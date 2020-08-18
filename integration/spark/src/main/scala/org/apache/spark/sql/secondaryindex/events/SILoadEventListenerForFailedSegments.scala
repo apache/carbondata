@@ -49,6 +49,8 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
           val loadTablePostStatusUpdateEvent = event.asInstanceOf[LoadTablePostStatusUpdateEvent]
           val carbonLoadModel = loadTablePostStatusUpdateEvent.getCarbonLoadModel
           val sparkSession = SparkSession.getActiveSession.get
+          if (CarbonProperties.getInstance().isSIRepairEnabled(carbonLoadModel.getDatabaseName,
+            carbonLoadModel.getTableName)) {
           // when Si creation and load to main table are parallel, get the carbonTable from the
           // metastore which will have the latest index Info
           val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
@@ -62,6 +64,10 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
             null != indexMetadata.getIndexesMap.get(secondaryIndexProvider)) {
             val indexTables = indexMetadata.getIndexesMap
               .get(secondaryIndexProvider).keySet().asScala
+            val maxSegmentRepairLimit = CarbonProperties.getInstance().getMaxSIRepairLimit(
+              carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
+            LOGGER.info("Number of segments to be repaired for table: " +
+              carbonLoadModel.getTableName + " are : " + maxSegmentRepairLimit)
             // if there are no index tables for a given fact table do not perform any action
             if (indexTables.nonEmpty) {
               val mainTableDetails =
@@ -69,10 +75,12 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
               indexTables.foreach {
                 indexTableName =>
                   CarbonIndexUtil.processSIRepair(indexTableName, carbonTable, carbonLoadModel,
-                    indexMetadata, mainTableDetails.toList, secondaryIndexProvider)(sparkSession)
+                    indexMetadata, mainTableDetails.toList, secondaryIndexProvider,
+                    maxSegmentRepairLimit)(sparkSession)
               }
             }
           }
+        }
     }
   }
 }
