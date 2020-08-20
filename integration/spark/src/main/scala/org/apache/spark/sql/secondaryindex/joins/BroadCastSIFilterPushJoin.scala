@@ -30,7 +30,7 @@ import org.apache.hadoop.mapreduce.{Job, JobContext}
 import org.apache.log4j.Logger
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, BindReferences, Expression, In, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.JoinType
@@ -39,7 +39,7 @@ import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide, H
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.types.{MetadataBuilder, TimestampType}
+import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -227,14 +227,6 @@ object BroadCastSIFilterPushJoin {
       CarbonCommonConstants.BROADCAST_RECORD_SIZE,
       CarbonCommonConstants.DEFAULT_BROADCAST_RECORD_SIZE)
 
-    val isTupleIdTillRowLevel =
-      leftKeys.exists(exp => exp.isInstanceOf[AttributeReference] &&
-                             exp.asInstanceOf[AttributeReference].metadata.contains(
-                               CarbonCommonConstants.IS_TUPLE_ID_TILL_ROW_FOR_SI_COMPLEX)) |
-      rightKeys.exists(exp => exp.isInstanceOf[AttributeReference] &&
-                              exp.asInstanceOf[AttributeReference].metadata.contains(
-                                CarbonCommonConstants.IS_TUPLE_ID_TILL_ROW_FOR_SI_COMPLEX))
-
     if (tableScan.isDefined && null != filters
         && filters.length > 0
         && ((filters(0).length > 0 && filters(0).length <= configuredFilterRecordSize.toInt) ||
@@ -243,10 +235,10 @@ object BroadCastSIFilterPushJoin {
       tableScan.get match {
         case scan: CarbonDataSourceScan =>
           addPushDownToCarbonRDD(scan.rdd,
-            addPushDownFilters(filterKeys, filters), isTupleIdTillRowLevel)
+            addPushDownFilters(filterKeys, filters))
         case _ =>
           addPushDownToCarbonRDD(tableScan.get.asInstanceOf[RowDataSourceScanExec].rdd,
-            addPushDownFilters(filterKeys, filters), isTupleIdTillRowLevel)
+            addPushDownFilters(filterKeys, filters))
       }
     }
   }
@@ -495,22 +487,12 @@ object BroadCastSIFilterPushJoin {
   }
 
   private def addPushDownToCarbonRDD(rdd: RDD[InternalRow],
-      expressions: Seq[Expression],
-      isTupleIdTillRowLevel: Boolean): Unit = {
+      expressions: Seq[Expression]): Unit = {
     rdd match {
       case value: CarbonScanRDD[InternalRow] =>
         if (expressions.nonEmpty) {
-          var expression = CarbonFilters.preProcessExpressions(expressions).head
-          if (isTupleIdTillRowLevel) {
-            val metadata = new MetadataBuilder().putString(CarbonCommonConstants
-              .IS_TUPLE_ID_TILL_ROW_FOR_SI_COMPLEX, "true").build()
-            expression = expression.transform {
-              case attrRef: AttributeReference if attrRef.name
-                .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) =>
-                CarbonToSparkAdapter.createAttributeReference(attrRef, metadata)
-            }
-          }
-          val expressionVal = CarbonFilters.transformExpression(expression)
+          val expressionVal = CarbonFilters
+            .transformExpression(CarbonFilters.preProcessExpressions(expressions).head)
           if (null != expressionVal) {
             value.setFilterExpression(expressionVal)
           }

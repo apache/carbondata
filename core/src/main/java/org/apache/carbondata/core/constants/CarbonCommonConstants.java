@@ -2411,23 +2411,6 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SI_SEGMENT_MERGE_DEFAULT = "false";
 
   /**
-   * Until the threshold for complex filter is reached, row id will be set to the bitset in
-   * implicit filter during secondary index pruning
-   */
-  public static final String SI_COMPLEX_FILTER_THRESHOLD = "carbon.si.complex.filter.threshold";
-
-  /**
-   * Maximum value for complex filter threshold
-   */
-  public static final String SI_COMPLEX_FILTER_THRESHOLD_DEFAULT = "32000";
-
-  /**
-   * Property to decide if position id till row level or not
-   */
-  public static final String IS_TUPLE_ID_TILL_ROW_FOR_SI_COMPLEX =
-      "is_tuple_id_till_row_for_si_complex";
-
-  /**
    * Hash method of bucket table
    */
   public static final String BUCKET_HASH_METHOD = "bucket_hash_method";

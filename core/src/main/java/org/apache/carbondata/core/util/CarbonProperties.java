@@ -2073,13 +2073,6 @@ public final class CarbonProperties {
     ));
   }
 
-  public int getComplexFilterThresholdForSI() {
-    String thresholdValue = getProperty(CarbonCommonConstants.SI_COMPLEX_FILTER_THRESHOLD,
-        CarbonCommonConstants.SI_COMPLEX_FILTER_THRESHOLD_DEFAULT);
-    LOGGER.info("Threshold value for secondary index complex filter: " + thresholdValue);
-    return Integer.parseInt(thresholdValue);
-  }
-
   public static void setAuditEnabled(boolean enabled) {
     getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_AUDIT, String.valueOf(enabled));
   }

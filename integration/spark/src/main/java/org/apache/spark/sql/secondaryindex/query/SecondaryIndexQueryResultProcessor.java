@@ -18,7 +18,6 @@
 package org.apache.spark.sql.secondaryindex.query;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -264,12 +263,6 @@ public class SecondaryIndexQueryResultProcessor {
       throws SecondaryIndexException {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     byte[] implicitColumnByteArray = wrapper.getImplicitColumnByteArray();
-    if (row.length > 1) {
-      String blockletPath = new String(implicitColumnByteArray, Charset.defaultCharset())
-          + CarbonCommonConstants.FILE_SEPARATOR + row[row.length - 2]
-          + CarbonCommonConstants.FILE_SEPARATOR + row[row.length - 1];
-      implicitColumnByteArray = blockletPath.getBytes(Charset.defaultCharset());
-    }
 
     List<CarbonDimension> dimensions = segmentProperties.getDimensions();
     Object[] preparedRow = new Object[dimensions.size() + measureCount];

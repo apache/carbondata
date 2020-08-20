@@ -236,12 +236,10 @@ object CarbonFilters {
         left match {
           case left: AttributeReference if (left.name
             .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)) =>
-            val isTupleIdTillRowLevel = left.metadata
-              .contains(CarbonCommonConstants.IS_TUPLE_ID_TILL_ROW_FOR_SI_COMPLEX)
             new InExpression(transformExpression(left),
               new ImplicitExpression(convertToJavaList(right.filter(_ != null)
                 .filter(!isNullLiteral(_))
-                .map(transformExpression)), isTupleIdTillRowLevel))
+                .map(transformExpression))))
           case _ =>
             new InExpression(transformExpression(left),
               new ListExpression(convertToJavaList(right.filter(_ != null).filter(!isNullLiteral(_))

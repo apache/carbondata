@@ -96,10 +96,10 @@ class TestImplicitFilterExpression extends QueryTest with BeforeAndAfterAll {
       .getShortBlockId(carbondataFileName.substring(carbondataFileName.lastIndexOf("/Part") + 1))
     // create block to blocklet mapping indicating which all blocklets for a given block
     // contain the data
-    val blockToBlockletMap = new util.HashMap[String, util.Set[String]]()
-    val blockletList = new util.HashSet[String]()
+    val blockToBlockletMap = new util.HashMap[String, util.Set[Integer]]()
+    val blockletList = new util.HashSet[Integer]()
     // add blocklet Id 0 to the list
-    blockletList.add(blockletId.toString)
+    blockletList.add(blockletId)
     blockToBlockletMap.put(carbondataFileShortName, blockletList)
     // create a new AND expression with True expression as right child
     val filterExpression = new AndExpression(scanRDD.indexFilter.getExpression, new TrueExpression(null))

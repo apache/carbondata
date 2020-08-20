@@ -125,14 +125,6 @@ object CarbonToSparkAdapter {
       None)
   }
 
-  def createAttributeReference(attr: AttributeReference, metadata: Metadata): AttributeReference = {
-    AttributeReference(
-      attr.name,
-      attr.dataType,
-      attr.nullable,
-      metadata)(attr.exprId, attr.qualifier)
-  }
-
   // Create the aliases using two plan outputs mappings.
   def createAliases(mappings: Seq[(NamedExpression, NamedExpression)]): Seq[NamedExpression] = {
     mappings.map{ case (o1, o2) =>

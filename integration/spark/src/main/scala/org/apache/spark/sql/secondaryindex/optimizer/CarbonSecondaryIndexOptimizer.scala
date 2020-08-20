@@ -33,7 +33,6 @@ import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.optimizer
 import org.apache.spark.sql.secondaryindex.optimizer.NodeType.NodeType
-import org.apache.spark.sql.types.{Metadata, MetadataBuilder}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -259,16 +258,13 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       indexTableToLogicalRelationMapping: mutable.Map[String, LogicalPlan],
       originalFilterAttributes: Set[String],
       limitLiteral: Literal,
-      checkAndAddLimitLiteral: Boolean = false,
-      hasComplexFilterWithPrimitive: Boolean = false): (DataFrame, Set[String]) = {
+      checkAndAddLimitLiteral: Boolean = false): (DataFrame, Set[String]) = {
     siFilterPushDownTree match {
       case SIUnaryFilterPushDownOperation(tableName, filterCondition) =>
         val attributeMap = indexTableAttributeMap.get(tableName).get
         var filterAttributes = indexJoinedFilterAttributes
-        var isComplexFilter = false;
         val newFilterCondition = filterCondition transform {
           case ArrayContains(left, right) =>
-            isComplexFilter = true
             EqualTo(left, right)
         }
         val indexTableFilter = newFilterCondition transformDown {
@@ -285,12 +281,6 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         val positionRef = attributeMap(CarbonCommonConstants.POSITION_REFERENCE.toLowerCase())
         var positionReference = Seq(positionRef)
 
-        if (isComplexFilter && !hasComplexFilterWithPrimitive) {
-          val metadata = new MetadataBuilder().putString(CarbonCommonConstants
-            .IS_TUPLE_ID_TILL_ROW_FOR_SI_COMPLEX, "true").build()
-          positionReference = Seq(CarbonToSparkAdapter.createAttributeReference(positionRef,
-            metadata))
-        }
         // Add Filter on logicalRelation
         var planTransform: LogicalPlan = Filter(indexTableFilter,
           indexTableToLogicalRelationMapping(tableName))
@@ -314,33 +304,25 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           indexTableDf.logicalPlan
         }
         // Add Group By on PositionReference after join
-        indexTableDf = if (isComplexFilter && !hasComplexFilterWithPrimitive) {
-          createDF(sparkSession, Project(positionReference, indexLogicalPlan))
-        } else {
-          createDF(sparkSession,
-            Aggregate(positionReference, positionReference, indexLogicalPlan))
-        }
+        indexTableDf = createDF(sparkSession,
+          Aggregate(positionReference, positionReference, indexLogicalPlan))
         // return the data frame
         (indexTableDf, filterAttributes)
       case SIBinaryFilterPushDownOperation(nodeType, leftOperation, rightOperation) =>
-        val hasComplexFilter: Boolean =
-          hasComplexArrayFilter(leftOperation) | hasComplexArrayFilter(rightOperation)
         val (leftOperationDataFrame, indexFilterAttributesLeft) = createIndexFilterDataFrame(
           leftOperation,
           indexTableAttributeMap,
           indexJoinedFilterAttributes,
           indexTableToLogicalRelationMapping,
           originalFilterAttributes,
-          limitLiteral,
-          hasComplexFilterWithPrimitive = hasComplexFilter)
+          limitLiteral)
         val (rightOperationDataFrame, indexFilterAttributesRight) = createIndexFilterDataFrame(
           rightOperation,
           indexTableAttributeMap,
           indexFilterAttributesLeft,
           indexTableToLogicalRelationMapping,
           originalFilterAttributes,
-          limitLiteral,
-          hasComplexFilterWithPrimitive = hasComplexFilter)
+          limitLiteral)
 
         // create new data frame by applying join or union based on nodeType
         val newDFAfterUnionOrJoin = applyUnionOrJoinOnDataFrames(nodeType,
@@ -494,7 +476,6 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case EndsWith(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case Contains(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => true
-//      case plan if CarbonHiveIndexMetadataUtil.checkArrayFilter(plan) => true
       case _ => false
     }
     if (!doNotPushToSI) {
@@ -853,25 +834,6 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         afterRule
       }
     }
-  }
-
-  /**
-   * method to check if si filter push down tree has complex array filter
-   */
-  def hasComplexArrayFilter(siFilterPushDownTree: SIFilterPushDownOperation): Boolean = {
-    var hasComplexFilter = false
-    siFilterPushDownTree match {
-      case SIUnaryFilterPushDownOperation(_, filterCondition) =>
-        filterCondition transform {
-          case ArrayContains(left, right) =>
-            hasComplexFilter = true
-            ArrayContains(left, right)
-        }
-      case SIBinaryFilterPushDownOperation(_, leftOperation, rightOperation) =>
-        hasComplexFilter =
-          hasComplexArrayFilter(leftOperation) | hasComplexArrayFilter(rightOperation)
-    }
-    hasComplexFilter
   }
 
 }

@@ -19,7 +19,7 @@ package org.apache.spark.sql.hive
 import org.apache.hadoop.hive.ql.exec.UDF
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.{Expression, GetArrayItem}
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -140,16 +140,6 @@ object CarbonHiveIndexMetadataUtil {
       case hiveUDF: HiveSimpleUDF if hiveUDF.function.isInstanceOf[NonIndexUDFExpression] => true
       case _ => false
     }
-  }
-
-  def checkArrayFilter(condition: Expression): Boolean = {
-    var arrayFilter = false
-    condition transformDown {
-      case arrayItem@GetArrayItem(_, _) =>
-        arrayFilter = true
-        arrayItem
-    }
-    arrayFilter
   }
 
   def getNIChildren(condition: Expression): Expression = {

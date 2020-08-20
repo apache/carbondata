@@ -985,7 +985,7 @@ public final class FilterUtil {
    * @return
    */
   public static ColumnFilterInfo getImplicitColumnFilterList(
-      Map<String, Set<String>> implicitColumnFilterList, boolean isIncludeFilter) {
+      Map<String, Set<Integer>> implicitColumnFilterList, boolean isIncludeFilter) {
     ColumnFilterInfo columnFilterInfo = new ColumnFilterInfo();
     columnFilterInfo.setIncludeFilter(isIncludeFilter);
     if (null != implicitColumnFilterList) {
@@ -1069,7 +1069,7 @@ public final class FilterUtil {
    * @param blockIdToBlockletIdMapping
    */
   public static void createImplicitExpressionAndSetAsRightChild(Expression expression,
-      Map<String, Set<String>> blockIdToBlockletIdMapping) {
+      Map<String, Set<Integer>> blockIdToBlockletIdMapping) {
     ColumnExpression columnExpression =
         new ColumnExpression(CarbonCommonConstants.POSITION_ID, DataTypes.STRING);
     ImplicitExpression implicitExpression = new ImplicitExpression(blockIdToBlockletIdMapping);

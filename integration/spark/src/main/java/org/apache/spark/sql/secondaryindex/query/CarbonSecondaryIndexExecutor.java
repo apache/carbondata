@@ -84,10 +84,6 @@ public class CarbonSecondaryIndexExecutor {
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<TableBlockInfo> blockList = null;
     queryModel = prepareQueryModel();
-    if (secondaryIndexColumns.length == 1 && carbonTable.getColumnByName(secondaryIndexColumns[0])
-        .isComplex()) {
-      queryModel.setRequiredRowId(true);
-    }
     this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel,
         FileFactory.getConfiguration());
     // for each segment get task block info

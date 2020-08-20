@@ -91,7 +91,7 @@ public class CarbonInputSplit extends FileSplit
    * validBlockletIds will contain the valid blocklet ids for a given block that contains the data
    * after pruning from driver. These will be used in executor for further pruning of blocklets
    */
-  private Set<String> validBlockletIds;
+  private Set<Integer> validBlockletIds;
 
   private transient IndexRow indexRow;
 
@@ -377,7 +377,7 @@ public class CarbonInputSplit extends FileSplit
     int validBlockletIdCount = in.readShort();
     validBlockletIds = new HashSet<>(validBlockletIdCount);
     for (int i = 0; i < validBlockletIdCount; i++) {
-      validBlockletIds.add(in.readUTF());
+      validBlockletIds.add((int) in.readShort());
     }
   }
 
@@ -430,8 +430,8 @@ public class CarbonInputSplit extends FileSplit
       out.writeUTF(indexWritePath);
     }
     out.writeShort(getValidBlockletIds().size());
-    for (String blockletId : getValidBlockletIds()) {
-      out.writeUTF(blockletId);
+    for (Integer blockletId : getValidBlockletIds()) {
+      out.writeShort(blockletId);
     }
   }
 
@@ -597,14 +597,14 @@ public class CarbonInputSplit extends FileSplit
     this.fileFormat = fileFormat;
   }
 
-  public Set<String> getValidBlockletIds() {
+  public Set<Integer> getValidBlockletIds() {
     if (null == validBlockletIds) {
       validBlockletIds = new HashSet<>();
     }
     return validBlockletIds;
   }
 
-  public void setValidBlockletIds(Set<String> validBlockletIds) {
+  public void setValidBlockletIds(Set<Integer> validBlockletIds) {
     this.validBlockletIds = validBlockletIds;
   }
 

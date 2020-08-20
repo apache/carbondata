@@ -61,14 +61,6 @@ object CarbonToSparkAdapter {
       metadata)(exprId, qualifier)
   }
 
-  def createAttributeReference(attr: AttributeReference, metadata: Metadata): AttributeReference = {
-    AttributeReference(
-      attr.name,
-      attr.dataType,
-      attr.nullable,
-      metadata)(attr.exprId, attr.qualifier)
-  }
-
   def createAttributeReference(attr: AttributeReference,
       attrName: String,
       newSubsume: String): AttributeReference = {
