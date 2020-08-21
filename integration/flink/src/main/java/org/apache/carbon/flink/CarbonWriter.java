@@ -88,7 +88,7 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
         }
         try {
           CarbonUtil.copyCarbonDataFileToCarbonStorePath(file.getAbsolutePath(), remotePath,
-                1024 * 1024 * 2);
+                  1024 * 1024 * 2);
         } catch (CarbonDataWriterException exception) {
           LOGGER.error(exception.getMessage(), exception);
           throw exception;
@@ -133,7 +133,7 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
       }
       try {
         CarbonUtil.copyCarbonDataFileToCarbonStorePath(file.getAbsolutePath(), remotePath,
-                1024 * 1024 * 2);
+                  1024 * 1024 * 2);
       } catch (CarbonDataWriterException exception) {
         LOGGER.error(exception.getMessage(), exception);
         throw exception;
