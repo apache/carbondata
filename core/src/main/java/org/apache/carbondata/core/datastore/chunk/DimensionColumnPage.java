@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.datastore.chunk;
 
-import java.util.BitSet;
-
 import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 

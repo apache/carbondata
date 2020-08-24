@@ -19,7 +19,6 @@ package org.apache.carbondata.core.datastore.page.statistics;
 
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 // Statistics of dimension and measure column in a TablePage
 public class TablePageStatistics {

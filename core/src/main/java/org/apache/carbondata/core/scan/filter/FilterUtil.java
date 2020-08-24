@@ -1461,12 +1461,8 @@ public final class FilterUtil {
         || null != dimensionRawColumnChunk.getLocalDictionary()) && (dimensionFilterValues[0]
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY))) {
       return true;
-    } else if ((dimensionRawColumnChunk.isAdaptiveForBinaryData() || dimensionRawColumnChunk
-        .isAdaptiveForNoDictionary()) && ((byte[]) (dimensionFilterValues[0])).length == 0) {
-      return true;
-    } else {
-      return false;
-    }
+    } else return (dimensionRawColumnChunk.isAdaptiveForBinaryData() || dimensionRawColumnChunk
+        .isAdaptiveForNoDictionary()) && ((byte[]) (dimensionFilterValues[0])).length == 0;
   }
 
   public static Object[] updateFiltersForDimColumns(byte[][] filters,
