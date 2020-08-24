@@ -23,23 +23,23 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
 
-public abstract class BlockIndexerStorage<T> {
+public abstract class PageIndexGenerator<T> {
 
-  protected short[] rowIdPage;
+  short[] invertedIndex;
 
   protected short[] rowIdRlePage;
 
-  protected T dataPage;
-
   protected short[] dataRlePage;
 
+  private boolean alreadySorted;
+
   public short[] getRowIdPage() {
-    return rowIdPage;
+    return invertedIndex;
   }
 
   public int getRowIdPageLengthInBytes() {
-    if (rowIdPage != null) {
-      return rowIdPage.length * CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+    if (invertedIndex != null) {
+      return invertedIndex.length * CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
     } else {
       return 0;
     }
@@ -57,9 +57,9 @@ public abstract class BlockIndexerStorage<T> {
     }
   }
 
-  public T getDataPage() {
-    return dataPage;
-  }
+  public abstract T getDataPage();
+
+  public abstract int[] getLength();
 
   public short[] getDataRlePage() {
     return dataRlePage;
@@ -110,11 +110,14 @@ public abstract class BlockIndexerStorage<T> {
       list.add(rowIds[i - 1]);
     }
     if ((((list.size() + map.size()) * 100) / rowIds.length) > 70) {
-      this.rowIdPage = rowIds;
+      this.invertedIndex = rowIds;
       this.rowIdRlePage = new short[0];
     } else {
-      this.rowIdPage = convertToArray(list);
+      this.invertedIndex = convertToArray(list);
       this.rowIdRlePage = convertToArray(map);
+    }
+    if (invertedIndex.length == 2 && rowIdRlePage.length == 1) {
+      alreadySorted = true;
     }
   }
 
@@ -165,5 +168,12 @@ public abstract class BlockIndexerStorage<T> {
       shortArray[i] = list.get(i);
     }
     return shortArray;
+  }
+
+  /**
+   * @return the alreadySorted
+   */
+  public boolean isAlreadySorted() {
+    return alreadySorted;
   }
 }

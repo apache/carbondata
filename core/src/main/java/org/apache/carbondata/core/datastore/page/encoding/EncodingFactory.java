@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -59,7 +60,7 @@ public abstract class EncodingFactory {
    * Return new encoder for specified column
    */
   public abstract ColumnPageEncoder createEncoder(TableSpec.ColumnSpec columnSpec,
-      ColumnPage inputPage);
+      ColumnPage inputPage, Map<String, Object> encoderParameter);
 
   /**
    * Return new decoder based on encoder metadata read from file
@@ -103,29 +104,28 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveIntegralCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
-          stats, encodings.contains(Encoding.INVERTED_INDEX)).createDecoder(metadata);
+          stats).createDecoder(metadata);
     } else if (encoding == ADAPTIVE_DELTA_INTEGRAL) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveDeltaIntegralCodec(metadata.getSchemaDataType(),
-          metadata.getStoreDataType(), stats, encodings.contains(Encoding.INVERTED_INDEX))
-          .createDecoder(metadata);
+          metadata.getStoreDataType(), stats).createDecoder(metadata);
     } else if (encoding == ADAPTIVE_FLOATING) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveFloatingCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
-          stats, encodings.contains(Encoding.INVERTED_INDEX)).createDecoder(metadata);
+          stats).createDecoder(metadata);
     } else if (encoding == ADAPTIVE_DELTA_FLOATING) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveDeltaFloatingCodec(metadata.getSchemaDataType(),
-          metadata.getStoreDataType(), stats, encodings.contains(Encoding.INVERTED_INDEX))
+          metadata.getStoreDataType(), stats)
           .createDecoder(metadata);
     } else if (encoding == RLE_INTEGRAL) {
       RLEEncoderMeta metadata = new RLEEncoderMeta();

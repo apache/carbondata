@@ -21,7 +21,7 @@ package org.apache.carbondata.core.datastore.columnar;
  * This is for all dimension except DATE
  * TODO: refactor to use 'encode by meta' without going through BlockIndexerStorage
  */
-public class DummyBlockIndexerStorage extends BlockIndexerStorage<byte[][]> {
+public class DummyBlockIndexerStorage extends PageIndexGenerator<byte[][]> {
 
   @Override
   public short[] getRowIdPage() {
@@ -46,6 +46,11 @@ public class DummyBlockIndexerStorage extends BlockIndexerStorage<byte[][]> {
   @Override
   public byte[][] getDataPage() {
     return new byte[0][];
+  }
+
+  @Override
+  public int[] getLength() {
+    return new int[0];
   }
 
   @Override

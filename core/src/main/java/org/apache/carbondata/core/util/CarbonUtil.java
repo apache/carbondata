@@ -3191,7 +3191,7 @@ public final class CarbonUtil {
       default:
         // for primitive column
         ColumnPageEncoder columnPageEncoder =
-            DefaultEncodingFactory.getInstance().createEncoder(columnSpec, columnPage);
+            DefaultEncodingFactory.getInstance().createEncoder(columnSpec, columnPage, null);
         newEncodedColumnPage = columnPageEncoder.encode(columnPage);
     }
     return new FallbackEncodedColumnPage(newEncodedColumnPage, pageIndex);

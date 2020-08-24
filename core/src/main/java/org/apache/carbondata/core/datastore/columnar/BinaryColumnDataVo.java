@@ -19,30 +19,50 @@ package org.apache.carbondata.core.datastore.columnar;
 
 import java.util.Arrays;
 
-import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
+import org.apache.carbondata.core.util.ByteUtil;
 
-public class ByteArrayColumnWithRowId implements Comparable<ByteArrayColumnWithRowId> {
-  private byte[] column;
+/**
+ * Hold the data for binary column type like string
+ */
+public class BinaryColumnDataVo implements ColumnDataVo<byte[]> {
 
-  private short rowId;
+  /**
+   * length of the data
+   */
+  private final int length;
 
-  ByteArrayColumnWithRowId(byte[] column, short rowId) {
+  /**
+   * data
+   */
+  protected byte[] column;
+
+  /**
+   * actual index
+   */
+  private Short index;
+
+  BinaryColumnDataVo(byte[] column, short index, int length) {
     this.column = column;
-    this.rowId = rowId;
+    this.index = index;
+    this.length = length;
   }
 
-  public byte[] getColumn() {
+  /**
+   * @return the column
+   */
+  public byte[] getData() {
     return column;
   }
 
-  public short getRowId() {
-    return rowId;
+  /**
+   * @return the index
+   */
+  public short getIndex() {
+    return index;
   }
 
-  @Override
-  public int compareTo(ByteArrayColumnWithRowId o) {
-    return UnsafeComparer.INSTANCE
-        .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
+  public int getLength() {
+    return length;
   }
 
   @Override
@@ -50,12 +70,17 @@ public class ByteArrayColumnWithRowId implements Comparable<ByteArrayColumnWithR
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    ByteArrayColumnWithRowId o = (ByteArrayColumnWithRowId)obj;
-    return Arrays.equals(column, o.column) && rowId == o.rowId;
+    BinaryColumnDataVo o = (BinaryColumnDataVo)obj;
+    return Arrays.equals(column, o.column) && index.equals(o.index);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(column) + Short.hashCode(rowId);
+    return Arrays.hashCode(column) + index.hashCode();
+  }
+
+  @Override
+  public int compareTo(Object o) {
+    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, ((BinaryColumnDataVo) o).column);
   }
 }

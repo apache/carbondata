@@ -23,11 +23,9 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 
 public abstract class IndexStorageCodec implements ColumnPageCodec {
   protected boolean isSort;
-  protected boolean isInvertedIndex;
 
-  IndexStorageCodec(boolean isSort, boolean isInvertedIndex) {
+  IndexStorageCodec(boolean isSort) {
     this.isSort = isSort;
-    this.isInvertedIndex = isInvertedIndex;
   }
 
   @Override
