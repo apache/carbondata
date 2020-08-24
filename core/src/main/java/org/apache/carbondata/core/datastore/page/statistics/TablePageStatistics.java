@@ -58,19 +58,11 @@ public class TablePageStatistics {
 
   private void updateDimensionMinMax(EncodedColumnPage[] dimensions) {
     for (int i = 0; i < dimensions.length; i++) {
-      SimpleStatsResult stats = dimensions[i].getStats();
-      Object min = stats.getMin();
-      Object max = stats.getMax();
-      if (CarbonUtil.isEncodedWithMeta(dimensions[i].getPageMetadata().getEncoders())) {
-        dimensionMaxValue[i] = DataTypeUtil
-            .getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(max, stats.getDataType());
-        dimensionMinValue[i] = DataTypeUtil
-            .getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(min, stats.getDataType());
-      } else {
-        dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), max);
-        dimensionMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), min);
-      }
-      writeMinMaxForDimensions[i] = stats.writeMinMax();
+      dimensionMaxValue[i] =
+          dimensions[i].getPageMetadata().getMin_max().getMax_values().get(0).array();
+      dimensionMinValue[i] =
+          dimensions[i].getPageMetadata().getMin_max().getMin_values().get(0).array();
+      writeMinMaxForDimensions[i] = dimensions[i].getStats().writeMinMax();
     }
   }
 

@@ -21,6 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -46,6 +47,8 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   private boolean isExplicitSorted;
 
+  private PresenceMeta presenceMeta;
+
   public ColumnPageWrapper(ColumnPage columnPage, CarbonDictionary localDictionary,
       int[] invertedIndex, int[] invertedReverseIndex, boolean isAdaptivePrimitivePage,
       boolean isExplicitSorted) {
@@ -54,6 +57,9 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     this.invertedIndex = invertedIndex;
     this.invertedReverseIndex = invertedReverseIndex;
     this.isAdaptivePrimitivePage = isAdaptivePrimitivePage;
+    if (null != columnPage) {
+      this.presenceMeta = columnPage.getPresenceMeta();
+    }
     this.isExplicitSorted = isExplicitSorted;
   }
 
@@ -171,16 +177,41 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         throw new RuntimeException("unsupported type: " + targetDataType);
       }
     } else {
-      return columnPage.getBytes(rowId);
+      if ((srcDataType == DataTypes.BYTE)) {
+        long longData = columnPage.getLong(rowId);
+        byte out = (byte) longData;
+        return new byte[] { out };
+      } else if (srcDataType == DataTypes.BOOLEAN) {
+        long longData = columnPage.getLong(rowId);
+        byte out = (byte) longData;
+        return ByteUtil.toBytes(ByteUtil.toBoolean(out));
+      } else if (srcDataType == DataTypes.SHORT) {
+        long longData = columnPage.getLong(rowId);
+        short out = (short) longData;
+        return ByteUtil.toXorBytes(out);
+      } else if (srcDataType == DataTypes.SHORT_INT) {
+        long longData = columnPage.getLong(rowId);
+        int out = (int) longData;
+        return ByteUtil.toXorBytes(out);
+      } else if (srcDataType == DataTypes.INT) {
+        long longData = columnPage.getLong(rowId);
+        int out = (int) longData;
+        return ByteUtil.toXorBytes(out);
+      } else if (srcDataType == DataTypes.TIMESTAMP || srcDataType == DataTypes.LONG) {
+        long longData = columnPage.getLong(rowId);
+        return ByteUtil.toXorBytes(longData);
+      } else {
+        return columnPage.getBytes(rowId);
+      }
     }
   }
 
   private byte[] getNullBitSet(int rowId, ColumnType columnType) {
-    if (columnPage.getNullBits().get(rowId) && columnType == ColumnType.COMPLEX_PRIMITIVE) {
+    if (presenceMeta.getBitSet().get(rowId) && columnType == ColumnType.COMPLEX_PRIMITIVE) {
       // if this row is null, return default null represent in byte array
       return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
-    if (columnPage.getNullBits().get(rowId)) {
+    if (presenceMeta.getBitSet().get(rowId)) {
       // if this row is null, return default null represent in byte array
       return CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }
@@ -247,15 +278,15 @@ public class ColumnPageWrapper implements DimensionColumnPage {
   }
 
   @Override
-  public int compareTo(int rowId, byte[] compareValue) {
+  public int compareTo(int rowId, Object compareValue) {
     // rowId is the inverted index, but the null bitset is based on actual data
     int nullBitSetRowId = rowId;
     if (isExplicitSorted()) {
-      nullBitSetRowId = getInvertedIndex(rowId);
+      nullBitSetRowId = getInvertedReverseIndex(rowId);
     }
     byte[] nullBitSet = getNullBitSet(nullBitSetRowId, columnPage.getColumnSpec().getColumnType());
     if (nullBitSet != null
-        && ByteUtil.UnsafeComparer.INSTANCE.compareTo(nullBitSet, compareValue) == 0) {
+        && ByteUtil.UnsafeComparer.INSTANCE.compareTo(nullBitSet, (byte[]) compareValue) == 0) {
       // check if the compare value is a null value
       // if the compare value is null and the data is also null we can directly return 0
       return 0;
@@ -266,7 +297,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
       } else {
         chunkData = this.getChunkDataInBytes(rowId);
       }
-      return ByteUtil.UnsafeComparer.INSTANCE.compareTo(chunkData, compareValue);
+      return ByteUtil.UnsafeComparer.INSTANCE.compareTo(chunkData,  (byte[]) compareValue);
     }
   }
 
@@ -284,8 +315,8 @@ public class ColumnPageWrapper implements DimensionColumnPage {
   }
 
   @Override
-  public BitSet getNullBits() {
-    return columnPage.getNullBits();
+  public PresenceMeta getPresentMeta() {
+    return presenceMeta;
   }
 
 }

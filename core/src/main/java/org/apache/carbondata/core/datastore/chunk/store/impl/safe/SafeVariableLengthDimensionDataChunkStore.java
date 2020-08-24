@@ -50,12 +50,15 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
 
   private int dataLength;
 
+  private DataType lengthStoredType;
+
   public SafeVariableLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows,
-      int dataLength) {
+      int dataLength, DataType lengthStoredType) {
     super(isInvertedIndex);
     this.numberOfRows = numberOfRows;
     this.dataOffsets = new int[numberOfRows];
     this.dataLength = dataLength;
+    this.lengthStoredType = lengthStoredType;
   }
 
   /**
@@ -107,7 +110,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     vector.setDictionary(null);
     DataType dt = vector.getType();
     AbstractNonDictionaryVectorFiller vectorFiller = NonDictionaryVectorFillerFactory
-        .getVectorFiller(getLengthSize(), dt, numberOfRows, dataLength);
+        .getVectorFiller(getLengthSize(), dt, numberOfRows, dataLength, lengthStoredType);
     vector = ColumnarVectorWrapperDirectFactory
         .getDirectVectorWrapperFactory(vector, invertedIndex, new BitSet(), vectorInfo.deletedRows,
             false, false);

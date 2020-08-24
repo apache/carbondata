@@ -90,7 +90,7 @@ public class ComplexColumnPage {
       } else {
         this.columnPages[i] = ColumnPage.newLocalDictPage(
             new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize,
-            localDictionaryGenerator, true);
+            localDictionaryGenerator);
         this.columnPages[i].setStatsCollector(new DummyStatsCollector());
       }
     }
