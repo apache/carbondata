@@ -45,10 +45,10 @@ public class TestPageLevelDictionary {
       CarbonCommonConstants.DEFAULT_COMPRESSOR).getName();
 
   @Test public void testPageLevelDictionaryGenerateDataIsGenertingProperDictionaryValues() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
     String columnName = "column1";
     PageLevelDictionary pageLevelDictionary = new PageLevelDictionary(generator, columnName,
-        DataTypes.STRING, false, compressorName);
+        compressorName);
     try {
       for (int i = 1; i <= 1000; i++) {
         Assert.assertTrue((i + 1) == pageLevelDictionary.getDictionaryValue(("" + i).getBytes()));
@@ -60,10 +60,10 @@ public class TestPageLevelDictionary {
   }
 
   @Test public void testPageLevelDictionaryContainsOnlyUsedDictionaryValues() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
     String columnName = "column1";
     PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(
-        generator, columnName, DataTypes.STRING, false, compressorName);
+        generator, columnName, compressorName);
     byte[][] validateData = new byte[500][];
     try {
       for (int i = 1; i <= 500; i++) {
@@ -79,7 +79,7 @@ public class TestPageLevelDictionary {
       Assert.assertTrue(false);
     }
     PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(
-        generator, columnName, DataTypes.STRING, false, compressorName);
+        generator, columnName, compressorName);
     try {
       for (int i = 1; i <= 500; i++) {
         byte[] data = ("vikas" + i).getBytes();
@@ -113,10 +113,10 @@ public class TestPageLevelDictionary {
 
   @Test
   public void testPageLevelDictionaryContainsOnlyUsedDictionaryValuesWhenMultiplePagesUseSameDictionary() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
     String columnName = "column1";
     PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(
-        generator, columnName, DataTypes.STRING, false, compressorName);
+        generator, columnName, compressorName);
     byte[][] validateData = new byte[10][];
     int index = 0;
     try {
@@ -134,7 +134,7 @@ public class TestPageLevelDictionary {
       Assert.assertTrue(false);
     }
     PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(
-        generator, columnName, DataTypes.STRING, false, compressorName);
+        generator, columnName, compressorName);
     try {
       for (int i = 1; i <= 5; i++) {
         byte[] data = ("vikas" + i).getBytes();

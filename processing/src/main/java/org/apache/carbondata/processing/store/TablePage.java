@@ -148,7 +148,7 @@ public class TablePage {
               new ColumnPageEncoderMeta(spec, dataType, columnCompressor);
           if (null != localDictionaryGenerator) {
             page = ColumnPage
-                .newLocalDictPage(columnPageEncoderMeta, pageSize, localDictionaryGenerator, false);
+                .newLocalDictPage(columnPageEncoderMeta, pageSize, localDictionaryGenerator);
           } else {
             page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
           }

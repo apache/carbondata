@@ -27,7 +27,7 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
   private Object[] dataPage;
 
   public PrimitivePageIndexGenerator(Object[] dataPage, boolean isSortRequired,
-      DataType dataType) {
+      DataType dataType, boolean isLocalDictGeneratedPage) {
     if (isSortRequired) {
       SerializableComparator comparator =
           org.apache.carbondata.core.util.comparator.Comparator.getComparator(dataType);
@@ -39,7 +39,12 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
       this.rowIdRlePage = new short[0];
       this.invertedIndex = new short[0];
     }
-    this.dataRlePage = new short[0];
+    if (isLocalDictGeneratedPage && null != dataPage && dataPage.length != 0) {
+      this.dataPage = rleEncodeOnData(dataPage);
+    } else {
+      this.dataPage = dataPage;
+      this.dataRlePage = new short[0];
+    }
   }
 
   /**

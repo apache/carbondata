@@ -23,13 +23,10 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.apache.log4j.Logger;
 
@@ -67,29 +64,21 @@ public class LocalDictColumnPage extends ColumnPage {
    */
   private boolean isActualPageMemoryFreed;
 
-  private KeyGenerator keyGenerator;
-
-  private int[] dummyKey;
-
   private boolean isDecoderBasedFallBackEnabled;
 
   /**
    * Create a new column page with input data type and page size.
    */
   protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnPage,
-      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive,
-      boolean isDecoderBasedFallBackEnabled) {
+      LocalDictionaryGenerator localDictionaryGenerator, boolean isDecoderBasedFallBackEnabled) {
     super(actualDataColumnPage.getColumnPageEncoderMeta(), actualDataColumnPage.getPageSize());
     // if threshold is not reached then create page level dictionary
     // for encoding with local dictionary
     if (!localDictionaryGenerator.isThresholdReached()) {
       pageLevelDictionary = new PageLevelDictionary(localDictionaryGenerator,
-          actualDataColumnPage.getColumnSpec().getFieldName(), actualDataColumnPage.getDataType(),
-          isComplexTypePrimitive, actualDataColumnPage.getColumnCompressorName());
+          actualDataColumnPage.getColumnSpec().getFieldName(),
+          actualDataColumnPage.getColumnCompressorName());
       this.encodedDataColumnPage = encodedColumnPage;
-      this.keyGenerator = KeyGeneratorFactory
-          .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX + 1 });
-      this.dummyKey = new int[1];
     } else {
       // else free the encoded column page memory as its of no use
       encodedColumnPage.freeMemory();
@@ -137,23 +126,7 @@ public class LocalDictColumnPage extends ColumnPage {
     if (null != pageLevelDictionary) {
       try {
         actualDataColumnPage.putBytes(rowId, bytes);
-        byte[] input;
-        DataType dataType = actualDataColumnPage.columnPageEncoderMeta.getStoreDataType();
-        if (dataType == DataTypes.STRING) {
-          ByteBuffer byteBuffer = ByteBuffer.allocate(bytes.length + 2);
-          byteBuffer.putShort((short) bytes.length);
-          byteBuffer.put(bytes);
-          input = byteBuffer.array();
-        } else if (dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
-          ByteBuffer byteBuffer = ByteBuffer.allocate(bytes.length + 4);
-          byteBuffer.putInt(bytes.length);
-          byteBuffer.put(bytes);
-          input = byteBuffer.array();
-        } else {
-          input = bytes;
-        }
-        dummyKey[0] = pageLevelDictionary.getDictionaryValue(input);
-        encodedDataColumnPage.putBytes(rowId, keyGenerator.generateKey(dummyKey));
+        encodedDataColumnPage.putData(rowId, pageLevelDictionary.getDictionaryValue(bytes));
       } catch (DictionaryThresholdReachedException e) {
         LOGGER.warn("Local Dictionary threshold reached for the column: " + actualDataColumnPage
             .getColumnSpec().getFieldName() + ", " + e.getMessage());
@@ -166,6 +139,27 @@ public class LocalDictColumnPage extends ColumnPage {
     }
     if (pageSize <= rowId) {
       pageSize = rowId + 1;
+    }
+  }
+
+  /**
+   * Set null at rowId
+   */
+  protected void putNull(int rowId) {
+    if (null != pageLevelDictionary) {
+      try {
+        actualDataColumnPage.putBytes(rowId, CarbonCommonConstants.EMPTY_BYTE_ARRAY);
+        encodedDataColumnPage.putData(rowId,
+            pageLevelDictionary.getDictionaryValue(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY));
+      } catch (DictionaryThresholdReachedException e) {
+        LOGGER.warn("Local Dictionary threshold reached for the column: " + actualDataColumnPage
+            .getColumnSpec().getFieldName() + ", " + e.getMessage());
+        pageLevelDictionary = null;
+        encodedDataColumnPage.freeMemory();
+        encodedDataColumnPage = null;
+      }
+    } else {
+      actualDataColumnPage.putBytes(rowId, CarbonCommonConstants.EMPTY_BYTE_ARRAY);
     }
   }
 
@@ -420,5 +414,13 @@ public class LocalDictColumnPage extends ColumnPage {
     } else {
       return actualDataColumnPage.getPageLengthInBytes();
     }
+  }
+
+  public ColumnPage getLocalDictPage() {
+    return this.encodedDataColumnPage;
+  }
+
+  public boolean isLVActualColumnPage() {
+    return this.actualDataColumnPage.isLVByteBufferPage();
   }
 }

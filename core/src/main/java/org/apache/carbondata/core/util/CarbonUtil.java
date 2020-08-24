@@ -3019,10 +3019,7 @@ public final class CarbonUtil {
         // check whether the column is local dictionary column or not
         if (columnSchema.isLocalDictColumn()) {
           columnLocalDictGenMap.put(columnSchema.getColumnName(),
-              new ColumnLocalDictionaryGenerator(localDictionaryThreshold,
-                  columnSchema.getDataType() == DataTypes.VARCHAR ?
-                      CarbonCommonConstants.INT_SIZE_IN_BYTE :
-                      CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+              new ColumnLocalDictionaryGenerator(localDictionaryThreshold));
         }
       }
     }
