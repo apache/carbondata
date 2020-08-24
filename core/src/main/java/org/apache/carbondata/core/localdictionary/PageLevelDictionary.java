@@ -53,7 +53,6 @@ public class PageLevelDictionary {
 
   private String columnName;
 
-  private boolean isComplexTypePrimitive;
   // compressor to be used for the dictionary. The compressor is the same as column compressor.
   private String columnCompressor;
 

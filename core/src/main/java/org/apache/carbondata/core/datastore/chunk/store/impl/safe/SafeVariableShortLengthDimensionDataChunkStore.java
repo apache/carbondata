@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * Below class is responsible to store variable long length(>32000) dimension data chunk in
@@ -28,8 +29,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 public class SafeVariableShortLengthDimensionDataChunkStore
     extends SafeVariableLengthDimensionDataChunkStore {
   public SafeVariableShortLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows,
-      int dataLength) {
-    super(isInvertedIndex, numberOfRows, dataLength);
+      int dataLength, DataType lengthStoredType) {
+    super(isInvertedIndex, numberOfRows, dataLength, lengthStoredType);
   }
 
   @Override

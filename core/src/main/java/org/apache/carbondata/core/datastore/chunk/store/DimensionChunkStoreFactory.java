@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableSh
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeFixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableIntLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableShortLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.util.CarbonProperties;
 
@@ -65,7 +66,8 @@ public class DimensionChunkStoreFactory {
    */
   public DimensionDataChunkStore getDimensionChunkStore(int columnValueSize,
       boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType,
-      CarbonDictionary dictionary, boolean fillDirectVector, int dataLength) {
+      CarbonDictionary dictionary, boolean fillDirectVector, int dataLength,
+      DataType lengthStoredType) {
     if (isUnsafe && !fillDirectVector) {
       switch (storeType) {
         case FIXED_LENGTH:
@@ -91,10 +93,10 @@ public class DimensionChunkStoreFactory {
               numberOfRows);
         case VARIABLE_SHORT_LENGTH:
           return new SafeVariableShortLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows,
-              dataLength);
+              dataLength, lengthStoredType);
         case VARIABLE_INT_LENGTH:
           return new SafeVariableIntLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows,
-              dataLength);
+              dataLength, lengthStoredType);
         case LOCAL_DICT:
           return new LocalDictDimensionDataChunkStore(
               new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, 3, numberOfRows),

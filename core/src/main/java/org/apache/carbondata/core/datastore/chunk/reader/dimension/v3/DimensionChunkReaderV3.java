@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.chunk.reader.dimension.v3;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -24,9 +26,12 @@ import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
+import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.BinaryTypeDimColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
@@ -34,13 +39,18 @@ import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractDimen
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
+import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -116,7 +126,8 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
   }
 
   protected DimensionRawColumnChunk getDimensionRawColumnChunk(FileReader fileReader,
-      int columnIndex, long offset, int length, ByteBuffer buffer, DataChunk3 dataChunk) {
+      int columnIndex, long offset, int length, ByteBuffer buffer, DataChunk3 dataChunk)
+      throws IOException {
     // creating a raw chunks instance and filling all the details
     DimensionRawColumnChunk rawColumnChunk =
         new DimensionRawColumnChunk(columnIndex, buffer, offset, length, this);
@@ -146,6 +157,37 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     rawColumnChunk.setMinValues(minValueOfEachPage);
     rawColumnChunk.setMinMaxFlagArray(minMaxFlag);
     rawColumnChunk.setRowCount(eachPageLength);
+    List<Encoding> encoders = dataChunk.getData_chunk_list().get(0).getEncoders();
+    ColumnPageEncoderMeta metadata = null;
+    if (isEncodedWithAdaptiveMeta(dataChunk.getData_chunk_list().get(0))) {
+      List<ByteBuffer> encoderMeta = dataChunk.getData_chunk_list().get(0).getEncoder_meta();
+      ByteArrayInputStream stream = new ByteArrayInputStream(encoderMeta.get(0).array());
+      DataInputStream in = new DataInputStream(stream);
+      metadata = new ColumnPageEncoderMeta();
+      metadata.readFields(in);
+    }
+    rawColumnChunk
+        .setAdaptiveForBinaryData(CarbonUtil.hasEncoding(encoders, Encoding.DIRECT_STRING));
+
+    rawColumnChunk.setAdaptiveForNoDictionary(
+        null != metadata && (metadata.getColumnSpec().getColumnType() != ColumnType.COMPLEX
+            || metadata.getColumnSpec().getColumnType() != ColumnType.COMPLEX_PRIMITIVE
+            || metadata.getColumnSpec().getColumnType() != ColumnType.COMPLEX_STRUCT
+            || metadata.getColumnSpec().getColumnType() != ColumnType.COMPLEX_ARRAY));
+
+    if (rawColumnChunk.isAdaptiveForNoDictionary()) {
+      PresenceMeta[] presenceMeta = new PresenceMeta[dataChunk.getData_chunk_list().size()];
+      for (int i = 0; i < presenceMeta.length; i++) {
+        String compressorName = CarbonMetadataUtil
+            .getCompressorNameFromChunkMeta(dataChunk.getData_chunk_list().get(i).getChunk_meta());
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(compressorName);
+        presenceMeta[i] =
+            new PresenceMeta(dataChunk.getData_chunk_list().get(i).presence.represents_presence,
+                QueryUtil
+                    .getNullBitSet(dataChunk.getData_chunk_list().get(i).presence, compressor));
+      }
+      rawColumnChunk.setPresenceMeta(presenceMeta);
+    }
     rawColumnChunk.setOffsets(ArrayUtils
         .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
     return rawColumnChunk;
@@ -231,7 +273,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
         .get(rawColumnPage.getColumnIndex()) + dataChunk3.getPage_offset().get(pageNumber);
     // first read the data and uncompressed it
     return decodeDimension(rawColumnPage, rawData, pageMetadata, offset, vectorInfo,
-        reusableDataBuffer);
+        reusableDataBuffer, pageNumber);
   }
 
   @Override
@@ -273,21 +315,22 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   protected DimensionColumnPage decodeDimension(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo,
-      ReusableDataBuffer reusableDataBuffer) throws IOException {
+      ReusableDataBuffer reusableDataBuffer, int pageNumber) throws IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     org.apache.carbondata.core.metadata.encoder.Encoding.validateEncodingTypes(encodings);
-    if (CarbonUtil.isEncodedWithMeta(encodings)) {
+    if (!rawColumnPage.isAdaptiveForBinaryData() && CarbonUtil.isEncodedWithMeta(encodings)) {
+      int dataOffset = offset;
+      BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
       int[] invertedIndexes = new int[0];
       int[] invertedIndexesReverse = new int[0];
       // in case of no dictionary measure data types, if it is included in sort columns
       // then inverted index to be uncompressed
       boolean isExplicitSorted =
           CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX);
-      int dataOffset = offset;
       if (isExplicitSorted) {
         offset += pageMetadata.data_page_length;
-        invertedIndexes = CarbonUtil
-            .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
+        invertedIndexes =
+            CarbonUtil.getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
         if (vectorInfo == null) {
           // get the reverse index
           invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
@@ -295,18 +338,23 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
           vectorInfo.invertedIndex = invertedIndexes;
         }
       }
-      BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, dataOffset,
           null != rawColumnPage.getLocalDictionary(), vectorInfo, nullBitSet, reusableDataBuffer);
-      if (decodedPage != null) {
-        decodedPage.setNullBits(nullBitSet);
+      if (null != decodedPage) {
+        decodedPage.setPresenceMeta(new PresenceMeta(pageMetadata.presence.represents_presence,
+            QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor)));
+        // TODO handle for date, timestamp and local dict
+        return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(),
+            invertedIndexes, invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata),
+            isExplicitSorted);
+      } else {
+        return new ColumnPageWrapper(null, rawColumnPage.getLocalDictionary(), invertedIndexes,
+            invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata), isExplicitSorted);
       }
-      return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(), invertedIndexes,
-          invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata), isExplicitSorted);
     } else {
       // following code is for backward compatibility
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset, vectorInfo,
-          reusableDataBuffer);
+          reusableDataBuffer, pageNumber);
     }
   }
 
@@ -331,12 +379,16 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   private DimensionColumnPage decodeDimensionLegacy(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo,
-      ReusableDataBuffer reusableDataBuffer) {
+      ReusableDataBuffer reusableDataBuffer, int pageNumber) {
     byte[] dataPage;
     int[] rlePage;
     int[] invertedIndexes = new int[0];
     int[] invertedIndexesReverse = new int[0];
     int uncompressedSize = 0;
+    DataType dataType = DataTypes.INT;
+    if (!pageMetadata.getEncoder_meta().isEmpty() && null != pageMetadata.getEncoder_meta()) {
+      dataType = DataTypes.valueOf(pageMetadata.getEncoder_meta().get(0).get(0));
+    }
     if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
       uncompressedSize =
           compressor.unCompressedLength(pageData.array(), offset, pageMetadata.data_page_length);
@@ -380,10 +432,20 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
               (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.DIRECT_COMPRESS_VARCHAR) ?
                   DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_INT_LENGTH :
                   DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_SHORT_LENGTH);
-      columnDataChunk =
-          new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
-              pageMetadata.getNumberOfRowsInpage(), dimStoreType,
-              rawColumnPage.getLocalDictionary(), vectorInfo, uncompressedSize);
+      if (null == pageMetadata.getEncoder_meta() || pageMetadata.getEncoder_meta().isEmpty()) {
+        columnDataChunk =
+            new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
+                pageMetadata.getNumberOfRowsInpage(), dimStoreType,
+                rawColumnPage.getLocalDictionary(), vectorInfo, uncompressedSize);
+      } else {
+        boolean isEncodedComplexChild = CarbonUtil
+            .hasEncoding(pageMetadata.encoders, Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY);
+        columnDataChunk =
+            new BinaryTypeDimColumnPage(dataPage, invertedIndexes, invertedIndexesReverse, dataType,
+                pageMetadata.getNumberOfRowsInpage(), rawColumnPage.getPresenceMeta()[pageNumber],
+                vectorInfo, uncompressedSize, dimStoreType, rawColumnPage.getLocalDictionary(),
+                isEncodedComplexChild);
+      }
     } else {
       // to store fixed length column chunk values
       columnDataChunk =

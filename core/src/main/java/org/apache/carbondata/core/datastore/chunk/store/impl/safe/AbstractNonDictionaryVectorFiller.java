@@ -45,15 +45,15 @@ public abstract class AbstractNonDictionaryVectorFiller {
 class NonDictionaryVectorFillerFactory {
 
   public static AbstractNonDictionaryVectorFiller getVectorFiller(int length, DataType type,
-      int numberOfRows, int actualDataLength) {
+      int numberOfRows, int actualDataLength, DataType lengthStoredType) {
     if (type == DataTypes.STRING) {
       if (length > DataTypes.SHORT.getSizeInBytes()) {
-        return new LongStringVectorFiller(numberOfRows, actualDataLength);
+        return new LongStringVectorFiller(numberOfRows, actualDataLength, lengthStoredType);
       } else {
-        return new StringVectorFiller(numberOfRows, actualDataLength);
+        return new StringVectorFiller(numberOfRows, actualDataLength, lengthStoredType);
       }
     } else if (type == DataTypes.VARCHAR || type == DataTypes.BINARY) {
-      return new LongStringVectorFiller(numberOfRows, actualDataLength);
+      return new LongStringVectorFiller(numberOfRows, actualDataLength, lengthStoredType);
     } else if (type == DataTypes.TIMESTAMP) {
       return new TimeStampVectorFiller(numberOfRows);
     } else if (type == DataTypes.BOOLEAN) {
@@ -76,9 +76,12 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
 
   private int actualDataLength;
 
-  public StringVectorFiller(int numberOfRows, int actualDataLength) {
+  private DataType lengthStoredType;
+
+  public StringVectorFiller(int numberOfRows, int actualDataLength, DataType lengthStoredType) {
     super(numberOfRows);
     this.actualDataLength = actualDataLength;
+    this.lengthStoredType = lengthStoredType;
   }
 
   @Override
@@ -93,27 +96,51 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
     // adding offsets and data separately.
     if (addSequential) {
       for (int i = 0; i < numberOfRows; i++) {
-        int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
-        localOffset += 2;
-        if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
-          vector.putNull(i);
+        if (null != lengthStoredType && lengthStoredType == DataTypes.BYTE) {
+          byte length = data[localOffset];
+          localOffset += 1;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putByteArray(i, localOffset, length, data);
+          }
+          localOffset += length;
         } else {
-          vector.putByteArray(i, localOffset, length, data);
+          int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
+          localOffset += 2;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putByteArray(i, localOffset, length, data);
+          }
+          localOffset += length;
         }
-        localOffset += length;
       }
     } else {
       for (int i = 0; i < numberOfRows; i++) {
-        int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
-        localOffset += 2;
-        if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
-          vector.putNull(i);
+        if (null != lengthStoredType && lengthStoredType == DataTypes.BYTE) {
+          byte length = data[localOffset];
+          localOffset += 1;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putArray(i, localOffset, length);
+          }
+          localOffset += length;
         } else {
-          vector.putArray(i, localOffset, length);
+          int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
+          localOffset += 2;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putArray(i, localOffset, length);
+          }
+          localOffset += length;
         }
-        localOffset += length;
       }
       vector.putAllByteArray(data, 0, actualDataLength);
     }
@@ -124,9 +151,12 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
 
   private int actualDataLength;
 
-  public LongStringVectorFiller(int numberOfRows, int actualDataLength) {
+  private DataType lengthStoredType;
+
+  public LongStringVectorFiller(int numberOfRows, int actualDataLength, DataType lengthStoredType) {
     super(numberOfRows);
     this.actualDataLength = actualDataLength;
+    this.lengthStoredType = lengthStoredType;
   }
 
   @Override
@@ -137,32 +167,112 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
     int localOffset = 0;
     ByteUtil.UnsafeComparer comparator = ByteUtil.UnsafeComparer.INSTANCE;
     if (invertedIndex) {
-      for (int i = 0; i < numberOfRows; i++) {
-        int length =
-            (((data[localOffset] & 0xFF) << 24) | ((data[localOffset + 1] & 0xFF) << 16) | (
-                (data[localOffset + 2] & 0xFF) << 8) | (data[localOffset + 3] & 0xFF));
-        localOffset += 4;
-        if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
-          vector.putNull(i);
-        } else {
-          vector.putByteArray(i, localOffset, length, data);
+      if (lengthStoredType != null && lengthStoredType == DataTypes.BYTE) {
+        for (int i = 0; i < numberOfRows; i++) {
+          int length = data[localOffset];
+          localOffset += 1;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putByteArray(i, localOffset, length, data);
+          }
+          localOffset += length;
         }
-        localOffset += length;
+      } else if (lengthStoredType != null && lengthStoredType == DataTypes.SHORT) {
+        for (int i = 0; i < numberOfRows; i++) {
+          int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
+          localOffset += 2;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putByteArray(i, localOffset, length, data);
+          }
+          localOffset += length;
+        }
+      } else if (lengthStoredType != null && lengthStoredType == DataTypes.SHORT_INT) {
+        for (int i = 0; i < numberOfRows; i++) {
+          int length =
+              (((data[localOffset] & 0xFF) << 16) | ((data[localOffset + 1] & 0xFF) << 8) | (
+                  data[localOffset + 2] & 0xFF));
+          localOffset += 3;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putByteArray(i, localOffset, length, data);
+          }
+          localOffset += length;
+        }
+      } else {
+        for (int i = 0; i < numberOfRows; i++) {
+          int length =
+              (((data[localOffset] & 0xFF) << 24) | ((data[localOffset + 1] & 0xFF) << 16) | (
+                  (data[localOffset + 2] & 0xFF) << 8) | (data[localOffset + 3] & 0xFF));
+          localOffset += 4;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putByteArray(i, localOffset, length, data);
+          }
+          localOffset += length;
+        }
       }
     } else {
-      for (int i = 0; i < numberOfRows; i++) {
-        int length =
-            (((data[localOffset] & 0xFF) << 24) | ((data[localOffset + 1] & 0xFF) << 16) | (
-                (data[localOffset + 2] & 0xFF) << 8) | (data[localOffset + 3] & 0xFF));
-        localOffset += 4;
-        if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
-          vector.putNull(i);
-        } else {
-          vector.putArray(i, localOffset, length);
+      if (lengthStoredType != null && lengthStoredType == DataTypes.BYTE) {
+        for (int i = 0; i < numberOfRows; i++) {
+          int length = data[localOffset];
+          localOffset += 1;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putArray(i, localOffset, length);
+          }
+          localOffset += length;
         }
-        localOffset += length;
+      } else if (lengthStoredType != null && lengthStoredType == DataTypes.SHORT) {
+        for (int i = 0; i < numberOfRows; i++) {
+          int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
+          localOffset += 2;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putArray(i, localOffset, length);
+          }
+          localOffset += length;
+        }
+      } else if (lengthStoredType != null && lengthStoredType == DataTypes.SHORT_INT) {
+        for (int i = 0; i < numberOfRows; i++) {
+          int length =
+              (((data[localOffset] & 0xFF) << 16) | ((data[localOffset + 1] & 0xFF) << 8) | (
+                  data[localOffset + 2] & 0xFF));
+          localOffset += 3;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putArray(i, localOffset, length);
+          }
+          localOffset += length;
+        }
+      } else {
+        for (int i = 0; i < numberOfRows; i++) {
+          int length =
+              (((data[localOffset] & 0xFF) << 24) | ((data[localOffset + 1] & 0xFF) << 16) | (
+                  (data[localOffset + 2] & 0xFF) << 8) | (data[localOffset + 3] & 0xFF));
+          localOffset += 4;
+          if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+              CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+            vector.putNull(i);
+          } else {
+            vector.putArray(i, localOffset, length);
+          }
+          localOffset += length;
+        }
       }
       vector.putAllByteArray(data, 0, actualDataLength);
     }
