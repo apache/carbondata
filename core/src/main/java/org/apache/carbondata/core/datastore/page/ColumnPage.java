@@ -25,6 +25,7 @@ import java.util.BitSet;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -61,6 +62,8 @@ public abstract class ColumnPage {
   protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
           CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT));
+
+  private PresenceMeta presenceMeta;
 
   /**
    * Create a new column page with input data type and page size.
@@ -939,5 +942,68 @@ public abstract class ColumnPage {
 
   public ByteBuffer getByteBuffer() {
     throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  public boolean isLVByteBufferPage() {
+    return false;
+  }
+
+  public ColumnPage getLocalDictPage() {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  public boolean isLVActualColumnPage() {
+    return false;
+  }
+
+  /**
+   * Convert the data of the page based on the data type for each row
+   * While preparing the inverted index for the page,
+   * we need the data based on data type for no dict measure column if adaptive encoding is applied
+   * This is similar to page.getByteArrayPage()
+   *
+   * @return
+   */
+  public Object[] getPageBasedOnDataType() {
+    Object[] data = new Object[getActualRowCount()];
+    DataType dataType = columnPageEncoderMeta.getStoreDataType();
+    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getByte(i);
+      }
+    } else if (dataType == DataTypes.SHORT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getShort(i);
+      }
+    } else if (dataType == DataTypes.SHORT_INT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getShortInt(i);
+      }
+    } else if (dataType == DataTypes.INT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getInt(i);
+      }
+    } else if (dataType == DataTypes.LONG) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getLong(i);
+      }
+    } else if (dataType == DataTypes.FLOAT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getFloat(i);
+      }
+    } else if (dataType == DataTypes.DOUBLE) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getDouble(i);
+      }
+    }
+    return data;
+  }
+
+  public PresenceMeta getPresenceMeta() {
+    return presenceMeta;
+  }
+
+  public void setPresenceMeta(PresenceMeta presenceMeta) {
+    this.presenceMeta = presenceMeta;
   }
 }

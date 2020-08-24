@@ -61,7 +61,7 @@ public class RLECodec implements ColumnPageCodec {
   }
 
   @Override
-  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+  public ColumnPageEncoder createEncoder(Map<String, Object> parameter) {
     return new RLEEncoder();
   }
 

@@ -21,26 +21,68 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
+import org.apache.carbondata.core.datastore.columnar.PageIndexGenerator;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.DataChunk2;
+import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.SortState;
 
 public abstract class IndexStorageEncoder extends ColumnPageEncoder {
-  BlockIndexerStorage indexStorage;
+  /**
+   * index generator
+   */
+  PageIndexGenerator pageIndexGenerator;
+  /**
+   * compressed data
+   */
   ByteBuffer compressedDataPage;
 
-  abstract void encodeIndexStorage(ColumnPage inputPage);
+  /**
+   * encoded data page, in case of
+   */
+  EncodedColumnPage encodedColumnPage;
+
+  /**
+   * whether to store offset for column data
+   */
+  private boolean storeOffset;
+
+  /**
+   * keygenerator
+   */
+  private KeyGenerator keyGenerator;
+
+  /**
+   * default encoding
+   */
+  private List<Encoding> encoding;
+
+  protected DataType selectedDataType;
+
+  IndexStorageEncoder(boolean storeOffset, KeyGenerator keyGenerator, List<Encoding> encoding) {
+    this.storeOffset = storeOffset;
+    this.keyGenerator = keyGenerator;
+    this.encoding = encoding;
+  }
+
+  abstract void encodeIndexStorage(ColumnPage inputPage) throws IOException;
 
   @Override
   protected ByteBuffer encodeData(ColumnPage input) throws IOException {
     encodeIndexStorage(input);
-    if (indexStorage.getRowIdPageLengthInBytes() > 0 ||
-        indexStorage.getDataRlePageLengthInBytes() > 0) {
+    if (pageIndexGenerator.getRowIdPageLengthInBytes() > 0 ||
+        pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
       return appendToCompressedData();
     } else {
       return compressedDataPage;
@@ -55,19 +97,19 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
     for (int i = 0; i < length; i++) {
       out.writeByte(buffer.get(i));
     }
-    if (indexStorage.getRowIdPageLengthInBytes() > 0) {
-      out.writeInt(indexStorage.getRowIdPageLengthInBytes());
-      for (short rowId : indexStorage.getRowIdPage()) {
+    if (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) {
+      out.writeInt(pageIndexGenerator.getRowIdPageLengthInBytes());
+      for (short rowId : pageIndexGenerator.getRowIdPage()) {
         out.writeShort(rowId);
       }
-      if (indexStorage.getRowIdRlePageLengthInBytes() > 0) {
-        for (short rowIdRle : indexStorage.getRowIdRlePage()) {
+      if (pageIndexGenerator.getRowIdRlePageLengthInBytes() > 0) {
+        for (short rowIdRle : pageIndexGenerator.getRowIdRlePage()) {
           out.writeShort(rowIdRle);
         }
       }
     }
-    if (indexStorage.getDataRlePageLengthInBytes() > 0) {
-      for (short dataRle : indexStorage.getDataRlePage()) {
+    if (pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
+      for (short dataRle : pageIndexGenerator.getDataRlePage()) {
         out.writeShort(dataRle);
       }
     }
@@ -82,19 +124,71 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
   }
 
   @Override
+  protected List<ByteBuffer> buildEncoderMeta(ColumnPage inputPage) throws IOException {
+    if (this.storeOffset) {
+      List<ByteBuffer> metaDatas = new ArrayList<>();
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      DataOutputStream out = new DataOutputStream(stream);
+      out.writeByte(selectedDataType.getId());
+      metaDatas.add(ByteBuffer.wrap(stream.toByteArray()));
+      return metaDatas;
+    } else {
+      return encodedColumnPage.getPageMetadata().encoder_meta;
+    }
+  }
+
+  @Override
   protected void fillLegacyFields(DataChunk2 dataChunk) {
-    SortState sort = (indexStorage.getRowIdPageLengthInBytes() > 0) ?
+    SortState sort = (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) ?
         SortState.SORT_EXPLICIT : SortState.SORT_NATIVE;
     dataChunk.setSort_state(sort);
-    if (indexStorage.getRowIdPageLengthInBytes() > 0) {
+    if (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) {
       int rowIdPageLength = CarbonCommonConstants.INT_SIZE_IN_BYTE +
-          indexStorage.getRowIdPageLengthInBytes() +
-          indexStorage.getRowIdRlePageLengthInBytes();
+          pageIndexGenerator.getRowIdPageLengthInBytes() +
+          pageIndexGenerator.getRowIdRlePageLengthInBytes();
       dataChunk.setRowid_page_length(rowIdPageLength);
     }
-    if (indexStorage.getDataRlePageLengthInBytes() > 0) {
-      dataChunk.setRle_page_length(indexStorage.getDataRlePageLengthInBytes());
+    if (pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
+      dataChunk.setRle_page_length(pageIndexGenerator.getDataRlePageLengthInBytes());
     }
     dataChunk.setData_page_length(compressedDataPage.limit() - compressedDataPage.position());
+  }
+
+  @Override
+  protected List<Encoding> getEncodingList() {
+    List<Encoding> encodings = new ArrayList<>();
+    if (null != encodedColumnPage) {
+      encodings.addAll(encodedColumnPage.getPageMetadata().getEncoders());
+    }
+    // add codec encoding
+    encodings.addAll(encoding);
+    if (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) {
+      encodings.add(Encoding.INVERTED_INDEX);
+    }
+
+    return encodings;
+  }
+
+  @Override
+  protected BlockletMinMaxIndex buildMinMaxIndex(ColumnPage inputPage) {
+    BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
+    if (null != keyGenerator) {
+      int min = (int) (inputPage.getStatistics().getMin());
+      int max = (int) (inputPage.getStatistics().getMax());
+      blockletMinMaxIndex
+          .addToMax_values(ByteBuffer.wrap(keyGenerator.generateKey(new int[] { max })));
+      blockletMinMaxIndex
+          .addToMin_values(ByteBuffer.wrap(keyGenerator.generateKey(new int[] { min })));
+    } else if (encoding.isEmpty()) {
+      blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(DataTypeUtil
+          .getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(inputPage.getStatistics().getMax(),
+              inputPage.getDataType())));
+      blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(DataTypeUtil
+          .getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(inputPage.getStatistics().getMin(),
+              inputPage.getDataType())));
+    } else {
+      blockletMinMaxIndex = super.buildMinMaxIndex(inputPage);
+    }
+    return blockletMinMaxIndex;
   }
 }

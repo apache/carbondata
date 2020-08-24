@@ -44,7 +44,6 @@ import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVec
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -53,9 +52,11 @@ import org.apache.carbondata.format.Encoding;
  */
 public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
+  private ColumnPage encodedPage;
+
   public AdaptiveIntegralCodec(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, boolean isInvertedIndex) {
-    super(srcDataType, targetDataType, stats, isInvertedIndex);
+      SimpleStatsResult stats) {
+    super(srcDataType, targetDataType, stats);
   }
 
   @Override
@@ -64,22 +65,22 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
   }
 
   @Override
-  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+  public ColumnPageEncoder createEncoder(Map<String, Object> parameter) {
     return new ColumnPageEncoder() {
-      ByteBuffer result = null;
       @Override
       protected ByteBuffer encodeData(ColumnPage input) throws IOException {
         if (encodedPage != null) {
           throw new IllegalStateException("already encoded");
         }
-        Compressor compressor =
-            CompressorFactory.getInstance().getCompressor(input.getColumnCompressorName());
-        result = encodeAndCompressPage(input, converter, compressor);
-        ByteBuffer bytes = writeInvertedIndexIfRequired(result);
+        encodedPage = ColumnPage.newPage(
+            new ColumnPageEncoderMeta(input.getColumnPageEncoderMeta().getColumnSpec(),
+                targetDataType, input.getColumnPageEncoderMeta().getCompressorName()),
+            input.getPageSize());
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(
+            input.getColumnCompressorName());
+        input.convertValue(converter);
+        ByteBuffer result = encodedPage.compress(compressor);
         encodedPage.freeMemory();
-        if (bytes.limit() != 0) {
-          return bytes;
-        }
         return result;
       }
 
@@ -87,9 +88,6 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       protected List<Encoding> getEncodingList() {
         List<Encoding> encodings = new ArrayList<Encoding>();
         encodings.add(Encoding.ADAPTIVE_INTEGRAL);
-        if (null != indexStorage && indexStorage.getRowIdPageLengthInBytes() > 0) {
-          encodings.add(Encoding.INVERTED_INDEX);
-        }
         return encodings;
       }
 
@@ -99,10 +97,6 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
             inputPage.getColumnCompressorName());
       }
 
-      @Override
-      protected void fillLegacyFields(DataChunk2 dataChunk) {
-        fillLegacyFieldsIfRequired(dataChunk, result);
-      }
     };
   }
 

@@ -15,28 +15,32 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.datastore.blocklet;
 
-import java.util.Map;
+import java.util.BitSet;
 
-/**
- *  Codec for a column page data.
- */
-public interface ColumnPageCodec {
-  /**
-   * Return the codec name
-   */
-  String getName();
+public class PresenceMeta {
 
   /**
-   * Return a new Encoder which will be used to encode one column page.
-   * This will be called for every column page
+   * true represents null bitset and false no null bitset
    */
-  ColumnPageEncoder createEncoder(Map<String, Object> parameter);
+  private boolean isNullBitset;
 
   /**
-   * Return a new Decoder with specified metadata.
-   * This will be called for every column page
+   * null/not null bitset
    */
-  ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta);
+  private BitSet bitSet;
+
+  public PresenceMeta(boolean isNullBitset, BitSet bitSet) {
+    this.isNullBitset = isNullBitset;
+    this.bitSet = bitSet;
+  }
+
+  public boolean isNullBitset() {
+    return isNullBitset;
+  }
+
+  public BitSet getBitSet() {
+    return bitSet;
+  }
 }
