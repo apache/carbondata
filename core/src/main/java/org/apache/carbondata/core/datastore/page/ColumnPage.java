@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
@@ -142,13 +143,16 @@ public abstract class ColumnPage {
   }
 
   public static ColumnPage newLocalDictPage(ColumnPageEncoderMeta columnPageEncoderMeta,
-      int pageSize, LocalDictionaryGenerator localDictionaryGenerator,
-      boolean isComplexTypePrimitive) {
+      int pageSize, LocalDictionaryGenerator localDictionaryGenerator) {
     boolean isDecoderBasedFallBackEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
             CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT));
+    ColumnPageStatsCollector primitivePageStatsCollector =
+        PrimitivePageStatsCollector.newInstance(DataTypes.INT);
     ColumnPage actualPage;
     ColumnPage encodedPage;
+    TableSpec.MeasureSpec encodedSpec = TableSpec.MeasureSpec
+        .newInstance(columnPageEncoderMeta.getColumnSpec().getFieldName(), DataTypes.INT);
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
       DataType dataType = columnPageEncoderMeta.getStoreDataType();
       if (dataType == DataTypes.STRING ||
@@ -158,20 +162,15 @@ public abstract class ColumnPage {
       } else {
         actualPage = new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
       }
-      encodedPage = new UnsafeFixLengthColumnPage(
-          new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), BYTE_ARRAY,
-              columnPageEncoderMeta.getCompressorName()),
-          pageSize,
-          CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE);
     } else {
       actualPage = new SafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
-      encodedPage = new SafeFixLengthColumnPage(
-          new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), BYTE_ARRAY,
-              columnPageEncoderMeta.getCompressorName()),
-          pageSize);
     }
+    encodedPage =
+        newIntPage(new ColumnPageEncoderMeta(encodedSpec, DataTypes.INT,
+            columnPageEncoderMeta.getCompressorName()), new int[pageSize]);
+    encodedPage.setStatsCollector(primitivePageStatsCollector);
     return new LocalDictColumnPage(actualPage, encodedPage, localDictionaryGenerator,
-        isComplexTypePrimitive, isDecoderBasedFallBackEnabled);
+        isDecoderBasedFallBackEnabled);
   }
 
   /**

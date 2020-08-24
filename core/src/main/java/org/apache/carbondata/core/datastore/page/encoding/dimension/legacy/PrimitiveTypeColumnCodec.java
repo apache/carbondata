@@ -71,8 +71,8 @@ public class PrimitiveTypeColumnCodec extends IndexStorageCodec {
         PageIndexGenerator<Object[]> pageIndexGenerator;
         // get data
         Object[] data = actualPage.getPageBasedOnDataType();
-        pageIndexGenerator =
-            new PrimitivePageIndexGenerator(data, isSort, actualPage.getDataType());
+        pageIndexGenerator = new PrimitivePageIndexGenerator(data, isSort, actualPage.getDataType(),
+            input.isLocalDictGeneratedPage());
         if (pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
           encodings.add(Encoding.RLE);
         }

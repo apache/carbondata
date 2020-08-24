@@ -65,13 +65,12 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll string,person Struct<detail:int>) " +
       "STORED AS carbondata tblproperties('local_dictionary_enable'='true')")
     sql("insert into table1 values('abc',named_struct('detail', 1))")
-    sql("desc formatted table1").show(100, false)
-//    checkAnswer(sql("select roll,person,person.detail from table1"),
-//      Seq(Row("abc", Row(1), 1)))
-//    checkAnswer(sql("select person,person.detail from table1"),
-//      Seq(Row(Row(1), 1)))
-//    checkAnswer(sql("select roll,person from table1"), Seq(Row("abc", Row(1))))
-//    checkAnswer(sql("select roll from table1"), Seq(Row("abc")))
+    checkAnswer(sql("select roll,person,person.detail from table1"),
+      Seq(Row("abc", Row(1), 1)))
+    checkAnswer(sql("select person,person.detail from table1"),
+      Seq(Row(Row(1), 1)))
+    checkAnswer(sql("select roll,person from table1"), Seq(Row("abc", Row(1))))
+    checkAnswer(sql("select roll from table1"), Seq(Row("abc")))
   }
 
   test("test projection pushDown for Array") {
