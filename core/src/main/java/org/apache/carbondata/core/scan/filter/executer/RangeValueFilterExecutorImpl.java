@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
@@ -51,6 +52,7 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
   private byte[][] filterRangesValues;
   private SegmentProperties segmentProperties;
   private boolean isDefaultValuePresentInFilter;
+  private Object[] dimFilterRangeValues;
 
   /**
    * flag to check whether the filter dimension is present in current block list of dimensions.
@@ -75,6 +77,7 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
     this.filterRangesValues = filterRangeValues;
     this.lessThanExp = isLessThan();
     this.lessThanEqualExp = isLessThanEqualTo();
+    this.dimFilterRangeValues = filterRangeValues;
     this.greaterThanExp = isGreaterThan();
     this.greaterThanEqualExp = isGreaterThanEqualTo();
     startBlockMinIsDefaultStart = false;
@@ -394,6 +397,12 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
     BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
     FilterExecutor filterExecutor = null;
     boolean isExclude = false;
+    if (rawColumnChunk.isAdaptiveForDictionary() && dimColEvaluatorInfo.getDimension()
+        .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      dimFilterRangeValues = FilterUtil
+          .updateFiltersForDimColumns(filterRangesValues, rawColumnChunk,
+              dimColEvaluatorInfo.getDimension());
+    }
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
       if (rawColumnChunk.getMaxValues() != null) {
         if (isScanRequired(rawColumnChunk.getMinValues()[i], rawColumnChunk.getMaxValues()[i],
@@ -409,7 +418,8 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
             if (null != rawColumnChunk.getLocalDictionary()) {
               if (null == filterExecutor) {
                 filterExecutor = FilterUtil
-                    .getFilterExecutorForRangeFilters(rawColumnChunk, exp, isNaturalSorted);
+                    .getFilterExecutorForRangeFilters(dimensionColumnPage.isAdaptiveEncoded(),
+                        rawColumnChunk, exp, isNaturalSorted);
                 if (filterExecutor instanceof ExcludeFilterExecutorImpl) {
                   isExclude = true;
                 }
@@ -565,7 +575,6 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
       int numberOfRows) {
     BitSet bitSet = new BitSet(numberOfRows);
     // if (dimensionColumnPage instanceof FixedLengthDimensionColumnPage) {
-    byte[][] filterValues = this.filterRangesValues;
     if (dimensionColumnPage.isExplicitSorted()) {
       int start = 0;
       int startMin = 0;
@@ -577,11 +586,11 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
 
         start = CarbonUtil
             .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
-                filterValues[0], greaterThanExp);
+                dimFilterRangeValues[0], greaterThanExp);
 
         if (greaterThanExp && start >= 0) {
           start = CarbonUtil
-              .nextGreaterValueToTarget(start, dimensionColumnPage, filterValues[0],
+              .nextGreaterValueToTarget(start, dimensionColumnPage, dimFilterRangeValues[0],
                   numberOfRows);
         }
 
@@ -593,8 +602,7 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
           // Method will compare the tentative index value after binary search, this tentative
           // index needs to be compared by the filter member if its >= filter then from that
           // index the bitset will be considered for filtering process.
-          if ((ByteUtil.compare(filterValues[0], dimensionColumnPage.getChunkData(start)))
-              > 0) {
+          if (dimensionColumnPage.compareTo(start, dimFilterRangeValues[0]) < 0) {
             start = start + 1;
           }
         }
@@ -606,11 +614,11 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
       if (!endBlockMaxisDefaultEnd) {
         start = CarbonUtil
             .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
-                filterValues[1], lessThanEqualExp);
+                dimFilterRangeValues[1], lessThanEqualExp);
 
         if (lessThanExp && start >= 0) {
-          start =
-              CarbonUtil.nextLesserValueToTarget(start, dimensionColumnPage, filterValues[1]);
+          start = CarbonUtil
+              .nextLesserValueToTarget(start, dimensionColumnPage, dimFilterRangeValues[1]);
         }
 
         if (start < 0) {
@@ -620,8 +628,7 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
           }
           // In case the start is less than 0, then positive value of start is pointing to the next
           // value of the searched key. So move to the previous one.
-          if ((ByteUtil.compare(filterValues[1], dimensionColumnPage.getChunkData(start))
-              < 0)) {
+          if (dimensionColumnPage.compareTo(start, dimFilterRangeValues[1]) > 0) {
             start = start - 1;
           }
         }
@@ -652,11 +659,11 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
 
       // evaluate result for lower range value first and then perform and operation in the
       // upper range value in order to compute the final result
-      bitSet = evaluateGreaterThanFilterForUnsortedColumn(dimensionColumnPage, filterValues[0],
-          numberOfRows);
+      bitSet = evaluateGreaterThanFilterForUnsortedColumn(dimensionColumnPage,
+          dimFilterRangeValues[0], numberOfRows);
       BitSet upperRangeBitSet =
-          evaluateLessThanFilterForUnsortedColumn(dimensionColumnPage, filterValues[1],
-              numberOfRows);
+          evaluateLessThanFilterForUnsortedColumn(dimensionColumnPage,
+              dimFilterRangeValues[1], numberOfRows);
       bitSet.and(upperRangeBitSet);
       FilterUtil.removeNullValues(dimensionColumnPage, bitSet, defaultValue);
     }
@@ -672,17 +679,17 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
    * @return
    */
   private BitSet evaluateGreaterThanFilterForUnsortedColumn(
-      DimensionColumnPage dimensionColumnPage, byte[] filterValue, int numberOfRows) {
+      DimensionColumnPage dimensionColumnPage, Object filterValue, int numberOfRows) {
     BitSet bitSet = new BitSet(numberOfRows);
     if (greaterThanExp) {
       for (int i = 0; i < numberOfRows; i++) {
-        if ((ByteUtil.compare(dimensionColumnPage.getChunkData(i), filterValue) > 0)) {
+        if (dimensionColumnPage.compareTo(i, filterValue) > 0) {
           bitSet.set(i);
         }
       }
     } else if (greaterThanEqualExp) {
       for (int i = 0; i < numberOfRows; i++) {
-        if ((ByteUtil.compare(dimensionColumnPage.getChunkData(i), filterValue) >= 0)) {
+        if (dimensionColumnPage.compareTo(i, filterValue) >= 0) {
           bitSet.set(i);
         }
       }
@@ -699,17 +706,17 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
    * @return
    */
   private BitSet evaluateLessThanFilterForUnsortedColumn(
-      DimensionColumnPage dimensionColumnPage, byte[] filterValue, int numberOfRows) {
+      DimensionColumnPage dimensionColumnPage, Object filterValue, int numberOfRows) {
     BitSet bitSet = new BitSet(numberOfRows);
     if (lessThanExp) {
       for (int i = 0; i < numberOfRows; i++) {
-        if ((ByteUtil.compare(dimensionColumnPage.getChunkData(i), filterValue) < 0)) {
+        if (dimensionColumnPage.compareTo(i, filterValue) < 0) {
           bitSet.set(i);
         }
       }
     } else if (lessThanEqualExp) {
       for (int i = 0; i < numberOfRows; i++) {
-        if ((ByteUtil.compare(dimensionColumnPage.getChunkData(i), filterValue) <= 0)) {
+        if (dimensionColumnPage.compareTo(i, filterValue) <= 0) {
           bitSet.set(i);
         }
       }

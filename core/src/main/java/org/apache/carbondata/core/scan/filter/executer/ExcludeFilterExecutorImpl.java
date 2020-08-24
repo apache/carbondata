@@ -55,12 +55,12 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
    */
   private boolean isNaturalSorted = false;
 
-  private byte[][] filterValues;
+  private Object[] dimensionFilterValues;
 
   private FilterBitSetUpdater filterBitSetUpdater;
 
-  public ExcludeFilterExecutorImpl(byte[][] filterValues, boolean isNaturalSorted) {
-    this.filterValues = filterValues;
+  public ExcludeFilterExecutorImpl(Object[] filterValues, boolean isNaturalSorted) {
+    this.dimensionFilterValues = filterValues;
     this.isNaturalSorted = isNaturalSorted;
     this.filterBitSetUpdater =
         BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecutorType.EXCLUDE);
@@ -109,19 +109,25 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
       }
       DimensionRawColumnChunk dimensionRawColumnChunk =
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
+      BitSetGroup bitSetGroup = new BitSetGroup(dimensionRawColumnChunk.getPagesCount());
+      this.dimensionFilterValues = FilterUtil
+          .updateFiltersForDimColumns(dimColumnExecutorInfo.filterKeysForExclude,
+              dimensionRawColumnChunk, dimColEvaluatorInfo.getDimension());
+      // get the encoded filter values for local dictionary generated column page
+      if (null != dimensionRawColumnChunk.getLocalDictionary()) {
+        dimensionFilterValues = FilterUtil
+            .getEncodedFilterValuesForLocalDict(dimensionRawColumnChunk.isAdaptiveForDictionary(),
+                dimensionRawColumnChunk.getLocalDictionary(),
+                dimColumnExecutorInfo.filterKeysForExclude);
+      }
       DimensionColumnPage[] dimensionColumnPages =
           dimensionRawColumnChunk.decodeAllColumnPages();
-      filterValues = FilterUtil
-          .getEncodedFilterValues(dimensionRawColumnChunk.getLocalDictionary(),
-              dimColumnExecutorInfo.filterKeysForExclude);
-      BitSetGroup bitSetGroup = new BitSetGroup(dimensionRawColumnChunk.getPagesCount());
       for (int i = 0; i < dimensionColumnPages.length; i++) {
         BitSet bitSet = getFilteredIndexes(dimensionColumnPages[i],
             dimensionRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
             rawBlockletColumnChunks.getBitSetGroup(), i);
         bitSetGroup.setBitSet(bitSet, i);
       }
-
       return bitSetGroup;
     } else if (isMeasurePresentInCurrentBlock) {
       int chunkIndex = segmentProperties.getMeasuresOrdinalToChunkMapping()
@@ -237,7 +243,7 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
     BitSet bitSet = new BitSet(numberOfRows);
     bitSet.flip(0, numberOfRows);
     Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
-    BitSet nullBitSet = measureColumnPage.getNullBits();
+    BitSet nullBitSet = measureColumnPage.getPresenceMeta().getBitSet();
     BitSet prvPageBitSet = prvBitSetGroup.getBitSet(pageNumber);
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrDataType);
     for (Object filterValue : filterValues) {
@@ -276,9 +282,9 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
   protected BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
       int numberOfRows, boolean useBitsetPipeLine, BitSetGroup prvBitSetGroup, int pageNumber) {
     // check whether applying filtered based on previous bitset will be optimal
-    if (filterValues.length > 0 && CarbonUtil
+    if (dimensionFilterValues.length > 0 && CarbonUtil
         .usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
-            filterValues.length)) {
+            dimensionFilterValues.length)) {
       return getFilteredIndexesUsingPrvBitset(dimensionColumnPage, prvBitSetGroup, pageNumber);
     } else {
       return getFilteredIndexes(dimensionColumnPage, numberOfRows);
@@ -314,8 +320,8 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
     if (!dimensionColumnPage.isExplicitSorted()) {
       for (int index = prvPageBitSet.nextSetBit(0);
            index >= 0; index = prvPageBitSet.nextSetBit(index + 1)) {
-        compareResult = CarbonUtil
-            .isFilterPresent(filterValues, dimensionColumnPage, 0, filterValues.length - 1, index);
+        compareResult = CarbonUtil.isFilterPresent(dimensionFilterValues, dimensionColumnPage, 0,
+            dimensionFilterValues.length - 1, index);
         if (compareResult != 0) {
           bitSet.set(index);
         } else {
@@ -327,9 +333,8 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
     } else {
       for (int index = prvPageBitSet.nextSetBit(0);
            index >= 0; index = prvPageBitSet.nextSetBit(index + 1)) {
-        compareResult = CarbonUtil
-            .isFilterPresent(filterValues, dimensionColumnPage, 0, filterValues.length - 1,
-                dimensionColumnPage.getInvertedReverseIndex(index));
+        compareResult = CarbonUtil.isFilterPresent(dimensionFilterValues, dimensionColumnPage, 0,
+            dimensionFilterValues.length - 1, dimensionColumnPage.getInvertedReverseIndex(index));
         if (compareResult != 0) {
           bitSet.set(index);
         } else {
@@ -346,16 +351,17 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
       DimensionColumnPage dimensionColumnPage, int numberOfRows) {
     BitSet bitSet = new BitSet(numberOfRows);
     bitSet.flip(0, numberOfRows);
-    if (filterValues.length == 0) {
+    if (dimensionFilterValues.length == 0) {
       return bitSet;
     }
     int startIndex = 0;
-    for (int i = 0; i < filterValues.length; i++) {
+    for (Object dimensionFilterValue : dimensionFilterValues) {
       if (startIndex >= numberOfRows) {
         break;
       }
-      int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnPage,
-          startIndex, numberOfRows - 1, filterValues[i]);
+      int[] rangeIndex = CarbonUtil
+          .getRangeIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
+              dimensionFilterValue);
       for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
         bitSet.flip(dimensionColumnPage.getInvertedIndex(j));
       }
@@ -371,18 +377,19 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
     BitSet bitSet = new BitSet(numberOfRows);
     bitSet.flip(0, numberOfRows);
     // filterValues can be null when the dictionary chunk and surrogate size both are one
-    if (filterValues.length == 0) {
+    if (dimensionFilterValues.length == 0) {
       return bitSet;
     }
     // binary search can only be applied if column is sorted
     if (isNaturalSorted && dimensionColumnPage.isExplicitSorted()) {
       int startIndex = 0;
-      for (int i = 0; i < filterValues.length; i++) {
+      for (Object dimensionFilterValue : dimensionFilterValues) {
         if (startIndex >= numberOfRows) {
           break;
         }
-        int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnPage,
-            startIndex, numberOfRows - 1, filterValues[i]);
+        int[] rangeIndex = CarbonUtil
+            .getRangeIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
+                dimensionFilterValue);
         for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
           bitSet.flip(j);
         }
@@ -391,17 +398,18 @@ public class ExcludeFilterExecutorImpl implements FilterExecutor {
         }
       }
     } else {
-      if (filterValues.length > 1) {
+      if (dimensionFilterValues.length > 1) {
         for (int i = 0; i < numberOfRows; i++) {
-          int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
-              dimensionColumnPage, i);
+          int index = CarbonUtil
+              .binarySearch(dimensionFilterValues, 0, dimensionFilterValues.length - 1,
+                  dimensionColumnPage, i);
           if (index >= 0) {
             bitSet.flip(i);
           }
         }
       } else {
         for (int j = 0; j < numberOfRows; j++) {
-          if (dimensionColumnPage.compareTo(j, filterValues[0]) == 0) {
+          if (dimensionColumnPage.compareTo(j, dimensionFilterValues[0]) == 0) {
             bitSet.flip(j);
           }
         }

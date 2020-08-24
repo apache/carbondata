@@ -50,7 +50,6 @@ import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
-import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -175,7 +174,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
             || metadata.getColumnSpec().getColumnType() != ColumnType.COMPLEX_STRUCT
             || metadata.getColumnSpec().getColumnType() != ColumnType.COMPLEX_ARRAY));
 
-    if (rawColumnChunk.isAdaptiveForNoDictionary()) {
+    if (rawColumnChunk.isAdaptiveForBinaryData() || rawColumnChunk.isAdaptiveForNoDictionary()) {
       PresenceMeta[] presenceMeta = new PresenceMeta[dataChunk.getData_chunk_list().size()];
       for (int i = 0; i < presenceMeta.length; i++) {
         String compressorName = CarbonMetadataUtil
