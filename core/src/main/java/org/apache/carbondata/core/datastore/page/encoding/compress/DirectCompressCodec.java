@@ -352,8 +352,15 @@ public class DirectCompressCodec implements ColumnPageCodec {
       } else if (pageDataType == DataTypes.INT) {
         int size = pageSize * DataTypes.INT.getSizeInBytes();
         if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+          if (isDirectDictionary) {
+            for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i)
+                  - DateDirectDictionaryGenerator.cutOffDate);
+            }
+          } else {
+            for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+            }
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
@@ -367,15 +374,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
         } else {
-          if (isDirectDictionary) {
-            for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i)
-                  - DateDirectDictionaryGenerator.cutOffDate);
-            }
-          } else {
-            for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
-            }
+          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+            vector.putDouble(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
           }
         }
       } else if (pageDataType == DataTypes.LONG) {

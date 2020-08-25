@@ -74,9 +74,10 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
   }
 
   public AdaptiveDeltaIntegralCodec(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, CarbonDictionary dictionary) {
+      SimpleStatsResult stats, CarbonDictionary dictionary, boolean isDirectDictionary) {
     super(srcDataType, targetDataType, stats);
     this.dictionary = dictionary;
+    this.isDirectDictionary = isDirectDictionary;
     initialize(srcDataType, stats);
   }
 
@@ -98,10 +99,6 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       throw new UnsupportedOperationException(
           "unsupported data type for Delta compress: " + srcDataType);
     }
-  }
-
-  public void setDirectDictionary(boolean isDirectDictionary) {
-    this.isDirectDictionary = isDirectDictionary;
   }
 
   @Override

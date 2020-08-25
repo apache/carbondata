@@ -61,7 +61,7 @@ public class FilterExecutorUtil {
     final CarbonMeasure measure = measureColumnResolvedFilterInfo.getMeasure();
     final DataType dataType = FilterUtil.getMeasureDataType(measureColumnResolvedFilterInfo);
     int numberOfRows = page.getPageSize();
-    BitSet nullBitSet = page.getNullBits();
+    BitSet nullBitSet = page.getPresenceMeta().getBitSet();
     Object[] filterKeys = measureColumnExecutorFilterInfo.getFilterKeys();
     // to handle the null value
     for (int i = 0; i < filterKeys.length; i++) {

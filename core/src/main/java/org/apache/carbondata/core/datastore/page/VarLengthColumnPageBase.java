@@ -52,8 +52,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   VarLengthColumnPageBase(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
-    TableSpec.ColumnSpec spec = TableSpec.ColumnSpec.newInstance(
-        columnPageEncoderMeta.getColumnSpec().getFieldName(), DataTypes.INT, ColumnType.MEASURE);
+    TableSpec.MeasureSpec spec = TableSpec.MeasureSpec.newInstance(
+        columnPageEncoderMeta.getColumnSpec().getFieldName(), DataTypes.INT);
     rowOffset = ColumnPage.newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.INT, columnPageEncoderMeta.getCompressorName()),
         pageSize + 1);
@@ -327,6 +327,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     rowOffset.putInt(rowId + 1, rowOffset.getInt(rowId) + bytes.length);
     putBytesAtRow(rowId, bytes);
     totalLength += bytes.length;
+    pageSize = rowId + 1;
   }
 
   @Override
