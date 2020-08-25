@@ -19,13 +19,17 @@ package org.apache.carbondata.processing.loading;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -46,45 +50,58 @@ public class TableProcessingOperations {
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
   /**
-   *
-   * @param carbonTable
-   * @param isCompactionFlow
-   * @throws IOException
+   * delete folder which metadata no exist in tablestatus
+   * this method don't check tablestatus history.
    */
   public static void deletePartialLoadDataIfExist(CarbonTable carbonTable,
       final boolean isCompactionFlow) throws IOException {
     String metaDataLocation = carbonTable.getMetadataPath();
-    //delete folder which metadata no exist in tablestatus
     String partitionPath = CarbonTablePath.getPartitionDir(carbonTable.getTablePath());
     if (FileFactory.isFileExist(partitionPath)) {
-      final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
-      CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath);
-      CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile path) {
-          String segmentId =
-              CarbonTablePath.DataFileUtil.getSegmentIdFromPath(path.getAbsolutePath() + "/dummy");
-          boolean found = false;
-          for (int j = 0; j < details.length; j++) {
-            if (details[j].getLoadName().equals(segmentId)) {
-              found = true;
-              break;
+      // list all segments before reading tablestatus file.
+      CarbonFile[] allSegments = FileFactory.getCarbonFile(partitionPath).listFiles();
+      // there is no segment
+      if (allSegments == null || allSegments.length == 0) {
+        return;
+      }
+      LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
+      // there is no segment or failed to read tablestatus file.
+      // so it should stop immediately.
+      if (details == null || details.length == 0) {
+        return;
+      }
+      Set<String> metadataSet = new HashSet<>(details.length);
+      for (LoadMetadataDetails detail : details) {
+        metadataSet.add(detail.getLoadName());
+      }
+      List<CarbonFile> staleSegments = new ArrayList<>(allSegments.length);
+      for (CarbonFile segment : allSegments) {
+        String segmentName = segment.getName();
+        // check segment folder pattern
+        if (segmentName.startsWith(CarbonTablePath.SEGMENT_PREFIX)) {
+          String[] parts = segmentName.split(CarbonCommonConstants.UNDERSCORE);
+          if (parts.length == 2) {
+            boolean isOriginal = !parts[1].contains(".");
+            if (isCompactionFlow) {
+              // in compaction flow, it should be big segment and segment metadata is not exists
+              if (!isOriginal && !metadataSet.contains(parts[1])) {
+                staleSegments.add(segment);
+              }
+            } else {
+              // in loading flow, it should be original segment and segment metadata is not exists
+              if (isOriginal && !metadataSet.contains(parts[1])) {
+                staleSegments.add(segment);
+              }
             }
           }
-          return !found;
         }
-      });
-      for (int k = 0; k < listFiles.length; k++) {
-        String segmentId = CarbonTablePath.DataFileUtil
-            .getSegmentIdFromPath(listFiles[k].getAbsolutePath() + "/dummy");
-        if (isCompactionFlow) {
-          if (segmentId.contains(".")) {
-            CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());
-          }
-        } else {
-          if (!segmentId.contains(".")) {
-            CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());
-          }
+      }
+      // delete segment one by one
+      for (CarbonFile staleSegment : staleSegments) {
+        try {
+          CarbonUtil.deleteFoldersAndFiles(staleSegment);
+        } catch (IOException | InterruptedException e) {
+          LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
         }
       }
     }

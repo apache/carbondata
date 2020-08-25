@@ -19,25 +19,25 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.math.BigDecimal
 
+import org.apache.commons.io.FileUtils
+import org.apache.commons.lang3.RandomStringUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.Segment
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.util.BadRecordUtil
-import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.RandomStringUtils
 
 class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
 
   val badRecordAction = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
-  val testdata =s"$resourcesPath/MoreThan32KChar.csv"
+  val testdata = s"$resourcesPath/MoreThan32KChar.csv"
   val longChar: String = RandomStringUtils.randomAlphabetic(33000)
 
   override def beforeEach {
@@ -310,7 +310,8 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
     FileFactory.getCarbonFile(tableStatusFile).delete()
     sql("insert into stale values('k')")
-    checkAnswer(sql("select * from stale"), Row("k"))
+    // if table lose tablestatus file, the system should keep all data.
+    checkAnswer(sql("select * from stale"), Seq(Row("k"), Row("k")))
   }
 
   test("test data loading with directly writing fact data to hdfs") {
