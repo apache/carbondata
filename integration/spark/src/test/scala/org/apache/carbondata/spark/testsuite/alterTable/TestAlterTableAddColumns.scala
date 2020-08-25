@@ -29,11 +29,18 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
+    dropTable()
   }
 
   override def afterAll(): Unit = {
+    dropTable()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
+  }
+
+  private def dropTable(): Unit = {
+    sql("drop table if exists test_add_column_with_comment")
+    sql("drop table if exists test_add_column_for_complex_table")
   }
 
   private def testAddColumnForComplexTable(): Unit = {
@@ -105,6 +112,26 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
             ("999" * 12000), Map(4 -> 4), Row(4))))
 
     sql(s"""DROP TABLE IF EXISTS ${ tableName }""")
+  }
+
+  test("alter table add columns with comment") {
+    sql("""create table test_add_column_with_comment(
+        | col1 string comment 'col1 comment',
+        | col2 int,
+        | col3 string)
+        | stored as carbondata""".stripMargin)
+    sql(
+      """alter table test_add_column_with_comment add columns(
+        | col4 string comment "col4 comment",
+        | col5 int,
+        | col6 string comment "")""".stripMargin)
+    val describe = sql("describe test_add_column_with_comment")
+    var count = describe.filter("col_name='col5' and comment is null").count()
+    assertResult(1)(count)
+    count = describe.filter("col_name='col4' and comment = 'col4 comment'").count()
+    assertResult(1)(count)
+    count = describe.filter("col_name='col6' and comment = ''").count()
+    assertResult(1)(count)
   }
 
   test("[CARBONDATA-3596] Fix exception when execute load data command or select sql on a table which includes complex columns after execute 'add column' command") {

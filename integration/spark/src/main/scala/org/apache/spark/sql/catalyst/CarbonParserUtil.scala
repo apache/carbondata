@@ -1047,77 +1047,31 @@ object CarbonParserUtil {
   private def normalizeType(field: Field): Field = {
     val dataType = field.dataType.getOrElse("NIL")
     dataType match {
-      case "string" =>
-        Field(field.column, Some("String"), field.name, Some(null), field.parent,
-          field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-          field.columnComment)
-      case "smallint" =>
-        Field(field.column, Some("SmallInt"), field.name, Some(null),
-          field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema, field.columnComment)
-      case "integer" | "int" =>
-        Field(field.column, Some("Integer"), field.name, Some(null),
-          field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema, field.columnComment)
-      case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment)
-      case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment)
-      case "float" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment)
-      case "timestamp" =>
-        Field(field.column, Some("Timestamp"), field.name, Some(null),
-          field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema, field.columnComment)
-      case "date" =>
-        Field(field.column, Some("Date"), field.name, Some(null),
-          field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema, field.columnComment)
-      case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment)
+      case "string" => field.copy(dataType = Some("String"))
+      case "smallint" => field.copy(dataType = Some("SmallInt"))
+      case "integer" | "int" => field.copy(dataType = Some("Integer"))
+      case "long" => field.copy(dataType = Some("Long"))
+      case "double" => field.copy(dataType = Some("Double"))
+      case "float" => field.copy(dataType = Some("Double"))
+      case "timestamp" => field.copy(dataType = Some("Timestamp"))
+      case "date" => field.copy(dataType = Some("Date"))
+      case "numeric" => field.copy(dataType = Some("Numeric"))
       case "array" =>
-        Field(field.column, Some("Array"), field.name,
-          field.children.map(f => f.map(normalizeType(_))),
-          field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema, field.columnComment)
+        field.copy(dataType = Some("Array"), children = field.children.map(_.map(normalizeType)))
       case "struct" =>
-        Field(field.column, Some("Struct"), field.name,
-          field.children.map(f => f.map(normalizeType(_))),
-          field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema, field.columnComment)
+        field.copy(dataType = Some("Struct"), children = field.children.map(_.map(normalizeType)))
       case "map" =>
-        Field(field.column, Some("Map"), field.name,
-          field.children.map(f => f.map(normalizeType(_))),
-          field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema, field.columnComment)
-      case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment, field.spatialIndex)
-      case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment)
-      case "boolean" => Field(field.column, Some("Boolean"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment)
+        field.copy(dataType = Some("Map"), children = field.children.map(_.map(normalizeType)))
+      case "bigint" => field.copy(dataType = Some("BigInt"))
+      case "decimal" => field.copy(dataType = Some("Decimal"))
+      case "boolean" => field.copy(dataType = Some("Boolean"))
+      case "binary" => field.copy(dataType = Some("Binary"))
       // checking if the nested data type contains the child type as decimal(10,0),
       // if it is present then extracting the precision and scale. resetting the data type
       // with Decimal.
       case _ if dataType.startsWith("decimal") =>
         val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType)
-        Field(field.column,
-          Some("Decimal"),
-          field.name,
-          Some(null),
-          field.parent,
-          field.storeType, field.schemaOrdinal, precision,
-          scale,
-          field.rawSchema,
-          field.columnComment
-        )
+        field.copy(dataType = Some("Decimal"), precision = precision, scale = scale)
       case _ =>
         field
     }
@@ -1125,67 +1079,25 @@ object CarbonParserUtil {
 
   private def addParent(field: Field): Field = {
     field.dataType.getOrElse("NIL") match {
-      case "Array" => Field(field.column, Some("Array"), field.name,
-        field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema,
-        columnComment = field.columnComment)
-      case "Struct" => Field(field.column, Some("Struct"), field.name,
-        field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema,
-        columnComment = field.columnComment)
-      case "Map" => Field(field.column, Some("Map"), field.name,
-        field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema,
-        columnComment = field.columnComment)
+      case "Array" | "Struct" | "Map" =>
+        field.copy(children = field.children.map(_.map(appendParentForEachChild(_, field.column))))
       case _ => field
     }
   }
 
   private def appendParentForEachChild(field: Field, parentName: String): Field = {
     field.dataType.getOrElse("NIL") match {
-      case "String" => Field(parentName + "." + field.column, Some("String"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "binary" => Field(parentName + "." + field.column, Some("Binary"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "SmallInt" => Field(parentName + "." + field.column, Some("SmallInt"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Integer" => Field(parentName + "." + field.column, Some("Integer"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Long" => Field(parentName + "." + field.column, Some("Long"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Double" => Field(parentName + "." + field.column, Some("Double"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Float" => Field(parentName + "." + field.column, Some("Double"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Timestamp" => Field(parentName + "." + field.column, Some("Timestamp"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Date" => Field(parentName + "." + field.column, Some("Date"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Numeric" => Field(parentName + "." + field.column, Some("Numeric"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Array" => Field(parentName + "." + field.column, Some("Array"),
-        Some(parentName + "." + field.name.getOrElse(None)),
-        field.children
-          .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
-        parentName)
-      case "Struct" => Field(parentName + "." + field.column, Some("Struct"),
-        Some(parentName + "." + field.name.getOrElse(None)),
-        field.children
-          .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
-        parentName)
-      case "Map" => Field(parentName + "." + field.column, Some("Map"),
-        Some(parentName + "." + field.name.getOrElse(None)),
-        field.children
-          .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
-        parentName)
-      case "BigInt" => Field(parentName + "." + field.column, Some("BigInt"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Decimal" => Field(parentName + "." + field.column, Some("Decimal"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale)
-      case "Boolean" => Field(parentName + "." + field.column, Some("Boolean"),
-        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case _ => field
+      case "Array" | "Struct" | "Map" =>
+        val newChildren = field.children
+          .map(_.map(appendParentForEachChild(_, parentName + "." + field.column)))
+        field.copy(column = parentName + "." + field.column,
+          name = Some(parentName + "." + field.name.getOrElse(None)),
+          children = newChildren,
+          parent = parentName)
+      case _ =>
+        field.copy(column = parentName + "." + field.column,
+          name = Some(parentName + "." + field.name.getOrElse(None)),
+          parent = parentName)
     }
   }
 
