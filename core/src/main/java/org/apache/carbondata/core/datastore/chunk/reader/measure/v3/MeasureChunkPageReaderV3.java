@@ -24,6 +24,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
+import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -158,6 +159,9 @@ public class MeasureChunkPageReaderV3 extends MeasureChunkReaderV3 {
     ColumnPage decodedPage =
         decodeMeasure(pageMetadata, buffer, 0, null, nullBitSet, reusableDataBuffer);
     decodedPage.setNullBits(nullBitSet);
+    PresenceMeta presenceMeta = new PresenceMeta(pageMetadata.presence.represents_presence,
+        QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
+    decodedPage.setPresenceMeta(presenceMeta);
     return decodedPage;
   }
 
