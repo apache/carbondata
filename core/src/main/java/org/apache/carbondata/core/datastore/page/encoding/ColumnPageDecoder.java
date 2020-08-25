@@ -29,13 +29,16 @@ public interface ColumnPageDecoder {
   /**
    * Apply decoding algorithm on input byte array and return decoded column page
    */
-  ColumnPage decode(byte[] input, int offset, int length) throws IOException;
+  ColumnPage decode(byte[] input, int offset, int length, boolean isRLEEncoded, int rlePageLength)
+      throws IOException;
 
   /**
    *  Apply decoding algorithm on input byte array and fill the vector here.
    */
   void decodeAndFillVector(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
-      BitSet nullBits, boolean isLVEncoded, int pageSize, ReusableDataBuffer reusableDataBuffer);
+      BitSet nullBits, boolean isLVEncoded, int pageSize, ReusableDataBuffer reusableDataBuffer,
+      boolean isRLEEncoded, int rlePageLength);
 
-  ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded) throws IOException;
+  ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded, boolean isRLEEncoded,
+      int rlePageLength) throws IOException;
 }

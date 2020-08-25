@@ -69,8 +69,7 @@ public class TestLocalDictionaryGenerator {
   public void testColumnLocalDictionaryGeneratorForNullValueIsPresentWithoutAddingAnyData() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
     ByteBuffer byteBuffer = ByteBuffer.allocate(
-        2 + CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
-    byteBuffer.putShort((short)CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+        CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
     byteBuffer.put(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
 
     Assert.assertTrue(Arrays.equals(generator.getDictionaryKeyBasedOnValue(1),

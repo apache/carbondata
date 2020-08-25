@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
@@ -67,7 +68,7 @@ public abstract class EncodingFactory {
    */
   public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas,
       String compressor) throws IOException {
-    return createDecoder(encodings, encoderMetas, compressor, false);
+    return createDecoder(encodings, encoderMetas, compressor, false, null);
   }
 
   /**
@@ -81,7 +82,7 @@ public abstract class EncodingFactory {
    * @throws IOException
    */
   public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas,
-      String compressor, boolean fullVectorFill) throws IOException {
+      String compressor, boolean fullVectorFill, CarbonDictionary dictionary) throws IOException {
     assert (encodings.size() >= 1);
     assert (encoderMetas.size() == 1);
     boolean isComplexPrimitiveIntLengthEncoding =
@@ -104,14 +105,14 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveIntegralCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
-          stats).createDecoder(metadata);
+          stats, dictionary).createDecoder(metadata);
     } else if (encoding == ADAPTIVE_DELTA_INTEGRAL) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveDeltaIntegralCodec(metadata.getSchemaDataType(),
-          metadata.getStoreDataType(), stats).createDecoder(metadata);
+          metadata.getStoreDataType(), stats, dictionary).createDecoder(metadata);
     } else if (encoding == ADAPTIVE_FLOATING) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);

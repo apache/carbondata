@@ -297,7 +297,8 @@ public class RLECodec implements ColumnPageCodec {
     }
 
     @Override
-    public ColumnPage decode(byte[] input, int offset, int length) throws IOException {
+    public ColumnPage decode(byte[] input, int offset, int length, boolean isRLEEncoded,
+        int rlePageLength) throws IOException {
       DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
       ColumnPage resultPage = ColumnPage.newPage(
@@ -319,14 +320,15 @@ public class RLECodec implements ColumnPageCodec {
     @Override
     public void decodeAndFillVector(byte[] input, int offset, int length,
         ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
-        ReusableDataBuffer reusableDataBuffer) {
+        ReusableDataBuffer reusableDataBuffer, boolean isRLEEncoded, int rlePageLength) {
       throw new UnsupportedOperationException("Not supposed to be called here");
     }
 
     @Override
-    public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+    public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded,
+        boolean isRLEEncoded, int rlePageLength)
         throws IOException {
-      return decode(input, offset, length);
+      return decode(input, offset, length, isRLEEncoded, rlePageLength);
     }
 
     private void decodeBytePage(DataInputStream in, ColumnPage decodedPage)

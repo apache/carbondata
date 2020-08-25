@@ -252,10 +252,9 @@ public class DefaultEncodingFactory extends EncodingFactory {
         return new DirectCompressCodec(stats.getDataType());
       }
     }
-    boolean isInvertedIndex = isInvertedIndex(isComplexPrimitive, columnSpec);
     if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
       // choose adaptive encoding
-      return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats);
+      return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats, null);
     } else {
       // choose delta adaptive encoding
       return new AdaptiveDeltaIntegralCodec(stats.getDataType(), deltaDataType, stats);
