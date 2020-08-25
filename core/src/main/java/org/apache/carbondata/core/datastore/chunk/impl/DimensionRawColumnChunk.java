@@ -280,9 +280,9 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
     List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();
     ColumnPageDecoder decoder = DefaultEncodingFactory.getInstance()
-        .createDecoder(encodings, encoderMetas, compressorName, false);
+        .createDecoder(encodings, encoderMetas, compressorName, false, null);
     return decoder.decode(localDictionaryChunk.getDictionary_data(), 0,
-        localDictionaryChunk.getDictionary_data().length);
+        localDictionaryChunk.getDictionary_data().length, false, 0);
   }
 
   public void setAdaptiveForBinaryData(boolean isAdaptiveForBinaryData) {

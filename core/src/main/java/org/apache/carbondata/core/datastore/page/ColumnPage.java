@@ -26,6 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
+import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -38,6 +39,7 @@ import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGener
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
@@ -789,11 +791,30 @@ public abstract class ColumnPage {
    */
   public static ColumnPage decompress(ColumnPageEncoderMeta meta, byte[] compressedData, int offset,
       int length, boolean isLVEncoded, boolean isComplexPrimitiveIntLengthEncoding) {
+    return decompress(meta, compressedData, offset, length, isLVEncoded,
+        isComplexPrimitiveIntLengthEncoding, false, 0);
+  }
+
+  /**
+   * Decompress data and create a column page using the decompressed data,
+   * except for decimal page
+   */
+  public static ColumnPage decompress(ColumnPageEncoderMeta meta, byte[] compressedData, int offset,
+      int length, boolean isLVEncoded, boolean isComplexPrimitiveIntLengthEncoding,
+      boolean isRLEEncoded, int rlePageLength) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DataType storeDataType = meta.getStoreDataType();
     if (storeDataType == DataTypes.BOOLEAN || storeDataType == BYTE) {
       byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
+      if (isRLEEncoded) {
+        int[] rlePage;
+        offset += length;
+        rlePage = CarbonUtil.getIntArray(ByteBuffer.wrap(compressedData), offset, rlePageLength);
+        // uncompress the data with rle indexes
+        byteData = UnBlockIndexer
+            .uncompressData(byteData, rlePage, BYTE.getSizeInBytes(), byteData.length);
+      }
       return newBytePage(meta, byteData);
     } else if (storeDataType == SHORT) {
       short[] shortData = compressor.unCompressShort(compressedData, offset, length);

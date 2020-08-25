@@ -117,7 +117,8 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length) {
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isRLEEncoded,
+          int rlePageLength) {
         ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false, false);
         return LazyColumnPage.newPage(page, converter);
       }
@@ -125,7 +126,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
-          ReusableDataBuffer reusableDataBuffer) {
+          ReusableDataBuffer reusableDataBuffer, boolean isRLEEncoded, int rlePageLength) {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         byte[] unCompressData;
@@ -141,8 +142,9 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       }
 
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded) {
-        return decode(input, offset, length);
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded,
+          boolean isRLEEncoded, int rlePageLength) {
+        return decode(input, offset, length, isRLEEncoded, rlePageLength);
       }
     };
   }

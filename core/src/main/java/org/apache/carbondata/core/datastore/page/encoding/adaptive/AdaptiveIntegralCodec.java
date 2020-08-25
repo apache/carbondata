@@ -24,8 +24,10 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -39,11 +41,13 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -53,6 +57,14 @@ import org.apache.carbondata.format.Encoding;
 public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
   private ColumnPage encodedPage;
+
+  private CarbonDictionary dictionary = null;
+
+  public AdaptiveIntegralCodec(DataType srcDataType, DataType targetDataType,
+      SimpleStatsResult stats, CarbonDictionary dictionary) {
+    super(srcDataType, targetDataType, stats);
+    this.dictionary = dictionary;
+  }
 
   public AdaptiveIntegralCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats) {
@@ -104,12 +116,14 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length) {
-        ColumnPage page = null;
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isRLEEncoded,
+          int rlePageLength) {
+        ColumnPage page;
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
-          page = ColumnPage.decompress(meta, input, offset, length, false, false);
+          page = ColumnPage
+              .decompress(meta, input, offset, length, false, false, isRLEEncoded, rlePageLength);
         }
         return LazyColumnPage.newPage(page, converter);
       }
@@ -117,16 +131,29 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
-          ReusableDataBuffer reusableDataBuffer) {
+          ReusableDataBuffer reusableDataBuffer, boolean isRLEEncoded, int rlePageLength) {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         byte[] unCompressData;
+        int uncompressedLength;
         if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
-          int uncompressedLength = compressor.unCompressedLength(input, offset, length);
+          uncompressedLength = compressor.unCompressedLength(input, offset, length);
           unCompressData = reusableDataBuffer.getDataBuffer(uncompressedLength);
           compressor.rawUncompress(input, offset, length, unCompressData);
         } else {
           unCompressData = compressor.unCompressByte(input, offset, length);
+          uncompressedLength = unCompressData.length;
+        }
+        offset += length;
+        int[] rlePage;
+        // if rle is applied then read the rle block chunk and then uncompress
+        //then actual data based on rle block
+        if (isRLEEncoded) {
+          rlePage = CarbonUtil.getIntArray(ByteBuffer.wrap(input), offset, rlePageLength);
+          // uncompress the data with rle indexes
+          unCompressData = UnBlockIndexer
+              .uncompressData(unCompressData, rlePage, meta.getStoreDataType().getSizeInBytes(),
+                  uncompressedLength);
         }
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
@@ -138,8 +165,9 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       }
 
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded) {
-        return decode(input, offset, length);
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded,
+          boolean isRLEEncoded, int rlePageLength) {
+        return decode(input, offset, length, isRLEEncoded, rlePageLength);
       }
     };
   }
@@ -281,15 +309,27 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       CarbonColumnVector vector = vectorInfo.vector;
       DataType vectorDataType = vector.getType();
       BitSet deletedRows = vectorInfo.deletedRows;
+      BitSet nullBitset = new BitSet();
+      if (null != dictionary && !dictionary.isDictionaryUsed()) {
+        vector.setDictionary(dictionary);
+        dictionary.setDictionaryUsed();
+      }
+      CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
+          .getDirectVectorWrapperFactory(vector.getDictionaryVector(), vectorInfo.invertedIndex,
+              nullBitset, vectorInfo.deletedRows, false, true);
       vector = ColumnarVectorWrapperDirectFactory
           .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBits, deletedRows,
               true, false);
-      fillVector(pageData, vector, vectorDataType, pageDataType, pageSize, vectorInfo, nullBits);
+      fillVector(pageData, vector, vectorDataType, pageDataType, pageSize, vectorInfo, nullBits,
+          dictionaryVector);
       if ((deletedRows == null || deletedRows.isEmpty())
           && !(vectorInfo.vector instanceof SequentialFill)) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
           vector.putNull(i);
         }
+      }
+      if (dictionaryVector instanceof ConvertibleVector) {
+        ((ConvertibleVector) dictionaryVector).convert();
       }
       if (vector instanceof ConvertibleVector) {
         ((ConvertibleVector) vector).convert();
@@ -298,7 +338,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     }
 
     private void fillVector(byte[] pageData, CarbonColumnVector vector, DataType vectorDataType,
-        DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo, BitSet nullBits) {
+        DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo, BitSet nullBits,
+        CarbonColumnVector dictionaryVector) {
       int rowId = 0;
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
         if (vectorDataType == DataTypes.SHORT) {
@@ -326,9 +367,17 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putFloat(i, pageData[i]);
           }
-        } else {
+        } else if (vectorDataType == DataTypes.DOUBLE) {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(i, pageData[i]);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            if (pageData[i] == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+              dictionaryVector.putNull(i);
+            } else {
+              dictionaryVector.putInt(i, (int) pageData[i]);
+            }
           }
         }
       } else if (pageDataType == DataTypes.SHORT) {
@@ -356,9 +405,18 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
             vector.putFloat(rowId++, (ByteUtil.toShortLittleEndian(pageData, i)));
           }
-        } else {
+        } else if (vectorDataType == DataTypes.DOUBLE) {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
             vector.putDouble(rowId++, ByteUtil.toShortLittleEndian(pageData, i));
+          }
+        } else {
+          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+            short data = ByteUtil.toShortLittleEndian(pageData, i);
+            if (data == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+              dictionaryVector.putNull(i);
+            } else {
+              dictionaryVector.putInt(rowId++, data);
+            }
           }
         }
 
@@ -387,10 +445,19 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i * 3);
             vector.putFloat(i, shortInt);
           }
-        } else {
+        } else if (vectorDataType == DataTypes.DOUBLE) {
           for (int i = 0; i < pageSize; i++) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i * 3);
             vector.putDouble(i, shortInt);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            int shortInt = ByteUtil.valueOf3Bytes(pageData, i * 3);
+            if (shortInt == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+              dictionaryVector.putNull(i);
+            } else {
+              dictionaryVector.putInt(i, shortInt);
+            }
           }
         }
       } else if (pageDataType == DataTypes.INT) {
@@ -410,9 +477,18 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
-        } else {
+        } else if (vectorDataType == DataTypes.DOUBLE) {
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
             vector.putDouble(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+          }
+        } else {
+          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+            int data = ByteUtil.toIntLittleEndian(pageData, i);
+            if (data == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+              dictionaryVector.putNull(i);
+            } else {
+              dictionaryVector.putInt(rowId++, data);
+            }
           }
         }
       } else if (pageDataType == DataTypes.LONG) {

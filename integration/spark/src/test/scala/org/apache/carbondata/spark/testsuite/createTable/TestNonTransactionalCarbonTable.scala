@@ -55,6 +55,7 @@ import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonMetadataUtil, CarbonProperties, CarbonUtil, DataFileFooterConverterV3}
+import org.apache.carbondata.format.Encoding
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.sdk.file._
 
@@ -2681,8 +2682,10 @@ object testUtil{
       val encoderMetas = local_dictionary.getDictionary_meta.getEncoder_meta
       val encodingFactory = DefaultEncodingFactory.getInstance
       val decoder = encodingFactory.createDecoder(encodings, encoderMetas, compressorName)
+      val isRLEEncoded = CarbonUtil.hasEncoding(encodings, Encoding.RLE)
       val dictionaryPage = decoder
-        .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length)
+        .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length,
+          isRLEEncoded, rawColumnPage.getDataChunkV3.getData_chunk_list.get(0).rle_page_length)
       val dictionaryMap = new util.HashMap[DictionaryByteArrayWrapper, Integer]
       val usedDictionaryValues = util.BitSet
         .valueOf(CompressorFactory.getInstance.getCompressor(compressorName)
