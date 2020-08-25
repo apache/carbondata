@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
@@ -64,6 +65,8 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
 
   private CarbonDictionary dictionary = null;
 
+  private boolean isDirectDictionary = false;
+
   public AdaptiveDeltaIntegralCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats) {
     super(srcDataType, targetDataType, stats);
@@ -71,9 +74,10 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
   }
 
   public AdaptiveDeltaIntegralCodec(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, CarbonDictionary dictionary) {
+      SimpleStatsResult stats, CarbonDictionary dictionary, boolean isDirectDictionary) {
     super(srcDataType, targetDataType, stats);
     this.dictionary = dictionary;
+    this.isDirectDictionary = isDirectDictionary;
     initialize(srcDataType, stats);
   }
 
@@ -382,8 +386,15 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             vector.putShort(i, (short) (max - pageData[i]));
           }
         } else if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putInt(i, (int) (max - pageData[i]));
+          if (isDirectDictionary) {
+            for (int i = 0; i < pageSize; i++) {
+              vector
+                  .putInt(i, (int) (max - pageData[i] - DateDirectDictionaryGenerator.cutOffDate));
+            }
+          } else {
+            for (int i = 0; i < pageSize; i++) {
+              vector.putInt(i, (int) (max - pageData[i]));
+            }
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
@@ -419,6 +430,10 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             dictionaryVector.putInt(i, (int) (max - pageData[i]));
           }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(i, (int) (max - pageData[i] - DateDirectDictionaryGenerator.cutOffDate));
+          }
         }
       } else if (pageDataType == DataTypes.SHORT) {
         int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
@@ -428,8 +443,15 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             vector.putShort(rowId++, (short) (max - ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < size; i += shortSizeInBytes) {
-            vector.putInt(rowId++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)));
+          if (isDirectDictionary) {
+            for (int i = 0; i < size; i += shortSizeInBytes) {
+              vector.putInt(rowId++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)
+                  - DateDirectDictionaryGenerator.cutOffDate));
+            }
+          } else {
+            for (int i = 0; i < size; i += shortSizeInBytes) {
+              vector.putInt(rowId++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)));
+            }
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < size; i += shortSizeInBytes) {
@@ -460,18 +482,31 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             vector.putDouble(rowId++, (max - ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.STRING) {
-            for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-              dictionaryVector
-                  .putInt(rowId++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)));
-            }
+          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+            dictionaryVector
+                .putInt(rowId++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)));
           }
+        } else {
+          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+            vector.putInt(rowId++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)
+                - DateDirectDictionaryGenerator.cutOffDate));
+          }
+        }
       } else if (pageDataType == DataTypes.SHORT_INT) {
         int shortIntSizeInBytes = DataTypes.SHORT_INT.getSizeInBytes();
         int size = pageSize * shortIntSizeInBytes;
         if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < size; i += shortIntSizeInBytes) {
-            int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
-            vector.putInt(rowId++, (int) (max - shortInt));
+          if (isDirectDictionary) {
+            for (int i = 0; i < size; i += shortIntSizeInBytes) {
+              int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
+              vector.putInt(rowId++,
+                  (int) (max - shortInt - DateDirectDictionaryGenerator.cutOffDate));
+            }
+          } else {
+            for (int i = 0; i < size; i += shortIntSizeInBytes) {
+              int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
+              vector.putInt(rowId++, (int) (max - shortInt));
+            }
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < size; i += shortIntSizeInBytes) {
@@ -508,13 +543,26 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
             dictionaryVector.putInt(rowId++, (int) (max - shortInt));
           }
+        } else {
+          for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
+            int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
+            vector
+                .putInt(rowId++, (int) (max - shortInt - DateDirectDictionaryGenerator.cutOffDate));
+          }
         }
       } else if (pageDataType == DataTypes.INT) {
         int intSizeInBytes = DataTypes.INT.getSizeInBytes();
         int size = pageSize * intSizeInBytes;
         if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < size; i += intSizeInBytes) {
-            vector.putInt(rowId++, (int) (max - ByteUtil.toIntLittleEndian(pageData, i)));
+          if (isDirectDictionary) {
+            for (int i = 0; i < size; i += intSizeInBytes) {
+              vector.putInt(rowId++, (int) (max - ByteUtil.toIntLittleEndian(pageData, i)
+                  - DateDirectDictionaryGenerator.cutOffDate));
+            }
+          } else {
+            for (int i = 0; i < size; i += intSizeInBytes) {
+              vector.putInt(rowId++, (int) (max - ByteUtil.toIntLittleEndian(pageData, i)));
+            }
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < size; i += intSizeInBytes) {
@@ -542,6 +590,11 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         } else if (vectorDataType == DataTypes.STRING) {
           for (int i = 0; i < size; i += intSizeInBytes) {
             dictionaryVector.putInt(rowId++, (int) (max - ByteUtil.toIntLittleEndian(pageData, i)));
+          }
+        } else {
+          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+            vector.putInt(rowId++, (int) (max - ByteUtil.toIntLittleEndian(pageData, i)
+                - DateDirectDictionaryGenerator.cutOffDate));
           }
         }
       } else if (pageDataType == DataTypes.LONG) {

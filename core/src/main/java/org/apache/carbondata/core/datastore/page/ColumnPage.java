@@ -380,6 +380,35 @@ public abstract class ColumnPage {
   public abstract void freeMemory();
 
   /**
+   * PutData with default null value used for dictionary/direct dictionary columns
+   * @param rowId
+   * @param value
+   * @param nullValue
+   */
+  public void putData(int rowId, Object value, Object nullValue) {
+    if (value == null) {
+      putNull(rowId, nullValue);
+      statsCollector.updateNull(rowId, nullValue);
+      nullBitSet.set(rowId);
+      return;
+    }
+    putData(rowId, value);
+  }
+
+  /**
+   * Set null at rowId with null values passed
+   * this will be used for dictionary columns
+   */
+  protected void putNull(int rowId, Object nullValue) {
+    DataType dataType = columnPageEncoderMeta.getStoreDataType();
+    if (dataType == DataTypes.INT) {
+      putInt(rowId, (int)nullValue);
+    } else {
+      throw new UnsupportedOperationException("Operation Not supported");
+    }
+  }
+
+  /**
    * Set value at rowId
    */
   public void putData(int rowId, Object value) {
@@ -541,7 +570,7 @@ public abstract class ColumnPage {
     } else if (DataTypes.isDecimal(dataType)) {
       putDecimal(rowId, BigDecimal.ZERO);
     } else {
-      throw new IllegalArgumentException("unsupported data type: " + dataType);
+      putBytes(rowId, new byte[0]);
     }
   }
 
@@ -569,7 +598,7 @@ public abstract class ColumnPage {
     } else if (DataTypes.isDecimal(dataType)) {
       result = getDecimal(rowId);
     } else {
-      throw new IllegalArgumentException("unsupported data type: " + dataType);
+      return new byte[0];
     }
     return result;
   }

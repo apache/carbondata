@@ -66,8 +66,14 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
   boolean isComplexPrimitiveIntLengthEncoding = false;
 
+  boolean isDirectDictionary = false;
+
   public void setComplexPrimitiveIntLengthEncoding(boolean complexPrimitiveIntLengthEncoding) {
     isComplexPrimitiveIntLengthEncoding = complexPrimitiveIntLengthEncoding;
+  }
+
+  public void setIsDirectDictionary(boolean isDirectDictionary) {
+    this.isDirectDictionary = isDirectDictionary;
   }
 
   @Override
@@ -413,8 +419,15 @@ public class DirectCompressCodec implements ColumnPageCodec {
         if (pageDataType == DataTypes.INT) {
           int size = pageSize * intSizeInBytes;
           if (vectorDataType == DataTypes.INT) {
-            for (int i = 0; i < size; i += intSizeInBytes) {
-              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+            if (isDirectDictionary) {
+              for (int i = 0; i < size; i += intSizeInBytes) {
+                vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i)
+                    - DateDirectDictionaryGenerator.cutOffDate);
+              }
+            } else {
+              for (int i = 0; i < size; i += intSizeInBytes) {
+                vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+              }
             }
           } else if (vectorDataType == DataTypes.LONG) {
             for (int i = 0; i < size; i += intSizeInBytes) {
