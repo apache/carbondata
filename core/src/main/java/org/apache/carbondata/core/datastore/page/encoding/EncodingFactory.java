@@ -87,6 +87,8 @@ public abstract class EncodingFactory {
     assert (encoderMetas.size() == 1);
     boolean isComplexPrimitiveIntLengthEncoding =
         encodings.contains(Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY);
+    boolean isDirectDictionary =
+        encodings.contains(Encoding.DIRECT_DICTIONARY);
     Encoding encoding = encodings.get(0);
     byte[] encoderMeta = encoderMetas.get(0).array();
     ByteArrayInputStream stream = new ByteArrayInputStream(encoderMeta);
@@ -97,6 +99,7 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       DirectCompressCodec directCompressCodec =
           new DirectCompressCodec(metadata.getStoreDataType());
+      directCompressCodec.setIsDirectDictionary(isDirectDictionary);
       directCompressCodec.setComplexPrimitiveIntLengthEncoding(isComplexPrimitiveIntLengthEncoding);
       return directCompressCodec.createDecoder(metadata);
     } else if (encoding == ADAPTIVE_INTEGRAL) {

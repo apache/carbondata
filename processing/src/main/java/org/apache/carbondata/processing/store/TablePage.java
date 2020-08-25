@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -36,16 +37,16 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
-import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.StringStatsCollector;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
@@ -107,10 +108,12 @@ public class TablePage {
       }
       ColumnPage page;
       if (spec.getSchemaDataType() == DataTypes.DATE) {
-        page = ColumnPage
-            .newPage(new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor),
-                pageSize);
-        page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
+        TableSpec.DimensionSpec dimensionSpec = TableSpec.DimensionSpec
+            .newInstance(spec.getFieldName(), DataTypes.INT, spec.getColumnType());
+        ColumnPageEncoderMeta columnPageEncoderMeta =
+            new ColumnPageEncoderMeta(dimensionSpec, DataTypes.INT, columnCompressor);
+        page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
+        page.setStatsCollector(PrimitivePageStatsCollector.newInstance(DataTypes.INT));
         dictDimensionPages[tmpNumDictDimIdx++] = page;
       } else {
         if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
@@ -202,12 +205,11 @@ public class TablePage {
   private void convertToColumnarAndAddToPages(int rowId, CarbonRow row) {
     // 1. convert dictionary columns
     int[] dictDimensions = WriteStepRowUtil.getDictDimension(row);
-    byte[][] keys = new byte[dictDimensions.length][];
-    for (int i = 0; i < dictDimensions.length; i++) {
-      keys[i] = ByteUtil.toBytes(dictDimensions[i]);
-    }
     for (int i = 0; i < dictDimensionPages.length; i++) {
-      dictDimensionPages[i].putData(rowId, keys[i]);
+      dictDimensionPages[i].putData(rowId,
+          dictDimensions[i] == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY ?
+              null :
+              dictDimensions[i], CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
     }
 
     // 2. convert noDictionary columns and complex columns and varchar, binary columns.
@@ -348,9 +350,12 @@ public class TablePage {
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
       switch (spec.getColumnType()) {
         case DIRECT_DICTIONARY:
-          columnPageEncoder = encodingFactory.createEncoder(
-              spec,
-              dictDimensionPages[dictIndex], null);
+          KeyGenerator keyGenerator =
+              KeyGeneratorFactory.getKeyGenerator(new int[] { Integer.MAX_VALUE });
+          Map<String, Object> encoderParameter = new HashMap<>();
+          encoderParameter.put("keygenerator", keyGenerator);
+          columnPageEncoder =
+              encodingFactory.createEncoder(spec, dictDimensionPages[dictIndex], encoderParameter);
           encodedPage = columnPageEncoder.encode(dictDimensionPages[dictIndex++]);
           encodedDimensions.add(encodedPage);
           break;

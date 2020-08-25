@@ -36,6 +36,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
@@ -60,8 +61,14 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
   boolean isComplexPrimitiveIntLengthEncoding = false;
 
+  boolean isDirectDictionary = false;
+
   public void setComplexPrimitiveIntLengthEncoding(boolean complexPrimitiveIntLengthEncoding) {
     isComplexPrimitiveIntLengthEncoding = complexPrimitiveIntLengthEncoding;
+  }
+
+  public void setIsDirectDictionary(boolean isDirectDictionary) {
+    this.isDirectDictionary = isDirectDictionary;
   }
 
   @Override
@@ -360,8 +367,15 @@ public class DirectCompressCodec implements ColumnPageCodec {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
         } else {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putDouble(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+          if (isDirectDictionary) {
+            for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i)
+                  - DateDirectDictionaryGenerator.cutOffDate);
+            }
+          } else {
+            for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+            }
           }
         }
       } else if (pageDataType == DataTypes.LONG) {

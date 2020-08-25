@@ -33,6 +33,9 @@ import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.BinaryTypeDimColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DirectDictDateDimColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.DirectDictTimestampDimColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.FixedLenAdaptiveDimColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.LocalDictAdaptiveDimColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
@@ -169,7 +172,8 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     }
     rawColumnChunk
         .setAdaptiveForBinaryData(CarbonUtil.hasEncoding(encoders, Encoding.DIRECT_STRING));
-    if (CarbonUtil.hasEncoding(encoders, Encoding.DICTIONARY) || null != dataChunk
+    if (CarbonUtil.hasEncoding(encoders, Encoding.DICTIONARY) || CarbonUtil
+        .hasEncoding(encoders, Encoding.DIRECT_DICTIONARY) || null != dataChunk
         .getLocal_dictionary()) {
       rawColumnChunk.setAdaptiveForDictionary(
           CarbonUtil.hasEncoding(encoders, Encoding.ADAPTIVE_DELTA_INTEGRAL) || CarbonUtil
@@ -349,7 +353,6 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       if (null != decodedPage) {
         decodedPage.setPresenceMeta(new PresenceMeta(pageMetadata.presence.represents_presence,
             QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor)));
-        // TODO handle for date, timestamp
         ColumnPageWrapper columnPageWrapper =
             new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(), invertedIndexes,
                 invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata), isExplicitSorted);
@@ -361,6 +364,17 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
           if (null != rawColumnPage.getDataChunkV3().getLocal_dictionary()) {
             return new LocalDictAdaptiveDimColumnPage(decodedPage, invertedIndexes,
                 invertedIndexesReverse, rawColumnPage.getLocalDictionary());
+          } else if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.DICTIONARY)) {
+            return new FixedLenAdaptiveDimColumnPage(decodedPage, invertedIndexes,
+                invertedIndexesReverse, getColumnValueSize(pageMetadata.encoders));
+          } else if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.DIRECT_DICTIONARY)) {
+            if (decodedPage.getColumnSpec().getSchemaDataType() == DataTypes.LONG) {
+              return new DirectDictTimestampDimColumnPage(decodedPage, invertedIndexes,
+                  invertedIndexesReverse, getColumnValueSize(pageMetadata.encoders));
+            } else {
+              return new DirectDictDateDimColumnPage(decodedPage, invertedIndexes,
+                  invertedIndexesReverse, getColumnValueSize(pageMetadata.encoders));
+            }
           } else {
             return columnPageWrapper;
           }
