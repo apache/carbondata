@@ -693,7 +693,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       var columnComment: String = ""
       var plainComment: String = ""
       if (col.getComment().isDefined) {
-        columnComment = " comment \"" + col.getComment().get + "\""
+        columnComment = " comment '" + col.getComment().get + "'"
         plainComment = col.getComment().get
       }
       // external table use float data type

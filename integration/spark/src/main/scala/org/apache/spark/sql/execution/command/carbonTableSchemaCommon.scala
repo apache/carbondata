@@ -23,6 +23,7 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -69,7 +70,7 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
     storeType: Option[String] = Some("columnar"),
     var schemaOrdinal: Int = -1,
     var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "",
-    var columnComment: String = "", var spatialIndex: Boolean = false) {
+    var columnComment: String = null, var spatialIndex: Boolean = false) {
   override def equals(o: Any) : Boolean = o match {
     case that: Field =>
       that.column.equalsIgnoreCase(this.column)
@@ -624,9 +625,7 @@ class TableNewProcessor(cm: TableModel) {
     if (isVarcharColumn(colName)) {
       columnSchema.setDataType(DataTypes.VARCHAR)
     }
-    // TODO: Need to fill RowGroupID, converted type
-    // & Number of Children after DDL finalization
-    if (field.columnComment.nonEmpty) {
+    if (field.columnComment != null) {
       var columnProperties = columnSchema.getColumnProperties
       if (columnProperties == null) {
         columnProperties = new util.HashMap[String, String]()
