@@ -28,6 +28,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSour
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonSessionCatalogUtil}
+import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types._
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -35,7 +36,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression, MatchExpression}
+import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression,
+   Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression, MatchExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
@@ -373,6 +375,152 @@ object CarbonFilters {
     val carbonTable = CarbonEnv.getCarbonTable(identifier)(sparkSession)
     getPartitions(partitionFilters, sparkSession, carbonTable)
   }
+
+  def getStorageOrdinal(filter: Filter, carbonTable: CarbonTable): Int = {
+    val column = filter.references.map(carbonTable.getColumnByName)
+    if (column.isEmpty) {
+      -1
+    } else {
+      if (column.head.isDimension) {
+        column.head.getOrdinal
+      } else {
+        column.head.getOrdinal + carbonTable.getAllDimensions.size()
+      }
+    }
+  }
+
+  def collectSimilarExpressions(filter: Filter, table: CarbonTable): Seq[(Filter, Int)] = {
+    filter match {
+      case sources.And(left, right) =>
+        collectSimilarExpressions(left, table) ++ collectSimilarExpressions(right, table)
+      case sources.Or(left, right) => collectSimilarExpressions(left, table) ++
+                              collectSimilarExpressions(right, table)
+      case others => Seq((others, getStorageOrdinal(others, table)))
+    }
+  }
+
+  /**
+   * This method will reorder the filter based on the Storage Ordinal of the column references.
+   *
+   * Example1:
+   *             And                                   And
+   *      Or          And             =>        Or            And
+   *  col3  col1  col2  col1                col1  col3    col1   col2
+   *
+   *  **Mixed expression filter reordered locally, but wont be reordered globally.**
+   *
+   * Example2:
+   *             And                                   And
+   *      And          And           =>       And            And
+   *  col3  col1  col2  col1                col1  col1    col2   col3
+   *
+   *             Or                                    Or
+   *       Or          Or             =>        Or            Or
+   *   col3  col1  col2  col1               col1  col1    col2   col3
+   *
+   *  **Similar expression filters are reordered globally**
+   *
+   * @param filters the filter expressions to be reordered
+   * @return The reordered filter with the current ordinal
+   */
+  def reorderFilter(filters: Array[Filter], table: CarbonTable): Array[Filter] = {
+    val filterMap = mutable.HashMap[String, List[(Filter, Int)]]()
+    if (!CarbonProperties.isFilterReorderingEnabled) {
+      filters
+    } else {
+      filters.collect {
+        // If the filter size is one or the user has disabled reordering then no need to reorder.
+        case filter if filter.references.toSet.size == 1 =>
+          (filter, getStorageOrdinal(filter, table))
+        case filter =>
+          val sortedFilter = sortFilter(filter, filterMap, table)
+          // If filter has only AND/OR expression then sort the nodes globally using the filterMap.
+          // Else sort the subnodes individually
+          if (!filterMap.contains("OR") && filterMap.contains("AND") && filterMap("AND").nonEmpty) {
+            val sortedFilterAndOrdinal = filterMap("AND").sortBy(_._2)
+            (sortedFilterAndOrdinal.map(_._1).reduce(sources.And), sortedFilterAndOrdinal.head._2)
+          } else if (!filterMap.contains("AND") && filterMap.contains("OR") &&
+                     filterMap("OR").nonEmpty) {
+            val sortedFilterAndOrdinal = filterMap("OR").sortBy(_._2)
+            (sortedFilterAndOrdinal.map(_._1).reduce(sources.Or), sortedFilterAndOrdinal.head._2)
+          } else {
+            sortedFilter
+          }
+      }.sortBy(_._2).map(_._1)
+    }
+  }
+
+  def generateNewFilter(filterType: String, left: Filter, right: Filter,
+      filterMap: mutable.HashMap[String, List[(Filter, Int)]],
+      table: CarbonTable): (Filter, Int) = {
+    filterMap.getOrElseUpdate(filterType, List())
+    // Generate a function which can handle both AND/OR.
+    val newFilter: (Filter, Filter) => Filter = filterType match {
+      case "OR" => sources.Or
+      case _ => sources.And
+    }
+    if (checkIfRightIsASubsetOfLeft(left, right)) {
+      val (sorted, ordinal) = sortFilter(left, filterMap, table)
+      val rightOrdinal = getStorageOrdinal(right, table)
+      val orderedFilter = if (ordinal >= rightOrdinal) {
+        (newFilter(right, sorted), rightOrdinal)
+      } else {
+        (newFilter(sorted, right), ordinal)
+      }
+      if (isLeafNode(left)) {
+        filterMap.put(filterType, filterMap(filterType) ++ List((sorted, ordinal)))
+      }
+      if (isLeafNode(right)) {
+        filterMap.put(filterType, filterMap(filterType) ++ List((right, rightOrdinal)))
+      }
+      orderedFilter
+    } else {
+      val (leftSorted, leftOrdinal) = sortFilter(left, filterMap, table)
+      val (rightSorted, rightOrdinal) = sortFilter(right, filterMap, table)
+      val orderedFilter = if (leftOrdinal > rightOrdinal) {
+        (newFilter(rightSorted, leftSorted), rightOrdinal)
+      } else {
+        (newFilter(leftSorted, rightSorted), leftOrdinal)
+      }
+      if (isLeafNode(left)) {
+        filterMap.put(filterType, filterMap(filterType) ++ List((leftSorted, leftOrdinal)))
+      }
+      if (isLeafNode(right)) {
+        filterMap.put(filterType, filterMap(filterType) ++ List((rightSorted, rightOrdinal)))
+      }
+      orderedFilter
+    }
+  }
+
+  def sortFilter(filter: Filter, filterMap: mutable.HashMap[String, List[(Filter, Int)]],
+      table: CarbonTable): (Filter, Int) = {
+    filter match {
+      case sources.And(left, right) =>
+        generateNewFilter("AND", left, right, filterMap, table)
+      case sources.Or(left, right) =>
+        generateNewFilter("OR", left, right, filterMap, table)
+      case others => (others, getStorageOrdinal(others, table))
+    }
+  }
+
+  /**
+   * Checks if the filter node is a leaf node, here leaf node means node should not be AND/OR.
+   *
+   * @return true if leaf node, false otherwise
+   */
+  private def isLeafNode(filter: Filter): Boolean = {
+    !filter.isInstanceOf[sources.Or] && !filter.isInstanceOf[sources.And]
+  }
+
+  /**
+   * Checks if the references in right subtree of a filter are a subset of the left references.
+   * @return true if right is a subset, otherwise false
+   */
+  private def checkIfRightIsASubsetOfLeft(left: Filter, right: Filter): Boolean = {
+    left.references.toSeq == right.references.toSeq ||
+    right.references.diff(left.references).length == 0
+  }
+
   /**
    * Fetches partition information from hive
    * @param partitionFilters

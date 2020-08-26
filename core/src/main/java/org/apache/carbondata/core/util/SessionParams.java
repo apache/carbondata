@@ -227,6 +227,8 @@ public class SessionParams implements Serializable, Cloneable {
             throw new InvalidConfigurationException("The sort scope " + key
                 + " can have only either NO_SORT, LOCAL_SORT or GLOBAL_SORT.");
           }
+        } else if (key.equalsIgnoreCase(CARBON_REORDER_FILTER)) {
+          isValid = true;
         } else {
           throw new InvalidConfigurationException(
               "The key " + key + " not supported for dynamic configuration.");

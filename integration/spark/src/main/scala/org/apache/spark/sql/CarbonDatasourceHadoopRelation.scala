@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.execution.strategy.PushDownHelper
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
+import org.apache.spark.sql.sources.{And, BaseRelation, Filter, InsertableRelation, Or}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
 
@@ -72,7 +72,8 @@ case class CarbonDatasourceHadoopRelation(
       projects: Seq[NamedExpression],
       filters: Array[Filter],
       partitions: Seq[PartitionSpec]): RDD[InternalRow] = {
-    val filterExpression: Option[Expression] = filters.flatMap { filter =>
+    val reorderedFilter = CarbonFilters.reorderFilter(filters, carbonTable)
+    val filterExpression: Option[Expression] = reorderedFilter.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter,
         carbonTable.getTableInfo.getFactTable.getTableProperties.asScala)
     }.reduceOption(new AndExpression(_, _))
