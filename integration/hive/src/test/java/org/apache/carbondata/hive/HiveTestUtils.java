@@ -21,6 +21,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.carbondata.hive.test.server.HiveEmbeddedServer2;
 
@@ -56,6 +59,8 @@ public abstract class HiveTestUtils {
   public boolean checkAnswer(ResultSet actual, ResultSet expected) throws SQLException {
     Assert.assertEquals("Row Count Mismatch: ", expected.getFetchSize(), actual.getFetchSize());
     int rowCountExpected = 0;
+    List<String> expectedValuesList = new ArrayList<>();
+    List<String> actualValuesList = new ArrayList<>();
     while (expected.next()) {
       rowCountExpected ++;
       if (!actual.next()) {
@@ -65,10 +70,12 @@ public abstract class HiveTestUtils {
       Assert.assertTrue(numOfColumnsExpected > 0);
       Assert.assertEquals(actual.getMetaData().getColumnCount(), numOfColumnsExpected);
       for (int i = 1; i <= numOfColumnsExpected; i++) {
-        Assert.assertEquals(actual.getString(i), actual.getString(i));
+        expectedValuesList.add(expected.getString(i));
+        actualValuesList.add(actual.getString(i));
       }
-      System.out.println();
     }
+    Collections.sort(expectedValuesList);Collections.sort(actualValuesList);
+    Assert.assertArrayEquals(expectedValuesList.toArray(), actualValuesList.toArray());
     Assert.assertTrue(rowCountExpected > 0);
     return true;
   }

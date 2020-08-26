@@ -51,6 +51,8 @@ class CarbonHiveMetastoreListener(conf: Configuration) extends MetaStorePreEvent
             table.getSd.setCols(hiveSchema)
             table.getSd.setInputFormat("org.apache.carbondata.hive.MapredCarbonInputFormat")
             table.getSd.setOutputFormat("org.apache.carbondata.hive.MapredCarbonOutputFormat")
+            table.getParameters
+              .put("storage_handler", "org.apache.carbondata.hive.CarbonStorageHandler")
             val serdeInfo = table.getSd.getSerdeInfo
             serdeInfo.setSerializationLib("org.apache.carbondata.hive.CarbonHiveSerDe")
             val tablePath = serdeInfo.getParameters.get("tablePath")
