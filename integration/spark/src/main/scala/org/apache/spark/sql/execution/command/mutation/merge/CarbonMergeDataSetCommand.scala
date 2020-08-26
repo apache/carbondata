@@ -219,7 +219,7 @@ case class CarbonMergeDataSetCommand(
     val dataFrame = loadDF.select(tableCols.map(col): _*)
     CarbonInsertIntoCommand(databaseNameOp = Some(carbonTable.getDatabaseName),
       tableName = carbonTable.getTableName,
-      options = Map("fileheader" -> header, "sort_scope" -> "no_sort"),
+      options = Map("fileheader" -> header),
       isOverwriteTable = false,
       dataFrame.queryExecution.logical,
       carbonTable.getTableInfo,
