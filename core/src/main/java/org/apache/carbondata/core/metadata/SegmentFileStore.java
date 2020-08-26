@@ -466,14 +466,22 @@ public class SegmentFileStore {
   /**
    * Move the loaded data from source folder to destination folder.
    */
-  private static void moveFromTempFolder(String source, String dest) {
+  private static void moveFromTempFolder(String source, String dest) throws IOException {
 
     CarbonFile oldFolder = FileFactory.getCarbonFile(source);
     CarbonFile[] oldFiles = oldFolder.listFiles();
     for (CarbonFile file : oldFiles) {
       file.renameForce(dest + CarbonCommonConstants.FILE_SEPARATOR + file.getName());
     }
+    // delete the segment path at any cost at first, we we dont want to delete fact directory in
+    // case of multiple load scenario or update, delete scenario
     oldFolder.delete();
+    CarbonFile partDir = FileFactory.getCarbonFile(CarbonTablePath.getPartitionDir(dest));
+    // once last segment is processed(in case of update delete), delete the main fact directory
+    if (partDir.listFiles(false).size() == 0) {
+      CarbonFile oldFactDirPath = FileFactory.getCarbonFile(CarbonTablePath.getFactDir(dest));
+      oldFactDirPath.delete();
+    }
   }
 
   /**
