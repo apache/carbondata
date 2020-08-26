@@ -28,6 +28,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSour
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonSessionCatalogUtil}
+import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types._
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -35,7 +36,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression, MatchExpression}
+import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression,
+   Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression, MatchExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
@@ -373,6 +375,146 @@ object CarbonFilters {
     val carbonTable = CarbonEnv.getCarbonTable(identifier)(sparkSession)
     getPartitions(partitionFilters, sparkSession, carbonTable)
   }
+
+  def getStorageOrdinal(filter: Filter, carbonTable: CarbonTable): Int = {
+    val column = filter.references.map(carbonTable.getColumnByName)
+    if (column.isEmpty) {
+      -1
+    } else {
+      if (column.head.isDimension) {
+        column.head.getOrdinal
+      } else {
+        column.head.getOrdinal + carbonTable.getAllDimensions.size()
+      }
+    }
+  }
+
+  def collectSimilarExpressions(filter: Filter, table: CarbonTable): Seq[(Filter, Int)] = {
+    filter match {
+      case sources.And(left, right) =>
+        collectSimilarExpressions(left, table) ++ collectSimilarExpressions(right, table)
+      case sources.Or(left, right) => collectSimilarExpressions(left, table) ++
+                              collectSimilarExpressions(right, table)
+      case others => Seq((others, getStorageOrdinal(others, table)))
+    }
+  }
+
+  /**
+   * This method will reorder the filter based on the Storage Ordinal of the column references.
+   *
+   * Example1:
+   *             And                                   And
+   *      Or          And             =>        Or            And
+   *  col3  col1  col2  col1                col1  col3    col1   col2
+   *
+   *  **Mixed expression filter reordered locally, but wont be reordered globally.**
+   *
+   * Example2:
+   *             And                                   And
+   *      And          And           =>       And            And
+   *  col3  col1  col2  col1                col1  col1    col2   col3
+   *
+   *             Or                                    Or
+   *       Or          Or             =>        Or            Or
+   *   col3  col1  col2  col1               col1  col1    col2   col3
+   *
+   *  **Similar expression filters are reordered globally**
+   *
+   * @param filter the filter expression to be reordered
+   * @return The reordered filter with the current ordinal
+   */
+  def reorderFilter(filter: Filter, table: CarbonTable): (Filter, Int) = {
+    val filterMap = mutable.HashMap[String, List[(Filter, Int)]]()
+      def sortFilter(filter: Filter): (Filter, Int) = {
+        filter match {
+          case sources.And(left, right) =>
+            filterMap.getOrElseUpdate("AND", List())
+            if (left.references.toSeq == right.references.toSeq ||
+                right.references.diff(left.references).length == 0) {
+              val sorted = sortFilter(left)
+              val rightOrdinal = getStorageOrdinal(right, table)
+              val newAnd = if (sorted._2 >= rightOrdinal) {
+                (sources.And(right, sorted._1), rightOrdinal)
+              } else {
+                (sources.And(sorted._1, right), sorted._2)
+              }
+              if (!left.isInstanceOf[sources.Or] && !left.isInstanceOf[sources.And]) {
+                filterMap.put("AND", filterMap("AND") ++ List(sorted))
+              }
+              if (!right.isInstanceOf[sources.Or] && !right.isInstanceOf[sources.And]) {
+                filterMap.put("AND", filterMap("AND") ++ List((right, rightOrdinal)))
+              }
+              newAnd
+            } else {
+              val leftSorted = sortFilter(left)
+              val rightSorted = sortFilter(right)
+              val newAnd = if (leftSorted._2 > rightSorted._2) {
+                (sources.And(rightSorted._1, leftSorted._1), rightSorted._2)
+              } else {
+                (sources.And(leftSorted._1, rightSorted._1), leftSorted._2)
+              }
+              if (!left.isInstanceOf[sources.Or] && !left.isInstanceOf[sources.And]) {
+                filterMap.put("AND", filterMap("AND") ++ List(leftSorted))
+              }
+              if (!right.isInstanceOf[sources.Or] && !right.isInstanceOf[sources.And]) {
+                filterMap.put("AND", filterMap("AND") ++ List(rightSorted))
+              }
+              newAnd
+            }
+          case sources.Or(left, right) =>
+            filterMap.getOrElseUpdate("OR", List())
+            if (left.references.toSeq == right.references.toSeq ||
+                                               right.references.diff(left.references).length == 0) {
+              val sorted = sortFilter(left)
+              val rightOrdinal = getStorageOrdinal(right, table)
+              val newOr = if (sorted._2 >= rightOrdinal) {
+                (sources.Or(right, sorted._1), rightOrdinal)
+              } else {
+                (sources.Or(sorted._1, right), sorted._2)
+              }
+              if (!left.isInstanceOf[sources.Or] && !left.isInstanceOf[sources.And]) {
+                filterMap.put("OR", filterMap("OR") ++ List(sorted))
+              }
+              if (!right.isInstanceOf[sources.Or] && !right.isInstanceOf[sources.And]) {
+                filterMap.put("OR", filterMap("OR") ++ List((right, rightOrdinal)))
+              }
+              newOr
+            } else {
+              val leftSorted = sortFilter(left)
+              val rightSorted = sortFilter(right)
+              val newOr = if (leftSorted._2 > rightSorted._2) {
+                (sources.Or(rightSorted._1, leftSorted._1), rightSorted._2)
+              } else {
+                (sources.Or(leftSorted._1, rightSorted._1), leftSorted._2)
+              }
+              if (!left.isInstanceOf[sources.Or] && !left.isInstanceOf[sources.And]) {
+                filterMap.put("OR", filterMap("OR") ++ List(leftSorted))
+              }
+              if (!right.isInstanceOf[sources.Or] && !right.isInstanceOf[sources.And]) {
+                filterMap.put("OR", filterMap("OR") ++ List(rightSorted))
+              }
+              newOr
+            }
+          case others => (others, getStorageOrdinal(others, table))
+        }
+      }
+    val sortedFilter = if (filter.references.toSet.size == 1) {
+      (filter, -1)
+    } else {
+      sortFilter(filter)
+    }
+    if (!filterMap.contains("OR") && filterMap.contains("AND") && filterMap("AND").nonEmpty) {
+      val sortedFilterAndOrdinal = filterMap("AND").sortBy(_._2)
+      (sortedFilterAndOrdinal.map(_._1).reduce(sources.And), sortedFilterAndOrdinal.head._2)
+    } else if (!filterMap.contains("AND") && filterMap.contains("OR") &&
+               filterMap("OR").nonEmpty) {
+      val sortedFilterAndOrdinal = filterMap("OR").sortBy(_._2)
+      (sortedFilterAndOrdinal.map(_._1).reduce(sources.Or), sortedFilterAndOrdinal.head._2)
+    } else {
+      sortedFilter
+    }
+  }
+
   /**
    * Fetches partition information from hive
    * @param partitionFilters

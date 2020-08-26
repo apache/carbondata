@@ -30,6 +30,6 @@ class InPolygonUDF extends (String => Boolean) with Serializable {
 
 @InterfaceAudience.Internal
 case class InPolygon(queryString: String) extends Filter {
-  override def references: Array[String] = null
+  override def references: Array[String] = Array()
 }
 

@@ -20,18 +20,24 @@ package org.apache.spark.sql
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.sources.Filter
 
+object ExtractReferences {
+  def apply(expr: Expression): Array[String] = {
+    expr.references.map(_.name).toArray
+  }
+}
+
 case class CastExpr(expr: Expression) extends Filter {
-  override def references: Array[String] = null
+  override def references: Array[String] = ExtractReferences(expr)
 }
 
 case class FalseExpr() extends Filter {
-  override def references: Array[String] = null
+  override def references: Array[String] = Array.empty
 }
 
 case class CarbonEndsWith(expr: Expression) extends Filter {
-  override def references: Array[String] = null
+  override def references: Array[String] = ExtractReferences(expr)
 }
 
 case class CarbonContainsWith(expr: Expression) extends Filter {
-  override def references: Array[String] = null
+  override def references: Array[String] = ExtractReferences(expr)
 }
