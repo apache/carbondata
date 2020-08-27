@@ -73,9 +73,12 @@ public class MapParserImpl extends ArrayParserImpl {
 
   @Override
   public ArrayObject parseRaw(Object data) {
-    Object keyArray = ((Object[]) data)[0];
-    Object valueArray = ((Object[]) data)[1];
-    return new ArrayObject(new Object[]{child.parseRaw(keyArray), child.parseRaw(valueArray)});
+    Object[] keyValuePairs = ((Object[]) data);
+    Object[] objectArray = new Object[keyValuePairs.length];
+    for (int i = 0; i < ((Object[]) data).length; i++) {
+      objectArray[i] = child.parseRaw(keyValuePairs[i]);
+    }
+    return new ArrayObject(objectArray);
   }
 
 }
