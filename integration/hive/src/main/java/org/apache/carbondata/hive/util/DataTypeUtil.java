@@ -21,16 +21,19 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+
+import org.apache.commons.lang.ArrayUtils;
 
 public class DataTypeUtil {
 
   public static DataType convertHiveTypeToCarbon(String type) throws SQLException {
     if ("string".equalsIgnoreCase(type) || type.startsWith("char")) {
       return DataTypes.STRING;
-    } else if ("varchar".equalsIgnoreCase(type)) {
+    } else if (type.startsWith("varchar")) {
       return DataTypes.VARCHAR;
     } else if ("float".equalsIgnoreCase(type)) {
       return DataTypes.FLOAT;
@@ -38,8 +41,10 @@ public class DataTypeUtil {
       return DataTypes.DOUBLE;
     } else if ("boolean".equalsIgnoreCase(type)) {
       return DataTypes.BOOLEAN;
-    } else if ("tinyint".equalsIgnoreCase(type) || "smallint".equalsIgnoreCase(type)) {
+    } else if ("smallint".equalsIgnoreCase(type)) {
       return DataTypes.SHORT;
+    } else if ("tinyint".equalsIgnoreCase(type)) {
+      return DataTypes.BYTE;
     } else if ("int".equalsIgnoreCase(type)) {
       return DataTypes.INT;
     } else if ("bigint".equalsIgnoreCase(type)) {
@@ -64,13 +69,23 @@ public class DataTypeUtil {
       return DataTypes.createArrayType(convertHiveTypeToCarbon(subType));
     } else if (type.startsWith("map<")) {
       String[] subType = (type.substring(type.indexOf("<") + 1, type.indexOf(">"))).split(",");
+      for (int i = 0; i < subType.length; i++) {
+        if (subType[i].startsWith("decimal")) {
+          subType[i] += CarbonCommonConstants.COMMA + subType[++i];
+          subType = (String[]) ArrayUtils.removeElement(subType, subType[i]);
+        }
+      }
       return DataTypes
           .createMapType(convertHiveTypeToCarbon(subType[0]), convertHiveTypeToCarbon(subType[1]));
     } else if (type.startsWith("struct<")) {
       String[] subTypes =
           (type.substring(type.indexOf("<") + 1, type.indexOf(">"))).split(",");
       List<StructField> structFieldList = new ArrayList<>();
-      for (String subType : subTypes) {
+      for (int i = 0; i < subTypes.length; i++) {
+        String subType = subTypes[i];
+        if (subType.startsWith("decimal")) {
+          subType += CarbonCommonConstants.COMMA + subTypes[++i];
+        }
         String[] nameAndType = subType.split(":");
         structFieldList
             .add(new StructField(nameAndType[0], convertHiveTypeToCarbon(nameAndType[1])));

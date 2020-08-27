@@ -222,6 +222,8 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
       return new LongWritable((long) obj);
     } else if (dataType == DataTypes.SHORT) {
       return new ShortWritable((short) obj);
+    } else if (dataType == DataTypes.BYTE) {
+      return new ByteWritable((byte) obj);
     } else if (dataType == DataTypes.BOOLEAN) {
       return new BooleanWritable((boolean) obj);
     } else if (dataType == DataTypes.VARCHAR) {

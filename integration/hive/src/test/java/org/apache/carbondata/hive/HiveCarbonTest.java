@@ -110,6 +110,94 @@ public class HiveCarbonTest extends HiveTestUtils {
     checkAnswer(carbonResult, hiveResult);
   }
 
+  @Test
+  public void testArrayType() throws Exception {
+    String complexArrayPath = (resourceDirectoryPath + "array").replace("\\", "/");
+    statement.execute("drop table if exists hive_table_complexArray");
+    statement.execute(String.format("CREATE external TABLE hive_table_complexArray(arrayString  ARRAY<STRING>,"
+        + " arrayShort ARRAY<SMALLINT>, arrayInt ARRAY<INT>, arrayLong ARRAY<BIGINT>, arrayFloat ARRAY<FLOAT>,"
+        + " arrayDouble ARRAY<DOUBLE>, arrayDecimal ARRAY<DECIMAL(8,2)>, arrayChar ARRAY<CHAR(5)>, "
+        + "arrayBoolean ARRAY<BOOLEAN>, arrayVarchar ARRAY<VARCHAR(50)>, arrayByte ARRAY<TINYINT>, arrayDate ARRAY<DATE>)"
+        + " ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES ('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '%s' TBLPROPERTIES('external.table.purge'='false')", complexArrayPath));
+
+    statement.execute("drop table if exists hive_carbon_table7");
+    statement.execute(
+        "CREATE TABLE hive_carbon_table7(arrayString  ARRAY<STRING>, arrayShort ARRAY<SMALLINT>, arrayInt ARRAY<INT>, "
+            + "arrayLong ARRAY<BIGINT>, arrayFloat ARRAY<FLOAT>, arrayDouble ARRAY<DOUBLE>, "
+            + "arrayDecimal ARRAY<DECIMAL(8,2)>, arrayChar ARRAY<CHAR(5)>, arrayBoolean ARRAY<BOOLEAN>, arrayVarchar ARRAY<VARCHAR(50)>, "
+            + "arrayByte ARRAY<TINYINT>, arrayDate ARRAY<DATE>) "
+            + "stored by 'org.apache.carbondata.hive.CarbonStorageHandler' TBLPROPERTIES ('complex_delimiter'='$,@')");
+
+    statement.execute(
+        "insert into hive_carbon_table7 select * from hive_table_complexArray");
+
+    ResultSet hiveResult = connection.createStatement().executeQuery("select * from hive_table_complexArray");
+    ResultSet carbonResult = connection.createStatement().executeQuery("select * from hive_carbon_table7");
+    checkAnswer(carbonResult, hiveResult);
+  }
+
+
+  @Test
+  public void arrayOfTimestamp() throws Exception {
+    statement.execute("drop table if exists hivee");
+    statement.execute("CREATE external TABLE hivee(arrayInt ARRAY<timestamp>)"
+        + " ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES ('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '%s' TBLPROPERTIES('external.table.purge'='false')");
+    statement.execute("insert into table hivee values (array(Timestamp('2000-03-12 15:00:00'),Timestamp('2001-04-15 15:58:00'),Timestamp('2002-05-27 15:20:00')))");
+    statement.execute("drop table if exists carbonn");
+    statement.execute(
+        "CREATE TABLE carbonn(timestampField array<timestamp>) "
+            + "stored by 'org.apache.carbondata.hive.CarbonStorageHandler' TBLPROPERTIES ('complex_delimiter'='$,@', 'BAD_RECORDS_LOGGER_ENABLE' = 'TRUE')");
+    statement.execute("insert into carbonn select * from hivee");
+    ResultSet resultSet = connection.createStatement()
+        .executeQuery("select * from carbonn");
+    ResultSet hiveResults = connection.createStatement()
+        .executeQuery("select * from hivee");
+   checkAnswer(resultSet, hiveResults);
+  }
+
+  @Test
+  public void testMapType() throws Exception {
+    String complexMapPath = (resourceDirectoryPath + "map").replace("\\", "/");
+    statement.execute("drop table if exists hive_table_complexMap");
+    statement.execute(String.format("CREATE external TABLE hive_table_complexMap(mapField1 MAP<STRING, STRING>, mapField2 MAP<INT, STRING>, mapField3 MAP<DOUBLE, "
+        + "FLOAT>,mapField4 MAP<TINYINT, SMALLINT>, mapField5 MAP<DECIMAL(10,2), VARCHAR(50)>, mapField6 MAP<BIGINT,DATE>,mapField7 MAP<CHAR(5),INT>, "
+        + "mapField8 MAP<BIGINT,BOOLEAN>)"
+        + " ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES ('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '%s' TBLPROPERTIES('external.table.purge'='false')", complexMapPath));
+
+    statement.execute("drop table if exists hive_carbon_table8");
+    statement.execute(
+        "CREATE TABLE hive_carbon_table8(mapField1 MAP<STRING, STRING>, mapField2 MAP<INT, STRING>, mapField3 MAP<DOUBLE, FLOAT>,mapField4 MAP<TINYINT, SMALLINT>, "
+            + "mapField5 MAP<DECIMAL(10,2), VARCHAR(50)>, mapField6 MAP<BIGINT, DATE>,mapField7 MAP<CHAR(5), INT>, mapField8 MAP<BIGINT,BOOLEAN>) "
+            + "stored by 'org.apache.carbondata.hive.CarbonStorageHandler' TBLPROPERTIES ('complex_delimiter'='$,@')");
+    statement.execute(
+        "insert into hive_carbon_table8 select * from hive_table_complexMap");
+    ResultSet hiveResult = connection.createStatement().executeQuery("select * from hive_table_complexMap");
+    ResultSet carbonResult = connection.createStatement().executeQuery("select * from hive_carbon_table8");
+    checkAnswer(carbonResult, hiveResult);
+  }
+
+  @Test
+  public void testStructType() throws Exception {
+    String complexStructPath = (resourceDirectoryPath + "struct").replace("\\", "/");
+    statement.execute("drop table if exists hive_table_complexSTRUCT");
+    statement.execute(String.format("CREATE external TABLE hive_table_complexSTRUCT(structField STRUCT<stringfield: STRING, shortfield: SMALLINT, intfield: INT, "
+        + "longfield: BIGINT, floatfield: FLOAT, doublefield: DOUBLE, charfield: CHAR(4), boolfield: BOOLEAN, varcharfield: VARCHAR(50), bytefield: TINYINT, "
+        + "datefield: DATE, decimalfield: DECIMAL(8,2)>) "
+        + "ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES "
+        + "('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '%s' TBLPROPERTIES('external.table.purge'='false')", complexStructPath));
+
+    statement.execute("drop table if exists hive_carbon_table9");
+    statement.execute(
+        "CREATE TABLE hive_carbon_table9(structField STRUCT<stringfield: STRING, shortfield: SMALLINT, intfield: INT, longfield: BIGINT, floatfield: FLOAT, "
+            + "doublefield: DOUBLE, charfield: CHAR(4), boolfield: BOOLEAN, varcharfield: VARCHAR(50), bytefield: TINYINT, datefield: DATE, decimalfield: DECIMAL(8,2)>) "
+            + "stored by 'org.apache.carbondata.hive.CarbonStorageHandler' TBLPROPERTIES ('complex_delimiter'='$,@')");
+    statement.execute(
+        "insert into hive_carbon_table9 select * from hive_table_complexSTRUCT");
+    ResultSet hiveResult = connection.createStatement().executeQuery("select * from hive_table_complexSTRUCT");
+    ResultSet carbonResult = connection.createStatement().executeQuery("select * from hive_carbon_table9");
+    checkAnswer(carbonResult, hiveResult);
+  }
+
   @AfterClass
   public static void tearDown() {
     try {
