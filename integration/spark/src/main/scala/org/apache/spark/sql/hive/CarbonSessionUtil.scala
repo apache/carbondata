@@ -17,20 +17,24 @@
 
 package org.apache.spark.sql.hive
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSource, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTablePartition, CatalogTableType, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{MetadataBuilder, StructField, StructType}
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
-import org.apache.spark.util.CarbonReflectionUtils
+import org.apache.spark.util.{CarbonReflectionUtils, PartitionCacheKey, PartitionCacheManager}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.converter.SparkDataTypeConverterImpl
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.util.CarbonUtil
 
 /**
  * This class refresh the relation from cache if the carbon table in
@@ -103,15 +107,17 @@ object CarbonSessionUtil {
    *
    * @param partitionFilters
    * @param sparkSession
-   * @param identifier
+   * @param carbonTable
    * @return
    */
-  def prunePartitionsByFilter(partitionFilters: Seq[Expression],
+  def pruneAndCachePartitionsByFilters(partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
-      identifier: TableIdentifier): Seq[CatalogTablePartition] = {
-    val allPartitions = sparkSession.sessionState.catalog.listPartitions(identifier)
+      carbonTable: CarbonTable): Seq[CatalogTablePartition] = {
+    val allPartitions = PartitionCacheManager.get(PartitionCacheKey(carbonTable.getTableId,
+      carbonTable.getTablePath, CarbonUtil.getExpiration_time(carbonTable))).asScala
     ExternalCatalogUtils.prunePartitionsByFilter(
-      sparkSession.sessionState.catalog.getTableMetadata(identifier),
+      sparkSession.sessionState.catalog.getTableMetadata(TableIdentifier(carbonTable.getTableName,
+        Some(carbonTable.getDatabaseName))),
       allPartitions,
       partitionFilters,
       sparkSession.sessionState.conf.sessionLocalTimeZone

@@ -34,6 +34,7 @@ import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
 /**
@@ -117,12 +118,12 @@ class CarbonHiveSessionCatalog(
    * hive and then apply filter instead of querying hive along with filters.
    * @param partitionFilters
    * @param sparkSession
-   * @param identifier
+   * @param carbonTable
    * @return
    */
   override def getPartitionsAlternate(partitionFilters: Seq[Expression],
-      sparkSession: SparkSession, identifier: TableIdentifier): Seq[CatalogTablePartition] = {
-    CarbonSessionCatalogUtil.getPartitionsAlternate(partitionFilters, sparkSession, identifier)
+      sparkSession: SparkSession, carbonTable: CarbonTable): Seq[CatalogTablePartition] = {
+    CarbonSessionCatalogUtil.getPartitionsAlternate(partitionFilters, sparkSession, carbonTable)
   }
 
   /**

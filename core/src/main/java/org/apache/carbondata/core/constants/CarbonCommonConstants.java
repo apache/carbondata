@@ -1274,6 +1274,13 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MAX_DRIVER_LRU_CACHE_SIZE = "carbon.max.driver.lru.cache.size";
 
   /**
+   * max driver lru cache size upto which partition lru cache will be loaded in memory
+   */
+  @CarbonProperty
+  public static final String CARBON_PARTITION_MAX_DRIVER_LRU_CACHE_SIZE =
+      "carbon.partition.max.driver.lru.cache.size";
+
+  /**
    * max executor lru cache size upto which lru cache will be loaded in memory
    */
   @CarbonProperty

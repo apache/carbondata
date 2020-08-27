@@ -523,10 +523,6 @@ object CarbonFilters {
 
   /**
    * Fetches partition information from hive
-   * @param partitionFilters
-   * @param sparkSession
-   * @param carbonTable
-   * @return
    */
   def getPartitions(partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
@@ -547,7 +543,7 @@ object CarbonFilters {
           CarbonSessionCatalogUtil.getPartitionsAlternate(
             partitionFilters,
             sparkSession,
-            identifier)
+            carbonTable)
         }
       } catch {
         case e: Exception =>
@@ -555,7 +551,7 @@ object CarbonFilters {
           CarbonSessionCatalogUtil.getPartitionsAlternate(
             partitionFilters,
             sparkSession,
-            identifier)
+            carbonTable)
       }
     }
     Some(partitions.map { partition =>
