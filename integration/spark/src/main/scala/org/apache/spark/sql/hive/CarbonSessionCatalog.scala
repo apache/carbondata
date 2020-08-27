@@ -23,7 +23,8 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 
 import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceStability}
-import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema => ColumnSchema}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
 /**
  * This interface defines those common api used by carbon for spark-2.1 and spark-2.2 integration,
@@ -55,11 +56,11 @@ trait CarbonSessionCatalog {
    *
    * @param partitionFilters
    * @param sparkSession
-   * @param identifier
+   * @param carbonTable
    * @return
    */
   def getPartitionsAlternate(partitionFilters: Seq[Expression], sparkSession: SparkSession,
-      identifier: TableIdentifier): Seq[CatalogTablePartition]
+      carbonTable: CarbonTable): Seq[CatalogTablePartition]
 
   /**
    * Update the storage format with new location information

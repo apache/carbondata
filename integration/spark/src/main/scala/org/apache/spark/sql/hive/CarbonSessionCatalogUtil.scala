@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
 object CarbonSessionCatalogUtil {
@@ -132,14 +133,14 @@ object CarbonSessionCatalogUtil {
    * hive and then apply filter instead of querying hive along with filters.
    * @param partitionFilters
    * @param sparkSession
-   * @param identifier
+   * @param carbonTable
    * @return
    */
   def getPartitionsAlternate(
       partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
-      identifier: TableIdentifier): Seq[CatalogTablePartition] = {
-    CarbonSessionUtil.prunePartitionsByFilter(partitionFilters, sparkSession, identifier)
+      carbonTable: CarbonTable): Seq[CatalogTablePartition] = {
+    CarbonSessionUtil.pruneAndCachePartitionsByFilters(partitionFilters, sparkSession, carbonTable)
   }
 
   /**

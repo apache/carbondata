@@ -22,11 +22,13 @@ import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
+import org.apache.spark.util.{PartitionCacheKey, PartitionCacheManager}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.Strings
@@ -585,6 +587,43 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
+  test("test partition caching") {
+    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "false")
+    sql("drop table if exists partition_cache")
+    sql("create table partition_cache(a string) partitioned by(b int) stored as carbondata")
+    sql("insert into partition_cache select 'k',1")
+    sql("select * from partition_cache where b = 1").collect()
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "partition_cache")
+    var partitionSpecs: util.List[CatalogTablePartition] = PartitionCacheManager.getIfPresent(
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+    assert(partitionSpecs.size == 1)
+    sql("insert into partition_cache select 'k',2")
+    sql("select * from partition_cache where b = 2").collect()
+    sql("select * from partition_cache where b = 2").collect()
+    partitionSpecs = PartitionCacheManager.getIfPresent(
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+    assert(partitionSpecs.size == 2)
+    sql("delete from table partition_cache where segment.id in (1)")
+    sql("select * from partition_cache where b = 2").collect()
+    partitionSpecs = PartitionCacheManager.getIfPresent(
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+    assert(partitionSpecs.size == 1)
+    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
+  }
+
+  test("test partition caching after load") {
+    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "false")
+    sql("drop table if exists partition_cache")
+    sql("create table partition_cache(a string) partitioned by(b int) stored as carbondata")
+    sql("insert into partition_cache select 'k',1")
+    sql("select * from partition_cache where b = 1").collect()
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "partition_cache")
+    val partitionSpecs = PartitionCacheManager.getIfPresent(
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+    assert(partitionSpecs.size == 1)
+    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
+  }
+
   def verifyInsertForPartitionTable(tableName: String, sort_scope: String): Unit = {
     sql(s"drop table if exists $tableName")
     sql(
@@ -661,6 +700,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
 
   override def afterAll = {
+    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

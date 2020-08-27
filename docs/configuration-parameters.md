@@ -146,6 +146,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.secondary.index.creation.threads | 1 | Specifies the number of threads to concurrently process segments during secondary index creation. This property helps fine tuning the system when there are a lot of segments in a table. The value range is 1 to 50. |
 | carbon.si.lookup.partialstring | true | When true, it includes starts with, ends with and contains. When false, it includes only starts with secondary indexes. |
 | carbon.max.pagination.lru.cache.size.in.mb | -1 | Maximum memory **(in MB)** upto which the SDK pagination reader can cache the blocklet rows. Suggest to configure as multiple of blocklet size. Default value of -1 means there is no memory limit for caching. Only integer values greater than 0 are accepted. |
+| carbon.partition.max.driver.lru.cache.size | -1 | Maximum memory **(in MB)** upto which driver can cache partition metadata. Beyond this, least recently used data will be removed from cache before loading new set of values.
 
 ## Data Mutation Configuration
 | Parameter | Default Value | Description |
