@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -54,6 +55,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
@@ -213,6 +215,13 @@ public class CarbonHiveSerDe extends AbstractSerDe {
       throws SerDeException {
     if (obj == null) {
       return null;
+    }
+    if (inspector.getTypeInfo().getTypeName().equalsIgnoreCase(DataTypes.BINARY.getName())) {
+      BytesWritable primitiveWritableObject =
+          (BytesWritable) inspector.getPrimitiveWritableObject(obj);
+      byte[] bytes = primitiveWritableObject.getBytes();
+      int length = primitiveWritableObject.getLength();
+      return Arrays.copyOfRange(bytes, 0, length);
     }
     return inspector.getPrimitiveWritableObject(obj).toString();
   }
