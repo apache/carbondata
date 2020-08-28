@@ -42,6 +42,9 @@ public class HiveCarbonTest extends HiveTestUtils {
   // "/complex" subdirectory name
   private static final String COMPLEX = "complex";
 
+  // "/text" subdirectory name
+  private static final String TEXT = "text";
+
   @BeforeClass
   public static void setup() throws Exception {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT, "false");
@@ -207,6 +210,25 @@ public class HiveCarbonTest extends HiveTestUtils {
     statement.execute(
         "insert into hive_carbon_table9 select * from hive_table_complexSTRUCT");
     ResultSet hiveResult = connection.createStatement().executeQuery("select * from hive_table_complexSTRUCT");
+    ResultSet carbonResult = connection.createStatement().executeQuery("select * from hive_carbon_table9");
+    checkAnswer(carbonResult, hiveResult);
+  }
+
+  @Test
+  public void testBinaryDataTypeColumns() throws Exception {
+    String dataPath = resourceDirectoryPath + TEXT + "/string.txt";
+    statement.execute("drop table if exists mytable_n2");
+    statement.execute("drop table if exists hive_carbon_table9");
+    statement.execute("drop table if exists mytable_n21");
+    statement.execute("CREATE TABLE mytable_n2(key binary, value int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '9'");
+    statement.execute("LOAD DATA LOCAL INPATH '" + dataPath + "' INTO TABLE mytable_n2");
+    statement.execute("CREATE TABLE mytable_n21(key binary, value int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '9'");
+    statement.execute("insert into mytable_n21 select * from mytable_n2");
+    statement.execute(
+        "CREATE TABLE hive_carbon_table9(key binary, value int) "
+            + "stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    statement.execute("insert into hive_carbon_table9 select * from mytable_n2");
+    ResultSet hiveResult = connection.createStatement().executeQuery("select * from mytable_n2");
     ResultSet carbonResult = connection.createStatement().executeQuery("select * from hive_carbon_table9");
     checkAnswer(carbonResult, hiveResult);
   }

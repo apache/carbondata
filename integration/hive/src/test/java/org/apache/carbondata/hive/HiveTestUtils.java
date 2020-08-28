@@ -30,8 +30,6 @@ import org.apache.carbondata.hive.test.server.HiveEmbeddedServer2;
 
 import org.junit.Assert;
 
-import javax.validation.constraints.AssertTrue;
-
 /**
  * A utility class to start and stop the Hive Embedded Server.
  */
