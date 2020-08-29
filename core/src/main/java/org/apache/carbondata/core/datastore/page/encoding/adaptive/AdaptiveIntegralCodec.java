@@ -340,32 +340,33 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           }
         }
       } else if (pageDataType == DataTypes.SHORT) {
-        int size = pageSize * DataTypes.SHORT.getSizeInBytes();
+        int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
+        int size = pageSize * shortSizeInBytes;
         if (vectorDataType == DataTypes.SHORT) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putShort(rowId++, (ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putInt(rowId++, (ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.LONG) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putLong(rowId++, (ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putLong(rowId++, ((long) ByteUtil.toShortLittleEndian(pageData, i)) * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
         } else if (vectorDataType == DataTypes.FLOAT) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putFloat(rowId++, (ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putDouble(rowId++, ByteUtil.toShortLittleEndian(pageData, i));
           }
         }
@@ -402,35 +403,37 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           }
         }
       } else if (pageDataType == DataTypes.INT) {
-        int size = pageSize * DataTypes.INT.getSizeInBytes();
+        int intSizeInBytes = DataTypes.INT.getSizeInBytes();
+        int size = pageSize * intSizeInBytes;
         if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += intSizeInBytes) {
             vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
           }
         } else if (vectorDataType == DataTypes.LONG) {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += intSizeInBytes) {
             vector.putLong(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
           }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += intSizeInBytes) {
             vector.putLong(rowId++, (long) ByteUtil.toIntLittleEndian(pageData, i) * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
         } else {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += intSizeInBytes) {
             vector.putDouble(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
           }
         }
       } else if (pageDataType == DataTypes.LONG) {
-        int size = pageSize * DataTypes.LONG.getSizeInBytes();
+        int longSizeInBytes = DataTypes.LONG.getSizeInBytes();
+        int size = pageSize * longSizeInBytes;
         if (vectorDataType == DataTypes.LONG) {
-          for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
+          for (int i = 0; i < size; i += longSizeInBytes) {
             vector.putLong(rowId++, ByteUtil.toLongLittleEndian(pageData, i));
           }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
-          for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
+          for (int i = 0; i < size; i += longSizeInBytes) {
             vector.putLong(rowId++, ByteUtil.toLongLittleEndian(pageData, i) * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
@@ -438,8 +441,9 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
         }
       } else {
-        int size = pageSize * DataTypes.DOUBLE.getSizeInBytes();
-        for (int i = 0; i < size; i += DataTypes.DOUBLE.getSizeInBytes()) {
+        int doubleSizeInBytes = DataTypes.DOUBLE.getSizeInBytes();
+        int size = pageSize * doubleSizeInBytes;
+        for (int i = 0; i < size; i += doubleSizeInBytes) {
           vector.putDouble(rowId++, ByteUtil.toDoubleLittleEndian(pageData, i));
         }
       }

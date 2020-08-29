@@ -114,7 +114,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     return childrenVector;
   }
 
-  public void setChildrenVector(ArrayList<CarbonColumnVector> childrenVector) {
+  public void setChildrenVector(List<CarbonColumnVector> childrenVector) {
     this.childrenVector = childrenVector;
   }
 
@@ -122,14 +122,14 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     return childElementsForEachRow;
   }
 
-  public void setNumberOfChildElementsInEachRow(ArrayList<Integer> childrenElements) {
+  public void setNumberOfChildElementsInEachRow(List<Integer> childrenElements) {
     this.childElementsForEachRow = childrenElements;
   }
 
   public void setNumberOfChildElementsForArray(byte[] parentPageData, int pageSize) {
     // for complex array type, go through parent page to get the child information
     ByteBuffer childInfoBuffer = ByteBuffer.wrap(parentPageData);
-    ArrayList<Integer> childElementsForEachRow = new ArrayList<>();
+    List<Integer> childElementsForEachRow = new ArrayList<>();
     // Parent page array data looks like
     // number of children in each row [4 byte], Offset [4 byte],
     // number of children in each row [4 byte], Offset [4 byte]...
@@ -145,7 +145,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   public void setNumberOfChildElementsForStruct(byte[] parentPageData, int pageSize) {
     // for complex struct type, go through parent page to get the child information
     ByteBuffer childInfoBuffer = ByteBuffer.wrap(parentPageData);
-    ArrayList<Integer> childElementsForEachRow = new ArrayList<>();
+    List<Integer> childElementsForEachRow = new ArrayList<>();
     // Parent page struct data looks like
     // number of children in each row [2 byte], number of children in each row [2 byte],
     // number of children in each row [2 byte], number of children in each row [2 byte]...

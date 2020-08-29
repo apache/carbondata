@@ -54,7 +54,7 @@ public class ComplexTypeStreamReader extends CarbonColumnVectorImpl
     super(batchSize, field.getDataType());
     this.batchSize = batchSize;
     this.type = getType(field);
-    ArrayList<CarbonColumnVector> childrenList = new ArrayList<>();
+    List<CarbonColumnVector> childrenList = new ArrayList<>();
     for (StructField child : field.getChildren()) {
       childrenList.add(new ColumnarVectorWrapperDirect(Objects.requireNonNull(
           CarbonVectorBatch.createDirectStreamReader(this.batchSize, child.getDataType(), child))));

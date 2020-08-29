@@ -142,12 +142,13 @@ public final class DecimalConverterFactory {
           }
         }
       } else if (pageType == DataTypes.SHORT) {
+        int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
         for (int i = 0; i < size; i++) {
           if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
-                .valueOf(ByteUtil.toShortLittleEndian(data, i * DataTypes.SHORT.getSizeInBytes()),
+                .valueOf(ByteUtil.toShortLittleEndian(data, i * shortSizeInBytes),
                     scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
@@ -156,12 +157,13 @@ public final class DecimalConverterFactory {
           }
         }
       } else if (pageType == DataTypes.SHORT_INT) {
+        int shortIntSizeInBytes = DataTypes.SHORT_INT.getSizeInBytes();
         for (int i = 0; i < size; i++) {
           if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
-                .valueOf(ByteUtil.valueOf3Bytes(data, i * DataTypes.SHORT_INT.getSizeInBytes()),
+                .valueOf(ByteUtil.valueOf3Bytes(data, i * shortIntSizeInBytes),
                     scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
@@ -169,70 +171,74 @@ public final class DecimalConverterFactory {
             vector.putDecimal(i, value, precision);
           }
         }
-      } else if (pageType == DataTypes.INT) {
-        for (int i = 0; i < size; i++) {
-          if (nullBitSet.get(i)) {
-            vector.putNull(i);
-          } else {
-            BigDecimal value = BigDecimal
-                .valueOf(ByteUtil.toIntLittleEndian(data, i * DataTypes.INT.getSizeInBytes()),
-                    scale);
+      } else {
+        int intSizeInBytes = DataTypes.INT.getSizeInBytes();
+        if (pageType == DataTypes.INT) {
+          for (int i = 0; i < size; i++) {
+            if (nullBitSet.get(i)) {
+              vector.putNull(i);
+            } else {
+              BigDecimal value = BigDecimal
+                  .valueOf(ByteUtil.toIntLittleEndian(data, i * intSizeInBytes),
+                      scale);
+              if (value.scale() < newMeasureScale) {
+                value = value.setScale(newMeasureScale);
+              }
+              vector.putDecimal(i, value, precision);
+            }
+          }
+        } else if (pageType == DataTypes.LONG) {
+          int longSizeInBytes = DataTypes.LONG.getSizeInBytes();
+          for (int i = 0; i < size; i++) {
+            if (nullBitSet.get(i)) {
+              vector.putNull(i);
+            } else {
+              BigDecimal value = BigDecimal
+                  .valueOf(ByteUtil.toLongLittleEndian(data, i * longSizeInBytes),
+                      scale);
+              if (value.scale() < newMeasureScale) {
+                value = value.setScale(newMeasureScale);
+              }
+              vector.putDecimal(i, value, precision);
+            }
+          }
+        } else if (pageType == DataTypes.BYTE_ARRAY) {
+          // complex primitive decimal dimension
+          int offset = 0;
+          for (int j = 0; j < size; j++) {
+            // here decimal data will be Length[4 byte], scale[1 byte], value[Length byte]
+            int len = ByteBuffer.wrap(data, offset, intSizeInBytes).getInt();
+            offset += intSizeInBytes;
+            if (len == 0) {
+              vector.putNull(j);
+              continue;
+            }
+            // jump the scale offset
+            offset += 1;
+            // remove scale from the length
+            len -= 1;
+            byte[] row = new byte[len];
+            System.arraycopy(data, offset, row, 0, len);
+            long val;
+            if (len == 1) {
+              val = row[0];
+            } else if (len == 2) {
+              val = ByteUtil.toShort(row, 0);
+            } else if (len == 4) {
+              val = ByteUtil.toInt(row, 0);
+            } else if (len == 3) {
+              val = ByteUtil.valueOf3Bytes(row, 0);
+            } else {
+              // TODO: check if other value can come
+              val = ByteUtil.toLong(row, 0, len);
+            }
+            BigDecimal value = BigDecimal.valueOf(val, scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
             }
-            vector.putDecimal(i, value, precision);
+            vector.putDecimal(j, value, precision);
+            offset += len;
           }
-        }
-      } else if (pageType == DataTypes.LONG) {
-        for (int i = 0; i < size; i++) {
-          if (nullBitSet.get(i)) {
-            vector.putNull(i);
-          } else {
-            BigDecimal value = BigDecimal
-                .valueOf(ByteUtil.toLongLittleEndian(data, i * DataTypes.LONG.getSizeInBytes()),
-                    scale);
-            if (value.scale() < newMeasureScale) {
-              value = value.setScale(newMeasureScale);
-            }
-            vector.putDecimal(i, value, precision);
-          }
-        }
-      } else if (pageType == DataTypes.BYTE_ARRAY) {
-        // complex primitive decimal dimension
-        int offset = 0;
-        for (int j = 0; j < size; j++) {
-          // here decimal data will be Length[4 byte], scale[1 byte], value[Length byte]
-          int len = ByteBuffer.wrap(data, offset, DataTypes.INT.getSizeInBytes()).getInt();
-          offset += DataTypes.INT.getSizeInBytes();
-          if (len == 0) {
-            vector.putNull(j);
-            continue;
-          }
-          // jump the scale offset
-          offset += 1;
-          // remove scale from the length
-          len -= 1;
-          byte[] row = new byte[len];
-          System.arraycopy(data, offset, row, 0, len);
-          long val;
-          if (len == 1) {
-            val = row[0];
-          } else if (len == 2) {
-            val = ByteUtil.toShort(row, 0);
-          } else if (len == 4) {
-            val = ByteUtil.toInt(row, 0);
-          } else if (len == 3) {
-            val = ByteUtil.valueOf3Bytes(row, 0);
-          } else {
-            // TODO: check if other value can come
-            val = ByteUtil.toLong(row, 0, len);
-          }
-          BigDecimal value = BigDecimal.valueOf(val, scale);
-          if (value.scale() < newMeasureScale) {
-            value = value.setScale(newMeasureScale);
-          }
-          vector.putDecimal(j, value, precision);
-          offset += len;
         }
       }
     }

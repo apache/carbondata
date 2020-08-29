@@ -167,7 +167,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   public StructField fillChildFields(CarbonDimension dimension) {
     List<CarbonDimension> listOfChildDimensions =
             dimension.getListOfChildDimensions();
-    ArrayList<StructField> childFields = null;
+    List<StructField> childFields = null;
     if (listOfChildDimensions != null) {
       childFields = new ArrayList<>();
       for (CarbonDimension childDimension : listOfChildDimensions) {
@@ -190,7 +190,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     for (ProjectionDimension dim : queryDimension) {
       if (dim.getDimension().isComplex()) {
         List<CarbonDimension> childDimensions = dim.getDimension().getListOfChildDimensions();
-        ArrayList<StructField> childFields = new ArrayList<StructField>();
+        List<StructField> childFields = new ArrayList<StructField>();
         for (CarbonDimension childDimension : childDimensions) {
           childFields.add(fillChildFields(childDimension));
         }

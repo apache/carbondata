@@ -345,28 +345,29 @@ public class DirectCompressCodec implements ColumnPageCodec {
           }
         }
       } else if (pageDataType == DataTypes.SHORT) {
-        int size = pageSize * DataTypes.SHORT.getSizeInBytes();
+        int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
+        int size = pageSize * shortSizeInBytes;
         if (vectorDataType == DataTypes.SHORT) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putShort(rowId++, (ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putInt(rowId++, ByteUtil.toShortLittleEndian(pageData, i));
           }
         } else if (vectorDataType == DataTypes.LONG) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putLong(rowId++, ByteUtil.toShortLittleEndian(pageData, i));
           }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putLong(rowId++, (long) ByteUtil.toShortLittleEndian(pageData, i) * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
         } else {
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+          for (int i = 0; i < size; i += shortSizeInBytes) {
             vector.putDouble(rowId++, ByteUtil.toShortLittleEndian(pageData, i));
           }
         }
@@ -395,98 +396,104 @@ public class DirectCompressCodec implements ColumnPageCodec {
             vector.putDouble(i, shortInt);
           }
         }
-      } else if (pageDataType == DataTypes.INT) {
-        int size = pageSize * DataTypes.INT.getSizeInBytes();
-        if (vectorDataType == DataTypes.INT) {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
-          }
-        } else if (vectorDataType == DataTypes.LONG) {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putLong(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
-          }
-        } else if (vectorDataType == DataTypes.TIMESTAMP) {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putLong(rowId++, (long) ByteUtil.toIntLittleEndian(pageData, i) * 1000);
-          }
-        } else if (DataTypes.isDecimal(vectorDataType)) {
-          DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
-          decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
-        } else {
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putDouble(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
-          }
-        }
-      } else if (pageDataType == DataTypes.LONG) {
-        int size = pageSize * DataTypes.LONG.getSizeInBytes();
-        if (vectorDataType == DataTypes.LONG) {
-          for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
-            vector.putLong(rowId++, ByteUtil.toLongLittleEndian(pageData, i));
-          }
-        } else if (vectorDataType == DataTypes.TIMESTAMP) {
-          for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
-            vector.putLong(rowId++, ByteUtil.toLongLittleEndian(pageData, i) * 1000);
-          }
-        } else if (DataTypes.isDecimal(vectorDataType)) {
-          DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
-          decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
-        }
-      } else if (pageDataType == DataTypes.BYTE_ARRAY) {
-        // for complex primitive types
-        if (vectorDataType == DataTypes.STRING || vectorDataType == DataTypes.BINARY
-            || vectorDataType == DataTypes.VARCHAR) {
-          // for complex primitive string, binary, varchar type
-          int offset = 0;
-          for (int i = 0; i < pageSize; i++) {
-            int len = ByteBuffer.wrap(pageData, offset, DataTypes.INT.getSizeInBytes()).getInt();
-            offset += DataTypes.INT.getSizeInBytes();
-            if (vectorDataType == DataTypes.BINARY && len == 0) {
-              vector.putNull(i);
-              continue;
-            }
-            byte[] row = new byte[len];
-            System.arraycopy(pageData, offset, row, 0, len);
-            if (Arrays.equals(row, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY)) {
-              vector.putNull(i);
-            } else {
-              vector.putObject(i, row);
-            }
-            offset += len;
-          }
-        } else if (vectorDataType == DataTypes.DATE) {
-          // for complex primitive date type
-          int offset = 0;
-          for (int i = 0; i < pageSize; i++) {
-            int len = ByteBuffer.wrap(pageData, offset, DataTypes.INT.getSizeInBytes()).getInt();
-            offset += DataTypes.INT.getSizeInBytes();
-            int surrogateInternal =
-                ByteUtil.toXorInt(pageData, offset, DataTypes.INT.getSizeInBytes());
-            if (len == 0) {
-              vector.putObject(0, null);
-            } else {
-              vector.putObject(0, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
-            }
-            offset += len;
-          }
-        } else if (DataTypes.isDecimal(vectorDataType)) {
-          // for complex primitive decimal type
-          DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
-          if (decimalConverter == null) {
-            decimalConverter = DecimalConverterFactory.INSTANCE
-                .getDecimalConverter(((DecimalType) vectorDataType).getPrecision(),
-                    ((DecimalType) vectorDataType).getScale());
-          }
-          decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
-        }
-      } else if (vectorDataType == DataTypes.FLOAT) {
-        int size = pageSize * DataTypes.FLOAT.getSizeInBytes();
-        for (int i = 0; i < size; i += DataTypes.FLOAT.getSizeInBytes()) {
-          vector.putFloat(rowId++, ByteUtil.toFloatLittleEndian(pageData, i));
-        }
       } else {
-        int size = pageSize * DataTypes.DOUBLE.getSizeInBytes();
-        for (int i = 0; i < size; i += DataTypes.DOUBLE.getSizeInBytes()) {
-          vector.putDouble(rowId++, ByteUtil.toDoubleLittleEndian(pageData, i));
+        int intSizeInBytes = DataTypes.INT.getSizeInBytes();
+        if (pageDataType == DataTypes.INT) {
+          int size = pageSize * intSizeInBytes;
+          if (vectorDataType == DataTypes.INT) {
+            for (int i = 0; i < size; i += intSizeInBytes) {
+              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+            }
+          } else if (vectorDataType == DataTypes.LONG) {
+            for (int i = 0; i < size; i += intSizeInBytes) {
+              vector.putLong(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+            }
+          } else if (vectorDataType == DataTypes.TIMESTAMP) {
+            for (int i = 0; i < size; i += intSizeInBytes) {
+              vector.putLong(rowId++, (long) ByteUtil.toIntLittleEndian(pageData, i) * 1000);
+            }
+          } else if (DataTypes.isDecimal(vectorDataType)) {
+            DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
+            decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
+          } else {
+            for (int i = 0; i < size; i += intSizeInBytes) {
+              vector.putDouble(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+            }
+          }
+        } else if (pageDataType == DataTypes.LONG) {
+          int longSizeInBytes = DataTypes.LONG.getSizeInBytes();
+          int size = pageSize * longSizeInBytes;
+          if (vectorDataType == DataTypes.LONG) {
+            for (int i = 0; i < size; i += longSizeInBytes) {
+              vector.putLong(rowId++, ByteUtil.toLongLittleEndian(pageData, i));
+            }
+          } else if (vectorDataType == DataTypes.TIMESTAMP) {
+            for (int i = 0; i < size; i += longSizeInBytes) {
+              vector.putLong(rowId++, ByteUtil.toLongLittleEndian(pageData, i) * 1000);
+            }
+          } else if (DataTypes.isDecimal(vectorDataType)) {
+            DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
+            decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
+          }
+        } else if (pageDataType == DataTypes.BYTE_ARRAY) {
+          // for complex primitive types
+          if (vectorDataType == DataTypes.STRING || vectorDataType == DataTypes.BINARY
+              || vectorDataType == DataTypes.VARCHAR) {
+            // for complex primitive string, binary, varchar type
+            int offset = 0;
+            for (int i = 0; i < pageSize; i++) {
+              int len = ByteBuffer.wrap(pageData, offset, intSizeInBytes).getInt();
+              offset += intSizeInBytes;
+              if (vectorDataType == DataTypes.BINARY && len == 0) {
+                vector.putNull(i);
+                continue;
+              }
+              byte[] row = new byte[len];
+              System.arraycopy(pageData, offset, row, 0, len);
+              if (Arrays.equals(row, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY)) {
+                vector.putNull(i);
+              } else {
+                vector.putObject(i, row);
+              }
+              offset += len;
+            }
+          } else if (vectorDataType == DataTypes.DATE) {
+            // for complex primitive date type
+            int offset = 0;
+            for (int i = 0; i < pageSize; i++) {
+              int len = ByteBuffer.wrap(pageData, offset, intSizeInBytes).getInt();
+              offset += intSizeInBytes;
+              int surrogateInternal =
+                  ByteUtil.toXorInt(pageData, offset, intSizeInBytes);
+              if (len == 0) {
+                vector.putObject(0, null);
+              } else {
+                vector.putObject(0, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+              }
+              offset += len;
+            }
+          } else if (DataTypes.isDecimal(vectorDataType)) {
+            // for complex primitive decimal type
+            DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
+            if (decimalConverter == null) {
+              decimalConverter = DecimalConverterFactory.INSTANCE
+                  .getDecimalConverter(((DecimalType) vectorDataType).getPrecision(),
+                      ((DecimalType) vectorDataType).getScale());
+            }
+            decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
+          }
+        } else if (vectorDataType == DataTypes.FLOAT) {
+          int floatSizeInBytes = DataTypes.FLOAT.getSizeInBytes();
+          int size = pageSize * floatSizeInBytes;
+          for (int i = 0; i < size; i += floatSizeInBytes) {
+            vector.putFloat(rowId++, ByteUtil.toFloatLittleEndian(pageData, i));
+          }
+        } else {
+          int doubleSizeInBytes = DataTypes.DOUBLE.getSizeInBytes();
+          int size = pageSize * doubleSizeInBytes;
+          for (int i = 0; i < size; i += doubleSizeInBytes) {
+            vector.putDouble(rowId++, ByteUtil.toDoubleLittleEndian(pageData, i));
+          }
         }
       }
     }
