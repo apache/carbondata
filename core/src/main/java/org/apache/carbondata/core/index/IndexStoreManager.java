@@ -30,6 +30,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandExceptio
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
@@ -515,15 +516,16 @@ public final class IndexStoreManager {
         UpdateVO updateVO =
             SegmentUpdateStatusManager.getInvalidTimestampRange(segment.getLoadMetadataDetails());
         SegmentRefreshInfo segmentRefreshInfo;
-        if ((updateVO != null && updateVO.getLatestUpdateTimestamp() != null)
-            || segment.getSegmentFileName() != null) {
-          long segmentFileTimeStamp;
+        if (updateVO.getLatestUpdateTimestamp() != null || segment.getSegmentFileName() != null) {
+          long segmentFileTimeStamp = 0L;
           if (null != segment.getLoadMetadataDetails()) {
             segmentFileTimeStamp = segment.getLoadMetadataDetails().getLastModifiedTime();
           } else {
-            segmentFileTimeStamp = FileFactory.getCarbonFile(CarbonTablePath
-                .getSegmentFilePath(table.getTablePath(), segment.getSegmentFileName()))
-                .getLastModifiedTime();
+            CarbonFile segmentFile = FileFactory.getCarbonFile(CarbonTablePath
+                .getSegmentFilePath(table.getTablePath(), segment.getSegmentFileName()));
+            if (segmentFile.exists()) {
+              segmentFileTimeStamp = segmentFile.getLastModifiedTime();
+            }
           }
           segmentRefreshInfo =
               new SegmentRefreshInfo(updateVO.getLatestUpdateTimestamp(), 0, segmentFileTimeStamp);

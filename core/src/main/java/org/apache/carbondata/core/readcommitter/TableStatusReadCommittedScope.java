@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
@@ -100,9 +101,11 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     if (null != segment.getLoadMetadataDetails()) {
       segmentFileTimeStamp = segment.getLoadMetadataDetails().getLastModifiedTime();
     } else if (null != segment.getSegmentFileName()) {
-      segmentFileTimeStamp = FileFactory.getCarbonFile(CarbonTablePath
-          .getSegmentFilePath(identifier.getTablePath(), segment.getSegmentFileName()))
-          .getLastModifiedTime();
+      CarbonFile segmentFile = FileFactory.getCarbonFile(CarbonTablePath
+          .getSegmentFilePath(identifier.getTablePath(), segment.getSegmentFileName()));
+      if (segmentFile.exists()) {
+        segmentFileTimeStamp = segmentFile.getLastModifiedTime();
+      }
     }
     if (updateVo != null) {
       segmentRefreshInfo =
