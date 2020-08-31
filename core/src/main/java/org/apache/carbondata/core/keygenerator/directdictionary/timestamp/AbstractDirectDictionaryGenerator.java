@@ -24,6 +24,7 @@ import java.util.Date;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.log4j.Logger;
 
@@ -86,19 +87,34 @@ public abstract class AbstractDirectDictionaryGenerator implements DirectDiction
 
   private int getDirectSurrogateForMember(String memberStr) {
     Date dateToStr;
+    SimpleDateFormat simpleDateFormat = null;
     try {
-      SimpleDateFormat simpleDateFormat = simpleDateFormatLocal.get();
+      simpleDateFormat = simpleDateFormatLocal.get();
       if (null == simpleDateFormat) {
         initialize();
         simpleDateFormat = simpleDateFormatLocal.get();
       }
       dateToStr = simpleDateFormat.parse(memberStr);
     } catch (ParseException e) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Cannot convert value to Time/Long type value. Value considered as null." + e
-            .getMessage());
+      // If the parsing fails, try to parse again with setLenient to true if the property is set
+      if (CarbonProperties.getInstance().isSetLenientEnabled()) {
+        try {
+          simpleDateFormat.setLenient(true);
+          dateToStr = simpleDateFormat.parse(memberStr);
+          LOGGER.info("Parsed data with lenience as true, setting back to default mode");
+        } catch (ParseException ex) {
+          LOGGER.info("Failed to parse data with lenience as true, setting back to default mode");
+          dateToStr = null;
+        } finally {
+          simpleDateFormat.setLenient(false);
+        }
+      } else {
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Cannot convert value to Time/Long type value. Value considered as null." + e
+              .getMessage());
+        }
+        dateToStr = null;
       }
-      dateToStr = null;
     }
     //adding +2 to reserve the first cutOffDiff value for null or empty date
     if (null == dateToStr) {

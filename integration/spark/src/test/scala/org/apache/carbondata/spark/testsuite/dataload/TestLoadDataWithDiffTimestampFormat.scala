@@ -366,6 +366,25 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
     sql("set carbon.load.dateformat.setlenient.enable = false")
   }
 
+  test("test load with 0000 year") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE, "true")
+    sql("DROP TABLE IF EXISTS test_time")
+    sql("DROP TABLE IF EXISTS testhivetable")
+    sql("CREATE TABLE IF NOT EXISTS test_time (ID Int, date Date, time Timestamp) STORED AS carbondata " +
+        "TBLPROPERTIES('dateformat'='yyyy-MM-dd', 'timestampformat'='yyyy-MM-dd HH:mm:ss') ")
+    sql("CREATE TABLE testhivetable (ID Int, date Date, time TIMESTAMP) row format delimited fields terminated by ',' ")
+    val csvPath = s"$resourcesPath/hiveTimestampCheck.csv"
+    val rows = new ListBuffer[Array[String]]
+    rows += Array("1", "0000-01-01", "0000-01-01 00:00:00")
+    BadRecordUtil.createCSV(rows, csvPath)
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/hiveTimestampCheck.csv' into table test_time options('fileheader'='ID,date,time')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/hiveTimestampCheck.csv' overwrite INTO table testhivetable")
+    checkAnswer(sql("select * from test_time"), sql("select * from testhivetable"))
+    sql("DROP TABLE testhivetable")
+    sql("DROP TABLE test_time")
+    CarbonProperties.getInstance().removeProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE)
+  }
+
   def generateCSVFile(): Unit = {
     val rows = new ListBuffer[Array[String]]
     rows += Array("1", "1941-3-15", "2019-3-10 02:00:00")

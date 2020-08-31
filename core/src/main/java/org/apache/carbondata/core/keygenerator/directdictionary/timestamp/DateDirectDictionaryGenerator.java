@@ -54,14 +54,16 @@ public class DateDirectDictionaryGenerator extends AbstractDirectDictionaryGener
   static {
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
     df.setTimeZone(TimeZone.getTimeZone("GMT"));
+    df.setLenient(true);
     long minValue = 0;
     long maxValue = 0;
     try {
-      minValue = df.parse("0001-01-01").getTime();
+      minValue = df.parse("0000-01-01").getTime();
       maxValue = df.parse("9999-12-31").getTime();
     } catch (ParseException e) {
       // the Exception will not occur as constant value is being parsed
     }
+    df.setLenient(false);
     MIN_VALUE = minValue;
     MAX_VALUE = maxValue;
   }
