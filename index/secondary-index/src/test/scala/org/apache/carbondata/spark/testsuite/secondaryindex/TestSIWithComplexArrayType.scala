@@ -34,11 +34,11 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test array<string> on secondary index") {
-    sql("create table complextable (country array<string>, name string) stored as carbondata")
-    sql("insert into complextable select array('china', 'us'), 'b'")
-    sql("insert into complextable select array('pak'), 'v'")
-    sql("insert into complextable select array('china'), 'f'")
-    sql("insert into complextable select array('india'),'g'")
+    sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
+    sql("insert into complextable select 1,array('china', 'us'), 'b'")
+    sql("insert into complextable select 2,array('pak'), 'v'")
+    sql("insert into complextable select 3,array('china'), 'f'")
+    sql("insert into complextable select 4,array('india'),'g'")
     val result1 = sql(" select * from complextable where array_contains(country,'china')")
     val result2 = sql(" select * from complextable where country[0]='china'")
     sql("drop index if exists index_1 on complextable")
@@ -66,7 +66,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test array<string> and string as index columns on secondary index") {
-    sql("create table complextable (id int, country array<string>, name string) stored as carbondata")
+    sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
     sql("insert into complextable select 1, array('china', 'us'), 'b'")
     sql("insert into complextable select 2, array('pak'), 'v'")
     sql("insert into complextable select 3, array('china'), 'f'")
@@ -166,7 +166,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test array<varchar> and varchar as index columns on secondary index") {
-    sql("create table complextable (id int, country array<varchar(10)>, name string) stored as carbondata")
+    sql("create table complextable (id string, country array<varchar(10)>, name string) stored as carbondata")
     sql("insert into complextable select 1, array('china', 'us'), 'b'")
     sql("insert into complextable select 2, array('pak'), 'v'")
     sql("insert into complextable select 3, array('china'), 'f'")
@@ -184,7 +184,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test multiple SI with array and primitive type") {
-    sql("create table complextable (id int, country array<varchar(10)>, name string, addr string) stored as carbondata")
+    sql("create table complextable (id string, country array<varchar(10)>, name string, addr string) stored as carbondata")
     sql("insert into complextable select 1, array('china', 'us'), 'b', 'b1'")
     sql("insert into complextable select 2, array('pak', 'india'), 'v', 'v'")
     val result1 = sql("select * from complextable where addr='v' and array_contains(country,'pak')")
@@ -210,7 +210,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test SI complex with multiple array contains") {
-    sql("create table complextable (id int, country array<varchar(10)>, name string, addr string) stored as carbondata")
+    sql("create table complextable (id string, country array<varchar(10)>, name string, addr string) stored as carbondata")
     sql("insert into complextable select 1, array('china', 'us'), 'b', 'b1'")
     sql("insert into complextable select 2, array('pak', 'india'), 'v', 'v'")
     val result1 = sql("select * from complextable where array_contains(country,'india') and array_contains(country,'pak')")

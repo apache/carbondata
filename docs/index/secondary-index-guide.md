@@ -1,3 +1,4 @@
+
 <!--
     Licensed to the Apache Software Foundation (ASF) under one or more
     contributor license agreements.  See the NOTICE file distributed with
@@ -23,6 +24,7 @@
 * [Querying Data](#querying-data)
 * [Compaction](#compacting-SI-table)
 * [DDLs on Secondary Index](#DDLs-on-Secondary-Index)
+* [Complex DataType support on SI](#Complex-DataType-support-on-SI)
 
 ## Quick example
 
@@ -210,3 +212,7 @@ Reindex on Database level
   REINDEX DATABASE db_name [WHERE SEGMENT.ID IN (1,2,5)]
   ```
 Note: This command is not supported with other concurrent operations.
+
+## Complex DataType support on SI
+Currently, only complex Array types are supported for creating secondary indexes. Nested Array
+support and other complex types support will be supported in the future.

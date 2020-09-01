@@ -246,7 +246,8 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
 
       var isColsIndexedAsPerTable = true
       for (i <- indexModel.columnNames.indices) {
-        if (!dims(i).getColName.equalsIgnoreCase(indexModel.columnNames(i))) {
+        val mainTableDims = dims.sortBy(_.getOrdinal)
+        if (!mainTableDims(i).getColName.equalsIgnoreCase(indexModel.columnNames(i))) {
           isColsIndexedAsPerTable = false
         }
       }

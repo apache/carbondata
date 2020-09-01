@@ -276,7 +276,9 @@ public class SecondaryIndexQueryResultProcessor {
     for (; i < dimensions.size() - 1; i++) {
       CarbonDimension dims = dimensions.get(i);
       boolean isComplexColumn = false;
-      // check if dimension is a complex data type
+      // As complex column of MainTable is stored as its primitive type in SI,
+      // we need to check if dimension is complex dimension or not based on dimension
+      // name. Check if name exists in complexDimensionInfoMap of main table result
       if (!complexDimensionInfoMap.isEmpty() && complexColumnParentBlockIndexes.length > 0) {
         for (GenericQueryType queryType : complexDimensionInfoMap.values()) {
           if (queryType.getName().equalsIgnoreCase(dims.getColName())) {
@@ -285,11 +287,14 @@ public class SecondaryIndexQueryResultProcessor {
           }
         }
       }
+      // fill all the no dictionary and dictionary data to the prepared row first, fill the complex
+      // flatten data to prepared row at last
       if (dims.hasEncoding(Encoding.DICTIONARY) && !isComplexColumn) {
         // dictionary
         preparedRow[i] = wrapper.getDictionaryKeyByIndex(dictionaryIndex++);
       } else {
         if (isComplexColumn) {
+          // get the flattened data of complex column
           byte[] complexKeyByIndex = wrapper.getComplexKeyByIndex(complexIndex);
           ByteBuffer byteArrayInput = ByteBuffer.wrap(complexKeyByIndex);
           GenericQueryType genericQueryType =
@@ -306,6 +311,7 @@ public class SecondaryIndexQueryResultProcessor {
             complexFlattenedData[index] =
                 getData(data, index, dims.getColumnSchema().getDataType());
           }
+          // store the dimesnion column index and the complex column flattened data to a map
           complexDataMap.put(i, complexFlattenedData);
         } else {
           // no dictionary dims
@@ -330,8 +336,9 @@ public class SecondaryIndexQueryResultProcessor {
     // at last add implicit column position reference(PID)
     preparedRow[i] = implicitColumnByteArray;
 
-    // In case of complex array type, flatten the data and add for sorting
-    // TODO: Handle for nested array and other complex types
+    // In case of complex array type, get the flattened data based on dimension index and add
+    // it to the prepared row one by one and add for sorting.
+    // TODO Handle for nested array and other complex types
     if (!complexDataMap.isEmpty()) {
       Object[] firstRow = preparedRow;
       for (Map.Entry<Integer, Object[]> dataEntry : complexDataMap.entrySet()) {
