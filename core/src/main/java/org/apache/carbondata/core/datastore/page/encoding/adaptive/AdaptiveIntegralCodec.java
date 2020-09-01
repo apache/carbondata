@@ -317,7 +317,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           .getDirectVectorWrapperFactory(vectorInfo, vector.getDictionaryVector(),
               vectorInfo.invertedIndex, nullBitset, vectorInfo.deletedRows, false, true);
       vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vectorInfo, vector, vectorInfo.invertedIndex, nullBits,
+          .getDirectVectorWrapperFactory(vectorInfo, vector, null, nullBits,
               deletedRows, true, false);
       fillVector(pageData, vector, pageDataType, pageSize, vectorInfo, nullBits,
           dictionaryVector);
@@ -341,9 +341,6 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         CarbonColumnVector dictionaryVector) {
       // get the updated values if it is decode of child vector
       pageSize = ColumnVectorInfo.getUpdatedPageSizeForChildVector(vectorInfo, pageSize);
-      vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vectorInfo, vector, null, nullBits, vectorInfo.deletedRows,
-              true, false);
       DataType vectorDataType = vector.getType();
       int rowId = 0;
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {

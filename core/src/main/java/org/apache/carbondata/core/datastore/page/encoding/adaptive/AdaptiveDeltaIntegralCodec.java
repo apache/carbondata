@@ -345,7 +345,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
           .getDirectVectorWrapperFactory(vectorInfo, vector.getDictionaryVector(),
               vectorInfo.invertedIndex, nullBitset, vectorInfo.deletedRows, false, true);
       vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vectorInfo, vector, vectorInfo.invertedIndex, nullBits,
+          .getDirectVectorWrapperFactory(vectorInfo, vector, null, nullBits,
               deletedRows, true, false);
       if (null != dictionary && !dictionary.isDictionaryUsed()) {
         vector.setDictionary(dictionary);
@@ -371,9 +371,6 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         CarbonColumnVector dictionaryVector) {
       // get the updated values if it is decode of child vector
       pageSize = ColumnVectorInfo.getUpdatedPageSizeForChildVector(vectorInfo, pageSize);
-      vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vectorInfo, vector, null, nullBits, vectorInfo.deletedRows,
-              true, false);
       DataType vectorDataType = vector.getType();
       int newScale = 0;
       if (vectorInfo.measure != null) {

@@ -103,8 +103,8 @@ public class LocalDictAdaptiveDimColumnPage implements DimensionColumnPage {
     }
     BitSet nullBitset = new BitSet();
     CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
-        .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
-            vectorInfo[chunkIndex].deletedRows, false, true);
+        .getDirectVectorWrapperFactory(columnVectorInfo, vector.getDictionaryVector(),
+            invertedIndex, nullBitset, vectorInfo[chunkIndex].deletedRows, false, true);
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = offset + columnVectorInfo.size;
@@ -128,8 +128,8 @@ public class LocalDictAdaptiveDimColumnPage implements DimensionColumnPage {
     }
     BitSet nullBitset = new BitSet();
     CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
-        .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
-            vectorInfo[chunkIndex].deletedRows, false, true);
+        .getDirectVectorWrapperFactory(columnVectorInfo, vector.getDictionaryVector(),
+            invertedIndex, nullBitset, vectorInfo[chunkIndex].deletedRows, false, true);
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = offset + columnVectorInfo.size;
