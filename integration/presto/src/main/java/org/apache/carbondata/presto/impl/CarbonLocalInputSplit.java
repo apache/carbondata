@@ -22,12 +22,15 @@ import java.util.List;
 
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypeDeserializer;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * CarbonLocalInputSplit represents a block, it contains a set of blocklet.
@@ -156,7 +159,10 @@ public class CarbonLocalInputSplit {
     if (FileFormat.COLUMNAR_V3.ordinal() == inputSplit.getFileFormat().ordinal()
         && null != carbonLocalInputSplit.detailInfo && !carbonLocalInputSplit.detailInfo
         .equalsIgnoreCase("null")) {
-      Gson gson = new Gson();
+      GsonBuilder gsonBuilder = new GsonBuilder();
+      // add typeAdapter for DataType Class for deserialization
+      gsonBuilder.registerTypeAdapter(DataType.class, new DataTypeDeserializer());
+      Gson gson = gsonBuilder.create();
       BlockletDetailInfo blockletDetailInfo =
           gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);
       if (null == blockletDetailInfo) {
