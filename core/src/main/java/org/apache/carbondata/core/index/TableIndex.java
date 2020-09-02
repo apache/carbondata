@@ -152,6 +152,8 @@ public final class TableIndex extends OperationEventListener {
     int numOfThreadsForPruning = CarbonProperties.getNumOfThreadsForPruning();
     int carbonDriverPruningMultiThreadEnableFilesCount =
         CarbonProperties.getDriverPruningMultiThreadEnableFilesCount();
+    // when the query is without filter, as we need to return all the blocklets,
+    // so no need of multi-thread pruning
     if (numOfThreadsForPruning == 1 || indexesCount < numOfThreadsForPruning || totalFiles
             < carbonDriverPruningMultiThreadEnableFilesCount || !isFilterPresent) {
       // use multi-thread, only if the files are more than 0.1 million.

@@ -73,7 +73,7 @@ object BadRecordUtil {
 
   def createCSV(rows: ListBuffer[Array[String]], csvPath: String): Unit = {
     val out = new BufferedWriter(new FileWriter(csvPath))
-    val writer: CSVWriter = new CSVWriter(out)
+    val writer: CSVWriter = new CSVWriter(out, ',', CSVWriter.NO_QUOTE_CHARACTER)
     try {
       for (row <- rows) {
         writer.writeNext(row)
