@@ -425,84 +425,14 @@ object CarbonFilters {
    */
   def reorderFilter(filter: Filter, table: CarbonTable): (Filter, Int) = {
     val filterMap = mutable.HashMap[String, List[(Filter, Int)]]()
-      def sortFilter(filter: Filter): (Filter, Int) = {
-        filter match {
-          case sources.And(left, right) =>
-            filterMap.getOrElseUpdate("AND", List())
-            if (left.references.toSeq == right.references.toSeq ||
-                right.references.diff(left.references).length == 0) {
-              val sorted = sortFilter(left)
-              val rightOrdinal = getStorageOrdinal(right, table)
-              val newAnd = if (sorted._2 >= rightOrdinal) {
-                (sources.And(right, sorted._1), rightOrdinal)
-              } else {
-                (sources.And(sorted._1, right), sorted._2)
-              }
-              if (!left.isInstanceOf[sources.Or] && !left.isInstanceOf[sources.And]) {
-                filterMap.put("AND", filterMap("AND") ++ List(sorted))
-              }
-              if (!right.isInstanceOf[sources.Or] && !right.isInstanceOf[sources.And]) {
-                filterMap.put("AND", filterMap("AND") ++ List((right, rightOrdinal)))
-              }
-              newAnd
-            } else {
-              val leftSorted = sortFilter(left)
-              val rightSorted = sortFilter(right)
-              val newAnd = if (leftSorted._2 > rightSorted._2) {
-                (sources.And(rightSorted._1, leftSorted._1), rightSorted._2)
-              } else {
-                (sources.And(leftSorted._1, rightSorted._1), leftSorted._2)
-              }
-              if (!left.isInstanceOf[sources.Or] && !left.isInstanceOf[sources.And]) {
-                filterMap.put("AND", filterMap("AND") ++ List(leftSorted))
-              }
-              if (!right.isInstanceOf[sources.Or] && !right.isInstanceOf[sources.And]) {
-                filterMap.put("AND", filterMap("AND") ++ List(rightSorted))
-              }
-              newAnd
-            }
-          case sources.Or(left, right) =>
-            filterMap.getOrElseUpdate("OR", List())
-            if (left.references.toSeq == right.references.toSeq ||
-                                               right.references.diff(left.references).length == 0) {
-              val sorted = sortFilter(left)
-              val rightOrdinal = getStorageOrdinal(right, table)
-              val newOr = if (sorted._2 >= rightOrdinal) {
-                (sources.Or(right, sorted._1), rightOrdinal)
-              } else {
-                (sources.Or(sorted._1, right), sorted._2)
-              }
-              if (!left.isInstanceOf[sources.Or] && !left.isInstanceOf[sources.And]) {
-                filterMap.put("OR", filterMap("OR") ++ List(sorted))
-              }
-              if (!right.isInstanceOf[sources.Or] && !right.isInstanceOf[sources.And]) {
-                filterMap.put("OR", filterMap("OR") ++ List((right, rightOrdinal)))
-              }
-              newOr
-            } else {
-              val leftSorted = sortFilter(left)
-              val rightSorted = sortFilter(right)
-              val newOr = if (leftSorted._2 > rightSorted._2) {
-                (sources.Or(rightSorted._1, leftSorted._1), rightSorted._2)
-              } else {
-                (sources.Or(leftSorted._1, rightSorted._1), leftSorted._2)
-              }
-              if (!left.isInstanceOf[sources.Or] && !left.isInstanceOf[sources.And]) {
-                filterMap.put("OR", filterMap("OR") ++ List(leftSorted))
-              }
-              if (!right.isInstanceOf[sources.Or] && !right.isInstanceOf[sources.And]) {
-                filterMap.put("OR", filterMap("OR") ++ List(rightSorted))
-              }
-              newOr
-            }
-          case others => (others, getStorageOrdinal(others, table))
-        }
-      }
+    // If the filter size is one then no need to reorder.
     val sortedFilter = if (filter.references.toSet.size == 1) {
       (filter, -1)
     } else {
-      sortFilter(filter)
+      sortFilter(filter, filterMap, table)
     }
+    // If filter has only AND/PR expression then sort the nodes globally using the filterMap.
+    // Else sort the subnodes individually
     if (!filterMap.contains("OR") && filterMap.contains("AND") && filterMap("AND").nonEmpty) {
       val sortedFilterAndOrdinal = filterMap("AND").sortBy(_._2)
       (sortedFilterAndOrdinal.map(_._1).reduce(sources.And), sortedFilterAndOrdinal.head._2)
@@ -513,6 +443,94 @@ object CarbonFilters {
     } else {
       sortedFilter
     }
+  }
+
+  def sortFilter(filter: Filter, filterMap: mutable.HashMap[String, List[(Filter, Int)]],
+      table: CarbonTable): (Filter, Int) = {
+    filter match {
+      case sources.And(left, right) =>
+        filterMap.getOrElseUpdate("AND", List())
+        // If right is a subset of left then sort only the left part as the data would be cached
+        // by the left side, and right can reuse the cached data instead of reading(therefore no
+        // seek issue).
+        if (checkIfRightIsASubsetOfLeft(left, right)) {
+          val sorted = sortFilter(left, filterMap, table)
+          val rightOrdinal = getStorageOrdinal(right, table)
+          val newAnd = if (sorted._2 >= rightOrdinal) {
+            (sources.And(right, sorted._1), rightOrdinal)
+          } else {
+            (sources.And(sorted._1, right), sorted._2)
+          }
+          if (isLeafNode(left)) {
+            filterMap.put("AND", filterMap("AND") ++ List(sorted))
+          }
+          if (isLeafNode(right)) {
+            filterMap.put("AND", filterMap("AND") ++ List((right, rightOrdinal)))
+          }
+          newAnd
+        } else {
+          val leftSorted = sortFilter(left, filterMap, table)
+          val rightSorted = sortFilter(right, filterMap, table)
+          val newAnd = if (leftSorted._2 > rightSorted._2) {
+            (sources.And(rightSorted._1, leftSorted._1), rightSorted._2)
+          } else {
+            (sources.And(leftSorted._1, rightSorted._1), leftSorted._2)
+          }
+          if (isLeafNode(left)) {
+            filterMap.put("AND", filterMap("AND") ++ List(leftSorted))
+          }
+          if (isLeafNode(right)) {
+            filterMap.put("AND", filterMap("AND") ++ List(rightSorted))
+          }
+          newAnd
+        }
+      case sources.Or(left, right) =>
+        filterMap.getOrElseUpdate("OR", List())
+        // If right is a subset of left then sort only the left part as the data would be cached
+        // by the left side, and right can reuse the cached data instead of reading(therefore no
+        // seek issue).
+        if (checkIfRightIsASubsetOfLeft(left, right)) {
+          val sorted = sortFilter(left, filterMap, table)
+          val rightOrdinal = getStorageOrdinal(right, table)
+          val newOr = if (sorted._2 >= rightOrdinal) {
+            (sources.Or(right, sorted._1), rightOrdinal)
+          } else {
+            (sources.Or(sorted._1, right), sorted._2)
+          }
+          if (isLeafNode(left)) {
+            filterMap.put("OR", filterMap("OR") ++ List(sorted))
+          }
+          if (isLeafNode(right)) {
+            filterMap.put("OR", filterMap("OR") ++ List((right, rightOrdinal)))
+          }
+          newOr
+        } else {
+          val leftSorted = sortFilter(left, filterMap, table)
+          val rightSorted = sortFilter(right, filterMap, table)
+          val newOr = if (leftSorted._2 > rightSorted._2) {
+            (sources.Or(rightSorted._1, leftSorted._1), rightSorted._2)
+          } else {
+            (sources.Or(leftSorted._1, rightSorted._1), leftSorted._2)
+          }
+          if (isLeafNode(left)) {
+            filterMap.put("OR", filterMap("OR") ++ List(leftSorted))
+          }
+          if (isLeafNode(right)) {
+            filterMap.put("OR", filterMap("OR") ++ List(rightSorted))
+          }
+          newOr
+        }
+      case others => (others, getStorageOrdinal(others, table))
+    }
+  }
+
+  private def isLeafNode(filter: Filter): Boolean = {
+    !filter.isInstanceOf[sources.Or] && !filter.isInstanceOf[sources.And]
+  }
+
+  def checkIfRightIsASubsetOfLeft(left: Filter, right: Filter): Boolean = {
+    left.references.toSeq == right.references.toSeq ||
+    right.references.diff(left.references).length == 0
   }
 
   /**
