@@ -2557,4 +2557,10 @@ public final class CarbonCommonConstants {
   public static final String COMPLEX_DELIMITER_LEVEL_3_DEFAULT = "@";
 
   public static final String FILE_HEADER = "fileHeader";
+
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_REORDER_FILTER = "carbon.reorder.filter";
+
+  public static final String CARBON_REORDER_FILTER_DEFAULT = "true";
+
 }

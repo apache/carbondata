@@ -99,8 +99,7 @@ object CarbonSetCommand {
     if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
       if (key.split("\\.").length == 5) {
         sessionParams.addProperty(key.toLowerCase(), value)
-      }
-      else {
+      } else {
         throw new MalformedCarbonCommandException(
           "property should be in \" carbon.input.segments.<database_name>" +
           ".<table_name>=<seg_id list> \" format.")
@@ -121,8 +120,7 @@ object CarbonSetCommand {
     } else if (key.startsWith(CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE)) {
       if (key.split("\\.").length == 7) {
         sessionParams.addProperty(key.toLowerCase(), value)
-      }
-      else {
+      } else {
         throw new MalformedCarbonCommandException(
           "property should be in \" carbon.table.load.sort.scope.<database_name>" +
           ".<table_name>=<sort_scope> \" format.")
@@ -132,8 +130,9 @@ object CarbonSetCommand {
       if (keySplits.length == 6 || keySplits.length == 4) {
         sessionParams.addProperty(key.toString, value)
       }
-    }
-    else if (isCarbonProperty) {
+    } else if (key.equalsIgnoreCase(CarbonCommonConstants.CARBON_REORDER_FILTER)) {
+      sessionParams.addProperty(key, value)
+    } else if (isCarbonProperty) {
       sessionParams.addProperty(key, value)
     }
   }

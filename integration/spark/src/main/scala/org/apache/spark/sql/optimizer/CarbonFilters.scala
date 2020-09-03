@@ -425,23 +425,66 @@ object CarbonFilters {
    */
   def reorderFilter(filter: Filter, table: CarbonTable): (Filter, Int) = {
     val filterMap = mutable.HashMap[String, List[(Filter, Int)]]()
-    // If the filter size is one then no need to reorder.
-    val sortedFilter = if (filter.references.toSet.size == 1) {
+    // If the filter size is one or the user has disabled reordering then no need to reorder.
+    if (filter.references.toSet.size == 1 ||
+        !CarbonProperties.isFilterReorderingEnabled) {
       (filter, -1)
     } else {
-      sortFilter(filter, filterMap, table)
+      val sortedFilter = sortFilter(filter, filterMap, table)
+      // If filter has only AND/OR expression then sort the nodes globally using the filterMap.
+      // Else sort the subnodes individually
+      if (!filterMap.contains("OR") && filterMap.contains("AND") && filterMap("AND").nonEmpty) {
+        val sortedFilterAndOrdinal = filterMap("AND").sortBy(_._2)
+        (sortedFilterAndOrdinal.map(_._1).reduce(sources.And), sortedFilterAndOrdinal.head._2)
+      } else if (!filterMap.contains("AND") && filterMap.contains("OR") &&
+                 filterMap("OR").nonEmpty) {
+        val sortedFilterAndOrdinal = filterMap("OR").sortBy(_._2)
+        (sortedFilterAndOrdinal.map(_._1).reduce(sources.Or), sortedFilterAndOrdinal.head._2)
+      } else {
+        sortedFilter
+      }
     }
-    // If filter has only AND/PR expression then sort the nodes globally using the filterMap.
-    // Else sort the subnodes individually
-    if (!filterMap.contains("OR") && filterMap.contains("AND") && filterMap("AND").nonEmpty) {
-      val sortedFilterAndOrdinal = filterMap("AND").sortBy(_._2)
-      (sortedFilterAndOrdinal.map(_._1).reduce(sources.And), sortedFilterAndOrdinal.head._2)
-    } else if (!filterMap.contains("AND") && filterMap.contains("OR") &&
-               filterMap("OR").nonEmpty) {
-      val sortedFilterAndOrdinal = filterMap("OR").sortBy(_._2)
-      (sortedFilterAndOrdinal.map(_._1).reduce(sources.Or), sortedFilterAndOrdinal.head._2)
+  }
+
+  def generateNewFilter(filterType: String, left: Filter, right: Filter,
+      filterMap: mutable.HashMap[String, List[(Filter, Int)]],
+      table: CarbonTable): (Filter, Int) = {
+    filterMap.getOrElseUpdate(filterType, List())
+    // Generate a function which can handle both AND/OR.
+    val newFilter: (Filter, Filter) => Filter = filterType match {
+      case "OR" => sources.Or
+      case _ => sources.And
+    }
+    if (checkIfRightIsASubsetOfLeft(left, right)) {
+      val sorted = sortFilter(left, filterMap, table)
+      val rightOrdinal = getStorageOrdinal(right, table)
+      val orderedFilter = if (sorted._2 >= rightOrdinal) {
+        (newFilter(right, sorted._1), rightOrdinal)
+      } else {
+        (newFilter(sorted._1, right), sorted._2)
+      }
+      if (isLeafNode(left)) {
+        filterMap.put(filterType, filterMap(filterType) ++ List(sorted))
+      }
+      if (isLeafNode(right)) {
+        filterMap.put(filterType, filterMap(filterType) ++ List((right, rightOrdinal)))
+      }
+      orderedFilter
     } else {
-      sortedFilter
+      val leftSorted = sortFilter(left, filterMap, table)
+      val rightSorted = sortFilter(right, filterMap, table)
+      val orderedFilter = if (leftSorted._2 > rightSorted._2) {
+        (newFilter(rightSorted._1, leftSorted._1), rightSorted._2)
+      } else {
+        (newFilter(leftSorted._1, rightSorted._1), leftSorted._2)
+      }
+      if (isLeafNode(left)) {
+        filterMap.put(filterType, filterMap(filterType) ++ List(leftSorted))
+      }
+      if (isLeafNode(right)) {
+        filterMap.put(filterType, filterMap(filterType) ++ List(rightSorted))
+      }
+      orderedFilter
     }
   }
 
@@ -449,86 +492,27 @@ object CarbonFilters {
       table: CarbonTable): (Filter, Int) = {
     filter match {
       case sources.And(left, right) =>
-        filterMap.getOrElseUpdate("AND", List())
-        // If right is a subset of left then sort only the left part as the data would be cached
-        // by the left side, and right can reuse the cached data instead of reading(therefore no
-        // seek issue).
-        if (checkIfRightIsASubsetOfLeft(left, right)) {
-          val sorted = sortFilter(left, filterMap, table)
-          val rightOrdinal = getStorageOrdinal(right, table)
-          val newAnd = if (sorted._2 >= rightOrdinal) {
-            (sources.And(right, sorted._1), rightOrdinal)
-          } else {
-            (sources.And(sorted._1, right), sorted._2)
-          }
-          if (isLeafNode(left)) {
-            filterMap.put("AND", filterMap("AND") ++ List(sorted))
-          }
-          if (isLeafNode(right)) {
-            filterMap.put("AND", filterMap("AND") ++ List((right, rightOrdinal)))
-          }
-          newAnd
-        } else {
-          val leftSorted = sortFilter(left, filterMap, table)
-          val rightSorted = sortFilter(right, filterMap, table)
-          val newAnd = if (leftSorted._2 > rightSorted._2) {
-            (sources.And(rightSorted._1, leftSorted._1), rightSorted._2)
-          } else {
-            (sources.And(leftSorted._1, rightSorted._1), leftSorted._2)
-          }
-          if (isLeafNode(left)) {
-            filterMap.put("AND", filterMap("AND") ++ List(leftSorted))
-          }
-          if (isLeafNode(right)) {
-            filterMap.put("AND", filterMap("AND") ++ List(rightSorted))
-          }
-          newAnd
-        }
+        generateNewFilter("AND", left, right, filterMap, table)
       case sources.Or(left, right) =>
-        filterMap.getOrElseUpdate("OR", List())
-        // If right is a subset of left then sort only the left part as the data would be cached
-        // by the left side, and right can reuse the cached data instead of reading(therefore no
-        // seek issue).
-        if (checkIfRightIsASubsetOfLeft(left, right)) {
-          val sorted = sortFilter(left, filterMap, table)
-          val rightOrdinal = getStorageOrdinal(right, table)
-          val newOr = if (sorted._2 >= rightOrdinal) {
-            (sources.Or(right, sorted._1), rightOrdinal)
-          } else {
-            (sources.Or(sorted._1, right), sorted._2)
-          }
-          if (isLeafNode(left)) {
-            filterMap.put("OR", filterMap("OR") ++ List(sorted))
-          }
-          if (isLeafNode(right)) {
-            filterMap.put("OR", filterMap("OR") ++ List((right, rightOrdinal)))
-          }
-          newOr
-        } else {
-          val leftSorted = sortFilter(left, filterMap, table)
-          val rightSorted = sortFilter(right, filterMap, table)
-          val newOr = if (leftSorted._2 > rightSorted._2) {
-            (sources.Or(rightSorted._1, leftSorted._1), rightSorted._2)
-          } else {
-            (sources.Or(leftSorted._1, rightSorted._1), leftSorted._2)
-          }
-          if (isLeafNode(left)) {
-            filterMap.put("OR", filterMap("OR") ++ List(leftSorted))
-          }
-          if (isLeafNode(right)) {
-            filterMap.put("OR", filterMap("OR") ++ List(rightSorted))
-          }
-          newOr
-        }
+        generateNewFilter("OR", left, right, filterMap, table)
       case others => (others, getStorageOrdinal(others, table))
     }
   }
 
+  /**
+   * Checks if the filter node is a leaf node, here leaf node means node should not be AND/OR.
+   *
+   * @return true if leaf node, false otherwise
+   */
   private def isLeafNode(filter: Filter): Boolean = {
     !filter.isInstanceOf[sources.Or] && !filter.isInstanceOf[sources.And]
   }
 
-  def checkIfRightIsASubsetOfLeft(left: Filter, right: Filter): Boolean = {
+  /**
+   * Checks if the references in right subtree of a filter are a subset of the left references.
+   * @return true if right is a subset, otherwise false
+   */
+  private def checkIfRightIsASubsetOfLeft(left: Filter, right: Filter): Boolean = {
     left.references.toSeq == right.references.toSeq ||
     right.references.diff(left.references).length == 0
   }
