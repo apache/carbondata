@@ -30,11 +30,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -945,6 +945,12 @@ public class CarbonUtilTest {
     Assert.assertEquals(CarbonUpdateUtil.getSegmentBlockNameKey("0", blockName, false), "0/0-0_0-0-0-1597412488102");
     // partition table
     Assert.assertEquals(CarbonUpdateUtil.getSegmentBlockNameKey("0", blockName, true), "0-0_0-0-0-1597412488102");
+  }
+
+  @Test public void testSegmentNumberFromSegmentFile() {
+    String segmentFileName = "0_1597411003332";
+    Assert.assertEquals("0",
+        CarbonTablePath.DataFileUtil.getSegmentNoFromSegmentFile(segmentFileName));
   }
 
   private String generateString(int length) {

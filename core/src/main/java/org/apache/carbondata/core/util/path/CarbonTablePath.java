@@ -564,6 +564,13 @@ public class CarbonTablePath {
     }
 
     /**
+     * This method returns the segment number from the segment file name
+     */
+    public static String getSegmentNoFromSegmentFile(String segmentFileName) {
+      return segmentFileName.split(CarbonCommonConstants.UNDERSCORE)[0];
+    }
+
+    /**
      * gets segment id from given absolute data file path
      */
     public static String getSegmentIdFromPath(String dataFileAbsolutePath) {
