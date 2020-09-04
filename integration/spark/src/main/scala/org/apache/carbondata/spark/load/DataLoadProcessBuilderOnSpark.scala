@@ -34,9 +34,10 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.types.{ByteType, DateType, LongType, StringType, TimestampType}
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
+import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.util.{CollectionAccumulator, LongAccumulator}
+import org.apache.spark.util.{CollectionAccumulator, LongAccumulator, SizeEstimator}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
@@ -143,8 +144,12 @@ object DataLoadProcessBuilderOnSpark {
 
     var numPartitions = CarbonDataProcessorUtil.getGlobalSortPartitions(
       configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
+
+    // if numPartitions user does not specify and not specified in config then dynamically calculate
     if (numPartitions <= 0) {
-      numPartitions = convertRDD.partitions.length
+      val defaultMaxSplitBytes = sessionState(sparkSession).conf.filesMaxPartitionBytes
+      val dynamicPartitionNum = Math.ceil(model.getTotalSize.toDouble / defaultMaxSplitBytes).toInt
+      numPartitions = Math.min(convertRDD.partitions.length, dynamicPartitionNum)
     }
 
     // Because if the number of partitions greater than 1, there will be action operator(sample) in
@@ -227,9 +232,15 @@ object DataLoadProcessBuilderOnSpark {
     // 2. sort
     var numPartitions = CarbonDataProcessorUtil.getGlobalSortPartitions(
       configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
+
+    // if numPartitions user does not specify and not specified in config then dynamically calculate
     if (numPartitions <= 0) {
-      numPartitions = originRDD.partitions.length
+      val defaultMaxSplitBytes = sessionState(sparkSession).conf.filesMaxPartitionBytes
+      val dynamicPartitionNum = Math.ceil(SizeEstimator.estimate(originRDD).toDouble /
+                                          defaultMaxSplitBytes).toInt
+      numPartitions = Math.min(originRDD.partitions.length, dynamicPartitionNum)
     }
+
     // Because if the number of partitions greater than 1, there will be action operator
     // (sample) in
     // sortBy operator. So here we cache the rdd to avoid do input and convert again.

@@ -84,6 +84,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql("DROP TABLE IF EXISTS carbon_globalsort")
     sql("DROP TABLE IF EXISTS carbon_globalsort1")
     sql("DROP TABLE IF EXISTS carbon_globalsort2")
+    sql("DROP TABLE IF EXISTS carbon_globalsort3")
+    sql("DROP TABLE IF EXISTS carbon_globalsort4")
     sql("DROP TABLE IF EXISTS carbon_globalsort_partitioned")
     sql("DROP TABLE IF EXISTS carbon_globalsort_difftypes")
     sql("DROP TABLE IF EXISTS carbon_globalsort_minor")
@@ -124,7 +126,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
       "OPTIONS('BAD_RECORDS_ACTION'='REDIRECT')")
 
-    assert(getIndexFileCount("carbon_globalsort") === 2)
+    assert(getIndexFileCount("carbon_globalsort") === 1)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
   }
 
@@ -178,7 +180,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("ALTER TABLE carbon_globalsort COMPACT 'MAJOR'")
 
-    assert(getIndexFileCount("carbon_globalsort") === 2)
+    assert(getIndexFileCount("carbon_globalsort") === 1)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(24)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_twice ORDER BY name, id"))
@@ -336,7 +338,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("DELETE FROM carbon_globalsort WHERE id = 1").collect()
 
-    assert(getIndexFileCount("carbon_globalsort") === 2)
+    assert(getIndexFileCount("carbon_globalsort") === 1)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_delete ORDER BY name, id"))
@@ -382,13 +384,13 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "carbon_globalsort")
     val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, "0")
     if (FileFactory.isFileExist(segmentDir)) {
-      assertResult(Math.max(4, defaultParallelism) + 1)(new File(segmentDir).listFiles().length)
+      assertResult(2)(new File(segmentDir).listFiles().length)
     } else {
       val segment = Segment.getSegment("0", carbonTable.getTablePath)
       val store = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
       store.readIndexFiles(new Configuration(false))
       val size = store.getIndexFilesMap.asScala.map(f => f._2.size()).sum
-      assertResult(Math.max(4, defaultParallelism) + 1)(size + store.getIndexFilesMap.size())
+      assertResult(2)(size + store.getIndexFilesMap.size())
     }
   }
 
@@ -525,6 +527,91 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     val deletedRows = sql("delete from carbon_global_sort_update d where d.id = 12").collect()
     assert(deletedRows.head.get(0) == 2)
     assert(sql("select * from carbon_global_sort_update").count() == 22)
+  }
+
+  test("calculate the global sort partitions automatically when user does not give in load options ") {
+    sql("DROP TABLE IF EXISTS carbon_globalsort3")
+    sql(
+      """
+        | CREATE TABLE carbon_globalsort3(id INT, name STRING, city STRING, age INT)
+        | STORED AS carbondata
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort3")
+    assert(getIndexFileCount("carbon_globalsort3") === 1)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort3"), Seq(Row(12)))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort3"),
+      sql("SELECT * FROM carbon_localsort_once ORDER BY name"))
+  }
+
+  test("calculate the global sort partitions automatically with less max partitionbytes ") {
+    sql("DROP TABLE IF EXISTS carbon_globalsort3")
+    sql(s"SET ${ "spark.sql.files.maxPartitionBytes" } = 100")
+    sql(
+      """
+        | CREATE TABLE carbon_globalsort3(id INT, name STRING, city STRING, age INT)
+        | STORED AS carbondata
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort3")
+    assert(getIndexFileCount("carbon_globalsort3") === 3)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort3"), Seq(Row(12)))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort3"),
+      sql("SELECT * FROM carbon_localsort_once ORDER BY name"))
+    // set it to default
+    sql(s"SET ${ "spark.sql.files.maxPartitionBytes" } = 134217728")
+  }
+
+  test("calculate the global sort partitions automatically based on size") {
+    sql("DROP TABLE IF EXISTS carbon_globalsort3")
+    sql(
+      s"""
+         | CREATE TABLE carbon_globalsort3 (
+         |    CUST_ID int,
+         |    CUST_NAME binary,
+         |    ACTIVE_EMUI_VERSION string,
+         |    DOB timestamp,
+         |    DOJ timestamp,
+         |    BIGINT_COLUMN1 bigint,
+         |    BIGINT_COLUMN2 bigint,
+         |    DECIMAL_COLUMN1 decimal(30,10),
+         |    DECIMAL_COLUMN2 decimal(36,10),
+         |    Double_COLUMN1 double,
+         |    Double_COLUMN2 double,
+         |    INTEGER_COLUMN1 int)
+         | STORED AS carbondata
+         | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'CUST_ID')
+             """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA inpath '$resourcesPath/restructure/data_2000.csv'
+         | into table carbon_globalsort3
+         | OPTIONS(
+         |    'DELIMITER'=',' ,
+         |    'QUOTECHAR'='"',
+         |    'BAD_RECORDS_ACTION'='FORCE',
+         |    'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
+             """.stripMargin)
+    assert(getIndexFileCount("carbon_globalsort3") === 1)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort3"), Seq(Row(2013)))
+  }
+
+  test("calculate the global sort partitions automatically for insert") {
+    sql("DROP TABLE IF EXISTS carbon_globalsort4")
+    sql(
+      """
+        | CREATE TABLE carbon_globalsort4(id INT, name STRING, city STRING, age INT)
+        | STORED AS carbondata
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
+      """.stripMargin)
+    sql(s"insert into carbon_globalsort4 select 1, 'name_1', 'city_1', 1")
+    val df = sql("select * from carbon_globalsort4")
+    val scanRdd = df.queryExecution.sparkPlan.collect {
+      case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+        b.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
+    }.head
+    assert(getIndexFileCount("carbon_globalsort4") === 1)
+    assertResult(1)(df.count)
   }
 
   private def resetConf() {
