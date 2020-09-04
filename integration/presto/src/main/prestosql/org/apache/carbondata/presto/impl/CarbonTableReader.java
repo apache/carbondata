@@ -41,15 +41,12 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
-import org.apache.carbondata.core.metadata.schema.PartitionInfo;
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -245,16 +242,14 @@ public class CarbonTableReader {
    *
    * @param tableCacheModel cached table
    * @param filters carbonData filters
-   * @param constraints presto filters
+   * @param filteredPartitions matched partitionSpec for the filter
    * @param config hadoop conf
    * @return list of multiblock split
    * @throws IOException
    */
-  public List<CarbonLocalMultiBlockSplit> getInputSplits(
-      CarbonTableCacheModel tableCacheModel,
-      Expression filters,
-      TupleDomain<HiveColumnHandle> constraints,
-      Configuration config) throws IOException {
+  public List<CarbonLocalMultiBlockSplit> getInputSplits(CarbonTableCacheModel tableCacheModel,
+      Expression filters, List<PartitionSpec> filteredPartitions, Configuration config)
+      throws IOException {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
     List<CarbonLocalMultiBlockSplit> multiBlockSplitList = new ArrayList<>();
     CarbonTable carbonTable = tableCacheModel.getCarbonTable();
@@ -270,15 +265,6 @@ public class CarbonTableReader {
     CarbonInputFormat.setTableInfo(config, carbonTable.getTableInfo());
 
     JobConf jobConf = new JobConf(config);
-    List<PartitionSpec> filteredPartitions = new ArrayList<>();
-
-    PartitionInfo partitionInfo = carbonTable.getPartitionInfo();
-    LoadMetadataDetails[] loadMetadataDetails = null;
-    if (partitionInfo != null && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE) {
-      loadMetadataDetails = SegmentStatusManager.readTableStatusFile(
-          CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()));
-      filteredPartitions = findRequiredPartitions(constraints, carbonTable, loadMetadataDetails);
-    }
     try {
       CarbonTableInputFormat.setTableInfo(config, tableInfo);
       CarbonTableInputFormat<Object> carbonTableInputFormat =
