@@ -247,7 +247,7 @@ public class CarbonTableReader {
    *
    * @param tableCacheModel cached table
    * @param filters carbonData filters
-   * @param constraints presto filters
+   * @param filteredPartitions matched partitionSpec for the filter
    * @param config hadoop conf
    * @return list of multiblock split
    * @throws IOException
@@ -255,7 +255,7 @@ public class CarbonTableReader {
   public List<CarbonLocalMultiBlockSplit> getInputSplits(
       CarbonTableCacheModel tableCacheModel,
       Expression filters,
-      TupleDomain<HiveColumnHandle> constraints,
+      List<PartitionSpec> filteredPartitions,
       Configuration config) throws IOException {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
     List<CarbonLocalMultiBlockSplit> multiBlockSplitList = new ArrayList<>();
@@ -272,15 +272,6 @@ public class CarbonTableReader {
     CarbonInputFormat.setTableInfo(config, carbonTable.getTableInfo());
 
     JobConf jobConf = new JobConf(config);
-    List<PartitionSpec> filteredPartitions = new ArrayList<>();
-
-    PartitionInfo partitionInfo = carbonTable.getPartitionInfo();
-    LoadMetadataDetails[] loadMetadataDetails = null;
-    if (partitionInfo != null && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE) {
-      loadMetadataDetails = SegmentStatusManager.readTableStatusFile(
-          CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()));
-      filteredPartitions = findRequiredPartitions(constraints, carbonTable, loadMetadataDetails);
-    }
     try {
       CarbonTableInputFormat.setTableInfo(config, tableInfo);
       CarbonTableInputFormat<Object> carbonTableInputFormat =

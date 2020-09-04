@@ -151,7 +151,7 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
       putNull(rowId);
     } else {
       if (dictionaryBlock == null) {
-        putByteArray(rowId, ByteUtil.toBytes((String) value));
+        putByteArray(rowId, (byte []) value);
       } else {
         putInt(rowId, (int) value);
       }

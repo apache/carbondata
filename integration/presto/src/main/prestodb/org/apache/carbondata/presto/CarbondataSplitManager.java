@@ -27,11 +27,14 @@ import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
@@ -48,6 +51,7 @@ import com.facebook.presto.hive.ForHiveClient;
 import com.facebook.presto.hive.HdfsEnvironment;
 import com.facebook.presto.hive.HiveClientConfig;
 import com.facebook.presto.hive.HiveColumnHandle;
+import com.facebook.presto.hive.HivePartition;
 import com.facebook.presto.hive.HiveSplit;
 import com.facebook.presto.hive.HiveSplitManager;
 import com.facebook.presto.hive.HiveTableLayoutHandle;
@@ -55,6 +59,7 @@ import com.facebook.presto.hive.HiveTransactionHandle;
 import com.facebook.presto.hive.NamenodeStats;
 import com.facebook.presto.hive.metastore.SemiTransactionalHiveMetastore;
 import com.facebook.presto.hive.metastore.Table;
+import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.ConnectorSplitSource;
@@ -117,6 +122,16 @@ public class CarbondataSplitManager extends HiveSplitManager {
       // file metastore case tablePath can be null, so get from location
       location = table.getStorage().getLocation();
     }
+    List<PartitionSpec> filteredPartitions = new ArrayList<>();
+    if (layout.getPartitionColumns().size() > 0 && layout.getPartitions().isPresent()) {
+      List<String> colNames =
+          layout.getPartitionColumns().stream().map(x -> ((HiveColumnHandle) x).getName())
+              .collect(Collectors.toList());
+      for (HivePartition partition : layout.getPartitions().get()) {
+        filteredPartitions.add(new PartitionSpec(colNames,
+            location + CarbonCommonConstants.FILE_SEPARATOR + partition.getPartitionId()));
+      }
+    }
     String queryId = System.nanoTime() + "";
     QueryStatistic statistic = new QueryStatistic();
     QueryStatisticsRecorder statisticRecorder = CarbonTimeStatisticsFactory.createDriverRecorder();
@@ -139,7 +154,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
     try {
 
       List<CarbonLocalMultiBlockSplit> splits =
-          carbonTableReader.getInputSplits(cache, filters, predicate, configuration);
+          carbonTableReader.getInputSplits(cache, filters, filteredPartitions, configuration);
 
       ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
       long index = 0;

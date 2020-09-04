@@ -27,11 +27,14 @@ import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
@@ -49,6 +52,7 @@ import io.prestosql.plugin.hive.ForHive;
 import io.prestosql.plugin.hive.HdfsEnvironment;
 import io.prestosql.plugin.hive.HiveColumnHandle;
 import io.prestosql.plugin.hive.HiveConfig;
+import io.prestosql.plugin.hive.HivePartition;
 import io.prestosql.plugin.hive.HivePartitionManager;
 import io.prestosql.plugin.hive.HiveSplit;
 import io.prestosql.plugin.hive.HiveSplitManager;
@@ -106,10 +110,8 @@ public class CarbondataSplitManager extends HiveSplitManager {
   public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle,
       ConnectorSession session, ConnectorTableHandle tableHandle,
       SplitSchedulingStrategy splitSchedulingStrategy) {
-
-    HiveTableHandle hiveTable = (HiveTableHandle) tableHandle;
-    SchemaTableName schemaTableName = hiveTable.getSchemaTableName();
-
+    HiveTableHandle hiveTableHandle = (HiveTableHandle) tableHandle;
+    SchemaTableName schemaTableName = hiveTableHandle.getSchemaTableName();
     carbonTableReader.setPrestoQueryId(session.getQueryId());
     // get table metadata
     SemiTransactionalHiveMetastore metastore =
@@ -126,6 +128,17 @@ public class CarbondataSplitManager extends HiveSplitManager {
       // file metastore case tablePath can be null, so get from location
       location = table.getStorage().getLocation();
     }
+    List<PartitionSpec> filteredPartitions = new ArrayList<>();
+    if (hiveTableHandle.getPartitionColumns().size() > 0 && hiveTableHandle.getPartitions()
+        .isPresent()) {
+      List<String> colNames =
+          hiveTableHandle.getPartitionColumns().stream().map(HiveColumnHandle::getName)
+              .collect(Collectors.toList());
+      for (HivePartition partition : hiveTableHandle.getPartitions().get()) {
+        filteredPartitions.add(new PartitionSpec(colNames,
+            location + CarbonCommonConstants.FILE_SEPARATOR + partition.getPartitionId()));
+      }
+    }
     String queryId = System.nanoTime() + "";
     QueryStatistic statistic = new QueryStatistic();
     QueryStatisticsRecorder statisticRecorder = CarbonTimeStatisticsFactory.createDriverRecorder();
@@ -134,8 +147,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
     statistic = new QueryStatistic();
 
     carbonTableReader.setQueryId(queryId);
-    TupleDomain<HiveColumnHandle> predicate =
-        (TupleDomain<HiveColumnHandle>) hiveTable.getCompactEffectivePredicate();
+    TupleDomain<HiveColumnHandle> predicate = hiveTableHandle.getCompactEffectivePredicate();
     Configuration configuration = this.hdfsEnvironment.getConfiguration(
         new HdfsEnvironment.HdfsContext(session, schemaTableName.getSchemaName(),
             schemaTableName.getTableName()), new Path(location));
@@ -146,10 +158,8 @@ public class CarbondataSplitManager extends HiveSplitManager {
         carbonTableReader.getCarbonCache(schemaTableName, location, configuration);
     Expression filters = PrestoFilterUtil.parseFilterExpression(predicate);
     try {
-
       List<CarbonLocalMultiBlockSplit> splits =
-          carbonTableReader.getInputSplits(cache, filters, predicate, configuration);
-
+          carbonTableReader.getInputSplits(cache, filters, filteredPartitions, configuration);
       ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
       long index = 0;
       for (CarbonLocalMultiBlockSplit split : splits) {

@@ -32,10 +32,9 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field, StructField}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.presto.server.PrestoServer
+import org.apache.carbondata.presto.server.{PrestoServer, PrestoTestUtil}
 import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
-import io.prestosql.jdbc.PrestoArray
 
 class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAfterAll with BeforeAndAfterEach {
 
@@ -617,46 +616,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       .executeQuery("select * from files5 ")
 
     assert(actualResult.size == 2)
-    for( row <- 0 to 1) {
-      var column1 = actualResult(row)("stringfield")
-      if(column1 == "row1") {
-        var column2 =  actualResult(row)("arraybyte").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-        var column3 =  actualResult(row)("arrayshort").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-        var column4 =  actualResult(row)("arrayint").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-        assert(column2(0) == null)
-        assert(column3(0) == null)
-        assert(column4(0) == null)
-      } else if(column1 == "row2") {
-        var column2 =  actualResult(row)("arrayint").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-        if (column2.sameElements(Array(4))) {
-          var column3 =  actualResult(row)("arraybyte").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column4 =  actualResult(row)("arrayshort").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column5 =  actualResult(row)("arraylong").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column6 =  actualResult(row)("arrayfloat").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column7 =  actualResult(row)("arraydouble").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column8 =  actualResult(row)("arraybinary").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column9 =  actualResult(row)("arraydate").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column10 =  actualResult(row)("arraytimestamp").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column11 =  actualResult(row)("arrayboolean").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column12 =  actualResult(row)("arrayvarchar").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column13 =  actualResult(row)("arraydecimal").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-          var column14 =  actualResult(row)("arraystring").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
-
-          assert(column3.sameElements(Array(3,5,4)))
-          assert(column4.sameElements(Array(4,5,6)))
-          assert(column5.sameElements(Array(2L,59999999L, 99999999999L)))
-          assert(column6.sameElements(Array(5.4646f,5.55f,0.055f)))
-          assert(column7.sameElements(Array(5.46464646464,5.55,0.055)))
-          assert(column8(0).asInstanceOf[Array[Byte]].size == 118198)
-          assert(column9.sameElements(Array("2019-03-02","2020-03-02","2021-04-02")))
-          assert(column10.sameElements(Array("2019-02-12 03:03:34.000","2020-02-12 03:03:34.000","2021-03-12 03:03:34.000")))
-          assert(column11.sameElements(Array(true,false)))
-          assert(column12.sameElements(Array(longChar)))
-          assert(column13.sameElements(Array("999.23","0.12")))
-          assert(column14.sameElements(Array("japan","china","iceland")))
-        }
-      }
-    }
+    PrestoTestUtil.validateArrayOfPrimitiveTypeData(actualResult, longChar)
     FileUtils.deleteDirectory(new File(writerPathComplex))
   }
 
