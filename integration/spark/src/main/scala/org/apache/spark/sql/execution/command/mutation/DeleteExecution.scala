@@ -234,7 +234,7 @@ object DeleteExecution {
                   TupleIdEnum.BLOCKLET_ID.getTupleIdIndex),
                 Integer.parseInt(CarbonUpdateUtil.getRequiredFieldFromTID(TID,
                   TupleIdEnum.PAGE_ID.getTupleIdIndex)))
-            } else if (TID.contains("#")) {
+            } else if (TID.contains("#/") && load.getPath != null) {
               // this is in case of the external segment, where the tuple id has external path with#
               (CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.EXTERNAL_OFFSET),
                 CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.EXTERNAL_BLOCKLET_ID),
@@ -275,7 +275,7 @@ object DeleteExecution {
             columnCompressor = CompressorFactory.getInstance.getCompressor.getName
           }
           var blockNameFromTupleID =
-            if (TID.contains("#")) {
+            if (TID.contains("#/") && load.getPath != null) {
               CarbonUpdateUtil.getRequiredFieldFromTID(TID,
                 TupleIdEnum.EXTERNAL_BLOCK_ID)
             } else {

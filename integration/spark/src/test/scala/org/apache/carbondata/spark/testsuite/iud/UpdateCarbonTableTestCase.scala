@@ -18,17 +18,15 @@ package org.apache.carbondata.spark.testsuite.iud
 
 import java.io.File
 
-import org.apache.spark.sql.test.SparkTestQueryExecutor
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SaveMode}
-import org.scalatest.{BeforeAndAfterAll, ConfigMap}
-
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SaveMode}
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
@@ -76,12 +74,23 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows""")
+    sql("insert into iud.zerorows select 'abc',34,'def','des'")
     sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
     sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").show()
     sql("clean files for table iud.zerorows")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from iud.zerorows"""),
-      Seq(Row("a",2,"aa","aaa"),Row("b",3,"bb","bbb"),Row("c",3,"cc","ccc"),Row("d",4,"dd","ddd"),Row("e",5,"ee","eee"),Row("a",2,"aa","aaa"),Row("b",3,"bb","bbb"),Row("c",3,"cc","ccc"),Row("d",4,"dd","ddd"),Row("e",5,"ee","eee"))
+      Seq(Row("a", 2, "aa", "aaa"),
+        Row("abc", 34, "def", "des"),
+        Row("b", 3, "bb", "bbb"),
+        Row("c", 3, "cc", "ccc"),
+        Row("d", 4, "dd", "ddd"),
+        Row("e", 5, "ee", "eee"),
+        Row("a", 2, "aa", "aaa"),
+        Row("b", 3, "bb", "bbb"),
+        Row("c", 3, "cc", "ccc"),
+        Row("d", 4, "dd", "ddd"),
+        Row("e", 5, "ee", "eee"))
     )
     sql("""drop table iud.zerorows""")
   }
@@ -904,6 +913,25 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql("drop table if exists test_return_row_count")
     sql("drop table if exists test_return_row_count_source")
+  }
+
+  test("test update on a table with multiple partition directories") {
+    sql("drop table if exists partitionMultiple")
+    import sqlContext.implicits._
+    val df = sqlContext.sparkContext.parallelize(1 to 4, 4)
+      .map { x => (s"name$x", s"$x", s"region$x", s"country$x", s"city$x")
+      }.toDF("name", "age", "region", "country", "city")
+    df.write.format("carbondata")
+      .option("tableName", "partitionMultiple")
+      .option("partitionColumns", "region, country, city")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(sql("delete from partitionMultiple where name = 'name2'"), Seq(Row(1)))
+    checkAnswer(sql("update partitionMultiple set(name) = ('Joey') where age = 3"), Seq(Row(1)))
+    checkAnswer(sql("select * from partitionMultiple"),
+      Seq(Row("name1", "1", "region1", "country1", "city1"),
+        Row("name4", "4", "region4", "country4", "city4"),
+        Row("Joey", "3", "region3", "country3", "city3")))
   }
 
   test("test update for partition table without merge index files for segment") {
