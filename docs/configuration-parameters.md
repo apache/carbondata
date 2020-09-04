@@ -230,7 +230,7 @@ RESET
 | carbon.index.visible.<db_name>.<table_name>.<index_name> | To specify query on ***db_name.table_name*** to not use the index ***index_name***. |
 | carbon.load.indexes.parallel.<db_name>.<table_name> | To enable parallel index loading for a table. when db_name.table_name are not specified, i.e., when ***carbon.load.indexes.parallel.*** is set, it applies for all the tables of the session. |
 | carbon.enable.index.server                | To use index server for caching and pruning. This property can be used for a session or for a particular table with ***carbon.enable.index.server.<db_name>.<table_name>***. |
-
+| carbon.reorder.filter                     | This property can be used to enabled/disable filter reordering. Should be disabled only when the user has optimized the filter condition.
 **Examples:**
 
 * Add or Update:

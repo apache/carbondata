@@ -24,7 +24,6 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 
 class TestFilterReordering extends QueryTest with BeforeAndAfterAll{
 
@@ -37,19 +36,25 @@ class TestFilterReordering extends QueryTest with BeforeAndAfterAll{
   test("Test filter reorder with various conditions") {
     val filter1 = Or(And(EqualTo("four", 11), EqualTo("two", 11)), EqualTo("one", 11))
     val table = CarbonEnv.getCarbonTable(None, "filter_reorder")(sqlContext.sparkSession)
-    var d: (Filter, Int) = CarbonFilters.reorderFilter(filter1, table)
-    assert(d._1.references.sameElements(Array("one", "two", "four")))
+    var d: Array[Filter] = CarbonFilters.reorderFilter(Array(filter1), table)
+    assert(d.head.references.sameElements(Array("one", "two", "four")))
 
     val filter2 = Or(Or(EqualTo("four", 11), EqualTo("two", 11)),
       Or(EqualTo("one", 11), Or(EqualTo("five", 11), EqualTo("three", 11))))
-    d = CarbonFilters.reorderFilter(filter2, table)
-    assert(d._1.references.sameElements(Array("one", "two", "three", "four", "five")))
+    d = CarbonFilters.reorderFilter(Array(filter2), table)
+    assert(d.head.references.sameElements(Array("one", "two", "three", "four", "five")))
 
     val filter3 = Or(Or(EqualTo("four", 11), EqualTo("two", 11)),
       Or(EqualTo("one", 11), Or(EqualTo("five", 11),
         And(EqualTo("three", 11), EqualTo("three", 11)))))
-    d = CarbonFilters.reorderFilter(filter3, table)
-    assert(d._1.references.sameElements(Array("one", "three", "three", "five", "two", "four")))
+    d = CarbonFilters.reorderFilter(Array(filter3), table)
+    assert(d.head.references.sameElements(Array("one", "three", "three", "five", "two", "four")))
+
+    val filter4: Array[Filter] = Array(EqualTo("four", 11), EqualTo("two", 11), EqualTo("one", 11),
+      EqualTo("five", 11), EqualTo("three", 11))
+    d = CarbonFilters.reorderFilter(filter4, table)
+    assert(d.map(_.references.head) sameElements
+           Array("one", "two", "three", "four", "five"))
   }
 
   test("test disabling filter reordering") {
@@ -57,8 +62,8 @@ class TestFilterReordering extends QueryTest with BeforeAndAfterAll{
     CarbonUtils.updateSessionInfoToCurrentThread(sqlContext.sparkSession)
     val filter1 = Or(And(EqualTo("four", 11), EqualTo("two", 11)), EqualTo("one", 11))
     val table = CarbonEnv.getCarbonTable(None, "filter_reorder")(sqlContext.sparkSession)
-    val d: (Filter, Int) = CarbonFilters.reorderFilter(filter1, table)
-    assert(d._1.references.sameElements(Array("four", "two", "one")))
+    val d: Array[Filter] = CarbonFilters.reorderFilter(Array(filter1), table)
+    assert(d.head.references.sameElements(Array("four", "two", "one")))
     sqlContext.sparkSession.sql(s"set ${CarbonCommonConstants.CARBON_REORDER_FILTER}=true")
   }
 

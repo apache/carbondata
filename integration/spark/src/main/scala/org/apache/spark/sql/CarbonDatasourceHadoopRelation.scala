@@ -72,9 +72,8 @@ case class CarbonDatasourceHadoopRelation(
       projects: Seq[NamedExpression],
       filters: Array[Filter],
       partitions: Seq[PartitionSpec]): RDD[InternalRow] = {
-    val reorderedFilter = filters.map(CarbonFilters.reorderFilter(_, carbonTable)).sortBy(_._2)
-    val filterExpression: Option[Expression] = reorderedFilter.flatMap { tuple =>
-      val filter = tuple._1
+    val reorderedFilter = CarbonFilters.reorderFilter(filters, carbonTable)
+    val filterExpression: Option[Expression] = reorderedFilter.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter,
         carbonTable.getTableInfo.getFactTable.getTableProperties.asScala)
     }.reduceOption(new AndExpression(_, _))

@@ -420,29 +420,33 @@ object CarbonFilters {
    *
    *  **Similar expression filters are reordered globally**
    *
-   * @param filter the filter expression to be reordered
+   * @param filters the filter expressions to be reordered
    * @return The reordered filter with the current ordinal
    */
-  def reorderFilter(filter: Filter, table: CarbonTable): (Filter, Int) = {
+  def reorderFilter(filters: Array[Filter], table: CarbonTable): Array[Filter] = {
     val filterMap = mutable.HashMap[String, List[(Filter, Int)]]()
-    // If the filter size is one or the user has disabled reordering then no need to reorder.
-    if (filter.references.toSet.size == 1 ||
-        !CarbonProperties.isFilterReorderingEnabled) {
-      (filter, -1)
+    if (!CarbonProperties.isFilterReorderingEnabled) {
+      filters
     } else {
-      val sortedFilter = sortFilter(filter, filterMap, table)
-      // If filter has only AND/OR expression then sort the nodes globally using the filterMap.
-      // Else sort the subnodes individually
-      if (!filterMap.contains("OR") && filterMap.contains("AND") && filterMap("AND").nonEmpty) {
-        val sortedFilterAndOrdinal = filterMap("AND").sortBy(_._2)
-        (sortedFilterAndOrdinal.map(_._1).reduce(sources.And), sortedFilterAndOrdinal.head._2)
-      } else if (!filterMap.contains("AND") && filterMap.contains("OR") &&
-                 filterMap("OR").nonEmpty) {
-        val sortedFilterAndOrdinal = filterMap("OR").sortBy(_._2)
-        (sortedFilterAndOrdinal.map(_._1).reduce(sources.Or), sortedFilterAndOrdinal.head._2)
-      } else {
-        sortedFilter
-      }
+      filters.collect {
+        // If the filter size is one or the user has disabled reordering then no need to reorder.
+        case filter if filter.references.toSet.size == 1 =>
+          (filter, getStorageOrdinal(filter, table))
+        case filter =>
+          val sortedFilter = sortFilter(filter, filterMap, table)
+          // If filter has only AND/OR expression then sort the nodes globally using the filterMap.
+          // Else sort the subnodes individually
+          if (!filterMap.contains("OR") && filterMap.contains("AND") && filterMap("AND").nonEmpty) {
+            val sortedFilterAndOrdinal = filterMap("AND").sortBy(_._2)
+            (sortedFilterAndOrdinal.map(_._1).reduce(sources.And), sortedFilterAndOrdinal.head._2)
+          } else if (!filterMap.contains("AND") && filterMap.contains("OR") &&
+                     filterMap("OR").nonEmpty) {
+            val sortedFilterAndOrdinal = filterMap("OR").sortBy(_._2)
+            (sortedFilterAndOrdinal.map(_._1).reduce(sources.Or), sortedFilterAndOrdinal.head._2)
+          } else {
+            sortedFilter
+          }
+      }.sortBy(_._2).map(_._1)
     }
   }
 
@@ -456,33 +460,33 @@ object CarbonFilters {
       case _ => sources.And
     }
     if (checkIfRightIsASubsetOfLeft(left, right)) {
-      val sorted = sortFilter(left, filterMap, table)
+      val (sorted, ordinal) = sortFilter(left, filterMap, table)
       val rightOrdinal = getStorageOrdinal(right, table)
-      val orderedFilter = if (sorted._2 >= rightOrdinal) {
-        (newFilter(right, sorted._1), rightOrdinal)
+      val orderedFilter = if (ordinal >= rightOrdinal) {
+        (newFilter(right, sorted), rightOrdinal)
       } else {
-        (newFilter(sorted._1, right), sorted._2)
+        (newFilter(sorted, right), ordinal)
       }
       if (isLeafNode(left)) {
-        filterMap.put(filterType, filterMap(filterType) ++ List(sorted))
+        filterMap.put(filterType, filterMap(filterType) ++ List((sorted, ordinal)))
       }
       if (isLeafNode(right)) {
         filterMap.put(filterType, filterMap(filterType) ++ List((right, rightOrdinal)))
       }
       orderedFilter
     } else {
-      val leftSorted = sortFilter(left, filterMap, table)
-      val rightSorted = sortFilter(right, filterMap, table)
-      val orderedFilter = if (leftSorted._2 > rightSorted._2) {
-        (newFilter(rightSorted._1, leftSorted._1), rightSorted._2)
+      val (leftSorted, leftOrdinal) = sortFilter(left, filterMap, table)
+      val (rightSorted, rightOrdinal) = sortFilter(right, filterMap, table)
+      val orderedFilter = if (leftOrdinal > rightOrdinal) {
+        (newFilter(rightSorted, leftSorted), rightOrdinal)
       } else {
-        (newFilter(leftSorted._1, rightSorted._1), leftSorted._2)
+        (newFilter(leftSorted, rightSorted), leftOrdinal)
       }
       if (isLeafNode(left)) {
-        filterMap.put(filterType, filterMap(filterType) ++ List(leftSorted))
+        filterMap.put(filterType, filterMap(filterType) ++ List((leftSorted, leftOrdinal)))
       }
       if (isLeafNode(right)) {
-        filterMap.put(filterType, filterMap(filterType) ++ List(rightSorted))
+        filterMap.put(filterType, filterMap(filterType) ++ List((rightSorted, rightOrdinal)))
       }
       orderedFilter
     }
