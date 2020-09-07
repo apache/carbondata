@@ -27,18 +27,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.block.TableBlockInfo
-import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
-import org.apache.carbondata.core.datastore.chunk.reader.CarbonDataReaderFactory
-import org.apache.carbondata.core.datastore.chunk.reader.dimension.v3.DimensionChunkReaderV3
-import org.apache.carbondata.core.datastore.compression.CompressorFactory
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion
-import org.apache.carbondata.core.util.{CarbonMetadataUtil, CarbonProperties, DataFileFooterConverterV3}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil}
 
 class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterAll {
 
@@ -61,7 +51,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
       "CREATE TABLE local2(name string) STORED AS carbondata tblproperties" +
       "('local_dictionary_threshold'='2001','local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
-    assert(!checkForLocalDictionary(getDimRawChunk(0)))
+    assert(!CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
   }
 
   test("test successful local dictionary generation") {
@@ -70,7 +60,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
         "tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='9001'," +
         "'local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
-    assert(checkForLocalDictionary(getDimRawChunk(0)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
   }
 
   test("test successful local dictionary generation for default configs") {
@@ -78,7 +68,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("CREATE TABLE local2(name string) STORED AS carbondata " +
         "tblproperties('local_dictionary_enable'='true')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
-    assert(checkForLocalDictionary(getDimRawChunk(0)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
   }
 
   test("test local dictionary generation for local dictionary include") {
@@ -86,7 +76,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("CREATE TABLE local2(name string) STORED AS carbondata " +
         "TBLPROPERTIES ('local_dictionary_enable'='true', 'local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
-    assert(checkForLocalDictionary(getDimRawChunk(0)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
   }
 
   test("test local dictionary generation for local dictioanry exclude") {
@@ -95,7 +85,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
       "CREATE TABLE local2(name string) STORED AS carbondata tblproperties" +
       "('local_dictionary_enable'='true')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
-    assert(checkForLocalDictionary(getDimRawChunk(0)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
   }
 
   test("test local dictionary generation when it is disabled") {
@@ -104,7 +94,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
       "CREATE TABLE local2(name string) STORED AS carbondata tblproperties" +
       "('local_dictionary_enable'='false','local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
-    assert(!checkForLocalDictionary(getDimRawChunk(0)))
+    assert(!CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
   }
 
   test("test local dictionary generation for invalid threshold configurations") {
@@ -114,7 +104,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
       "tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name'," +
       "'local_dictionary_threshold'='300000')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
-    assert(checkForLocalDictionary(getDimRawChunk(0)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
   }
 
   test("test local dictionary generation for include and exclude") {
@@ -123,8 +113,8 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
         "tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name', " +
         "'local_dictionary_exclude'='age')")
     sql("insert into table local2 values('vishal', '30')")
-    assert(checkForLocalDictionary(getDimRawChunk(0)))
-    assert(!checkForLocalDictionary(getDimRawChunk(1)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
+    assert(!CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 1)))
   }
 
   test("test local dictionary generation for complex type") {
@@ -134,9 +124,9 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("load data inpath '" + file2 +
         "' into table local2 OPTIONS('header'='false','COMPLEX_DELIMITER_LEVEL_1'='$', " +
         "'COMPLEX_DELIMITER_LEVEL_2'=':')")
-    assert(!checkForLocalDictionary(getDimRawChunk(0)))
-    assert(checkForLocalDictionary(getDimRawChunk(1)))
-    assert(checkForLocalDictionary(getDimRawChunk(2)))
+    assert(!CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 1)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 2)))
   }
 
   test("test local dictionary generation for map type") {
@@ -148,10 +138,10 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
         "map('Manish','Gupta','Manish','Nalla','Shardul','Singh','Vishal','Kumar'))")
     checkAnswer(sql("select * from local2"), Seq(
       Row(Map("Manish" -> "Nalla", "Shardul" -> "Singh", "Vishal" -> "Kumar"))))
-    assert(!checkForLocalDictionary(getDimRawChunk(0)))
-    assert(!checkForLocalDictionary(getDimRawChunk(1)))
-    assert(checkForLocalDictionary(getDimRawChunk(2)))
-    assert(checkForLocalDictionary(getDimRawChunk(3)))
+    assert(!CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 0)))
+    assert(!CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 1)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 2)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(storePath, 3)))
   }
 
   test("test local dictionary data validation") {
@@ -174,10 +164,10 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("CREATE TABLE local2(name string) STORED AS carbondata " +
         "tblproperties('local_dictionary_enable'='true')")
     sql("load data inpath '" + resourcesPath + "/localdictionary.csv" + "' into table local2")
-    val dimRawChunk = getDimRawChunk(0)
+    val dimRawChunk = CarbonTestUtil.getDimRawChunk(storePath, 0)
     val dictionaryData = Array("vishal", "kumar", "akash", "praveen", "brijoo")
     try
-      assert(validateDictionary(dimRawChunk.get(0), dictionaryData))
+      assert(CarbonTestUtil.validateDictionary(dimRawChunk.get(0), dictionaryData))
     catch {
       case e: Exception =>
         assert(false)
@@ -242,107 +232,4 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     val file: File = new File(fileName)
     if (file.exists) file.delete
   }
-
-  private def checkForLocalDictionary(dimensionRawColumnChunks: util
-  .List[DimensionRawColumnChunk]): Boolean = {
-    var isLocalDictionaryGenerated = false
-    import scala.collection.JavaConverters._
-    for (dimensionRawColumnChunk <- dimensionRawColumnChunks.asScala) {
-      if (dimensionRawColumnChunk.getDataChunkV3
-        .isSetLocal_dictionary) {
-        isLocalDictionaryGenerated = true
-      }
-    }
-    isLocalDictionaryGenerated
-  }
-
-  /**
-   * this method returns true if local dictionary is created for all the blocklets or not
-   *
-   * @return
-   */
-  private def getDimRawChunk(blockindex: Int): util.ArrayList[DimensionRawColumnChunk] = {
-    val dataFiles = FileFactory.getCarbonFile(storePath)
-      .listFiles(new CarbonFileFilter() {
-        override def accept(file: CarbonFile): Boolean = {
-          if (file.getName
-            .endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-            true
-          } else {
-            false
-          }
-        }
-      })
-    val dimensionRawColumnChunks = read(dataFiles(0).getAbsolutePath,
-      blockindex)
-    dimensionRawColumnChunks
-  }
-
-  private def read(filePath: String, blockIndex: Int) = {
-    val carbonDataFiles = new File(filePath)
-    val dimensionRawColumnChunks = new
-        util.ArrayList[DimensionRawColumnChunk]
-    val offset = carbonDataFiles.length
-    val converter = new DataFileFooterConverterV3
-    val fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
-    val actualOffset = fileReader.readLong(carbonDataFiles.getAbsolutePath, offset - 8)
-    val blockInfo = new TableBlockInfo(carbonDataFiles.getAbsolutePath,
-      actualOffset,
-      "0",
-      new Array[String](0),
-      carbonDataFiles.length,
-      ColumnarFormatVersion.V3,
-      null)
-    val dataFileFooter = converter.readDataFileFooter(blockInfo)
-    val blockletList = dataFileFooter.getBlockletList
-    import scala.collection.JavaConverters._
-    for (blockletInfo <- blockletList.asScala) {
-      val dimensionColumnChunkReader =
-        CarbonDataReaderFactory
-          .getInstance
-          .getDimensionColumnChunkReader(ColumnarFormatVersion.V3,
-            blockletInfo,
-            carbonDataFiles.getAbsolutePath,
-            false).asInstanceOf[DimensionChunkReaderV3]
-      dimensionRawColumnChunks
-        .add(dimensionColumnChunkReader.readRawDimensionChunk(fileReader, blockIndex))
-    }
-    dimensionRawColumnChunks
-  }
-
-  private def validateDictionary(rawColumnPage: DimensionRawColumnChunk,
-      data: Array[String]): Boolean = {
-    val local_dictionary = rawColumnPage.getDataChunkV3.local_dictionary
-    if (null != local_dictionary) {
-      val compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
-        rawColumnPage.getDataChunkV3.getData_chunk_list.get(0).getChunk_meta)
-      val encodings = local_dictionary.getDictionary_meta.encoders
-      val encoderMetas = local_dictionary.getDictionary_meta.getEncoder_meta
-      val encodingFactory = DefaultEncodingFactory.getInstance
-      val decoder = encodingFactory.createDecoder(encodings, encoderMetas, compressorName)
-      val dictionaryPage = decoder
-        .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length)
-      val dictionaryMap = new
-          util.HashMap[DictionaryByteArrayWrapper, Integer]
-      val usedDictionaryValues = util.BitSet
-        .valueOf(CompressorFactory.getInstance.getCompressor(compressorName)
-          .unCompressByte(local_dictionary.getDictionary_values))
-      var index = 0
-      var i = usedDictionaryValues.nextSetBit(0)
-      while ( { i >= 0 }) {
-        dictionaryMap
-          .put(new DictionaryByteArrayWrapper(dictionaryPage.getBytes({ index += 1; index - 1 })),
-            i)
-        i = usedDictionaryValues.nextSetBit(i + 1)
-      }
-      for (i <- data.indices) {
-        if (null == dictionaryMap.get(new DictionaryByteArrayWrapper(data(i).getBytes))) {
-          return false
-        }
-      }
-      return true
-    }
-    false
-  }
-
 }

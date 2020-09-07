@@ -40,20 +40,12 @@ import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.block.TableBlockInfo
-import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
-import org.apache.carbondata.core.datastore.chunk.reader.CarbonDataReaderFactory
-import org.apache.carbondata.core.datastore.chunk.reader.dimension.v3.DimensionChunkReaderV3
-import org.apache.carbondata.core.datastore.compression.CompressorFactory
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3
-import org.apache.carbondata.core.util.{CarbonMetadataUtil, CarbonProperties, CarbonUtil, DataFileFooterConverterV3}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.sdk.file._
@@ -2425,7 +2417,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(writerPath, 0)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
@@ -2452,7 +2444,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(writerPath, 0)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
@@ -2470,7 +2462,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(!testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    assert(!CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(writerPath, 0)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
@@ -2488,7 +2480,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(writerPath, 0)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
@@ -2496,7 +2488,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerPath))
     sql("insert into sdkTable select 's1','s2',23 ")
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(writerPath, 0)))
     val df = sql("describe formatted sdkTable")
     checkExistence(df, true, "Local Dictionary Enabled true")
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))
@@ -2532,7 +2524,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(writerPath, 0)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
@@ -2631,105 +2623,4 @@ object testUtil{
       writer.close()
     }
   }
-
-  /**
-   * this method returns true if local dictionary is created for all the blocklets or not
-   *
-   * @return
-   */
-  def getDimRawChunk(blockindex: Int,storePath :String): util.ArrayList[DimensionRawColumnChunk] = {
-    val dataFiles = FileFactory.getCarbonFile(storePath)
-      .listFiles(new CarbonFileFilter() {
-        override def accept(file: CarbonFile): Boolean = {
-          if (file.getName
-            .endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-            true
-          } else {
-            false
-          }
-        }
-      })
-    val dimensionRawColumnChunks = read(dataFiles(0).getAbsolutePath,
-      blockindex)
-    dimensionRawColumnChunks
-  }
-
-  def read(filePath: String, blockIndex: Int) = {
-    val carbonDataFiles = new File(filePath)
-    val dimensionRawColumnChunks = new
-        util.ArrayList[DimensionRawColumnChunk]
-    val offset = carbonDataFiles.length
-    val converter = new DataFileFooterConverterV3
-    val fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
-    val actualOffset = fileReader.readLong(carbonDataFiles.getAbsolutePath, offset - 8)
-    val blockInfo = new TableBlockInfo(carbonDataFiles.getAbsolutePath,
-      actualOffset,
-      "0",
-      new Array[String](0),
-      carbonDataFiles.length,
-      ColumnarFormatVersion.V3,
-      null)
-    val dataFileFooter = converter.readDataFileFooter(blockInfo)
-    val blockletList = dataFileFooter.getBlockletList.asScala
-    for (blockletInfo <- blockletList) {
-      val dimensionColumnChunkReader =
-        CarbonDataReaderFactory
-          .getInstance
-          .getDimensionColumnChunkReader(ColumnarFormatVersion.V3,
-            blockletInfo,
-            carbonDataFiles.getAbsolutePath,
-            false).asInstanceOf[DimensionChunkReaderV3]
-      dimensionRawColumnChunks
-        .add(dimensionColumnChunkReader.readRawDimensionChunk(fileReader, blockIndex))
-    }
-    dimensionRawColumnChunks
-  }
-
-  def validateDictionary(rawColumnPage: DimensionRawColumnChunk,
-      data: Array[String]): Boolean = {
-    val local_dictionary = rawColumnPage.getDataChunkV3.local_dictionary
-    if (null != local_dictionary) {
-      val compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
-        rawColumnPage.getDataChunkV3.getData_chunk_list.get(0).getChunk_meta)
-      val encodings = local_dictionary.getDictionary_meta.encoders
-      val encoderMetas = local_dictionary.getDictionary_meta.getEncoder_meta
-      val encodingFactory = DefaultEncodingFactory.getInstance
-      val decoder = encodingFactory.createDecoder(encodings, encoderMetas, compressorName)
-      val dictionaryPage = decoder
-        .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length)
-      val dictionaryMap = new util.HashMap[DictionaryByteArrayWrapper, Integer]
-      val usedDictionaryValues = util.BitSet
-        .valueOf(CompressorFactory.getInstance.getCompressor(compressorName)
-          .unCompressByte(local_dictionary.getDictionary_values))
-      var index = 0
-      var i = usedDictionaryValues.nextSetBit(0)
-      while ( { i >= 0 }) {
-        dictionaryMap
-          .put(new DictionaryByteArrayWrapper(dictionaryPage.getBytes({ index += 1; index - 1 })),
-            i)
-        i = usedDictionaryValues.nextSetBit(i + 1)
-      }
-      for (i <- data.indices) {
-        if (null == dictionaryMap.get(new DictionaryByteArrayWrapper(data(i).getBytes))) {
-          return false
-        }
-      }
-      return true
-    }
-    false
-  }
-
-  def checkForLocalDictionary(dimensionRawColumnChunks: util
-  .List[DimensionRawColumnChunk]): Boolean = {
-    var isLocalDictionaryGenerated = false
-    import scala.collection.JavaConversions._
-    for (dimensionRawColumnChunk <- dimensionRawColumnChunks) {
-      if (dimensionRawColumnChunk.getDataChunkV3
-        .isSetLocal_dictionary) {
-        isLocalDictionaryGenerated = true
-      }
-    }
-    isLocalDictionaryGenerated
-  }
-
 }

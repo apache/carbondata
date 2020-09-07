@@ -100,6 +100,13 @@ object HiveExample {
         "insert into complexMap values(map('Manish','Nalla','Shardul','Singh','Vishal','Kumar'," +
         "'EmptyVal','','NullVal', 'null'))")
 
+    sparkSession.sql("""DROP TABLE IF EXISTS carbonLocalDictionary""".stripMargin)
+
+    sparkSession.sql(
+      s"create table carbonLocalDictionary(id int, name string, scale decimal, country string, " +
+      s"salary double) stored as carbondata TBLPROPERTIES ('local_dictionary_enable'='true'," +
+      s"'local_dictionary_include'='name') ")
+
     // delete the already existing lock on metastore so that new derby instance
     // for HiveServer can run on the same metastore
     checkAndDeleteDBLock
@@ -237,6 +244,30 @@ object HiveExample {
     println(" ********** Total Rows Fetched When Quering The Out Of Order Columns **********" +
             s"$outOfOrderColFetched")
     assert(outOfOrderColFetched == 4)
+
+    println(" ********** Local Dictionary details from Describe Formatted **********")
+
+    val resultDictQuery = statement.executeQuery("describe formatted carbonLocalDictionary")
+
+    var dataType = ""
+
+    while (resultDictQuery.next) {
+      dataType = dataType + resultDictQuery.getString("data_type")
+      if (resultDictQuery.getString("data_type") != null &&
+          resultDictQuery.getString("data_type").contains("local_dictionary_enable")) {
+        println(s"| " + resultDictQuery.getString("data_type") + " |    " + "| " +
+                resultDictQuery.getString("comment") + " |")
+        assert(resultDictQuery.getString("comment").contains("true"))
+      }
+      if (resultDictQuery.getString("data_type") != null &&
+          resultDictQuery.getString("data_type").contains("local_dictionary_include")) {
+        println(s"| " + resultDictQuery.getString("data_type") + " |    " + "| " +
+                resultDictQuery.getString("comment") + " |")
+        assert(resultDictQuery.getString("comment").contains("name"))
+      }
+    }
+    assert(dataType.contains("local_dictionary_enable"))
+    assert(dataType.contains("local_dictionary_include"))
 
     val resultAggQuery = statement
       .executeQuery(

@@ -119,5 +119,10 @@ select * from hive_carbon order by id;
 
 ### Note
  - Partition table support is not handled
+ - Currently because carbon is implemented as a non-native hive table, therefore the user has to add the `storage_handler` information in tblproperties if the table has to be accessed from hive. Once the tblproperties have been updated, the user would not be able to do certain operations like alter, update/delete, etc., in both spark and hive.
+ 
+ ```
+ alter table <tableName> set tblproperties('storage_handler'= 'org.apache.carbondata.hive.CarbonStorageHandler');
+```
 
 
