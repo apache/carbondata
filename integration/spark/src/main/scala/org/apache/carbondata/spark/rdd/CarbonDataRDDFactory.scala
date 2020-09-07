@@ -54,7 +54,7 @@ import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarForma
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonUtil, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.view.{MVSchema, MVStatus}
@@ -725,43 +725,53 @@ object CarbonDataRDDFactory {
     val metadataDetails =
       SegmentStatusManager.readTableStatusFile(
         CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
-    val segmentFiles = segmentDetails.asScala.map { seg =>
-      val load =
-        metadataDetails.find(_.getLoadName.equals(seg.getSegmentNo)).get
-      val segmentFile = load.getSegmentFile
-      var segmentFiles: Seq[CarbonFile] = Seq.empty[CarbonFile]
+    val updateTableStatusFile = CarbonUpdateUtil.getUpdateStatusFileName(updateModel
+      .updatedTimeStamp.toString)
+    val updatedSegments = SegmentUpdateStatusManager.readLoadMetadata(updateTableStatusFile,
+      carbonTable.getTablePath).map(_.getSegmentName).toSet
+    val segmentFiles = segmentDetails.asScala.map { segment =>
+      // create new segment files and merge for only updated segments
+      if (updatedSegments.contains(segment.getSegmentNo)) {
+        val load =
+          metadataDetails.find(_.getLoadName.equals(segment.getSegmentNo)).get
+        val segmentFile = load.getSegmentFile
+        var segmentFiles: Seq[CarbonFile] = Seq.empty[CarbonFile]
 
-      val segmentMetaDataInfo = segmentMetaDataInfoMap.get(seg.getSegmentNo)
-      val file = SegmentFileStore.writeSegmentFile(
-        carbonTable,
-        seg.getSegmentNo,
-        String.valueOf(System.currentTimeMillis()),
-        load.getPath,
-        segmentMetaDataInfo)
+        val segmentMetaDataInfo = segmentMetaDataInfoMap.get(segment.getSegmentNo)
+        val segmentFileName = SegmentFileStore.writeSegmentFile(
+          carbonTable,
+          segment.getSegmentNo,
+          String.valueOf(System.currentTimeMillis()),
+          load.getPath,
+          segmentMetaDataInfo)
 
-      if (segmentFile != null) {
-        segmentFiles ++= FileFactory.getCarbonFile(
+        if (segmentFile != null) segmentFiles ++= FileFactory.getCarbonFile(
           SegmentFileStore.getSegmentFilePath(carbonTable.getTablePath, segmentFile)) :: Nil
-      }
-      val updatedSegFile = if (file != null) {
-        val carbonFile = FileFactory.getCarbonFile(
-          SegmentFileStore.getSegmentFilePath(carbonTable.getTablePath, file))
-        segmentFiles ++= carbonFile :: Nil
+        val updatedSegFile = if (segmentFileName != null) {
+          val segmentCarbonFile = FileFactory.getCarbonFile(
+            SegmentFileStore.getSegmentFilePath(carbonTable.getTablePath, segmentFileName))
+          segmentFiles ++= segmentCarbonFile :: Nil
 
-        val mergedSegFileName = SegmentFileStore.genSegmentFileName(
-          seg.getSegmentNo,
-          updateModel.updatedTimeStamp.toString)
-        SegmentFileStore.mergeSegmentFiles(
-          mergedSegFileName,
-          CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath),
-          segmentFiles.toArray)
-        carbonFile.delete()
-        mergedSegFileName + CarbonTablePath.SEGMENT_EXT
+          val mergedSegFileName = SegmentFileStore.genSegmentFileName(
+            segment.getSegmentNo,
+            updateModel.updatedTimeStamp.toString)
+          SegmentFileStore.mergeSegmentFiles(
+            mergedSegFileName,
+            CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath),
+            segmentFiles.toArray)
+          segmentFiles.foreach { oldSegmentFile =>
+            oldSegmentFile.delete()
+            LOGGER.debug(s"Old segment file is deleted after segment file merge: ${
+              oldSegmentFile.getName
+            }")
+          }
+          mergedSegFileName + CarbonTablePath.SEGMENT_EXT
+        } else null
+
+        new Segment(segment.getSegmentNo, updatedSegFile)
       } else {
-        null
+        segment
       }
-
-      new Segment(seg.getSegmentNo, updatedSegFile)
     }.filter(_.getSegmentFileName != null).asJava
     segmentFiles
   }
