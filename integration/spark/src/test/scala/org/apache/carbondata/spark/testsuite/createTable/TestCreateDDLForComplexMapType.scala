@@ -18,7 +18,6 @@
 package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.{BufferedWriter, File, FileWriter}
-import java.util
 
 import scala.collection.JavaConverters._
 
@@ -28,8 +27,6 @@ import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
-
 class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
   private val conf: Configuration = new Configuration(false)
 
@@ -38,14 +35,6 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
 
   val path = s"$rootPath/integration/spark/src/test/resources/maptest2.csv"
 
-  private def checkForLocalDictionary(dimensionRawColumnChunks: util
-  .List[DimensionRawColumnChunk]): Boolean = {
-    var isLocalDictionaryGenerated = false
-    isLocalDictionaryGenerated = dimensionRawColumnChunks.asScala
-      .filter(dimensionRawColumnChunk => dimensionRawColumnChunk.getDataChunkV3
-        .isSetLocal_dictionary).size > 0
-    isLocalDictionaryGenerated
-  }
 
   def createCSVFile(): Unit = {
     val out = new BufferedWriter(new FileWriter(path));

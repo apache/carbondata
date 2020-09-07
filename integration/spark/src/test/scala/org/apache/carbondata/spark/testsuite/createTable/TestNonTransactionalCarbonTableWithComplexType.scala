@@ -29,7 +29,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil}
 import org.apache.carbondata.sdk.file.CarbonWriter
 
 class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with BeforeAndAfterAll {
@@ -231,7 +231,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       s"""CREATE EXTERNAL TABLE localComplex STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0, writerPath)))
+    assert(CarbonTestUtil.checkForLocalDictionary(CarbonTestUtil.getDimRawChunk(writerPath, 0)))
     sql("describe formatted localComplex").collect
     val descLoc = sql("describe formatted localComplex").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {

@@ -16,12 +16,16 @@
  */
 package org.apache.carbondata.hive;
 
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -71,6 +75,18 @@ public class HiveCarbonTest extends HiveTestUtils {
     statement.execute("insert into hive_carbon_table4 select * from hive_table");
     checkAnswer(statement.executeQuery("select * from hive_carbon_table4"),
             connection.createStatement().executeQuery("select * from hive_table"));
+  }
+
+  @Test
+  public void verifyLocalDictionaryValues() throws Exception {
+    statement.execute("drop table if exists hive_carbon_table");
+    statement.execute("CREATE TABLE hive_carbon_table(shortField SMALLINT , intField INT, bigintField BIGINT , doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT) stored by 'org.apache.carbondata.hive.CarbonStorageHandler' TBLPROPERTIES ('local_dictionary_enable'='true','local_dictionary_include'='stringField')");
+    statement.execute("insert into hive_carbon_table select * from hive_table");
+    File rootPath = new File(HiveTestUtils.class.getResource("/").getPath() + "../../../..");
+    String storePath = rootPath.getAbsolutePath() + "/integration/hive/target/warehouse/warehouse/hive_carbon_table/";
+    ArrayList<DimensionRawColumnChunk> dimRawChunk = CarbonTestUtil.getDimRawChunk(storePath, 0);
+    String[] dictionaryData = new String[]{"hive", "impala", "flink", "spark"};
+    assert(CarbonTestUtil.validateDictionary(dimRawChunk.get(0), dictionaryData));
   }
 
   @Test
