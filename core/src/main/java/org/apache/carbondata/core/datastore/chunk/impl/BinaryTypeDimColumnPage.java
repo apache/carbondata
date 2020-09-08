@@ -83,13 +83,11 @@ public class BinaryTypeDimColumnPage extends AbstractDimensionColumnPage {
       default:
         throw new UnsupportedOperationException("Invalidate dimension store type");
     }
-    if (!isEncodedComplexChild) {
-      dataChunkStore = DimensionChunkStoreFactory.INSTANCE
-          .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize, dimStoreType,
-              dictionary, vectorInfo != null, dataLength, lengthStoredType);
-      if (vectorInfo != null) {
-        dataChunkStore.fillVector(invertedIndex, invertedIndexReverse, data, vectorInfo);
-      }
+    dataChunkStore = DimensionChunkStoreFactory.INSTANCE
+        .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize, dimStoreType,
+            dictionary, vectorInfo != null, dataLength, lengthStoredType);
+    if (vectorInfo != null) {
+      dataChunkStore.fillVector(invertedIndex, invertedIndexReverse, data, vectorInfo);
     }
   }
 

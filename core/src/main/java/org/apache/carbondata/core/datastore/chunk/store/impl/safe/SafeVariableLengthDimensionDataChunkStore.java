@@ -23,6 +23,8 @@ import java.util.BitSet;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
@@ -109,14 +111,37 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     CarbonColumnVector vector = vectorInfo.vector;
     vector.setDictionary(null);
     DataType dt = vector.getType();
+    boolean isComplexPrimitive = false;
+    if (dt.isComplexType()) {
+      if (!vectorInfo.vectorStack.isEmpty()) {
+        CarbonColumnVector columnVector = vectorInfo.vectorStack.peek();
+        if (!columnVector.getType().isComplexType()) {
+          dt = columnVector.getType();
+          isComplexPrimitive = true;
+        }
+      }
+    }
+    DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
+    if (isComplexPrimitive && DataTypes.isDecimal(dt)) {
+      if (decimalConverter == null) {
+        decimalConverter = DecimalConverterFactory.INSTANCE
+            .getDecimalConverter(((DecimalType) dt).getPrecision(), ((DecimalType) dt).getScale());
+      }
+    }
     AbstractNonDictionaryVectorFiller vectorFiller = NonDictionaryVectorFillerFactory
-        .getVectorFiller(getLengthSize(), dt, numberOfRows, dataLength, lengthStoredType);
+        .getVectorFiller(getLengthSize(), dt, numberOfRows, dataLength, lengthStoredType,
+            isComplexPrimitive, decimalConverter);
     vector = ColumnarVectorWrapperDirectFactory
         .getDirectVectorWrapperFactory(vectorInfo, vector, invertedIndex, new BitSet(),
             vectorInfo.deletedRows, false, false);
     vectorFiller.fillVector(data, vector);
     if (vector instanceof ConvertibleVector) {
       ((ConvertibleVector) vector).convert();
+    }
+    if (vectorInfo.vector.getType().isComplexType() && !vectorInfo.vectorStack.isEmpty()) {
+      // For complex type, always top of the vector stack is processed in decodeAndFillVector.
+      // so, pop() the top vector as its processing is finished.
+      vectorInfo.vectorStack.pop();
     }
   }
 
