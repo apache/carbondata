@@ -1415,6 +1415,18 @@ public final class CarbonCommonConstants {
   public static final String BITSET_PIPE_LINE_DEFAULT = "true";
 
   /**
+   * this is the user defined time(in days), when a specific timestamp subdirectory in
+   * trash folder will expire
+   */
+  @CarbonProperty
+  public static final String CARBON_TRASH_EXPIRATION_DAYS = "carbon.trash.expiration.days";
+
+  /**
+   * Default expiration time of trash folder is 3 days.
+   */
+  public static final String CARBON_TRASH_EXPIRATION_DAYS_DEFAULT = "7";
+
+  /**
    * minimum required registered resource for starting block distribution
    */
   @CarbonProperty

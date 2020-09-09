@@ -514,11 +514,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
-    CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case databaseName ~ tableName =>
+    CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
+      (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
+      case databaseName ~ tableName ~ optionList =>
         CarbonCleanFilesCommand(
           CarbonParserUtil.convertDbNameToLowerCase(databaseName),
-          Option(tableName.toLowerCase()))
+          Option(tableName.toLowerCase()), optionList)
     }
 
   protected lazy val explainPlan: Parser[LogicalPlan] =

@@ -57,6 +57,7 @@ import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CleanFilesUtil;
 import org.apache.carbondata.core.util.DeleteLoadFolders;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -1134,8 +1135,8 @@ public class SegmentStatusManager {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
           }
           if (updateCompletionStatus) {
-            DeleteLoadFolders
-                .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
+            CleanFilesUtil
+                .physicalDataAndIndexDeletion(carbonTable, newAddedLoadHistoryList,
                     isForceDeletion, partitionSpecs);
           }
         }

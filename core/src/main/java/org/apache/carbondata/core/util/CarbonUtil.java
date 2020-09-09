@@ -69,7 +69,9 @@ import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
+import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
@@ -3440,5 +3442,32 @@ public final class CarbonUtil {
         }
       });
     }
+  }
+
+  /**
+   * The below method tries to get the segment lock for the given segment.
+   */
+  public static boolean tryGettingSegmentLock(LoadMetadataDetails oneLoad,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
+    ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
+            CarbonTablePath.addSegmentPrefix(oneLoad.getLoadName()) + LockUsage.LOCK);
+    boolean canGetSegmentLock;
+    try {
+      if (segmentLock.lockWithRetries()) {
+        LOGGER.info("Acquired segment lock on segment: " + oneLoad.getLoadName() + ". It " +
+                "can be deleted as load is not in progress");
+        canGetSegmentLock = true;
+      } else {
+        LOGGER.info("Load in progress for segment" + oneLoad.getLoadName());
+        canGetSegmentLock = false;
+      }
+    } finally {
+      if (segmentLock.unlock()) {
+        LOGGER.info("Segment lock on segment:" + oneLoad.getLoadName() + " is released");
+      } else {
+        LOGGER.error("Unable to release segment lock on : " + oneLoad.getLoadName());
+      }
+    }
+    return canGetSegmentLock;
   }
 }

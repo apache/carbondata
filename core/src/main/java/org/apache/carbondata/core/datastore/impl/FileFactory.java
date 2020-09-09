@@ -731,4 +731,7 @@ public final class FileFactory {
     return getCarbonFile(path, getConfiguration()).listDirs();
   }
 
+  public static List<CarbonFile> getFolderList(CarbonFile carbonFile) throws IOException {
+    return carbonFile.listDirs();
+  }
 }

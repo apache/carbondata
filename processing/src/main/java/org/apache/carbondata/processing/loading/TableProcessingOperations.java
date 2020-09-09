@@ -19,10 +19,8 @@ package org.apache.carbondata.processing.loading;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,6 +33,7 @@ import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -42,6 +41,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.util.path.TrashUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
@@ -53,6 +53,8 @@ public class TableProcessingOperations {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
+  private static List<CarbonFile> filesInTrashFolder = new ArrayList<CarbonFile>();
+
   /**
    * delete folder which metadata no exist in tablestatus
    * this method don't check tablestatus history.
@@ -61,6 +63,8 @@ public class TableProcessingOperations {
       final boolean isCompactionFlow) throws IOException {
     String metaDataLocation = carbonTable.getMetadataPath();
     String partitionPath = CarbonTablePath.getPartitionDir(carbonTable.getTablePath());
+    String timeStampForTrashFolder = String.valueOf(new Timestamp(System.currentTimeMillis())
+        .getTime());
     if (FileFactory.isFileExist(partitionPath)) {
       // list all segments before reading tablestatus file.
       CarbonFile[] allSegments = FileFactory.getCarbonFile(partitionPath).listFiles();
@@ -81,44 +85,23 @@ public class TableProcessingOperations {
           LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
           // there is no segment or failed to read tablestatus file.
           // so it should stop immediately.
-          if (details == null || details.length == 0) {
+          // Do not stop if the tablestatus file does not exist, it can have stale segments.
+          if (FileFactory.getCarbonFile(carbonTable.getMetadataPath() + CarbonCommonConstants
+              .FILE_SEPARATOR + "tablestatus").exists() && (details == null || details
+              .length == 0)) {
             return;
           }
-          Set<String> metadataSet = new HashSet<>(details.length);
-          for (LoadMetadataDetails detail : details) {
-            metadataSet.add(detail.getLoadName());
-          }
-          List<CarbonFile> staleSegments = new ArrayList<>(allSegments.length);
-          Set<String> staleSegmentsId = new HashSet<>(allSegments.length);
-          for (CarbonFile segment : allSegments) {
-            String segmentName = segment.getName();
-            // check segment folder pattern
-            if (segmentName.startsWith(CarbonTablePath.SEGMENT_PREFIX)) {
-              String[] parts = segmentName.split(CarbonCommonConstants.UNDERSCORE);
-              if (parts.length == 2) {
-                boolean isOriginal = !parts[1].contains(".");
-                if (isCompactionFlow) {
-                  // in compaction flow,
-                  // it should be merged segment and segment metadata doesn't exists
-                  if (!isOriginal && !metadataSet.contains(parts[1])) {
-                    staleSegments.add(segment);
-                    staleSegmentsId.add(parts[1]);
-                  }
-                } else {
-                  // in loading flow,
-                  // it should be original segment and segment metadata doesn't exists
-                  if (isOriginal && !metadataSet.contains(parts[1])) {
-                    staleSegments.add(segment);
-                    staleSegmentsId.add(parts[1]);
-                  }
-                }
-              }
-            }
-          }
-          // delete segment folders one by one
-          for (CarbonFile staleSegment : staleSegments) {
+          HashMap<CarbonFile, String> staleSegments = getStaleSegments(details, allSegments,
+                  isCompactionFlow);
+          // move these segments one by one to the trash folder
+          for (Map.Entry<CarbonFile, String> entry : staleSegments.entrySet()) {
+            TrashUtil.copyDataToTrashBySegment(entry.getKey(), carbonTable.getTablePath(),
+                    timeStampForTrashFolder + CarbonCommonConstants.FILE_SEPARATOR +
+                      CarbonCommonConstants.LOAD_FOLDER + entry.getValue());
+            LOGGER.info("Deleting Segment: " + entry.getKey().getAbsolutePath());
             try {
-              CarbonUtil.deleteFoldersAndFiles(staleSegment);
+              CarbonUtil.deleteFoldersAndFiles(entry.getKey());
+              LOGGER.info("Deleting Segment: "  + entry.getKey());
             } catch (IOException | InterruptedException e) {
               LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
             }
@@ -129,8 +112,8 @@ public class TableProcessingOperations {
                 CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath());
             // delete the segment metadata files also
             CarbonFile[] staleSegmentMetadataFiles = FileFactory.getCarbonFile(segmentFilesLocation)
-                .listFiles(file -> (staleSegmentsId
-                    .contains(file.getName().split(CarbonCommonConstants.UNDERSCORE)[0])));
+                .listFiles(file -> (staleSegments.containsValue(file.getName()
+                        .split(CarbonCommonConstants.UNDERSCORE)[0])));
             for (CarbonFile staleSegmentMetadataFile : staleSegmentMetadataFiles) {
               staleSegmentMetadataFile.delete();
             }
@@ -149,8 +132,176 @@ public class TableProcessingOperations {
       } finally {
         carbonTableStatusLock.unlock();
       }
+    } else {
+      ICarbonLock carbonTableStatusLock = CarbonLockFactory
+          .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier(), LockUsage.TABLE_STATUS_LOCK);
+      try {
+        if (carbonTableStatusLock.lockWithRetries()) {
+          // detect stale segments for partition table
+          // logic: read table status and compare with metadata folder
+          LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
+          Map<String, String> detailName = new HashMap<>();
+          for (LoadMetadataDetails detail : details) {
+            detailName.put(detail.getLoadName(), detail.getSegmentFile());
+          }
+          String segmentListPath = carbonTable.getMetadataPath() + CarbonCommonConstants
+              .FILE_SEPARATOR + CarbonTablePath.SEGMENTS_METADATA_FOLDER;
+          CarbonFile[] allSegment = FileFactory.getCarbonFile(segmentListPath).listFiles();
+          List<String> staleSegments = new ArrayList<>();
+          for (CarbonFile file : allSegment) {
+            staleSegments.add(file.getName());
+          }
+          Iterator detailNameIterator = detailName.entrySet().iterator();
+          while (detailNameIterator.hasNext()) {
+            Map.Entry mapElement = (Map.Entry) detailNameIterator.next();
+            staleSegments.remove(mapElement.getValue());
+          }
+
+          // handle staleSegments for alter scenario. Ignoring the segment file with the load start
+          // time with loadstart time as it was written during load.
+          for (LoadMetadataDetails detail : details) {
+            staleSegments.remove(detail.getLoadName() + CarbonCommonConstants.UNDERSCORE +
+                detail.getLoadStartTime() + CarbonTablePath.SEGMENT_EXT);
+          }
+
+          // handle scenario where updateStatusFileName is defined, no need to consider that file
+          // as a stale segment.
+          for (LoadMetadataDetails detail : details) {
+            if (detail.getUpdateStatusFileName() != null && !detail.getUpdateStatusFileName()
+                .isEmpty()) {
+              if (detail.getUpdateStatusFileName().contains(CarbonCommonConstants
+                  .TABLEUPDATESTATUS_FILENAME)) {
+                staleSegments.remove(detail.getLoadName() +
+                    CarbonCommonConstants.UNDERSCORE + detail.getUpdateStatusFileName().substring(
+                    CarbonCommonConstants.TABLEUPDATESTATUS_FILENAME.length() +
+                      CarbonCommonConstants.HYPHEN.length()) + CarbonTablePath.SEGMENT_EXT);
+              }
+            }
+          }
+
+          if (staleSegments.size() != 0) {
+            filesInTrashFolder.clear();
+            listAllPartitionFile(carbonTable.getTablePath());
+            List<String> filesToDelete = new ArrayList<>();
+            for (String segmentFile : staleSegments) {
+              SegmentFileStore.SegmentFile segmentFileName = SegmentFileStore.readSegmentFile(
+                  segmentListPath + CarbonCommonConstants.FILE_SEPARATOR + segmentFile);
+              Map<String, SegmentFileStore.FolderDetails> locationMap = segmentFileName
+                  .getLocationMap();
+              Iterator<Map.Entry<String, SegmentFileStore.FolderDetails>> it = locationMap
+                  .entrySet().iterator();
+              while (it.hasNext()) {
+                Map.Entry<String, SegmentFileStore.FolderDetails> nextValue = it.next();
+                String indexMergeFile = nextValue.getValue().getMergeFileName();
+                String segmentNo = "";
+                if (indexMergeFile != null) {
+                  segmentNo = indexMergeFile.substring(0, indexMergeFile.indexOf(
+                    CarbonCommonConstants.UNDERSCORE));
+                } else {
+                  segmentNo = segmentFile.substring(0, segmentFile.indexOf(CarbonCommonConstants
+                    .UNDERSCORE));
+                }
+                // search for indexMergeFile everywhere and segmentFile in the carbondata file
+                for (CarbonFile fileList : filesInTrashFolder) {
+                  String nameofFile = fileList.getName().replace(CarbonCommonConstants.HYPHEN,
+                      CarbonCommonConstants.UNDERSCORE);
+                  String nameOfSegment = segmentFile.substring(0, segmentFile.indexOf(
+                      CarbonCommonConstants.POINT));
+                  if (fileList.getName().equals(indexMergeFile)) {
+                    String partitionValue = fileList.getAbsolutePath().split(CarbonCommonConstants
+                        .FILE_SEPARATOR)[fileList.getAbsolutePath().split(CarbonCommonConstants
+                        .FILE_SEPARATOR).length - 2];
+                    TrashUtil.copyDataToTrashFolderByFile(carbonTable.getTablePath(),
+                        fileList.getAbsolutePath(), timeStampForTrashFolder + CarbonCommonConstants
+                        .FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + segmentNo +
+                        CarbonCommonConstants.FILE_SEPARATOR + partitionValue);
+                    filesToDelete.add(fileList.getAbsolutePath());
+                  } else if (nameofFile.contains(nameOfSegment) && fileList.getName().endsWith(
+                      CarbonTablePath.INDEX_FILE_EXT)) {
+                    String partitionValue = fileList.getAbsolutePath().split(CarbonCommonConstants
+                        .FILE_SEPARATOR)[fileList.getAbsolutePath().split(CarbonCommonConstants
+                        .FILE_SEPARATOR).length - 2];
+                    TrashUtil.copyDataToTrashFolderByFile(carbonTable.getTablePath(),
+                        fileList.getAbsolutePath(), timeStampForTrashFolder + CarbonCommonConstants
+                        .FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + segmentNo +
+                        CarbonCommonConstants.FILE_SEPARATOR + partitionValue);
+                    filesToDelete.add(fileList.getAbsolutePath());
+                  } else if (nameofFile.contains(nameOfSegment) && fileList.getName().endsWith(
+                      CarbonCommonConstants.FACT_FILE_EXT)) {
+                    // carbondata file found
+                    String partitionValue = fileList.getAbsolutePath().split(CarbonCommonConstants
+                        .FILE_SEPARATOR)[fileList.getAbsolutePath().split(CarbonCommonConstants
+                        .FILE_SEPARATOR).length - 2];
+                    TrashUtil.copyDataToTrashFolderByFile(carbonTable.getTablePath(), fileList
+                        .getAbsolutePath(), timeStampForTrashFolder + CarbonCommonConstants
+                        .FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + segmentNo +
+                        CarbonCommonConstants.FILE_SEPARATOR + partitionValue);
+                    filesToDelete.add(fileList.getAbsolutePath());
+                  }
+                }
+              }
+            }
+            for (String fileName : filesToDelete) {
+              try {
+                CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(fileName));
+              } catch (InterruptedException e) {
+                LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
+              }
+            }
+            filesInTrashFolder.clear();
+          }
+        }
+      } finally {
+        carbonTableStatusLock.unlock();
+      }
     }
   }
+
+  public static void listAllPartitionFile(String tablePath) {
+    if (!FileFactory.getCarbonFile(tablePath).isDirectory()) {
+      filesInTrashFolder.add(FileFactory.getCarbonFile(tablePath));
+    }
+    CarbonFile[] fileList = FileFactory.getCarbonFile(tablePath).listFiles();
+    for (CarbonFile fileName : fileList) {
+      if (!fileName.isDirectory() || fileName.getName().contains("=")) {
+        listAllPartitionFile(fileName.getAbsolutePath());
+      }
+    }
+  }
+
+  public static HashMap<CarbonFile, String> getStaleSegments(LoadMetadataDetails[] details,
+      CarbonFile[] allSegments, boolean isCompactionFlow) {
+    Set<String> metadataSet = new HashSet<>(details.length);
+    for (LoadMetadataDetails detail : details) {
+      metadataSet.add(detail.getLoadName());
+    }
+    HashMap<CarbonFile, String> staleSegments = new HashMap<>(allSegments.length);
+    for (CarbonFile segment : allSegments) {
+      String segmentName = segment.getName();
+      // check segment folder pattern
+      if (segmentName.startsWith(CarbonTablePath.SEGMENT_PREFIX)) {
+        String[] parts = segmentName.split(CarbonCommonConstants.UNDERSCORE);
+        if (parts.length == 2) {
+          boolean isOriginal = !parts[1].contains(".");
+          if (isCompactionFlow) {
+            // in compaction flow,
+            // it should be merged segment and segment metadata doesn't exists
+            if (!isOriginal && !metadataSet.contains(parts[1])) {
+              staleSegments.put(segment, parts[1]);
+            }
+          } else {
+            // in loading flow,
+            // it should be original segment and segment metadata doesn't exists
+            if (isOriginal && !metadataSet.contains(parts[1])) {
+              staleSegments.put(segment, parts[1]);
+            }
+          }
+        }
+      }
+    }
+    return staleSegments;
+  }
+
 
   /**
    *

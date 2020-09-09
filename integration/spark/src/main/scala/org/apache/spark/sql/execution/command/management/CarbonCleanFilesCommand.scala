@@ -17,24 +17,30 @@
 
 package org.apache.spark.sql.execution.command.management
 
+import java.lang.Boolean
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Checker}
 import org.apache.spark.sql.optimizer.CarbonFilters
+import org.apache.spark.sql.types.StringType
 
-import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.cleanfiles.CleanFilesUtil
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
-import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.processing.loading.TableProcessingOperations
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.view.MVManagerInSpark
 
 /**
@@ -48,6 +54,7 @@ import org.apache.carbondata.view.MVManagerInSpark
 case class CarbonCleanFilesCommand(
     databaseNameOp: Option[String],
     tableName: Option[String],
+    options: Option[List[(String, String)]],
     forceTableClean: Boolean = false,
     isInternalCleanCall: Boolean = false,
     truncateTable: Boolean = false)
@@ -55,6 +62,24 @@ case class CarbonCleanFilesCommand(
 
   var carbonTable: CarbonTable = _
   var cleanFileCommands: List[CarbonCleanFilesCommand] = List.empty
+  val optionsMap = options.getOrElse(List.empty[(String, String)]).toMap
+  val isDryRun = optionsMap.getOrElse("isdryrun", "false").toBoolean
+  val dryRun = "isDryRun"
+  val forceTrashClean = optionsMap.getOrElse("force", "false").toBoolean
+
+  override def output: Seq[Attribute] = {
+    if (isDryRun && tableName.isDefined) {
+      Seq(
+        AttributeReference("TABLE NAME", StringType, nullable = true)(),
+        AttributeReference("SEGMENT NUMBER", StringType, nullable = true)(),
+        AttributeReference("SEGMENT STATUS", StringType, nullable = true)(),
+        AttributeReference("SEGMENT LOCATION", StringType, nullable = false)(),
+        AttributeReference("ACTION", StringType, nullable = false)(),
+        AttributeReference("EXPIRATION TIME", StringType, nullable = false)())
+    } else {
+      Seq.empty
+    }
+  }
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
@@ -71,6 +96,7 @@ case class CarbonCleanFilesCommand(
           CarbonCleanFilesCommand(
             Some(relationIdentifier.getDatabaseName),
             Some(relationIdentifier.getTableName),
+            options,
             isInternalCleanCall = true)
       }.toList
       commands.foreach(_.processMetadata(sparkSession))
@@ -80,22 +106,43 @@ case class CarbonCleanFilesCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    if (!isDryRun) {
+      cleanFilesOperation(sparkSession)
+    } else if (isDryRun && tableName.isDefined) {
+      // dry run, do not clean anything and do not delete trash too
+      CleanFilesUtil.cleanFilesDryRun(carbonTable, sparkSession)
+    } else {
+      Seq.empty
+    }
+  }
+
+  // actual clean files operation of the carbonTable
+  def cleanFilesOperation(sparkSession: SparkSession): Seq[Row] = {
     // if insert overwrite in progress, do not allow delete segment
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
     }
     val operationContext = new OperationContext
-    val cleanFilesPreEvent: CleanFilesPreEvent =
-      CleanFilesPreEvent(carbonTable,
-        sparkSession)
+    val cleanFilesPreEvent: CleanFilesPreEvent = CleanFilesPreEvent(carbonTable, sparkSession)
     OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent, operationContext)
     if (tableName.isDefined) {
       Checker.validateTableExists(databaseNameOp, tableName.get, sparkSession)
+      if (forceTrashClean) {
+        CleanFilesUtil.deleteDataFromTrashFolder(carbonTable, sparkSession)
+      } else {
+        // clear trash based on timestamp
+        CleanFilesUtil.deleteStaleDataFromTrash(carbonTable, sparkSession)
+      }
+      // delete partial load and send them to trash
+      TableProcessingOperations
+        .deletePartialLoadDataIfExist(carbonTable, false)
       if (forceTableClean) {
         deleteAllData(sparkSession, databaseNameOp, tableName.get)
       } else {
         cleanGarbageData(sparkSession, databaseNameOp, tableName.get)
       }
+      // clean stash in metadata folder too
+      deleteStaleSegmentFiles(carbonTable)
     } else {
       cleanGarbageDataInAllTables(sparkSession)
     }
@@ -108,12 +155,52 @@ case class CarbonCleanFilesCommand(
     Seq.empty
   }
 
+  // This method deletes the stale segment files in the metadata/segment folder.
+  def deleteStaleSegmentFiles(carbonTable: CarbonTable): Unit = {
+    val tableStatusLock = CarbonLockFactory
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
+    val carbonLoadModel = new CarbonLoadModel
+    try {
+      if (tableStatusLock.lockWithRetries()) {
+        val tableStatusFilePath = CarbonTablePath
+          .getTableStatusFilePath(carbonTable.getTablePath)
+        val tableStatusFileContent = SegmentStatusManager.readTableStatusFile(tableStatusFilePath)
+        val loadMetaDataDetails = tableStatusFileContent.filter(details => details
+          .getSegmentStatus == SegmentStatus.SUCCESS || details.getSegmentStatus == SegmentStatus
+          .LOAD_PARTIAL_SUCCESS).sortWith(_.getLoadName < _.getLoadName)
+        carbonLoadModel.setLoadMetadataDetails(loadMetaDataDetails.toList.asJava)
+      } else {
+        throw new ConcurrentOperationException(carbonTable.getDatabaseName,
+          carbonTable.getTableName, "table status read", "clean files command")
+      }
+    } finally {
+      tableStatusLock.unlock()
+    }
+    val loadMetaDataDetails = carbonLoadModel.getLoadMetadataDetails.asScala
+    val segmentFileList = loadMetaDataDetails.map(f => CarbonTablePath.getSegmentFilesLocation(
+      carbonTable.getTablePath) + CarbonCommonConstants.FILE_SEPARATOR + f.getSegmentFile)
+
+    val metaDataPath = CarbonTablePath.getMetadataPath(carbonTable.getTablePath) +
+      CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.SEGMENTS_METADATA_FOLDER
+
+    val segmentListFromMetadataFOlder = FileFactory.getFolderList(metaDataPath).asScala
+      .map(f => f.getAbsolutePath).toList
+    if (segmentListFromMetadataFOlder.length > loadMetaDataDetails.length) {
+      // stale metadata file exists, need to delete those, no need to add them to trash
+      segmentListFromMetadataFOlder.foreach(file =>
+        if (!segmentFileList.contains(file)) {
+          // delete the stale file
+          FileFactory.deleteFile(file)
+        })
+    }
+  }
+
   private def deleteAllData(sparkSession: SparkSession,
       databaseNameOp: Option[String], tableName: String): Unit = {
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    CarbonStore.cleanFiles(
+    CleanFilesUtil.cleanFiles(
       dbName = dbName,
       tableName = tableName,
       tablePath = tablePath,
@@ -130,7 +217,7 @@ case class CarbonCleanFilesCommand(
       Seq.empty[Expression],
       sparkSession,
       carbonTable)
-    CarbonStore.cleanFiles(
+    CleanFilesUtil.cleanFiles(
       dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
       tableName = tableName,
       tablePath = carbonTable.getTablePath,
@@ -146,7 +233,7 @@ case class CarbonCleanFilesCommand(
       val databases = sparkSession.sessionState.catalog.listDatabases()
       databases.foreach(dbName => {
         val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
-        CommonUtil.cleanInProgressSegments(databaseLocation, dbName)
+        CleanFilesUtil.cleanInProgressSegments(databaseLocation, dbName)
       })
     } catch {
       case e: Throwable =>

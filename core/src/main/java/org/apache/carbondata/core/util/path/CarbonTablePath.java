@@ -41,12 +41,14 @@ public class CarbonTablePath {
   private static final String DICTIONARY_EXT = ".dict";
   public static final String SCHEMA_FILE = "schema";
   private static final String FACT_DIR = "Fact";
+  public static final String CARBON_TRASH_FOLDER_NAME = ".Trash";
   public static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
   private static final String DATA_PART_PREFIX = "part-";
   public static final String BATCH_PREFIX = "_batchno";
   private static final String LOCK_DIR = "LockFiles";
 
+  public static final String SEGMENTS_METADATA_FOLDER = "segments";
   public static final String TABLE_STATUS_FILE = "tablestatus";
   public static final String TABLE_STATUS_HISTORY_FILE = "tablestatus.history";
   public static final String CARBON_DATA_EXT = ".carbondata";
@@ -728,15 +730,16 @@ public class CarbonTablePath {
    * Get the segment file locations of table
    */
   public static String getSegmentFilesLocation(String tablePath) {
-    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments";
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
+        SEGMENTS_METADATA_FOLDER;
   }
 
   /**
    * Get the segment file path of table
    */
   public static String getSegmentFilePath(String tablePath, String segmentFileName) {
-    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments"
-        + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName;
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
+        SEGMENTS_METADATA_FOLDER + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName;
   }
 
   /**
@@ -791,5 +794,10 @@ public class CarbonTablePath {
     } else {
       return dataFilePath;
     }
+  }
+
+  public static String getTrashFolderPath(String carbonTablePath) {
+    return carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath
+      .CARBON_TRASH_FOLDER_NAME;
   }
 }

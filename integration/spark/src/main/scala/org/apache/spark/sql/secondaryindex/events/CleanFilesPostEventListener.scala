@@ -24,10 +24,8 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
@@ -35,8 +33,9 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.path.{CarbonTablePath, TrashUtil}
 import org.apache.carbondata.events.{CleanFilesPostEvent, Event, OperationContext, OperationEventListener}
+import org.apache.carbondata.processing.loading.TableProcessingOperations
 
 class CleanFilesPostEventListener extends OperationEventListener with Logging {
 
@@ -54,6 +53,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
         val indexTables = CarbonIndexUtil
           .getIndexCarbonTables(carbonTable, cleanFilesPostEvent.sparkSession)
         indexTables.foreach { indexTable =>
+          TrashUtil.deleteAllDataFromTrashFolder(indexTable.getTablePath)
           val partitions: Option[Seq[PartitionSpec]] = CarbonFilters.getPartitions(
             Seq.empty[Expression],
             cleanFilesPostEvent.sparkSession,
@@ -62,6 +62,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
             indexTable, true, partitions.map(_.asJava).orNull)
           CarbonUpdateUtil.cleanUpDeltaFiles(indexTable, true)
           cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
+          TableProcessingOperations.deletePartialLoadDataIfExist(indexTable, false)
         }
     }
   }
