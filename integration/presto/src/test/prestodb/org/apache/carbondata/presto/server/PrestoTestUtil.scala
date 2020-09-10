@@ -18,7 +18,6 @@ package org.apache.carbondata.presto.server
 
 import com.facebook.presto.jdbc.PrestoArray
 
-
 object PrestoTestUtil {
 
   // this method depends on prestodb jdbc PrestoArray class

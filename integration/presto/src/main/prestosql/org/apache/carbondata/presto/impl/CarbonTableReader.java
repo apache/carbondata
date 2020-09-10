@@ -247,9 +247,11 @@ public class CarbonTableReader {
    * @return list of multiblock split
    * @throws IOException
    */
-  public List<CarbonLocalMultiBlockSplit> getInputSplits(CarbonTableCacheModel tableCacheModel,
-      Expression filters, List<PartitionSpec> filteredPartitions, Configuration config)
-      throws IOException {
+  public List<CarbonLocalMultiBlockSplit> getInputSplits(
+      CarbonTableCacheModel tableCacheModel,
+      Expression filters,
+      List<PartitionSpec> filteredPartitions,
+      Configuration config) throws IOException {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
     List<CarbonLocalMultiBlockSplit> multiBlockSplitList = new ArrayList<>();
     CarbonTable carbonTable = tableCacheModel.getCarbonTable();
