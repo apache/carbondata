@@ -327,6 +327,11 @@ public final class DataTypeUtil {
           return null;
         }
         return Float.parseFloat(data);
+      } else if (actualDataType == DataTypes.BYTE) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return Byte.parseByte(data);
       } else if (actualDataType == DataTypes.DOUBLE) {
         if (data.isEmpty()) {
           return null;

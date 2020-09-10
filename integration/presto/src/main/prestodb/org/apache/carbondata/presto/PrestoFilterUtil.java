@@ -78,16 +78,22 @@ public class PrestoFilterUtil {
     HiveType colType = columnHandle.getHiveType();
     if (colType.equals(HiveType.HIVE_BOOLEAN)) {
       return DataTypes.BOOLEAN;
+    } else if (colType.equals(HiveType.HIVE_BINARY)) {
+      return DataTypes.BINARY;
     } else if (colType.equals(HiveType.HIVE_SHORT)) {
       return DataTypes.SHORT;
     } else if (colType.equals(HiveType.HIVE_INT)) {
       return DataTypes.INT;
+    } else if (colType.equals(HiveType.HIVE_FLOAT)) {
+      return DataTypes.FLOAT;
     } else if (colType.equals(HiveType.HIVE_LONG)) {
       return DataTypes.LONG;
     } else if (colType.equals(HiveType.HIVE_DOUBLE)) {
       return DataTypes.DOUBLE;
     } else if (colType.equals(HiveType.HIVE_STRING)) {
       return DataTypes.STRING;
+    } else if (colType.equals(HiveType.HIVE_BYTE)) {
+      return DataTypes.BYTE;
     } else if (colType.equals(HiveType.HIVE_DATE)) {
       return DataTypes.DATE;
     } else if (colType.equals(HiveType.HIVE_TIMESTAMP)) {
@@ -282,9 +288,11 @@ public class PrestoFilterUtil {
   private static Object convertDataByType(Object rawData, HiveType type) {
     if (type.equals(HiveType.HIVE_INT) || type.equals(HiveType.HIVE_SHORT)) {
       return Integer.valueOf(rawData.toString());
+    } else if (type.equals(HiveType.HIVE_FLOAT)) {
+      return Float.intBitsToFloat((int) ((Long) rawData).longValue());
     } else if (type.equals(HiveType.HIVE_LONG)) {
       return rawData;
-    } else if (type.equals(HiveType.HIVE_STRING)) {
+    } else if (type.equals(HiveType.HIVE_STRING) || type.equals(HiveType.HIVE_BINARY)) {
       if (rawData instanceof Slice) {
         return ((Slice) rawData).toStringUtf8();
       } else {
