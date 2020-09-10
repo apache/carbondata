@@ -50,7 +50,7 @@ object DistributedRDDUtils {
   def getExecutors(segment: Array[InputSplit], executorsList : Map[String, Seq[String]],
       tableUniqueName: String, rddId: Int): Seq[Partition] = {
     // sort the partitions in increasing order of index size.
-    val (segments, legacySegments) = segment.span(split => split
+    val (segments, legacySegments) = segment.partition(split => split
       .asInstanceOf[IndexInputSplitWrapper].getDistributable.getSegment.getIndexSize > 0)
     val sortedPartitions = segments.sortWith(_.asInstanceOf[IndexInputSplitWrapper]
                                               .getDistributable.getSegment.getIndexSize >
@@ -94,7 +94,7 @@ object DistributedRDDUtils {
   private def convertToPartition(segments: Seq[InputSplit], legacySegments: Seq[InputSplit],
       tableUniqueName: String,
       executorList: Map[String, Seq[String]]): Seq[InputSplit] = {
-    if (legacySegments.nonEmpty) {
+    val legacySegmentsInputSplit = if (legacySegments.nonEmpty) {
       val validExecutorIds = executorList.flatMap {
         case (host, executors) => executors.map {
           executor => s"${host}_$executor"
@@ -108,7 +108,8 @@ object DistributedRDDUtils {
           wrapper.setLocations(Array("executor_" + executor))
           legacySegment
       }
-    } else { Seq() } ++ segments.map { partition =>
+    } else { Seq() }
+    legacySegmentsInputSplit ++ segments.map { partition =>
       val wrapper: IndexInputSplit = partition.asInstanceOf[IndexInputSplitWrapper]
         .getDistributable
       wrapper.setLocations(Array(DistributedRDDUtils

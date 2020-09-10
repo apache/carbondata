@@ -30,7 +30,7 @@ import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import org.apache.carbondata.core.index.{IndexInputFormat, Segment}
 import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
-import org.apache.carbondata.indexserver.{DistributedIndexJob, DistributedRDDUtils}
+import org.apache.carbondata.indexserver.{DistributedIndexJob, DistributedRDDUtils, IndexRDDPartition}
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 
 class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
@@ -111,6 +111,38 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
       .getExecutors(indexDistributableWrapper.toArray, executorList, "default_table1", 1)
     DistributedRDDUtils.executorToCacheSizeMapping.asScala.foreach {
       a => a._2.values().asScala.foreach(size => assert(size == 250 || size == 251))
+    }
+  }
+
+  test("Test distribution for legacy segments and non-legacy segments") {
+    val executorList = (0 until 10).map {
+      host =>
+        val executorIds = (0 until 2).map {
+          executor => executor.toString
+        }
+        (host.toString, executorIds)
+    }.toMap
+    val indexDistributableWrapper = (0 to 10).map {
+      i =>
+        val segment = new Segment(i.toString)
+        if (i < 5) { segment.setIndexSize(0) } else {
+          segment.setIndexSize(1)
+        }
+        val blockletIndexDistributable = new BlockletIndexInputSplit(i.toString)
+        blockletIndexDistributable.setSegment(segment)
+        new IndexInputSplitWrapper("", blockletIndexDistributable)
+    }
+
+    val partitions = DistributedRDDUtils
+      .getExecutors(indexDistributableWrapper.toArray, executorList, "default_table1", 1)
+    var size = 0
+    partitions.zipWithIndex.foreach {
+      case (partition: IndexRDDPartition, _) =>
+        size += partition.inputSplit.size
+    }
+    assert(size == 11)
+    DistributedRDDUtils.executorToCacheSizeMapping.asScala.foreach {
+      a => a._2.values().asScala.foreach(size => assert(size == 1 || size == 1))
     }
   }
 
