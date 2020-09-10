@@ -223,6 +223,12 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
             String.valueOf(i.toFloat / 2)))
         i += 1
       }
+      writer
+        .write(Array[String]("true",
+          String.valueOf(i),
+          String.valueOf("abc"),
+          String.valueOf(i.toDouble / 2),
+          String.valueOf(i.toFloat / 2)))
       writer.close()
     } catch {
       case ex: Throwable => throw new RuntimeException(ex)
@@ -271,6 +277,14 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       .executeQuery("SELECT COUNT(*) AS RESULT FROM files ")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 3))
     assert(actualResult.equals(expectedResult))
+
+    val FloatFilterResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM files where salary > 0.0")
+    assert(FloatFilterResult.length == 2 )
+
+    val ByteFilterResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM files where id = 2")
+    assert(ByteFilterResult.length == 1 )
     cleanTestData()
   }
 
@@ -302,7 +316,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     buildTestDataOtherDataType(3, null, writerPathBinary)
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("select id from files1 ")
-    assert(actualResult.size == 3)
+    assert(actualResult.size == 4)
     // check the binary byte Array size, as original hex encoded image byte array size is 118198
     assert(actualResult.head("id").asInstanceOf[Array[Byte]].length == 118198)
     // validate some initial bytes
@@ -310,6 +324,10 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     assert(actualResult.head("id").asInstanceOf[Array[Byte]](1) == 57)
     assert(actualResult.head("id").asInstanceOf[Array[Byte]](2) == 53)
     assert(actualResult.head("id").asInstanceOf[Array[Byte]](3) == 48)
+
+    val binaryFilterResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select id from files1 where id = cast('abc' as varbinary)");
+    assert(binaryFilterResult.length == 1)
     FileUtils.deleteDirectory(new File(writerPathBinary))
   }
 
