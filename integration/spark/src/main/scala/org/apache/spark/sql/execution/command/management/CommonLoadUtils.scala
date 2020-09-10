@@ -1064,6 +1064,7 @@ object CommonLoadUtils {
         if (loadParams.updateModel.isDefined) {
           CarbonScalaUtil.updateErrorInUpdateModel(loadParams.updateModel.get, executorMessage)
         }
+        loadParams.operationContext.setProperty("Error message", errorMessage)
         LOGGER.info(errorMessage)
         LOGGER.error(ex)
         throw ex
