@@ -191,7 +191,12 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
         if (isUpdateTableStatusRequired) {
           CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
         }
-        throw ex
+        val errorMessage = operationContext.getProperty("Error message")
+        if (errorMessage != null) {
+          throw new RuntimeException(errorMessage.toString, ex.getCause)
+        } else {
+          throw ex
+        }
     }
     Seq.empty
   }

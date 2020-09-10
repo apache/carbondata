@@ -219,6 +219,25 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     }
   }
 
+  test("test load with partition column having bad record value") {
+    sql("drop table if exists dataloadOptionTests")
+    sql("CREATE TABLE dataloadOptionTests (empno int, empname String, designation String, " +
+      "workgroupcategory int, workgroupcategoryname String, deptno int, projectjoindate " +
+      "Timestamp, projectenddate Date,attendance int,utilization int,salary int) PARTITIONED BY " +
+      "(deptname String,doj Timestamp,projectcode int) STORED AS carbondata ")
+    val csvFilePath = s"$resourcesPath/data.csv"
+    val ex = intercept[RuntimeException] {
+      sql("LOAD DATA local inpath '" + csvFilePath +
+          "' INTO TABLE dataloadOptionTests OPTIONS ('bad_records_action'='FAIL', 'DELIMITER'= '," +
+          "', 'QUOTECHAR'= '\"', 'dateformat'='DD-MM-YYYY','timestampformat'='DD-MM-YYYY')")
+    }
+    assert(ex.getMessage.contains(
+      "DataLoad failure: Data load failed due to bad record: The value with column name " +
+      "projectjoindate and column data type TIMESTAMP is not a valid TIMESTAMP type.Please " +
+      "enable bad record logger to know the detail reason."))
+    sql("drop table dataloadOptionTests")
+  }
+
   def drop(): Unit = {
     sql("drop table IF EXISTS sales")
     sql("drop table IF EXISTS serializable_values")
