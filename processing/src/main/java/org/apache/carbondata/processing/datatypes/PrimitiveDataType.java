@@ -302,7 +302,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           if (this.carbonDimension.getDataType() == DataTypes.STRING
               && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
             logHolder.setReason(String.format(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE,
-                input.toString(), this.carbonDimension.getColName()));
+                this.carbonDimension.getColName()));
             updateNullValue(dataOutputStream, logHolder);
             return;
           }
@@ -339,7 +339,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       if (this.carbonDimension.getDataType() == DataTypes.STRING && input instanceof String
           && ((String)input).length() > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
         logHolder.setReason(String.format(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE,
-            input.toString(), this.carbonDimension.getColName()));
+            this.carbonDimension.getColName()));
         updateNullValue(dataOutputStream, logHolder);
         return;
       }
@@ -348,7 +348,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       if (this.carbonDimension.getDataType() == DataTypes.STRING
           && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
         logHolder.setReason(String.format(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE,
-            input.toString(), this.carbonDimension.getColName()));
+            this.carbonDimension.getColName()));
         updateNullValue(dataOutputStream, logHolder);
         return;
       }

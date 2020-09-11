@@ -236,7 +236,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     exception = intercept[Exception] {
       sql(s"insert into longerthan32kchar values('33000', '$longChar', 4)")
     }
-    assert(exception.getMessage.contains(s"Record [33000, $longChar, 4] of column dim2 exceeded " +
+    assert(exception.getMessage.contains(s"Record of column dim2 exceeded " +
       s"${CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT} characters. Please consider long string data type."))
     // Update strings of length greater than 32000
     sql(s"insert into longerthan32kchar values('ok', 'hi', 1)")
@@ -244,7 +244,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       sql(s"update longerthan32kchar set(longerthan32kchar.dim2)=('$longChar') " +
         "where longerthan32kchar.mes1=1").show()
     }
-    assert(exception.getMessage.contains(s"Record [ok, $longChar, 1] of column dim2 exceeded " +
+    assert(exception.getMessage.contains(s"Record of column dim2 exceeded " +
       s"${CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT} characters. Please consider long string data type."))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")

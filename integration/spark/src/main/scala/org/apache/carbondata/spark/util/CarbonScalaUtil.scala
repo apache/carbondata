@@ -76,7 +76,7 @@ object CarbonScalaUtil {
     } catch {
       case e: Exception =>
         if (e.getMessage.startsWith(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE)) {
-          val msg = CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE.format(row,
+          val msg = CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE.format(
               carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn
                 .get(idx).getColName)
           LOGGER.error(msg, e)

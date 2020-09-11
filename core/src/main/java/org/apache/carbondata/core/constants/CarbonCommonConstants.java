@@ -2528,7 +2528,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_INDEXSERVER_TEMPFOLDER_DELETETIME_DEFAULT = "10800000";
 
   public static final String STRING_LENGTH_EXCEEDED_MESSAGE =
-      "Record %s of column %s exceeded " + MAX_CHARS_PER_COLUMN_DEFAULT +
+      "Record of column %s exceeded " + MAX_CHARS_PER_COLUMN_DEFAULT +
           " characters. Please consider long string data type.";
 
   /**
