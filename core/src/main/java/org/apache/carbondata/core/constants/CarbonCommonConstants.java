@@ -1878,6 +1878,11 @@ public final class CarbonCommonConstants {
   public static final String UNDERSCORE = "_";
 
   /**
+   * EQUALS
+   */
+  public static final String EQUALS = "=";
+
+  /**
    * POINT
    */
   public static final String POINT = ".";
