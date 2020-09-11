@@ -18,7 +18,6 @@
 package org.apache.carbondata.processing.loading.converter.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -119,10 +118,6 @@ public class RowConverterImpl implements RowConverter {
             .getTableProperties();
     String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
     boolean isSpatialColumn = false;
-    Object[] rawData = row.getRawData();
-    if (rawData == null) {
-      rawData = row.getData() == null ? null : row.getData().clone();
-    }
     for (int i = 0; i < fieldConverters.length; i++) {
       if (spatialProperty != null) {
         isSpatialColumn = fieldConverters[i].getDataField().getColumn().getColName()
@@ -137,10 +132,9 @@ public class RowConverterImpl implements RowConverter {
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
         String reason = logHolder.getReason();
         if (reason.equalsIgnoreCase(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE)) {
-          reason = String.format(reason, Arrays.toString(rawData),
-              this.fields[i].getColumn().getColName());
+          reason = String.format(reason, this.fields[i].getColumn().getColName());
         }
-        badRecordLogger.addBadRecordsToBuilder(rawData, reason);
+        badRecordLogger.addBadRecordsToBuilder(row.getRawData(), reason);
         if (badRecordLogger.isDataLoadFail()) {
           String error = "Data load failed due to bad record: " + reason;
           if (!badRecordLogger.isBadRecordLoggerEnable()) {
