@@ -886,7 +886,7 @@ object AlterTableUtil {
   def validateLongStringColumns(longStringColumns: String,
       carbonTable: CarbonTable): Unit = {
     // don't allow duplicate column names
-    val longStringCols = longStringColumns.split(",")
+    val longStringCols = longStringColumns.split(",").map(column => column.trim.toLowerCase)
     if (longStringCols.distinct.lengthCompare(longStringCols.size) != 0) {
       val duplicateColumns = longStringCols
         .diff(longStringCols.distinct).distinct
@@ -898,14 +898,14 @@ object AlterTableUtil {
     // check if the column specified exists in table schema and must be of string data type
     val colSchemas = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
     longStringCols.foreach { col =>
-      if (!colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col.trim))) {
-        val errorMsg = "LONG_STRING_COLUMNS column: " + col.trim +
+      if (!colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col))) {
+        val errorMsg = "LONG_STRING_COLUMNS column: " + col +
                        " does not exist in table. Please check the DDL."
         throw new MalformedCarbonCommandException(errorMsg)
-      } else if (colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col.trim) &&
+      } else if (colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col) &&
                                           !x.getDataType.toString
                                             .equalsIgnoreCase("STRING"))) {
-        val errMsg = "LONG_STRING_COLUMNS column: " + col.trim +
+        val errMsg = "LONG_STRING_COLUMNS column: " + col +
                      " is not a string datatype column"
         throw new MalformedCarbonCommandException(errMsg)
       }

@@ -80,7 +80,7 @@ public class NotInExpression extends BinaryConditionalExpression {
           val = new ExpressionResult(val.getDataType(), exprResVal.getBoolean());
         } else if (dataType == DataTypes.STRING) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getString());
-        } else if (dataType == DataTypes.SHORT) {
+        } else if (dataType == DataTypes.SHORT || dataType == DataTypes.VARCHAR) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getShort());
         } else if (dataType == DataTypes.INT) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getInt());

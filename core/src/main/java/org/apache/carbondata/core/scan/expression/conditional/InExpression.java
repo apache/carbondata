@@ -57,7 +57,7 @@ public class InExpression extends BinaryConditionalExpression {
         DataType dataType = val.getDataType();
         if (dataType == DataTypes.BOOLEAN) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getBoolean());
-        } else if (dataType == DataTypes.STRING) {
+        } else if (dataType == DataTypes.STRING || dataType == DataTypes.VARCHAR) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getString());
         } else if (dataType == DataTypes.SHORT) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getShort());

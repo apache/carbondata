@@ -52,7 +52,7 @@ public class LessThanEqualToExpression extends BinaryConditionalExpression {
     DataType dataType = exprResValue1.getDataType();
     if (dataType == DataTypes.BOOLEAN) {
       result = elRes.getBoolean().compareTo(erRes.getBoolean()) <= 0;
-    } else if (dataType == DataTypes.STRING) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.VARCHAR) {
       result = elRes.getString().compareTo(erRes.getString()) <= 0;
     } else if (dataType == DataTypes.SHORT) {
       result = elRes.getShort() <= (erRes.getShort());
