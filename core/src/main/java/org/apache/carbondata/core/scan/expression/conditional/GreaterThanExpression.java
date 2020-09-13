@@ -54,7 +54,7 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
     DataType dataType = val1.getDataType();
     if (dataType == DataTypes.BOOLEAN) {
       result = exprLeftRes.getBoolean().compareTo(exprRightRes.getBoolean()) > 0;
-    } else if (dataType == DataTypes.STRING) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.VARCHAR) {
       result = exprLeftRes.getString().compareTo(exprRightRes.getString()) > 0;
     } else if (dataType == DataTypes.DOUBLE) {
       result = exprLeftRes.getDouble() > (exprRightRes.getDouble());

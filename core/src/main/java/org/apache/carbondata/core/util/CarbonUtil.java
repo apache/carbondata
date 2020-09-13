@@ -3344,6 +3344,8 @@ public final class CarbonUtil {
     // for setting long string columns
     if (!longStringColumnsString.isEmpty()) {
       String[] inputColumns = longStringColumnsString.split(",");
+      inputColumns = Arrays.stream(inputColumns).map(String::trim)
+              .map(String::toLowerCase).toArray(String[]::new);
       Set<String> longStringSet = new HashSet<>(Arrays.asList(inputColumns));
       List<org.apache.carbondata.format.ColumnSchema> varCharColumns = new ArrayList<>();
       // change data type to varchar and extract the varchar columns

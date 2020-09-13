@@ -66,7 +66,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
     DataType dataType = val1.getDataType();
     if (dataType == DataTypes.BOOLEAN) {
       result = !val1.getBoolean().equals(val2.getBoolean());
-    } else if (dataType == DataTypes.STRING) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.VARCHAR) {
       result = !val1.getString().equals(val2.getString());
     } else if (dataType == DataTypes.SHORT) {
       result = val1.getShort().shortValue() != val2.getShort().shortValue();
