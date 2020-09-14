@@ -244,18 +244,6 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
                                "number of key columns in Source table")
       }
 
-      var isColsIndexedAsPerTable = true
-      for (i <- indexModel.columnNames.indices) {
-        val mainTableDims = dims.sortBy(_.getOrdinal)
-        if (!mainTableDims(i).getColName.equalsIgnoreCase(indexModel.columnNames(i))) {
-          isColsIndexedAsPerTable = false
-        }
-      }
-
-      if (isColsIndexedAsPerTable) {
-        throw new ErrorMessage(
-          s"Index table column indexing order is same as Parent table column start order")
-      }
       // Should not allow to create index on an index table
       val isIndexTable = carbonTable.isIndexTable
       if (isIndexTable) {

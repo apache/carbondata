@@ -126,21 +126,6 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("test create index table cols order same as start order of parent table") {
-    try {
-      sql("drop index if exists index_on_measure on carbon")
-      sql("create index index_on_measure on table carbon (empno,empname,designation,doj,"+
-          "workgroupcategory) AS 'carbondata'")
-      assert(false)
-    } catch {
-      case ex: Exception =>
-        assert(ex.getMessage.equalsIgnoreCase(
-          "Index table column indexing order is same as Parent table column start order"))
-    } finally{
-      sql("drop index if exists index_on_measure on carbon")
-     }
-  }
-
   test("test create index table on more than one column") {
     try {
       sql("drop index if exists index_more_columns on carbon")
