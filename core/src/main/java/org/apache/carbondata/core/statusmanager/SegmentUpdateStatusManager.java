@@ -536,8 +536,9 @@ public class SegmentUpdateStatusManager {
    */
 
   public CarbonFile[] getUpdateDeltaFilesList(LoadMetadataDetails loadMetadataDetail,
-       final boolean validUpdateFiles, final List<String> filExtensions, final boolean excludeOriginalFact,
-       CarbonFile[] allFilesOfSegment, boolean isAbortedFile){
+       final boolean validUpdateFiles, final List<String> filExtensions,
+       final boolean excludeOriginalFact, CarbonFile[] allFilesOfSegment,
+       boolean isAbortedFile) {
     String endTimeStamp = "";
     String startTimeStamp = "";
     long factTimeStamp = 0;
