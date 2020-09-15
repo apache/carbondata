@@ -21,6 +21,8 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -168,6 +170,16 @@ public class FileFactoryImplUnitTest {
   @Test public void testGetCarbonFile() throws IOException {
     FileFactory.getDataOutputStream(filePath);
     assertNotNull(FileFactory.getCarbonFile(filePath));
+  }
+
+  @Test public void testSetLastModifiedTimeToCurrentTime()
+      throws IOException, ParseException, InterruptedException {
+    FileFactory.createNewFile(filePath);
+    long lastModifiedTimeBeforeUpdate = FileFactory.getCarbonFile(filePath).getLastModifiedTime();
+    Thread.sleep(100);
+    FileFactory.setLastModifiedTimeToCurrentTime(filePath);
+    long lastModifiedTimeAfterUpdate = FileFactory.getCarbonFile(filePath).getLastModifiedTime();
+    assert(lastModifiedTimeAfterUpdate > lastModifiedTimeBeforeUpdate);
   }
 
   @Test public void testTruncateFile() {

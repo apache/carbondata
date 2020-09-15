@@ -297,6 +297,26 @@ public final class FileFactory {
     return getCarbonFile(filePath).deleteFile();
   }
 
+  public static long setLastModifiedTimeToCurrentTime(String filePath) throws IOException {
+    switch (getFileType(filePath)) {
+      case ALLUXIO:
+      case S3:
+        if (getCarbonFile(filePath).getSize() > 0) {
+          throw new IOException("Unsupported setLastModifiedTime operation on NonEmpty File");
+        }
+        getCarbonFile(filePath).createNewFile(true);
+        return getCarbonFile(filePath).getLastModifiedTime();
+      case LOCAL:
+      case HDFS:
+      case VIEWFS:
+      case CUSTOM:
+      default:
+        long currentTime = System.currentTimeMillis();
+        getCarbonFile(filePath).setLastModifiedTime(currentTime);
+        return currentTime;
+    }
+  }
+
   public static boolean deleteAllFilesOfDir(File path) {
     if (!path.exists()) {
       return true;

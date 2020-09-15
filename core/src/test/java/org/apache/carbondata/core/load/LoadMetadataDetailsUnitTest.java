@@ -116,6 +116,8 @@ public class LoadMetadataDetailsUnitTest {
     loadMetadataDetails.setUpdateDeltaEndTimestamp("01-01-2016 00:00:00");
     assertEquals(loadMetadataDetails.getLastModifiedTime(), timeStamp);;
     loadMetadataDetails.setUpdateDeltaEndTimestamp(null);
+    loadMetadataDetails.setLoadEndTime(null);
+    assertEquals(loadMetadataDetails.getLastModifiedTime(), -1);
     loadMetadataDetails.setLoadEndTime(timeStamp);
     assertEquals(loadMetadataDetails.getLastModifiedTime(), timeStamp);
     loadMetadataDetails.setUpdateDeltaEndTimestamp("");

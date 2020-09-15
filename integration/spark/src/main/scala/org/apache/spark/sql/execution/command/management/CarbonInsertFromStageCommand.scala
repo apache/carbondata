@@ -507,9 +507,10 @@ case class CarbonInsertFromStageCommand(
         override def call(): (CarbonFile, CarbonFile, Boolean) = {
           try {
             // Get the loading files path
+            val stageLoadingFilePath = stagePath +
+              File.separator + files._1.getName + CarbonTablePath.LOADING_FILE_SUFFIX;
             val stageLoadingFile =
-              FileFactory.getCarbonFile(stagePath +
-                File.separator + files._1.getName + CarbonTablePath.LOADING_FILE_SUFFIX);
+              FileFactory.getCarbonFile(stageLoadingFilePath);
             // Try to create loading files
             // make isFailed to be true if createNewFile return false.
             // the reason can be file exists or exceptions.
@@ -517,7 +518,9 @@ case class CarbonInsertFromStageCommand(
             // if file exists, modify the lastmodifiedtime of the file.
             if (isFailed) {
               // make isFailed to be true if setLastModifiedTime return false.
-              isFailed = !stageLoadingFile.setLastModifiedTime(System.currentTimeMillis());
+              val modifiedTime = System.currentTimeMillis();
+              isFailed = (modifiedTime >
+                FileFactory.setLastModifiedTimeToCurrentTime(stageLoadingFilePath))
             }
             (files._1, files._2, isFailed)
           } catch {

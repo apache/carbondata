@@ -85,6 +85,44 @@ public class AlluxioCarbonFileTest {
         file.delete();
     }
 
+    @Test(expected = IOException.class)
+    public void testCreateNewTable() throws IOException {
+        new MockUp<Path>() {
+            @Mock
+            public FileSystem getFileSystem(Configuration conf) throws IOException {
+                return new DistributedFileSystem();
+            }
+
+        };
+        new MockUp<DistributedFileSystem>() {
+            @Mock
+            public boolean exists(Path f) throws IOException {
+                return true;
+            }
+        };
+        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        assertFalse(alluxioCarbonFile.createNewFile(false));
+        new MockUp<DistributedFileSystem>() {
+            @Mock
+            public FSDataOutputStream create(Path f, boolean overwrite, int bufferSize, short replication, long blockSize, Progressable progress) throws  IOException{
+                throw new IOException();
+            }
+            @Mock
+            public Configuration getConf() {
+                return new Configuration();
+            }
+            @Mock
+            public short getDefaultReplication(Path path) {
+                return 1;
+            }
+            @Mock
+            public long getDefaultBlockSize(Path f) {
+                return 1;
+            }
+        };
+        alluxioCarbonFile.createNewFile(true);
+    }
+
     @Test
     public void testRenameForceForException() throws IOException {
 
@@ -398,7 +436,7 @@ public class AlluxioCarbonFileTest {
         }
 
         @Override
-        public FileStatus[] listStatus(Path path) throws FileNotFoundException, IOException {
+        public FileStatus[] listStatus(Path path) throws IOException {
             return new FileStatus[0];
         }
 

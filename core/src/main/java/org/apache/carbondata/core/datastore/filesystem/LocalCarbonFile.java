@@ -422,6 +422,11 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
+  public boolean createNewFile(boolean overwrite) throws IOException {
+    return file.createNewFile();
+  }
+
+  @Override
   public boolean deleteFile() {
     return FileFactory.deleteAllFilesOfDir(file);
   }

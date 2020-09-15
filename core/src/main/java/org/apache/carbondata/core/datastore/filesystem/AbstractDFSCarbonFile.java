@@ -420,6 +420,20 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override
+  public boolean createNewFile(boolean overwrite) throws IOException {
+    if (!overwrite && fileSystem.exists(path)) {
+      return false;
+    } else {
+      // Pass the permissions during file creation itself
+      fileSystem
+          .create(path, false, fileSystem.getConf().getInt("io.file.buffer.size", 4096),
+              fileSystem.getDefaultReplication(path), fileSystem.getDefaultBlockSize(path), null)
+          .close();
+      return true;
+    }
+  }
+
+  @Override
   public boolean deleteFile() throws IOException {
     return fileSystem.delete(path, true);
   }

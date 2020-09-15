@@ -550,9 +550,8 @@ public class MVProvider {
             this.schemaIndexFilePath,
             new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
       }
-      long lastModifiedTime = System.currentTimeMillis();
-      FileFactory.getCarbonFile(this.schemaIndexFilePath).setLastModifiedTime(lastModifiedTime);
-      this.lastModifiedTime = lastModifiedTime;
+      this.lastModifiedTime =
+          FileFactory.setLastModifiedTimeToCurrentTime(this.schemaIndexFilePath);
     }
 
   }

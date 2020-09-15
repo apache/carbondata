@@ -150,6 +150,10 @@ public class LoadMetadataDetails implements Serializable {
     this.timestamp = Long.toString(timestamp);
   }
 
+  public void setLoadEndTime(String timestampStr) {
+    this.timestamp = timestampStr;
+  }
+
   public SegmentStatus getSegmentStatus() {
     return loadStatus;
   }
@@ -492,6 +496,10 @@ public class LoadMetadataDetails implements Serializable {
     if (!StringUtils.isEmpty(updateDeltaEndTimestamp)) {
       return convertTimeStampToLong(updateDeltaEndTimestamp);
     }
-    return convertTimeStampToLong(timestamp);
+    if (!StringUtils.isEmpty(timestamp)) {
+      return convertTimeStampToLong(timestamp);
+    }
+    return convertTimeStampToLong(
+            String.valueOf(CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT));
   }
 }
