@@ -1176,7 +1176,7 @@ public class CarbonTable implements Serializable, Writable {
 
   public Map<String, Map<String, Map<String, String>>> getIndexesMap() throws IOException {
     deserializeIndexMetadata();
-    if (null == indexMetadata) {
+    if (null == indexMetadata || null == indexMetadata.getIndexesMap()) {
       return new HashMap<>();
     }
     return indexMetadata.getIndexesMap();
