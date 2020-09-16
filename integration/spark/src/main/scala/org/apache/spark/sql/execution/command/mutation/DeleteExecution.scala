@@ -374,8 +374,6 @@ object DeleteExecution {
               blockMappingVO.getSegmentNumberOfBlockMapping)
           }
         } else {
-          // In case of failure , clean all related delete delta files
-          CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
           val errorMsg =
             "Delete data operation is failed due to failure in creating delete delta file for " +
             "segment : " + resultOfBlock._2._1.getSegmentName + " block : " +
@@ -410,8 +408,6 @@ object DeleteExecution {
       LOGGER.info(s"Delete data operation is successful for " +
                   s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
     } else {
-      // In case of failure , clean all related delete delta files
-      CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
       val errorMessage = "Delete data operation is failed due to failure " +
                          "in table status update."
       LOGGER.error("Delete data operation is failed due to failure in table status update.")
@@ -440,8 +436,6 @@ object DeleteExecution {
               blockMappingVO.getSegmentNumberOfBlockMapping)
           }
         } else {
-          // In case of failure , clean all related delete delta files
-          CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
           val errorMsg =
             "Delete data operation is failed due to failure in creating delete delta file for " +
             "segment : " + resultOfBlock._2._1.getSegmentName + " block : " +

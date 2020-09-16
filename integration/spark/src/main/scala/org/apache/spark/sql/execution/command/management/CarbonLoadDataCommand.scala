@@ -40,7 +40,6 @@ import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.events.exception.PreEventException
-import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
@@ -105,10 +104,6 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
     val (tf, df) = CommonLoadUtils.getTimeAndDateFormatFromLoadModel(carbonLoadModel)
     timeStampFormat = tf
     dateFormat = df
-    // Delete stale segment folders that are not in table status but are physically present in
-    // the Fact folder
-    LOGGER.info(s"Deleting stale folders if present for table $dbName.$tableName")
-    TableProcessingOperations.deletePartialLoadDataIfExist(table, false)
     var isUpdateTableStatusRequired = false
     val uuid = ""
     try {
