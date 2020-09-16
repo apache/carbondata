@@ -38,6 +38,7 @@ import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptimizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
@@ -61,6 +62,9 @@ public class IndexFilter implements Serializable {
   private String serializedExpression;
 
   private SegmentProperties properties;
+
+  // limit value used for row scanning, collected when carbon.mapOrderPushDown is enabled
+  private int limit = -1;
 
   public IndexFilter(CarbonTable table, Expression expression) {
     this(table, expression, false);
@@ -89,6 +93,14 @@ public class IndexFilter implements Serializable {
     this(table, expression);
     this.properties = properties;
     resolve(false);
+  }
+
+  public int getLimit() {
+    return limit;
+  }
+
+  public void setLimit(int limit) {
+    this.limit = limit;
   }
 
   Expression getNewCopyOfExpression() {
@@ -189,6 +201,9 @@ public class IndexFilter implements Serializable {
   public FilterResolverIntf getResolver() {
     if (resolver == null) {
       resolver = resolveFilter();
+      if (resolver instanceof RowLevelFilterResolverImpl) {
+        ((RowLevelFilterResolverImpl)resolver).setLimit(limit);
+      }
     }
     return resolver;
   }

@@ -147,6 +147,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.si.lookup.partialstring | true | When true, it includes starts with, ends with and contains. When false, it includes only starts with secondary indexes. |
 | carbon.max.pagination.lru.cache.size.in.mb | -1 | Maximum memory **(in MB)** upto which the SDK pagination reader can cache the blocklet rows. Suggest to configure as multiple of blocklet size. Default value of -1 means there is no memory limit for caching. Only integer values greater than 0 are accepted. |
 | carbon.partition.max.driver.lru.cache.size | -1 | Maximum memory **(in MB)** upto which driver can cache partition metadata. Beyond this, least recently used data will be removed from cache before loading new set of values.
+| carbon.mapOrderPushDown.<db_name>_<table_name>.column| empty | If order by column is in sort column, specify that sort column here to avoid ordering at map task . |
 
 ## Data Mutation Configuration
 | Parameter | Default Value | Description |
@@ -231,7 +232,8 @@ RESET
 | carbon.index.visible.<db_name>.<table_name>.<index_name> | To specify query on ***db_name.table_name*** to not use the index ***index_name***. |
 | carbon.load.indexes.parallel.<db_name>.<table_name> | To enable parallel index loading for a table. when db_name.table_name are not specified, i.e., when ***carbon.load.indexes.parallel.*** is set, it applies for all the tables of the session. |
 | carbon.enable.index.server                | To use index server for caching and pruning. This property can be used for a session or for a particular table with ***carbon.enable.index.server.<db_name>.<table_name>***. |
-| carbon.reorder.filter                     | This property can be used to enabled/disable filter reordering. Should be disabled only when the user has optimized the filter condition.
+| carbon.reorder.filter                     | This property can be used to enabled/disable filter reordering. Should be disabled only when the user has optimized the filter condition. | 
+| carbon.mapOrderPushDown.<db_name>_<table_name>.column | If order by column is in sort column, specify that sort column here to avoid ordering at map task . |
 **Examples:**
 
 * Add or Update:

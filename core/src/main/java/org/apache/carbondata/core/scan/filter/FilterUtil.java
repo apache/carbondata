@@ -203,7 +203,8 @@ public final class FilterUtil {
                   .getMsrColEvalutorInfoList(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-              segmentProperties, complexDimensionInfoMap);
+              segmentProperties, complexDimensionInfoMap,
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getLimit());
 
       }
     }
@@ -212,7 +213,8 @@ public final class FilterUtil {
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-        segmentProperties, complexDimensionInfoMap);
+        segmentProperties, complexDimensionInfoMap,
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getLimit());
 
   }
 

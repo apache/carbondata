@@ -36,15 +36,23 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
   private List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
   private List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
   private AbsoluteTableIdentifier tableIdentifier;
+  // limit value used for row scanning, collected when carbon.mapOrderPushDown is enabled
+  private int limit = -1;
 
   public RowLevelFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
     super(exp, isExpressionResolve, isIncludeFilter, false);
-    dimColEvaluatorInfoList =
-        new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(
-        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    dimColEvaluatorInfoList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    msrColEvalutorInfoList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     this.tableIdentifier = tableIdentifier;
+  }
+
+  public int getLimit() {
+    return limit;
+  }
+
+  public void setLimit(int limit) {
+    this.limit = limit;
   }
 
   /**
