@@ -38,7 +38,6 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.index.IndexType;
-import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -90,21 +89,18 @@ public final class IndexStoreManager {
    * @return
    */
   public List<TableIndex> getAllCGAndFGIndexes(CarbonTable carbonTable) throws IOException {
-    IndexMetadata indexMetadata = carbonTable.getIndexMetadata();
     List<TableIndex> indexes = new ArrayList<>();
-    if (null != indexMetadata) {
-      // get bloom indexes and lucene indexes
-      for (Map.Entry<String, Map<String, Map<String, String>>> providerEntry : indexMetadata
-          .getIndexesMap().entrySet()) {
-        for (Map.Entry<String, Map<String, String>> indexEntry : providerEntry.getValue()
-            .entrySet()) {
-          if (!indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER)
-              .equalsIgnoreCase(IndexType.SI.getIndexProviderName())) {
-            IndexSchema indexSchema = new IndexSchema(indexEntry.getKey(),
-                indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER));
-            indexSchema.setProperties(indexEntry.getValue());
-            indexes.add(getIndex(carbonTable, indexSchema));
-          }
+    // get bloom indexes and lucene indexes
+    for (Map.Entry<String, Map<String, Map<String, String>>> providerEntry : carbonTable
+        .getIndexesMap().entrySet()) {
+      for (Map.Entry<String, Map<String, String>> indexEntry : providerEntry.getValue()
+          .entrySet()) {
+        if (!indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER)
+            .equalsIgnoreCase(IndexType.SI.getIndexProviderName())) {
+          IndexSchema indexSchema = new IndexSchema(indexEntry.getKey(),
+              indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER));
+          indexSchema.setProperties(indexEntry.getValue());
+          indexes.add(getIndex(carbonTable, indexSchema));
         }
       }
     }

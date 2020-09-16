@@ -171,7 +171,9 @@ object CarbonInternalMetastore {
               val indexProvider = if (null != indexProperties) {
                 indexProperties.get(CarbonCommonConstants.INDEX_PROVIDER)
               } else {
-                // in case of SI compatibility scenario, indexProperties will be null
+                // in case if SI table has been created before the change CARBONDATA-3765,
+                // indexProperties variable will not be present. On direct upgrade of SI store,
+                // indexProperties will be null, in that case, create indexProperties from indexCols
                 indexProperties = new java.util.HashMap[String, String]()
                 indexProperties.put(CarbonCommonConstants.INDEX_COLUMNS,
                   indexTableInfo.getIndexCols.asScala.mkString(","))
