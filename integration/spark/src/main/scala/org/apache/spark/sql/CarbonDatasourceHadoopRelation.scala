@@ -46,7 +46,8 @@ case class CarbonDatasourceHadoopRelation(
     sparkSession: SparkSession,
     paths: Array[String],
     parameters: Map[String, String],
-    tableSchema: Option[StructType])
+    tableSchema: Option[StructType],
+    limit: Int = -1)
   extends BaseRelation with InsertableRelation {
 
   val caseInsensitiveMap: Map[String, String] = parameters.map(f => (f._1.toLowerCase, f._2))
@@ -93,10 +94,15 @@ case class CarbonDatasourceHadoopRelation(
     }
 
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
+    val filter = filterExpression.map(new IndexFilter(carbonTable, _, true)).orNull
+    if (filter != null && filters.length == 1) {
+      // push down the limit if only one filter
+      filter.setLimit(limit)
+    }
     new CarbonScanRDD(
       sparkSession,
       projection,
-      filterExpression.map(new IndexFilter(carbonTable, _, true)).orNull,
+      filter,
       identifier,
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,

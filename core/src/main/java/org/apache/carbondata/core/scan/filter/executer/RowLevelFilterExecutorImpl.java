@@ -113,10 +113,15 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
    */
   private DirectDictionaryGenerator dateDictionaryGenerator;
 
+  // limit value used for row scanning, collected when carbon.mapOrderPushDown is enabled
+  // TODO: right now this is used only for Array_contains() filter,
+  // later we can make use of it for all row level filters.
+  private int limit;
+
   public RowLevelFilterExecutorImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
-      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+      Map<Integer, GenericQueryType> complexDimensionInfoMap, int limit) {
     this.segmentProperties = segmentProperties;
     if (null == dimColEvaluatorInfoList) {
       this.dimColEvaluatorInfoList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -147,6 +152,7 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
     this.complexDimensionInfoMap = complexDimensionInfoMap;
     this.dateDictionaryGenerator =
         DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
+    this.limit = limit;
     initDimensionChunkIndexes();
     initMeasureChunkIndexes();
   }
@@ -266,8 +272,12 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
           literalExpDataType);
       ArrayQueryType complexType =
           (ArrayQueryType) complexDimensionInfoMap.get(dimensionChunkIndex[0]);
+      int totalCount = 0;
       // check all the pages
       for (int i = 0; i < pageNumbers; i++) {
+        if (limit != -1 && totalCount >= limit) {
+          break;
+        }
         BitSet set = new BitSet(numberOfRows[i]);
         int[][] numberOfChild = complexType
             .getNumberOfChild(rawBlockletColumnChunks.getDimensionRawColumnChunks(), null,
@@ -277,12 +287,16 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
                 null, i);
         // check every row
         for (int index = 0; index < numberOfRows[i]; index++) {
+          if (limit != -1 && totalCount >= limit) {
+            break;
+          }
           int dataOffset = numberOfChild[index][1];
           // loop the children
           for (int j = 0; j < numberOfChild[index][0]; j++) {
             byte[] obj = page.getChunkData(dataOffset++);
             if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(obj, filterValueInBytes) == 0) {
               set.set(index);
+              totalCount++;
               break;
             }
           }

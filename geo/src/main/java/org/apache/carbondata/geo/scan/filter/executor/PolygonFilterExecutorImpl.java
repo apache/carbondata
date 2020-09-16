@@ -41,7 +41,7 @@ public class PolygonFilterExecutorImpl extends RowLevelFilterExecutorImpl {
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap) {
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
-        complexDimensionInfoMap);
+        complexDimensionInfoMap, -1);
   }
 
   private int getNearestRangeIndex(List<Long[]> ranges, long searchForNumber) {

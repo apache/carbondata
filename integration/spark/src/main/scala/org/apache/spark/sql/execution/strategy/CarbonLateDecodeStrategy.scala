@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.strategy
 
+import java.util.Locale
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -187,6 +189,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           planLater(right),
           condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+      case ExtractTakeOrderedAndProjectExec(carbonTakeOrderedAndProjectExec) =>
+        carbonTakeOrderedAndProjectExec :: Nil
       case _ => Nil
     }
   }
@@ -980,6 +984,85 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           None,
           new SparkCarbonTableFormat,
           null)(sparkSession)
+    }
+  }
+
+  object ExtractTakeOrderedAndProjectExec {
+
+    def unapply(plan: LogicalPlan): Option[CarbonTakeOrderedAndProjectExec] = {
+      val allRelations = plan.collect { case logicalRelation: LogicalRelation => logicalRelation }
+      // push down order by limit to carbon map task,
+      // only when there are only one CarbonDatasourceHadoopRelation
+      if (allRelations.size != 1 ||
+          allRelations.exists(x => !x.relation.isInstanceOf[CarbonDatasourceHadoopRelation])) {
+        return None
+      }
+      //  check and Replace TakeOrderedAndProject (physical plan node for order by + limit)
+      //  with CarbonTakeOrderedAndProjectExec.
+      val relation = allRelations.head.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+      plan match {
+        case ReturnAnswer(rootPlan) => rootPlan match {
+          case Limit(IntegerLiteral(limit), Sort(order, true, child)) =>
+            carbonTakeOrder(relation, limit,
+              order,
+              child.output,
+              planLater(pushLimit(limit, child)))
+          case Limit(IntegerLiteral(limit), Project(projectList, Sort(order, true, child))) =>
+            carbonTakeOrder(relation, limit, order, projectList, planLater(pushLimit(limit, child)))
+          case _ => None
+        }
+        case Limit(IntegerLiteral(limit), Sort(order, true, child)) =>
+          carbonTakeOrder(relation, limit, order, child.output, planLater(pushLimit(limit, child)))
+        case Limit(IntegerLiteral(limit), Project(projectList, Sort(order, true, child))) =>
+          carbonTakeOrder(relation, limit, order, projectList, planLater(pushLimit(limit, child)))
+        case _ => None
+      }
+    }
+
+    private def carbonTakeOrder(relation: CarbonDatasourceHadoopRelation,
+        limit: Int,
+        orders: Seq[SortOrder],
+        projectList: Seq[NamedExpression],
+        child: SparkPlan): Option[CarbonTakeOrderedAndProjectExec] = {
+      val latestOrder = orders.last
+      val fromHead: Boolean = latestOrder.direction match {
+        case Ascending => true
+        case Descending => false
+      }
+      val (columnName, canPushDown) = latestOrder.child match {
+        case attr: AttributeReference => (attr.name, true)
+        case Alias(AttributeReference(name, _, _, _), _) => (name, true)
+        case _ => (null, false)
+      }
+      val mapOrderPushDown = CarbonProperties.getInstance.getProperty(
+        CarbonCommonConstants.CARBON_MAP_ORDER_PUSHDOWN + "." +
+        s"${ relation.carbonTable.getTableUniqueName.toLowerCase(Locale.ROOT) }.column")
+      // when this property is enabled and order by column is in sort column,
+      // enable limit push down to map task, row scanner can use this limit.
+      val sortColumns = relation.carbonTable.getSortColumns
+      if (mapOrderPushDown != null && canPushDown && sortColumns.size() > 0
+          && sortColumns.get(0).equalsIgnoreCase(columnName)
+          && mapOrderPushDown.equalsIgnoreCase(columnName)) {
+        // Replace TakeOrderedAndProject (which comes after physical plan with limit and order by)
+        // with CarbonTakeOrderedAndProjectExec.
+        // which will skip the order at map task as column data is already sorted
+        Some(CarbonTakeOrderedAndProjectExec(limit, orders, projectList, child, skipMapOrder =
+          true, readFromHead = fromHead))
+      } else {
+        None
+      }
+    }
+
+    def pushLimit(limit: Int, plan: LogicalPlan): LogicalPlan = {
+      val newPlan = plan transform {
+        case lr: LogicalRelation =>
+          val newRelation = lr.copy(relation = lr.relation
+            .asInstanceOf[CarbonDatasourceHadoopRelation]
+            .copy(limit = limit))
+          newRelation
+        case other => other
+      }
+      newPlan
     }
   }
 }

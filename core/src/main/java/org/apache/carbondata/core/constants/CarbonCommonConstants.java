@@ -2575,4 +2575,12 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_REORDER_FILTER_DEFAULT = "true";
 
+  /**
+   * If order by column is in sort column,
+   * specify that sort column here to avoid ordering at map task.
+   * Also the limit value can be used for row scanning to scan the data only till the limit.
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_MAP_ORDER_PUSHDOWN = "carbon.mapOrderPushDown";
+
 }

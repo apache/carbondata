@@ -229,6 +229,8 @@ public class SessionParams implements Serializable, Cloneable {
           }
         } else if (key.equalsIgnoreCase(CARBON_REORDER_FILTER)) {
           isValid = true;
+        } else if (key.startsWith(CARBON_MAP_ORDER_PUSHDOWN)) {
+          isValid = true;
         } else {
           throw new InvalidConfigurationException(
               "The key " + key + " not supported for dynamic configuration.");

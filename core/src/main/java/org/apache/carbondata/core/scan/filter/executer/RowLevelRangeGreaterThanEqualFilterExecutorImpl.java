@@ -62,7 +62,7 @@ public class RowLevelRangeGreaterThanEqualFilterExecutorImpl extends RowLevelFil
       AbsoluteTableIdentifier tableIdentifier, byte[][] filterRangeValues,
       Object[] msrFilterRangeValues, SegmentProperties segmentProperties) {
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
-        null);
+        null, -1);
     this.filterRangeValues = filterRangeValues;
     this.msrFilterRangeValues = msrFilterRangeValues;
     if (!msrColEvalutorInfoList.isEmpty()) {

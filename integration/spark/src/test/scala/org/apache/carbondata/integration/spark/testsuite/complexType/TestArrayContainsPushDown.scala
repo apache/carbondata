@@ -66,6 +66,30 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
     sql("drop table complex1")
   }
 
+  test("test array contains push down using limit " +
+       "in row level scan when order by column is sort column") {
+    sql("drop table if exists complex1")
+
+    sql("create table complex1 (id int, arr array<String>) " +
+        "stored as carbondata TBLPROPERTIES ('SORT_COLUMNS'='id')")
+    sql("insert into complex1 select 1, array('as') union all " +
+        "select 2, array('sd','df','gh') union all " +
+        "select 3, array('rt','ew','rtyu','jk',null) union all " +
+        "select 4, array('ghsf','dbv','','ty') union all " +
+        "select 5, array('hjsd','fggb','nhj','sd','asd')")
+
+    // enable the property
+    CarbonProperties.getInstance()
+      .addProperty("carbon.mapOrderPushDown.default_complex1.column", "id")
+    // check for CarbonTakeOrderedAndProjectExec node in plan
+    checkExistence(sql(
+      " explain select * from complex1 where array_contains(arr,'sd') order by id limit 1"),
+      true,
+      "CarbonTakeOrderedAndProjectExec")
+    CarbonProperties.getInstance().removeProperty("carbon.mapOrderPushDown.default_complex1.column")
+    sql("drop table complex1")
+  }
+
   test("test array contains pushdown for array of boolean") {
     sql("drop table if exists complex1")
     sql("create table complex1 (arr array<boolean>) stored as carbondata")
