@@ -724,6 +724,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   def getFields(schema: Seq[StructField], isExternal: Boolean = false): Seq[Field] = {
+    def getScannerInput(col: StructField,
+        columnComment: String,
+        columnName: String) = {
+      if (col.dataType.catalogString == "float" && !isExternal) {
+        '`' + columnName + '`' + " double" + columnComment
+      } else {
+        '`' + columnName + '`' + ' ' + col.dataType.catalogString +
+        columnComment
+      }
+    }
+
     schema.map { col =>
       var columnComment: String = ""
       var plainComment: String = ""
@@ -731,15 +742,20 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         columnComment = " comment '" + col.getComment().get + "'"
         plainComment = col.getComment().get
       }
+      val indexesToReplace = col.name.toCharArray.zipWithIndex.map {
+        case (ch, index) => if (ch.equals('`')) index }.filter(_ != ())
       // external table use float data type
       // normal table use double data type instead of float
-      val x =
-        if (col.dataType.catalogString == "float" && !isExternal) {
-          '`' + col.name + '`' + " double" + columnComment
-        } else {
-          '`' + col.name + '`' + ' ' + col.dataType.catalogString + columnComment
-        }
-      val f: Field = anyFieldDef(new lexical.Scanner(x.toLowerCase))
+      var scannerInput = if (col.name.contains("`")) {
+        // If the column name contains the character like `, then parsing fails, as ` char is used
+        // to tokenize and it wont be able to differentiate between whether its actual character or
+        // token character. So just for parsing temporarily replace with !, then once field is
+        // prepared, just replace the original name.
+        getScannerInput(col, columnComment, col.name.replaceAll("`", "!"))
+      } else {
+        getScannerInput(col, columnComment, col.name)
+      }
+      var field: Field = anyFieldDef(new lexical.Scanner(scannerInput.toLowerCase))
       match {
         case Success(field, _) =>
           if (col.dataType.catalogString == "float" && isExternal) {
@@ -749,26 +765,32 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         case failureOrError => throw new MalformedCarbonCommandException(
           s"Unsupported data type: ${ col.dataType }")
       }
+      if (col.name.contains("`")) {
+        val actualName = indexesToReplace.foldLeft(field.column)((s, i) => s.updated(i
+          .asInstanceOf[Int], '`'))
+        field = field.copy(column = actualName, name = Some(actualName))
+        scannerInput = getScannerInput(col, columnComment, col.name)
+      }
       // the data type of the decimal type will be like decimal(10,0)
       // so checking the start of the string and taking the precision and scale.
       // resetting the data type with decimal
-      if (f.dataType.getOrElse("").startsWith("decimal")) {
+      if (field.dataType.getOrElse("").startsWith("decimal")) {
         val (precision, scale) = CommonUtil.getScaleAndPrecision(col.dataType.catalogString)
-        f.precision = precision
-        f.scale = scale
-        f.dataType = Some("decimal")
+        field.precision = precision
+        field.scale = scale
+        field.dataType = Some("decimal")
       }
-      if (f.dataType.getOrElse("").startsWith("char")) {
-        f.dataType = Some("char")
+      if (field.dataType.getOrElse("").startsWith("char")) {
+        field.dataType = Some("char")
       }
-      else if (f.dataType.getOrElse("").startsWith("float") && !isExternal) {
-        f.dataType = Some("double")
+      else if (field.dataType.getOrElse("").startsWith("float") && !isExternal) {
+        field.dataType = Some("double")
       }
-      f.rawSchema = x
+      field.rawSchema = scannerInput
       if (col.getComment().isDefined) {
-        f.columnComment = plainComment
+        field.columnComment = plainComment
       }
-      f
+      field
     }
   }
 
