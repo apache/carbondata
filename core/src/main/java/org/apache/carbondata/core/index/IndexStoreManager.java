@@ -92,7 +92,7 @@ public final class IndexStoreManager {
   public List<TableIndex> getAllCGAndFGIndexes(CarbonTable carbonTable) throws IOException {
     IndexMetadata indexMetadata = carbonTable.getIndexMetadata();
     List<TableIndex> indexes = new ArrayList<>();
-    if (null != indexMetadata) {
+    if (null != indexMetadata && indexMetadata.getIndexesMap() != null) {
       // get bloom indexes and lucene indexes
       for (Map.Entry<String, Map<String, Map<String, String>>> providerEntry : indexMetadata
           .getIndexesMap().entrySet()) {
