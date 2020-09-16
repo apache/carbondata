@@ -167,21 +167,28 @@ object CarbonInternalMetastore {
         } else {
           IndexTableInfo.fromGson(indexInfo)
             .foreach { indexTableInfo =>
-              val indexProvider = indexTableInfo.getIndexProperties
-                .get(CarbonCommonConstants.INDEX_PROVIDER)
+              var indexProperties = indexTableInfo.getIndexProperties
+              val indexProvider = if (null != indexProperties) {
+                indexProperties.get(CarbonCommonConstants.INDEX_PROVIDER)
+              } else {
+                // in case of SI compatibility scenario, indexProperties will be null
+                indexProperties = new java.util.HashMap[String, String]()
+                indexProperties.put(CarbonCommonConstants.INDEX_COLUMNS,
+                  indexTableInfo.getIndexCols.asScala.mkString(","))
+                val provider = IndexType.SI.getIndexProviderName
+                indexProperties.put(CarbonCommonConstants.INDEX_PROVIDER, provider)
+                provider
+              }
               if (indexTableMap.isEmpty) {
                 val indexTableInfoMap = new java.util.HashMap[String, java.util.Map[String, String]]
-                indexTableInfoMap.put(indexTableInfo.getTableName,
-                  indexTableInfo.getIndexProperties)
+                indexTableInfoMap.put(indexTableInfo.getTableName, indexProperties)
                 indexTableMap.put(indexProvider, indexTableInfoMap)
               } else if (null == indexTableMap.get(indexProvider)) {
                 val indexTableInfoMap = new java.util.HashMap[String, java.util.Map[String, String]]
-                indexTableInfoMap.put(indexTableInfo.getTableName,
-                  indexTableInfo.getIndexProperties)
+                indexTableInfoMap.put(indexTableInfo.getTableName, indexProperties)
                 indexTableMap.put(indexProvider, indexTableInfoMap)
               } else {
-                indexTableMap.get(indexProvider).put(indexTableInfo.getTableName,
-                  indexTableInfo.getIndexProperties)
+                indexTableMap.get(indexProvider).put(indexTableInfo.getTableName, indexProperties)
               }
             }
           val indexMetadata = new IndexMetadata(
