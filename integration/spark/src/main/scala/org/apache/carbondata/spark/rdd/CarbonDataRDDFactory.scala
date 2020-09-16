@@ -57,7 +57,6 @@ import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonUtil, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.{DistributedRDDUtils, IndexServer}
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -267,9 +266,8 @@ object CarbonDataRDDFactory {
             throw new Exception("Exception in compaction " + exception.getMessage)
           }
         } finally {
-          executor.shutdownNow()
           try {
-            compactor.deletePartialLoadsInCompaction()
+            executor.shutdownNow()
           } catch {
             // no need to throw this as compaction is over
             case ex: Exception =>
