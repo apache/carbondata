@@ -960,9 +960,7 @@ public class SegmentStatusManager {
     if (details != null && details.length > 0) {
       for (LoadMetadataDetails oneRow : details) {
         if ((SegmentStatus.MARKED_FOR_DELETE == oneRow.getSegmentStatus()
-            || SegmentStatus.COMPACTED == oneRow.getSegmentStatus()
-            || SegmentStatus.INSERT_IN_PROGRESS == oneRow.getSegmentStatus()
-            || SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneRow.getSegmentStatus())
+            || SegmentStatus.COMPACTED == oneRow.getSegmentStatus())
             && oneRow.getVisibility().equalsIgnoreCase("true")) {
           return true;
         }

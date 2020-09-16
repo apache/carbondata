@@ -267,9 +267,8 @@ object CarbonDataRDDFactory {
             throw new Exception("Exception in compaction " + exception.getMessage)
           }
         } finally {
-          executor.shutdownNow()
           try {
-            compactor.deletePartialLoadsInCompaction()
+            executor.shutdownNow()
           } catch {
             // no need to throw this as compaction is over
             case ex: Exception =>

@@ -184,10 +184,6 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
           getReArrangedSchemaLogicalRelation(reArrangedIndex, logicalPartitionRelation)
       }
     }
-    // Delete stale segment folders that are not in table status but are physically present in
-    // the Fact folder
-    LOGGER.info(s"Deleting stale folders if present for table $dbName.$tableName")
-    TableProcessingOperations.deletePartialLoadDataIfExist(table, false)
     var isUpdateTableStatusRequired = false
     val uuid = ""
     try {
