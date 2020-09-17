@@ -86,6 +86,19 @@ public class HiveCarbonTest extends HiveTestUtils {
   }
 
   @Test
+  public void verifyEmptyTableSelectQuery() throws Exception {
+    statement.execute("drop table if exists hive_carbon_table1");
+    statement.execute("CREATE TABLE hive_carbon_table1(id INT, name STRING, scale DECIMAL, country STRING, salary DOUBLE) stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    statement.execute("drop table if exists hive_carbon_table2");
+    statement.execute("CREATE TABLE hive_carbon_table2(id INT, name STRING, scale DECIMAL, country STRING, salary DOUBLE) stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    statement.execute("INSERT into hive_carbon_table2 SELECT * FROM hive_carbon_table1");
+    checkAnswer(statement.executeQuery("SELECT * FROM hive_carbon_table2"),
+        connection.createStatement().executeQuery("select * from hive_carbon_table1"));
+    statement.execute("drop table if exists hive_carbon_table1");
+    statement.execute("drop table if exists hive_carbon_table2");
+  }
+
+  @Test
   public void verifyDataAfterLoadUsingSortColumns() throws Exception {
     statement.execute("drop table if exists hive_carbon_table5");
     statement.execute(
