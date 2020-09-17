@@ -171,13 +171,33 @@ public class HiveCarbonUtil {
       columns = columns + "," + partitionColumns;
       columnTypes = columnTypes + ":" + partitionColumnTypes;
     }
-    String[] columnTypeArray = HiveCarbonUtil.splitSchemaStringToArray(columnTypes);
-
+    String[][] validatedColumnsAndTypes = validateColumnsAndTypes(columns, columnTypes);
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(
         HiveCarbonUtil.getTableInfo(tableName, databaseName, tablePath,
-            sortColumns, columns.split(","), columnTypeArray, new ArrayList<>()));
+            sortColumns, validatedColumnsAndTypes[0],
+            validatedColumnsAndTypes[1], new ArrayList<>()));
     carbonTable.setTransactionalTable(false);
     return carbonTable;
+  }
+
+  // In case of empty table some extra field is getting added in the columns and columntypes
+  // which should be removed after validation.
+  private static String[][] validateColumnsAndTypes(String columns, String columnTypes) {
+    String[] columnTypeArray = HiveCarbonUtil.splitSchemaStringToArray(columnTypes);
+    String[] columnArray = columns.split(",");
+    String[] validatedColumnArray;
+    String[] validatedColumnTypeArray;
+    int length = columnArray.length;
+    if (columnArray[length - 3].equalsIgnoreCase("BLOCK__OFFSET__INSIDE__FILE")) {
+      validatedColumnArray = new String[length - 3];
+      validatedColumnTypeArray = new String[length - 3];
+      System.arraycopy(columnArray, 0, validatedColumnArray, 0, length - 3);
+      System.arraycopy(columnTypeArray, 0, validatedColumnTypeArray, 0, length - 3);
+    } else {
+      validatedColumnArray = columnArray;
+      validatedColumnTypeArray = columnTypeArray;
+    }
+    return new String[][]{validatedColumnArray, validatedColumnTypeArray};
   }
 
   private static TableInfo getTableInfo(String tableName, String databaseName, String location,
@@ -303,8 +323,15 @@ public class HiveCarbonUtil {
     List<String> tokens = new ArrayList();
     StringBuilder stack = new StringBuilder();
     int openingCount = 0;
-    for (int i = 0; i < schema.length(); i++) {
-      if (schema.charAt(i) == '<') {
+    int length = schema.length();
+    for (int i = 0; i < length; i++) {
+      if (schema.charAt(i) == '(') {
+        stack.append(schema.charAt(i));
+        while (++i < length && schema.charAt(i) != ')') {
+          stack.append(schema.charAt(i));
+        }
+        stack.append(schema.charAt(i));
+      } else if (schema.charAt(i) == '<') {
         openingCount++;
         stack.append(schema.charAt(i));
       } else if (schema.charAt(i) == '>') {
@@ -317,9 +344,9 @@ public class HiveCarbonUtil {
         } else {
           stack.append(schema.charAt(i));
         }
-      } else if (schema.charAt(i) == ':' && openingCount > 0) {
+      } else if ((schema.charAt(i) == ':' || schema.charAt(i) == ',') && openingCount > 0) {
         stack.append(schema.charAt(i));
-      } else if (schema.charAt(i) == ':' && openingCount == 0) {
+      } else if ((schema.charAt(i) == ':' || schema.charAt(i) == ',') && openingCount == 0) {
         tokens.add(stack.toString());
         stack = new StringBuilder();
         openingCount = 0;

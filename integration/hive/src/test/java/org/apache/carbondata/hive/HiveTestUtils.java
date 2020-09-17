@@ -66,11 +66,9 @@ public abstract class HiveTestUtils {
 
   public boolean checkAnswer(ResultSet actual, ResultSet expected) throws SQLException {
     Assert.assertEquals("Row Count Mismatch: ", expected.getFetchSize(), actual.getFetchSize());
-    int rowCountExpected = 0;
     List<String> expectedValuesList = new ArrayList<>();
     List<String> actualValuesList = new ArrayList<>();
     while (expected.next()) {
-      rowCountExpected ++;
       if (!actual.next()) {
         return false;
       }
@@ -88,7 +86,6 @@ public abstract class HiveTestUtils {
     }
     Collections.sort(expectedValuesList);Collections.sort(actualValuesList);
     Assert.assertArrayEquals(expectedValuesList.toArray(), actualValuesList.toArray());
-    Assert.assertTrue(rowCountExpected > 0);
     return true;
   }
 

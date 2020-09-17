@@ -154,8 +154,16 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     } else {
       carbonInputFormat = new CarbonFileInputFormat<>();
     }
-    List<org.apache.hadoop.mapreduce.InputSplit> splitList =
-        carbonInputFormat.getSplits(jobContext);
+    List<org.apache.hadoop.mapreduce.InputSplit> splitList;
+    try {
+      splitList = carbonInputFormat.getSplits(jobContext);
+    } catch (IOException ex) {
+      if (ex.getMessage().contains("No Index files are present in the table location :")) {
+        splitList = new ArrayList<>();
+      } else {
+        throw ex;
+      }
+    }
     InputSplit[] splits = new InputSplit[splitList.size()];
     CarbonInputSplit split;
     for (int i = 0; i < splitList.size(); i++) {
