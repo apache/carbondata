@@ -18,35 +18,23 @@
 package org.apache.spark.sql.execution.command.table
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.MetadataCommand
-import org.apache.spark.sql.types.{BooleanType, StringType}
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.execution.command.{MetadataCommand, ShowTablesCommand}
 
 
-private[sql] case class CarbonShowTablesCommand ( databaseName: Option[String],
-    tableIdentifierPattern: Option[String])  extends MetadataCommand{
+private[sql] case class CarbonShowTablesCommand(showTablesCommand: ShowTablesCommand)
+  extends MetadataCommand {
 
-  // The result of SHOW TABLES has three columns: database, tableName and isTemporary.
-  override val output: Seq[Attribute] = {
-    AttributeReference("database", StringType, nullable = false)() ::
-    AttributeReference("tableName", StringType, nullable = false)() ::
-    AttributeReference("isTemporary", BooleanType, nullable = false)() :: Nil
-  }
+  override val output: Seq[Attribute] = showTablesCommand.output
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    // Since we need to return a Seq of rows, we will call getTables directly
-    // instead of calling tables in sparkSession.
-    val catalog = sparkSession.sessionState.catalog
-    val db = databaseName.getOrElse(catalog.getCurrentDatabase)
-    val tables =
-      tableIdentifierPattern.map(catalog.listTables(db, _)).getOrElse(catalog.listTables(db))
+    val rows = showTablesCommand.run(sparkSession)
     val externalCatalog = sparkSession.sharedState.externalCatalog
     // this method checks whether the table is mainTable or MV based on property "isVisible"
-    def isMainTable(tableIdent: TableIdentifier) = {
+    def isMainTable(db: String, table: String) = {
       var isMainTable = true
       try {
-        isMainTable = externalCatalog.getTable(db, tableIdent.table).storage.properties
+        isMainTable = externalCatalog.getTable(db, table).storage.properties
           .getOrElse("isVisible", true).toString.toBoolean
       } catch {
         case ex: Throwable =>
@@ -55,12 +43,7 @@ private[sql] case class CarbonShowTablesCommand ( databaseName: Option[String],
       isMainTable
     }
     // tables will be filtered for all the MVs to show only main tables
-    tables.collect {
-      case tableIdent if isMainTable(tableIdent) =>
-        val isTemp = catalog.isTemporaryTable(tableIdent)
-        Row(tableIdent.database.getOrElse("default"), tableIdent.table, isTemp)
-    }
-
+    rows.filter(row => isMainTable(row.get(0).toString, row.get(1).toString))
   }
 
   override protected def opName: String = "SHOW TABLES"

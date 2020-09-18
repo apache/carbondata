@@ -397,12 +397,6 @@ object DDLHelper {
     }
   }
 
-  def showTables(showTablesCommand: ShowTablesCommand): Seq[SparkPlan] = {
-    ExecutedCommandExec(CarbonShowTablesCommand(
-      showTablesCommand.databaseName,
-      showTablesCommand.tableIdentifierPattern)) :: Nil
-  }
-
   //////////////////////////////////////////////////////////////////////////////////
   // carbon file
   /////////////////////////////////////////////////////////////////////////////////

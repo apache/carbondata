@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.command.index.{DropIndexCommand, ShowIndex
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand}
 import org.apache.spark.sql.execution.command.mutation.CarbonTruncateCommand
 import org.apache.spark.sql.execution.command.schema._
-import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDropTableCommand, CarbonShowCreateTableCommand}
+import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDropTableCommand, CarbonShowCreateTableCommand, CarbonShowTablesCommand}
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
@@ -194,7 +194,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case explain: ExplainCommand =>
         DDLHelper.explain(explain, sparkSession)
       case showTables: ShowTablesCommand =>
-        DDLHelper.showTables(showTables)
+        ExecutedCommandExec(CarbonShowTablesCommand(showTables)) :: Nil
       case CarbonCreateSecondaryIndexCommand(
       indexModel, tableProperties, ifNotExists, isDeferredRefresh, isCreateSIndex) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore

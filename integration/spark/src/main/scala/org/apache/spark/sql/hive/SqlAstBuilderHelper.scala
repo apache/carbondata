@@ -84,14 +84,6 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
     super.visitCreateTable(ctx)
   }
 
-  override def visitShowTables(ctx: ShowTablesContext): LogicalPlan = {
-    withOrigin(ctx) {
-        CarbonShowTablesCommand(
-          Option(ctx.db).map(_.getText),
-          Option(ctx.pattern).map(string))
-    }
-  }
-
   override def visitExplain(ctx: SqlBaseParser.ExplainContext): LogicalPlan = {
     CarbonExplainCommand(super.visitExplain(ctx))
   }
