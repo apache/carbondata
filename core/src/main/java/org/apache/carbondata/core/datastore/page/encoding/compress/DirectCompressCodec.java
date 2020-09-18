@@ -50,6 +50,7 @@ import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVec
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -316,6 +317,17 @@ public class DirectCompressCodec implements ColumnPageCodec {
     private void fillPrimitiveType(byte[] pageData, CarbonColumnVector vector,
         DataType vectorDataType, DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo,
         BitSet nullBits) {
+      int intSizeInBytes = DataTypes.INT.getSizeInBytes();
+      int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
+      int lengthStoredInBytes;
+      if (vectorInfo.encodings != null && vectorInfo.encodings.size() > 0 && CarbonUtil
+          .hasEncoding(vectorInfo.encodings, Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY)) {
+        lengthStoredInBytes = intSizeInBytes;
+      } else {
+        // Before to carbon 2.0, complex child length is stored as SHORT
+        // for string, varchar, binary, date, decimal types
+        lengthStoredInBytes = shortSizeInBytes;
+      }
       int rowId = 0;
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
         if (vectorDataType == DataTypes.SHORT) {
@@ -345,7 +357,6 @@ public class DirectCompressCodec implements ColumnPageCodec {
           }
         }
       } else if (pageDataType == DataTypes.SHORT) {
-        int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
         int size = pageSize * shortSizeInBytes;
         if (vectorDataType == DataTypes.SHORT) {
           for (int i = 0; i < size; i += shortSizeInBytes) {
@@ -397,7 +408,6 @@ public class DirectCompressCodec implements ColumnPageCodec {
           }
         }
       } else {
-        int intSizeInBytes = DataTypes.INT.getSizeInBytes();
         if (pageDataType == DataTypes.INT) {
           int size = pageSize * intSizeInBytes;
           if (vectorDataType == DataTypes.INT) {
@@ -441,36 +451,46 @@ public class DirectCompressCodec implements ColumnPageCodec {
               || vectorDataType == DataTypes.VARCHAR) {
             // for complex primitive string, binary, varchar type
             int offset = 0;
+            int length;
             for (int i = 0; i < pageSize; i++) {
-              int len = ByteBuffer.wrap(pageData, offset, intSizeInBytes).getInt();
-              offset += intSizeInBytes;
-              if (vectorDataType == DataTypes.BINARY && len == 0) {
+              if (lengthStoredInBytes == intSizeInBytes) {
+                length = ByteBuffer.wrap(pageData, offset, lengthStoredInBytes).getInt();
+              } else {
+                length = ByteBuffer.wrap(pageData, offset, lengthStoredInBytes).getShort();
+              }
+              offset += lengthStoredInBytes;
+              if (vectorDataType == DataTypes.BINARY && length == 0) {
                 vector.putNull(i);
                 continue;
               }
-              byte[] row = new byte[len];
-              System.arraycopy(pageData, offset, row, 0, len);
+              byte[] row = new byte[length];
+              System.arraycopy(pageData, offset, row, 0, length);
               if (Arrays.equals(row, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY)) {
                 vector.putNull(i);
               } else {
                 vector.putObject(i, row);
               }
-              offset += len;
+              offset += length;
             }
           } else if (vectorDataType == DataTypes.DATE) {
             // for complex primitive date type
             int offset = 0;
+            int length;
             for (int i = 0; i < pageSize; i++) {
-              int len = ByteBuffer.wrap(pageData, offset, intSizeInBytes).getInt();
-              offset += intSizeInBytes;
+              if (lengthStoredInBytes == intSizeInBytes) {
+                length = ByteBuffer.wrap(pageData, offset, lengthStoredInBytes).getInt();
+              } else {
+                length = ByteBuffer.wrap(pageData, offset, lengthStoredInBytes).getShort();
+              }
+              offset += lengthStoredInBytes;
               int surrogateInternal =
                   ByteUtil.toXorInt(pageData, offset, intSizeInBytes);
-              if (len == 0) {
+              if (length == 0) {
                 vector.putObject(0, null);
               } else {
                 vector.putObject(0, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
               }
-              offset += len;
+              offset += length;
             }
           } else if (DataTypes.isDecimal(vectorDataType)) {
             // for complex primitive decimal type
