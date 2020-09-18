@@ -28,6 +28,7 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.format.Encoding;
 
 public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public int offset;
@@ -45,6 +46,8 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public DecimalConverterFactory.DecimalConverter decimalConverter;
   // Vector stack is used in complex column vectorInfo to store all the children vectors.
   public Stack<CarbonColumnVector> vectorStack = new Stack<>();
+  // store the encoding of the column, used while decoding the page for filling the vector
+  public List<Encoding> encodings;
 
   @Override
   public int compareTo(ColumnVectorInfo o) {

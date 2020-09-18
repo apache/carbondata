@@ -27,7 +27,9 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.format.Encoding;
 
 /**
  * Decimal converter to keep the data compact.
@@ -110,6 +112,10 @@ public final class DecimalConverterFactory {
     @Override
     public void fillVector(Object valuesToBeConverted, int size,
         ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
+      if (!(valuesToBeConverted instanceof byte[])) {
+        throw new UnsupportedOperationException("This object type " + valuesToBeConverted.getClass()
+            + " is not supported in this method");
+      }
       // TODO we need to find way to directly set to vector with out conversion. This way is very
       // inefficient.
       CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
@@ -124,9 +130,16 @@ public final class DecimalConverterFactory {
         precision = vectorInfo.measure.getMeasure().getPrecision();
         newMeasureScale = vectorInfo.measure.getMeasure().getScale();
       }
-      if (!(valuesToBeConverted instanceof byte[])) {
-        throw new UnsupportedOperationException("This object type " + valuesToBeConverted.getClass()
-            + " is not supported in this method");
+      int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
+      int intSizeInBytes = DataTypes.INT.getSizeInBytes();
+      int lengthStoredInBytes;
+      if (vectorInfo.encodings != null && vectorInfo.encodings.size() > 0 && CarbonUtil
+          .hasEncoding(vectorInfo.encodings, Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY)) {
+        lengthStoredInBytes = intSizeInBytes;
+      } else {
+        // before to carbon 2.0, complex child length is stored as SHORT
+        // for string, varchar, binary, date, decimal types
+        lengthStoredInBytes = shortSizeInBytes;
       }
       byte[] data = (byte[]) valuesToBeConverted;
       if (pageType == DataTypes.BYTE) {
@@ -142,7 +155,6 @@ public final class DecimalConverterFactory {
           }
         }
       } else if (pageType == DataTypes.SHORT) {
-        int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
         for (int i = 0; i < size; i++) {
           if (nullBitSet.get(i)) {
             vector.putNull(i);
@@ -172,7 +184,6 @@ public final class DecimalConverterFactory {
           }
         }
       } else {
-        int intSizeInBytes = DataTypes.INT.getSizeInBytes();
         if (pageType == DataTypes.INT) {
           for (int i = 0; i < size; i++) {
             if (nullBitSet.get(i)) {
@@ -205,39 +216,44 @@ public final class DecimalConverterFactory {
         } else if (pageType == DataTypes.BYTE_ARRAY) {
           // complex primitive decimal dimension
           int offset = 0;
+          int length;
           for (int j = 0; j < size; j++) {
             // here decimal data will be Length[4 byte], scale[1 byte], value[Length byte]
-            int len = ByteBuffer.wrap(data, offset, intSizeInBytes).getInt();
-            offset += intSizeInBytes;
-            if (len == 0) {
+            if (lengthStoredInBytes == intSizeInBytes) {
+              length = ByteBuffer.wrap(data, offset, lengthStoredInBytes).getInt();
+            } else {
+              length = ByteBuffer.wrap(data, offset, lengthStoredInBytes).getShort();
+            }
+            offset += lengthStoredInBytes;
+            if (length == 0) {
               vector.putNull(j);
               continue;
             }
             // jump the scale offset
             offset += 1;
             // remove scale from the length
-            len -= 1;
-            byte[] row = new byte[len];
-            System.arraycopy(data, offset, row, 0, len);
+            length -= 1;
+            byte[] row = new byte[length];
+            System.arraycopy(data, offset, row, 0, length);
             long val;
-            if (len == 1) {
+            if (length == 1) {
               val = row[0];
-            } else if (len == 2) {
+            } else if (length == 2) {
               val = ByteUtil.toShort(row, 0);
-            } else if (len == 4) {
+            } else if (length == 4) {
               val = ByteUtil.toInt(row, 0);
-            } else if (len == 3) {
+            } else if (length == 3) {
               val = ByteUtil.valueOf3Bytes(row, 0);
             } else {
               // TODO: check if other value can come
-              val = ByteUtil.toLong(row, 0, len);
+              val = ByteUtil.toLong(row, 0, length);
             }
             BigDecimal value = BigDecimal.valueOf(val, scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
             }
             vector.putDecimal(j, value, precision);
-            offset += len;
+            offset += length;
           }
         }
       }
