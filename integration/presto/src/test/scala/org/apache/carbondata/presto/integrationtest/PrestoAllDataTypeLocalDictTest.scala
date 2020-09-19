@@ -79,7 +79,11 @@ class PrestoAllDataTypeLocalDictTest extends FunSuiteLike with BeforeAndAfterAll
     prestoServer.execute("drop table if exists testdb.testtable")
     prestoServer.execute("drop schema if exists testdb")
     prestoServer.execute("create schema testdb")
-    prestoServer.execute("create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4), dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='CARBON') ")
+    prestoServer.execute(
+      "create table testdb.testtable(ID int, date date, country varchar, name varchar, " +
+      "phonetype varchar, serialname varchar,salary double, bonus decimal(10,4), " +
+      "monthlyBonus decimal(18,4), dob timestamp, shortField smallint, " +
+      "iscurrentemployee boolean) with(format='CARBON') ")
     CarbonDataStoreCreator
       .createCarbonStore(storePath,
         s"$rootPath/integration/presto/src/test/resources/alldatatype.csv", true)
@@ -218,7 +222,9 @@ class PrestoAllDataTypeLocalDictTest extends FunSuiteLike with BeforeAndAfterAll
         "SELECT ID,DATE,COUNTRY,NAME,PHONETYPE,SERIALNAME,SALARY,BONUS FROM TESTDB.TESTTABLE " +
         "WHERE BONUS>1234 AND ID<2 GROUP BY ID,DATE,COUNTRY,NAME,PHONETYPE,SERIALNAME,SALARY," +
         "BONUS ORDER BY ID")
+    // scalastyle:off println
     actualResult.foreach(println)
+    // scalastyle:on println
     val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 1,
       "NAME" -> "anubhav",
       "BONUS" -> java.math.BigDecimal.valueOf(1234.4440).setScale(4),
@@ -256,7 +262,7 @@ class PrestoAllDataTypeLocalDictTest extends FunSuiteLike with BeforeAndAfterAll
   test("test for null operator on date data type") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT ID FROM TESTDB.TESTTABLE WHERE DATE IS NULL")
-    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 9),Map("ID" -> null))
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 9), Map("ID" -> null))
     assert(actualResult.equals(expectedResult))
 
   }
@@ -278,7 +284,9 @@ class PrestoAllDataTypeLocalDictTest extends FunSuiteLike with BeforeAndAfterAll
 
   test("test timestamp datatype using cast operator") {
     val actualResult: List[Map[String, Any]] = prestoServer
-      .executeQuery("SELECT NAME AS RESULT FROM TESTDB.TESTTABLE WHERE DOB = CAST('2016-04-14 15:00:09' AS TIMESTAMP)")
+      .executeQuery(
+        "SELECT NAME AS RESULT FROM TESTDB.TESTTABLE " +
+        "WHERE DOB = CAST('2016-04-14 15:00:09' AS TIMESTAMP)")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "jatin"))
     assert(actualResult.equals(expectedResult))
   }

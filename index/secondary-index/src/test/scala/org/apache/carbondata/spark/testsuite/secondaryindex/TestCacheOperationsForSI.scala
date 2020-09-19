@@ -25,9 +25,9 @@ import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.cache.CacheProvider
-import org.scalatest.BeforeAndAfterAll
 
 class TestCacheOperationsForSI extends QueryTest with BeforeAndAfterAll {
 

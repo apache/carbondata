@@ -34,9 +34,8 @@ import org.apache.carbondata.core.util.CarbonProperties
  * Test class of testing projection with complex data type
  *
  */
-
 class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   val hugeBinary = RandomStringUtils.randomAlphabetic(33000)
 
   override def beforeAll(): Unit = {
@@ -79,7 +78,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll string,person array<int>) " +
       "STORED AS carbondata")
     sql("insert into table1 values('abc',array(1,2,3))")
-    sql("select * from table1").show(false)
+    sql("select * from table1").collect()
     checkAnswer(sql("select roll,person from table1"),
       Seq(Row("abc", mutable.WrappedArray.make(Array(1, 2, 3)))))
   }
@@ -220,7 +219,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table table1 (roll int,person Struct<detail:array<timestamp>>) " +
       "STORED AS carbondata")
-    sql("insert into table1 values(1, named_struct('detail', array('2018-01-01 00:00:00.0','2017-01-01 00:00:00.0')))")
+    sql("insert into table1 values(" +
+        "1, named_struct('detail', array('2018-01-01 00:00:00.0','2017-01-01 00:00:00.0')))")
     checkExistence(sql("select person.detail[0] from table1"), true, "2018-01-01 00:00:00.0")
     checkExistence(sql("select person.detail[1] from table1"), true, "2017-01-01 00:00:00.0")
     checkAnswer(sql("select roll,person from table1"),
@@ -360,7 +360,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table table1 (roll int,person Struct<detail:Struct<age:timestamp>>) " +
       "STORED AS carbondata")
-    sql("insert into table1 values(1, named_struct('detail', named_struct('age', '2018-01-01 00:00:00.0')))")
+    sql("insert into table1 values(" +
+        "1, named_struct('detail', named_struct('age', '2018-01-01 00:00:00.0')))")
     checkExistence(sql("select person from table1"), true, "2018-01-01 00:00:00.0")
     checkAnswer(sql("select person,person.detail from table1"),
       Seq(Row(Row(Row(Timestamp.valueOf("2018-01-01 00:00:00.0"))),
@@ -415,8 +416,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS table1")
     sql("create table table1 (person Struct<detail:string,ph:array<int>>) STORED AS carbondata ")
     sql("insert into table1 values(named_struct('detail', 'abc', 'ph', array(2)))")
-    sql("select person from table1").show(false)
-    sql("select person.detail, person.ph[0] from table1").show(false)
+    sql("select person from table1").collect()
+    sql("select person.detail, person.ph[0] from table1").collect()
   }
 
   test("test Projection PushDown for Struct - Merge column") {
@@ -555,8 +556,9 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll string,person Struct<detail:int,age:string>,person1 " +
       "Struct<detail:int,age:array<string>>) " +
       "STORED AS carbondata")
-    sql("insert into table1 values('abc', named_struct('detail', 1, 'age', 'abc'), named_struct('detail', 2, 'age', array('cde')))")
-    sql("select person.detail,person1.age from table1").show(false)
+    sql("insert into table1 values('abc', named_struct('detail', 1, 'age', 'abc'), " +
+        "named_struct('detail', 2, 'age', array('cde')))")
+    sql("select person.detail,person1.age from table1").collect()
   }
 
   test("test Projection PushDown for more than one Struct column Cases -1") {
@@ -577,8 +579,9 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table table1 (person Struct<detail:array<int>>,person1 Struct<detail:array<int>>) " +
       "STORED AS carbondata")
-    sql("insert into table1 values(named_struct('detail', array(1)), named_struct('detail', array(2)))")
-    sql("select person.detail[0],person1.detail[0] from table1").show(false)
+    sql("insert into table1 values(" +
+        "named_struct('detail', array(1)), named_struct('detail', array(2)))")
+    sql("select person.detail[0],person1.detail[0] from table1").collect()
   }
 
   test("test Projection PushDown for StructofStruct case1 - Merging columns") {
@@ -629,9 +632,12 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
       "h:string,i:int>,j:int>) STORED AS carbondata ")
-    sql("insert into table1 values(1,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
-    sql("insert into table1 values(2,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
-    sql("insert into table1 values(3,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
+    sql("insert into table1 values(1,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', " +
+        "'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
+    sql("insert into table1 values(2,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', " +
+        "'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
+    sql("insert into table1 values(3,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', " +
+        "'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
     checkAnswer(sql("select a.b from table1"), Seq(Row(1), Row(1), Row(1)))
     checkAnswer(sql("select a.c from table1"), Seq(Row("abc"), Row("abc"), Row("abc")))
     checkAnswer(sql("select a.d from table1"), Seq(Row(2), Row(2), Row(2)))
@@ -670,14 +676,14 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(a array<array<int>>) STORED AS carbondata")
     sql("insert into test values(array(array(1))) ")
-    sql("select a[0][0] from test").show(false)
+    sql("select a[0][0] from test").collect()
   }
 
   test("Struct and ArrayofArray PushDown") {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(a array<array<int>>,b struct<c:array<int>>) STORED AS carbondata")
     sql("insert into test values(array(array(1)),named_struct('c', array(1))) ")
-    sql("select b.c[0],a[0][0] from test").show(false)
+    sql("select b.c[0],a[0][0] from test").collect()
   }
 
   test("test structofarray with count(distinct)") {
@@ -688,13 +694,15 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table test(cus_id string, struct_of_array struct<id:int,date:timestamp," +
       "sno:array<int>,sal:array<double>,state:array<string>,date1:array<timestamp>>) " +
       "STORED AS carbondata")
-    sql("insert into test values('cus_01',named_struct('id', 1, 'date', '2017-01-01 00:00:00', 'sno', array(1,2), 'sal', array(2.0,3.0), 'state', array('ab','ac'), 'date1', array('2018-01-01 00:00:00')))")
-    //    sql("select *from test").show(false)
+    sql("insert into test values('cus_01',named_struct('id', 1, 'date', " +
+        "'2017-01-01 00:00:00', 'sno', array(1,2), 'sal', array(2.0,3.0), 'state', " +
+        "array('ab','ac'), 'date1', array('2018-01-01 00:00:00')))")
+    //    sql("select *from test").collect()
     sql(
       "select struct_of_array.state[0],count(distinct struct_of_array.id) as count_int,count" +
       "(distinct struct_of_array.state[0]) as count_string from test group by struct_of_array" +
       ".state[0]")
-      .show(false)
+      .collect()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -704,10 +712,15 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(cus_id string,array_of_struct array<struct<id:int,country:string," +
         "state:string,city:string>>) STORED AS carbondata")
-    sql("insert into test values('cus_01',array(named_struct('id', 123, 'country', 'abc', 'state', 'mno', 'city', 'xyz'),named_struct('id', 1234, 'country', 'abc1', 'state', 'mno1', 'city', 'xyz1')))")
-    checkAnswer(sql("select array_of_struct.state[0],count(distinct array_of_struct.id[0]) as count_country," +
-      "count(distinct array_of_struct.state[0]) as count_city from test group by array_of_struct" +
-      ".state[0]"), Seq(Row("mno", 1, 1)))
+    sql("insert into test values('cus_01',array(named_struct('id', 123, 'country', " +
+        "'abc', 'state', 'mno', 'city', 'xyz'),named_struct('id', 1234, 'country', 'abc1', " +
+        "'state', 'mno1', 'city', 'xyz1')))")
+    checkAnswer(
+      sql("select array_of_struct.state[0]," +
+          "count(distinct array_of_struct.id[0]) as count_country," +
+          "count(distinct array_of_struct.state[0]) as count_city " +
+          "from test group by array_of_struct.state[0]"),
+      Seq(Row("mno", 1, 1)))
   }
 
   test("test struct complex type with filter") {
@@ -716,14 +729,14 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("insert into test values(1,named_struct('b', 2, 'c', 3))")
     sql("insert into test values(3,named_struct('b', 5, 'c', 3))")
     sql("insert into test values(2,named_struct('b', 4, 'c', 5))")
-    checkAnswer(sql("select a.b from test where id=3"),Seq(Row(5)))
-    checkAnswer(sql("select a.b from test where a.c!=3"),Seq(Row(4)))
-    checkAnswer(sql("select a.b from test where a.c=3"),Seq(Row(5),Row(2)))
-    checkAnswer(sql("select a.b from test where id=1 or !a.c=3"),Seq(Row(4),Row(2)))
-    checkAnswer(sql("select a.b from test where id=3 or a.c=3"),Seq(Row(5),Row(2)))
+    checkAnswer(sql("select a.b from test where id=3"), Seq(Row(5)))
+    checkAnswer(sql("select a.b from test where a.c!=3"), Seq(Row(4)))
+    checkAnswer(sql("select a.b from test where a.c=3"), Seq(Row(5), Row(2)))
+    checkAnswer(sql("select a.b from test where id=1 or !a.c=3"), Seq(Row(4), Row(2)))
+    checkAnswer(sql("select a.b from test where id=3 or a.c=3"), Seq(Row(5), Row(2)))
   }
 
-  /* test struct of date*/
+  // test struct of date
   test("test struct complex type with date") {
     var backupdateFormat = CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
@@ -741,32 +754,40 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
 
   test("test Projection with two struct") {
     sql("DROP TABLE IF EXISTS test")
-    sql("create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>) STORED AS carbondata")
+    sql("create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>) " +
+        "STORED AS carbondata")
     sql("insert into test values(1, named_struct('b', 2, 'c', 3), named_struct('e', 3, 'f', 2))")
-    checkAnswer(sql("select * from test"),Seq(Row(1,Row(2,3),Row(3,2))))
-    checkAnswer(sql("select a.b,id,a.c from test"),Seq(Row(2,1,3)))
-    checkAnswer(sql("select d.e,d.f from test"),Seq(Row(3,2)))
-    checkAnswer(sql("select a.b,d.e,d.f,id,a.c from test"),Seq(Row(2,3,2,1,3)))
+    checkAnswer(sql("select * from test"), Seq(Row(1, Row(2, 3), Row(3, 2))))
+    checkAnswer(sql("select a.b,id,a.c from test"), Seq(Row(2, 1, 3)))
+    checkAnswer(sql("select d.e,d.f from test"), Seq(Row(3, 2)))
+    checkAnswer(sql("select a.b,d.e,d.f,id,a.c from test"), Seq(Row(2, 3, 2, 1, 3)))
     checkAnswer(sql("select a.b,d.e,id,a.c,d.f,a.c from test"), Seq(Row(2, 3, 1, 3, 2, 3)))
     checkAnswer(sql("select a.b,d.e,d.f from test"), Seq(Row(2, 3, 2)))
     checkAnswer(sql("select a.b,a.c,id,d.e,d.f from test"), Seq(Row(2, 3, 1, 3, 2)))
     checkAnswer(sql("select d.e,d.f,id,a.b,a.c from test"), Seq(Row(3, 2, 1, 2, 3)))
     checkAnswer(sql("select d.e,1,d.f from test"), Seq(Row(3, 1, 2)))
     checkAnswer(sql("select d.e,1,d.f,a.b,id,a.c from test"), Seq(Row(3, 1, 2, 2, 1, 3)))
-    checkAnswer(sql("select d.e+1,d.f,a.b,d.e,a.c,id from test"), Seq(Row(4,2,2,3,3,1)))
-    checkAnswer(sql("select d.f,a.c,a.b,id,a.c,a.b from test"), Seq(Row(2,3,2,1,3,2)))
+    checkAnswer(sql("select d.e+1,d.f,a.b,d.e,a.c,id from test"), Seq(Row(4, 2, 2, 3, 3, 1)))
+    checkAnswer(sql("select d.f,a.c,a.b,id,a.c,a.b from test"), Seq(Row(2, 3, 2, 1, 3, 2)))
     checkAnswer(sql("select sum(d.e) from test"), Seq(Row(3)))
-    checkAnswer(sql("select d.f,a.c,a.b,id,a.c,a.b,id,1,id,3,d.f from test"), Seq(Row(2,3,2,1,3,2,1,1,1,3,2)))
+    checkAnswer(sql("select d.f,a.c,a.b,id,a.c,a.b,id,1,id,3,d.f from test"),
+      Seq(Row(2, 3, 2, 1, 3, 2, 1, 1, 1, 3, 2)))
   }
 
   test("test project with struct and array") {
     sql("DROP TABLE IF EXISTS test")
-    sql("create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>,person Struct<detail:array<int>>) STORED AS carbondata")
-    sql("insert into test values(1, named_struct('b', 2, 'c', 3), named_struct('e', 3, 'f', 2), named_struct('detail', array(5,6,7,8)))")
-    checkAnswer(sql("select * from test"),Seq(Row(1,Row(2,3),Row(3,2),Row(mutable.WrappedArray.make(Array(5,6,7,8))))))
-    checkAnswer(sql("select a.b,id,a.c,person.detail[0] from test"),Seq(Row(2,1,3,5)))
-    checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id from test"),Seq(Row(2,1,3,5,3,2,6,1)))
-    checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id,1,a.b from test"),Seq(Row(2,1,3,5,3,2,6,1,1,2)))
+    sql("create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>," +
+        "person Struct<detail:array<int>>) STORED AS carbondata")
+    sql("insert into test values(1, named_struct('b', 2, 'c', 3), " +
+        "named_struct('e', 3, 'f', 2), named_struct('detail', array(5,6,7,8)))")
+    checkAnswer(sql("select * from test"),
+      Seq(Row(1, Row(2, 3), Row(3, 2), Row(mutable.WrappedArray.make(Array(5, 6, 7, 8))))))
+    checkAnswer(sql("select a.b,id,a.c,person.detail[0] from test"), Seq(Row(2, 1, 3, 5)))
+    checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id from test"),
+      Seq(Row(2, 1, 3, 5, 3, 2, 6, 1)))
+    checkAnswer(
+      sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id,1,a.b from test"),
+      Seq(Row(2, 1, 3, 5, 3, 2, 6, 1, 1, 2)))
   }
 
   test("test block Update for complex datatype") {
@@ -774,10 +795,10 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("create table test(id int,a struct<b:int,c:int>,d array<int>) STORED AS carbondata")
     sql("insert into test values(1, named_struct('b', 2, 'c', 3), array(4))")
     val structException = intercept[UnsupportedOperationException](
-    sql("update test set(a.b)=(4) where id=1").show(false))
+    sql("update test set(a.b)=(4) where id=1").collect())
     assertResult("Unsupported operation on Complex data type")(structException.getMessage)
     val arrayException = intercept[UnsupportedOperationException](
-    sql("update test set(a)=(4) where id=1").show(false))
+    sql("update test set(a)=(4) where id=1").collect())
     assertResult("Unsupported operation on Complex data type")(arrayException.getMessage)
   }
 
@@ -822,17 +843,17 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table table1 (person struct<height:double>) STORED AS carbondata")
     sql("insert into table1 values(named_struct('height', 1000000000))")
-    checkExistence(sql("select * from table1"),true,"1.0E9")
+    checkExistence(sql("select * from table1"), true, "1.0E9")
     sql("DROP TABLE IF EXISTS table1")
     sql(
       "create table table1 (person struct<height:double>) STORED AS carbondata")
     sql("insert into table1 values(named_struct('height', 12345678912))")
-    checkExistence(sql("select * from table1"),true,"1.2345678912E10")
+    checkExistence(sql("select * from table1"), true, "1.2345678912E10")
     sql("DROP TABLE IF EXISTS table1")
     sql(
       "create table table1 (person struct<b:array<double>>) STORED AS carbondata")
     sql("insert into table1 values(named_struct('b', array(10000000,2000000000,2900000000)))")
-    checkExistence(sql("select * from table1"),true,"2.9E9")
+    checkExistence(sql("select * from table1"), true, "2.9E9")
   }
 
   test("test compaction - auto merge") {
@@ -862,7 +883,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "/Struct.csv' into table table1 options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
       "'complex_delimiter_level_2'='&')")
-    checkExistence(sql("show segments for table table1"),true, "Compacted")
+    checkExistence(sql("show segments for table table1"), true, "Compacted")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
@@ -871,10 +892,10 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(id int,a struct<c:struct<d:decimal(20,10)>>) STORED AS carbondata ")
-    checkExistence(sql("desc test"),true,"struct<c:struct<d:decimal(20,10)>>")
-    checkExistence(sql("describe formatted test"),true,"struct<c:struct<d:decimal(20,10)>>")
+    checkExistence(sql("desc test"), true, "struct<c:struct<d:decimal(20,10)>>")
+    checkExistence(sql("describe formatted test"), true, "struct<c:struct<d:decimal(20,10)>>")
     sql("insert into test values(1, named_struct('c', named_struct('d', 3999.999)))")
-    checkExistence(sql("select * from test"),true,"3999.9990000000")
+    checkExistence(sql("select * from test"), true, "3999.9990000000")
   }
 
   test("test dictionary include for second struct and array column") {
@@ -882,18 +903,20 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>, d1 struct<e1:int," +
       "f1:int>) STORED AS carbondata ")
-    sql("insert into test values(1, named_struct('b', 2, 'c', 3), named_struct('e', 4, 'f', 5), named_struct('e1', 6, 'f1', 7))")
-    checkAnswer(sql("select * from test"),Seq(Row(1,Row(2,3),Row(4,5),Row(6,7))))
+    sql("insert into test values(1, named_struct('b', 2, 'c', 3), " +
+        "named_struct('e', 4, 'f', 5), named_struct('e1', 6, 'f1', 7))")
+    checkAnswer(sql("select * from test"), Seq(Row(1, Row(2, 3), Row(4, 5), Row(6, 7))))
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(a array<int>, b array<int>) STORED AS carbondata")
     sql("insert into test values(array(1),array(2)) ")
-    checkAnswer(sql("select b[0] from test"),Seq(Row(2)))
+    checkAnswer(sql("select b[0] from test"), Seq(Row(2)))
     sql("DROP TABLE IF EXISTS test")
-    sql(
-      "create table test(intval array<array<int>>,str array<array<string>>, bool " +
-      "array<array<boolean>>, sint array<array<short>>, big array<array<bigint>>)  STORED AS carbondata ")
-    sql("insert into test values(array(array(1)), array(array('ab')), array(array(true)), array(array(22)), array(array(33))) ")
+    sql("create table test(intval array<array<int>>,str array<array<string>>, bool " +
+        "array<array<boolean>>, sint array<array<short>>, big array<array<bigint>>)" +
+        "STORED AS carbondata ")
+    sql("insert into test values(array(array(1)), array(array('ab')), " +
+        "array(array(true)), array(array(22)), array(array(33))) ")
     checkExistence(sql("select * from test"), true, "33")
   }
 
@@ -920,17 +943,16 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     val exception2 = intercept[Exception] {
       sql("insert into test values(array('a')) ")
     }
-    assert(exception2.getMessage
-      .contains(
-        "Data load failed due to bad record: The value with column name a.val and column data type " +
-        "DATE is not a valid DATE type.Please enable bad record logger to know the detail reason."))
+    assert(exception2.getMessage.contains(
+        "Data load failed due to bad record: The value with column name a.val and column data type DATE is not a valid DATE type.Please enable bad record logger to know the detail reason."))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         "MM-dd-yyyy")
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(a struct<d1:date,d2:date>) STORED AS carbondata")
     sql("insert into test values(named_struct('d1', '2012-02-18', 'd2', '2016-12-09'))")
-    checkAnswer(sql("select * from test "), Row(Row(java.sql.Date.valueOf("2012-02-18"),java.sql.Date.valueOf("2016-12-09"))))
+    checkAnswer(sql("select * from test "),
+      Row(Row(java.sql.Date.valueOf("2012-02-18"), java.sql.Date.valueOf("2016-12-09"))))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
@@ -938,22 +960,28 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
         CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
   }
-  test("test null values in primitive data type and select all data types including complex data type") {
+  test("test null values in primitive data type and " +
+       "select all data types including complex data type") {
     sql("DROP TABLE IF EXISTS table1")
     sql(
-      "create table table1 (id int, name string, structField struct<intval:int, stringval:string>) STORED AS carbondata")
+      "create table table1 (id int, name string, " +
+      "structField struct<intval:int, stringval:string>) STORED AS carbondata")
     sql("insert into table1 values(null, 'aaa', named_struct('intval', 23, 'stringval', 'bb'))")
-    checkAnswer(sql("select * from table1"),Seq(Row(null,"aaa", Row(23,"bb"))))
-    checkAnswer(sql("select id,name,structField.intval,structField.stringval from table1"),Seq(Row(null,"aaa",23,"bb")))
-    checkAnswer(sql("select id,name,structField.intval,structField.stringval,name from table1"),Seq(Row(null,"aaa",23,"bb","aaa")))
-    checkAnswer(sql("select id,name,structField.intval,name,structField.stringval from table1"),Seq(Row(null,"aaa",23,"aaa","bb")))
+    checkAnswer(sql("select * from table1"), Seq(Row(null, "aaa", Row(23, "bb"))))
+    checkAnswer(sql("select id,name,structField.intval,structField.stringval from table1"),
+      Seq(Row(null, "aaa", 23, "bb")))
+    checkAnswer(sql("select id,name,structField.intval,structField.stringval,name from table1"),
+      Seq(Row(null, "aaa", 23, "bb", "aaa")))
+    checkAnswer(sql("select id,name,structField.intval,name,structField.stringval from table1"),
+      Seq(Row(null, "aaa", 23, "aaa", "bb")))
   }
 
   test("test array of binary data type") {
     sql("drop table if exists carbon_table")
     sql("drop table if exists hive_table")
     sql("create table if not exists hive_table(id int, label boolean, name string," +
-        "binaryField array<binary>, autoLabel boolean) row format delimited fields terminated by ','")
+        "binaryField array<binary>, autoLabel boolean) " +
+        "row format delimited fields terminated by ','")
     sql("insert into hive_table values(1,true,'abc',array('binary'),false)")
     sql("create table if not exists carbon_table(id int, label boolean, name string," +
         "binaryField array<binary>, autoLabel boolean) STORED AS carbondata")
@@ -983,7 +1011,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("create table if not exists carbon_table(id int, label boolean, name string," +
         "binaryField struct<b:binary>, autoLabel boolean) STORED AS carbondata")
     sql("insert into carbon_table values(1,true,'abc',named_struct('b','binary'),false)")
-    sql("SELECT binaryField.b FROM carbon_table").show(false)
+    sql("SELECT binaryField.b FROM carbon_table").collect()
     checkAnswer(sql("SELECT binaryField.b FROM carbon_table"),
       sql("SELECT binaryField.b FROM parquet_table"))
     sql("drop table if exists carbon_table")
@@ -1004,7 +1032,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbon_table")
     sql("drop table if exists hive_table")
     sql("create table if not exists hive_table(id int, label boolean, name string," +
-        "binaryField map<int, binary>, autoLabel boolean) row format delimited fields terminated by ','")
+        "binaryField map<int, binary>, autoLabel boolean) " +
+        "row format delimited fields terminated by ','")
     sql("insert into hive_table values(1,true,'abc',map(1,'binary'),false)")
     sql("create table if not exists carbon_table(id int, label boolean, name string," +
         "binaryField map<int, binary>, autoLabel boolean) STORED AS carbondata")
@@ -1077,7 +1106,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "insert into hive_table values(1,true,'abc',array('binary1','binary2'), named_struct('b2'," +
       "'binary1'), map(1,'binary1'))")
     sql("create table if not exists carbon_table(id int, label boolean, name string," +
-        "binaryField1 array<binary>, binaryField2 struct<b2:binary>, binaryField3 map<int,binary>) " +
+        "binaryField1 array<binary>,binaryField2 struct<b2:binary>,binaryField3 map<int,binary>)" +
         "STORED AS carbondata")
     sql(
       "load data inpath '" + resourcesPath + "/complexbinary.csv' into table carbon_table options" +
@@ -1093,7 +1122,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hive_table")
   }
 
-  test("test when insert select from a parquet table with an struct with binary and custom complex delimiter") {
+  test("test when insert select from a parquet table " +
+       "with an struct with binary and custom complex delimiter") {
     var carbonProperties = CarbonProperties.getInstance()
     carbonProperties.addProperty(CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1, "#")
 
@@ -1110,7 +1140,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     carbonProperties.removeProperty(CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1)
   }
 
-  test("[CARBONDATA-3527] Fix 'String length cannot exceed 32000 characters' issue when load data with 'GLOBAL_SORT' from csv files which include big complex type data") {
+  test("[CARBONDATA-3527] Fix 'String length cannot exceed 32000 characters' issue " +
+       "when load data with 'GLOBAL_SORT' from csv files which include big complex type data") {
     val tableName = "complexdata3_table"
     sql(s"drop table if exists ${tableName}")
     sql(
@@ -1158,8 +1189,10 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
                 'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='\\001','COMPLEX_DELIMITER_LEVEL_2'='\\002'
                 )""")
     checkAnswer(sql(s"select count(1) from ${tableName}"), Seq(Row(10)))
-    checkAnswer(sql(s"select modela[0][0], modela_ms[0][1] from ${tableName} where id = 'e01a1773-bd37-40be-a1de-d7e74837a281'"),
+    checkAnswer(sql(s"select modela[0][0], modela_ms[0][1] from ${tableName} " +
+                    s"where id = 'e01a1773-bd37-40be-a1de-d7e74837a281'"),
       Seq(Row(0.0, 0.10781755)))
     sql(s"drop table if exists ${tableName}")
   }
+  // scalastyle:on lineLength
 }

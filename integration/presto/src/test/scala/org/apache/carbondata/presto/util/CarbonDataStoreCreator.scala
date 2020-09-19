@@ -21,10 +21,10 @@ import java.io._
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.{ArrayList, Date, UUID}
+import java.util.concurrent.atomic.AtomicInteger
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import com.google.gson.Gson
@@ -32,23 +32,23 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.TaskAttemptID
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce.{RecordReader, TaskType}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.{AtomicFileOperationFactory, AtomicFileOperations, FileWriteOperation}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, CarbonTableBuilder, TableSchemaBuilder}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.processing.loading.DataLoadExecutor
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
@@ -121,8 +121,8 @@ object CarbonDataStoreCreator {
         "," +
         "true")
       loadModel.setMaxColumns("15")
-      loadModel.setCsvHeader(
-        "ID,date,country,name,phonetype,serialname,salary,bonus,monthlyBonus,dob,shortField,isCurrentEmployee")
+      loadModel.setCsvHeader("ID,date,country,name,phonetype,serialname,salary,bonus," +
+                             "monthlyBonus,dob,shortField,isCurrentEmployee")
       loadModel.setCsvHeaderColumns(loadModel.getCsvHeader.split(","))
       loadModel.setTaskNo("0")
       loadModel.setSegmentId("0")
@@ -147,11 +147,14 @@ object CarbonDataStoreCreator {
     schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
     schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
     schemaBuilder.addColumn(new StructField("salary", DataTypes.DOUBLE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(10, 4)), integer, false, true)
-    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(18, 4)), integer, false, true)
+    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(10, 4)),
+      integer, false, true)
+    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(18, 4)),
+      integer, false, true)
     schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
     schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN), integer, false, true)
+    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
+      integer, false, true)
     schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
     val schema = schemaBuilder.build()
 
@@ -212,8 +215,9 @@ object CarbonDataStoreCreator {
   private def isDictionaryDefaultMember(dims: util.List[CarbonDimension],
       dimensionSet: Array[util.List[String]],
       index: Int) = {
-    dimensionSet(index).isEmpty && dims(index).hasEncoding(Encoding.DICTIONARY) &&
-    !dims(index).hasEncoding(Encoding.DIRECT_DICTIONARY)
+    val dimensions = dims.asScala
+    dimensionSet(index).isEmpty && dimensions(index).hasEncoding(Encoding.DICTIONARY) &&
+    !dimensions(index).hasEncoding(Encoding.DIRECT_DICTIONARY)
   }
 
   /**

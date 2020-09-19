@@ -26,14 +26,13 @@ import org.scalatest.BeforeAndAfterAll
  */
 
 class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     sql("CREATE TABLE alldatatypestableJoin (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata TBLPROPERTIES('TABLE_BLOCKSIZE'='4')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE alldatatypestableJoin OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""");
 
     sql("CREATE TABLE alldatatypestableJoin_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
     sql(s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO TABLE alldatatypestableJoin_hive");
-
   }
 
   test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableJoin where empname in ('arvind','ayushi') group by empno,empname,utilization") {
@@ -46,7 +45,7 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists employee")
     sql("create table employee(name string, empid string, mgrid string, mobileno bigint) STORED AS carbondata")
     sql(s"load data inpath '$resourcesPath/join/emp.csv' into table employee options('fileheader'='name,empid,mgrid,mobileno')")
-    
+
     sql("drop table if exists manager")
     sql("create table manager(name string, empid string, mgrid string, mobileno bigint) STORED AS carbondata")
     sql(s"load data inpath '$resourcesPath/join/mgr.csv' into table manager options('fileheader'='name,empid,mgrid,mobileno')")
@@ -54,7 +53,6 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     sql("select e.empid from employee e inner join manager m on e.mgrid=m.empid"),
     Seq(Row("t23717"))
     )
-   
   }
 
   test("Union with alias fails") {
@@ -82,7 +80,7 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
 
     checkAnswer(sql("""SELECT t.a a FROM (select charField a from  carbon_table1 t1 union all  select charField a from  carbon_table2 t2) t order by a """),
-      Seq(Row("aaa"),Row("bbb"),Row("ccc"),Row("ddd"))
+      Seq(Row("aaa"), Row("bbb"), Row("ccc"), Row("ddd"))
      )
 
     // Drop table
@@ -103,4 +101,5 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists manager")
     sql("drop table if exists employee")
   }
+  // scalastyle:on lineLength
 }

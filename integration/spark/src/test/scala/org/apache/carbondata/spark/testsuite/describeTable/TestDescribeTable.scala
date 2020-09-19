@@ -24,26 +24,29 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
-  * test class for describe table .
-  */
+ * test class for describe table .
+ */
 class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     sql("DROP TABLE IF EXISTS Desc1")
     sql("DROP TABLE IF EXISTS Desc2")
     sql("drop table if exists a")
-    sql("CREATE TABLE Desc1(Dec1Col1 String, Dec1Col2 String, Dec1Col3 int, Dec1Col4 double) STORED AS carbondata")
+    sql("CREATE TABLE Desc1(" +
+        "Dec1Col1 String, Dec1Col2 String, Dec1Col3 int, Dec1Col4 double) STORED AS carbondata")
     sql("DESC Desc1")
     sql("DROP TABLE Desc1")
-    sql("CREATE TABLE Desc1(Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) STORED AS carbondata")
-    sql("CREATE TABLE Desc2(Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) STORED AS carbondata")
+    sql("CREATE TABLE Desc1(" +
+        "Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) STORED AS carbondata")
+    sql("CREATE TABLE Desc2(" +
+        "Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) STORED AS carbondata")
   }
 
   test("test describe table") {
-    checkAnswer(sql("DESC Desc1"), Seq(Row("dec2col1","bigint",null),
-      Row("dec2col2","string",null),
-      Row("dec2col3","bigint",null),
-      Row("dec2col4","decimal(10,0)",null)))
+    checkAnswer(sql("DESC Desc1"), Seq(Row("dec2col1", "bigint", null),
+      Row("dec2col2", "string", null),
+      Row("dec2col3", "bigint", null),
+      Row("dec2col4", "decimal(10,0)", null)))
   }
 
   test("test describe formatted table") {
@@ -55,7 +58,8 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into a values('a',1)")
     sql("insert into a values('a',2)")
     val desc = sql("describe formatted a").collect()
-    assert(desc(desc.indexWhere(_.get(0).toString.contains("#Partition")) + 2).get(0).toString.contains("b"))
+    assert(desc(desc.indexWhere(_.get(0).toString.contains("#Partition")) + 2)
+      .get(0).toString.contains("b"))
     val descPar = sql("describe formatted a partition(b=1)").collect
     descPar.find(_.get(0).toString.contains("Partition Value:")) match {
       case Some(row) => assert(row.get(1).toString.contains("1"))

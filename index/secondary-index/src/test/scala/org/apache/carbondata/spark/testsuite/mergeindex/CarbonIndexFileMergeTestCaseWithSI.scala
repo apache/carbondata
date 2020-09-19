@@ -18,17 +18,17 @@ package org.apache.carbondata.spark.testsuite.mergeindex
 
 import java.io.{File, PrintWriter}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import scala.util.Random
+
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import scala.util.Random
-
-import org.apache.spark.sql.test.util.QueryTest
 
 class CarbonIndexFileMergeTestCaseWithSI
   extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -264,8 +264,10 @@ class CarbonIndexFileMergeTestCaseWithSI
     try {
       val write = new PrintWriter(fileName);
       for (i <- start until (start + line)) {
+        // scalastyle:off println
         write
           .println(i + "," + "n" + i + "," + "c" + Random.nextInt(line) + "," + Random.nextInt(80))
+        // scalastyle:on println
       }
       write.close()
     } catch {

@@ -18,17 +18,17 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * FT for compaction scenario where major segment should not be included in minor.
-  */
+ * FT for compaction scenario where major segment should not be included in minor.
+ */
 class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll {
 
   val csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
@@ -67,8 +67,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
   }
 
   /**
-    * Delete should not work on compacted segment.
-    */
+   * Delete should not work on compacted segment.
+   */
   test("delete compacted segment and check status") {
     createTableAndLoadData()
     intercept[Throwable] {
@@ -88,8 +88,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
   }
 
   /**
-    * Delete should not work on compacted segment.
-    */
+   * Delete should not work on compacted segment.
+   */
   test("delete compacted segment by date and check status") {
     createTableAndLoadData()
     sql(
@@ -110,8 +110,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
   }
 
   /**
-    * Test whether major compaction is not included in minor compaction.
-    */
+   * Test whether major compaction is not included in minor compaction.
+   */
   test("delete merged folder and check segments") {
     createTableAndLoadData()
     // delete merged segments
@@ -127,7 +127,12 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       absoluteTableIdentifier)
 
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
+    val segments = segmentStatusManager
+      .getValidAndInvalidSegments
+      .getValidSegments
+      .asScala
+      .map(_.getSegmentNo)
+      .toList
     assert(segments.contains("0.1"))
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
@@ -168,7 +173,12 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       absoluteTableIdentifier)
 
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
+    val segments = segmentStatusManager
+      .getValidAndInvalidSegments
+      .getValidSegments
+      .asScala
+      .map(_.getSegmentNo)
+      .toList
     assert(!segments.contains("0.1"))
     assert(segments.contains("0.2"))
     assert(!segments.contains("2"))

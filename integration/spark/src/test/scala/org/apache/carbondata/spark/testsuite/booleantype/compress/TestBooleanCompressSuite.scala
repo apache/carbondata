@@ -21,10 +21,9 @@ import java.io.{File, PrintWriter}
 
 import scala.util.Random
 
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 class TestBooleanCompressSuite extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
 
@@ -82,7 +81,9 @@ class TestBooleanCompressSuite extends QueryTest with BeforeAndAfterEach with Be
         if (eachNum >= randomNumber * rate) {
           flag = false
         }
+        // scalastyle:off println
         write.println(flag)
+        // scalastyle:on println
         d = d + 1
       }
 

@@ -109,11 +109,15 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
   test("test data loading with invalid values for mesasures") {
     val testData = s"$resourcesPath/invalidMeasures.csv"
     sql("drop table if exists invalidMeasures")
-    sql("CREATE TABLE invalidMeasures (country String, salary double, age decimal(10,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table invalidMeasures options('Fileheader'='country,salary,age')")
+    sql("CREATE TABLE invalidMeasures (" +
+        "country String, salary double, age decimal(10,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table invalidMeasures " +
+        s"options('Fileheader'='country,salary,age')")
     checkAnswer(
       sql("SELECT * FROM invalidMeasures"),
-      Seq(Row("India",null,new BigDecimal("22.44")), Row("Russia",null,null), Row("USA",234.43,null))
+      Seq(Row("India", null, new BigDecimal("22.44")),
+        Row("Russia", null, null),
+        Row("USA", 234.43, null))
     )
   }
 
@@ -141,8 +145,10 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT, "1")
       .addProperty(CarbonCommonConstants.SORT_SIZE, "1")
       .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE, "1")
+    // scalastyle:off lineLength
     sql("create table if not exists carbonBigDecimalLoad (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimalLoad")
+    // scalastyle:on lineLength
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
         CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)
@@ -155,11 +161,13 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
   private def createTableAndLoadData (badRecordAction: String): Unit = {
     BadRecordUtil.cleanBadRecordPath("default", "longerthan32kchar")
     sql("CREATE TABLE longerthan32kchar(dim1 String, dim2 String, mes1 int) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$testdata' into table longerThan32kChar OPTIONS('FILEHEADER'='dim1,dim2,mes1', " +
-      s"'BAD_RECORDS_ACTION'='${badRecordAction}','BAD_RECORDS_LOGGER_ENABLE'='TRUE')")
+    sql(s"LOAD DATA LOCAL INPATH '$testdata' into table longerThan32kChar " +
+        "OPTIONS('FILEHEADER'='dim1,dim2,mes1', " +
+        s"'BAD_RECORDS_ACTION'='${badRecordAction}','BAD_RECORDS_LOGGER_ENABLE'='TRUE')")
   }
 
-  test("test load / insert / update with data more than 32000 characters and bad record action as Redirect") {
+  test("test load / insert / update with data more than 32000 characters and" +
+       " bad record action as Redirect") {
     createTableAndLoadData("REDIRECT")
     var redirectCsvPath = BadRecordUtil
       .getRedirectCsvPath("default", "longerthan32kchar", "0", "0")
@@ -169,23 +177,24 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "REDIRECT");
     sql(s"insert into longerthan32kchar values('33000', '$longChar', 4)")
-    checkAnswer(sql("select * from longerthan32kchar"), Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2)))
+    checkAnswer(sql("select * from longerthan32kchar"),
+      Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2)))
     redirectCsvPath = BadRecordUtil.getRedirectCsvPath("default", "longerthan32kchar", "1", "0")
     var redirectedFileLineList = FileUtils.readLines(redirectCsvPath)
     var iterator = redirectedFileLineList.iterator()
     while (iterator.hasNext) {
-      assert(iterator.next().equals("33000,"+longChar+",4"))
+      assert(iterator.next().equals("33000," + longChar + ",4"))
     }
 
     // Update strings of length greater than 32000
     sql(s"update longerthan32kchar set(longerthan32kchar.dim2)=('$longChar') " +
-      "where longerthan32kchar.mes1=1").show()
+      "where longerthan32kchar.mes1=1").collect()
     checkAnswer(sql("select * from longerthan32kchar"), Seq(Row("itsok", "hello", 2)))
     redirectCsvPath = BadRecordUtil.getRedirectCsvPath("default", "longerthan32kchar", "0", "1")
     redirectedFileLineList = FileUtils.readLines(redirectCsvPath)
     iterator = redirectedFileLineList.iterator()
     while (iterator.hasNext) {
-      assert(iterator.next().equals("ok,"+longChar+",1"))
+      assert(iterator.next().equals("ok," + longChar + ",1"))
     }
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
@@ -197,22 +206,30 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     BadRecordUtil.cleanBadRecordPath("default", "longerthan32kchar")
   }
 
-  test("test load / insert / update with data more than 32000 characters and bad record action as Force") {
+  test("test load / insert / update with data more than 32000 characters " +
+       "and bad record action as Force") {
     createTableAndLoadData("FORCE")
-    checkAnswer(sql("select * from longerthan32kchar"), Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2), Row("32123", null, 3)))
+    checkAnswer(sql("select * from longerthan32kchar"),
+      Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2), Row("32123", null, 3)))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE");
     sql(s"insert into longerthan32kchar values('33000', '$longChar', 4)")
     checkAnswer(sql("select * from longerthan32kchar"),
-      Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2), Row("32123", null, 3), Row("33000", null, 4)))
+      Seq(Row("ok", "hi", 1),
+        Row("itsok", "hello", 2),
+        Row("32123", null, 3),
+        Row("33000", null, 4)))
 
     // Update strings of length greater than 32000
     sql(s"update longerthan32kchar set(longerthan32kchar.dim2)=('$longChar') " +
-      "where longerthan32kchar.mes1=1").show()
+      "where longerthan32kchar.mes1=1").collect()
     checkAnswer(sql("select * from longerthan32kchar"),
-      Seq(Row("ok", null, 1), Row("itsok", "hello", 2), Row("32123", null, 3), Row("33000", null, 4)))
+      Seq(Row("ok", null, 1),
+        Row("itsok", "hello", 2),
+        Row("32123", null, 3),
+        Row("33000", null, 4)))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
 
@@ -222,11 +239,13 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     }
   }
 
-  test("test load / insert / update with data more than 32000 characters and bad record action as Fail") {
+  test("test load / insert / update with data more than 32000 characters " +
+       "and bad record action as Fail") {
     sql("CREATE TABLE longerthan32kchar(dim1 String, dim2 String, mes1 int) STORED AS carbondata")
     var exception = intercept[Exception] {
-      sql(s"LOAD DATA LOCAL INPATH '$testdata' into table longerThan32kChar OPTIONS('FILEHEADER'='dim1,dim2,mes1', " +
-        s"'BAD_RECORDS_ACTION'='FAIL','BAD_RECORDS_LOGGER_ENABLE'='TRUE')")
+      sql(s"LOAD DATA LOCAL INPATH '$testdata' into table longerThan32kChar " +
+          "OPTIONS('FILEHEADER'='dim1,dim2,mes1', " +
+          "'BAD_RECORDS_ACTION'='FAIL','BAD_RECORDS_LOGGER_ENABLE'='TRUE')")
     }
 
     CarbonProperties.getInstance()
@@ -236,16 +255,18 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     exception = intercept[Exception] {
       sql(s"insert into longerthan32kchar values('33000', '$longChar', 4)")
     }
-    assert(exception.getMessage.contains(s"Record of column dim2 exceeded " +
-      s"${CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT} characters. Please consider long string data type."))
+    assert(exception.getMessage.contains(
+      s"Record of column dim2 exceeded ${CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT} " +
+      "characters. Please consider long string data type."))
     // Update strings of length greater than 32000
     sql(s"insert into longerthan32kchar values('ok', 'hi', 1)")
     exception = intercept[Exception] {
       sql(s"update longerthan32kchar set(longerthan32kchar.dim2)=('$longChar') " +
-        "where longerthan32kchar.mes1=1").show()
+        "where longerthan32kchar.mes1=1").collect()
     }
-    assert(exception.getMessage.contains(s"Record of column dim2 exceeded " +
-      s"${CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT} characters. Please consider long string data type."))
+    assert(exception.getMessage.contains(
+      s"Record of column dim2 exceeded ${CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT} " +
+      s"characters. Please consider long string data type."))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
 
@@ -255,20 +276,23 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     }
   }
 
-  test("test load / insert / update with data more than 32000 characters and bad record action as Ignore") {
+  test("test load / insert / update with data more than 32000 characters " +
+       "and bad record action as Ignore") {
     createTableAndLoadData("IGNORE")
-    checkAnswer(sql("select * from longerthan32kchar"), Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2)))
+    checkAnswer(sql("select * from longerthan32kchar"),
+      Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2)))
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "IGNORE");
     sql(s"insert into longerthan32kchar values('33000', '$longChar', 4)")
-    checkAnswer(sql("select * from longerthan32kchar"), Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2)))
+    checkAnswer(sql("select * from longerthan32kchar"),
+      Seq(Row("ok", "hi", 1), Row("itsok", "hello", 2)))
 
     // Update strings of length greater than 32000
     sql(s"update longerthan32kchar set(longerthan32kchar.dim2)=('$longChar') " +
-      "where longerthan32kchar.mes1=1").show()
+      "where longerthan32kchar.mes1=1").collect()
     checkAnswer(sql("select * from longerthan32kchar"), Seq(Row("itsok", "hello", 2)))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
@@ -287,7 +311,8 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("select count(*) from load32000bytes"), Seq(Row(1)))
 
     // Below load will be inserted as null because Strings greater than 32000 is bad record.
-    sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
+    sql(s"load data local inpath '$testdata' into table load32000bytes " +
+        "OPTIONS ('FILEHEADER'='name')")
     checkAnswer(sql("select count(*) from load32000bytes"), Seq(Row(2)))
     checkAnswer(sql("select * from load32000bytes"), Seq(Row("aaa"), Row(null)))
 
@@ -353,7 +378,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     sql("create table special_char(`i#d` string, `nam(e` string,`ci)&#@!ty` string,`a\be` int, `ag!e` float, `na^me1` Decimal(8,4), ```a``bc``!!d``` int) stored as carbondata" +
         " tblproperties('INVERTED_INDEX'='`a`bc`!!d`', 'SORT_COLUMNS'='`a`bc`!!d`')")
     sql("insert into special_char values('1','joey','hud', 2, 2.2, 2.3456, 5)")
-    checkAnswer(sql("select * from special_char"), Seq(Row("1","joey","hud", 2, 2.2, 2.3456, 5)))
+    checkAnswer(sql("select * from special_char"), Seq(Row("1", "joey", "hud", 2, 2.2, 2.3456, 5)))
     val df = sql("describe formatted special_char").collect()
     assert(df.exists(_.get(0).toString.contains("i#d")))
     assert(df.exists(_.get(0).toString.contains("nam(e")))
@@ -375,6 +400,6 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE,
         CarbonCommonConstants.DATA_LOAD_BATCH_SIZE_DEFAULT)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction);
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction)
   }
 }

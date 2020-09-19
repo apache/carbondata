@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
 import org.apache.spark.sql.Row
@@ -27,7 +28,8 @@ class SelectAllColumnsSuite extends QueryTest {
     sql("create table all_table(name string, age int, height int) STORED AS carbondata")
     sql("insert into all_table select 'tom',20,175")
     sql("insert into all_table select 'tom',32,180")
-    sql("create materialized view all_table_mv as select avg(age),avg(height),name from all_table group by name")
+    sql("create materialized view all_table_mv " +
+        "as select avg(age),avg(height),name from all_table group by name")
     sql("refresh materialized view all_table_mv")
     checkAnswer(
       sql("select avg(age),avg(height),name from all_table group by name"),

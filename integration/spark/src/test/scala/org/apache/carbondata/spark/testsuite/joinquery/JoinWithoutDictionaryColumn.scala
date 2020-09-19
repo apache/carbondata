@@ -17,10 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.joinquery
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test cases for testing columns having \N or \null values for non numeric columns
@@ -39,23 +40,14 @@ class JoinWithoutDictionaryColumn extends QueryTest with BeforeAndAfterAll {
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       )
 
-    sql(
-      """
-        create table mobile (mid String,Mobileid String, Color String, id int) STORED AS carbondata
-      """)
-    sql(
-      """
-        create table emp (eid String,ename String, Mobileid String,Color String, id int) STORED AS carbondata
-      """)
-
-    sql(
-      """
-        create table mobile_d (mid String,Mobileid String, Color String, id int) STORED AS carbondata
-      """)
-    sql(
-      """
-        create table emp_d (eid String,ename String, Mobileid String,Color String, id int) STORED AS carbondata
-      """)
+    sql("create table mobile (" +
+        "mid String,Mobileid String, Color String, id int) STORED AS carbondata")
+    sql("create table emp (" +
+        "eid String,ename String, Mobileid String,Color String, id int) STORED AS carbondata")
+    sql("create table mobile_d (" +
+        "mid String,Mobileid String, Color String, id int) STORED AS carbondata")
+    sql("create table emp_d (" +
+        "eid String,ename String, Mobileid String,Color String, id int) STORED AS carbondata")
 
     sql(
       s"""

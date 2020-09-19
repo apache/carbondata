@@ -18,12 +18,12 @@
 package org.apache.carbondata.spark.testsuite.badrecordloger
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.{CarbonCommonConstants}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.BadRecordUtil
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test Class for detailed query on timestamp datatypes
@@ -99,7 +99,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
 
       // 3. empty data for string data type - take empty value
       // 4. empty data for non-string data type - Bad records/Null value based on configuration
-      //table should have only two records.
+      // table should have only two records.
       sql(
         """CREATE TABLE IF NOT EXISTS emptyColumnValues(ID BigInt, date Timestamp, country String,
           actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata
@@ -256,9 +256,8 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
           "('bad_records_logger_enable'='false','bad_records_action'='redirect', 'DELIMITER'=" +
           " ',', 'QUOTECHAR'= '\"')");
     } catch {
-      case e: Exception => {
+      case _: Exception =>
         assert(true)
-      }
     }
     val redirectCsvPath = BadRecordUtil.getRedirectCsvPath("default", "sales_test", "0", "0")
     assert(BadRecordUtil.checkRedirectedCsvContentAvailableInSource(csvFilePath, redirectCsvPath))

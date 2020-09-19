@@ -29,11 +29,11 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
-import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.load.PrimitiveOrdering
@@ -70,7 +70,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
+        | TBLPROPERTIES(
+        | 'SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
@@ -87,7 +88,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column2(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
+        | TBLPROPERTIES(
+        | 'SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column2 " +
@@ -105,7 +107,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
         """
           | CREATE TABLE carbon_range_column3(id INT, name STRING, city STRING, age INT)
           | STORED AS carbondata
-          | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name,id')
+          | TBLPROPERTIES(
+          | 'SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name,id')
         """.stripMargin)
     }
     assertResult("range_column not support multiple columns")(ex.getMessage)
@@ -116,7 +119,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column3(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
+        | TBLPROPERTIES(
+        | 'SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
     val ex = intercept[MalformedCarbonCommandException] {
@@ -165,7 +169,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age SHORT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
+        | TBLPROPERTIES(
+        | 'SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
@@ -187,7 +192,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
+        | TBLPROPERTIES(
+        | 'SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
@@ -815,7 +821,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column5(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
+        | TBLPROPERTIES(
+        | 'SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column5 ")
@@ -854,6 +861,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
 
   def createFile(fileName: String, line: Int = 10000, lastCol: Int = 0): Boolean = {
     try {
+      // scalastyle:off println
       val write = new PrintWriter(new File(fileName))
       val start = 0
       if (0 == lastCol) {
@@ -931,9 +939,11 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
         }
       }
       write.close()
+      // scalastyle:on println
     } catch {
       case _: Exception => false
     }
+
     true
   }
 

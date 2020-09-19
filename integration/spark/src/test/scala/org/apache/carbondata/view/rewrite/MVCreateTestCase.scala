@@ -14,10 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
 import java.io.File
 import java.nio.file.{Files, Paths}
+
+import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -25,12 +30,9 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
-import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row}
-import org.scalatest.BeforeAndAfterAll
 
 class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     drop()
     CarbonProperties.getInstance()
@@ -171,7 +173,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
         "deptno, deptname, salary, empname from fact_table1")
-    sql("select * from source limit 2").show(false)
+    sql("select * from source limit 2").collect()
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
     assert(sql(" select empname, deptname, avg(salary) from source group by empname, deptname limit 2").collect().length == 2)
     var df = sql("select empname, avg(salary) from source group by empname")
@@ -218,7 +220,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
         "deptno, deptname, salary, empname from fact_table1")
-    sql("select * from source limit 2").show(false)
+    sql("select * from source limit 2").collect()
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
     var df = sql("select empname, avg(salary) from source group by empname")
     assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
@@ -259,11 +261,11 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists mv2")
     sql("drop table if exists source")
     sql("create table source stored as orc as select * from fact_table1")
-    sql("explain extended select empname, avg(salary) from source group by empname").show(false)
+    sql("explain extended select empname, avg(salary) from source group by empname").collect()
     sql("create materialized view mv2 as select empname, deptname, avg(salary) from source group by empname, deptname")
     sql("select * from mv2_table").show
     val df = sql("select empname, avg(salary) from source group by empname")
-    sql("explain extended select empname, avg(salary) from source group by empname").show(false)
+    sql("explain extended select empname, avg(salary) from source group by empname").collect()
     assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv2"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
     sql(s"drop materialized view mv2")
@@ -790,7 +792,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test4")
     sql("create table test4 ( name string,age int,salary int) STORED AS carbondata")
 
-    sql(" insert into test4 select 'babu',12,12").show()
+    sql(" insert into test4 select 'babu',12,12").collect()
     sql("create materialized view mv13 as select name,sum(salary) from test4 group by name")
     val frame = sql(
       "select name,sum(salary) from test4 group by name")
@@ -941,7 +943,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 //        "create materialized view MV_exp2 as select empname, sum(utilization) from fact_table1 group by empname")
 //
 //    }
-//    sql("show materialized views").show()
+//    sql("show materialized views").collect()
 //    val frame = sql(
 //      "select empname, sum(utilization) from fact_table1 group by empname")
 //    assert(TestUtil.verifyMV(frame.queryExecution.optimizedPlan, "MV_exp1"))
@@ -991,8 +993,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("  insert into mvtable1 select 'n1',12,12")
     sql(" insert into mvtable1 select 'n3',12,12")
     sql(" insert into mvtable1 select 'n4',12,12")
-    sql("update mvtable1 set(name) = ('updatedName')").show()
-    checkAnswer(sql("select count(*) from mvtable1 where name = 'updatedName'"),Seq(Row(4)))
+    sql("update mvtable1 set(name) = ('updatedName')").collect()
+    checkAnswer(sql("select count(*) from mvtable1 where name = 'updatedName'"), Seq(Row(4)))
     sql(s"drop materialized view MV11")
     sql("drop table if exists mvtable1")
     sql("drop table if exists mvtable2")
@@ -1048,7 +1050,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
         |  utilization int,salary int)
         | STORED AS parquet
       """.stripMargin)
-    
+
     val exception_tb_mv2: Exception = intercept[Exception] {
       sql("create materialized view dm_stream_test2 as select t1.empname as c1, t2.designation, " +
           "t2.empname as c2,t3.empname from (fact_table1 t1 inner join fact_streaming_table2 t2  " +
@@ -1102,7 +1104,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view limit_fail_dm1 as select empname,designation from limit_fail")
     try {
       val df = sql("select distinct(empname) from limit_fail limit 10")
-      sql("select * from limit_fail limit 10").show()
+      sql("select * from limit_fail limit 10").collect()
       assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "limit_fail_dm1"))
     } catch {
       case ex: Exception =>
@@ -1203,7 +1205,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("refresh materialized view MV11")
     val frame = sql("select count(*) from mvtable1")
     assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV11"))
-    checkAnswer(frame,Seq(Row(1)))
+    checkAnswer(frame, Seq(Row(1)))
     sql(s"drop materialized view MV11")
     sql("drop table if exists mvtable1")
   }
@@ -1389,8 +1391,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val newPath = storeLocation + "/" + "addsegtest"
     copy(path, newPath)
 
-    sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
-    sql("select empname,designation from fact_table_addseg").show()
+    sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").collect()
+    sql("select empname,designation from fact_table_addseg").collect()
     val df1 = sql("select empname,designation from fact_table_addseg")
     assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "addseg"))
     assert(df1.collect().length == 180)
@@ -1434,7 +1436,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val newPath = storeLocation + "/" + "addsegtest"
     copy(path, newPath)
 
-    sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
+    sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").collect()
     val df1 = sql("select empname,designation from fact_table_addseg")
     assert(!TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "addseg"))
     assert(df1.collect().length == 180)
@@ -1459,7 +1461,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table t2(userId string,age int,sex string) STORED AS carbondata")
     sql("insert into t1 values(1,100),(2,500)")
     sql("insert into t2 values(1,20,'f'),(2,30,'m')")
-    val result  = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
+    val result = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     sql("create materialized view mv1 as select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     val df = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1")
@@ -1476,7 +1478,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.mkdirs(newLoc, FileFactory.getConfiguration)
     val oldFiles = oldFolder.listFiles
     for (file <- oldFiles) {
-      Files.copy(Paths.get(file.getParentFile.getPath, file.getName), Paths.get(newLoc, file.getName))
+      Files.copy(Paths.get(file.getParentFile.getPath, file.getName),
+        Paths.get(newLoc, file.getName))
     }
   }
 
@@ -1486,4 +1489,5 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
+  // scalastyle:on lineLength
 }

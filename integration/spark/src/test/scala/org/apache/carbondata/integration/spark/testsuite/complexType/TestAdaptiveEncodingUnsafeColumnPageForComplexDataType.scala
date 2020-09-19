@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.integration.spark.testsuite.complexType.TestAdaptiveComplexType
-import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test class of Adaptive Encoding UnSafe Column Page with Complex Data type

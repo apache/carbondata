@@ -39,8 +39,8 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
       sql(
         s"""LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3""")
     }
-    assert(e.getMessage.contains(
-      "CSV header in input file is not proper. Column names in schema and csv header are not the same."))
+    assert(e.getMessage.contains("CSV header in input file is not proper. " +
+                                 "Column names in schema and csv header are not the same."))
   }
 
   test("test load data ddl provided wrong file header exception") {
@@ -51,7 +51,8 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
            options('fileheader'='no_column')
            """)
     }
-    assert(e.getMessage.contains("CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
+    assert(e.getMessage.contains("CSV header in DDL is not proper. " +
+                                 "Column names in schema and CSV header are not the same"))
   }
 
   test("test load data with wrong header , but without fileheader") {
@@ -105,8 +106,10 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
         options('header'='false', 'fileheader'='ID,date2,country,name,phonetype,serialnames,salary')
         """)
     }
-    assert(e1.getMessage.contains("CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
-    assert(e2.getMessage.contains("CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
+    assert(e1.getMessage.contains(
+      "CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
+    assert(e2.getMessage.contains(
+      "CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
   }
 
   test("test load data with header=true, but without fileheader") {
@@ -125,7 +128,8 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
            options('header'='true', 'fileheader'='ID,date,country,name,phonetype,serialname,salary')
            """)
     }
-    assert(e.getMessage.contains("When 'header' option is true, 'fileheader' option is not required."))
+    assert(e.getMessage.contains(
+      "When 'header' option is true, 'fileheader' option is not required."))
   }
 
   test("test load data with header=true and wrong fileheader") {
@@ -134,10 +138,12 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
       sql(
         s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/source.csv' into table t3
-           options('header'='true', 'fileheader'='ID1,date1,country,name,phonetype,serialname,salary')
+           options('header'='true',
+            'fileheader'='ID1,date1,country,name,phonetype,serialname,salary')
            """)
     }
-    assert(e.getMessage.contains("When 'header' option is true, 'fileheader' option is not required."))
+    assert(e.getMessage.contains(
+      "When 'header' option is true, 'fileheader' option is not required."))
   }
 
   test("test load data without header and fileheader") {

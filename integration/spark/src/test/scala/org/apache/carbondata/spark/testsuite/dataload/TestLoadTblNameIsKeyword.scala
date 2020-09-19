@@ -17,33 +17,35 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import java.io.File
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * Test Class for data loading into table whose name is key word
-  *
-  */
+ * Test Class for data loading into table whose name is key word
+ *
+ */
 class TestLoadTblNameIsKeyword extends QueryTest with BeforeAndAfterAll {
   val testData = s"$resourcesPath/dimSample.csv"
+
   override def beforeAll {
     sql("drop table if exists STRING")
     sql("drop table if exists DoUbLe")
     sql("drop table if exists timestamp")
-    sql("""
+    sql(
+      """
           CREATE TABLE IF NOT EXISTS STRING
           (id Int, name String, city String)
           STORED AS carbondata
         """)
-    sql("""
+    sql(
+      """
           CREATE TABLE IF NOT EXISTS DoUbLe
           (id Int, name String, city String)
           STORED AS carbondata
         """)
-    sql("""
+    sql(
+      """
           CREATE TABLE IF NOT EXISTS timestamp
           (id Int, name String, city String)
           STORED AS carbondata
@@ -51,22 +53,26 @@ class TestLoadTblNameIsKeyword extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test load data whose name is a keyword of data type") {
-    sql(s"""
+    sql(
+      s"""
           LOAD DATA LOCAL INPATH '$testData' into table STRING
         """)
     checkAnswer(
-      sql("""
+      sql(
+        """
             SELECT count(*) from STRING
           """),
       Seq(Row(20)))
   }
 
   test("test case in-sensitiveness") {
-    sql(s"""
+    sql(
+      s"""
           LOAD DATA LOCAL INPATH '$testData' into table DoUbLe
         """)
     checkAnswer(
-      sql("""
+      sql(
+        """
             SELECT count(*) from DoUbLe
           """),
       Seq(Row(20)))
@@ -74,7 +80,8 @@ class TestLoadTblNameIsKeyword extends QueryTest with BeforeAndAfterAll {
 
   test("test other ddl whose table name a keyword of data type") {
     sql("describe timestamp")
-    sql(s"""
+    sql(
+      s"""
           LOAD DATA LOCAL INPATH '$testData' into table timestamp
         """)
     sql("show segments for table timestamp")

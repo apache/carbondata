@@ -14,20 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.mergedata
 
 import java.io.{File, PrintWriter}
+
+import scala.util.Random
+
+import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.spark.sql.CarbonEnv
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import scala.util.Random
-
-import org.apache.spark.sql.test.util.QueryTest
 
 class CarbonDataFileMergeTestCaseOnSI
   extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -132,11 +134,13 @@ class CarbonDataFileMergeTestCaseOnSI
     "properties('table_blocksize'='1')")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
-    sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(0)").collect()
+    sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(0)")
+      .collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
     assert(getDataFileCount("nonindexmerge_index2", "0") < 7)
     assert(getDataFileCount("nonindexmerge_index2", "1") == 100)
-    sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(1)").collect()
+    sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(1)")
+      .collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
     assert(getDataFileCount("nonindexmerge_index2", "1") < 7)
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
@@ -160,7 +164,8 @@ class CarbonDataFileMergeTestCaseOnSI
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
     val exceptionMessage = intercept[RuntimeException] {
-      sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(1,2)").collect()
+      sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(1,2)")
+        .collect()
     }.getMessage
     assert(exceptionMessage.contains("Refresh index by segment id is failed. Invalid ID:"))
   }
@@ -246,8 +251,10 @@ class CarbonDataFileMergeTestCaseOnSI
     try {
       val write = new PrintWriter(fileName);
       for (i <- start until (start + line)) {
+        // scalastyle:off println
         write
           .println(i + "," + "n" + i + "," + "c" + Random.nextInt(line) + "," + Random.nextInt(80))
+        // scalastyle:on println
       }
       write.close()
     } catch {

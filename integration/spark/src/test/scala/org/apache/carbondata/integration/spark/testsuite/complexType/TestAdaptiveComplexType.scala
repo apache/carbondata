@@ -29,7 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def afterAll(): Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -67,10 +67,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
         Row(2, Row(700, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -93,10 +92,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(50000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
         Row(2, Row(70000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
@@ -119,10 +117,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
         Row(2, Row(7000000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
@@ -158,8 +155,10 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
       "marks:array<smallint>>) STORED AS carbondata")
-    sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(200,300,400)))")
-    sql("insert into adaptive values(2,named_struct('id', 8000, 'name', 'abc', 'marks', array(300,400,500)))")
+    sql("insert into adaptive values(" +
+        "1,named_struct('id', 500, 'name', 'abc', 'marks', array(200,300,400)))")
+    sql("insert into adaptive values(" +
+        "2,named_struct('id', 8000, 'name', 'abc', 'marks', array(300,400,500)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
         Row(2, Row(8000, "abc", mutable.WrappedArray.make(Array(300, 400, 500))))))
@@ -170,7 +169,8 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
       "marks:array<bigint>>) STORED AS carbondata")
-    sql("insert into adaptive values(1,named_struct('id', 1, 'name', 'abc', 'marks', array(20,30,40)))")
+    sql("insert into adaptive values(" +
+        "1,named_struct('id', 1, 'name', 'abc', 'marks', array(20,30,40)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1, "abc", mutable.WrappedArray.make(Array(20, 30, 40))))))
   }
@@ -190,10 +190,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
         Row(2, Row(700, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -217,10 +216,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(50000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
         Row(2, Row(70000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
@@ -233,10 +231,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
         Row(2, Row(7000000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
@@ -268,11 +265,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_double1.csv' into table adaptive options('delimiter'='," +
-      "'," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_double1.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1.323, "abc", mutable.WrappedArray.make(Array(2.2, 3.3, 4.4)))),
         Row(2, Row(1.323, "abc", mutable.WrappedArray.make(Array(2.2, 3.3, 4.4)))),
@@ -292,11 +287,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_double2.csv' into table adaptive options('delimiter'='," +
-      "'," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_double2.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 40.4)))),
         Row(2, Row(2.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 40.4)))),
@@ -316,11 +309,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_double3.csv' into table adaptive options('delimiter'='," +
-      "'," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_double3.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 500.423)))),
         Row(2, Row(2.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 500.423)))),
@@ -340,11 +331,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_double4.csv' into table adaptive options('delimiter'='," +
-      "'," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_double4.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 50000.423)))),
         Row(2, Row(2.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 50000.423)))),
@@ -371,7 +360,7 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<id:decimal(3,2),name:string>) " +
       "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 3.2, 'name', 'abc'))")
-    sql("select * from adaptive").show(false)
+    sql("select * from adaptive").collect()
   }
 
   test("test Decimal with Array") {
@@ -380,7 +369,7 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<name:string," +
       "marks:array<decimal>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array(20.2,30.3,40.4)))")
-    sql("select * from adaptive").show(false)
+    sql("select * from adaptive").collect()
   }
 
   test("test Timestamp with Struct") {
@@ -417,7 +406,7 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "create table adaptive(roll int, student struct<name:string," +
       "marks:array<date>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array('2017/01/01')))")
-    sql("select * from adaptive").show(false)
+    sql("select * from adaptive").collect()
   }
 
   test("test LONG with Array and Struct Encoding LONG --> BYTE") {
@@ -442,10 +431,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
         Row(2, Row(700, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -457,10 +445,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(50000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
         Row(2, Row(70000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
@@ -483,10 +470,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
         Row(2, Row(7000000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
@@ -512,7 +498,7 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200, 300, 52000000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(200, 300, 52000000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000,'name', 'abc', 'marks', array(200, 300, 52000000000)))")
-    sql("select * from adaptive").show(false)
+    sql("select * from adaptive").collect()
   }
 
   test("test SHORT with Array and Struct Encoding SHORT -->BYTE") {
@@ -537,10 +523,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:SHORT,name:string,marks:array<SHORT>>) " +
       "STORED AS carbondata")
-    sql(
-      s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'=':')")
+    sql(s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive " +
+        "options('delimiter'=',','quotechar'='\"','fileheader'='roll,student'," +
+        "'complex_delimiter_level_1'='$','complex_delimiter_level_2'=':')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
         Row(2, Row(700, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -563,8 +548,9 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(array1 struct<double1:double,double2:double,double3:double>) " +
       "STORED AS carbondata")
-    sql("insert into adaptive values(named_struct('double1', 10000000.0, 'double2', 300000.0, 'double3', 3000.0))")
-    sql("select * from adaptive").show(false)
+    sql("insert into adaptive values(" +
+        "named_struct('double1', 10000000.0, 'double2', 300000.0, 'double3', 3000.0))")
+    sql("select * from adaptive").collect()
     checkExistence(sql("select * from adaptive"), true, "1.0E7,300000.0,3000.0")
     sql("Drop table if exists adaptive")
     sql("create table adaptive(struct_arr struct<array_db1:array<double>>) STORED AS carbondata")
@@ -582,5 +568,5 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       Seq(Row(mutable.WrappedArray.make(Array(null, 5.121f)))))
     sql("drop table if exists floatComplexPrimitive")
   }
-
+  // scalastyle:on lineLength
 }

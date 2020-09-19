@@ -17,7 +17,7 @@
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import java.util
-import java.util.concurrent.{Callable, ExecutorService, Executors}
+import java.util.concurrent.{Callable, Executors, ExecutorService}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
@@ -31,6 +31,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
   var executorService: ExecutorService = _
+  // scalastyle:off lineLength
   override def beforeAll {
     defaultConfig()
     dropTable
@@ -78,14 +79,16 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("test global sort order in old insert flow") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true");
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true");
     sql("DROP TABLE IF EXISTS gs_test")
     sql("create table gs_test (id string) " +
         "using carbondata options('sort_scope'='global_sort', 'local_dictionary_enable'='false', 'sort_columns'='id','global_sort_partitions'='1')")
     sql("insert into gs_test select 'abc1' union all select 'abc5' union all select 'abc10' union all select 'abc20' ")
     checkAnswerWithoutSort(sql("select id from gs_test"), Seq(Row("abc1"), Row("abc10"), Row("abc20"), Row("abc5")))
     sql("DROP TABLE IF EXISTS gs_test")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false");
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false");
   }
 
   test("test global sort partition order") {
@@ -268,7 +271,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   test("global sort badrecords on partition column") {
     sql("create table badrecordsPartition(intField1 int, stringField1 string) partitioned by (intField2 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartition options('bad_records_action'='force')")
-    sql("select count(*) from badrecordsPartition").show()
+    sql("select count(*) from badrecordsPartition").collect()
     checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is null"), Seq(Row(9)))
     checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is not null"), Seq(Row(2)))
   }
@@ -734,7 +737,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
       sql("insert into partdatecarb4 partition(state,city,country='india') select 'name1',12,'KA', 'BGLR'")
       sql("insert into partdatecarb4 partition(city,state,country='india') select 'name1',12, 'BGLR','KA'")
-      sql("select * from partdatecarb4").show()
+      sql("select * from partdatecarb4").collect()
       checkAnswer(sql("select * from partdatecarb4"), sql("select * from partdatecarb4_hive"))
       intercept[Exception] {
         sql(
@@ -865,30 +868,30 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("DROP TABLE IF EXISTS intissue")
     sql("create table intissue(a int) partitioned by (b int) STORED AS carbondata")
     sql("insert into intissue values(1,1)")
-    checkAnswer(sql("select * from intissue"), Seq(Row(1,1)))
+    checkAnswer(sql("select * from intissue"), Seq(Row(1, 1)))
   }
 
   test("data loading with int partition issue with global sort") {
     sql("DROP TABLE IF EXISTS intissuesort")
     sql("create table intissuesort(a int) partitioned by (b int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     sql("insert into intissuesort values(1,1)")
-    checkAnswer(sql("select * from intissuesort"), Seq(Row(1,1)))
+    checkAnswer(sql("select * from intissuesort"), Seq(Row(1, 1)))
   }
 
   test("data loading with decimal column fail issue") {
     sql("DROP TABLE IF EXISTS partitiondecimalfailissue")
     sql("CREATE TABLE IF NOT EXISTS partitiondecimalfailissue (ID Int, date Timestamp, country String, name String, phonetype String, serialname String) partitioned by (salary Decimal(17,2)) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalDataWithHeader.csv' into table partitiondecimalfailissue")
-    sql(s"select * from partitiondecimalfailissue").show()
+    sql(s"select * from partitiondecimalfailissue").collect()
     sql(s"insert into partitiondecimalfailissue partition(salary='13000000.7878788') select ID,date,country,name,phonetype,serialname from partitiondecimalfailissue" )
-    sql(s"select * from partitiondecimalfailissue").show(100)
+    sql(s"select * from partitiondecimalfailissue").collect()
   }
 
   test("data loading with decimalissue partition issue") {
     sql("DROP TABLE IF EXISTS decimalissue")
     sql("create table decimalissue(a int) partitioned by (b decimal(2,2)) STORED AS carbondata")
     sql("insert into decimalissue values(23,21.2)")
-    checkAnswer(sql("select * from decimalissue"), Seq(Row(23,null)))
+    checkAnswer(sql("select * from decimalissue"), Seq(Row(23, null)))
   }
 
   test("data loading scalar query partition issue") {
@@ -903,11 +906,11 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       intercept[Exception] {
         sql(s"select * from scalarissue_hive where salary = (select max(salary) from " +
             s"scalarissue_hive)")
-          .show()
+          .collect()
       }
       intercept[Exception] {
         sql(s"select * from scalarissue where salary = (select max(salary) from scalarissue)")
-          .show()
+          .collect()
       }
     } else {
       checkAnswer(sql(s"select * from scalarissue_hive where salary = (select max(salary) from " +
@@ -924,7 +927,9 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     val ex = intercept[Exception] {
       sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionfailmessage options('bad_records_action'='fail')")
     }
+    // scalastyle:off println
     println(ex.getMessage.startsWith("DataLoad failure: Data load failed due to bad record"))
+    // scalastyle:on println
   }
 
   test("multiple compaction on partition table") {
@@ -1064,7 +1069,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     checkAnswer(sql("select distinct cast(newcol1 as string) from partitiontwonocolumns"), Seq(Row("2016-08-09")))
   }
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -1072,14 +1077,14 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
       .addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
         CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
-      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION , LoggerAction.FORCE.name())
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
     dropTable
     if (executorService != null && !executorService.isShutdown) {
       executorService.shutdownNow()
     }
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists originTable")
     sql("drop table if exists originMultiLoads")
     sql("drop table if exists partitionone")
@@ -1127,4 +1132,5 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitionNoColumn")
     sql("drop table if exists partitiondefaultlocalsort")
   }
+  // scalastyle:on lineLength
 }

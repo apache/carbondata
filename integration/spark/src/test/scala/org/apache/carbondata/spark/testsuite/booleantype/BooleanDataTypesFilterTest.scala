@@ -24,14 +24,15 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll(): Unit = {
     defaultConfig()
     sql("drop table if exists carbon_table")
     sql("drop table if exists boolean_table")
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanOnlyBoolean.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanOnlyBoolean.csv"
 
     sql("CREATE TABLE if not exists carbon_table(booleanField BOOLEAN) STORED AS carbondata")
     sql(
@@ -121,7 +122,8 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     checkAnswer(sql("select count(*) from carbon_table where booleanField = null"),
       Row(0))
 
-    checkAnswer(sql("select count(*) from carbon_table where booleanField = false or booleanField = true"),
+    checkAnswer(
+      sql("select count(*) from carbon_table where booleanField = false or booleanField = true"),
       Row(8))
   }
 
@@ -138,8 +140,8 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     checkAnswer(sql("select count(*) from carbon_table where booleanField in (false)"),
       Row(4))
 
-    checkAnswer(sql("select * from carbon_table where booleanField in (true,false)"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
+    checkAnswer(sql("select * from carbon_table where booleanField in (true,false)"), Seq(
+      Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
 
     checkAnswer(sql("select count(*) from carbon_table where booleanField in (true,false)"),
       Row(8))
@@ -184,7 +186,8 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     checkAnswer(sql("select count(*) from carbon_table where booleanField != null"),
       Row(0))
 
-    checkAnswer(sql("select count(*) from carbon_table where booleanField != false or booleanField != true"),
+    checkAnswer(
+      sql("select count(*) from carbon_table where booleanField != false or booleanField != true"),
       Row(8))
   }
 
@@ -195,8 +198,8 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     checkAnswer(sql("select count(*) from carbon_table where booleanField >= true"),
       Row(4))
 
-    checkAnswer(sql("select * from carbon_table where booleanField >= false"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
+    checkAnswer(sql("select * from carbon_table where booleanField >= false"), Seq(
+      Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
 
     checkAnswer(sql("select count(*) from carbon_table where booleanField >=false"),
       Row(8))
@@ -226,8 +229,8 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     checkAnswer(sql("select count(*) from carbon_table where booleanField <= false"),
       Row(4))
 
-    checkAnswer(sql("select * from carbon_table where booleanField <= true"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
+    checkAnswer(sql("select * from carbon_table where booleanField <= true"), Seq(
+      Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
 
     checkAnswer(sql("select count(*) from carbon_table where booleanField <= true"),
       Row(8))
@@ -251,10 +254,12 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Filtering table: support boolean, Expression: between") {
-    checkAnswer(sql("select * from carbon_table where booleanField < true and booleanField >= false"),
+    checkAnswer(
+      sql("select * from carbon_table where booleanField < true and booleanField >= false"),
       Seq(Row(false), Row(false), Row(false), Row(false)))
 
-    checkAnswer(sql("select count(*) from carbon_table where booleanField < true and booleanField >= false"),
+    checkAnswer(
+      sql("select count(*) from carbon_table where booleanField < true and booleanField >= false"),
       Row(4))
   }
 
@@ -266,8 +271,8 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
   test("Filtering table: support boolean, Expression: IsNotNull") {
     checkAnswer(sql("select count(*) from carbon_table where booleanField is not null"),
       Row(8))
-    checkAnswer(sql("select * from carbon_table where booleanField is not null"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
+    checkAnswer(sql("select * from carbon_table where booleanField is not null"), Seq(
+      Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
   }
 
   test("Filtering table: support boolean, Expression: IsNull") {
@@ -278,18 +283,23 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Filtering table: support boolean and other data type, and") {
-    checkAnswer(sql("select count(*) from boolean_table where booleanField = false and shortField = 1"),
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField = false and shortField = 1"),
       Row(3))
 
-    checkAnswer(sql("select count(*) from boolean_table where booleanField = false and stringField='flink'"),
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField = false and stringField='flink'"),
       Row(1))
 
-    checkAnswer(sql("select intField,booleanField,stringField from boolean_table where booleanField = false and stringField='flink'"),
+    checkAnswer(
+      sql("select intField,booleanField,stringField from boolean_table " +
+          "where booleanField = false and stringField='flink'"),
       Row(11, false, "flink"))
   }
 
   test("Filtering table: support boolean and other data type, GreaterThanEqualToExpression") {
-    checkAnswer(sql("select count(*) from boolean_table where booleanField <= false and shortField >= 1"),
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField <= false and shortField >= 1"),
       Row(6))
   }
 
@@ -321,7 +331,9 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     checkAnswer(sql("select count(*) from carbon_table where booleanField like 'n%'"),
       Row(0))
 
-    checkAnswer(sql("select count(*) from carbon_table where booleanField like 'f%' or booleanField like 't%'"),
+    checkAnswer(
+      sql("select count(*) from carbon_table " +
+          "where booleanField like 'f%' or booleanField like 't%'"),
       Row(8))
 
     checkAnswer(sql("select count(*) from carbon_table where booleanField like '%e'"),
@@ -347,7 +359,8 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     sql("drop table if exists boolean_table2")
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val booleanLocation2 = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val booleanLocation2 =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     sql(
       s"""
          | CREATE TABLE boolean_table2(
@@ -374,13 +387,20 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
          | INTO TABLE boolean_table2
          | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
        """.stripMargin)
-    checkAnswer(sql("select count(*) from boolean_table2 where booleanField = false and booleanField2 = false"),
+    checkAnswer(
+      sql("select count(*) from boolean_table2 " +
+          "where booleanField = false and booleanField2 = false"),
       Row(4))
-    checkAnswer(sql("select count(*) from boolean_table2 where booleanField = true and booleanField2 = true"),
+    checkAnswer(
+      sql("select count(*) from boolean_table2 where booleanField = true and booleanField2 = true"),
       Row(3))
-    checkAnswer(sql("select count(*) from boolean_table2 where booleanField = false and booleanField2 = true"),
+    checkAnswer(
+      sql("select count(*) from boolean_table2 " +
+          "where booleanField = false and booleanField2 = true"),
       Row(2))
-    checkAnswer(sql("select count(*) from boolean_table2 where booleanField = true and booleanField2 = false"),
+    checkAnswer(
+      sql("select count(*) from boolean_table2 " +
+          "where booleanField = true and booleanField2 = false"),
       Row(1))
     sql("drop table if exists boolean_table2")
   }
@@ -389,7 +409,8 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     sql("drop table if exists boolean_table2")
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val booleanLocation2 = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val booleanLocation2 =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     sql(
       s"""
          | CREATE TABLE boolean_table2(
@@ -422,15 +443,23 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
          | INTO TABLE boolean_table2
          | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
        """.stripMargin)
-    checkAnswer(sql("select count(*) from boolean_table2 where booleanField = false and booleanField2 = false"),
+    checkAnswer(
+      sql("select count(*) from boolean_table2 " +
+          "where booleanField = false and booleanField2 = false"),
       Row(8))
-    checkAnswer(sql("select count(*) from boolean_table2 where booleanField = true and booleanField2 = true"),
+    checkAnswer(
+      sql("select count(*) from boolean_table2 " +
+          "where booleanField = true and booleanField2 = true"),
       Row(6))
-    checkAnswer(sql("select count(*) from boolean_table2 where booleanField = false and booleanField2 = true"),
+    checkAnswer(
+      sql("select count(*) from boolean_table2 " +
+          "where booleanField = false and booleanField2 = true"),
       Row(4))
-    checkAnswer(sql("select count(*) from boolean_table2 where booleanField = true and booleanField2 = false"),
+    checkAnswer(
+      sql("select count(*) from boolean_table2 " +
+          "where booleanField = true and booleanField2 = false"),
       Row(2))
     sql("drop table if exists boolean_table2")
   }
-
+  // scalastyle:on lineLength
 }

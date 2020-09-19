@@ -26,19 +26,22 @@ class InsertIntoCarbonTableSpark2TestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("insert select one row") {
-    sql("create table OneRowTable(col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
+    sql("create table OneRowTable(" +
+        "col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
     sql("insert into OneRowTable select '0.1', 'a.b', 1, 1.2")
     checkAnswer(sql("select * from OneRowTable"), Seq(Row("0.1", "a.b", 1, 1.2)))
   }
 
   test("test insert into with database name having underscore") {
     sql("drop table if exists OneRowTable")
-    sql("create table OneRowTable(col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
+    sql("create table OneRowTable(" +
+        "col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
     sql("insert into OneRowTable select '0.1', 'a.b', 1, 1.2")
     checkAnswer(sql("select * from OneRowTable"), Seq(Row("0.1", "a.b", 1, 1.2)))
     sql("drop database if exists _default cascade")
     sql("create database _default")
-    sql("create table _default._OneRowTable(col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
+    sql("create table _default._OneRowTable(" +
+        "col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
     sql("insert into _default._OneRowTable select * from OneRowTable")
     checkAnswer(sql("select * from _default._OneRowTable"), Seq(Row("0.1", "a.b", 1, 1.2)))
     sql("drop database if exists _default cascade")

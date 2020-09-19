@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.carbondata.iud
 
 import org.apache.spark.sql.Row
@@ -26,16 +27,23 @@ class DeleteCarbonTableSubqueryTestCase extends QueryTest with BeforeAndAfterAll
     sql("drop database  if exists iud_db_sub cascade")
     sql("create database  iud_db_sub")
 
-    sql("""create table iud_db_sub.source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source2.csv' INTO table iud_db_sub.source2""")
+    sql(
+      """create table iud_db_sub.source2 (
+        |c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""".stripMargin)
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source2.csv'
+         | INTO table iud_db_sub.source2""".stripMargin)
     sql("use iud_db_sub")
   }
 
   test("delete data from  carbon table[where IN (sub query) ]") {
     sql("""drop table if exists iud_db_sub.dest""")
-    sql("""create table iud_db_sub.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""").show()
+    sql(
+      """create table iud_db_sub.dest (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin).collect()
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db_sub.dest""")
-    sql("""delete from  iud_db_sub.dest where c1 IN (select c11 from source2)""").show(truncate = false)
+    sql("""delete from  iud_db_sub.dest where c1 IN (select c11 from source2)""")
+      .collect()
     checkAnswer(
       sql("""select c1 from iud_db_sub.dest"""),
       Seq(Row("c"), Row("d"), Row("e"))
@@ -45,9 +53,13 @@ class DeleteCarbonTableSubqueryTestCase extends QueryTest with BeforeAndAfterAll
 
   test("delete data from  carbon table[where IN (sub query with where clause) ]") {
     sql("""drop table if exists iud_db_sub.dest""")
-    sql("""create table iud_db_sub.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""").show()
+    sql(
+      """create table iud_db_sub.dest (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin).collect()
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db_sub.dest""")
-    sql("""delete from  iud_db_sub.dest where c1 IN (select c11 from source2 where c11 = 'b')""").show()
+    sql(
+      """delete from  iud_db_sub.dest
+        | where c1 IN (select c11 from source2 where c11 = 'b')""".stripMargin).collect()
     checkAnswer(
       sql("""select c1 from iud_db_sub.dest"""),
       Seq(Row("a"), Row("c"), Row("d"), Row("e"))

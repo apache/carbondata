@@ -143,7 +143,7 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
       "'DEFAULT.VALUE.c4'='def')")
     sql(s"""CREATE EXTERNAL TABLE rsext STORED AS carbondata LOCATION '$storeLocation/rstest1'""")
     sql("insert into rsext select 'shahid', 1")
-    checkAnswer(sql("select * from rstest1"),  sql("select * from rsext"))
+    checkAnswer(sql("select * from rstest1"), sql("select * from rsext"))
   }
 
 }

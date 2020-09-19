@@ -35,8 +35,8 @@ class TestIndexModelWithUnsafeColumnPage extends QueryTest with BeforeAndAfterAl
   }
 
   test("Test secondry index data count") {
-    checkAnswer(sql("select count(*) from testSecondryIndex_IndexTable")
-    ,Seq(Row(1)))
+    checkAnswer(sql("select count(*) from testSecondryIndex_IndexTable"),
+      Seq(Row(1)))
   }
 
   override def afterAll {

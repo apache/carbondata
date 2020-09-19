@@ -120,11 +120,15 @@ class ProfilerSuite extends QueryTest with BeforeAndAfterAll {
     checkCommand("DROP TABLE IF EXISTS mobile")
     checkCommand("DROP TABLE IF EXISTS emp")
     // create table
-    checkCommand("CREATE TABLE mobile (mid string,mobileId string, color string, id int) STORED AS carbondata ")
-    checkCommand("CREATE TABLE emp (eid string,eName string, mobileId string,color string, id int) STORED AS carbondata")
+    checkCommand("CREATE TABLE mobile (mid string,mobileId string, color string, id int) " +
+                 "STORED AS carbondata ")
+    checkCommand("CREATE TABLE emp (eid string,eName string, mobileId string,color string, " +
+                 "id int) STORED AS carbondata")
     // load data
-    checkCommand(s"LOAD DATA LOCAL INPATH '$resourcesPath/join/mobile.csv' INTO TABLE mobile OPTIONS('FILEHEADER'='mid,mobileId,color,id')")
-    checkCommand(s"LOAD DATA LOCAL INPATH '$resourcesPath/join/employee.csv' INTO TABLE emp OPTIONS('FILEHEADER'='eid,eName,mobileId,color,id')")
+    checkCommand(s"LOAD DATA LOCAL INPATH '$resourcesPath/join/mobile.csv' " +
+                 "INTO TABLE mobile OPTIONS('FILEHEADER'='mid,mobileId,color,id')")
+    checkCommand(s"LOAD DATA LOCAL INPATH '$resourcesPath/join/employee.csv' " +
+                 "INTO TABLE emp OPTIONS('FILEHEADER'='eid,eName,mobileId,color,id')")
     // select query
     checkSelectQuery("SELECT * FROM mobile where mid = 'mid89'", 4)
     checkSelectQuery("SELECT * FROM emp where eid = 'empid292'", 4)

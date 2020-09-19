@@ -17,58 +17,60 @@
 
 package org.apache.carbondata.view.plans
 
-import org.apache.carbondata.mv.dsl.Plans._
-import org.apache.carbondata.mv.plans.modular.ModularPlanSignatureGenerator
-import org.apache.carbondata.view.testutil.ModularPlanTest
 import org.apache.spark.sql.catalyst.util._
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.mv.dsl.Plans._
+import org.apache.carbondata.mv.plans.modular.ModularPlanSignatureGenerator
+import org.apache.carbondata.view.testutil.ModularPlanTest
+
 class SignatureSuite extends ModularPlanTest with BeforeAndAfterAll {
+
   import org.apache.carbondata.view.testutil.TestSQLBatch._
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  
+
   ignore("test signature computing") {
 
     hiveClient.runSqlHive(
-        s"""
-           |CREATE TABLE if not exists Fact (
-           |  `A` int,
-           |  `B` int,
-           |  `C` int,
-           |  `K` int
-           |)
-           |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-           |STORED AS TEXTFILE        
+      s"""
+         |CREATE TABLE if not exists Fact (
+         |  `A` int,
+         |  `B` int,
+         |  `C` int,
+         |  `K` int
+         |)
+         |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+         |STORED AS TEXTFILE
         """.stripMargin.trim
-        )
-        
+    )
+
     hiveClient.runSqlHive(
-        s"""
-           |CREATE TABLE  if not exists Dim (
-           |  `D` int,
-           |  `K` int
-           |)
-           |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-           |STORED AS TEXTFILE        
+      s"""
+         |CREATE TABLE  if not exists Dim (
+         |  `D` int,
+         |  `K` int
+         |)
+         |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+         |STORED AS TEXTFILE
         """.stripMargin.trim
-        )   
-        
+    )
+
     testSQLBatch.foreach { query =>
       val analyzed = testHive.sql(query).queryExecution.optimizedPlan
       val modularPlan = analyzed.optimize.modularize
       val sig = ModularPlanSignatureGenerator.generate(modularPlan)
       sig match {
-        case Some(s) if (s.groupby != true || s.datasets != Set("default.fact","default.dim")) =>
+        case Some(s) if (s.groupby != true || s.datasets != Set("default.fact", "default.dim")) =>
           fail(
-              s"""
-              |=== FAIL: signature do not match ===
-              |${sideBySide(s.groupby.toString, true.toString).mkString("\n")}
-              |${sideBySide(s.datasets.toString, Set("Fact","Dim").toString).mkString("\n")}
+            s"""
+               |=== FAIL: signature do not match ===
+               |${ sideBySide(s.groupby.toString, true.toString).mkString("\n") }
+               |${ sideBySide(s.datasets.toString, Set("Fact", "Dim").toString).mkString("\n") }
             """.stripMargin)
         case _ =>
-      } 
+      }
     }
-  }  
+  }
 }

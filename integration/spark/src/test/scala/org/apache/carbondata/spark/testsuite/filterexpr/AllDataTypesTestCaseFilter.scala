@@ -26,14 +26,12 @@ import org.scalatest.BeforeAndAfterAll
  */
 
 class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     sql("CREATE TABLE alldatatypestableFilter (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE alldatatypestableFilter OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""");
-    
     sql("CREATE TABLE alldatatypestableFilter_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
     sql(s"""LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO TABLE alldatatypestableFilter_hive""");
-
   }
 
   test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname in ('arvind','ayushi') group by empno,empname,utilization") {
@@ -41,13 +39,13 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
       sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname in ('arvind','ayushi') group by empno,empname,utilization"),
       sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter_hive where empname in ('arvind','ayushi') group by empno,empname,utilization"))
   }
-  
+
   test("select empno,empname from alldatatypestableFilter where regexp_replace(workgroupcategoryname, 'er', 'ment') NOT IN ('development')") {
     checkAnswer(
       sql("select empno,empname from alldatatypestableFilter where regexp_replace(workgroupcategoryname, 'er', 'ment') NOT IN ('development')"),
       sql("select empno,empname from alldatatypestableFilter_hive where regexp_replace(workgroupcategoryname, 'er', 'ment') NOT IN ('development')"))
   }
-  
+
   test("select empno,empname from alldatatypescubeFilter where regexp_replace(workgroupcategoryname, 'er', 'ment') != 'development'") {
     checkAnswer(
       sql("select empno,empname from alldatatypestableFilter where regexp_replace(workgroupcategoryname, 'er', 'ment') != 'development'"),
@@ -77,9 +75,10 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
         .get("PushedFilters").get.contains("CarbonContainsWith"))
     }
   }
-  
+
   override def afterAll {
     sql("drop table alldatatypestableFilter")
     sql("drop table alldatatypestableFilter_hive")
   }
+  // scalastyle:on lineLength
 }

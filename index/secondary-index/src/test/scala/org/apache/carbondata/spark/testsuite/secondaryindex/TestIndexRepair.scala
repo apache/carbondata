@@ -16,11 +16,10 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
-.isFilterPushedDownToSI;
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 /**
  * test cases for testing reindex command on index table/main table/DB level
@@ -195,7 +194,7 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     sql("create database test")
     sql("drop table if exists maintable1")
 
-    //table 1
+    // table 1
     sql("CREATE TABLE test.maintable1(a INT, b STRING, c STRING, d STRING) stored as carbondata")
     sql("CREATE INDEX indextable1 on table test.maintable1(c) as 'carbondata'")
     sql("CREATE INDEX indextable2 on table test.maintable1(d) as 'carbondata'")

@@ -1,26 +1,26 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*    http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.carbondata.spark.testsuite.longstring
 
+import java.io.{File, PrintWriter}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-
-import java.io.{File, PrintWriter}
 
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
@@ -31,14 +31,11 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
-import scala.collection.mutable
-import scala.collection.JavaConverters._
-
-class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
+class VarcharDataTypesBasicTestCase
+  extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   private val longStringTable = "long_string_table"
   private val inputDir = s"$resourcesPath${File.separator}varchartype${File.separator}"
   private val fileName = s"longStringData.csv"
@@ -48,7 +45,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   private val lineNum = 1000
   private var content: Content = _
   private var longStringDF: DataFrame = _
-  private var originMemorySize = CarbonProperties.getInstance().getProperty(
+  private val originMemorySize = CarbonProperties.getInstance().getProperty(
     CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
     CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT)
   private var longChar : String = _
@@ -58,7 +55,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
       tail: Int, desc_line_tail: String, note_line_tail: String)
 
   override def beforeAll(): Unit = {
-    // for one 32000 lines * 32000 characters column page, it use about 1GB memory, but here we have only 1000 lines
+    // for one 32000 lines * 32000 characters column page, it use about 1GB memory,
+    // but here we have only 1000 lines
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
       CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT)
@@ -99,7 +97,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
            |""".
           stripMargin)
     }
-    assert(exceptionCaught.getMessage.contains("sort_columns is unsupported for long string datatype column: name"))
+    assert(exceptionCaught.getMessage.contains(
+      "sort_columns is unsupported for long string datatype column: name"))
   }
 
   test("long string columns can only be string columns") {
@@ -128,7 +127,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
           stripMargin)
       sql("ALTER TABLE long_string_table SET TBLPROPERTIES('long_String_columns'='NAME')")
     }
-    assert(exceptionCaught.getMessage.contains("LONG_STRING_COLUMNS cannot be present in sort columns: name"))
+    assert(exceptionCaught.getMessage.contains(
+      "LONG_STRING_COLUMNS cannot be present in sort columns: name"))
   }
 
   test("check compaction after altering range column dataType to longStringColumn") {
@@ -151,8 +151,14 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME, "long_string_table")
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier)
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
+    val segmentStatusManager: SegmentStatusManager =
+      new SegmentStatusManager(absoluteTableIdentifier)
+    val segments = segmentStatusManager
+      .getValidAndInvalidSegments
+      .getValidSegments
+      .asScala
+      .map(_.getSegmentNo)
+      .toList
     assert(segments.contains("0.1"))
     assert(!segments.contains("0"))
     assert(!segments.contains("1"))
@@ -233,13 +239,14 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql("insert into testlongstring select 1, 'ab', 'cool'")
     // describe formatted should not have long_string_columns
     checkExistence(sql("describe formatted testlongstring"), false, "long_string_columns")
-    //Alter table add table property of long string columns
+    // Alter table add table property of long string columns
     sql("ALTER TABLE testlongstring SET TBLPROPERTIES('long_String_columns'='name,description')")
     sql(s""" insert into testlongstring select 1, 'ab1', '$longChar'""")
-    checkAnswer(sql("select * from testlongstring"), Seq(Row(1, "ab", "cool"), Row(1, "ab1", longChar)))
+    checkAnswer(sql("select * from testlongstring"),
+      Seq(Row(1, "ab", "cool"), Row(1, "ab1", longChar)))
     // describe formatted should have long_string_columns
     checkExistence(sql("describe formatted testlongstring"), true, "LONG_STRING_COLUMNS")
-    //insert without without local dictionary
+    // insert without without local dictionary
     sql("ALTER TABLE testlongstring SET TBLPROPERTIES('local_dictionary_enable'='false')")
     sql(s""" insert into testlongstring select 1, 'abc', '$longChar'""")
     checkAnswer(sql("select * from testlongstring"),
@@ -254,7 +261,10 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     // insert long string will be handled as bad record as unset is done
     sql(s""" insert into testlongstring select 1, 'abc', '$longChar'""")
     checkAnswer(sql("select * from testlongstring"),
-      Seq(Row(1, "ab", "cool"), Row(1, "ab1", longChar), Row(1, "abc", longChar), Row(1, "abc", null)))
+      Seq(Row(1, "ab", "cool"),
+        Row(1, "ab1", longChar),
+        Row(1, "abc", longChar),
+        Row(1, "abc", null)))
     sql("ALTER TABLE testlongstring SET TBLPROPERTIES('long_String_columns'='description')")
     sql(s""" insert into testlongstring select 1, 'ab1', '$longChar'""")
     sql("drop table if exists testlongstring")
@@ -274,7 +284,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
       s"""insert into varchar_complex_table values(1, array('ar1.0','ar1.1'),
          |'xx', 'normal string1', 'xx', array('ar2.0','ar2.1'))""".stripMargin)
 
-    sql("ALTER TABLE varchar_complex_table SET TBLPROPERTIES('long_String_columns'='varchar1,varchar2')")
+    sql("ALTER TABLE varchar_complex_table " +
+        "SET TBLPROPERTIES('long_String_columns'='varchar1,varchar2')")
 
     sql(
       s"""insert into varchar_complex_table values(1, array('ar1.0','ar1.1'), '$longChar',
@@ -283,10 +294,10 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
 
     checkAnswer(
       sql("SELECT * FROM varchar_complex_table where m1=1"),
-      Seq(Row(1,mutable.WrappedArray.make(Array("ar1.0","ar1.1")),"xx","normal string1",
-        "xx",mutable.WrappedArray.make(Array("ar2.0","ar2.1"))),
-      Row(1,mutable.WrappedArray.make(Array("ar1.0","ar1.1")),longChar,"normal string1",
-        longChar,mutable.WrappedArray.make(Array("ar2.0","ar2.1")))))
+      Seq(Row(1, mutable.WrappedArray.make(Array("ar1.0", "ar1.1")), "xx", "normal string1",
+        "xx", mutable.WrappedArray.make(Array("ar2.0", "ar2.1"))),
+        Row(1, mutable.WrappedArray.make(Array("ar1.0", "ar1.1")), longChar, "normal string1",
+          longChar, mutable.WrappedArray.make(Array("ar2.0", "ar2.1")))))
     checkAnswer(
       sql(
         """
@@ -294,12 +305,13 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
           |FROM varchar_complex_table
           |WHERE arr1[1]='ar1.3'
           |""".stripMargin),
-      Seq(Row(longChar,mutable.WrappedArray.make(Array("ar2.2","ar2.3")),"normal string2",2,
-        longChar,mutable.WrappedArray.make(Array("ar1.2","ar1.3")))))
+      Seq(Row(longChar, mutable.WrappedArray.make(Array("ar2.2", "ar2.3")), "normal string2", 2,
+        longChar, mutable.WrappedArray.make(Array("ar1.2", "ar1.3")))))
     sql("DROP TABLE IF EXISTS varchar_complex_table")
   }
 
-  test("inverted index columns cannot be present in long_string_cols as they do not support sort_cols") {
+  test("inverted index columns cannot be present in long_string_cols " +
+       "as they do not support sort_cols") {
     val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
@@ -309,7 +321,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
            | TBLPROPERTIES('inverted_index'='note', 'long_string_columns'='note,description')
            |""".stripMargin)
     }
-    assert(exceptionCaught.getMessage.contains("INVERTED_INDEX column: note should be present in SORT_COLUMNS"))
+    assert(exceptionCaught.getMessage.contains(
+      "INVERTED_INDEX column: note should be present in SORT_COLUMNS"))
   }
 
   private def prepareTable(): Unit = {
@@ -332,26 +345,45 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     checkAnswer(sql(s"SELECT id, name, address FROM $longStringTable where id = ${content.tail}"),
       Row(content.tail, s"name_${content.tail}", s"address_${content.tail}"))
     // query return long_string_column in the middle position
-    checkAnswer(sql(s"SELECT id, name, description, address FROM $longStringTable where id = ${content.head}"),
-      Row(content.head, s"name_${content.head}", content.desc_line_head, s"address_${content.head}"))
+    checkAnswer(
+      sql(s"SELECT id, name, description, address FROM $longStringTable " +
+          s"where id = ${ content.head }"),
+      Row(content.head,
+        s"name_${ content.head }",
+        content.desc_line_head,
+        s"address_${ content.head }"))
     // query return long_string_column at last position
-    checkAnswer(sql(s"SELECT id, name, address, description FROM $longStringTable where id = ${content.mid}"),
+    checkAnswer(
+      sql(s"SELECT id, name, address, description FROM $longStringTable " +
+          s"where id = ${content.mid}"),
       Row(content.mid, s"name_${content.mid}", s"address_${content.mid}", content.desc_line_mid))
     // query return 2 long_string_columns
-    checkAnswer(sql(s"SELECT id, name, note, address, description FROM $longStringTable where id = ${content.mid}"),
-      Row(content.mid, s"name_${content.mid}", content.note_line_mid, s"address_${content.mid}", content.desc_line_mid))
+    checkAnswer(
+      sql(s"SELECT id, name, note, address, description FROM $longStringTable " +
+          s"where id = ${content.mid}"),
+      Row(content.mid,
+        s"name_${ content.mid }",
+        content.note_line_mid,
+        s"address_${ content.mid }",
+        content.desc_line_mid))
     // query by simple string column
-    checkAnswer(sql(s"SELECT id, note, address, description FROM $longStringTable where name = 'name_${content.tail}'"),
+    checkAnswer(sql(s"SELECT id, note, address, description FROM $longStringTable " +
+                    s"where name = 'name_${content.tail}'"),
       Row(content.tail, content.note_line_tail, s"address_${content.tail}", content.desc_line_tail))
     // query by long string column
-    checkAnswer(sql(s"SELECT id, name, address, description FROM $longStringTable where note = '${content.note_line_tail}'"),
-      Row(content.tail, s"name_${content.tail}", s"address_${content.tail}", content.desc_line_tail))
+    checkAnswer(sql(s"SELECT id, name, address, description FROM $longStringTable " +
+                    s"where note = '${content.note_line_tail}'"),
+      Row(content.tail,
+        s"name_${ content.tail }",
+        s"address_${ content.tail }",
+        content.desc_line_tail))
   }
 
   test("Load and query with long string datatype: safe sort & safe columnpage") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
 
     prepareTable()
     checkQuery()
@@ -365,25 +397,28 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("Load and query with long string datatype: safe sort & unsafe column page") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
 
     prepareTable()
     checkQuery()
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-      CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-      CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
+        CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+        CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
+        CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
   }
 
   test("Load and query with long string datatype: unsafe sort & safe column page") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
 
     prepareTable()
     checkQuery()
@@ -397,9 +432,10 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("Load and query with long string datatype: unsafe sort & unsafe column page") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
 
     prepareTable()
     checkQuery()
@@ -420,11 +456,13 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
         | STORED AS carbondata
         | TBLPROPERTIES('long_string_columns'='varchar1,varchar2')
         | """.stripMargin)
-    sql("insert into varchar_complex_table values(1, array('ar1.0','ar1.1'), 'longstr10', 'normal string1', 'longstr11', array('ar2.0','ar2.1')),(2, array('ar1.2','ar1.3'), 'longstr20', 'normal string2', 'longstr21', array('ar2.2','ar2.3'))")
+    sql("insert into varchar_complex_table values(1, array('ar1.0','ar1.1'), 'longstr10', " +
+        "'normal string1', 'longstr11', array('ar2.0','ar2.1')),(2, array('ar1.2','ar1.3'), " +
+        "'longstr20', 'normal string2', 'longstr21', array('ar2.2','ar2.3'))")
     checkAnswer(
       sql("SELECT * FROM varchar_complex_table where varchar1='longstr10'"),
-      Seq(Row(1,mutable.WrappedArray.make(Array("ar1.0","ar1.1")),"longstr10","normal string1",
-        "longstr11",mutable.WrappedArray.make(Array("ar2.0","ar2.1")))))
+      Seq(Row(1, mutable.WrappedArray.make(Array("ar1.0", "ar1.1")), "longstr10", "normal string1",
+        "longstr11", mutable.WrappedArray.make(Array("ar2.0", "ar2.1")))))
     checkAnswer(
       sql(
         """
@@ -432,13 +470,14 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
           |FROM varchar_complex_table
           |WHERE arr1[1]='ar1.3'
           |""".stripMargin),
-      Seq(Row("longstr20",mutable.WrappedArray.make(Array("ar2.2","ar2.3")),"normal string2",2,
-        "longstr21",mutable.WrappedArray.make(Array("ar1.2","ar1.3")))))
+      Seq(Row("longstr20", mutable.WrappedArray.make(Array("ar2.2", "ar2.3")), "normal string2", 2,
+        "longstr21", mutable.WrappedArray.make(Array("ar1.2", "ar1.3")))))
 
     sql("DROP TABLE IF EXISTS varchar_complex_table")
   }
 
-  test("check new schema after modifying schema through alter table queries when long_string_column is not present") {
+  test("check new schema after modifying schema through alter table queries " +
+       "when long_string_column is not present") {
     sql(
       s"""
          | CREATE TABLE if not exists $longStringTable(
@@ -447,16 +486,19 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
          | TBLPROPERTIES('sort_columns'='id,name')
          |""".
         stripMargin)
-    sql(s"alter table long_string_table set tblproperties('sort_columns'='ID','sort_scope'='no_sort')")
+    sql("alter table long_string_table set tblproperties(" +
+        "'sort_columns'='ID','sort_scope'='no_sort')")
     sql(s"alter table long_string_table unset tblproperties('long_string_columns')")
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "long_string_table")
+    val carbonTable = CarbonMetadata.getInstance()
+      .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+        "long_string_table")
     val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala.toList
       .filter(column => column.getColumnName.equalsIgnoreCase("name"))
     assert(columns != null && columns.size > 0 && columns.head.getColumnName.equals("name"))
   }
 
-  test("check new schema after modifying schema through alter table queries when long_string_column is present") {
+  test("check new schema after modifying schema through alter table queries " +
+       "when long_string_column is present") {
     sql(
       s"""
          | CREATE TABLE if not exists $longStringTable(
@@ -466,23 +508,25 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
          |""".
         stripMargin)
     sql(s"alter table long_string_table set tblproperties('long_string_columns'='address')")
-    sql(s"alter table long_string_table set tblproperties('sort_columns'='ID','sort_scope'='no_sort')")
+    sql("alter table long_string_table set tblproperties(" +
+        "'sort_columns'='ID','sort_scope'='no_sort')")
     sql(s"alter table long_string_table unset tblproperties('long_string_columns')")
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "long_string_table")
+    val carbonTable = CarbonMetadata.getInstance()
+      .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "long_string_table")
     val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala.toList
       .filter(column => column.getColumnName.equalsIgnoreCase("name"))
-    assert(columns != null && columns.size > 0 && columns.head.getColumnName.equals("name"))
+    assert(columns != null && columns.nonEmpty && columns.head.getColumnName.equals("name"))
   }
-  
+
   test("update table with long string column") {
     prepareTable()
     // update non-varchar column
-    sql(s"update $longStringTable set(id)=(0) where name is not null").show()
+    sql(s"update $longStringTable set(id)=(0) where name is not null").collect()
     // update varchar column
-    sql(s"update $longStringTable set(description)=('empty') where name is not null").show()
+    sql(s"update $longStringTable set(description)=('empty') where name is not null").collect()
     // update non-varchar&varchar column
-    sql(s"update $longStringTable set(description, id)=('sth.', 1) where name is not null").show()
+    sql(s"update $longStringTable set(description, id)=('sth.', 1) where name is not null")
+      .collect()
   }
 
     // ignore this test in CI, because it will need at least 4GB memory to run successfully
@@ -538,7 +582,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     checkQuery()
   }
 
-  test("write from dataframe with long_string datatype whose order of fields is not the same as that in table") {
+  test("write from dataframe with long_string datatype " +
+       "whose order of fields is not the same as that in table") {
     sql(
       s"""
          | CREATE TABLE if not exists $longStringTable(
@@ -569,7 +614,11 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
          | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'sort_columns'='id')
          |""".
         stripMargin)
-    checkExistence(sql(s"desc formatted $longStringTable"), true, "long_string_columns".toUpperCase, "address", "note")
+    checkExistence(sql(s"desc formatted $longStringTable"),
+      true,
+      "long_string_columns".toUpperCase,
+      "address",
+      "note")
   }
 
   // will create 2 long string columns
@@ -602,7 +651,9 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
         desc_line_tail = description
         note_line_tail = note
       }
+      // scalastyle:off println
       write.println(line)
+      // scalastyle:on println
     }
     write.close()
     Content(head, desc_line_head, note_line_head,
@@ -634,7 +685,9 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
       } else if (tail == i) {
         desc_line_tail = description
       }
+      // scalastyle:off println
       write.println(line)
+      // scalastyle:on println
     }
     write.close()
     Content(head, desc_line_head, "",

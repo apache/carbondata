@@ -35,8 +35,8 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.presto.server.{PrestoServer, PrestoTestUtil}
 import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
-
-class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAfterAll with BeforeAndAfterEach {
+class PrestoTestNonTransactionalTableFiles
+  extends FunSuiteLike with BeforeAndAfterAll with BeforeAndAfterEach {
 
   private val logger = LogServiceFactory
     .getLogService(classOf[PrestoTestNonTransactionalTableFiles].getCanonicalName)
@@ -95,11 +95,9 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
 
   private def createTableBinary = {
     prestoServer.execute("drop table if exists sdk_output.files1")
-    prestoServer
-      .execute(
-        "create table sdk_output.files1(name boolean, age int, id varbinary, height double, salary " +
-        "real) with" +
-        "(format='CARBON') ")
+    prestoServer.execute(
+      "create table sdk_output.files1(name boolean, age int, id varbinary, height double, salary " +
+        "real) with(format='CARBON') ")
   }
 
   def buildTestData(rows: Int, options: util.Map[String, String], varcharDataGen: Boolean): Any = {
@@ -173,7 +171,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
         i += 1
       }
       if (options != null) {
-        //Keep one valid record. else carbon data file will not generate
+        // Keep one valid record. else carbon data file will not generate
         writer
           .write(Array[String]("robot" + i,
             String.valueOf(i),
@@ -383,11 +381,12 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     val writerPathComplex = storePath + "/sdk_output/files4"
     FileUtils.deleteDirectory(new File(writerPathComplex))
     prestoServer.execute("drop table if exists sdk_output.files4")
-    prestoServer
-      .execute(
-        "create table sdk_output.files4(stringField varchar, structField ROW(byteField tinyint, shortField SMALLINT, intField Integer, " +
-        "longField BIGINT, floatField real, doubleField DOUBLE, binaryField varbinary, dateField date, timeStampField timestamp, " +
-        "booleanField boolean, longStringField varchar, decimalField decimal(8,2), stringChildField varchar)) with(format='CARBON') ")
+    prestoServer.execute(
+      "create table sdk_output.files4(stringField varchar, structField ROW(byteField tinyint, " +
+      "shortField SMALLINT, intField Integer, longField BIGINT, floatField real, doubleField " +
+      "DOUBLE, binaryField varbinary, dateField date, timeStampField timestamp, booleanField " +
+      "boolean, longStringField varchar, decimalField decimal(8,2), stringChildField varchar)) " +
+      "with(format='CARBON') ")
 
     val imagePath = rootPath + "/sdk/sdk/src/test/resources/image/carbondatalogo.jpg"
     val bis = new BufferedInputStream(new FileInputStream(imagePath))
@@ -418,11 +417,15 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     ("structField", "struct", fields.asJava))
 
     try {
-      val options: util.Map[String, String] = Map("bAd_RECords_action" -> "FORCE", "quotechar" -> "\"").asJava
+      val options: util.Map[String, String] =
+        Map("bAd_RECords_action" -> "FORCE", "quotechar" -> "\"").asJava
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(writerPathComplex)
-          .uniqueIdentifier(System.nanoTime()).withLoadOptions(options).withBlockSize(2).enableLocalDictionary(false)
+          .uniqueIdentifier(System.nanoTime())
+          .withLoadOptions(options)
+          .withBlockSize(2)
+          .enableLocalDictionary(false)
           .withCsvInput(new Schema(structType)).writtenBy("presto").build()
 
       val array1 = Array[String]("row1",
@@ -467,7 +470,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
 
     for(i <- 0 to 1) {
       val row = actualResult(i)("stringfield")
-      val result = actualResult(i)("structfield").asInstanceOf[java.util.Map[String,Any]]
+      val result = actualResult(i)("structfield").asInstanceOf[java.util.Map[String, Any]]
       if(row == "row1") { assert(result.get("bytefield") == null)
         assert(result.get("shortfield") == null)
         assert(result.get("intfield") == null)
@@ -539,12 +542,12 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     import scala.collection.JavaConverters._
     FileUtils.deleteDirectory(new File(writerPathComplex))
     prestoServer.execute("drop table if exists sdk_output.files5")
-    prestoServer
-      .execute(
-        "create table sdk_output.files5(arrayByte ARRAY(tinyint), arrayShort ARRAY(smallint), arrayInt ARRAY(int), " +
-        "arrayLong ARRAY(bigint), arrayFloat ARRAY(real), arrayDouble ARRAY(double), " +
-        "arrayBinary ARRAY(varbinary), arrayDate ARRAY(date), arrayTimestamp ARRAY(timestamp), arrayBoolean ARRAY(boolean), " +
-        "arrayVarchar ARRAY(varchar), arrayDecimal ARRAY(decimal(8,2)), arrayString ARRAY(varchar), stringField varchar ) with(format='CARBON') ")
+    prestoServer.execute(
+      "create table sdk_output.files5(arrayByte ARRAY(tinyint), arrayShort ARRAY(smallint), " +
+      "arrayInt ARRAY(int), arrayLong ARRAY(bigint), arrayFloat ARRAY(real), arrayDouble ARRAY" +
+      "(double), arrayBinary ARRAY(varbinary), arrayDate ARRAY(date), arrayTimestamp ARRAY" +
+      "(timestamp), arrayBoolean ARRAY(boolean), arrayVarchar ARRAY(varchar), arrayDecimal ARRAY" +
+      "(decimal(8,2)), arrayString ARRAY(varchar), stringField varchar ) with(format='CARBON') ")
 
     val imagePath = rootPath + "/sdk/sdk/src/test/resources/image/carbondatalogo.jpg"
     val bis = new BufferedInputStream(new FileInputStream(imagePath))
@@ -587,13 +590,26 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     val structType14 = new Field("stringField", DataTypes.STRING)
 
     try {
-      val options: util.Map[String, String] = Map("bAd_RECords_action" -> "FORCE", "quotechar" -> "\"").asJava
+      val options: util.Map[String, String] =
+        Map("bAd_RECords_action" -> "FORCE", "quotechar" -> "\"").asJava
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(writerPathComplex).withLoadOptions(options)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).enableLocalDictionary(false)
-          .withCsvInput(new Schema(Array[Field](structType1,structType2,structType3,structType4,structType5,structType6,
-            structType7,structType8,structType9,structType10,structType11,structType12,structType13,structType14))).writtenBy("presto").build()
+          .withCsvInput(new Schema(Array[Field](structType1,
+            structType2,
+            structType3,
+            structType4,
+            structType5,
+            structType6,
+            structType7,
+            structType8,
+            structType9,
+            structType10,
+            structType11,
+            structType12,
+            structType13,
+            structType14))).writtenBy("presto").build()
 
       var array = Array[String](null,
         null,
@@ -613,7 +629,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       array = Array[String]("3" + "\001" + "5" + "\001" + "4",
         "4" + "\001" + "5" + "\001" + "6",
         "4",
-        "2" + "\001" + "59999999" + "\001" + "99999999999" ,
+        "2" + "\001" + "59999999" + "\001" + "99999999999",
         "5.4646" + "\001" + "5.55" + "\001" + "0.055",
         "5.46464646464" + "\001" + "5.55" + "\001" + "0.055",
         binaryValue,

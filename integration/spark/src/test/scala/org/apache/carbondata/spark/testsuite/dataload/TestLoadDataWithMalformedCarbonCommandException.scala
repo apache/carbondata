@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import org.scalatest.BeforeAndAfterAll
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 

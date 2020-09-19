@@ -85,7 +85,9 @@ class TestDeleteStageFiles extends QueryTest {
         writerProperties,
         carbonProperties
       )
-      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+      val streamSink = StreamingFileSink
+        .forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory)
+        .build
 
       stream.addSink(streamSink)
 
@@ -102,7 +104,10 @@ class TestDeleteStageFiles extends QueryTest {
 
       // ensure the stage snapshot file and all stage files are deleted
       assertResult(false)(FileFactory.isFileExist(CarbonTablePath.getStageSnapshotFile(tablePath)))
-      assertResult(true)(FileFactory.getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
+      assertResult(true)(FileFactory
+        .getCarbonFile(CarbonTablePath.getStageDir(tablePath))
+        .listFiles()
+        .isEmpty)
 
       sql(s"DELETE FROM TABLE $tableName STAGE OPTIONS('retain_hour'='0')")
       val dataLocation = new File(CarbonTablePath.getStageDataDir(tablePath))
@@ -163,7 +168,9 @@ class TestDeleteStageFiles extends QueryTest {
         writerProperties,
         carbonProperties
       )
-      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+      val streamSink = StreamingFileSink
+        .forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory)
+        .build
 
       stream.addSink(streamSink)
 
@@ -180,7 +187,10 @@ class TestDeleteStageFiles extends QueryTest {
 
       // ensure the stage snapshot file and all stage files are deleted
       assertResult(false)(FileFactory.isFileExist(CarbonTablePath.getStageSnapshotFile(tablePath)))
-      assertResult(true)(FileFactory.getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
+      assertResult(true)(FileFactory
+        .getCarbonFile(CarbonTablePath.getStageDir(tablePath))
+        .listFiles()
+        .isEmpty)
 
       sql(s"DELETE FROM TABLE $tableName STAGE OPTIONS('retain_hour'='0')")
       val dataLocation = new File(CarbonTablePath.getStageDataDir(tablePath))
@@ -240,7 +250,9 @@ class TestDeleteStageFiles extends QueryTest {
         writerProperties,
         carbonProperties
       )
-      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+      val streamSink = StreamingFileSink
+        .forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory)
+        .build
 
       stream.addSink(streamSink)
 

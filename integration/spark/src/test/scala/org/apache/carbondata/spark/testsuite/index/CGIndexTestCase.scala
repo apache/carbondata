@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.carbondata.spark.testsuite.index
 
 import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
@@ -30,17 +29,17 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexModel, IndexWriter}
-import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexModel, IndexWriter}
+import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
-import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.scan.expression.Expression
@@ -55,12 +54,14 @@ import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlo
 class CGIndexFactory(
     carbonTable: CarbonTable,
     indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
+  // scalastyle:off ???
   var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-
   /**
    * Return a new write for this indexSchema
    */
-  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
+  override def createWriter(segment: Segment,
+      shardName: String,
+      segmentProperties: SegmentProperties): IndexWriter = {
     new CGIndexWriter(carbonTable, segment, shardName, indexSchema)
   }
 
@@ -93,7 +94,6 @@ class CGIndexFactory(
   }
 
   /**
-   *
    * @param event
    */
   override def fireEvent(event: Event): Unit = {
@@ -112,7 +112,7 @@ class CGIndexFactory(
 
     val files = file.listFiles()
     files.map { f =>
-      val d:IndexInputSplit = new BlockletIndexInputSplit(f.getCanonicalPath)
+      val d: IndexInputSplit = new BlockletIndexInputSplit(f.getCanonicalPath)
       d
     }.toList.asJava
   }
@@ -211,7 +211,7 @@ class CGIndex extends CoarseGrainIndex {
       f.getChildren.get(1).evaluate(null).getString
     }
     val meta = findMeta(value(0).getBytes)
-    meta.map { f=>
+    meta.map { f =>
       new Blocklet(shardName, f._1 + "")
     }.asJava
   }
@@ -225,7 +225,8 @@ class CGIndex extends CoarseGrainIndex {
     tuples
   }
 
-  private def getEqualToExpression(expression: Expression, buffer: ArrayBuffer[Expression]): Unit = {
+  private def getEqualToExpression(expression: Expression,
+      buffer: ArrayBuffer[Expression]): Unit = {
     if (expression.isInstanceOf[EqualToExpression]) {
       buffer += expression
     } else {
@@ -243,7 +244,7 @@ class CGIndex extends CoarseGrainIndex {
   /**
    * Clear complete index table and release memory.
    */
-  override def clear() = {
+  override def clear(): Unit = {
     ???
   }
 
@@ -252,7 +253,7 @@ class CGIndex extends CoarseGrainIndex {
   /**
    * clears all the resources for indexs
    */
-  override def finish() = {
+  override def finish(): Unit = {
     ???
   }
 
@@ -363,7 +364,7 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
   val file2 = resourcesPath + "/compaction/fil2.csv"
 
   override protected def beforeAll(): Unit = {
-    //n should be about 5000000 of reset if size is default 1024
+    // n should be about 5000000 of reset if size is default 1024
     val n = 150000
     CompactionSupportGlobalSortBigFileTest.createFile(file2, n * 4, n)
     CarbonProperties.getInstance()
@@ -401,8 +402,10 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    sql(s"create index ggindex1 on table index_test (name) as '${classOf[CGIndexFactory].getName}' ")
-    sql(s"create index ggindex2 on table index_test (city) as '${classOf[CGIndexFactory].getName}' ")
+    sql(s"create index ggindex1 on table index_test (name) " +
+        s"as '${classOf[CGIndexFactory].getName}' ")
+    sql(s"create index ggindex2 on table index_test (city) " +
+        s"as '${classOf[CGIndexFactory].getName}' ")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from index_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
@@ -435,14 +438,16 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
          | AS '${classOf[CGIndexFactory].getName}'
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
-    val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName " +
+                  s"WHERE name='n502670' AND city='c2670'").collect()
     assert(df1(0).getString(0).contains("CG Index"))
     assert(df1(0).getString(0).contains(indexName1))
     assert(df1(0).getString(0).contains(indexName2))
 
     // make index1 invisible
     sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName1 = false")
-    val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName " +
+                  s"WHERE name='n502670' AND city='c2670'").collect()
     val e = intercept[Exception] {
       assert(df2(0).getString(0).contains(indexName1))
     }
@@ -455,7 +460,8 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName2 = false")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
-    val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName " +
+                  s"WHERE name='n502670' AND city='c2670'").collect()
     val e31 = intercept[Exception] {
       assert(df3(0).getString(0).contains(indexName1))
     }
@@ -470,7 +476,8 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName1 = true")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
-    val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName " +
+                  s"WHERE name='n502670' AND city='c2670'").collect()
     assert(df4(0).getString(0).contains(indexName1))
     val e41 = intercept[Exception] {
       assert(df3(0).getString(0).contains(indexName2))
@@ -491,5 +498,5 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
         CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
-
+  // scalastyle:on ???
 }

@@ -18,11 +18,12 @@
 package org.apache.carbondata.spark.testsuite.createTable
 
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.hive.MapredCarbonInputFormat
-import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 
 class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
 

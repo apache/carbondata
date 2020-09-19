@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite.matching
 
 object TestTPCDS_1_4_Batch {
+  // scalastyle:off
   val tpcds_1_4_testCases = Seq(
       // sequence of triples.  each triple denotes (MV, user query, rewritten query)
       // test case 1: test SELECT-SELECT-EXACT_MATCH with simple SELECT (extract from q45)
@@ -2917,4 +2919,5 @@ object TestTPCDS_1_4_Batch {
         |GROUP BY gen_subsumer_0.`prod_name`
         """.stripMargin.trim)
   )
+  // scalastyle:on
 }

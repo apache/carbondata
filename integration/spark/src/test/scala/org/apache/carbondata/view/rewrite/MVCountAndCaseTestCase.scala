@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
 import org.apache.spark.sql.test.util.QueryTest
@@ -31,7 +32,7 @@ class MVCountAndCaseTestCase  extends QueryTest with BeforeAndAfterAll{
          |using carbondata""".stripMargin)
   }
 
-  def drop(): Unit ={
+  def drop(): Unit = {
     sql("drop table if exists region")
     sql("drop table if exists data_table")
   }
@@ -57,13 +58,16 @@ class MVCountAndCaseTestCase  extends QueryTest with BeforeAndAfterAll{
                        |   END) AS rate
                        | FROM (
                        |   SELECT sum_result.*, H_REGION.`2250410101` FROM
-                       |   (SELECT cast(floor((starttime + 28800) / 3600) * 3600 - 28800 as int) AS `3600`,
+                       |   (SELECT
+                       |    cast(floor((starttime + 28800) / 3600) * 3600 - 28800 as int) AS `3600`,
                        |     LAYER4ID,
                        |     COALESCE(SUM(seq), 0) AS seq_c,
                        |     COALESCE(SUM(succ), 0) AS succ_c
                        |       FROM data_table
                        |       WHERE STARTTIME >= 1549866600 AND STARTTIME < 1549899900
-                       |       GROUP BY cast(floor((STARTTIME + 28800) / 3600) * 3600 - 28800 as int),LAYER4ID
+                       |       GROUP BY
+                       |        cast(floor((STARTTIME + 28800) / 3600) * 3600 - 28800 as int),
+                       |        LAYER4ID
                        |   )sum_result
                        |   LEFT JOIN
                        |   (SELECT l4id AS `225040101`,

@@ -14,20 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.sortcolumns
 
-import org.apache.spark.sql.{AnalysisException, Row}
-import org.scalatest.BeforeAndAfterAll
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil4Test
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 class TestSortColumns extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
@@ -122,7 +122,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   test("create table with dictionary sort_columns") {
     sql("CREATE TABLE sorttable2 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='empname')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-    checkAnswer(sql("select empname from sorttable2"),sql("select empname from origintable1"))
+    checkAnswer(sql("select empname from sorttable2"), sql("select empname from origintable1"))
   }
 
   test("create table with direct-dictioanry sort_columns") {
@@ -289,7 +289,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   test("describe formatted for sort_columns") {
     sql("CREATE TABLE sorttableDesc (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='empno,empname')")
-    checkExistence(sql("describe formatted sorttableDesc"),true,"Sort Columns empno, empname")
+    checkExistence(sql("describe formatted sorttableDesc"), true, "Sort Columns empno, empname")
   }
 
   test("duplicate columns in sort_columns") {
@@ -333,18 +333,17 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT)
   }
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     dropTestTables
     CarbonProperties.getInstance()
-      .addProperty(
-        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
       .removeProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
       .addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
         CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT)
   }
 
-  def dropTestTables = {
+  private def dropTestTables = {
     sql("drop table if exists test1")
     sql("drop table if exists sortint")
     sql("drop table if exists sortint1")
@@ -386,9 +385,16 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, unsafe)
   }
 
-  def defaultLoadingProperties = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+  private def defaultLoadingProperties = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+        CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
+        CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
   }
+  // scalastyle:on lineLength
 }

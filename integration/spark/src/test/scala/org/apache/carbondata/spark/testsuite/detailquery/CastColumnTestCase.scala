@@ -17,25 +17,25 @@
 
 package org.apache.carbondata.spark.testsuite.detailquery
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test Class for Range Filters.
  */
 class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
-    //For the Hive table creation and data loading
+    // For the Hive table creation and data loading
     sql("drop table if exists DICTIONARY_CARBON_1")
     sql("drop table if exists DICTIONARY_HIVE_1")
     sql("drop table if exists NO_DICTIONARY_CARBON_2")
     sql("drop table if exists NO_DICTIONARY_HIVE_2")
 
-    //For Carbon cube creation.
+    // For Carbon cube creation.
     sql("CREATE TABLE DICTIONARY_CARBON_1 (empno string, " +
         "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
@@ -132,8 +132,8 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Dictionary INT OR to explicit double") {
-    sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_1 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0").show(2000, false)
-    sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_1 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ").show(2000, false)
+    sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_1 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0").collect()
+    sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_1 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ").collect()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_1 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_1 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ")
@@ -565,8 +565,8 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("NO Dictionary INT OR to explicit double") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_2 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0").show(2000, false)
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_2 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ").show(2000, false)
+    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_2 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0").collect()
+    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_2 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ").collect()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_2 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_2 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ")
@@ -974,4 +974,5 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_HIVE_2")
     sql("drop table if exists cast_rand")
   }
+  // scalastyle:on lineLength
 }

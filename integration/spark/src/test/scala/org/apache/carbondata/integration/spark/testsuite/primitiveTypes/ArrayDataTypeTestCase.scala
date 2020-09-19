@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.primitiveTypes
 
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 

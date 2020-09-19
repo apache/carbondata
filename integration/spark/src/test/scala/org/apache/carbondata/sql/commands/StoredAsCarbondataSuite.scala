@@ -46,7 +46,9 @@ class StoredAsCarbondataSuite extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("SELECT * FROM carbon_table"), Seq(Row(28, "Bob")))
   }
 
-  test("CARBONDATA-2262: Support the syntax of 'STORED AS carbondata, get data size and index size after minor compaction") {
+  test("CARBONDATA-2262: Support the syntax of 'STORED AS carbondata, " +
+       "get data size and index size after minor compaction") {
+    // scalastyle:off lineLength
     sql("CREATE TABLE tableSize3 (empno INT, workgroupcategory STRING, deptno INT, projectcode INT, attendance INT) STORED AS carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
@@ -54,12 +56,17 @@ class StoredAsCarbondataSuite extends QueryTest with BeforeAndAfterEach {
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
-    sql("ALTER TABLE tableSize3 COMPACT 'minor'")
-    checkExistence(sql("DESCRIBE FORMATTED tableSize3"), true, CarbonCommonConstants.TABLE_DATA_SIZE)
-    checkExistence(sql("DESCRIBE FORMATTED tableSize3"), true, CarbonCommonConstants.TABLE_INDEX_SIZE)
+    // scalastyle:on lineLength
     val res3 = sql("DESCRIBE FORMATTED tableSize3").collect()
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
-        row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
+                     row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
+    sql("ALTER TABLE tableSize3 COMPACT 'minor'")
+    checkExistence(sql("DESCRIBE FORMATTED tableSize3"),
+    true,
+    CarbonCommonConstants.TABLE_DATA_SIZE)
+    checkExistence(sql("DESCRIBE FORMATTED tableSize3"),
+    true,
+    CarbonCommonConstants.TABLE_INDEX_SIZE)
     assert(res3.length == 2)
     res3.foreach(row => assert(row.getString(1).trim.substring(0, 3).toDouble > 0))
   }

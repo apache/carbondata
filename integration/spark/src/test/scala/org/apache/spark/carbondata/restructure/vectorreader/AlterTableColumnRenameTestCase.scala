@@ -19,7 +19,6 @@ package org.apache.spark.carbondata.restructure.vectorreader
 
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -66,7 +65,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table rename change empname workgroupcategoryname string")
     }
-    assert(ex.getMessage.contains("New column name workgroupcategoryname already exists in table rename"))
+    assert(ex.getMessage.contains(
+      "New column name workgroupcategoryname already exists in table rename"))
   }
 
   test("test change column command with comment") {
@@ -89,7 +89,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
 
     // Partition Column
     val ex = intercept[ProcessMetaDataException] {
-      sql(s"alter table rename_partition change projectcode projectcode int comment 'partitoncolumn comment'")
+      sql("alter table rename_partition " +
+          "change projectcode projectcode int comment 'partitoncolumn comment'")
     }
     ex.getMessage.contains(s"Alter on partition column projectcode is not supported")
     checkExistence(sql(s"describe formatted rename_partition"), false, "partitoncolumn comment")
@@ -102,7 +103,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
       "name", "string", "string", "bucket comment", false)
   }
 
-  test("column rename for different datatype"){
+  test("column rename for different datatype") {
     dropTable()
     createTable()
     sql("alter table rename change projectenddate newDate Timestamp")
@@ -114,14 +115,18 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(null == carbonTable.getColumnByName("workgroupcategory"))
   }
 
-  test("query count after column rename and filter results"){
+  test("query count after column rename and filter results") {
     dropTable()
     createNonPartitionTableAndLoad()
     val df1 = sql("select empname from rename").collect()
-    val df3 = sql("select workgroupcategory from rename where empname = 'bill' or empname = 'sibi'").collect()
+    val df3 =
+      sql("select workgroupcategory from rename where empname = 'bill' or empname = 'sibi'")
+        .collect()
     sql("alter table rename change empname empAddress string")
     val df2 = sql("select empAddress from rename").collect()
-    val df4 = sql("select workgroupcategory from rename where empAddress = 'bill' or empAddress = 'sibi'").collect()
+    val df4 =
+      sql("select workgroupcategory from rename where empAddress = 'bill' or empAddress = 'sibi'")
+        .collect()
     intercept[Exception] {
       sql("select empname from rename")
     }
@@ -129,7 +134,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(df3.length == df4.length)
   }
 
-  test("compaction after column rename and count"){
+  test("compaction after column rename and count") {
     dropTable()
     createNonPartitionTableAndLoad()
     for(i <- 0 to 2) {
@@ -165,8 +170,9 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     dropTable()
     createNonPartitionTableAndLoad()
     sql("alter table rename change empname name string")
-    sql("update rename set (name) = ('joey') where workgroupcategory = 'developer'").show()
-    sql("insert into rename select 20,'bill','PM','01-12-2015',3,'manager',14,'Learning',928479,'01-01-2016','30-11-2016',75,94,13547")
+    sql("update rename set (name) = ('joey') where workgroupcategory = 'developer'").collect()
+    sql("insert into rename select 20,'bill','PM','01-12-2015',3,'manager',14,'Learning'," +
+        "928479,'01-01-2016','30-11-2016',75,94,13547")
     val df1Count = sql("select * from rename where name = 'joey'").count
     sql("alter table rename change name empname string")
     val df2 = sql("select * from rename where empname = 'joey'")
@@ -181,14 +187,16 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(df3.count() == df4.count())
   }
 
-  test("test sort columns, local dictionary and other column properties in DESC formatted, check case sensitive also") {
+  test("test sort columns, local dictionary and other column properties in DESC formatted, " +
+       "check case sensitive also") {
     dropTable()
     sql(
       "CREATE TABLE rename (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
       "utilization int,salary int) STORED AS carbondata tblproperties(" +
-      "'local_dictionary_include'='workgroupcategoryname','local_dictionary_exclude'='deptname','COLUMN_META_CACHE'='projectcode,attendance'," +
+      "'local_dictionary_include'='workgroupcategoryname','local_dictionary_exclude'='deptname'," +
+      "'COLUMN_META_CACHE'='projectcode,attendance'," +
       "'SORT_COLUMNS'='workgroupcategory,utilization,salary')")
     sql("alter table rename change eMPName name string")
     sql("alter table rename change workgroupcategoryname workgroup string")
@@ -277,8 +285,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test rename on complex column") {
     sql("drop table if exists complex")
-    sql(
-      "create table complex (id int, name string, structField struct<intval:int, stringval:string>) STORED AS carbondata")
+    sql("create table complex (id int, name string, " +
+        "structField struct<intval:int, stringval:string>) STORED AS carbondata")
     val ex = intercept[AnalysisException] {
       sql("alter table complex change structField complexTest struct")
     }
@@ -292,7 +300,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     val ex = intercept[Exception] {
       sql("alter table rename set tblproperties('column_meta_cache'='workgroupcategoryname')")
     }
-    assert(ex.getMessage.contains("Column workgroupcategoryname does not exists in the table rename"))
+    assert(ex.getMessage.contains(
+      "Column workgroupcategoryname does not exists in the table rename"))
     sql("alter table rename set tblproperties('column_meta_cache'='testset')")
     val descLoc = sql("describe formatted rename").collect
     descLoc.find(_.get(0).toString.contains("Cached Min/Max Index Columns")) match {
@@ -343,7 +352,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE test_rename OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
     sql("alter table test_rename rename to test_rename_compact")
-    sql("alter table test_rename_compact set tblproperties('sort_columns'='deptno,projectcode', 'sort_scope'='local_sort')")
+    sql("alter table test_rename_compact set tblproperties(" +
+        "'sort_columns'='deptno,projectcode', 'sort_scope'='local_sort')")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE test_rename_compact OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
@@ -366,7 +376,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE test_alter OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
-    sql("alter table test_alter set tblproperties('sort_columns'='deptno,projectcode', 'sort_scope'='local_sort')")
+    sql("alter table test_alter set tblproperties(" +
+        "'sort_columns'='deptno,projectcode', 'sort_scope'='local_sort')")
     sql("alter table test_alter drop columns(deptno)")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE test_alter OPTIONS
@@ -420,8 +431,10 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
       "testcase4_2_col_renmaed", "decimal(30,10)", "decimal(32,11)", "testcase4_2 comment", true)
 
     // testcase5: special characters in comments
+    // scalastyle:off
     testChangeColumnWithComment(tableName, "testcase5_1_col",
       "testcase5_1_col_renamed", "string", "string", "测试comment", true)
+    // scalastyle:on
     testChangeColumnWithComment(tableName, "testcase5_2_col",
       "testcase5_2_col_renmaed", "decimal(30,10)", "decimal(32,11)", "\001\002comment", true)
   }
@@ -433,7 +446,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     if (needCreateOldColumn) {
       sql(s"alter table $tableName add columns ($oldColumnName $oldDataType)")
     }
-    sql(s"alter table $tableName change $oldColumnName $newColumnName $newDataType comment '$comment'")
+    sql(s"alter table $tableName " +
+        s"change $oldColumnName $newColumnName $newDataType comment '$comment'")
     checkExistence(sql(s"describe formatted $tableName"), true, comment)
     if (!newDataType.equalsIgnoreCase(oldDataType)) {
       sql(s"describe formatted $tableName")
@@ -467,7 +481,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
   }
 
-  def loadToTable():Unit = {
+  def loadToTable(): Unit = {
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE rename OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)

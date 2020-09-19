@@ -27,7 +27,7 @@ import org.scalatest.BeforeAndAfterAll
  * carbon table having Secondary index column
  */
 class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
-
+  // scalastyle:off lineLength
   override def beforeAll: Unit = {
     dropTables()
     sql(
@@ -148,7 +148,7 @@ class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
     val df = sql("explain extended select c_phone,c_mktsegment from carbon_table where c_mktsegment like 'BU%'").collect()
     df(0).getString(0).contains("default.sc_indx1")
     sql("create table carbon_table1 stored as carbondata as select c_phone,c_mktsegment from carbon_table where c_mktsegment like 'BU%'")
-    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989","BUILDING")))
+    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989", "BUILDING")))
     sql("drop table if exists carbon_table1")
   }
 
@@ -157,7 +157,7 @@ class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
     val df = sql("explain extended select first_value(c_phone), first_value(c_mktsegment) as a from carbon_table where c_mktsegment like 'BU%'").collect()
     df(0).getString(0).contains("default.sc_indx1")
     sql("create table carbon_table1 stored as carbondata as select first_value(c_phone) as a,first_value(c_mktsegment) as b from carbon_table where c_mktsegment like 'BU%'")
-    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989","BUILDING")))
+    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989", "BUILDING")))
     sql("drop table if exists carbon_table1")
   }
 
@@ -166,7 +166,7 @@ class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
     val df = sql("explain extended select last_value(c_phone),last_value(c_mktsegment) as a from carbon_table where c_mktsegment like 'BU%'").collect()
     df(0).getString(0).contains("default.sc_indx1")
     sql("create table carbon_table1 stored as carbondata as select last_value(c_phone) as a ,last_value(c_mktsegment) as b from carbon_table where c_mktsegment like 'BU%'")
-    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989","BUILDING")))
+    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989", "BUILDING")))
     sql("drop table if exists carbon_table1")
   }
 
@@ -175,7 +175,7 @@ class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
     val df = sql("explain extended select first(c_phone),first(c_mktsegment) as a from carbon_table where c_mktsegment like 'BU%'").collect()
     df(0).getString(0).contains("default.sc_indx1")
     sql("create table carbon_table1 stored as carbondata as select first(c_phone) as a,first(c_mktsegment) as b from carbon_table where c_mktsegment like 'BU%'")
-    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989","BUILDING")))
+    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989", "BUILDING")))
     sql("drop table if exists carbon_table1")
   }
 
@@ -184,7 +184,7 @@ class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
     val df = sql("explain extended select last(c_phone),last(c_mktsegment) as a from carbon_table where c_mktsegment like 'BU%'").collect()
     df(0).getString(0).contains("default.sc_indx1")
     sql("create table carbon_table1 stored as carbondata as select last(c_phone) as a,last(c_mktsegment) as b from carbon_table where c_mktsegment like 'BU%'")
-    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989","BUILDING")))
+    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989", "BUILDING")))
     sql("drop table if exists carbon_table1")
   }
 
@@ -202,7 +202,7 @@ class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
   }
 
   test("test ctas with carbon table with SI having cast of UDF functions") {
-    if(SparkUtil.isSparkVersionEqualTo("2.3")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.3")) {
       sql("drop table if exists carbon_table1")
       val query =
         "select cast(approx_count_distinct(empname) as string) as c1, cast(approx_count_distinct" +
@@ -334,7 +334,8 @@ class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
     df = sql("explain extended select c_phone from carbon_table where c_phone = '25-989-741-2989' union all select c_phone from carbon_table  where c_phone = '25-989-741-2989'").collect()
     df(0).getString(0).contains("default.sc_indx1")
     sql("create table carbon_table1 stored as carbondata as select c_phone from carbon_table where c_phone = '25-989-741-2989' union all select c_phone from carbon_table  where c_phone = '25-989-741-2989'")
-    checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989"),Row("25-989-741-2989")))
+    checkAnswer(sql("select * from carbon_table1"),
+      Seq(Row("25-989-741-2989"), Row("25-989-741-2989")))
     sql("drop table if exists carbon_table1")
   }
 
@@ -346,4 +347,5 @@ class TestCTASWithIndex extends QueryTest with BeforeAndAfterAll{
     checkAnswer(sql("select * from carbon_table1"), Seq(Row("25-989-741-2989", "25-989-741-2989")))
     sql("drop table if exists carbon_table1")
   }
+  // scalastyle:on lineLength
 }

@@ -18,13 +18,15 @@
 package org.apache.carbondata.spark.util
 
 import java.io.{BufferedWriter, File, FileFilter, FileWriter}
+
 import scala.collection.mutable.ListBuffer
+
 import au.com.bytecode.opencsv.CSVWriter
+import org.apache.commons.io.FileUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.commons.io.FileUtils
 
 object BadRecordUtil {
 

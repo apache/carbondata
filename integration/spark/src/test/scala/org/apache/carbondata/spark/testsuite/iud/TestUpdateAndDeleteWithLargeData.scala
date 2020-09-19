@@ -19,8 +19,8 @@ package org.apache.carbondata.spark.testsuite.iud
 
 import java.text.SimpleDateFormat
 
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -72,7 +72,7 @@ class TestUpdateAndDeleteWithLargeData extends QueryTest with BeforeAndAfterAll 
 
     sql(
       """
-            update ORDERS set (o_comment) = ('yyy')""").show()
+            update ORDERS set (o_comment) = ('yyy')""").collect()
     checkAnswer(sql(
       """select o_comment from orders limit 2 """), Seq(Row("yyy"), Row("yyy")))
 

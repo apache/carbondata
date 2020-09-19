@@ -16,20 +16,19 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
-.isFilterPushedDownToSI;
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 /**
  * test class for verifying the OR filter pushDown filter to SI table
  */
 class TestIndexModelForORFilterPushDown extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   private def dropTables: Unit = {
     sql("drop index if exists index_i1 on or_filter_pushDownValidation")
     sql("drop index if exists index_i2 on or_filter_pushDownValidation")
@@ -234,4 +233,5 @@ class TestIndexModelForORFilterPushDown extends QueryTest with BeforeAndAfterAll
   override def afterAll: Unit = {
     dropTables
   }
+  // scalastyle:on lineLength
 }

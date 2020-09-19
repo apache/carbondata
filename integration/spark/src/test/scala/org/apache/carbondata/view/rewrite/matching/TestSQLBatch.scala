@@ -14,10 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite.matching
 
 object TestSQLBatch {
-
+  // scalastyle:off lineLength
   // seq of (summaryDataset(MV), testUserSQL(Q), correctRewrittenSQL)
   val sampleTestCases = Seq(
     ("case_1",
@@ -231,4 +232,5 @@ object TestSQLBatch {
         |WHERE
         |  (gen_subsumer_0.`faid` = 3)
      """.stripMargin.trim))
+  // scalastyle:on lineLength
 }

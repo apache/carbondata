@@ -49,7 +49,7 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists index_dest1 on dest")
     sql("create index index_dest1 on table dest (c3) AS 'carbondata'")
     sql("drop index if exists index_dest2 on dest")
-    //create second index table , result should be same
+    // create second index table , result should be same
     sql("create index index_dest2 on table dest (c3,c5) AS 'carbondata'")
     // delete all rows in the segment
     sql("delete from dest d where d.c2 not in (56)").show
@@ -80,7 +80,7 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
         .equals(SegmentStatus.MARKED_FOR_DELETE.getMessage))
     }
 
-    //load again and check result
+    // load again and check result
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table dest""")
     checkAnswer(
       sql("""select c3 from dest"""),
@@ -162,7 +162,8 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
       case ex: Exception => assert(true)
     }
     sql(" select *  from t10").show()
-    checkAnswer(sql(" select country from t10 where country = 'china' order by id limit 1"), Row("china"))
+    checkAnswer(sql(" select country from t10 where country = 'china' order by id limit 1"),
+      Row("china"))
   }
 
   test("test index with IUD delete and compaction") {
@@ -396,7 +397,8 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists dest")
   }
 
-  test("test SI with more than 2 Union and Union All with different table donotPushtoSI operations") {
+  test("test SI with more than 2 Union " +
+       "and Union All with different table donotPushtoSI operations") {
     sql("drop table if exists dest")
     sql("drop table if exists dest1")
     sql("drop table if exists dest_parquet")
@@ -424,7 +426,8 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
         "dest_parquet1 where c3 = 'abc' union all select c3 from dest_parquet1 " +
         "where c3 != 'abc'"))
     checkAnswer(sql(
-      "select c3 from dest where c3 like '%bc' union select c3 from dest1  where c3 not like '%bc'"),
+      "select c3 from dest where c3 like '%bc' " +
+      "union select c3 from dest1  where c3 not like '%bc'"),
       sql("select c3 from dest_parquet where c3 like '%bc' union select c3 from " +
           "dest_parquet1 where c3 not like '%bc'"))
     checkAnswer(sql("select c3 from dest where c3 like '%bc' union all " +
@@ -432,7 +435,8 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
       sql("select c3 from dest_parquet where c3 like '%bc' union all select c3 from " +
           "dest_parquet1  where c3 not like '%bc'"))
     checkAnswer(sql(
-      "select c3 from dest where c3 in ('abc') union select c3 from dest1  where c3 not in ('abc')"),
+      "select c3 from dest where c3 in ('abc') " +
+      "union select c3 from dest1  where c3 not in ('abc')"),
       sql("select c3 from dest_parquet where c3 in ('abc') union select c3 from " +
           "dest_parquet1 where c3 not in ('abc')"))
     checkAnswer(sql("select c3 from dest where c3 in ('abc') union all " +

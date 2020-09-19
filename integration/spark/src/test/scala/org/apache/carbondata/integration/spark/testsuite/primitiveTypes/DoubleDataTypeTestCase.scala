@@ -18,9 +18,9 @@ package org.apache.carbondata.integration.spark.testsuite.primitiveTypes
 
 import java.util.Random
 
+import org.apache.spark.sql.{DataFrame, Row, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -79,19 +79,12 @@ class DoubleDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   test("duplicate values") {
     sql("create table uniq_carbon(name string, double_column double) STORED AS carbondata ")
     sql(s"load data inpath '$resourcesPath/uniq.csv' into table uniq_carbon")
-    sql("create table uniq_hive(name string, double_column double) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
+    sql("create table uniq_hive(name string, double_column double) " +
+        "ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
     sql(s"load data local inpath '$resourcesPath/uniqwithoutheader.csv' into table uniq_hive")
     checkAnswer(sql("select * from uniq_carbon where double_column>=11"),
       sql("select * from uniq_hive where double_column>=11"))
   }
-
-//  test("agg query") {
-//    checkAnswer(sql("select city, sum(m1), avg(m1), count(m1), max(m1), min(m1) from doubleTypeCarbonTable group by city"),
-//      sql("select city, sum(m1), avg(m1), count(m1), max(m1), min(m1) from doubleTypeHiveTable group by city"))
-//
-//    checkAnswer(sql("select city, sum(m2), avg(m2), count(m2), max(m2), min(m2) from doubleTypeCarbonTable group by city"),
-//      sql("select city, sum(m2), avg(m2), count(m2), max(m2), min(m2) from doubleTypeHiveTable group by city"))
-//  }
 
   override def afterAll {
     sql("drop table if exists uniq_carbon")

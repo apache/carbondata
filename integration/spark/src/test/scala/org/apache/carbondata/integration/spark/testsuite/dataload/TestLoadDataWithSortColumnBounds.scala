@@ -21,9 +21,9 @@ import java.io.{File, FileOutputStream, OutputStreamWriter, Serializable}
 
 import scala.util.Random
 
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -130,8 +130,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata " +
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     // load with 4 bounds
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -152,8 +152,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata " +
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     // load with 4 bounds
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -171,8 +171,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
   test("load data with sort column bounds: empty column value in bounds is treated as null") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata " +
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     // bounds have empty value
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -188,8 +188,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
   test("load data with sort column bounds: sort column bounds will be ignored if it is empty.") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata " +
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
         s" OPTIONS('fileheader'='ID,date,country,name,phonetype,serialname,salary'," +
@@ -201,11 +201,12 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
-  test("load data with sort column bounds: number of column value in bounds should match that of sort column") {
+  test("load data with sort column bounds: " +
+       "number of column value in bounds should match that of sort column") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata " +
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     val e = intercept[Exception] {
       // number of column value does not match that of sort columns
@@ -234,11 +235,12 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
-  test("load data with sort column bounds: sort column bounds will be ignored if not using local_sort") {
+  test("load data with sort column bounds: " +
+       "sort column bounds will be ignored if not using local_sort") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata " +
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name','sort_scope'='global_sort')")
     // since the sort_scope is 'global_sort', we will ignore the sort column bounds,
     // so the error in sort_column bounds will not be thrown
@@ -257,8 +259,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
        " means all dimension columns will be sort columns, so bounds should be set correctly") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata")
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata")
     // the sort_columns will have 5 columns if we don't specify it explicitly
     val e = intercept[Exception] {
       sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -276,11 +278,12 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
   test("load data with sort column bounds: sort column is global dictionary encoded") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata " +
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     // ID is sort column and dictionary column. Since the actual order and literal order of
-    // this column are not necessarily the same, this will not cause error but will cause data skewed.
+    // this column are not necessarily the same,
+    // this will not cause error but will cause data skewed.
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
         s" OPTIONS('fileheader'='ID,date,country,name,phonetype,serialname,salary'," +
         s" 'sort_column_bounds'='400,name400;800,name800;1200,name1200;1600,name1600')")
@@ -295,8 +298,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
        " but bounds are not in dictionary") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 
-    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata " +
+    sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='name,ID')")
     // 'name' is sort column and dictionary column, but value for 'name' in bounds does not exists
     // in dictionary. It will not cause error but will cause data skewed.
@@ -322,8 +325,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
       .mode(SaveMode.Overwrite)
       .save()
 
-    sql(s"select count(*) from $tableName").show()
-    sql(s"select count(*) from $tableName where ID > 1001").show()
+    sql(s"select count(*) from $tableName").collect()
+    sql(s"select count(*) from $tableName where ID > 1001").collect()
 
     checkAnswer(sql(s"select count(*) from $tableName"), Row(totalLineNum))
     checkAnswer(sql(s"select count(*) from $tableName where ID > 1001"), Row(totalLineNum - 1001))
@@ -331,7 +334,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
-  test("load data frame with sort column bounds: number of column value in bounds should match that of sort column") {
+  test("load data frame with sort column bounds: " +
+       "number of column value in bounds should match that of sort column") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     val e = intercept[Exception] {

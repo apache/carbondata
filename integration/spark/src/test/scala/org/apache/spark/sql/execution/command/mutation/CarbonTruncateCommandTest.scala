@@ -41,7 +41,7 @@ class CarbonTruncateCommandTest extends QueryTest with BeforeAndAfterAll {
     assert(getTableSize("default", s"dli_stored$index") == 0)
   }
 
-  private def getTableSize(databaseName: String, tableName:String) :Long={
+  private def getTableSize(databaseName: String, tableName: String): Long = {
     val table = CarbonMetadata.getInstance.getCarbonTable(databaseName, tableName)
     val relation = CarbonRelation(databaseName, tableName, table)
     relation.sizeInBytes

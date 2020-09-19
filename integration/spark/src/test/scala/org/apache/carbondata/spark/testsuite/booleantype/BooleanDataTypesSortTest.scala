@@ -25,7 +25,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val rootPath = new File(this.getClass.getResource("/").getPath
     + "../../../..").getCanonicalPath
-
+  // scalastyle:off lineLength
   override def beforeEach(): Unit = {
     sql("drop table if exists boolean_table")
     sql("drop table if exists boolean_table2")
@@ -67,19 +67,21 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
          | TBLPROPERTIES('sort_columns'='booleanField')
        """.stripMargin)
 
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
          | INTO TABLE boolean_table
          | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData')
            """.stripMargin)
-
-    sql("insert into boolean_table2 select shortField,booleanField from boolean_table where shortField = 1 and booleanField = true")
+    sql("insert into boolean_table2 select shortField,booleanField from boolean_table " +
+        "where shortField = 1 and booleanField = true")
 
     checkAnswer(
       sql("select shortField,booleanField from boolean_table"),
-      Seq(Row(5, false), Row(1, false), Row(2, false), Row(1, false), Row(4, false), Row(1, false), Row(1, true), Row(1, true), Row(1, true), Row(3, true))
+      Seq(Row(5, false), Row(1, false), Row(2, false), Row(1, false), Row(4, false), Row(1, false),
+        Row(1, true), Row(1, true), Row(1, true), Row(3, true))
     )
 
     checkAnswer(
@@ -121,7 +123,8 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
          | TBLPROPERTIES('sort_columns'='shortField,booleanField,booleanField2')
        """.stripMargin)
 
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
@@ -129,12 +132,14 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
          | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
 
-    sql("insert into boolean_table2 select shortField,booleanField,booleanField2 from boolean_table where shortField = 1 and booleanField = true")
+    sql("insert into boolean_table2 select shortField,booleanField,booleanField2 " +
+        "from boolean_table where shortField = 1 and booleanField = true")
 
     checkAnswer(
       sql("select shortField,booleanField,booleanField2 from boolean_table"),
-      Seq(Row(5, false, true), Row(1, false, false), Row(2, false, false), Row(1, false, false), Row(4, false, false),
-        Row(1, false, true), Row(1, true, true), Row(1, true, true), Row(1, true, true), Row(3, true, false))
+      Seq(Row(5, false, true), Row(1, false, false), Row(2, false, false), Row(1, false, false),
+        Row(4, false, false), Row(1, false, true), Row(1, true, true), Row(1, true, true),
+        Row(1, true, true), Row(3, true, false))
     )
 
     checkAnswer(
@@ -142,4 +147,5 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
       Seq(Row(1, true, true), Row(1, true, true), Row(1, true, true))
     )
   }
+  // scalastyle:on lineLength
 }

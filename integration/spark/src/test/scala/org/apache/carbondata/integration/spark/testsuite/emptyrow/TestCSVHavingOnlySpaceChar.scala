@@ -17,10 +17,11 @@
 
 package org.apache.carbondata.integration.spark.testsuite.emptyrow
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 class TestCSVHavingOnlySpaceChar extends QueryTest with BeforeAndAfterAll {
 
@@ -28,7 +29,7 @@ class TestCSVHavingOnlySpaceChar extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists emptyRowCarbonTable")
-    //eid,ename,sal,presal,comm,deptno,Desc
+    // eid,ename,sal,presal,comm,deptno,Desc
     sql(
       "create table if not exists emptyRowCarbonTable (eid int,ename String,sal decimal,presal " +
         "decimal,comm decimal" +
@@ -42,11 +43,10 @@ class TestCSVHavingOnlySpaceChar extends QueryTest with BeforeAndAfterAll {
 
   test("dataload") {
     try {
-      sql(
-        s"""LOAD DATA INPATH '$csvFilePath' INTO table emptyRowCarbonTable OPTIONS('DELIMITER'=',','QUOTECHAR'='"')""")
+      sql(s"LOAD DATA INPATH '$csvFilePath' INTO table emptyRowCarbonTable " +
+          "OPTIONS('DELIMITER'=',','QUOTECHAR'='\"')")
     } catch {
       case e: Throwable =>
-        System.out.println(e.getMessage)
         assert(e.getMessage.contains("First line of the csv is not valid."))
     }
   }

@@ -17,10 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.singlevaluerow
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
 
@@ -43,8 +44,8 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     val csvFilePath = s"$resourcesPath/emptyrow/emptyRows.csv"
 
-    sql(
-      s"""LOAD DATA INPATH '$csvFilePath' INTO table emptyRowCarbonTable OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='eid,ename,sal,presal,comm,deptno,Desc')""")
+    sql(s"LOAD DATA INPATH '$csvFilePath' INTO table emptyRowCarbonTable OPTIONS(" +
+        "'DELIMITER'=',','QUOTECHAR'='\"','FILEHEADER'='eid,ename,sal,presal,comm,deptno,Desc')")
 
     sql(
       "LOAD DATA LOCAL INPATH '" + csvFilePath + "' into table " +

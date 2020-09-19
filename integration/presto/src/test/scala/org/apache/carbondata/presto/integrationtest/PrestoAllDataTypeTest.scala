@@ -30,7 +30,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.presto.server.PrestoServer
 
-
 class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
   private val logger = LogServiceFactory
@@ -80,7 +79,10 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     prestoServer.execute("drop table if exists testdb.testtable")
     prestoServer.execute("drop schema if exists testdb")
     prestoServer.execute("create schema testdb")
-    prestoServer.execute("create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4), dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='CARBON') ")
+    prestoServer.execute(
+      "create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype " +
+      "varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4)" +
+      ", dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='CARBON') ")
     CarbonDataStoreCreator
       .createCarbonStore(storePath,
         s"$rootPath/integration/presto/src/test/resources/alldatatype.csv")
@@ -99,6 +101,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 11))
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for count() clause with distinct operator in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT COUNT(DISTINCT ID) AS RESULT FROM TESTDB.TESTTABLE ")
@@ -106,42 +109,49 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
 
   }
+
   test("test the result for sum()in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT SUM(ID) AS RESULT FROM TESTDB.TESTTABLE ")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 54))
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for sum() wiTh distinct operator in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT SUM(DISTINCT ID) AS RESULT FROM TESTDB.TESTTABLE ")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 45))
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for avg() with distinct operator in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT AVG(DISTINCT ID) AS RESULT FROM TESTDB.TESTTABLE ")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 5))
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for min() with distinct operator in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT MIN(DISTINCT ID) AS RESULT FROM TESTDB.TESTTABLE ")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 1))
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for max() with distinct operator in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT MAX(DISTINCT ID) AS RESULT FROM TESTDB.TESTTABLE ")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 9))
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for count()clause with distinct operator on decimal column in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT COUNT(DISTINCT BONUS) AS RESULT FROM TESTDB.TESTTABLE ")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 10))
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for count()clause with out  distinct operator on decimal column in presto")
   {
     val actualResult: List[Map[String, Any]] = prestoServer
@@ -149,12 +159,14 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 10))
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for sum()with out distinct operator for decimal column in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT SUM(DISTINCT BONUS) AS RESULT FROM TESTDB.TESTTABLE ")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 20774.6475))
     assert(actualResult.toString().equals(expectedResult.toString()))
   }
+
   test("test the result for sum() with distinct operator for decimal column in presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT SUM(DISTINCT BONUS) AS RESULT FROM TESTDB.TESTTABLE ")
@@ -163,6 +175,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       actualResult.head("RESULT").toString.toDouble ==
       expectedResult.head("RESULT").toString.toDouble)
   }
+
   test("test the result for avg() with distinct operator on decimal on presto") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT AVG(DISTINCT BONUS) AS RESULT FROM TESTDB.TESTTABLE ")
@@ -185,6 +198,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       "RESULT" -> java.math.BigDecimal.valueOf(9999.999).setScale(4)))
     assert(actualResult.equals(expectedResult))
   }
+
   test("select decimal data type with ORDER BY  clause") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT DISTINCT BONUS FROM TESTDB.TESTTABLE ORDER BY BONUS limit 3 ")
@@ -194,6 +208,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       Map("BONUS" -> java.math.BigDecimal.valueOf(500.88).setScale(4)))
     assert(actualResult.equals(expectedResult))
   }
+
   test("select string type with order by clause") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT NAME FROM TESTDB.TESTTABLE ORDER BY NAME")
@@ -211,6 +226,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     )
     assert(actualResult.equals(expectedResult))
   }
+
   test("select DATE type with order by clause") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT DATE FROM TESTDB.TESTTABLE ORDER BY DATE")
@@ -233,6 +249,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     })
     assert(actualResult.reverse.head("DATE") == null)
   }
+
   test("select int type with order by clause") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT DISTINCT ID FROM TESTDB.TESTTABLE ORDER BY ID")
@@ -247,9 +264,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       Map("ID" -> 9),
       Map("ID" -> null)
     )
-
     assert(actualResult.equals(expectedResult))
-
   }
 
   test("test and filter clause with greater than expression") {
@@ -275,8 +290,6 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
         "COUNTRY" -> "china",
         "PHONETYPE" -> "phone2441"))
     assert(actualResult.toString() equals expectedResult.toString())
-
-
   }
 
   test("test and filter clause with greater than equal to expression") {
@@ -320,6 +333,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
         "PHONETYPE" -> "phone2441"))
     assert(actualResult.toString() equals expectedResult.toString())
   }
+
   test("test and filter clause with less than equal to expression") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery(
@@ -345,6 +359,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
         "PHONETYPE" -> "phone1904"))
     assert(actualResult.toString() equals expectedResult.toString())
   }
+
   test("test equal to expression on decimal value") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery(
@@ -354,6 +369,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
     assert(actualResult equals expectedResult)
   }
+
   test("test less than expression with and operator") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery(
@@ -370,6 +386,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       "PHONETYPE" -> "phone197"))
     assert(actualResult.toString().equals(expectedResult.toString()))
   }
+
   test("test the result for in clause") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT NAME from testdb.testtable WHERE PHONETYPE IN('phone1848','phone706')")
@@ -380,6 +397,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for not in clause") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery(
@@ -394,13 +412,15 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
     assert(actualResult.equals(expectedResult))
   }
+
   test("test for null operator on date data type") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT ID FROM TESTDB.TESTTABLE WHERE DATE IS NULL")
-    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 9),Map("ID" -> null))
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 9), Map("ID" -> null))
     assert(actualResult.equals(expectedResult))
 
   }
+
   test("test for not null operator on date data type") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT NAME FROM TESTDB.TESTTABLE WHERE DATE IS NOT NULL AND ID=9")
@@ -408,6 +428,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
 
   }
+
   test("test for not null operator on timestamp type") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT NAME FROM TESTDB.TESTTABLE WHERE DOB IS NOT NULL AND ID=9")
@@ -416,6 +437,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
 
   }
+
   test("test for null operator on timestamp type") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT NAME FROM TESTDB.TESTTABLE WHERE DOB IS NULL AND ID=1")
@@ -423,6 +445,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
 
   }
+
   test("test the result for short datatype with order by clause") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery(
@@ -438,14 +461,16 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for short datatype in clause where field is null") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery(
         "SELECT ID from testdb.testtable WHERE SHORTFIELD IS NULL ORDER BY SHORTFIELD ")
-    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 7),Map("ID" -> null))
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 7), Map("ID" -> null))
 
     assert(actualResult.equals(expectedResult))
   }
+
   test("test the result for short datatype with greater than operator") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery(
@@ -474,43 +499,49 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
   }
 
   test("test timestamp datatype using cast operator") {
-    val actualResult: List[Map[String, Any]] = prestoServer
-      .executeQuery("SELECT NAME AS RESULT FROM TESTDB.TESTTABLE WHERE DOB = CAST('2016-04-14 15:00:09' AS TIMESTAMP)")
+    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery(
+      "SELECT NAME AS RESULT FROM TESTDB.TESTTABLE " +
+      "WHERE DOB = CAST('2016-04-14 15:00:09' AS TIMESTAMP)")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "jatin"))
     assert(actualResult.equals(expectedResult))
   }
 
   test("test timestamp datatype using cast and in operator") {
-    val actualResult: List[Map[String, Any]] = prestoServer
-      .executeQuery("SELECT ID AS RESULT FROM TESTDB.TESTTABLE WHERE DOB in (cast('2016-04-14 " +
-                    "15:00:09' as timestamp),cast('2015-10-07' as timestamp),cast('2015-10-07 01:00:03' as timestamp))")
+    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery(
+      "SELECT ID AS RESULT FROM TESTDB.TESTTABLE WHERE DOB in (cast('2016-04-14 15:00:09' as " +
+      "timestamp),cast('2015-10-07' as timestamp),cast('2015-10-07 01:00:03' as timestamp))")
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "2"))
     assert(actualResult.toString() equals expectedResult.toString())
   }
+
   test("test the boolean data type") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT isCurrentEmployee AS RESULT FROM TESTDB.TESTTABLE WHERE ID=1")
     assert(actualResult.head("RESULT").toString.toBoolean)
   }
+
   test("test the boolean data type for null value") {
     val actualResult: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is null")
     assert(actualResult.head("RESULT").toString.toInt==2)
   }
+
   test("test the boolean data type for not null value with filter ") {
-    val actualResult: List[Map[String, Any]] = prestoServer
-      .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is NOT null AND ID>8")
+    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery(
+      "SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is NOT null AND ID>8")
     assert(actualResult.head("RESULT").toString.toInt==9)
   }
 
-  test("test the show schemas result"){
+  test("test the show schemas result") {
    val actualResult = prestoServer.executeQuery("SHOW SCHEMAS")
-    assert(actualResult.equals(List(Map("Schema" -> "information_schema"), Map("Schema" -> "testdb"))))
+    assert(actualResult.equals(List(Map("Schema" -> "information_schema"),
+      Map("Schema" -> "testdb"))))
   }
-  test("test the show tables"){
-  val actualResult = prestoServer.executeQuery("SHOW TABLES")
-  assert(actualResult.equals(List(Map("Table" -> "testtable"))))
- }
+
+  test("test the show tables") {
+    val actualResult = prestoServer.executeQuery("SHOW TABLES")
+    assert(actualResult.equals(List(Map("Table" -> "testtable"))))
+  }
 
   private def cleanUp(): Unit = {
     FileFactory.deleteFile(s"$storePath/Fact")
@@ -523,9 +554,9 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     FileFactory.createNewFile(s"$storePath/testdb/.DS_STORE")
   }
 
-  test("test the OR operator on same column"){
-    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery("SELECT BONUS FROM TESTDB.TESTTABLE WHERE" +
-      " BONUS < 600 OR BONUS > 5000 ORDER BY BONUS")
+  test("test the OR operator on same column") {
+    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery(
+      "SELECT BONUS FROM TESTDB.TESTTABLE WHERE BONUS < 600 OR BONUS > 5000 ORDER BY BONUS")
     val expectedResult: List[Map[String, Any]] = List(
       Map("BONUS" -> java.math.BigDecimal.valueOf(500.4140).setScale(4)),
       Map("BONUS" -> java.math.BigDecimal.valueOf(500.5900).setScale(4)),
@@ -536,8 +567,9 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
   }
 
-  test("test the AND, OR operator on same column"){
-    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
+  test("test the AND, OR operator on same column") {
+    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery(
+      "SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
       " SHORTFIELD > 4 AND (SHORTFIELD < 10 or SHORTFIELD > 15) ORDER BY SHORTFIELD")
     val expectedResult: List[Map[String, Any]] = List(
       Map("SHORTFIELD" -> 8),
@@ -545,9 +577,10 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
   }
 
-  test("test the OR operator with multiple AND on same column"){
-    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
-      " (SHORTFIELD > 1 AND SHORTFIELD < 5) OR (SHORTFIELD > 10 AND SHORTFIELD < 15) ORDER BY SHORTFIELD")
+  test("test the OR operator with multiple AND on same column") {
+    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery(
+      "SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE (SHORTFIELD > 1 AND SHORTFIELD < 5) " +
+      "OR (SHORTFIELD > 10 AND SHORTFIELD < 15) ORDER BY SHORTFIELD")
     val expectedResult: List[Map[String, Any]] = List(
       Map("SHORTFIELD" -> 4),
       Map("SHORTFIELD" -> 11),
@@ -555,8 +588,9 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
   }
 
-  test("test the OR, AND operator with on Different column"){
-    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
+  test("test the OR, AND operator with on Different column") {
+    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery(
+      "SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
       " ID < 7 AND (SHORTFIELD < 5 OR SHORTFIELD > 15) ORDER BY SHORTFIELD")
     val expectedResult: List[Map[String, Any]] = List(
       Map("SHORTFIELD" -> 4),
@@ -564,14 +598,13 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
   }
 
-  test("test the Timestamp greaterthan expression"){
-    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery("SELECT DOB FROM TESTDB.TESTTABLE" +
-                                                                         " WHERE DOB > timestamp '2016-01-01 00:00:00.0' order by DOB")
+  test("test the Timestamp greaterthan expression") {
+    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery(
+      "SELECT DOB FROM TESTDB.TESTTABLE WHERE DOB > timestamp '2016-01-01 00:00:00.0' order by DOB")
     val expectedResult: List[Map[String, Any]] = List(
-      Map("DOB" -> new Timestamp(new java.util.Date(2016-1900,1-1,14,15,7,9).getTime)),
-      Map("DOB" -> new Timestamp(new java.util.Date(2016-1900,4-1,14,15,0,9).getTime)))
+      Map("DOB" -> new Timestamp(new java.util.Date(2016 - 1900, 1 - 1, 14, 15, 7, 9).getTime)),
+      Map("DOB" -> new Timestamp(new java.util.Date(2016 - 1900, 4 - 1, 14, 15, 0, 9).getTime)))
     assert(actualResult.equals(expectedResult))
   }
-
 
 }

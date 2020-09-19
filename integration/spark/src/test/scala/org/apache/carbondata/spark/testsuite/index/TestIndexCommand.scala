@@ -91,14 +91,14 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
          | on table $tableName (c)
          | as 'bloomfilter'
        """.stripMargin)
-    var result = sql(s"show indexes on $tableName").cache()
+    val result = sql(s"show indexes on $tableName").cache()
     checkAnswer(sql(s"show indexes on $tableName"),
-      Seq(Row(indexName, "bloomfilter", "a", "'INDEX_COLUMNS'='a','bloom_fpp'='0.001','bloom_size'='32000'", "ENABLED", "NA"),
+      Seq(Row(indexName, "bloomfilter", "a",
+        "'INDEX_COLUMNS'='a','bloom_fpp'='0.001','bloom_size'='32000'", "ENABLED", "NA"),
         Row(indexName2, "bloomfilter", "b", "'INDEX_COLUMNS'='b'", "ENABLED", "NA"),
         Row(indexName3, "bloomfilter", "c", "'INDEX_COLUMNS'='c'", "ENABLED", "NA")))
     result.unpersist()
     sql(s"drop table if exists $tableName")
-
   }
 
   test("test don't support lucene on binary data type") {

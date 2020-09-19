@@ -18,16 +18,17 @@ package org.apache.carbondata.spark.testsuite.blockprune
 
 import java.io.DataOutputStream
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * This class contains test cases for block prune query
-  */
+ * This class contains test cases for block prune query
+ */
 class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
   val outputPath = s"$resourcesPath/block_prune_test.csv"
   val enableMultiThreadFilesCount = "1"
@@ -35,14 +36,14 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
   val disableMultiThreadFilesCount =
     CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT;
 
-  def perpareCarbonProperty(propertyName:String,
-    propertyValue:String): Unit ={
+  def perpareCarbonProperty(propertyName: String,
+      propertyValue: String): Unit = {
     val properties = CarbonProperties.getInstance()
     properties.addProperty(propertyName, propertyValue)
     assert(properties.getProperty(propertyName).equals(propertyValue))
   }
 
-  def perpareData(): Unit ={
+  def perpareData(): Unit = {
     sql(
       """CREATE TABLE IF NOT EXISTS blockprune (name string, id int)
         STORED AS carbondata""")
@@ -54,7 +55,7 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     // Since the data needed for block prune is big, need to create a temp data file
-    val testData: Array[String]= new Array[String](3)
+    val testData: Array[String] = new Array[String](3)
     testData(0) = "a"
     testData(1) = "b"
     testData(2) = "c"
@@ -96,7 +97,8 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test block prune with negative multiThreadFilesCount") {
     sql("DROP TABLE IF EXISTS blockprune")
-    perpareCarbonProperty(CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT,
+    perpareCarbonProperty(
+      CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT,
       negativeMultiThreadFilesCount)
     perpareData()
     checkAnswer(
@@ -126,7 +128,8 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
   test("test block prune multi threads") {
     sql("DROP TABLE IF EXISTS blockprune")
 
-    perpareCarbonProperty(CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT,
+    perpareCarbonProperty(
+      CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT,
       enableMultiThreadFilesCount)
 
     sql(
@@ -137,9 +140,8 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
 
     val segmentCount = 10
     for (i <- 1 to segmentCount) {
-      sql(
-        s"LOAD DATA LOCAL INPATH '$outputPath' INTO table blockprune options('FILEHEADER'='name,id')"
-      )
+      sql(s"LOAD DATA LOCAL INPATH '$outputPath' INTO table blockprune " +
+          s"options('FILEHEADER'='name,id')")
     }
     // data is in all 7 blocks
     checkAnswer(
@@ -157,7 +159,8 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
           where name='b' group by name"""),
       Seq(Row("b", 2400010)))
 
-    perpareCarbonProperty(CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT,
+    perpareCarbonProperty(
+      CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT,
       disableMultiThreadFilesCount)
   }
 

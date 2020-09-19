@@ -20,15 +20,15 @@ package org.apache.carbondata.spark.testsuite.bigdecimal
 import java.math.BigDecimal
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * Test cases for testing big decimal functionality
-  */
+ * Test cases for testing big decimal functionality
+ */
 class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -40,7 +40,9 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE, "1")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT, "2")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT, "2")
+    // scalastyle:off lineLength
     sql("CREATE TABLE IF NOT EXISTS carbonTable (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary Decimal(17,2))STORED AS carbondata")
     sql("create table if not exists hiveTable(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary Decimal(17,2))row format delimited fields terminated by ','")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalDataWithHeader.csv' into table carbonTable")
@@ -52,6 +54,7 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
 
     sql("create table if not exists carbonBigDecimal_3 (ID Int, date Timestamp, country String,name String, phonetype String, serialname String, salary decimal(30, 2)) STORED AS carbondata ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal_3")
+    // scalastyle:on lineLength
   }
 
   test("test detail query on big decimal column") {
@@ -121,8 +124,10 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
 
   test("test aggregation on big decimal column with increased precision") {
     sql("drop table if exists carbonBigDecimal")
+    // scalastyle:off lineLength
     sql("create table if not exists carbonBigDecimal (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal")
+    // scalastyle:on lineLength
 
     checkAnswer(sql("select sum(salary) from carbonBigDecimal"),
       sql("select sum(salary) from hiveBigDecimal"))
@@ -135,8 +140,11 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
 
   test("test big decimal for dictionary look up") {
     sql("drop table if exists decimalDictLookUp")
-    sql("create table if not exists decimalDictLookUp (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED AS carbondata ")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table decimalDictLookUp")
+    sql("create table if not exists decimalDictLookUp (" +
+        "ID Int, date Timestamp, country String, name String, phonetype String, " +
+        "serialname String, salary decimal(27, 10)) STORED AS carbondata ")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' " +
+        "into table decimalDictLookUp")
 
     checkAnswer(sql("select sum(salary) from decimalDictLookUp"),
       sql("select sum(salary) from hiveBigDecimal"))
@@ -197,7 +205,7 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
   test("test decimal compression where both precision and data falls in integer range") {
     sql("create table decimal_int_test(d1 decimal(9,3)) STORED AS carbondata")
     sql(s"load data inpath '$resourcesPath/decimal_int_range.csv' into table decimal_int_test")
-    sql("select * from decimal_int_test").show(false)
+    sql("select * from decimal_int_test").collect()
     checkAnswer(sql("select * from decimal_int_test"),
       Seq(Row(new BigDecimal("111111.000")),
         Row(new BigDecimal("222222.120")),

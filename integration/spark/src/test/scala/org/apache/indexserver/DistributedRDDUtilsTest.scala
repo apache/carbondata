@@ -23,22 +23,22 @@ import scala.collection.JavaConverters._
 
 import mockit.{Mock, MockUp}
 import org.apache.hadoop.conf.Configuration
-
-import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
 
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexInputFormat, Segment}
 import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
 import org.apache.carbondata.indexserver.{DistributedIndexJob, DistributedRDDUtils, IndexRDDPartition}
-import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 
 class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
 
-  val executorCache: ConcurrentHashMap[String, ConcurrentHashMap[String, Long]] = DistributedRDDUtils
-    .executorToCacheSizeMapping
+  val executorCache: ConcurrentHashMap[String, ConcurrentHashMap[String, Long]] =
+    DistributedRDDUtils.executorToCacheSizeMapping
 
-  val tableCache: ConcurrentHashMap[String, ConcurrentHashMap[String, String]] = DistributedRDDUtils.tableToExecutorMapping
+  val tableCache: ConcurrentHashMap[String, ConcurrentHashMap[String, String]] =
+    DistributedRDDUtils.tableToExecutorMapping
 
   val indexServerTempFolder = "file:////tmp/indexservertmp/"
 
@@ -51,7 +51,7 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
 
   def buildTestData {
     val tableMap = new ConcurrentHashMap[String, String]
-    tableMap.put("0" , "IP1_EID1")
+    tableMap.put("0", "IP1_EID1")
     tableMap.put("1", "IP1_EID2")
     tableCache.put("Table1", tableMap)
     val executorMap1 = new ConcurrentHashMap[String, Long]
@@ -87,7 +87,10 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
     assert(DistributedRDDUtils.executorToCacheSizeMapping.containsKey("IP1"))
     assert(!DistributedRDDUtils.executorToCacheSizeMapping.get("IP1").contains("EID1"))
     assert(DistributedRDDUtils.tableToExecutorMapping.get("Table1").size() == 2)
-    assert(!DistributedRDDUtils.tableToExecutorMapping.get("Table1").get("0").equalsIgnoreCase("IP1_EID1"))
+    assert(!DistributedRDDUtils.tableToExecutorMapping
+      .get("Table1")
+      .get("0")
+      .equalsIgnoreCase("IP1_EID1"))
   }
 
   test("Test distribution for legacy segments") {
@@ -179,7 +182,7 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
         "a885a111-439f-4b91-ad81-f0bd48164b84"
       }
     }
-    try{
+    try {
       distributedRDDUtilsTest.execute(mockDataMapFormat.getMockInstance, new Configuration())
     } catch {
       case ex: Exception =>
@@ -195,10 +198,13 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
     val newPath = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b84/ip1"
     val newFile = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b84/ip1/as1"
     val tmpPathAnother = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b8412"
-    FileFactory.createDirectoryAndSetPermission(tmpPath, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    FileFactory.createDirectoryAndSetPermission(newPath, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(tmpPath,
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(newPath,
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     FileFactory.createNewFile(newFile, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    FileFactory.createDirectoryAndSetPermission(tmpPathAnother, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(tmpPathAnother,
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
 
     assert(FileFactory.isFileExist(newFile))
     assert(FileFactory.isFileExist(tmpPath))
@@ -211,7 +217,7 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
         "a885a111-439f-4b91-ad81-f0bd48164b84"
       }
     }
-    try{
+    try {
       distributedRDDUtilsTest.execute(mockDataMapFormat.getMockInstance, new Configuration())
     } catch {
       case ex: Exception =>

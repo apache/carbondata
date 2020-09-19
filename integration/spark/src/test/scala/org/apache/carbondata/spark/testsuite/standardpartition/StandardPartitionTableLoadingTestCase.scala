@@ -14,20 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import java.io.{File, FileWriter, IOException}
 import java.util
-import java.util.concurrent.{Callable, ExecutorService, Executors}
+import java.util.concurrent.{Callable, Executors, ExecutorService}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.util.{PartitionCacheKey, PartitionCacheManager}
 import org.scalatest.BeforeAndAfterAll
 
@@ -43,6 +44,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
+  // scalastyle:off lineLength
   var executorService: ExecutorService = _
   override def beforeAll {
     dropTable
@@ -286,7 +288,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
-  // TODO fix 
+  // TODO fix
   ignore("concurrent partition table load test") {
     executorService = Executors.newCachedThreadPool()
     sql(
@@ -342,7 +344,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE mergeindexpartitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_mergeindexpartitionthree")
-    val details = SegmentStatusManager.readTableStatusFile(CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
+    val details = SegmentStatusManager.readTableStatusFile(
+      CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
     val store = new SegmentFileStore(carbonTable.getTablePath, details(0).getSegmentFile)
     store.readIndexFiles(new Configuration(false))
     store.getIndexFiles
@@ -366,7 +369,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiononeissue PARTITION(empno='1')""")
     val df = sql("show partitions loadstaticpartitiononeissue")
     assert(df.collect().length == 1)
-    checkExistence(df, true,  "empno=1")
+    checkExistence(df, true, "empno=1")
   }
 
   test("bad record test with null values") {
@@ -442,7 +445,9 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
     sql(s"LOAD DATA LOCAL INPATH '$inputPath' INTO TABLE smallpartitionfiles")
     FileUtils.deleteDirectory(folder)
-    val specs = CarbonFilters.getPartitions(Seq.empty, sqlContext.sparkSession, TableIdentifier("smallpartitionfiles"))
+    val specs = CarbonFilters.getPartitions(Seq.empty,
+      sqlContext.sparkSession,
+      TableIdentifier("smallpartitionfiles"))
     specs.get.foreach{s =>
       assert(new File(s.getLocation.toString).listFiles().length < 10)
     }
@@ -482,8 +487,9 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       assert(scanRdd.getPartitions.length < 10)
       assertResult(100)(dataFrame.count)
     } finally {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION ,
-        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
+          CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
     }
   }
 
@@ -674,9 +680,9 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     (Strings.formatSize(dataSize.toFloat), Strings.formatSize(indexSize.toFloat))
   }
 
-  def restoreData(dblocation: String, tableName: String) = {
+  private def restoreData(dblocation: String, tableName: String) = {
     val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dblocation+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
     try {
       FileUtils.copyDirectory(new File(source), new File(destination))
       FileUtils.deleteDirectory(new File(source))
@@ -687,9 +693,10 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
     }
   }
-  def backUpData(dblocation: String, tableName: String) = {
+
+  private def backUpData(dblocation: String, tableName: String) = {
     val source = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val destination = dblocation+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val destination = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
     try {
       FileUtils.copyDirectory(new File(source), new File(destination))
     } catch {
@@ -699,7 +706,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
   }
 
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -712,7 +719,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists originTable")
     sql("drop table if exists originMultiLoads")
     sql("drop table if exists partitionone")
@@ -737,5 +744,5 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists cs_insert_p")
     sql("drop table if exists cs_load_p")
   }
-
+  // scalastyle:on lineLength
 }

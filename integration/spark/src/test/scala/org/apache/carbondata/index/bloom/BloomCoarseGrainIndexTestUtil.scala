@@ -22,8 +22,8 @@ import java.util.UUID
 
 import scala.util.Random
 
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.test.util.QueryTest
 
 object BloomCoarseGrainIndexTestUtil extends QueryTest {
 
@@ -31,12 +31,14 @@ object BloomCoarseGrainIndexTestUtil extends QueryTest {
     if (!new File(fileName).exists()) {
       val write = new PrintWriter(new File(fileName))
       for (i <- start until (start + line)) {
+        // scalastyle:off println
         write.println(
           s"$i,n$i,city_$i,${ Random.nextInt(80) }," +
           s"${ UUID.randomUUID().toString },${ UUID.randomUUID().toString }," +
           s"${ UUID.randomUUID().toString },${ UUID.randomUUID().toString }," +
           s"${ UUID.randomUUID().toString },${ UUID.randomUUID().toString }," +
           s"${ UUID.randomUUID().toString },${ UUID.randomUUID().toString }")
+        // scalastyle:on println
       }
       write.close()
     }
@@ -49,13 +51,18 @@ object BloomCoarseGrainIndexTestUtil extends QueryTest {
     }
   }
 
-  private def checkSqlHitIndex(sqlText: String, indexName: String, shouldHit: Boolean): DataFrame = {
+  private def checkSqlHitIndex(sqlText: String,
+      indexName: String,
+      shouldHit: Boolean): DataFrame = {
     // we will not check whether the query will hit the index because index may be skipped
     // if the former index pruned all the blocklets
     sql(sqlText)
   }
 
-  def checkBasicQuery(indexName: String, bloomDMSampleTable: String, normalTable: String, shouldHit: Boolean = true): Unit = {
+  def checkBasicQuery(indexName: String,
+      bloomDMSampleTable: String,
+      normalTable: String,
+      shouldHit: Boolean = true): Unit = {
     checkAnswer(
       checkSqlHitIndex(s"select * from $bloomDMSampleTable where id = 1", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 1"))
@@ -63,10 +70,14 @@ object BloomCoarseGrainIndexTestUtil extends QueryTest {
       checkSqlHitIndex(s"select * from $bloomDMSampleTable where id = 999", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 999"))
     checkAnswer(
-      checkSqlHitIndex(s"select * from $bloomDMSampleTable where city = 'city_1'", indexName, shouldHit),
+      checkSqlHitIndex(s"select * from $bloomDMSampleTable where city = 'city_1'",
+        indexName,
+        shouldHit),
       sql(s"select * from $normalTable where city = 'city_1'"))
     checkAnswer(
-      checkSqlHitIndex(s"select * from $bloomDMSampleTable where city = 'city_999'", indexName, shouldHit),
+      checkSqlHitIndex(s"select * from $bloomDMSampleTable where city = 'city_999'",
+        indexName,
+        shouldHit),
       sql(s"select * from $normalTable where city = 'city_999'"))
     checkAnswer(
       sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +

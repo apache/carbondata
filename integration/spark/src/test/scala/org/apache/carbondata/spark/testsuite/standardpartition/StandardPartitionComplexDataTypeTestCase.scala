@@ -33,7 +33,7 @@ class StandardPartitionComplexDataTypeTestCase extends QueryTest with BeforeAndA
     dropTable
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists tbl_complex_p")
     sql("drop table if exists tbl_complex_p_carbondata")
   }

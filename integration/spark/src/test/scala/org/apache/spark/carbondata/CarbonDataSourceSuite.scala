@@ -90,7 +90,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "16")
       .addProperty("carbon.enable.vector.reader", "true")
-      //.addProperty("enable.unsafe.sort", "true")
+      // .addProperty("enable.unsafe.sort", "true")
 
     val rdd = sqlContext.sparkContext
       .parallelize(1 to 1200000, 4)
@@ -145,7 +145,10 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonunion")
     sql("drop table if exists sparkunion")
     import sqlContext.implicits._
-    val df = sqlContext.sparkContext.parallelize(1 to 1000).map(x => (x+"", (x+100)+"")).toDF("c1", "c2")
+    val df = sqlContext.sparkContext
+      .parallelize(1 to 1000)
+      .map(x => (x + "", (x + 100) + ""))
+      .toDF("c1", "c2")
     df.createOrReplaceTempView("sparkunion")
     df.write
       .format("carbondata")
@@ -156,8 +159,10 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
       sql("select * from carbonunion where c1='200' and exists(select * from carbonunion)"),
       sql("select * from sparkunion where c1='200' and exists(select * from sparkunion)"))
     checkAnswer(
-      sql("select * from carbonunion where c1='200' and exists(select * from carbonunion) and exists(select * from carbonunion)"),
-      sql("select * from sparkunion where c1='200' and exists(select * from sparkunion) and exists(select * from sparkunion)"))
+      sql("select * from carbonunion where c1='200' and " +
+          "exists(select * from carbonunion) and exists(select * from carbonunion)"),
+      sql("select * from sparkunion where c1='200' and " +
+          "exists(select * from sparkunion) and exists(select * from sparkunion)"))
     sql("drop table if exists sparkunion")
     sql("drop table if exists carbonunion")
   })
@@ -173,7 +178,9 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
       sys.error("drop db should fail as one table exist in db")
     } catch {
       case e: Throwable =>
+        // scalastyle:off println
         println(e.getMessage)
+        // scalastyle:on println
     }
     checkAnswer(sql("select count(*) from testdb.test1"), Seq(Row(2)))
     sql("drop table testdb.test1")
@@ -186,14 +193,16 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
           "\nL_RETURNFLAG string,\nL_RECEIPTDATE string,\nL_ORDERKEY string,\nL_PARTKEY string," +
           "\nL_SUPPKEY string,\nL_LINENUMBER int,\nL_QUANTITY decimal,\nL_EXTENDEDPRICE decimal," +
           "\nL_DISCOUNT decimal,\nL_TAX decimal,\nL_LINESTATUS string,\nL_COMMITDATE string," +
-          "\nL_COMMENT string \n) \nUSING carbondata\nOPTIONS (DICTIONARY_EXCLUDE \"L_ORDERKEY, L_PARTKEY, L_SUPPKEY, L_COMMENT\")")
+          "\nL_COMMENT string \n) \nUSING carbondata\n" +
+          "OPTIONS (DICTIONARY_EXCLUDE \"L_ORDERKEY, L_PARTKEY, L_SUPPKEY, L_COMMENT\")")
     }
     assert(ex.getMessage.contains("Global dictionary is deprecated in CarbonData 2.0"))
   }
 
   test("test create table with complex datatype") {
     sql("drop table if exists create_source")
-    sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata")
+    sql("create table create_source(" +
+        "intField int, stringField string, complexField array<string>) USING carbondata")
     sql("drop table create_source")
   }
 
@@ -230,7 +239,9 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   test("test to create bucket columns with complex data type field") {
     sql("drop table if exists create_source")
     intercept[Exception] {
-      sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata OPTIONS('bucket_number'='1', 'bucket_columns'='complexField')")
+      sql("create table create_source(intField int, stringField string, " +
+          "complexField array<string>) USING carbondata " +
+          "OPTIONS('bucket_number'='1', 'bucket_columns'='complexField')")
     }
   }
 
@@ -239,7 +250,8 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     sql("create table create_source(intField int, stringField string, complexField array<int>) " +
         "USING carbondata OPTIONS('bucket_number'='1', 'BUCKET_COLUMNS'='stringField')")
     sql("insert into create_source values(1,'source',array(1,2,3))")
-    checkAnswer(sql("select * from create_source"), Row(1,"source", mutable.WrappedArray.newBuilder[Int].+=(1,2,3)))
+    checkAnswer(sql("select * from create_source"),
+      Row(1, "source", mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3)))
     sql("drop table if exists create_source")
   }
 

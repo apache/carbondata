@@ -17,21 +17,21 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import scala.collection.JavaConverters._
 import java.io.{File, FilenameFilter}
 
-import org.apache.hadoop.conf.Configuration
+import scala.collection.JavaConverters._
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.reader.CarbonIndexFileReader
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.index.Segment
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
+import org.apache.carbondata.core.reader.CarbonIndexFileReader
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
   var originVersion = ""

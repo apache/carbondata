@@ -17,14 +17,13 @@
 
 package org.apache.spark.sql
 
-import java.util.Date
-
 import org.apache.spark.sql.test.util.QueryTest
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+
 class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
+  // scalastyle:off lineLength
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS tableSize1")
     sql("DROP TABLE IF EXISTS tableSize2")
@@ -162,12 +161,12 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
                      row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res9.length == 2)
     res9.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
-    sql("update tableSize11 set (empno) = (234)").show()
+    sql("update tableSize11 set (empno) = (234)").collect()
     val res10 = sql("DESCRIBE FORMATTED tableSize11").collect()
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
                      row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res10.length == 2)
     res10.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
   }
-
+  // scalastyle:on lineLength
 }

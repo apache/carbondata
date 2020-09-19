@@ -30,10 +30,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
-import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
+import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
@@ -93,10 +93,10 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
          |with deferred refresh
          | """.stripMargin)
 
-    checkIndexStatus("indexstatustest1", "statusindex1",IndexStatus.DISABLED.name())
+    checkIndexStatus("indexstatustest1", "statusindex1", IndexStatus.DISABLED.name())
 
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table indexstatustest1")
-    checkIndexStatus("indexstatustest1", "statusindex1",IndexStatus.DISABLED.name())
+    checkIndexStatus("indexstatustest1", "statusindex1", IndexStatus.DISABLED.name())
     sql("DROP TABLE IF EXISTS indexstatustest1")
   }
 
@@ -117,7 +117,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     checkIndexStatus("indexstatustest2", "statusindex2", IndexStatus.DISABLED.name())
 
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table indexstatustest2")
-    checkIndexStatus("indexstatustest2", "statusindex2",  IndexStatus.DISABLED.name())
+    checkIndexStatus("indexstatustest2", "statusindex2", IndexStatus.DISABLED.name())
 
     sql(s"REFRESH INDEX statusindex2 on table indexstatustest2")
     checkIndexStatus("indexstatustest2", "statusindex2", IndexStatus.ENABLED.name())
@@ -127,10 +127,14 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
   private def checkIndexStatus(tableName: String, indexName: String, indexStatus: String): Unit = {
     val carbonTable = CarbonEnv.getCarbonTable(Some(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       tableName)(sqlContext.sparkSession)
-    val indexes = carbonTable.getIndexMetadata.getIndexesMap.get({ classOf[TestIndexFactory].getName })
-      .asScala.filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(indexStatus))
+    val indexes = carbonTable.getIndexMetadata
+      .getIndexesMap
+      .get({ classOf[TestIndexFactory].getName })
+      .asScala
+      .filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(indexStatus))
     assert(indexes.keySet.size == 1)
-    assert(indexes.exists(p => p._1.equals(indexName) && p._2.get(CarbonCommonConstants.INDEX_STATUS) == indexStatus))
+    assert(indexes.exists(p => p._1.equals(indexName) &&
+                               p._2.get(CarbonCommonConstants.INDEX_STATUS) == indexStatus))
   }
 
   override def afterAll {
@@ -150,7 +154,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
 class TestIndexFactory(
     carbonTable: CarbonTable,
     indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
-
+  // scalastyle:off ???
   override def fireEvent(event: Event): Unit = ???
 
   override def clear(): Unit = {}
@@ -163,10 +167,18 @@ class TestIndexFactory(
     ???
   }
 
-  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
-    new IndexWriter(carbonTable.getTablePath, "testdm", carbonTable.getIndexedColumns(indexSchema.getIndexColumns),
-      segment, shardName) {
-      override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
+  override def createWriter(segment: Segment,
+      shardName: String,
+      segmentProperties: SegmentProperties): IndexWriter = {
+    new IndexWriter(carbonTable.getTablePath,
+      "testdm",
+      carbonTable.getIndexedColumns(indexSchema.getIndexColumns),
+      segment,
+      shardName) {
+      override def onPageAdded(blockletId: Int,
+          pageId: Int,
+          pageSize: Int,
+          pages: Array[ColumnPage]): Unit = {}
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
 
@@ -247,4 +259,5 @@ class TestIndexFactory(
       partitionLocations: util.Set[Path]): util.List[CoarseGrainIndex] = {
     ???
   }
+  // scalastyle:on ???
 }

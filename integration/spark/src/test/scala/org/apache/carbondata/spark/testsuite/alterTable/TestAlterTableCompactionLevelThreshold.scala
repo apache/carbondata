@@ -27,9 +27,9 @@ import org.scalatest.BeforeAndAfterAll
 class TestAlterTableCompactionLevelThreshold extends QueryTest with BeforeAndAfterAll {
 
   private def isExpectedValueValid(dbName: String,
-                                   tableName: String,
-                                   key: String,
-                                   expectedValue: String): Boolean = {
+      tableName: String,
+      key: String,
+      expectedValue: String): Boolean = {
     val carbonTable = CarbonEnv.getCarbonTable(Option(dbName), tableName)(sqlContext.sparkSession)
     val value = carbonTable.getTableInfo.getFactTable.getTableProperties.get(key)
     expectedValue.equals(value)
@@ -47,18 +47,24 @@ class TestAlterTableCompactionLevelThreshold extends QueryTest with BeforeAndAft
   }
 
   test("validate alter compaction level_threshold") {
-    sql("ALTER TABLE alter_compaction_level_threshold SET TBLPROPERTIES('COMPACTION_LEVEL_THRESHOLD'='500,0')")
-    assert(isExpectedValueValid("default", "alter_compaction_level_threshold", "compaction_level_threshold", "500,0"))
+    sql("ALTER TABLE alter_compaction_level_threshold " +
+        "SET TBLPROPERTIES('COMPACTION_LEVEL_THRESHOLD'='500,0')")
+    assert(isExpectedValueValid("default",
+      "alter_compaction_level_threshold",
+      "compaction_level_threshold",
+      "500,0"))
   }
 
   test("validate alter compaction level_threshold with wrong threshold") {
     var exception = intercept[Exception] {
-      sql("ALTER TABLE alter_compaction_level_threshold SET TBLPROPERTIES('COMPACTION_LEVEL_THRESHOLD'='20000,0')")
+      sql("ALTER TABLE alter_compaction_level_threshold " +
+          "SET TBLPROPERTIES('COMPACTION_LEVEL_THRESHOLD'='20000,0')")
     }
     assert(exception.getMessage.contains("Alter table newProperties operation failed"))
 
     exception = intercept[Exception] {
-      sql("ALTER TABLE alter_compaction_level_threshold SET TBLPROPERTIES('COMPACTION_LEVEL_THRESHOLD'='?,?')")
+      sql("ALTER TABLE alter_compaction_level_threshold " +
+          "SET TBLPROPERTIES('COMPACTION_LEVEL_THRESHOLD'='?,?')")
     }
     assert(exception.getMessage.contains("Alter table newProperties operation failed"))
   }

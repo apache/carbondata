@@ -21,17 +21,16 @@ import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * Test Class for detailed query on timestamp datatypes
-  *
-  *
-  */
+ * Test Class for detailed query on timestamp datatypes
+ */
 class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
@@ -51,9 +50,8 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
           "STORED AS carbondata"
       )
 
-      sql(
-        "CREATE TABLE if not exists directDictionaryTable_hive (empno int,doj Timestamp, salary int) " +
-          "row format delimited fields terminated by ','"
+      sql("CREATE TABLE if not exists directDictionaryTable_hive (" +
+          "empno int,doj Timestamp, salary int) row format delimited fields terminated by ','"
       )
       val csvFilePath = s"$resourcesPath/datasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
@@ -65,7 +63,8 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
   }
 
   test("test direct dictionary for not null condition") {
-    sql("select doj, empno from directDictionaryTable where doj >= '2016-03-14 15:00:09' and doj < '2016-03-14 15:00:10'").show()
+    sql("select doj, empno from directDictionaryTable " +
+        "where doj >= '2016-03-14 15:00:09' and doj < '2016-03-14 15:00:10'").collect()
     checkAnswer(
       sql("select doj from directDictionaryTable where doj is not null"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
@@ -110,15 +109,18 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
   test("select doj from directDictionaryTable with regexp_replace equals filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') = '2016/03/14 15:00:09'"),
+      sql("select doj from directDictionaryTable " +
+          "where regexp_replace(doj, '-', '/') = '2016/03/14 15:00:09'"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09")))
     )
   }
 
   test("select doj from directDictionaryTable with regexp_replace NOT IN filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')"),
-      sql("select doj from directDictionaryTable_hive where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')")
+      sql("select doj from directDictionaryTable " +
+          "where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')"),
+      sql("select doj from directDictionaryTable_hive" +
+          " where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')")
     )
   }
 

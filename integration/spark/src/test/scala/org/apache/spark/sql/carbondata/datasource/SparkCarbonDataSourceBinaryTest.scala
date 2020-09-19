@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.carbondata.datasource
 
 import java.io.File
@@ -33,7 +34,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
 
   var writerPath = s"$target/SparkCarbonFileFormat/WriterOutput/"
   var outputPath = writerPath + 2
-  //getCanonicalPath gives path with \, but the code expects /.
+  // getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
 
   var sdkPath = new File(this.getClass.getResource("/").getPath + "../../../../sdk/sdk/")
@@ -48,7 +49,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
     BinaryUtil.binaryToCarbon(sourceImageFolder, writerPath, sufAnnotation, ".jpg")
   }
 
-  def cleanTestData() = {
+  private def cleanTestData() = {
     FileUtils.deleteDirectory(new File(writerPath))
     FileUtils.deleteDirectory(new File(outputPath))
   }
@@ -113,7 +114,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
            | options('SORT_COLUMNS'='image')
             """.stripMargin)
       // TODO: it should throw exception when create table
-      sql("SELECT COUNT(*) FROM binaryTable").show()
+      sql("SELECT COUNT(*) FROM binaryTable").collect()
     }
     assert(exception.getCause.getMessage
       .contains(
@@ -130,7 +131,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
              | options(PATH '$writerPath',
              |  'SORT_COLUMNS'='image')
                 """.stripMargin)
-        sql("SELECT COUNT(*) FROM binaryTable").show()
+        sql("SELECT COUNT(*) FROM binaryTable").collect()
       }
     } else {
       exception = intercept[Exception] {
@@ -141,7 +142,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
              | options('SORT_COLUMNS'='image')
              | LOCATION '$writerPath'
                 """.stripMargin)
-        sql("SELECT COUNT(*) FROM binaryTable").show()
+        sql("SELECT COUNT(*) FROM binaryTable").collect()
       }
     }
     assert(exception.getMessage.contains("Cannot use sort columns during infer schema"))
@@ -162,7 +163,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
              | options(PATH '$writerPath',
              | 'SORT_COLUMNS'='image')
                  """.stripMargin)
-        sql("SELECT COUNT(*) FROM binaryTable").show()
+        sql("SELECT COUNT(*) FROM binaryTable").collect()
       }
     } else {
       exception = intercept[Exception] {
@@ -178,7 +179,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
              | options('SORT_COLUMNS'='image')
              | LOCATION '$writerPath'
                  """.stripMargin)
-        sql("SELECT COUNT(*) FROM binaryTable").show()
+        sql("SELECT COUNT(*) FROM binaryTable").collect()
       }
     }
     assert(exception.getCause.getMessage
@@ -201,7 +202,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
            | using carbon
            | options('long_string_columns'='image')
        """.stripMargin)
-      sql("SELECT COUNT(*) FROM binaryTable").show()
+      sql("SELECT COUNT(*) FROM binaryTable").collect()
     }
     assert(exception.getCause.getMessage
       .contains("long string column : image is not supported for data type: BINARY"))
@@ -235,7 +236,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
       sql(
         "select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where " +
         "binaryId=0")
-        .show()
+        .collect()
 
       sql(
         "insert into binaryCarbon2 select binaryId,binaryName,binary,labelName,labelContent from " +
@@ -644,12 +645,12 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
     }
 
     var exception = intercept[Exception] {
-      sql("UPDATE carbon_table SET binaryField = 'binary2' WHERE id = 1").show()
+      sql("UPDATE carbon_table SET binaryField = 'binary2' WHERE id = 1").collect()
     }
     assert(exception.getMessage.contains("mismatched input 'UPDATE' expecting"))
 
     exception = intercept[Exception] {
-      sql("DELETE FROM carbon_table WHERE id = 1").show()
+      sql("DELETE FROM carbon_table WHERE id = 1").collect()
     }
     assert(exception.getMessage.contains("only CarbonData table support delete operation"))
   }

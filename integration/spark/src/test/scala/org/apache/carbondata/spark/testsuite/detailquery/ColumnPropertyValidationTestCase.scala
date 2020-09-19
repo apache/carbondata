@@ -26,11 +26,13 @@ class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll 
 
   test("Validate ColumnProperties_ valid key") {
      try {
-       sql("create table employee(empname String,empid String,city String,country String,gender String,salary Double) STORED AS carbondata tblproperties('columnproperties.gender.key'='value')")
+       sql("create table employee(empname String,empid String,city String,country String," +
+           "gender String,salary Double) STORED AS carbondata " +
+           "tblproperties('columnproperties.gender.key'='value')")
        assert(true)
        sql("drop table employee")
      } catch {
-       case e: Throwable =>assert(false)
+       case _: Throwable => assert(false)
      }
   }
   test("Validate Dictionary include _ invalid key") {
@@ -53,5 +55,4 @@ class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll 
   override def afterAll() {
     sql("drop table if exists employee")
   }
-  
 }

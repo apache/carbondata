@@ -14,17 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
-import org.apache.carbondata.core.util.{CarbonProperties, SessionParams}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     defaultConfig()
 
@@ -142,7 +143,7 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     checkAnswer(sql(s"""select count(*) from staticpartition where deptname='finance'"""), p2)
   }
 
-  test("enable auto compaction for partition table"){
+  test("enable auto compaction for partition table") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     CarbonProperties.getInstance()
@@ -165,7 +166,7 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     for (i <- 0 until 4) {
       sql(s"""insert into staticpartitioncompaction PARTITION(deptname='software') select empno,doj,workgroupcategoryname,deptno,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
     }
-    sql("CLEAN FILES FOR TABLE staticpartitioncompaction").show()
+    sql("CLEAN FILES FOR TABLE staticpartitioncompaction").collect()
     val segments = sql("SHOW SEGMENTS FOR TABLE staticpartitioncompaction")
     val segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(segmentSequenceIds.size==1)
@@ -181,8 +182,8 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql(s"""LOAD DATA local INPATH '$resourcesPath/100_olap.csv' INTO TABLE compactionupdatepartition options ('DELIMITER'=',', 'QUOTECHAR'='', 'FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointDescription,gamePointId,contractNumber')""")
     sql(s"""LOAD DATA local INPATH '$resourcesPath/100_olap.csv' INTO TABLE compactionupdatepartition options ('DELIMITER'=',', 'QUOTECHAR'='', 'FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointDescription,gamePointId,contractNumber')""")
     sql(s"""insert into compactionupdatepartition select * from compactionupdatepartition""")
-    sql("update compactionupdatepartition set(AMSize)=('8RAM size')").show()
-    sql("delete from compactionupdatepartition where AMSize ='8RAM size'").show()
+    sql("update compactionupdatepartition set(AMSize)=('8RAM size')").collect()
+    sql("delete from compactionupdatepartition where AMSize ='8RAM size'").collect()
     sql(s"""alter table compactionupdatepartition compact 'major'""").collect
   }
 
@@ -207,14 +208,14 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION, "false")
   }
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     dropTable
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists originTable")
     sql("drop table if exists originMultiLoads")
     sql("drop table if exists partitionone")
@@ -225,5 +226,5 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql("drop table if exists staticpartitioncompaction")
     sql("drop table if exists compactionupdatepartition")
   }
-
+  // scalastyle:on lineLength
 }

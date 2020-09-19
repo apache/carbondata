@@ -19,16 +19,15 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io._
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.sdk.util.BinaryUtil
-
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.sdk.util.BinaryUtil
 
 class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndAfterAll {
 
@@ -36,7 +35,7 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
             + "../../target/SparkCarbonFileFormat/WriterOutput/")
             .getCanonicalPath
     var outputPath = writerPath + 2
-    //getCanonicalPath gives path with \, but the code expects /.
+    // getCanonicalPath gives path with \, but the code expects /.
     writerPath = writerPath.replace("\\", "/")
 
     var sdkPath = new File(this.getClass.getResource("/").getPath + "../../../../sdk/sdk/")
@@ -50,7 +49,7 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
         BinaryUtil.binaryToCarbon(sourceImageFolder, writerPath, sufAnnotation, ".jpg")
     }
 
-    def cleanTestData() = {
+    private def cleanTestData() = {
         FileUtils.deleteDirectory(new File(writerPath))
         FileUtils.deleteDirectory(new File(outputPath))
     }
@@ -94,14 +93,18 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
             assert(3 == value.length)
             value.foreach { each =>
                 val byteArray = each.getAs[Array[Byte]](2)
+                // scalastyle:off
                 assert(new String(byteArray).startsWith("����\u0000\u0010JFIF"))
+                // scalastyle:on
             }
 
             val value3 = sql("SELECT * FROM binaryCarbon3").collect()
             assert(3 == value3.length)
             value3.foreach { each =>
                 val byteArray = each.getAs[Array[Byte]](2)
+                // scalastyle:off
                 assert(new String(byteArray).startsWith("����\u0000\u0010JFIF"))
+                // scalastyle:on
             }
             sql("DROP TABLE IF EXISTS binaryCarbon")
             sql("DROP TABLE IF EXISTS binaryCarbon3")
@@ -133,10 +136,12 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
                    |    labelContent STRING
                    |)  partitioned by ( binary BINARY) STORED AS carbondata""".stripMargin)
 
-            sql("insert into binaryCarbon2 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+            sql("insert into binaryCarbon2 select binaryId,binaryName,binary,labelName," +
+                "labelContent from binaryCarbon where binaryId=0 ")
             val carbonResult2 = sql("SELECT * FROM binaryCarbon2")
 
-            sql("create table binaryCarbon4 STORED AS carbondata select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+            sql("create table binaryCarbon4 STORED AS carbondata select binaryId,binaryName," +
+                "binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
             val carbonResult4 = sql("SELECT * FROM binaryCarbon4")
             val carbonResult = sql("SELECT * FROM binaryCarbon")
 
@@ -146,7 +151,8 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
             checkAnswer(carbonResult4, carbonResult2)
 
             try {
-                sql("insert into binaryCarbon3 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+                sql("insert into binaryCarbon3 select binaryId,binaryName,binary,labelName," +
+                    "labelContent from binaryCarbon where binaryId=0 ")
                 assert(false)
             } catch {
                 case e: Exception =>

@@ -45,7 +45,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into source select 4, 'abc4', 'classB'")
     sql("insert into source select 5, 'abc5', 'classA'")
     sql("insert into source select 6, 'abc6', 'classC'")
-    sql("show segments on source").show(false)
+    sql("show segments on source").collect()
 
     val df = sql(s"""show segments on source""").collect()
     // validating headers
@@ -66,7 +66,8 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     var rows = sql(
       """
         | show segments on source as
-        | select id, status, datasize from source_segments where status = 'Success' order by dataSize
+        | select id, status, datasize from source_segments where status = 'Success'
+        |  order by dataSize
         |""".stripMargin).collect()
 
 
@@ -78,7 +79,8 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     rows = sql(
       """
         | show segments on source limit 2 as
-        | select id, status, datasize from source_segments where status = 'Success' order by dataSize
+        | select id, status, datasize from source_segments where status = 'Success'
+        |  order by dataSize
         |""".stripMargin).collect()
 
     assertResult("4.1")(rows(0).get(0))
@@ -93,7 +95,13 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Show Segments on empty table") {
     sql(s"""drop TABLE if exists source""").collect
-    sql(s"""CREATE TABLE source (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10),Double_COLUMN1 double,DECIMAL_COLUMN2 decimal(36,10), Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('table_blocksize'='1')""").collect
+    sql(
+      s"""CREATE TABLE source (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,DOB
+         | timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1
+         | decimal(30,10),Double_COLUMN1 double,DECIMAL_COLUMN2 decimal(36,10), Double_COLUMN2
+         | double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('table_blocksize'='1')
+         |""".stripMargin)
+      .collect
     checkAnswer(sql("show segments on source"), Seq.empty)
     var result = sql("show segments on source as select * from source_segments").collect()
     assertResult(0)(result.length)
@@ -111,7 +119,8 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into source select 1, 'abc1', 'classA'")
     sql("drop table if exists source_segments")
     sql("create table source_segments (age int)")
-    val ex = intercept[MalformedCarbonCommandException](sql("show segments on source as select * from source_segments"))
+    val ex = intercept[MalformedCarbonCommandException](sql(
+      "show segments on source as select * from source_segments"))
     assert(ex.getMessage.contains("source_segments already exists"))
     sql("drop TABLE if exists source")
     sql("drop table if exists source_segments")
@@ -125,16 +134,23 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
         |STORED AS carbondata
         |""".stripMargin)
     sql("insert into source select 1, 'abc1', 'classA'")
-    val ex = intercept[AnalysisException](sql("show segments on source as select dsjk from source_segments"))
+    val ex = intercept[AnalysisException](sql(
+      "show segments on source as select dsjk from source_segments"))
     val tables = sql("show tables").collect()
     assert(!tables.toSeq.exists(_.get(1).equals("source_segments")))
     sql("drop TABLE if exists source")
   }
 
-  //Show Segments failing if table name not in same case
+  // Show Segments failing if table name not in same case
   test("DataLoadManagement001_830") {
     sql(s"""drop TABLE if exists Case_ShowSegment_196""").collect
-    sql(s"""CREATE TABLE Case_ShowSegment_196 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10),Double_COLUMN1 double,DECIMAL_COLUMN2 decimal(36,10), Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('table_blocksize'='1')""").collect
+    sql(
+      s"""CREATE TABLE Case_ShowSegment_196 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION
+         | string,DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,
+         | DECIMAL_COLUMN1 decimal(30,10),Double_COLUMN1 double,DECIMAL_COLUMN2 decimal(36,10),
+         | Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES
+         | ('table_blocksize'='1')""".stripMargin)
+      .collect
     val df = sql(s"""show segments on default.CASE_ShowSegment_196""").collect()
     val col = df.map {
       row => Row(row.getString(0), row.getString(1), row.getString(4))
@@ -150,7 +166,9 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
         + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
     val carbonTable = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
     insertTestDataIntoTable(tableName)
-    assert(sql(s"show segments on ${tableName} as select * from ${tableName}_segments").collect().length == 10)
+    assert(sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
+             .collect()
+             .length == 10)
     var detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     var historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
     assert(detail.length == 10)
@@ -172,12 +190,20 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
         + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
     insertTestDataIntoTable(tableName)
-    assert(sql(s"show segments on ${tableName} as select * from ${tableName}_segments").collect().length == 10)
-    assert(sql(s"show history segments on ${tableName} as select * from ${tableName}_segments").collect().length == 10)
+    assert(sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
+             .collect()
+             .length == 10)
+    assert(sql(s"show history segments on ${ tableName } as select * from ${ tableName }_segments")
+             .collect()
+             .length == 10)
     sql(s"clean files for table ${tableName}")
-    assert(sql(s"show segments on ${tableName} as select * from ${tableName}_segments").collect().length == 2)
-    sql(s"show history segments on ${tableName} as select * from ${tableName}_segments").show(false)
-    var segmentsHistoryList = sql(s"show history segments on ${tableName} as select * from ${tableName}_segments").collect()
+    assert(sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
+             .collect()
+             .length == 2)
+    sql(s"show history segments on ${tableName} as select * from ${tableName}_segments").collect()
+    var segmentsHistoryList = sql(s"show history segments on ${ tableName } " +
+                                  s"as select * from ${ tableName }_segments")
+      .collect()
     assert(segmentsHistoryList.length == 10)
     assertResult("0")(segmentsHistoryList(0).getString(0))
     assertResult("Compacted")(segmentsHistoryList(0).getString(1))
@@ -198,7 +224,8 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assertResult("4")(segmentsHistoryList(9).getString(0))
     assertResult("Compacted")(segmentsHistoryList(9).getString(1))
 
-    segmentsHistoryList = sql(s"show history segments on ${tableName} limit 2 as select * from ${tableName}_segments").collect()
+    segmentsHistoryList = sql(s"show history segments on ${tableName} limit 2 " +
+                              s"as select * from ${tableName}_segments").collect()
     assert(segmentsHistoryList.length == 2)
     assertResult("0")(segmentsHistoryList(0).getString(0))
     assertResult("Compacted")(segmentsHistoryList(0).getString(1))
@@ -206,7 +233,8 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assertResult("0.2")(segmentsHistoryList(1).getString(0))
     assertResult("Success")(segmentsHistoryList(1).getString(1))
 
-    assert(sql(s"show history segments on ${tableName} as select * from ${tableName}_segments limit 3").collect().length == 3)
+    assert(sql(s"show history segments on ${tableName} " +
+               s"as select * from ${tableName}_segments limit 3").collect().length == 3)
     dropTable(tableName)
   }
 

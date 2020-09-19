@@ -40,9 +40,9 @@ class BadRecordPathLoadOptionTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("data load log file and csv file written at the configured location") {
-    sql(
-      s"""CREATE TABLE IF NOT EXISTS salestest(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
+    sql(s"""CREATE TABLE IF NOT EXISTS salestest(ID BigInt, date Timestamp, country String,
+           actual_price Double, Quantity int, sold_price Decimal(19,2))
+           STORED AS carbondata TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
@@ -69,15 +69,12 @@ class BadRecordPathLoadOptionTest extends QueryTest with BeforeAndAfterAll {
     if (exists) {
       val listFiles: Array[CarbonFile] = carbonFile.listFiles(new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = {
-          if (file.getName.endsWith(".log") || file.getName.endsWith(".csv")) {
-            return true;
-          }
-          return false;
+          file.getName.endsWith(".log") || file.getName.endsWith(".csv")
         }
       })
       exists = listFiles.size > 0
     }
-    return exists;
+    exists
   }
 
 }

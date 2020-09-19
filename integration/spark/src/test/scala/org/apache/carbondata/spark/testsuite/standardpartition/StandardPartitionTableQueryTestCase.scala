@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
-import org.apache.spark.sql.test.SparkTestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
@@ -29,11 +29,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
+import org.apache.carbondata.sdk.file.CarbonWriter
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     dropTable
 
@@ -148,11 +148,21 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
       sql( "select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno," +
            " deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary " +
            "from originTable where projectcode=928478"))
-    verifyPartitionInfo(frame1, Seq("deptname=network","deptname=security","deptname=protocol","deptname=Learning","deptname=configManagement"))
+    verifyPartitionInfo(frame1,
+      Seq("deptname=network",
+        "deptname=security",
+        "deptname=protocol",
+        "deptname=Learning",
+        "deptname=configManagement"))
 
     val frame2 = sql("select distinct deptname from partitiontwo")
 
-    verifyPartitionInfo(frame2, Seq("deptname=network","deptname=security","deptname=protocol","deptname=Learning","deptname=configManagement"))
+    verifyPartitionInfo(frame2,
+      Seq("deptname=network",
+        "deptname=security",
+        "deptname=protocol",
+        "deptname=Learning",
+        "deptname=configManagement"))
 
     checkAnswer(frame,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where where deptname='network' and projectcode=928478 order by empno"))
@@ -172,7 +182,8 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     val frame = sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionmany where doj='2007-01-17 00:00:00'")
-    verifyPartitionInfo(frame, Seq("deptname=network","doj=2007-01-17 00:00:00","projectcode=928478"))
+    verifyPartitionInfo(frame,
+      Seq("deptname=network", "doj=2007-01-17 00:00:00", "projectcode=928478"))
     checkAnswer(frame,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj='2007-01-17 00:00:00'"))
 
@@ -210,28 +221,28 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
       """.stripMargin)
     sql(s"""insert into partitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
     val frame = sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitiondateinsert where projectenddate = cast('2016-11-30' as date)")
-    verifyPartitionInfo(frame, Seq("projectenddate=2016-11-30","doj=2015-12-01 00:00:00"))
+    verifyPartitionInfo(frame, Seq("projectenddate=2016-11-30", "doj=2015-12-01 00:00:00"))
     checkAnswer(frame,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where projectenddate = cast('2016-11-30' as date)"))
 
     val frame1 = sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitiondateinsert where doj>'2006-01-17 00:00:00'")
     verifyPartitionInfo(frame1,
-      Seq("projectenddate=2016-06-29" ,
-          "doj=2010-12-29 00:00:00"   ,
-          "doj=2015-12-01 00:00:00"   ,
-          "projectenddate=2016-11-12" ,
-          "projectenddate=2016-12-29" ,
-          "doj=2011-11-09 00:00:00"   ,
-          "doj=2009-07-07 00:00:00"   ,
-          "projectenddate=2016-05-29" ,
-          "doj=2012-10-14 00:00:00"   ,
-          "projectenddate=2016-11-30" ,
-           "projectenddate=2016-11-15",
-           "doj=2015-05-12 00:00:00"  ,
-           "doj=2013-09-22 00:00:00"  ,
-           "doj=2008-05-29 00:00:00"  ,
-           "doj=2014-08-15 00:00:00",
-           "projectenddate=2016-12-30"))
+      Seq("projectenddate=2016-06-29",
+        "doj=2010-12-29 00:00:00",
+        "doj=2015-12-01 00:00:00",
+        "projectenddate=2016-11-12",
+        "projectenddate=2016-12-29",
+        "doj=2011-11-09 00:00:00",
+        "doj=2009-07-07 00:00:00",
+        "projectenddate=2016-05-29",
+        "doj=2012-10-14 00:00:00",
+        "projectenddate=2016-11-30",
+        "projectenddate=2016-11-15",
+        "doj=2015-05-12 00:00:00",
+        "doj=2013-09-22 00:00:00",
+        "doj=2008-05-29 00:00:00",
+        "doj=2014-08-15 00:00:00",
+        "projectenddate=2016-12-30"))
     checkAnswer(frame1,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj>cast('2006-01-17 00:00:00' as Timestamp)"))
 
@@ -240,7 +251,7 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
   test("badrecords on partition column") {
     sql("create table badrecordsPartition(intField1 int, stringField1 string) partitioned by (intField2 int) STORED AS carbondata")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartition options('bad_records_action'='force')")
-    sql("select count(*) from badrecordsPartition").show()
+    sql("select count(*) from badrecordsPartition").collect()
     checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is null"), Seq(Row(9)))
     checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is not null"), Seq(Row(2)))
   }
@@ -294,14 +305,14 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
 
   }
 
-test("Creation of partition table should fail if the colname in table schema and partition column is same even if both are case sensitive"){
+test("Creation of partition table should fail if the colname in table schema and partition column is same even if both are case sensitive") {
   val exception = intercept[Exception]{
     sql("CREATE TABLE uniqdata_char2(name char(10),id int) partitioned by (NAME char(10))STORED AS carbondata ")
   }
   assert(exception.getMessage.contains("Found duplicate column(s) in the table definition of `default`.`uniqdata_char2`: `name`"))
 }
 
-  test("Creation of partition table should fail for both spark version with same exception when char data type is created with specified digit and colname in table schema and partition column is same even if both are case sensitive"){
+  test("Creation of partition table should fail for both spark version with same exception when char data type is created with specified digit and colname in table schema and partition column is same even if both are case sensitive") {
 
     sql("DROP TABLE IF EXISTS UNIQDATA_CHAR2")
     val exception = intercept[Exception]{
@@ -310,7 +321,7 @@ test("Creation of partition table should fail if the colname in table schema and
     assert(exception.getMessage.contains("Found duplicate column(s) in the table definition of `default`.`uniqdata_char2`: `name`"))
   }
 
-  test("Renaming a partition table should fail"){
+  test("Renaming a partition table should fail") {
     sql("drop table if exists partitionTable")
     sql(
       """create table partitionTable (id int,name String) partitioned by(email string) STORED AS carbondata
@@ -323,21 +334,21 @@ test("Creation of partition table should fail if the colname in table schema and
   }
 
 
-  test("add partition based on location on partition table"){
+  test("add partition based on location on partition table") {
     sql("drop table if exists partitionTable")
     sql(
       """create table partitionTable (id int,name String) partitioned by(email string) STORED AS carbondata
       """.stripMargin)
     sql("insert into partitionTable select 1,'huawei','abc'")
-    val location = target +"/" +"def"
+    val location = target + "/" + "def"
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
     sql(s"""alter table partitionTable add partition (email='def') location '$location'""")
     sql("insert into partitionTable select 1,'huawei','def'")
     checkAnswer(sql("select email from partitionTable"), Seq(Row("def"), Row("abc")))
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location))
   }
-  
-  test("sdk write and add partition based on location on partition table"){
+
+  test("sdk write and add partition based on location on partition table") {
     sql("drop table if exists partitionTable")
     sql("create table partitionTable (id int,name String) partitioned by(email string) stored as carbondata")
     sql("insert into partitionTable select 1,'blue','abc'")
@@ -345,7 +356,7 @@ test("Creation of partition table should fail if the colname in table schema and
       CarbonTablePath.getSchemaFilePath(
         CarbonEnv.getCarbonTable(None, "partitionTable")(sqlContext.sparkSession).getTablePath)
 
-    val sdkWritePath = target +"/" +"def"
+    val sdkWritePath = target + "/" + "def"
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
 
     (1 to 3).foreach { i =>
@@ -361,7 +372,7 @@ test("Creation of partition table should fail if the colname in table schema and
     }
 
     sql(s"alter table partitionTable add partition (email='def') location '$sdkWritePath'")
-    sql("show partitions partitionTable").show(false)
+    sql("show partitions partitionTable").collect()
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc"), Row("email=def")))
     checkAnswer(sql("select email from partitionTable"), Seq(Row("abc"), Row("def"), Row("def"), Row("def"), Row("def"), Row("def"), Row("def")))
     checkAnswer(sql("select count(*) from partitionTable"), Seq(Row(7)))
@@ -394,7 +405,7 @@ test("Creation of partition table should fail if the colname in table schema and
         | PARTITIONED BY (empname String)
         | STORED AS carbondata
       """.stripMargin)
-    val location = target +"/" +"ravi"
+    val location = target + "/" + "ravi"
     sql(s"""alter table staticpartitionlocload add partition (empname='ravi') location '$location'""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocload partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     val frame = sql("select count(empno) from staticpartitionlocload")
@@ -419,7 +430,7 @@ test("Creation of partition table should fail if the colname in table schema and
         | PARTITIONED BY (empname String)
         | STORED AS carbondata
       """.stripMargin)
-    val location = target +"/" +"ravi1"
+    val location = target + "/" + "ravi1"
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionsetloc partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     intercept[Exception] {
       sql(s"""alter table staticpartitionsetloc partition (empname='ravi') set location '$location'""")
@@ -440,7 +451,7 @@ test("Creation of partition table should fail if the colname in table schema and
         | PARTITIONED BY (empname String)
         | STORED AS carbondata
       """.stripMargin)
-    val location = target +"/" +"ravi"
+    val location = target + "/" + "ravi"
     sql(s"""alter table staticpartitionlocloadother add partition (empname='ravi') location '$location'""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother partition(empname='indra') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -475,7 +486,7 @@ test("Creation of partition table should fail if the colname in table schema and
         | PARTITIONED BY (empname String)
         | STORED AS carbondata
       """.stripMargin)
-    val location = target +"/" +"ravi1"
+    val location = target + "/" + "ravi1"
     try {
       sql(s"""alter table staticpartitionlocloadother_new add partition (empname='ravi') location '$location'""")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -503,7 +514,7 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("alter table par drop columns(name)")
     sql("alter table par add columns(name string)")
     sql("insert into par select 'joey','NY',32 union all select 'joey','NY',32")
-    checkAnswer(sql("select name from par"), Seq(Row("NY"),Row("NY"), Row(null), Row(null)))
+    checkAnswer(sql("select name from par"), Seq(Row("NY"), Row("NY"), Row(null), Row(null)))
     sql("drop table if exists par")
   }
 
@@ -532,7 +543,7 @@ test("Creation of partition table should fail if the colname in table schema and
     assert(!partitionNames.map(f => scanRDD.head.partitionNames.exists(_.getPartitions.contains(f))).exists(!_))
   }
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -541,7 +552,7 @@ test("Creation of partition table should fail if the colname in table schema and
     dropTable
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists originTable")
     sql("drop table if exists originMultiLoads")
     sql("drop table if exists partitionone")
@@ -565,5 +576,5 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists par")
     sql("drop table if exists onlyPart")
   }
-
+  // scalastyle:on lineLength
 }

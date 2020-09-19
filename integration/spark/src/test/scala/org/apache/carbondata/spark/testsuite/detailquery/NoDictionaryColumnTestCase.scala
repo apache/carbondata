@@ -21,9 +21,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * Test Class for detailed query on Int and BigInt of No Dictionary col
-  *
-  */
+ * Test Class for detailed query on Int and BigInt of No Dictionary col
+ */
 class NoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -33,12 +32,19 @@ class NoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS hiveEmpty")
     sql("CREATE TABLE carbonTable (imei String, age Int, num BigInt) STORED AS carbondata ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithNegtiveNumber.csv' INTO TABLE carbonTable")
-    sql("CREATE TABLE hiveTable (imei String, age Int, num BigInt) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithNegeativewithoutHeader.csv' INTO TABLE hiveTable")
+    sql("CREATE TABLE hiveTable (imei String, age Int, num BigInt) " +
+        "ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithNegeativewithoutHeader.csv' " +
+        s"INTO TABLE hiveTable")
 
-    sql("CREATE TABLE carbonEmpty (cust_id int, cust_name String, active_emui_version String, bob timestamp, bigint_column bigint) STORED AS carbondata ")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataWithEmptyRows.csv' INTO TABLE carbonEmpty OPTIONS('FILEHEADER'='cust_id,cust_name,active_emui_version,bob,bigint_column')")
-    sql("CREATE TABLE hiveEmpty (cust_id int, cust_name String, active_emui_version String, bob timestamp, bigint_column bigint) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
+    sql("CREATE TABLE carbonEmpty (cust_id int, cust_name String, " +
+        "active_emui_version String, bob timestamp, bigint_column bigint) STORED AS carbondata ")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataWithEmptyRows.csv' " +
+        s"INTO TABLE carbonEmpty " +
+        s"OPTIONS('FILEHEADER'='cust_id,cust_name,active_emui_version,bob,bigint_column')")
+    sql("CREATE TABLE hiveEmpty (cust_id int, cust_name String, " +
+        "active_emui_version String, bob timestamp, bigint_column bigint) " +
+        "ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataWithEmptyRows.csv' INTO TABLE hiveEmpty")
   }
 

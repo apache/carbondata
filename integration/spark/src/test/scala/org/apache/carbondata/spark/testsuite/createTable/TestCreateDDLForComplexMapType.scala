@@ -1,24 +1,26 @@
 /*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-    Licensed to the Apache Software Foundation (ASF) under one or more
-    contributor license agreements. See the NOTICE file distributed with
-    this work for additional information regarding copyright ownership.
-    The ASF licenses this file to You under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with
-    the License. You may obtain a copy of the License at
-    *
-    http://www.apache.org/licenses/LICENSE-2.0
-    *
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-    */
-package org.apache.carbondata.spark.testsuite.createTable.TestCreateDDLForComplexMapType
+package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.{BufferedWriter, File, FileWriter}
 import java.util
+
+import scala.collection.JavaConverters._
 
 import au.com.bytecode.opencsv.CSVWriter
 import org.apache.hadoop.conf.Configuration
@@ -27,7 +29,6 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
-import scala.collection.JavaConversions._
 
 class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
   private val conf: Configuration = new Configuration(false)
@@ -40,8 +41,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
   private def checkForLocalDictionary(dimensionRawColumnChunks: util
   .List[DimensionRawColumnChunk]): Boolean = {
     var isLocalDictionaryGenerated = false
-    import scala.collection.JavaConversions._
-    isLocalDictionaryGenerated = dimensionRawColumnChunks
+    isLocalDictionaryGenerated = dimensionRawColumnChunks.asScala
       .filter(dimensionRawColumnChunk => dimensionRawColumnChunk.getDataChunkV3
         .isSetLocal_dictionary).size > 0
     isLocalDictionaryGenerated
@@ -50,15 +50,10 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
   def createCSVFile(): Unit = {
     val out = new BufferedWriter(new FileWriter(path));
     val writer = new CSVWriter(out);
-
     val employee1 = Array("1\u0002Nalla\u00012\u0002Singh\u00011\u0002Gupta\u00014\u0002Kumar")
-
     val employee2 = Array("10\u0002Nallaa\u000120\u0002Sissngh\u0001100\u0002Gusspta\u000140" +
                           "\u0002Kumar")
-
-    var listOfRecords = List(employee1, employee2)
-
-    writer.writeAll(listOfRecords)
+    writer.writeAll(List(employee1, employee2).asJava)
     out.close()
   }
 
@@ -179,7 +174,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | carbon """.stripMargin).collect()
     assert(desc(0).get(1).asInstanceOf[String].trim.equals("array<map<int,int>>"))
     sql("insert into carbon values(array(map(1,2,2,3), map(100,200,200,300)))")
-    sql("select * from carbon").show(false)
+    sql("select * from carbon").collect()
   }
 
   test("Test Load data in map") {
@@ -234,7 +229,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | """
         .stripMargin)
     sql("insert into carbon values(map('vi','Nalla','sh','Singh','al','Gupta'))")
-    sql("select * from carbon").show(false)
+    sql("select * from carbon").collect()
     checkAnswer(sql("select * from carbon"), Seq(
       Row(Map("vi" -> "Nalla", "sh" -> "Singh", "al" -> "Gupta"))))
   }
@@ -271,7 +266,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbon values(1, map(1,'Nalla',2,'Singh',3,'Gupta',4,'Kumar'))")
     sql("insert into carbon values(2, map(1,'abc',2,'xyz',3,'hello',4,'mno'))")
     val exception = intercept[UnsupportedOperationException](
-      sql("update carbon set(mapField)=('1,haha') where a=1").show(false))
+      sql("update carbon set(mapField)=('1,haha') where a=1").collect())
     assertResult("Unsupported operation on Complex data type")(exception.getMessage())
     sql("delete from carbon where mapField[1]='abc'")
     checkAnswer(sql("select * from carbon"), Seq(
@@ -308,7 +303,8 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED AS carbondata """
         .stripMargin)
-    sql("insert into carbon values(map('manish', map(1,'nalla',2,'gupta'), 'kunal', map(1, 'kapoor', 2, 'sharma')))")
+    sql("insert into carbon values" +
+        "(map('manish', map(1,'nalla',2,'gupta'), 'kunal', map(1, 'kapoor', 2, 'sharma')))")
     checkAnswer(sql("select * from carbon"), Seq(
       Row(Map("manish" -> Map(1 -> "nalla", 2 -> "gupta"),
         "kunal" -> Map(1 -> "kapoor", 2 -> "sharma")))))
@@ -324,7 +320,8 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED AS carbondata
          |"""
         .stripMargin)
-    sql("insert into carbon values(map('manish', map(1,'nalla',1,'gupta'), 'kunal', map(1, 'kapoor', 2, 'sharma')))")
+    sql("insert into carbon values" +
+        "(map('manish', map(1,'nalla',1,'gupta'), 'kunal', map(1, 'kapoor', 2, 'sharma')))")
     checkAnswer(sql("select * from carbon"), Seq(
       Row(Map("manish" -> Map(1 -> "gupta"),
         "kunal" -> Map(1 -> "kapoor", 2 -> "sharma")))))
@@ -426,7 +423,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | 'header' = 'false')
        """.stripMargin)
     sql("alter table carbon compact 'minor'")
-    sql("show segments for table carbon").show(false)
+    sql("show segments for table carbon").collect()
     checkAnswer(sql("select * from carbon"), Seq(
       Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
@@ -493,7 +490,8 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED AS carbondata
          | """
         .stripMargin)
-    sql("INSERT INTO carbon values(map(1, named_struct('kk', 'man', 'mm', 'nan'), 2, named_struct('kk', 'kands', 'mm', 'dsnknd')))")
+    sql("INSERT INTO carbon values(map(1, named_struct('kk', 'man', 'mm', 'nan'), 2, " +
+        "named_struct('kk', 'kands', 'mm', 'dsnknd')))")
     sql("INSERT INTO carbon SELECT * FROM carbon")
     checkAnswer(sql("SELECT * FROM carbon limit 1"),
       Seq(Row(Map(1 -> Row("man", "nan"), (2 -> Row("kands", "dsnknd"))))))
@@ -509,7 +507,8 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED AS carbondata
          | """
         .stripMargin)
-    sql("INSERT INTO carbon values(map(1, named_struct('kk', 'man', 'mm', 'nan'), 2, named_struct('kk', 'kands', 'mm', 'dsnknd')))")
+    sql("INSERT INTO carbon values(map(1, named_struct('kk', 'man', 'mm', 'nan'), 2, " +
+        "named_struct('kk', 'kands', 'mm', 'dsnknd')))")
     checkAnswer(sql("SELECT mapField[1].kk FROM carbon"), Row("man"))
   }
 
@@ -523,8 +522,9 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED AS carbondata
          | """
         .stripMargin)
-    sql("INSERT INTO carbon values(named_struct('intVal', 1, 'map1', map('man','nan','kands','dsnknd')))")
-    val res = sql("SELECT structField.intVal FROM carbon").show(false)
+    sql("INSERT INTO carbon values(named_struct('intVal', 1, 'map1', " +
+        "map('man','nan','kands','dsnknd')))")
+    val res = sql("SELECT structField.intVal FROM carbon").collect()
     checkAnswer(sql("SELECT structField.intVal FROM carbon"), Seq(Row(1)))
   }
 

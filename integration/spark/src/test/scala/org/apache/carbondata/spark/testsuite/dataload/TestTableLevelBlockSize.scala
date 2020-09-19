@@ -18,19 +18,16 @@
 package org.apache.carbondata.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
-
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 /**
-  * Test Class for table block size
-  *
-  */
-
+ * Test Class for table block size
+ */
 class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
 
   val testData1 = s"$resourcesPath/dimSample.csv"
@@ -55,10 +52,9 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
         """)
       assert(false)
     } catch {
-      case e : MalformedCarbonCommandException => {
+      case e : MalformedCarbonCommandException =>
         assert(e.getMessage.equals("Invalid table_blocksize value found: 4096, " +
             "only int value from 1 MB to 2048 MB is supported."))
-      }
     }
   }
 
@@ -74,10 +70,9 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
         """)
       assert(false)
     } catch {
-      case e : MalformedCarbonCommandException => {
+      case e : MalformedCarbonCommandException =>
         assert(e.getMessage.equals("Invalid table_blocksize value found: 10y4, " +
             "only int value from 1 MB to 2048 MB is supported."))
-      }
     }
   }
 

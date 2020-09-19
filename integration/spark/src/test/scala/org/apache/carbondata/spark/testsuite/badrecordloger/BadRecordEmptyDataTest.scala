@@ -17,21 +17,17 @@
 
 package org.apache.carbondata.spark.testsuite.badrecordloger
 
-import java.io.File
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
-import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for detailed query on timestamp datatypes
- *
- *
  */
 class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
@@ -51,7 +47,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
 
       // 1. empty data for string data type - take empty value
       // 2. empty data for non-string data type - Bad records/Null value based on configuration
-      //table should have only two records.
+      // table should have only two records.
       sql(
         """CREATE TABLE IF NOT EXISTS emptyColumnValues(ID BigInt, date Timestamp, country String,
           actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata
@@ -130,7 +126,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from empty_timestamp_false") {
-    sql("select count(*) from empty_timestamp_false").show(100, false)
+    sql("select count(*) from empty_timestamp_false").collect()
     checkAnswer(
       sql("select count(*) from empty_timestamp_false"),
       Seq(Row(7)

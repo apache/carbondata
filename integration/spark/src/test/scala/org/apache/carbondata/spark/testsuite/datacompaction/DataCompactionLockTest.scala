@@ -16,25 +16,21 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-
-
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.spark.sql.test.util.QueryTest
-
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
-
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
-  * FT for data compaction Locking scenario.
-  */
+ * FT for data compaction Locking scenario.
+ */
 class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
 
   val absoluteTableIdentifier: AbsoluteTableIdentifier =
@@ -92,8 +88,8 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
   }
 
   /**
-    * Compaction should fail as lock is being held purposefully
-    */
+   * Compaction should fail as lock is being held purposefully
+   */
   test("check if compaction is failed or not.") {
 
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(

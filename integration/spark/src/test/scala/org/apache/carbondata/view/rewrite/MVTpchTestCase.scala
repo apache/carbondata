@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
 import java.io.File
@@ -23,7 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     drop()
     val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../")
@@ -192,13 +193,12 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   def verifyAgg(logicalPlan: LogicalPlan): Boolean = {
     var aggExpExists = false
     logicalPlan transform {
-      case a:Aggregate =>
+      case a: Aggregate =>
         aggExpExists = true
         a
     }
     aggExpExists
   }
-
 
   def drop(): Unit = {
     sql("drop table IF EXISTS LINEITEM")
@@ -218,4 +218,5 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
 //    drop()
   }
+  // scalastyle:on lineLength
 }

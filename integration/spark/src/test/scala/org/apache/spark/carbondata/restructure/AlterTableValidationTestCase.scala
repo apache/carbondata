@@ -30,7 +30,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength println
   override def beforeAll {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
@@ -98,8 +98,8 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "alter table restructure add columns(tmpstmp timestamp) TBLPROPERTIES ('DEFAULT.VALUE" +
       ".tmpstmp'= '2007-01-17')")
-    sql("select tmpstmp from restructure").show(200,false)
-    sql("select distinct(tmpstmp) from restructure").show(200,false)
+    sql("select tmpstmp from restructure").collect()
+    sql("select distinct(tmpstmp) from restructure").collect()
     checkAnswer(sql("select distinct(tmpstmp) from restructure"),
       Row(new java.sql.Timestamp(107, 0, 17, 0, 0, 0, 0)))
     checkExistence(sql("desc restructure"), true, "tmpstmp", "timestamp")
@@ -121,18 +121,18 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
         "('DEFAULT.VALUE.tmpstmp'='17-01-3007')")
     sql("insert into table1 select 'name','17-01-2007'")
     checkAnswer(sql("select * from table1"),
-      Seq(Row("abc",null),
-        Row("name",Timestamp.valueOf("2007-01-17 00:00:00.0"))))
+      Seq(Row("abc", null),
+        Row("name", Timestamp.valueOf("2007-01-17 00:00:00.0"))))
   }
 
   test("test add msr column") {
     sql(
       "alter table restructure add columns(msrField decimal(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
       ".msrfield'= '123.45')")
-    sql("desc restructure").show(2000,false)
+    sql("desc restructure").collect()
     checkExistence(sql("desc restructure"), true, "msrfield", "decimal(5,2)")
     val output = sql("select msrField from restructure").collect
-    sql("select distinct(msrField) from restructure").show(2000,false)
+    sql("select distinct(msrField) from restructure").collect()
     checkAnswer(sql("select distinct(msrField) from restructure"),
       Row(new BigDecimal("123.45").setScale(2, RoundingMode.HALF_UP)))
   }
@@ -155,7 +155,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("alter table alterLong1 add columns(newCol long)")
     checkAnswer(sql("select * from alterLong1"), Row("a", null))
     sql("insert into alterLong1 select 'b',70")
-    checkAnswer(sql("select * from alterLong1"), Seq(Row("a", null),Row("b", 70)))
+    checkAnswer(sql("select * from alterLong1"), Seq(Row("a", null), Row("b", 70)))
     sql("drop table if exists alterLong1")
   }
 
@@ -493,7 +493,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String) STORED AS carbondata""")
     sql("""insert into table uniqdata values(1,"hello")""")
     sql("alter table Default.uniqdata rename to uniqdata1")
-    checkAnswer(sql("select * from Default.uniqdata1"), Row(1,"hello"))
+    checkAnswer(sql("select * from Default.uniqdata1"), Row(1, "hello"))
   }
 
   // test query before&after renaming, see CARBONDATA-1690
@@ -524,17 +524,21 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED AS carbondata ")
     sql("alter table defaultSortColumnsWithAlter drop columns (designation)")
     sql("alter table defaultSortColumnsWithAlter add columns (designation12 String)")
-    checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"Sort Columns empno, empname, role, doj")
+    checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),
+      true,
+      "Sort Columns empno, empname, role, doj")
   }
   test("describe formatted for specified sort_columns pre and post alter") {
     sql("CREATE TABLE specifiedSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED AS carbondata " +
         "tblproperties('sort_columns'='empno,empname,designation,role,doj')")
     sql("alter table specifiedSortColumnsWithAlter drop columns (designation)")
     sql("alter table specifiedSortColumnsWithAlter add columns (designation12 String)")
-    checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"Sort Columns empno, empname, role, doj")
+    checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),
+      true,
+      "Sort Columns empno, empname, role, doj")
   }
 
-  test("test to check select columns after alter commands with null values"){
+  test("test to check select columns after alter commands with null values") {
     sql("drop table if exists restructure")
     sql("drop table if exists restructure1")
     sql(
@@ -550,7 +554,10 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("ALTER TABLE restructure1 DROP COLUMNS (projId)")
     sql("ALTER TABLE restructure1 CHANGE empno empno BIGINT")
     sql("ALTER TABLE restructure1 ADD COLUMNS (a1 INT, b1 STRING)")
-    checkAnswer(sql("select a1,b1,empname from restructure1 where a1 is null and b1 is null and empname='arvind'"),Row(null,null,"arvind"))
+    checkAnswer(
+      sql("select a1,b1,empname from restructure1 " +
+          "where a1 is null and b1 is null and empname='arvind'"),
+      Row(null, null, "arvind"))
     sql("drop table if exists restructure1")
     sql("drop table if exists restructure")
   }
@@ -559,14 +566,15 @@ test("test alter command for boolean data type with correct default measure valu
   sql("insert into testalterwithboolean values(1,'anubhav')  ")
   sql(
     "alter table testalterwithboolean add columns(booleanfield boolean) tblproperties('default.value.booleanfield'='true')")
-  checkAnswer(sql("select * from testalterwithboolean"),Seq(Row(1,"anubhav",true)))
+  checkAnswer(sql("select * from testalterwithboolean"), Seq(Row(1, "anubhav", true)))
 }
   test("test alter command for boolean data type with out default measure value") {
     sql("create table testalterwithbooleanwithoutdefaultvalue(id int,name string) STORED AS carbondata ")
     sql("insert into testalterwithbooleanwithoutdefaultvalue values(1,'anubhav')  ")
     sql(
       "alter table testalterwithbooleanwithoutdefaultvalue add columns(booleanfield boolean)")
-    checkAnswer(sql("select * from testalterwithbooleanwithoutdefaultvalue"),Seq(Row(1,"anubhav",null)))
+    checkAnswer(sql("select * from testalterwithbooleanwithoutdefaultvalue"),
+      Seq(Row(1, "anubhav", null)))
   }
   test("test alter command for filter on default values on date datatype") {
     sql("drop table if exists test")
@@ -580,17 +588,17 @@ test("test alter command for boolean data type with correct default measure valu
     sql("insert into test select 3,'String1',12345,'area',20,'country','2017-02-12','1995-01-01','1995-01-01'")
     sql("insert into test select 4,'String1',12345,'area',20,'country','2017-02-12','1996-01-01','1996-01-01'")
     checkAnswer(sql("select id from test where c3='1993-01-01'"), Seq(Row(1)))
-    checkAnswer(sql("select id from test where c3!='1993-01-01'"), Seq(Row(2),Row(3),Row(4)))
+    checkAnswer(sql("select id from test where c3!='1993-01-01'"), Seq(Row(2), Row(3), Row(4)))
     checkAnswer(sql("select id from test where c3<'1995-01-01'"), Seq(Row(1), Row(2)))
     checkAnswer(sql("select id from test where c3>'1994-01-01'"), Seq(Row(3), Row(4)))
     checkAnswer(sql("select id from test where c3>='1995-01-01'"), Seq(Row(3), Row(4)))
     checkAnswer(sql("select id from test where c3<='1994-01-01'"), Seq(Row(1), Row(2)))
     checkAnswer(sql("select id from test where c4 IS NULL"), Seq(Row(1)))
-    checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2),Row(3),Row(4)))
+    checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2), Row(3), Row(4)))
   }
 
   test("test alter command for filter on default values on timestamp datatype") {
-    def testFilterWithDefaultValue(flag: Boolean) = {
+    def testFilterWithDefaultValue(flag: Boolean): Unit = {
       try {
         CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -617,7 +625,8 @@ test("test alter command for boolean data type with correct default measure valu
         sql(
           "insert into test select 4,'String1',12345,'area',20,'country','2017-02-12','1996-01-01 10:10:10','1996-01-01 10:10:10'")
         checkAnswer(sql("select id from test where c3='1996-01-01 11:11:11'"), Seq(Row(1)))
-        checkAnswer(sql("select id from test where c3!='1996-01-01 11:11:11'"), Seq(Row(2),Row(3),Row(4)))
+        checkAnswer(sql("select id from test where c3!='1996-01-01 11:11:11'"),
+          Seq(Row(2), Row(3), Row(4)))
         checkAnswer(sql("select id from test where c3<'1995-01-01 11:11:11'"), Seq(Row(2)))
         checkAnswer(sql("select id from test where c3>'1994-01-02 11:11:11'"),
           Seq(Row(3), Row(4), Row(1)))
@@ -625,7 +634,7 @@ test("test alter command for boolean data type with correct default measure valu
           Seq(Row(3), Row(4), Row(1)))
         checkAnswer(sql("select id from test where c3<='1995-01-02 11:11:11'"), Seq(Row(2), Row(3)))
         checkAnswer(sql("select id from test where c4 IS NULL"), Seq(Row(1)))
-        checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2),Row(3),Row(4)))
+        checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2), Row(3), Row(4)))
       }
       finally {
         CarbonProperties.getInstance()
@@ -640,7 +649,7 @@ test("test alter command for boolean data type with correct default measure valu
   }
 
   test("test alter command for filter on default values on int") {
-    def testFilterWithDefaultValue(flag: Boolean) = {
+    def testFilterWithDefaultValue(flag: Boolean): Unit = {
       sql("drop table if exists test")
       sql(
         "create table test(id int,vin string,phonenumber long,area string,salary int,country " +
@@ -662,7 +671,7 @@ test("test alter command for boolean data type with correct default measure valu
       checkAnswer(sql("select id from test where c3>=35"), Seq(Row(3), Row(4)))
       checkAnswer(sql("select id from test where c3<=35"), Seq(Row(1), Row(2), Row(3)))
       checkAnswer(sql("select id from test where c4 IS NULL"), Seq(Row(1)))
-      checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2),Row(3),Row(4)))
+      checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2), Row(3), Row(4)))
     }
 
     testFilterWithDefaultValue(true)
@@ -677,19 +686,19 @@ test("test alter command for boolean data type with correct default measure valu
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table retructure_iud")
     sql("ALTER TABLE retructure_iud ADD COLUMNS (newField STRING) " +
-        "TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").show()
+        "TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").collect()
     sql("ALTER TABLE retructure_iud ADD COLUMNS (newField1 STRING) " +
-        "TBLPROPERTIES ('DEFAULT.VALUE.newField1'='def')").show()
+        "TBLPROPERTIES ('DEFAULT.VALUE.newField1'='def')").collect()
     // update operation
-    sql("""update retructure_iud d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    sql("""update retructure_iud d  set (d.id) = (d.id + 1) where d.id > 2""").collect()
     checkAnswer(
       sql("select count(*) from retructure_iud where id = 2 and newfield1='def'"),
       Seq(Row(1))
     )
   }
 
-  test("Alter table selection in random order"){
-    def test(): Unit ={
+  test("Alter table selection in random order") {
+    def test(): Unit = {
       sql("drop table if exists restructure_random_select")
       sql("create table restructure_random_select (imei string,channelsId string,gamePointId double,deviceInformationId double," +
           " deliverycharge double) STORED AS carbondata TBLPROPERTIES('table_blocksize'='2000','sort_columns'='imei')")
@@ -697,10 +706,10 @@ test("test alter command for boolean data type with correct default measure valu
       sql("Alter table restructure_random_select add columns (age int,name String)")
       checkAnswer(
         sql("select gamePointId,deviceInformationId,age,name from restructure_random_select where name is NULL or channelsId=4"),
-        Seq(Row(50.5,30.2,null,null)))
+        Seq(Row(50.5, 30.2, null, null)))
       checkAnswer(
         sql("select age,name,gamePointId,deviceInformationId from restructure_random_select where name is NULL or channelsId=4"),
-        Seq(Row(null,null,50.5,30.2)))
+        Seq(Row(null, null, 50.5, 30.2)))
     }
     try {
       test()
@@ -746,7 +755,7 @@ test("test alter command for boolean data type with correct default measure valu
     sql("alter table alterPartitionTable add columns(projectenddate timestamp)")
     sql(s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE alterPartitionTable OPTIONS('DELIMITER'= ',', " +
               "'QUOTECHAR'= '\"')")
-    sql("select * from alterPartitionTable where empname='bill'").show(false)
+    sql("select * from alterPartitionTable where empname='bill'").collect()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timestampFormat)
   }
@@ -846,4 +855,5 @@ test("test alter command for boolean data type with correct default measure valu
     sql("drop table if exists alterTable")
     sql("drop table if exists alterPartitionTable")
   }
+  // scalastyle:on lineLength println
 }

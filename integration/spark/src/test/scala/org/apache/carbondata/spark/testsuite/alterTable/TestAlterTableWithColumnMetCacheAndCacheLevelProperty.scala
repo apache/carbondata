@@ -21,13 +21,12 @@ import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-
 /**
  * test class for validating alter table set properties with alter_column_meta_cache and
  * cache_level properties
  */
-class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest with BeforeAndAfterAll {
+class TestAlterTableWithColumnMetCacheAndCacheLevelProperty
+  extends QueryTest with BeforeAndAfterAll {
 
   private def isExpectedValueValid(dbName: String,
       tableName: String,
@@ -47,7 +46,8 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
     // drop table
     dropTable
     // create table
-    sql("create table alter_column_meta_cache(c1 String, c2 String, c3 int, c4 double, c5 struct<imei:string, imsi:string>, c6 array<string>) STORED AS carbondata")
+    sql("create table alter_column_meta_cache(c1 String, c2 String, c3 int, c4 double, " +
+        "c5 struct<imei:string, imsi:string>, c6 array<string>) STORED AS carbondata")
     sql("create table cache_level(c1 String) STORED AS carbondata")
   }
 
@@ -62,13 +62,15 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
     assert(isExpectedValueValid("default", "alter_column_meta_cache", "column_meta_cache", "c2,c3"))
   }
 
-  test("validate column_meta_cache with intermediate empty string between columns - alter_column_meta_cache_03") {
+  test("validate column_meta_cache with intermediate empty string between columns " +
+       "- alter_column_meta_cache_03") {
     intercept[RuntimeException] {
       sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2,  ,c3')")
     }
   }
 
-  test("validate column_meta_cache with combination of valid and invalid columns - alter_column_meta_cache_04") {
+  test("validate column_meta_cache with combination of valid and invalid columns " +
+       "- alter_column_meta_cache_04") {
     intercept[RuntimeException] {
       sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2,c10')")
     }
@@ -76,7 +78,10 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
 
   test("validate column_meta_cache for dimensions and measures - alter_column_meta_cache_05") {
     sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c3,c2,c4')")
-    assert(isExpectedValueValid("default", "alter_column_meta_cache", "column_meta_cache", "c2,c3,c4"))
+    assert(isExpectedValueValid("default",
+      "alter_column_meta_cache",
+      "column_meta_cache",
+      "c2,c3,c4"))
   }
 
   test("validate for duplicate column names - alter_column_meta_cache_06") {
@@ -102,13 +107,15 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
     assert(isExpectedValueValid("default", "alter_column_meta_cache", "column_meta_cache", ""))
   }
 
-  test("validate describe formatted command to display column_meta_cache when column_meta_cache is set - alter_column_meta_cache_10") {
+  test("validate describe formatted command to display column_meta_cache " +
+       "when column_meta_cache is set - alter_column_meta_cache_10") {
     sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2')")
     val descResult = sql("describe formatted alter_column_meta_cache")
     checkExistence(descResult, true, "column_meta_cache")
   }
 
-  test("validate unsetting of column_meta_cache when column_meta_cache is already set - alter_column_meta_cache_11") {
+  test("validate unsetting of column_meta_cache " +
+       "when column_meta_cache is already set - alter_column_meta_cache_11") {
     sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2,c3')")
     var descResult = sql("describe formatted alter_column_meta_cache")
     checkExistence(descResult, true, "Cached Min/Max Index Columns c2, c3")
@@ -117,7 +124,8 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
     checkExistence(descResult, false, "Cached Min/Max Index Columns c2, c3")
   }
 
-  test("validate unsetting of column_meta_cache when column_meta_cache is not already set - alter_column_meta_cache_12") {
+  test("validate unsetting of column_meta_cache " +
+       "when column_meta_cache is not already set - alter_column_meta_cache_12") {
     var descResult = sql("describe formatted alter_column_meta_cache")
     checkExistence(descResult, false, "c2, c3")
     sql("Alter table alter_column_meta_cache UNSET TBLPROPERTIES('column_meta_cache')")
@@ -147,13 +155,15 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
     assert(isExpectedValueValid("default", "cache_level", "cache_level", "BLOCKLET"))
   }
 
-  test("validate describe formatted command to display cache_level when cache_level is set - ALTER_CACHE_LEVEL_05") {
+  test("validate describe formatted command to display cache_level " +
+       "when cache_level is set - ALTER_CACHE_LEVEL_05") {
     sql("Alter table cache_level SET TBLPROPERTIES('cache_level'='bloCKlet')")
     val descResult = sql("describe formatted cache_level")
     checkExistence(descResult, true, "Min/Max Index Cache Level")
   }
 
-  test("validate describe formatted command to display cache_level when cache_level is not set - ALTER_CACHE_LEVEL_06") {
+  test("validate describe formatted command to display cache_level " +
+       "when cache_level is not set - ALTER_CACHE_LEVEL_06") {
     sql("Alter table cache_level UNSET TBLPROPERTIES('cache_level')")
     val descResult = sql("describe formatted cache_level")
     // even though not configured default cache level will be displayed as BLOCK

@@ -21,6 +21,8 @@ import java.io.{File, IOException}
 import java.sql.Timestamp
 import java.util
 
+import scala.collection.JavaConverters._
+
 import org.apache.avro
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
@@ -32,14 +34,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.sdk.file._
-import scala.collection.JavaConverters._
 
 class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAndAfterAll {
 
   var writerPath = new File(this.getClass.getResource("/").getPath
                             + "../."
                             + "./target/SparkCarbonFileFormat/WriterOutput/").getCanonicalPath
-  //getCanonicalPath gives path with \, but the code expects /.
+  // getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
 
   var backupdateFormat = CarbonProperties.getInstance().getProperty(
@@ -93,7 +94,8 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
   private def writeCarbonFileFromJsonRowInput(jsonRow: String,
       carbonSchema: Schema) = {
     try {
-      val options: util.Map[String, String] = Map("bAd_RECords_action" -> "FAIL", "quotechar" -> "\"").asJava
+      val options: util.Map[String, String] =
+        Map("bAd_RECords_action" -> "FAIL", "quotechar" -> "\"").asJava
       val writer = CarbonWriter.builder
               .outputPath(writerPath)
               .uniqueIdentifier(System.currentTimeMillis())
@@ -105,10 +107,9 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
       writer.close()
     }
     catch {
-      case e: Exception => {
+      case e: Exception =>
         e.printStackTrace()
         Assert.fail(e.getMessage)
-      }
     }
   }
 
@@ -200,7 +201,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
-    sql("select * from sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable").collect()
     /*
     * +-------+---+-----------------------------------------+
       |name   |age|BuildNum                                 |
@@ -234,7 +235,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
-    sql("select * from sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable").collect()
 
     /*
     *  +----+---+-------------------+
@@ -366,7 +367,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
-    sql("select * from sdkOutputTable").show()
+    sql("select * from sdkOutputTable").collect()
     checkAnswer(sql("select * from sdkOutputTable"),
       Seq(Row("ajantha\"bhat\"", 26, "abc".getBytes())))
     sql("DROP TABLE sdkOutputTable")

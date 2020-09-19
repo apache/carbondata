@@ -22,18 +22,17 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, SaveMode}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
-import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
+import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
@@ -44,7 +43,7 @@ import org.apache.carbondata.events.Event
 class C2IndexFactory(
     carbonTable: CarbonTable,
     indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
-
+  // scalastyle:off ???
   var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   override def fireEvent(event: Event): Unit = ???
@@ -55,11 +54,16 @@ class C2IndexFactory(
 
   override def getIndexes(segment: Segment): util.List[CoarseGrainIndex] = ???
 
-  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter =
+  override def createWriter(segment: Segment,
+      shardName: String,
+      segmentProperties: SegmentProperties): IndexWriter = {
     IndexWriterSuite.indexWriterC2Mock(identifier, "testdm", segment, shardName)
+  }
 
-  override def getMeta: IndexMeta =
-    new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns), List(ExpressionType.EQUALS).asJava)
+  override def getMeta: IndexMeta = {
+    new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns),
+      List(ExpressionType.EQUALS).asJava)
+  }
 
   /**
    * Get all distributable objects of a segmentId
@@ -137,7 +141,7 @@ class IndexWriterSuite extends QueryTest with BeforeAndAfterAll {
       .format("carbondata")
       .option("tableName", "carbon1")
       .option("tempCSV", "false")
-      .option("sort_columns","c1")
+      .option("sort_columns", "c1")
       .mode(SaveMode.Overwrite)
       .save()
 
@@ -174,8 +178,8 @@ class IndexWriterSuite extends QueryTest with BeforeAndAfterAll {
       .format("carbondata")
       .option("tableName", "carbon2")
       .option("tempCSV", "false")
-      .option("sort_columns","c1")
-      .option("SORT_SCOPE","GLOBAL_SORT")
+      .option("sort_columns", "c1")
+      .option("SORT_SCOPE", "GLOBAL_SORT")
       .mode(SaveMode.Overwrite)
       .save()
 
@@ -210,8 +214,10 @@ object IndexWriterSuite {
 
   var callbackSeq: Seq[String] = Seq[String]()
 
-  def indexWriterC2Mock(identifier: AbsoluteTableIdentifier, indexName:String, segment: Segment,
-      shardName: String) =
+  def indexWriterC2Mock(identifier: AbsoluteTableIdentifier,
+      indexName: String,
+      segment: Segment,
+      shardName: String): IndexWriter = {
     new IndexWriter(identifier.getTablePath, indexName, Seq().asJava, segment, shardName) {
 
       override def onPageAdded(
@@ -226,33 +232,35 @@ object IndexWriterSuite {
         callbackSeq :+= s"add page data: blocklet $blockletId, page $pageId"
       }
 
-    override def onBlockletEnd(blockletId: Int): Unit = {
-      callbackSeq :+= s"blocklet end: $blockletId"
-    }
+      override def onBlockletEnd(blockletId: Int): Unit = {
+        callbackSeq :+= s"blocklet end: $blockletId"
+      }
 
-    override def onBlockEnd(blockId: String): Unit = {
-      callbackSeq :+= s"block end $blockId"
-    }
+      override def onBlockEnd(blockId: String): Unit = {
+        callbackSeq :+= s"block end $blockId"
+      }
 
-    override def onBlockletStart(blockletId: Int): Unit = {
-      callbackSeq :+= s"blocklet start $blockletId"
-    }
+      override def onBlockletStart(blockletId: Int): Unit = {
+        callbackSeq :+= s"blocklet start $blockletId"
+      }
 
-    /**
-     * Start of new block notification.
-     *
-     * @param blockId file name of the carbondata file
-     */
-    override def onBlockStart(blockId: String): Unit = {
-      callbackSeq :+= s"block start $blockId"
-    }
+      /**
+       * Start of new block notification.
+       *
+       * @param blockId file name of the carbondata file
+       */
+      override def onBlockStart(blockId: String): Unit = {
+        callbackSeq :+= s"block start $blockId"
+      }
 
-    /**
-     * This is called during closing of writer.So after this call no more data will be sent to this
-     * class.
-     */
-    override def finish() = {
+      /**
+       * This is called during closing of writer.So after this call no more data will be sent to
+       * this class.
+       */
+      override def finish(): Unit = {
 
+      }
     }
   }
+  // scalastyle:on ???
 }

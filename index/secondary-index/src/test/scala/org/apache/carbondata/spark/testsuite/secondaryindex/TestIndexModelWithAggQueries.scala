@@ -16,11 +16,12 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 /**
  * test cases with secondary index and agg queries
@@ -85,7 +86,8 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(
       "SELECT sum(cr_return_amount) AS returns, sum(cr_net_loss) AS profit_loss FROM " +
       "catalog_returns, date_dim WHERE cr_returned_date_sk = d_date_sk AND d_date BETWEEN cast" +
-      "('2000-08-03]' AS DATE) AND (cast('2000-08-03' AS DATE) + INTERVAL 30 days)"),Seq(Row(null,null)))
+      "('2000-08-03]' AS DATE) AND (cast('2000-08-03' AS DATE) + INTERVAL 30 days)"),
+      Seq(Row(null, null)))
   }
 
   test("pushing down filter for broadcast join with correct record") {
@@ -108,9 +110,8 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
 
   test("test index on SI table") {
     sql("drop table if exists test_si_1")
-    sql(
-      "CREATE TABLE test_si_1 (id int,name string,salary float,dob date,address string) STORED AS " +
-      "carbondata")
+    sql("CREATE TABLE test_si_1 (id int,name string,salary float,dob date,address string) " +
+        "STORED AS carbondata")
     sql("insert into test_si_1 select 1,'aa',23423.334,'2009-09-09','df'")
     sql("insert into test_si_1 select 2,'bb',4454.454,'2009-09-09','bang'")
     sql(
@@ -131,12 +132,16 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists cast_si")
     sql("drop table if exists ctas_cast")
     sql("drop index if exists index5 on cast_si")
-    sql("create table if not exists cast_si (RECORD_ID bigint,CDR_ID string,LOCATION_CODE int,USER_NUM string) STORED AS carbondata " +
+    sql("create table if not exists cast_si (" +
+        "RECORD_ID bigint,CDR_ID string,LOCATION_CODE int,USER_NUM string) STORED AS carbondata " +
         "TBLPROPERTIES('table_blocksize'='256','SORT_SCOPE'='NO_SORT')")
-    sql("create index index5 on table cast_si(USER_NUM) AS 'carbondata' properties('table_blocksize' = '256')")
+    sql("create index index5 on table cast_si(" +
+        "USER_NUM) AS 'carbondata' properties('table_blocksize' = '256')")
     sql("insert into cast_si select  1, 'gb3e5135-5533-4ee7-51b3-F61F1355b471', 2, '26557544541'")
-    sql("create table ctas_cast select cast(location_code as string) as location_code from cast_si where ((user_num in ('26557544541')))")
-    checkAnswer(sql("select count(*) from cast_si where ((user_num in ('26557544541')))"), sql("select count(*) from ctas_cast"))
+    sql("create table ctas_cast select cast(location_code as string) " +
+        "as location_code from cast_si where ((user_num in ('26557544541')))")
+    checkAnswer(sql("select count(*) from cast_si where ((user_num in ('26557544541')))"),
+      sql("select count(*) from ctas_cast"))
   }
 
   test("test clean files for index for marked for delete segments") {
@@ -158,7 +163,8 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
     }
     sql("clean files for table clean")
     val mainTable = CarbonEnv.getCarbonTable(Some("default"), "clean")(sqlContext.sparkSession)
-    val indexTable = CarbonEnv.getCarbonTable(Some("default"), "clean_index")(sqlContext.sparkSession)
+    val indexTable = CarbonEnv.getCarbonTable(Some("default"), "clean_index")(
+      sqlContext.sparkSession)
     assert(!FileFactory.isFileExist(mainTable.getSegmentPath("0")))
     assert(!FileFactory.isFileExist(indexTable.getSegmentPath("0")))
     assert(FileFactory.isFileExist(mainTable.getSegmentPath("1")))

@@ -26,6 +26,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
+  // scalastyle:off lineLength
   override def beforeAll {
     dropTable
 
@@ -98,14 +99,22 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into t1 select 5,'d',40.01,'1996-01-02'")
     sql("delete from table t1 where segment.id in(1)")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "t1")
-    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 5)
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath)
+             .listFiles()
+             .count(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) == 5)
     sql("clean files for table t1")
-    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 4)
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath)
+             .listFiles()
+             .count(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) == 4)
     sql("Alter table t1 compact 'minor'")
-    sql("show segments for table t1").show()
-    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 5)
+    sql("show segments for table t1").collect()
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath)
+             .listFiles()
+             .count(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) == 5)
     sql("clean files for table t1")
-    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 1)
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath)
+             .listFiles()
+             .count(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) == 1)
     sql("drop table if exists t1")
   }
 
@@ -151,7 +160,7 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "flatfolder_delete")
     sql(s"""delete from flatfolder_delete where empname='anandh'""")
     sql(s"""delete from flatfolder_delete where empname='arvind'""")
-    sql(s"""select * from flatfolder_delete""").show()
+    sql(s"""select * from flatfolder_delete""").collect()
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
              .filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 8)
     sql("Alter table flatfolder_delete compact 'minor'")
@@ -165,7 +174,7 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists flatfolder_delete")
   }
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -174,11 +183,11 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     dropTable
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists originTable")
     sql("drop table if exists flatfolder")
     sql("drop table if exists flatfolder_gs")
     sql("drop table if exists flatfolder_preagg")
   }
-
+  // scalastyle:on lineLength
 }

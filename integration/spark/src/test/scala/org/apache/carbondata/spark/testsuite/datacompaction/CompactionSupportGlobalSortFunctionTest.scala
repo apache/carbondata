@@ -3,13 +3,13 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the"License"); you may not use this file except in compliance with
+ * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an"AS IS" BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -22,14 +22,15 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
-class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
+class CompactionSupportGlobalSortFunctionTest
+  extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val filePath: String = s"$resourcesPath/globalsort"
   val file1: String = resourcesPath + "/globalsort/sample1.csv"
   val file2: String = resourcesPath + "/globalsort/sample2.csv"
@@ -42,7 +43,8 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       """
         | CREATE TABLE compaction_globalsort(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='global_sort', 'GLOBAL_SORT_PARTITIONS'='1')
+        | TBLPROPERTIES(
+        | 'SORT_COLUMNS'='city,name', 'SORT_SCOPE'='global_sort', 'GLOBAL_SORT_PARTITIONS'='1')
       """.stripMargin)
 
     sql("DROP TABLE IF EXISTS carbon_localsort")
@@ -125,7 +127,8 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       sql("SELECT * FROM carbon_localsort"))
   }
 
-  test("Compaction type: minor, >= default segments and < (default segments)*2 in level 1, compact once") {
+  test("Compaction type: minor, >= default segments " +
+       "and < (default segments)*2 in level 1, compact once") {
     for (i <- 0 until 2) {
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
@@ -309,10 +312,11 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
-
+      // scalastyle:off lineLength
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='1')")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='1')")
       sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='1')")
+      // scalastyle:on lineLength
     }
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
 
@@ -345,10 +349,11 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
-
+      // scalastyle:off lineLength
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
       sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      // scalastyle:on lineLength
     }
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
 
@@ -378,10 +383,11 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
-
+      // scalastyle:off lineLength
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
       sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      // scalastyle:on lineLength
     }
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
 
@@ -413,10 +419,11 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
-
+      // scalastyle:off lineLength
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
       sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
       sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      // scalastyle:on lineLength
     }
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
 
@@ -514,7 +521,8 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       """
         | CREATE TABLE compaction_globalsort2(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        |  TBLPROPERTIES('SORT_COLUMNS'='id','SORT_SCOPE'='GLOBAL_SORT', 'global_sort_partitions'='1')
+        |  TBLPROPERTIES(
+        |  'SORT_COLUMNS'='id','SORT_SCOPE'='GLOBAL_SORT', 'global_sort_partitions'='1')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort2")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort2")
@@ -535,9 +543,12 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
   private def resetConf() {
     val prop = CarbonProperties.getInstance()
-    prop.addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-    prop.addProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS, CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT)
-    prop.addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+    prop.addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+      CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+    prop.addProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
+      CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT)
+    prop.addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+      CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
@@ -547,7 +558,8 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir).size()
     } else {
       val segment = Segment.getSegment(segmentNo, carbonTable.getTablePath)
-      new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName).getIndexCarbonFiles.size()
+      new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
+        .getIndexCarbonFiles.size()
     }
   }
 }

@@ -31,8 +31,8 @@ import org.apache.carbondata.core.util.CarbonProperties
  *
  */
 class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
+  // scalastyle:off lineLength
   var hiveContext: HiveContext = _
-
   override def beforeAll {
     drop()
     CarbonProperties.getInstance()
@@ -42,7 +42,10 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
   test("test partition redirect") {
     sql(
       s"""CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED AS carbondata TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2))
+          partitioned by (country String)
+          STORED AS carbondata
+          TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
 
     val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS"
@@ -152,7 +155,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
   test("test partition with emptyColumnValues") {
     // 3. empty data for string data type - take empty value
     // 4. empty data for non-string data type - Bad records/Null value based on configuration
-    //table should have only two records.
+    // table should have only two records.
     sql(
       """CREATE TABLE IF NOT EXISTS emptyColumnValues(date Timestamp,country String,
           actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED AS carbondata
@@ -257,4 +260,5 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
+  // scalastyle:on lineLength
 }

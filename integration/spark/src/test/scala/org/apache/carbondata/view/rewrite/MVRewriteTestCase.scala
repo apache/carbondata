@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 class MVRewriteTestCase extends QueryTest with BeforeAndAfterAll {
-
 
   override def beforeAll(): Unit = {
     drop
@@ -30,7 +30,7 @@ class MVRewriteTestCase extends QueryTest with BeforeAndAfterAll {
         |using carbondata""".stripMargin)
   }
 
-  def drop(): Unit ={
+  def drop(): Unit = {
     sql("drop table if exists region")
     sql("drop table if exists data_table")
   }

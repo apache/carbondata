@@ -42,9 +42,11 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
 
   test("CARBONDATA-2262: test check results of table with complex data type and bucketing") {
     sql("DROP TABLE IF EXISTS create_source")
-    sql("CREATE TABLE create_source(intField INT, stringField STRING, complexField ARRAY<INT>) USING carbondata")
+    sql("CREATE TABLE create_source(" +
+        "intField INT, stringField STRING, complexField ARRAY<INT>) USING carbondata")
     sql("INSERT INTO create_source VALUES(1,'source',array(1,2,3))")
-    checkAnswer(sql("SELECT * FROM create_source"), Row(1, "source", mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3)))
+    checkAnswer(sql("SELECT * FROM create_source"),
+      Row(1, "source", mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3)))
     sql("DROP TABLE IF EXISTS create_source")
   }
 
@@ -54,7 +56,9 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("SELECT * FROM src_carbondata1"), Row(1, "source"))
   }
 
-   test("CARBONDATA-2262: Support the syntax of 'STORED AS carbondata, get data size and index size after minor compaction") {
+  test("CARBONDATA-2262: Support the syntax of 'STORED AS carbondata, " +
+        "get data size and index size after minor compaction") {
+    // scalastyle:off lineLength
     sql("CREATE TABLE tableSize3 (empno INT, workgroupcategory STRING, deptno INT, projectcode INT, attendance INT) USING carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
@@ -62,9 +66,14 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
+    // scalastyle:on lineLength
     sql("ALTER TABLE tableSize3 COMPACT 'minor'")
-    checkExistence(sql("DESCRIBE FORMATTED tableSize3"), true, CarbonCommonConstants.TABLE_DATA_SIZE)
-    checkExistence(sql("DESCRIBE FORMATTED tableSize3"), true, CarbonCommonConstants.TABLE_INDEX_SIZE)
+    checkExistence(sql("DESCRIBE FORMATTED tableSize3"),
+      true,
+      CarbonCommonConstants.TABLE_DATA_SIZE)
+    checkExistence(sql("DESCRIBE FORMATTED tableSize3"),
+      true,
+      CarbonCommonConstants.TABLE_INDEX_SIZE)
     val res3 = sql("DESCRIBE FORMATTED tableSize3").collect()
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
@@ -106,7 +115,8 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS src_carbondata6")
   }
 
-  test("CARBONDATA-2396 Support Create Table As Select with 'using carbondata' with Table properties") {
+  test("CARBONDATA-2396 Support Create Table As Select " +
+       "with 'using carbondata' with Table properties") {
     sql("DROP TABLE IF EXISTS src_carbondata5")
     sql("DROP TABLE IF EXISTS src_carbondata6")
     sql("CREATE TABLE src_carbondata5(key INT, value STRING) USING carbondata")

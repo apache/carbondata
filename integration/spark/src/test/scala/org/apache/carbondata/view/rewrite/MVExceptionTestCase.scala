@@ -14,12 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
 
 class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
@@ -29,22 +31,26 @@ class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
 
   test("test mv no base table") {
     val ex = intercept[AnalysisException] {
-      sql("create materialized view main_table_mv as select sum(age),name from main_table_error group by name")
+      sql("create materialized view main_table_mv as select sum(age),name " +
+          "from main_table_error group by name")
     }
     assert(ex.getMessage().contains("Table or view not found: main_table_error"))
   }
 
   test("test mv reduplicate mv table") {
     val ex = intercept[MalformedMVCommandException] {
-      sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
-      sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
+      sql("create materialized view main_table_mv1 as select sum(age),name " +
+          "from main_table group by name")
+      sql("create materialized view main_table_mv1 as select sum(age),name " +
+          "from main_table group by name")
     }
     assertResult("Materialized view with name default.main_table_mv1 already exists")(ex.getMessage)
   }
 
   test("test mv creation with limit in query") {
     val ex = intercept[MalformedCarbonCommandException] {
-      sql("create materialized view maintable_mv2 as select sum(age),name from main_table group by name limit 10")
+      sql("create materialized view maintable_mv2 as select sum(age),name " +
+          "from main_table group by name limit 10")
     }
     assertResult("Materialized view does not support the query with limit")(ex.getMessage)
   }

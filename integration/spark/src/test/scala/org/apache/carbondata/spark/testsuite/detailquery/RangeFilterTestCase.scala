@@ -17,18 +17,16 @@
 
 package org.apache.carbondata.spark.testsuite.detailquery
 
-import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for Range Filters.
  */
 class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
-    //For the Hive table creation and data loading
+    // For the Hive table creation and data loading
     sql("drop table if exists filtertestTable")
     sql("drop table if exists NO_DICTIONARY_HIVE_1")
     sql("drop table if exists NO_DICTIONARY_CARBON_1")
@@ -94,7 +92,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
       s"load data local inpath '$resourcesPath/datawithoutheader.csv' into table " +
       "NO_DICTIONARY_HIVE_7"
     );
-    //For Carbon cube creation.
+    // For Carbon cube creation.
     sql("CREATE TABLE NO_DICTIONARY_CARBON_6 (empno string, " +
         "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
@@ -106,7 +104,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
 
-    //For Carbon cube creation.
+    // For Carbon cube creation.
     sql("CREATE TABLE DICTIONARY_CARBON_6 (empno string, " +
         "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
@@ -149,13 +147,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "name String, phonetype String, serialname String, salary Int) " +
         "STORED AS carbondata "
     )
-    sql(
-      s"LOAD DATA LOCAL INPATH '$resourcesPath/data2.csv' INTO TABLE filtertestTable OPTIONS"+
-      s"('DELIMITER'= ',', " +
-      s"'FILEHEADER'= '')"
-    );
-
-
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data2.csv' INTO TABLE filtertestTable OPTIONS('DELIMITER'= ',', 'FILEHEADER'= '')")
   }
 
   test("Range filter No Dictionary 1") {
@@ -631,4 +623,5 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_7")
     sql("drop table if exists NO_DICTIONARY_HIVE_8")
   }
+  // scalastyle:on lineLength
 }

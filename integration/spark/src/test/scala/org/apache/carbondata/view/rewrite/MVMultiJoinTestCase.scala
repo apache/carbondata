@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
 import org.apache.spark.sql.Row
@@ -22,14 +23,14 @@ import org.scalatest.BeforeAndAfterAll
 
 class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
 
-  override def beforeAll(){
+  override def beforeAll() {
     drop
     sql("create table dim_table(name string,age int,height int) using carbondata")
     sql("create table sdr_table(name varchar(20), score int) using carbondata")
     sql("create table areas(aid int, title string, pid int) using carbondata")
   }
 
-  override def afterAll(){
+  override def afterAll() {
     drop
   }
 
@@ -51,7 +52,7 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
         "c.pid=p.aid where p.title = 'hebei'")
     val frame = sql(mvSQL)
     assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "table_mv"))
-    checkAnswer(frame, Seq(Row("hebei","shijiazhuang"), Row("hebei","handan")))
+    checkAnswer(frame, Seq(Row("hebei", "shijiazhuang"), Row("hebei", "handan")))
   }
 
   test("test mv two join tables are same") {
@@ -69,13 +70,17 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
          | left join dim_table dim_other on sdr.name = dim_other.name
          | group by sdr.name,dim.age,dim_other.height
        """.stripMargin
-    sql("create materialized view table_mv as select sdr.name,sum(sdr.score),dim.age,dim_other.height,count(dim.name) as c1, count(dim_other.name) as c2 from sdr_table sdr left join dim_table dim on sdr.name = dim.name left join dim_table dim_other on sdr.name = dim_other.name group by sdr.name,dim.age,dim_other.height")
+    sql(
+      "create materialized view table_mv as select sdr.name,sum(sdr.score),dim.age,dim_other" +
+      ".height,count(dim.name) as c1, count(dim_other.name) as c2 from sdr_table sdr left join " +
+      "dim_table dim on sdr.name = dim.name left join dim_table dim_other on sdr.name = dim_other" +
+      ".name group by sdr.name,dim.age,dim_other.height")
     val frame = sql(mvSQL)
     assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "table_mv"))
-    checkAnswer(frame, Seq(Row("lily",80,30,160),Row("tom",120,20,170)))
+    checkAnswer(frame, Seq(Row("lily", 80, 30, 160), Row("tom", 120, 20, 170)))
   }
 
-  def drop: Unit ={
+  def drop: Unit = {
     sql("drop table if exists areas")
     sql("drop table if exists dim_table")
     sql("drop table if exists sdr_table")

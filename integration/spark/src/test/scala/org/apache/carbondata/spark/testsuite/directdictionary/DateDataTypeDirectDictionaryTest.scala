@@ -21,18 +21,16 @@ import java.sql.Date
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
-import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
-  * Test Class for detailed query on timestamp datatypes
-  *
-  *
-  */
+ * Test Class for detailed query on timestamp datatypes
+ */
 class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
@@ -107,14 +105,16 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
 
   test("select doj from directDictionaryTable with regexp_replace equals filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') = '2016/03/14'"),
+      sql("select doj from directDictionaryTable " +
+          "where regexp_replace(doj, '-', '/') = '2016/03/14'"),
       Seq(Row(Date.valueOf("2016-03-14")))
     )
   }
 
   test("select doj from directDictionaryTable with regexp_replace NOT IN filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14')"),
+      sql("select doj from directDictionaryTable " +
+          "where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14')"),
       Seq(Row(Date.valueOf("2016-04-14")))
     )
   }

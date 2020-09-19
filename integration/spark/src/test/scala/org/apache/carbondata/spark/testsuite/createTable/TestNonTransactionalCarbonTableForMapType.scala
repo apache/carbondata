@@ -68,7 +68,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |}
       """.stripMargin
     val json =
-      """ {"name":"bob", "age":10, "mapRecord": {"street": "k-lane", "city": "bangalore"}} """.stripMargin
+      """ {"name":"bob", "age":10, "mapRecord": {"street": "k-lane", "city": "bangalore"}} """
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -101,7 +101,9 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |  ]
         |}
       """.stripMargin
-    val json = """ {"name":"bob", "age":10, "mapRecord": {"details": {"street": "k-lane", "city": "bangalore"}}} """.stripMargin
+    val json =
+      """ {"name":"bob", "age":10,
+        |"mapRecord": {"details": {"street": "k-lane", "city": "bangalore"}}} """.stripMargin
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -188,7 +190,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |  ]
         |}
       """.stripMargin
-    val json = """ {"name":"bob", "age":10, "mapRecord": {"city": ["city1","city2"]}} """.stripMargin
+    val json = """ {"name":"bob", "age":10, "mapRecord": {"city": ["city1","city2"]}} """
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -231,7 +233,9 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |  ]
         |}
       """.stripMargin
-    val json = """ {"name":"bob", "age":10, "mapRecord": {"details": {"street":"street1", "city":"bang"}}} """.stripMargin
+    val json =
+      """ {"name":"bob", "age":10,
+        | "mapRecord": {"details": {"street":"street1", "city":"bang"}}} """.stripMargin
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -274,7 +278,9 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |  ]
         |}
       """.stripMargin
-    val json = """ {"name":"bob", "age":10, "structRecord": {"street":"street1", "houseDetails": {"101": "Rahul", "102": "Pawan"}}} """.stripMargin
+    val json =
+      """ {"name":"bob", "age":10, "structRecord": {
+        |"street":"street1", "houseDetails": {"101": "Rahul", "102": "Pawan"}}} """.stripMargin
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -321,7 +327,9 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |  ]
         |}
       """.stripMargin
-    val json = """ {"name":"bob", "age":10, "structRecord": {"street":"street1", "houseDetails": [{"101": "Rahul", "102": "Pawan"}]}} """.stripMargin
+    val json =
+      """ {"name":"bob", "age":10, "structRecord": {
+        |"street":"street1", "houseDetails": [{"101": "Rahul", "102": "Pawan"}]}} """.stripMargin
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -355,7 +363,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |  ]
         |}
       """.stripMargin
-    val json = """ {"name":"bob", "age":10, "arrayRecord": [{"101": "Rahul", "102": "Pawan"}]} """.stripMargin
+    val json = """ {"name":"bob", "age":10, "arrayRecord": [{"101": "Rahul", "102": "Pawan"}]} """
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -393,7 +401,9 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |  ]
         |}
       """.stripMargin
-    val json = """ {"name":"bob", "age":10, "arrayRecord": [[{"101": "Rahul", "102": "Pawan"}]]} """.stripMargin
+    val json =
+      """ {"name":"bob", "age":10,
+        | "arrayRecord": [[{"101": "Rahul", "102": "Pawan"}]]} """.stripMargin
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -406,7 +416,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     dropSchema
   }
 
-  test("SDK Reader Without Projection Columns"){
+  test("SDK Reader Without Projection Columns") {
     deleteDirectory(writerPath)
     val mySchema =
       """
@@ -436,7 +446,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |  ]
         |}
       """.stripMargin
-    val json = """ {"name":"bob", "age":10, "arrayRecord": [{"101": "Rahul", "102": "Pawan"}]} """.stripMargin
+    val json = """ {"name":"bob", "age":10, "arrayRecord": [{"101": "Rahul", "102": "Pawan"}]} """
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(2, mySchema, json)
 
     val reader = CarbonReader.builder(writerPath, "_temp").build()
@@ -450,7 +460,9 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(exception1.getMessage
       .contains(
         "Complex child columns projection NOT supported through CarbonReader"))
+    // scalastyle:off println
     println("Done test")
+    // scalastyle:on println
   }
 
 
@@ -542,8 +554,8 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     sql(
       s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
-    sql("desc formatted sdkMapOutputTable").show(1000, false)
-    sql("select * from sdkMapOutputTable").show(false)
+    sql("desc formatted sdkMapOutputTable").collect()
+    sql("select * from sdkMapOutputTable").collect()
     checkAnswer(sql("select * from sdkMapOutputTable"), Seq(
       Row("bob", 10, Row("street1", Seq(Map("101" -> "Rahul", "102" -> "Pawan")))),
       Row("bob", 10, Row("street1", Seq(Map("101" -> "Rahul", "102" -> "Pawan")))),

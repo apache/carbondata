@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite
 
 import org.apache.spark.sql.AnalysisException
@@ -24,7 +25,8 @@ class TestCarbonCli extends QueryTest with BeforeAndAfterAll{
 
   override protected def beforeAll(): Unit = {
     sql("drop table if exists OneRowTable")
-    sql("create table OneRowTable(col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
+    sql("create table OneRowTable(" +
+        "col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
     sql("insert into OneRowTable select '0.1', 'a.b', 1, 1.2")
   }
 
@@ -62,10 +64,10 @@ class TestCarbonCli extends QueryTest with BeforeAndAfterAll{
       true, "## Benchmark")
   }
 
-  test("CarbonCli invalid cmd"){
+  test("CarbonCli invalid cmd") {
 
     assert(intercept[AnalysisException] {
-      sql("carboncli for table OneRowTable").show()
+      sql("carboncli for table OneRowTable").collect()
     }.getMessage().contains("mismatched input 'carboncli'"))
 
     assert(intercept[Exception] {

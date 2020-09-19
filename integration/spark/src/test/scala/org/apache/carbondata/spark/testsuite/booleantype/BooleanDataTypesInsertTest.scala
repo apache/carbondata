@@ -27,7 +27,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeEach(): Unit = {
     sql("drop table if exists boolean_one_column")
     sql("drop table if exists boolean_table")
@@ -98,7 +98,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting and selecting table: two columns boolean and many rows, should support") {
-    sql("CREATE TABLE if not exists boolean_table2(col1 BOOLEAN, col2 BOOLEAN) STORED AS carbondata")
+    sql("CREATE TABLE if not exists boolean_table2(" +
+        "col1 BOOLEAN, col2 BOOLEAN) STORED AS carbondata")
 
     sql("insert into boolean_table2 values(true,true)")
     sql("insert into boolean_table2 values(True,false)")
@@ -202,7 +203,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -212,8 +214,10 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            """.stripMargin)
 
     sql("insert into boolean_table2 select * from boolean_table")
-    sql("insert into boolean_table3 select shortField,booleanField,intField,stringField,booleanField2 from boolean_table")
-    sql("insert into boolean_table4 select shortField,booleanField,intField,stringField,booleanField2 from boolean_table where shortField > 3")
+    sql("insert into boolean_table3 " +
+        "select shortField,booleanField,intField,stringField,booleanField2 from boolean_table")
+    sql("insert into boolean_table4 select shortField,booleanField,intField,stringField," +
+        "booleanField2 from boolean_table where shortField > 3")
 
     checkAnswer(
       sql("select booleanField,intField from boolean_table2"),
@@ -294,7 +298,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -320,7 +325,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     )
   }
 
-  ignore("Inserting with the number of data type in source and target table columns being different, source more than target") {
+  ignore("Inserting with the number of data type in source " +
+         "and target table columns being different, source more than target") {
     sql(
       s"""
          | CREATE TABLE boolean_table(
@@ -364,7 +370,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -376,8 +383,9 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     sql("insert into boolean_table2 select * from boolean_table")
   }
 
-  test("Inserting with the number of data type in source and target table columns being different, source less than target") {
-    val exception_insert: Exception =intercept[Exception] {
+  test("Inserting with the number of data type in source " +
+       "and target table columns being different, source less than target") {
+    val exception_insert: Exception = intercept[Exception] {
       sql(
         s"""
            | CREATE TABLE boolean_table(
@@ -421,7 +429,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
       val rootPath = new File(this.getClass.getResource("/").getPath
         + "../../../..").getCanonicalPath
-      val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+      val storeLocation =
+        s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
       sql(
         s"""
@@ -431,7 +440,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            """.stripMargin)
       sql("insert into boolean_table2 select * from boolean_table")
     }
-    assert(exception_insert.getMessage.contains("Cannot insert into target table because number of columns mismatch"))
+    assert(exception_insert.getMessage.contains(
+      "Cannot insert into target table because number of columns mismatch"))
   }
 
   test("Inserting into Hive table from carbon table: support boolean data type and other format") {
@@ -477,7 +487,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -486,7 +497,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
 
-    sql("insert into hive_table select * from carbon_table where shortField = 1 and booleanField = true")
+    sql("insert into hive_table select * from carbon_table " +
+        "where shortField = 1 and booleanField = true")
 
     checkAnswer(
       sql("select booleanField,intField,booleanField2 from carbon_table"),
@@ -501,9 +513,15 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     )
 
     checkAnswer(
-      sql("select booleanField,intField,booleanField2 from carbon_table where exists (select booleanField,intField,booleanField2 " +
-        "from hive_table where carbon_table.intField=hive_table.intField)"),
-      Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false), Row(false, 10, false), Row(false, 10, false))
+      sql("select booleanField,intField,booleanField2 from carbon_table " +
+          "where exists (select booleanField,intField,booleanField2 " +
+          "from hive_table where carbon_table.intField=hive_table.intField)"),
+      Seq(Row(true, 10, true),
+        Row(true, 10, true),
+        Row(true, 10, true),
+        Row(false, 10, false),
+        Row(false, 10, false),
+        Row(false, 10, false))
     )
 
     sql("drop table if exists carbon_table")
@@ -554,7 +572,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -562,7 +581,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | INTO TABLE hive_table
            """.stripMargin)
 
-    sql("insert into carbon_table select * from hive_table where shortField = 1 and booleanField = true")
+    sql("insert into carbon_table select * from hive_table " +
+        "where shortField = 1 and booleanField = true")
 
     checkAnswer(
       sql("select booleanField,intField,booleanField2 from hive_table"),
@@ -577,9 +597,15 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     )
 
     checkAnswer(
-      sql("select booleanField,intField,booleanField2 from hive_table where exists (select booleanField,intField,booleanField2 " +
-        "from carbon_table where hive_table.intField=carbon_table.intField)"),
-      Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false), Row(false, 10, false), Row(false, 10, false))
+      sql("select booleanField,intField,booleanField2 from hive_table " +
+          "where exists (select booleanField,intField,booleanField2 " +
+          "from carbon_table where hive_table.intField=carbon_table.intField)"),
+      Seq(Row(true, 10, true),
+        Row(true, 10, true),
+        Row(true, 10, true),
+        Row(false, 10, false),
+        Row(false, 10, false),
+        Row(false, 10, false))
     )
   }
 
@@ -638,7 +664,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting overwrite: two columns boolean and many rows, should support") {
-    sql("CREATE TABLE if not exists boolean_table2(col1 BOOLEAN, col2 BOOLEAN) STORED AS carbondata")
+    sql("CREATE TABLE if not exists boolean_table2(" +
+        "col1 BOOLEAN, col2 BOOLEAN) STORED AS carbondata")
 
     sql("insert overwrite table boolean_table2 values(true,true)")
     checkAnswer(
@@ -694,7 +721,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     )
   }
 
-  test("Inserting overwrite: overwrite table with another table: support boolean data type and other format") {
+  test("Inserting overwrite: overwrite table with another table: " +
+       "support boolean data type and other format") {
     sql(
       s"""
          | CREATE TABLE boolean_table(
@@ -764,7 +792,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -774,8 +803,10 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            """.stripMargin)
 
     sql("insert overwrite table boolean_table2 select * from boolean_table")
-    sql("insert overwrite table boolean_table3 select shortField,booleanField,intField,stringField,booleanField2 from boolean_table")
-    sql("insert overwrite table boolean_table4 select shortField,booleanField,intField,stringField,booleanField2 from boolean_table where shortField > 3")
+    sql("insert overwrite table boolean_table3 " +
+        "select shortField,booleanField,intField,stringField,booleanField2 from boolean_table")
+    sql("insert overwrite table boolean_table4 select shortField,booleanField,intField," +
+        "stringField,booleanField2 from boolean_table where shortField > 3")
 
     checkAnswer(
       sql("select booleanField,intField from boolean_table2"),
@@ -811,7 +842,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     )
   }
 
-  test("Inserting overwrite: overwrite table Hive table from carbon table: support boolean data type and other format") {
+  test("Inserting overwrite: overwrite table Hive table from carbon table: " +
+       "support boolean data type and other format") {
     sql(
       s"""
          | CREATE TABLE carbon_table(
@@ -854,7 +886,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -863,7 +896,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
 
-    sql("insert overwrite table hive_table select * from carbon_table where shortField = 1 and booleanField = true")
+    sql("insert overwrite table hive_table " +
+        "select * from carbon_table where shortField = 1 and booleanField = true")
 
     checkAnswer(
       sql("select booleanField,intField,booleanField2 from carbon_table"),
@@ -878,13 +912,20 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     )
 
     checkAnswer(
-      sql("select booleanField,intField,booleanField2 from carbon_table where exists (select booleanField,intField,booleanField2 " +
+      sql("select booleanField,intField,booleanField2 from carbon_table " +
+          "where exists (select booleanField,intField,booleanField2 " +
         "from hive_table where carbon_table.intField=hive_table.intField)"),
-      Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false), Row(false, 10, false), Row(false, 10, false))
+      Seq(Row(true, 10, true),
+        Row(true, 10, true),
+        Row(true, 10, true),
+        Row(false, 10, false),
+        Row(false, 10, false),
+        Row(false, 10, false))
     )
   }
 
-  test("Inserting overwrite: overwrite table carbon table from Hive table: support boolean data type and other format") {
+  test("Inserting overwrite: overwrite table carbon table from Hive table: " +
+       "support boolean data type and other format") {
     sql(
       s"""
          | CREATE TABLE hive_table(
@@ -928,7 +969,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -936,7 +978,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | INTO TABLE hive_table
            """.stripMargin)
 
-    sql("insert overwrite table carbon_table select * from hive_table where shortField = 1 and booleanField = true")
+    sql("insert overwrite table carbon_table select * from hive_table " +
+        "where shortField = 1 and booleanField = true")
 
     checkAnswer(
       sql("select booleanField,intField,booleanField2 from hive_table"),
@@ -951,9 +994,15 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     )
 
     checkAnswer(
-      sql("select booleanField,intField,booleanField2 from hive_table where exists (select booleanField,intField,booleanField2 " +
-        "from carbon_table where hive_table.intField=carbon_table.intField)"),
-      Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false), Row(false, 10, false), Row(false, 10, false))
+      sql("select booleanField,intField,booleanField2 from hive_table " +
+          "where exists (select booleanField,intField,booleanField2 " +
+          "from carbon_table where hive_table.intField=carbon_table.intField)"),
+      Seq(Row(true, 10, true),
+        Row(true, 10, true),
+        Row(true, 10, true),
+        Row(false, 10, false),
+        Row(false, 10, false),
+        Row(false, 10, false))
     )
   }
 
@@ -993,5 +1042,5 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
         CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
-
+  // scalastyle:on lineLength
 }
