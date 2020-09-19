@@ -17,8 +17,8 @@
 
 package org.apache.spark.carbondata.bucketing
 
-import java.text.SimpleDateFormat
 import java.sql.Date
+import java.text.SimpleDateFormat
 
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.execution.WholeStageCodegenExec
@@ -26,12 +26,13 @@ import org.apache.spark.sql.execution.exchange.Exchange
 import org.apache.spark.sql.execution.joins.SortMergeJoinExec
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
@@ -305,7 +306,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("must unable to create table if number of buckets is 0") {
-    try{
+    try {
       sql(
         """
           |CREATE TABLE t11
@@ -321,17 +322,17 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
         """.stripMargin
       )
       assert(false)
-    }
-    catch {
+    } catch {
       case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
     }
   }
 
   test("Bucket table only sort inside buckets, can not set sort scope but can set sort columns.") {
     val ex = intercept[ProcessMetaDataException] {
-      sql("CREATE TABLE t44 (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
-        "('BUCKET_NUMBER'='4', 'BUCKET_COLUMNS'='name', 'sort_columns'='name', 'sort_scope'='global_sort')")
+      sql("CREATE TABLE t44 (ID Int, date Timestamp, country String, name String, " +
+          "phonetype String,serialname String, salary Int) STORED AS carbondata " +
+          "TBLPROPERTIES('BUCKET_NUMBER'='4', 'BUCKET_COLUMNS'='name', " +
+          "'sort_columns'='name', 'sort_scope'='global_sort')")
     }
     assert(ex.getMessage.contains("Bucket table only sort inside buckets," +
       " can not set sort scope but can set sort columns."))
@@ -656,9 +657,9 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("long as bucket column, test join of carbon bucket table and parquet table") {
-    sql("CREATE TABLE t21 (ID long, date Timestamp, country String, name String, phonetype String," +
-      "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
-      "('BUCKET_NUMBER'='9', 'BUCKET_COLUMNS'='ID')")
+    sql("CREATE TABLE t21 (ID long, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata " +
+        "TBLPROPERTIES('BUCKET_NUMBER'='9', 'BUCKET_COLUMNS'='ID')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t21")
     // parquet 1
     sql("DROP TABLE IF EXISTS bucketed_parquet_table_t21")
@@ -937,7 +938,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin), Row(100))
     sql(
       """select * from t46
-      """.stripMargin).show(100, false)
+      """.stripMargin).collect()
 
     val plan = sql(
       """
@@ -990,7 +991,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin), Row(100))
     sql(
       """select * from t48
-      """.stripMargin).show(100, false)
+      """.stripMargin).collect()
 
     val plan = sql(
       """

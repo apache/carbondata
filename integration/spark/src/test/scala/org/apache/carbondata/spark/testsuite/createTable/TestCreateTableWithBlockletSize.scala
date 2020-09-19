@@ -71,7 +71,8 @@ class TestCreateTableWithBlockletSize extends QueryTest with BeforeAndAfterAll {
 
   test("test create table with invalid blocklet size") {
     val ex = intercept[MalformedCarbonCommandException] {
-      sql("CREATE TABLE T1(name String) STORED AS CARBONDATA TBLPROPERTIES('TABLE_BLOCKLET_SIZE'='3X')")
+      sql("CREATE TABLE T1(name String) STORED AS CARBONDATA " +
+          "TBLPROPERTIES('TABLE_BLOCKLET_SIZE'='3X')")
     }
     assert(ex.getMessage.toLowerCase.contains("invalid table_blocklet_size"))
   }

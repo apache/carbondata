@@ -18,8 +18,8 @@
 package org.apache.spark.util
 
 import mockit.{Invocation, Mock, MockUp}
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, TaskContextImpl}
+import org.apache.spark.sql.SQLContext
 
 /**
  * This class is for accessing utils in spark package for tests
@@ -57,11 +57,12 @@ object SparkUtil4Test {
         try {
           invocation.proceed()
         } catch {
-          case e: Exception => //ignore
+          case e: Exception => // ignore
         }
       }
 
-      @Mock def addTaskCompletionListener(invocation: Invocation, listener: TaskCompletionListener): TaskContextImpl = {
+      @Mock def addTaskCompletionListener(invocation: Invocation,
+          listener: TaskCompletionListener): TaskContextImpl = {
         try {
           invocation.proceed(listener)
         } catch {
@@ -74,11 +75,12 @@ object SparkUtil4Test {
 
   private def createTaskMockUp2_2(): Unit = {
     new MockUp[TaskContextImpl] {
-      @Mock private[spark] def markTaskCompleted(invocation: Invocation, error: Option[Throwable]): Unit = {
+      @Mock private[spark] def markTaskCompleted(invocation: Invocation,
+          error: Option[Throwable]): Unit = {
         try {
           invocation.proceed(error)
         } catch {
-          case e: Exception => //ignore
+          case e: Exception => // ignore
         }
       }
     }

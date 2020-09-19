@@ -21,7 +21,7 @@ import java.io.{File, FileOutputStream}
 import java.math.{BigDecimal, RoundingMode}
 import java.sql.{Date, Timestamp}
 
-import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -47,7 +47,8 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE addcolumntest " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql("CREATE TABLE hivetable STORED AS PARQUET SELECT * FROM addcolumntest")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyy")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyy")
   }
 
   test("test like query on new column") {
@@ -85,7 +86,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test add dictionary column and test greaterthan/lessthan filter on new column") {
-    def test_add_and_filter() = {
+    def test_add_and_filter(): Unit = {
       sql(
         "ALTER TABLE addcolumntest ADD COLUMNS(intnewField INT) TBLPROPERTIES" +
           "('DEFAULT.VALUE.intNewField'='5')")
@@ -130,7 +131,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test compaction after adding new column") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("ALTER TABLE addcolumntest COMPACT 'major'")
-    sql("SHOW SEGMENTS FOR TABLE addcolumntest").show(100, false)
+    sql("SHOW SEGMENTS FOR TABLE addcolumntest").collect()
     checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0 Compacted")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "1 Compacted")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0.1 Success")
@@ -147,18 +148,19 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test add and drop column with data loading") {
-    def test_add_drop_load() = {
+    def test_add_drop_load(): DataFrame = {
       sql("DROP TABLE IF EXISTS carbon_table")
-      sql(
-        "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-        "TIMESTAMP,decimalField DECIMAL(6,2))STORED AS carbondata ")
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
-          s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+          "timestampField TIMESTAMP,decimalField DECIMAL(6,2))STORED AS carbondata ")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+          "INTO TABLE carbon_table " +
+          "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
       sql("ALTER TABLE carbon_table DROP COLUMNS(timestampField)")
       sql("SELECT * FROM carbon_table").collect
       sql("ALTER TABLE carbon_table ADD COLUMNS(timestampField TIMESTAMP)")
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data5.csv' INTO TABLE carbon_table " +
-          s"OPTIONS('FILEHEADER'='intField,stringField,charField,decimalField,timestampField')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data5.csv' " +
+          "INTO TABLE carbon_table " +
+          "OPTIONS('FILEHEADER'='intField,stringField,charField,decimalField,timestampField')")
       sql("DROP TABLE IF EXISTS carbon_table")
     }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
@@ -170,24 +172,28 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test add/drop and change datatype") {
-    def test_add_drop_change() = {
+    def test_add_drop_change(): DataFrame = {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
-        "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-        "TIMESTAMP,decimalField DECIMAL(6,2))STORED AS carbondata ")
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
-          s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+        "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP,decimalField DECIMAL(6,2))STORED AS carbondata ")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+          "INTO TABLE carbon_table " +
+          "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
       sql("ALTER TABLE carbon_table DROP COLUMNS(charField)")
       sql("SELECT * FROM carbon_table").collect
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE carbon_table " +
-          s"OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' " +
+          "INTO TABLE carbon_table " +
+          "OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField')")
       sql("ALTER TABLE carbon_table ADD COLUMNS(charField STRING) ")
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data2.csv' INTO TABLE carbon_table " +
-          s"OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data2.csv' " +
+          "INTO TABLE carbon_table " +
+          "OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
       sql("SELECT * FROM carbon_table").collect
       sql("ALTER TABLE carbon_table CHANGE decimalField decimalField DECIMAL(22,6)")
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data3.csv' INTO TABLE carbon_table " +
-          s"OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data3.csv' " +
+          "INTO TABLE carbon_table " +
+          "OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
       sql("DROP TABLE IF EXISTS carbon_table")
     }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
@@ -228,8 +234,9 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
       "TIMESTAMP)STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("ALTER TABLE carbon_table ADD COLUMNS(newfield char(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
-    checkAnswer(sql("SELECT DISTINCT(newfield) FROM carbon_table"),Row("char"))
+    sql("ALTER TABLE carbon_table ADD COLUMNS(newfield char(10)) " +
+        "TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
+    checkAnswer(sql("SELECT DISTINCT(newfield) FROM carbon_table"), Row("char"))
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
@@ -238,10 +245,10 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     try {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
-        "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-        "TIMESTAMP)STORED AS carbondata ")
-      sql(
-        "ALTER TABLE carbon_table ADD COLUMNS(newfield char) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+        "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP)STORED AS carbondata ")
+      sql("ALTER TABLE carbon_table ADD COLUMNS(newfield char) " +
+          "TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
       assert(true)
     }
@@ -258,8 +265,9 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
       "TIMESTAMP)STORED AS carbondata ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("ALTER TABLE carbon_table ADD COLUMNS(newfield varchar(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
-    checkAnswer(sql("SELECT DISTINCT(newfield) FROM carbon_table"),Row("char"))
+    sql("ALTER TABLE carbon_table ADD COLUMNS(newfield varchar(10)) " +
+        "TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
+    checkAnswer(sql("SELECT DISTINCT(newfield) FROM carbon_table"), Row("char"))
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
@@ -267,17 +275,15 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     try {
       sql("DROP TABLE IF EXISTS carbon_table")
-      sql(
-        "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-
-        "TIMESTAMP)STORED AS carbondata ")
-      sql(
-        "ALTER TABLE carbon_table ADD COLUMNS(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+          "timestampField TIMESTAMP)STORED AS carbondata ")
+      sql("ALTER TABLE carbon_table ADD COLUMNS(newfield varchar) " +
+          "TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
       assert(true)
     }
     catch {
-      case exception:Exception => assert(false)
+      case _: Exception => assert(false)
     }
   }
 
@@ -285,13 +291,12 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     intercept[Exception] {
       sql("DROP TABLE IF EXISTS carbon_table")
-      sql(
-        "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-        "TIMESTAMP)STORED AS carbondata ")
+      sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+          "timestampField TIMESTAMP)STORED AS carbondata ")
       val lockFilePath = s"${ TestQueryExecutor.storeLocation }/default/carbon_table/meta.lock"
       new File(lockFilePath).createNewFile()
-      sql(
-        "ALTER TABLE carbon_table ADD COLUMNS(newfield STRING) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("ALTER TABLE carbon_table ADD COLUMNS(newfield STRING) " +
+          "TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       new FileOutputStream(lockFilePath).getChannel.lock()
       sql(
         "ALTER TABLE carbon_table DROP COLUMNS(newfield)")
@@ -377,7 +382,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql(
       """ALTER TABLE carbon_new ADD COLUMNS(CUST_NAME STRING) TBLPROPERTIES
         ('DEFAULT.VALUE.CUST_NAME'='testuser')""")
-    checkAnswer(sql("SELECT DISTINCT(CUST_NAME) FROM carbon_new"),Row("testuser"))
+    checkAnswer(sql("SELECT DISTINCT(CUST_NAME) FROM carbon_new"), Row("testuser"))
   }
 
   test("test for checking newly added measure column for is null condition") {
@@ -395,7 +400,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
       s" OPTIONS" +
       s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
       s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,a6')")
-    sql("SELECT a6 FROM carbon_measure_is_null WHERE a6 IS NULL").show
+    sql("SELECT a6 FROM carbon_measure_is_null WHERE a6 IS NULL").collect()
     checkAnswer(sql("SELECT * FROM carbon_measure_is_null"),
       sql("SELECT * FROM carbon_measure_is_null WHERE a6 IS NULL"))
     checkAnswer(sql("SELECT count(*) FROM carbon_measure_is_null WHERE a6 IS NOT NULL"), Row(0))
@@ -404,8 +409,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test to check if intField returns correct result") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
-    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+        "INTO TABLE carbon_table " +
+        "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField INT) TBLPROPERTIES" +
       "('DEFAULT.VALUE.newField'='67890')")
@@ -416,8 +424,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test to check if intField returns correct result - dictionary exclude") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
-    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+        "INTO TABLE carbon_table " +
+        "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField INT) TBLPROPERTIES" +
       "('DEFAULT.VALUE.newField'='67890')")
@@ -428,8 +439,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test to check if bigintField returns correct result - dictionary exclude") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
-    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+        "INTO TABLE carbon_table " +
+        "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField bigint) TBLPROPERTIES" +
       "('DEFAULT.VALUE.newField'='67890')")
@@ -439,8 +453,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
 
   test("test to check if shortField returns correct result") {
     sql("DROP TABLE IF EXISTS carbon_table")
-    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+        "INTO TABLE carbon_table " +
+        "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField short) TBLPROPERTIES" +
       "('DEFAULT.VALUE.newField'='1')")
@@ -451,8 +468,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test to check if doubleField returns correct result") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
-    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+        "INTO TABLE carbon_table " +
+        "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField double) TBLPROPERTIES" +
       "('DEFAULT.VALUE.newField'='1457567.87')")
@@ -463,8 +483,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test to check if decimalField returns correct result") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
-    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+        "INTO TABLE carbon_table " +
+        "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField DECIMAL(5,2)) TBLPROPERTIES" +
       "('DEFAULT.VALUE.newField'='21.87')")
@@ -507,7 +530,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("INSERT INTO alter_decimal_filter SELECT 'xx',1,1.23")
     sql("ALTER TABLE alter_decimal_filter CHANGE n3 n3 DECIMAL(8,4)")
     sql("INSERT INTO alter_decimal_filter SELECT 'dd',2,111.111")
-    sql("SELECT * FROM alter_decimal_filter WHERE n3 = 1.22").show()
+    sql("SELECT * FROM alter_decimal_filter WHERE n3 = 1.22").collect()
     checkAnswer(sql("SELECT * FROM alter_decimal_filter WHERE n3 = 1.22"),
       Row("xx", 1, new BigDecimal(1.2200).setScale(4, RoundingMode.HALF_UP)))
     sql("DROP TABLE IF EXISTS alter_decimal_filter")
@@ -516,12 +539,15 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test add column with date") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
-    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+        s"INTO TABLE carbon_table " +
+        s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField date) TBLPROPERTIES" +
       "('DEFAULT.VALUE.newField'='2017-01-01')")
-    sql("select * from carbon_table").show(100, false)
+    sql("select * from carbon_table").collect()
     checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"), Row(Date.valueOf("2017-01-01")))
     sql("DROP TABLE IF EXISTS carbon_table")
   }
@@ -529,12 +555,16 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test add column with timestamp") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
-    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' " +
+        "INTO TABLE carbon_table " +
+        "OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField TIMESTAMP) TBLPROPERTIES" +
       "('DEFAULT.VALUE.newField'='01-01-2017 00:00:00.0')")
-    checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"), Row(Timestamp.valueOf("2017-01-01 00:00:00.0")))
+    checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"),
+      Row(Timestamp.valueOf("2017-01-01 00:00:00.0")))
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
@@ -542,9 +572,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS alter_dict")
     sql("CREATE TABLE alter_dict(stringField STRING,charField STRING) STORED AS carbondata")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_dict OPTIONS('FILEHEADER'='stringField,charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' " +
+        s"INTO TABLE alter_dict OPTIONS('FILEHEADER'='stringField,charField')")
     sql("ALTER TABLE alter_dict DROP COLUMNS(charField)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_dict OPTIONS('FILEHEADER'='stringField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' " +
+        s"INTO TABLE alter_dict OPTIONS('FILEHEADER'='stringField')")
     sql("ALTER TABLE alter_dict COMPACT 'major'")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_dict"), true, "0 Compacted")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_dict"), true, "1 Compacted")
@@ -569,9 +601,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS alter_no_dict")
     sql("CREATE TABLE alter_no_dict(stringField STRING,charField STRING) STORED AS carbondata ")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_no_dict OPTIONS('FILEHEADER'='stringField,charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' " +
+        s"INTO TABLE alter_no_dict OPTIONS('FILEHEADER'='stringField,charField')")
     sql("ALTER TABLE alter_no_dict DROP COLUMNS(charField)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_no_dict OPTIONS('FILEHEADER'='stringField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' " +
+        s"INTO TABLE alter_no_dict OPTIONS('FILEHEADER'='stringField')")
     sql("ALTER TABLE alter_no_dict COMPACT 'major'")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_no_dict"), true, "0 Compacted")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_no_dict"), true, "1 Compacted")
@@ -597,7 +631,8 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
            LOAD DATA LOCAL INPATH '$testData2' INTO TABLE indexAlter
            """)
 
-    sql("ALTER TABLE indexAlter ADD COLUMNS(salary STRING) TBLPROPERTIES('no_inverted_index'='salary')")
+    sql("ALTER TABLE indexAlter ADD COLUMNS(salary STRING) " +
+        "TBLPROPERTIES('no_inverted_index'='salary')")
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData2' INTO TABLE indexAlter
            """)
@@ -623,8 +658,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
            TBLPROPERTIES('NO_INVERTED_INDEX'='city')
       """)
 
-    sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('NO_INVERTED_INDEX'='col2')")
-    checkExistence(sql("desc formatted NO_INVERTED_CARBON"),false,"Inverted Index Columns name, col1")
+    sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) " +
+        "tblproperties('NO_INVERTED_INDEX'='col2')")
+    checkExistence(sql("desc formatted NO_INVERTED_CARBON"),
+      false,
+      "Inverted Index Columns name, col1")
   }
 
   // sort_columns cannot be given for newly added column, so inverted index will not be displayed
@@ -639,7 +677,8 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
            TBLPROPERTIES('INVERTED_INDEX'='city')
       """)
 
-    sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('INVERTED_INDEX'='col2')")
+    sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) " +
+        "tblproperties('INVERTED_INDEX'='col2')")
     val df = sql("describe formatted NO_INVERTED_CARBON")
     checkExistence(df, true, "Inverted Index Columns city, col2")
   }
@@ -647,9 +686,11 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   test("test rename textFileTable") {
     sql("drop table if exists renameTextFileTable")
     sql("drop table if exists new_renameTextFileTable")
-    sql("create table renameTextFileTable (id int,time string) row format delimited fields terminated by ',' stored as textfile ")
+    sql("create table renameTextFileTable (id int,time string) " +
+        "row format delimited fields terminated by ',' stored as textfile ")
     sql("alter table renameTextFileTable rename to new_renameTextFileTable")
-    checkAnswer(sql("DESC new_renameTextFileTable"),Seq(Row("id","int",null),Row("time","string",null)))
+    checkAnswer(sql("DESC new_renameTextFileTable"),
+      Seq(Row("id", "int", null), Row("time", "string", null)))
     intercept[Exception] {
       sql("select * from renameTextFileTable")
     }
@@ -657,7 +698,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists renameTextFileTable")
   }
 
-  test("test rename [create table, rename, create same table with different schema]"){
+  test("test rename [create table, rename, create same table with different schema]") {
     sql("drop table if exists t5")
     sql("drop table if exists t6")
 
@@ -669,7 +710,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     val t5: CarbonTable = CarbonEnv.getCarbonTable(None, "t5")(sqlContext.sparkSession)
     assert(t5.getTablePath
       .contains(t5.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId))
-    checkAnswer(sql("select * from t5"),Seq(Row("asd",1,"sdf")))
+    checkAnswer(sql("select * from t5"), Seq(Row("asd", 1, "sdf")))
   }
 
   override def afterAll {

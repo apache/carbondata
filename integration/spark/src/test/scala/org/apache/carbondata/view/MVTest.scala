@@ -31,7 +31,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class MVTest extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     drop()
     CarbonProperties.getInstance()
@@ -65,7 +65,7 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test disable mv with carbonproperties and sessionparam") {
-    //1. Prepare the source table and MV, make sure the MV is enabled
+    // 1. Prepare the source table and MV, make sure the MV is enabled
     sql("drop materialized view if exists mv1")
     sql("drop table if exists source")
     sql("create table source as select * from fact_table")
@@ -73,23 +73,24 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
     var df = sql("select empname, avg(salary) from source group by empname")
     assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
 
-    //2.  test disable mv with carbon.properties
+    // 2.  test disable mv with carbon.properties
     // 2.1 disable MV when set carbon.enable.mv = false in the carbonproperties
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_MV,"false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_MV, "false")
     df = sql("select empname, avg(salary) from source group by empname")
     assert(!isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
 
     // 2.2 enable MV when configuared value is invalid
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_MV,"invalidvalue")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_MV, "invalidvalue")
     df = sql("select empname, avg(salary) from source group by empname")
     assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
 
     // 2.3 enable mv when set carbon.enable.mv = true in the carbonproperties
     df = sql("select empname, avg(salary) from source group by empname")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_MV,"true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_MV, "true")
     assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
 
-    //3.  test disable mv with sessionparam
+    // 3.  test disable mv with sessionparam
     // 3.1 disable MV when set carbon.enable.mv = false in the sessionparam
     sql("set carbon.enable.mv = false")
     df = sql("select empname, avg(salary) from source group by empname")
@@ -260,5 +261,5 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
     }
     tables.exists(_.identifier.table.equalsIgnoreCase(tableName))
   }
-
+  // scalastyle:on lineLength
 }

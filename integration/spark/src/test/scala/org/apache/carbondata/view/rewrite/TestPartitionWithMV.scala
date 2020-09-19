@@ -1,35 +1,36 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain id copy of the License at
-*
-*    http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.carbondata.view.rewrite
 
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import scala.collection.JavaConverters._
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test class for MV to verify partition scenarios
  */
 class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
-
+  // scalastyle:off lineLength
   val testData = s"$resourcesPath/sample.csv"
 
   override def beforeAll(): Unit = {
@@ -109,8 +110,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("create materialized view p1 as select empname, year, sum(year),month,day from partitionone group by empname, year, month,day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert overwrite table partitionone values('v',2,2014,1,1)")
-    checkAnswer(sql("select * from partitionone"), Seq(Row("v",2,2014,1,1)))
-    checkAnswer(sql("select * from p1"), Seq(Row("v",2014,2014,1,1)))
+    checkAnswer(sql("select * from partitionone"), Seq(Row("v", 2, 2014, 1, 1)))
+    checkAnswer(sql("select * from p1"), Seq(Row("v", 2014, 2014, 1, 1)))
     checkAnswer(sql("select empname, sum(year) from partitionone group by empname, year, month,day"), Seq(Row("v", 2014)))
     val df1 = sql(s"select empname, sum(year) from partitionone group by empname, year, month,day")
     assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "p1"))
@@ -129,10 +130,12 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("create materialized view p1 as select empname, year, sum(year),month,day from partitionone group by empname, year, month,day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert overwrite table partitionone values('v',2,2015,1,1)")
-    checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,1), Row("v",2,2015,1,1)))
+    checkAnswer(sql("select * from partitionone"),
+      Seq(Row("k", 2, 2014, 1, 1), Row("v", 2, 2015, 1, 1)))
     val df1 = sql(s"select empname, sum(year) from partitionone group by empname, year, month,day")
     assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "p1"))
-    checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,1), Row("v",2015,2015,1,1)))
+    checkAnswer(sql("select * from p1"),
+      Seq(Row("k", 2014, 2014, 1, 1), Row("v", 2015, 2015, 1, 1)))
   }
 
   test("test to check column ordering in parent and child table") {
@@ -150,7 +153,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     val parentPartitionColumns = parentTable.getPartitionInfo.getColumnSchemaList
     val childPartitionColumns = childTable.getPartitionInfo.getColumnSchemaList
     assert(parentPartitionColumns.asScala.zip(childPartitionColumns.asScala).forall {
-      case (a,b) =>
+      case (a, b) =>
         a.getColumnName
           .equalsIgnoreCase(b.getColumnName
             .substring(b.getColumnName.lastIndexOf("_") + 1, b.getColumnName.length))
@@ -172,7 +175,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone compact 'minor'")
-    val showSegments = sql("show segments for table partitionone").collect().map{a=> (a.get(0), a.get(1))}
+    val showSegments = sql("show segments for table partitionone").collect()
+      .map { a => (a.get(0), a.get(1)) }
     assert(showSegments.count(_._2 == "Success") == 1)
     assert(showSegments.count(_._2 == "Compacted") == 4)
     assert(CarbonEnv.getCarbonTable(Some("partition_mv"), "p1")(sqlContext.sparkSession).isHivePartitionTable)
@@ -194,7 +198,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone compact 'major'")
-    val showSegments = sql("show segments for table partitionone").collect().map{a=> (a.get(0), a.get(1))}
+    val showSegments = sql("show segments for table partitionone").collect()
+      .map { a => (a.get(0), a.get(1)) }
     assert(showSegments.count(_._2 == "Success") == 1)
     assert(showSegments.count(_._2 == "Compacted") == 5)
   }
@@ -215,8 +220,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone drop partition(day=1)")
-    checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,2)))
-    checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,2)))
+    checkAnswer(sql("select * from partitionone"), Seq(Row("k", 2, 2014, 1, 2)))
+    checkAnswer(sql("select * from p1"), Seq(Row("k", 2014, 2014, 1, 2)))
   }
 
   test("test drop partition 2") {
@@ -235,8 +240,10 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2015,2,3)")
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone drop partition(day=1)")
-    checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,2), Row("k",2,2015,2,3)))
-    checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,2), Row("k",2015,2015,2,3)))
+    checkAnswer(sql("select * from partitionone"),
+      Seq(Row("k", 2, 2014, 1, 2), Row("k", 2, 2015, 2, 3)))
+    checkAnswer(sql("select * from p1"),
+      Seq(Row("k", 2014, 2014, 1, 2), Row("k", 2015, 2015, 2, 3)))
   }
 
   test("test drop partition directory") {
@@ -283,8 +290,11 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2015,2,3)")
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone drop partition(day=1)")
-    checkAnswer(sql("select empname, sum(year) from partitionone where day=3 group by empname, year, month, day"), Seq(Row("k",2015)))
-    checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,2), Row("k",2015,2015,2,3)))
+    checkAnswer(sql(
+      "select empname, sum(year) from partitionone where day=3 group by empname, year, month, day"),
+      Seq(Row("k", 2015)))
+    checkAnswer(sql("select * from p1"),
+      Seq(Row("k", 2014, 2014, 1, 2), Row("k", 2015, 2015, 2, 3)))
   }
 
   test("test drop partition 3") {
@@ -303,8 +313,10 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2015,2,3)")
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone drop partition(day=1,month=1)")
-    checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,2), Row("k",2,2015, 2,3), Row("k",2,2015, 2,1)))
-    checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,2), Row("k",2015,2015,2,3), Row("k",2015,2015,2,1)))
+    checkAnswer(sql("select * from partitionone"),
+      Seq(Row("k", 2, 2014, 1, 2), Row("k", 2, 2015, 2, 3), Row("k", 2, 2015, 2, 1)))
+    checkAnswer(sql("select * from p1"),
+      Seq(Row("k", 2014, 2014, 1, 2), Row("k", 2015, 2015, 2, 3), Row("k", 2015, 2015, 2, 1)))
   }
 
   test("test drop partition 4") {
@@ -323,8 +335,10 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2015,2,3)")
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone drop partition(year=2014,day=1)")
-    checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,2), Row("k",2,2015, 2,3), Row("k",2,2015, 2,1)))
-    checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,2), Row("k",2015,2015, 2,3), Row("k",2015,2015, 2,1)))
+    checkAnswer(sql("select * from partitionone"),
+      Seq(Row("k", 2, 2014, 1, 2), Row("k", 2, 2015, 2, 3), Row("k", 2, 2015, 2, 1)))
+    checkAnswer(sql("select * from p1"),
+      Seq(Row("k", 2014, 2014, 1, 2), Row("k", 2015, 2015, 2, 3), Row("k", 2015, 2015, 2, 1)))
   }
 
   test("test drop partition 5") {
@@ -344,8 +358,10 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone drop partition(year=2014,month=1, day=1)")
 
-    checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,2), Row("k",2,2015, 2,3), Row("k",2,2015, 2,1)))
-    checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,2), Row("k",2015,2015,2,3), Row("k",2015,2015,2,1)))
+    checkAnswer(sql("select * from partitionone"),
+      Seq(Row("k", 2, 2014, 1, 2), Row("k", 2, 2015, 2, 3), Row("k", 2, 2015, 2, 1)))
+    checkAnswer(sql("select * from p1"),
+      Seq(Row("k", 2014, 2014, 1, 2), Row("k", 2015, 2015, 2, 3), Row("k", 2015, 2015, 2, 1)))
   }
 
   test("test drop partition 6") {
@@ -364,8 +380,10 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values('k',2,2015,2,3)")
     sql("insert into partitionone values('k',2,2015,2,1)")
     sql("alter table partitionone drop partition(year=2014,month=1, day=1)")
-    checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,2), Row("k",2,2015, 2,3), Row("k",2,2015, 2,1)))
-    checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,2), Row("k",2015,2015,2,3), Row("k",2015,2015,2,1)))
+    checkAnswer(sql("select * from partitionone"),
+      Seq(Row("k", 2, 2014, 1, 2), Row("k", 2, 2015, 2, 3), Row("k", 2, 2015, 2, 1)))
+    checkAnswer(sql("select * from p1"),
+      Seq(Row("k", 2014, 2014, 1, 2), Row("k", 2015, 2015, 2, 3), Row("k", 2015, 2015, 2, 1)))
   }
 
   test("test drop partition 7") {
@@ -659,8 +677,9 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("alter table updatetime_8 compact 'minor'")
     val df = sql("select sum(hs_len) from updatetime_8 group by imex")
     assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "ag"))
-    checkAnswer(sql("select sum(hs_len) from updatetime_8 group by imex"),Seq(Row(40),Row(42),Row(83)))
-    sql("drop table updatetime_8").show(200, false)
+    checkAnswer(sql("select sum(hs_len) from updatetime_8 group by imex"),
+      Seq(Row(40), Row(42), Row(83)))
+    sql("drop table updatetime_8").collect()
   }
 
   test("check partitioning for child tables with various combinations") {
@@ -685,13 +704,32 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
       "create materialized view p5 as select empname, month,sum(year) from partitionone group by empname, month")
     sql(
       "create materialized view p6 as select empname, month, day, sum(year), sum(month) from partitionone group by empname, month, day")
-    assert(!CarbonEnv.getCarbonTable(Some("partition_mv"),"p1")(sqlContext.sparkSession).isHivePartitionTable)
-    assert(CarbonEnv.getCarbonTable(Some("partition_mv"),"p2")(sqlContext.sparkSession).getPartitionInfo.getColumnSchemaList.size() == 1)
-    assert(CarbonEnv.getCarbonTable(Some("partition_mv"),"p3")(sqlContext.sparkSession).getPartitionInfo.getColumnSchemaList.size == 2)
-    assert(CarbonEnv.getCarbonTable(Some("partition_mv"),"p4")(sqlContext.sparkSession).getPartitionInfo.getColumnSchemaList.size == 3)
-    assert(!CarbonEnv.getCarbonTable(Some("partition_mv"),"p5")(sqlContext.sparkSession).isHivePartitionTable)
-    assert(!CarbonEnv.getCarbonTable(Some("partition_mv"),"p6")(sqlContext.sparkSession).isHivePartitionTable)
-    assert(!CarbonEnv.getCarbonTable(Some("partition_mv"),"p7")(sqlContext.sparkSession).isHivePartitionTable)
+    assert(!CarbonEnv
+      .getCarbonTable(Some("partition_mv"), "p1")(sqlContext.sparkSession)
+      .isHivePartitionTable)
+    assert(CarbonEnv.getCarbonTable(Some("partition_mv"), "p2")(sqlContext.sparkSession)
+             .getPartitionInfo
+             .getColumnSchemaList
+             .size() == 1)
+    assert(CarbonEnv
+             .getCarbonTable(Some("partition_mv"), "p3")(sqlContext.sparkSession)
+             .getPartitionInfo
+             .getColumnSchemaList
+             .size == 2)
+    assert(CarbonEnv
+             .getCarbonTable(Some("partition_mv"), "p4")(sqlContext.sparkSession)
+             .getPartitionInfo
+             .getColumnSchemaList
+             .size == 3)
+    assert(!CarbonEnv
+      .getCarbonTable(Some("partition_mv"), "p5")(sqlContext.sparkSession)
+      .isHivePartitionTable)
+    assert(!CarbonEnv
+      .getCarbonTable(Some("partition_mv"), "p6")(sqlContext.sparkSession)
+      .isHivePartitionTable)
+    assert(!CarbonEnv
+      .getCarbonTable(Some("partition_mv"), "p7")(sqlContext.sparkSession)
+      .isHivePartitionTable)
     sql("drop table if exists partitionone")
   }
 
@@ -701,7 +739,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into partitionone values(1,2,3)")
     sql("drop materialized view if exists dm1")
     sql("create materialized view dm1   as select c,sum(b) from partitionone group by c")
-    checkAnswer(sql("select c,sum(b) from partitionone group by c"), Seq(Row(3,2)))
+    checkAnswer(sql("select c,sum(b) from partitionone group by c"), Seq(Row(3, 2)))
     sql("drop table if exists partitionone")
   }
 
@@ -710,18 +748,22 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("create table partitionone(a int,b int) partitioned by (c timestamp,d timestamp) STORED AS carbondata")
     sql("insert into partitionone values(1,2,'2017-01-01 01:00:00','2018-01-01 01:00:00')")
     sql("drop materialized view if exists dm1")
-    sql("describe formatted partitionone").show(100, false)
+    sql("describe formatted partitionone").collect()
     sql("create materialized view dm1   as select timeseries(c,'day'),sum(b) from partitionone group by timeseries(c,'day')")
-    assert(!CarbonEnv.getCarbonTable(Some("partition_mv"),"dm1")(sqlContext.sparkSession).isHivePartitionTable)
+    assert(!CarbonEnv
+      .getCarbonTable(Some("partition_mv"), "dm1")(sqlContext.sparkSession)
+      .isHivePartitionTable)
     assert(sql("select timeseries(c,'day'),sum(b) from partitionone group by timeseries(c,'day')").collect().length  == 1)
     sql("drop table if exists partitionone")
     sql("create table partitionone(a int,b timestamp) partitioned by (c timestamp) STORED AS carbondata")
     sql("insert into partitionone values(1,'2017-01-01 01:00:00','2018-01-01 01:00:00')")
     sql("drop materialized view if exists dm1")
     sql("create materialized view dm1   as select timeseries(b,'day'),c from partitionone group by timeseries(b,'day'),c")
-    assert(CarbonEnv.getCarbonTable(Some("partition_mv"),"dm1")(sqlContext.sparkSession).isHivePartitionTable)
+    assert(CarbonEnv
+      .getCarbonTable(Some("partition_mv"), "dm1")(sqlContext.sparkSession)
+      .isHivePartitionTable)
     assert(sql("select timeseries(b,'day'),c from partitionone group by timeseries(b,'day'),c").collect().length == 1)
     sql("drop table if exists partitionone")
   }
-
+  // scalastyle:on lineLength
 }

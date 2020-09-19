@@ -19,14 +19,14 @@ package org.apache.carbondata.spark.testsuite.iud
 
 import java.text.SimpleDateFormat
 import java.util
-import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
+import java.util.concurrent.{Callable, Executors, ExecutorService, Future}
 
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -34,17 +34,17 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
 import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
-import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
+import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
 
 // This testsuite test insert and insert overwrite with other commands concurrently
-class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+class TestInsertAndOtherCommandConcurrent
+  extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
   var testData: DataFrame = _
 
@@ -134,14 +134,15 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
-      "insert overwrite is in progress for table default.orders, compaction operation is not allowed"))
+      "insert overwrite is in progress for table default.orders, " +
+      "compaction operation is not allowed"))
   }
 
   // block updating records from table which has index. see PR2483
   ignore("update should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("update orders set (o_country)=('newCountry') where o_country='china'").show
+      sql("update orders set (o_country)=('newCountry') where o_country='china'").collect()
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
@@ -152,7 +153,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
   ignore("delete should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("delete from orders where o_country='china'").show
+      sql("delete from orders where o_country='china'").collect()
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
@@ -176,7 +177,8 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
-      "loading is in progress for table default.orders, alter table rename operation is not allowed"))
+      "loading is in progress for table default.orders, " +
+      "alter table rename operation is not allowed"))
   }
 
   test("delete segment by id should fail if insert overwrite is in progress") {
@@ -186,7 +188,8 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
-      "insert overwrite is in progress for table default.orders, delete segment operation is not allowed"))
+      "insert overwrite is in progress for table default.orders, " +
+      "delete segment operation is not allowed"))
   }
 
   test("delete segment by date should fail if insert overwrite is in progress") {
@@ -196,7 +199,8 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
-      "insert overwrite is in progress for table default.orders, delete segment operation is not allowed"))
+      "insert overwrite is in progress for table default.orders, " +
+      "delete segment operation is not allowed"))
   }
 
   test("clean file should fail if insert overwrite is in progress") {
@@ -206,7 +210,8 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
-      "insert overwrite is in progress for table default.orders, clean file operation is not allowed"))
+      "insert overwrite is in progress for table default.orders, " +
+      "clean file operation is not allowed"))
   }
 
   // ----------- INSERT  --------------
@@ -244,7 +249,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
   ignore("update should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("update orders set (o_country)=('newCountry') where o_country='china'").show
+      sql("update orders set (o_country)=('newCountry') where o_country='china'").collect()
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
@@ -255,7 +260,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
   ignore("delete should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("delete from orders where o_country='china'").show
+      sql("delete from orders where o_country='china'").collect()
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
@@ -279,7 +284,8 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
-      "loading is in progress for table default.orders, alter table rename operation is not allowed"))
+      "loading is in progress for table default.orders, " +
+      "alter table rename operation is not allowed"))
   }
 
   class QueryTask(query: String) extends Callable[String] {
@@ -304,7 +310,7 @@ object Global {
 class WaitingIndexFactory(
     carbonTable: CarbonTable,
     indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
-
+  // scalastyle:off ???
   override def fireEvent(event: Event): Unit = ???
 
   override def clear(): Unit = {}
@@ -313,10 +319,15 @@ class WaitingIndexFactory(
 
   override def getIndexes(segment: Segment): util.List[CoarseGrainIndex] = ???
 
-  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
+  override def createWriter(segment: Segment,
+      shardName: String,
+      segmentProperties: SegmentProperties): IndexWriter = {
     new IndexWriter(carbonTable.getTablePath, indexSchema.getIndexName,
       carbonTable.getIndexedColumns(indexSchema.getIndexColumns), segment, shardName) {
-      override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
+      override def onPageAdded(blockletId: Int,
+          pageId: Int,
+          pageSize: Int,
+          pages: Array[ColumnPage]): Unit = {}
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
 
@@ -338,7 +349,10 @@ class WaitingIndexFactory(
     }
   }
 
-  override def getMeta: IndexMeta = new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns), Seq(ExpressionType.EQUALS).asJava)
+  override def getMeta: IndexMeta = {
+    new IndexMeta(carbonTable.getIndexedColumns(indexSchema
+      .getIndexColumns), Seq(ExpressionType.EQUALS).asJava)
+  }
 
   override def toDistributable(segmentId: Segment): util.List[IndexInputSplit] = {
     util.Collections.emptyList()
@@ -377,4 +391,5 @@ class WaitingIndexFactory(
       partitionLocations: util.Set[Path]): util.List[CoarseGrainIndex] = {
     ???
   }
+  // scalastyle:on ???
 }

@@ -28,15 +28,14 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3DataFormatConstants}
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import BloomCoarseGrainIndexTestUtil.deleteFile
-import BloomCoarseGrainIndexTestUtil.createFile
-import BloomCoarseGrainIndexTestUtil.checkBasicQuery
 import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.metadata.index.IndexType
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.index.bloom.BloomCoarseGrainIndexTestUtil.{checkBasicQuery, createFile, deleteFile}
 
-class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+class BloomCoarseGrainIndexFunctionSuite
+  extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   val bigFile = s"$resourcesPath/bloom_index_function_test_big.csv"
   val normalTable = "carbon_normal"
   val bloomSampleTable = "carbon_bloom"
@@ -77,7 +76,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -90,12 +90,13 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
-    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
-    sql(s"select * from $bloomSampleTable where id = 1").show(false)
-    sql(s"select * from $bloomSampleTable where city = 'city_1'").show(false)
+    sql(s"select * from $bloomSampleTable where id = 1").collect()
+    sql(s"select * from $bloomSampleTable where city = 'city_1'").collect()
     checkBasicQuery(indexName, bloomSampleTable, normalTable)
     sql(s"DROP INDEX $indexName ON TABLE $bloomSampleTable")
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -123,7 +124,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -136,12 +138,13 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
-    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
-    sql(s"select * from $bloomSampleTable where id = 1").show(false)
-    sql(s"select * from $bloomSampleTable where city = 'city_1'").show(false)
+    sql(s"select * from $bloomSampleTable where id = 1").collect()
+    sql(s"select * from $bloomSampleTable where city = 'city_1'").collect()
     checkBasicQuery(indexName, bloomSampleTable, normalTable)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomSampleTable")
@@ -168,7 +171,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -181,12 +185,13 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
-    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
-    sql(s"select * from $bloomSampleTable where id = 1").show(false)
-    sql(s"select * from $bloomSampleTable where city = 'city_1'").show(false)
+    sql(s"select * from $bloomSampleTable where id = 1").collect()
+    sql(s"select * from $bloomSampleTable where city = 'city_1'").collect()
     checkBasicQuery(indexName, bloomSampleTable, normalTable)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomSampleTable")
@@ -194,7 +199,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   test("test bloom index: index column is float, not dictionary") {
     val floatCsvPath = s"$resourcesPath/datasamplefordate.csv"
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     sql(
       s"""
          | CREATE TABLE $normalTable(empno string, doj date, salary float)
@@ -223,8 +229,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | LOAD DATA INPATH '$floatCsvPath' INTO TABLE $bloomSampleTable OPTIONS(
          | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'"),
       sql(s"SELECT * FROM $normalTable WHERE salary='1040.56'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'"),
@@ -233,7 +239,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   test("test bloom index: index column is float, dictionary") {
     val floatCsvPath = s"$resourcesPath/datasamplefordate.csv"
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     sql(
       s"""
          | CREATE TABLE $normalTable(empno string, doj date, salary float)
@@ -262,8 +269,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | LOAD DATA INPATH '$floatCsvPath' INTO TABLE $bloomSampleTable OPTIONS(
          | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'"),
       sql(s"SELECT * FROM $normalTable WHERE salary='1040.56'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'"),
@@ -274,7 +281,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   test("test bloom index: index column is date") {
     val dateCsvPath = s"$resourcesPath/datasamplefordate.csv"
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     sql(
       s"""
          | CREATE TABLE $normalTable(empno string, doj date, salary float)
@@ -303,8 +311,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | LOAD DATA INPATH '$dateCsvPath' INTO TABLE $bloomSampleTable OPTIONS(
          | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'"),
       sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-14'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'"),
@@ -313,7 +321,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   test("test bloom index: index column is date, dictionary, sort column") {
     val dateCsvPath = s"$resourcesPath/datasamplefordate.csv"
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     sql(
       s"""
          | CREATE TABLE $normalTable(empno string, doj date, salary float)
@@ -342,8 +351,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | LOAD DATA INPATH '$dateCsvPath' INTO TABLE $bloomSampleTable OPTIONS(
          | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'"),
       sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-14'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'"),
@@ -356,7 +365,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | CREATE TABLE IF NOT EXISTS $normalTable (
-         | ID Int, date date, starttime Timestamp, country String, name String, phonetype String, serialname String, salary Int)
+         | ID Int, date date, starttime Timestamp, country String, name String, phonetype String,
+         |  serialname String, salary Int)
          | STORED AS carbondata
        """.stripMargin)
     sql(
@@ -367,7 +377,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | CREATE TABLE IF NOT EXISTS $bloomSampleTable (
-         | ID Int, date date, starttime Timestamp, country String, name String, phonetype String, serialname String, salary Int)
+         | ID Int, date date, starttime Timestamp, country String, name String, phonetype String,
+         |  serialname String, salary Int)
          | STORED AS carbondata
        """.stripMargin)
     sql(
@@ -381,8 +392,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | LOAD DATA LOCAL INPATH '$timeStampData' into table $bloomSampleTable
          | OPTIONS('dateformat' = 'yyyy/MM/dd','timestampformat'='yyyy-MM-dd HH:mm:ss')
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:30.0'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:31.0'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:30.0'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:31.0'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:30.0'"),
       sql(s"SELECT * FROM $normalTable WHERE starttime='2016-07-25 01:03:30.0'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:31.0'"),
@@ -394,7 +405,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | CREATE TABLE IF NOT EXISTS $normalTable (
-         | ID Int, date date, starttime Timestamp, country String, name String, phonetype String, serialname String, salary Int)
+         | ID Int, date date, starttime Timestamp, country String, name String, phonetype String,
+         |  serialname String, salary Int)
          | STORED AS carbondata
        """.stripMargin)
     sql(
@@ -405,7 +417,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | CREATE TABLE IF NOT EXISTS $bloomSampleTable (
-         | ID Int, date date, starttime Timestamp, country String, name String, phonetype String, serialname String, salary Int)
+         | ID Int, date date, starttime Timestamp, country String, name String, phonetype String,
+         |  serialname String, salary Int)
          | STORED AS carbondata
          | TBLPROPERTIES('dictionary_column'='starttime', 'sort_columns'='starttime')
        """.stripMargin)
@@ -420,9 +433,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | LOAD DATA LOCAL INPATH '$timeStampData' into table $bloomSampleTable
          | OPTIONS('dateformat' = 'yyyy/MM/dd','timestampformat'='yyyy-MM-dd HH:mm:ss')
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime=null").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:30.0'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:31.0'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime=null").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:30.0'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:31.0'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:30.0'"),
       sql(s"SELECT * FROM $normalTable WHERE starttime='2016-07-25 01:03:30.0'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE starttime='2016-07-25 01:03:31.0'"),
@@ -460,8 +473,10 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
   }
 
   test("test bloom index: querying with longstring index column") {
-    sql(s"CREATE TABLE $normalTable(c1 string, c2 int, c3 string) STORED AS carbondata TBLPROPERTIES('long_string_columns'='c3')")
-    sql(s"CREATE TABLE $bloomSampleTable(c1 string, c2 int, c3 string) STORED AS carbondata TBLPROPERTIES('long_string_columns'='c3')")
+    sql(s"CREATE TABLE $normalTable(c1 string, c2 int, c3 string) " +
+        "STORED AS carbondata TBLPROPERTIES('long_string_columns'='c3')")
+    sql(s"CREATE TABLE $bloomSampleTable(c1 string, c2 int, c3 string) " +
+        "STORED AS carbondata TBLPROPERTIES('long_string_columns'='c3')")
     // create index on longstring columns
     sql(
       s"""
@@ -514,7 +529,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
     checkBasicQuery(indexName, bloomSampleTable, normalTable)
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -556,7 +571,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
     checkBasicQuery(indexName, bloomSampleTable, normalTable)
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -598,7 +613,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
     checkBasicQuery(indexName, bloomSampleTable, normalTable)
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -607,7 +622,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   test("test rebuild bloom index: index column is float, not dictionary") {
     val floatCsvPath = s"$resourcesPath/datasamplefordate.csv"
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     sql(
       s"""
          | CREATE TABLE $normalTable(empno string, doj date, salary float)
@@ -636,8 +652,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | ON $bloomSampleTable (salary)
          | AS 'bloomfilter'
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'"),
       sql(s"SELECT * FROM $normalTable WHERE salary='1040.56'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'"),
@@ -646,7 +662,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   test("test rebuild bloom index: index column is float, dictionary") {
     val floatCsvPath = s"$resourcesPath/datasamplefordate.csv"
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     sql(
       s"""
          | CREATE TABLE $normalTable(empno string, doj date, salary float)
@@ -675,8 +692,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | ON $bloomSampleTable (salary)
          | AS 'bloomfilter'
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'"),
       sql(s"SELECT * FROM $normalTable WHERE salary='1040.56'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'"),
@@ -685,7 +702,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   test("test rebuild bloom index: index column is date") {
     val dateCsvPath = s"$resourcesPath/datasamplefordate.csv"
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     sql(
       s"""
          | CREATE TABLE $normalTable(empno string, doj date, salary float)
@@ -714,8 +732,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | ON $bloomSampleTable (doj)
          | AS 'bloomfilter'
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'"),
       sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-14'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'"),
@@ -724,7 +742,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   test("test rebuild bloom index: index column is date, dictionary, sort_colum") {
     val dateCsvPath = s"$resourcesPath/datasamplefordate.csv"
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     sql(
       s"""
          | CREATE TABLE $normalTable(empno string, doj date, salary float)
@@ -753,8 +772,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | ON $bloomSampleTable (doj)
          | AS 'bloomfilter'
        """.stripMargin)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").show(false)
-    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").show(false)
+    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").collect()
+    sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").collect()
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'"),
       sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-14'"))
     checkAnswer(sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'"),
@@ -803,19 +822,24 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     sql(s"INSERT INTO $bloomSampleTable SELECT 'c1v2', 2, 'c3v2'")
 
     // two segments both has index files
-    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), bloomSampleTable)(SparkTestQueryExecutor.spark)
+    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), bloomSampleTable)(
+      SparkTestQueryExecutor.spark)
     import scala.collection.JavaConverters._
     (0 to 1).foreach { segId =>
-      val indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, segId.toString, indexName)
-      assert(FileUtils.listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
+      val indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath,
+        segId.toString, indexName)
+      assert(FileUtils.listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true)
+        .asScala.nonEmpty)
     }
     // delete and clean the first segment, the corresponding index files should be cleaned too
     sql(s"DELETE FROM TABLE $bloomSampleTable WHERE SEGMENT.ID IN (0)")
     sql(s"CLEAN FILES FOR TABLE $bloomSampleTable")
     var indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, "0", indexName)
-    assert(!FileUtils.getFile(indexPath).exists(), "index file of this segment has been deleted, should not exist")
+    assert(!FileUtils.getFile(indexPath).exists(),
+      "index file of this segment has been deleted, should not exist")
     indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, "1", indexName)
-    assert(FileUtils.listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
+    assert(FileUtils.listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true)
+      .asScala.nonEmpty)
   }
 
   // two blocklets in one block are hit by bloom index while block cache level hit this block
@@ -823,7 +847,8 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     // minimum per page is 2000 rows
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE, "2000")
     // minimum per blocklet is 16MB
-    CarbonProperties.getInstance().addProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, "16")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, "16")
     // these lines will result in 3 blocklets in one block and bloom will hit at least 2 of them
     val lines = 100000
     sql("drop table if exists test_rcd").collect()
@@ -879,8 +904,10 @@ object IndexStatusUtil {
       tableName)(sparkSession)
     val secondaryIndexMap = carbonTable.getIndexesMap.get(indexProvider.getIndexProviderName)
     if (null != secondaryIndexMap) {
-      val indexes = secondaryIndexMap.asScala.filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(indexStatus))
-      assert(indexes.exists(p => p._1.equals(indexName) && p._2.get(CarbonCommonConstants.INDEX_STATUS) == indexStatus))
+      val indexes = secondaryIndexMap.asScala
+        .filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(indexStatus))
+      assert(indexes.exists(p => p._1.equals(indexName) &&
+                                 p._2.get(CarbonCommonConstants.INDEX_STATUS) == indexStatus))
     }
   }
 }

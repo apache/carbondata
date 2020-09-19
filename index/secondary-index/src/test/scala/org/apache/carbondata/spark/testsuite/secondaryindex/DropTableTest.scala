@@ -27,18 +27,19 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
   test("test to drop parent table with all indexes") {
     sql("drop database if exists cd cascade")
     sql("create database cd")
-    sql("show tables in cd").show()
+    sql("show tables in cd").collect()
     sql("create table cd.t1 (a string, b string, c string) STORED AS carbondata")
     sql("create index i1 on table cd.t1(c) AS 'carbondata'")
     sql("create index i2 on table cd.t1(c,b) AS 'carbondata'")
-    sql("show tables in cd").show()
+    sql("show tables in cd").collect()
     sql("drop table cd.t1")
     assert(sql("show tables in cd").collect()
-      .forall(row => row.getString(1) != "i2" && row != Row("cd", "i1", "false") && row != Row("cd", "t1", "false")))
+      .forall(row => row.getString(1) != "i2" && row != Row("cd", "i1", "false") &&
+                     row != Row("cd", "t1", "false")))
   }
 
 
-  /*test("test to drop one index table out of two"){
+  /* test("test to drop one index table out of two") {
     sql("drop database if exists cd cascade")
     sql("create database cd")
     sql("show tables in cd").show()
@@ -49,7 +50,7 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
     sql("drop index i1 on cd.t1")
     sql("show tables in cd").show()
     sql("select * from i2").show()
-  }*/
+  } */
 
   test("test to drop index tables") {
     sql("drop database if exists cd cascade")
@@ -57,11 +58,12 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
     sql("create table cd.t1 (a string, b string, c string) STORED AS carbondata")
     sql("create index i1 on table cd.t1(c) AS 'carbondata'")
     sql("create index i2 on table cd.t1(c,b) AS 'carbondata'")
-    sql("show tables in cd").show()
+    sql("show tables in cd").collect()
     sql("drop index i1 on cd.t1")
     sql("drop index i2 on cd.t1")
     assert(sql("show tables in cd").collect()
-      .forall(row => !row.getString(1).equals("i1") && !row.getString(1).equals("i2") && row.getString(1).equals("t1")))
+      .forall(row => !row.getString(1).equals("i1") && !row.getString(1).equals("i2") &&
+                     row.getString(1).equals("t1")))
     assert(sql("show indexes on cd.t1").collect().isEmpty)
   }
 

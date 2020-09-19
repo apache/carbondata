@@ -17,10 +17,11 @@
 package org.apache.carbondata.spark.testsuite.measurenullvalue
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 class NullMeasureValueTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
 
@@ -45,7 +46,7 @@ class NullMeasureValueTestCaseAggregate extends QueryTest with BeforeAndAfterAll
       sql("select count(distinct salary) from t3"),
       Seq(Row(0)))
   }
-  
+
   test("select sum(salary) from t3") {
     checkAnswer(
       sql("select sum(salary) from t3"),
@@ -56,7 +57,7 @@ class NullMeasureValueTestCaseAggregate extends QueryTest with BeforeAndAfterAll
       sql("select avg(salary) from t3"),
       Seq(Row(null)))
   }
-  
+
    test("select max(salary) from t3") {
     checkAnswer(
       sql("select max(salary) from t3"),
@@ -72,7 +73,7 @@ class NullMeasureValueTestCaseAggregate extends QueryTest with BeforeAndAfterAll
       sql("select sum(distinct salary) from t3"),
       Seq(Row(null)))
    }
-   
+
   override def afterAll {
     sql("drop table t3")
     CarbonProperties.getInstance()

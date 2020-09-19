@@ -26,6 +26,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestIndexModelWithUnsafeColumnPage extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    drop()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
     sql("drop table if exists testSecondryIndex")
@@ -35,12 +36,16 @@ class TestIndexModelWithUnsafeColumnPage extends QueryTest with BeforeAndAfterAl
   }
 
   test("Test secondry index data count") {
-    checkAnswer(sql("select count(*) from testSecondryIndex_IndexTable")
-    ,Seq(Row(1)))
+    checkAnswer(sql("select count(*) from testSecondryIndex_IndexTable"), Seq(Row(1)))
   }
 
   override def afterAll {
-    sql("drop table if exists testIndexTable")
+    drop()
+  }
+
+  private def drop(): Unit = {
+    sql("drop index if exists testSecondryIndex_IndexTable on testSecondryIndex")
+    sql("drop table if exists testSecondryIndex")
   }
 
 }

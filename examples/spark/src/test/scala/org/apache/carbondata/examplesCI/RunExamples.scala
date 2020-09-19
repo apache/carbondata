@@ -19,13 +19,13 @@ package org.apache.carbondata.examplesCI
 
 import java.io.File
 
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.SparkSqlAdapter
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.examples._
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples._
 import org.apache.carbondata.examples.sdk.CarbonReaderExample
 import org.apache.carbondata.examples.sql.JavaCarbonSessionExample
 
@@ -120,7 +120,7 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
     DirectSQLExample.exampleBody(spark)
   }
 
-  //Ignoring because HiveExample depends on Hadoop ENV, but CI doesn't meet the running conditions.
+  // Ignoring because HiveExample depends on Hadoop ENV, but CI doesn't meet the running conditions.
   ignore("HiveExample") {
     SparkSqlAdapter.initSparkSQL()
     HiveExample.createCarbonTable(spark)

@@ -1,23 +1,30 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*    http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.carbondata.view.rewrite
 
 import java.util
+
+import scala.collection.JavaConverters._
+
+import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
 import org.apache.carbondata.core.cache.CacheProvider
@@ -26,18 +33,12 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row}
-import org.scalatest.BeforeAndAfterEach
-
-import scala.collection.JavaConverters._
 
 /**
  * Test Class for MV materialized view to verify all scenerios
  */
 class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
-
+  // scalastyle:off lineLength
   override def beforeEach(): Unit = {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
@@ -112,25 +113,25 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test alter rename table") {
-    //check rename maintable
+    // check rename maintable
     intercept[MalformedCarbonCommandException] {
       sql("alter table maintable rename to maintable_rename")
     }.getMessage.contains("alter rename is not supported for materialized view table or for tables which have child materialized view")
-    //check rename MV
+    // check rename MV
     intercept[MalformedCarbonCommandException] {
       sql("alter table dm1 rename to dm11")
     }.getMessage.contains("alter rename is not supported for materialized view table or for tables which have child materialized view")
   }
 
   test("test alter change datatype") {
-    //change datatype for column
+    // change datatype for column
     intercept[ProcessMetaDataException] {
       sql("alter table maintable change price price bigint")
     }.getMessage.contains("Column price exists in a MV materialized view. Drop MV materialized view to continue")
-    //change datatype for column not present in materialized view table
+    // change datatype for column not present in materialized view table
     sql("alter table maintable change c_code c_code bigint")
     checkResult()
-    //change datatype for column present in materialized view table
+    // change datatype for column present in materialized view table
     intercept[ProcessMetaDataException] {
       sql("alter table dm1 change sum_price sum_price bigint")
     }.getMessage.contains("Cannot change data type or rename column for columns " +
@@ -247,7 +248,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table if exists noncarbon")
   }
 
-  //Test show materialized view
+  // Test show materialized view
   test("test materialized view status with single table") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
@@ -310,7 +311,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
       "products p, sales s where p.product=s.product")
     checkExistence(sql("show materialized views on table products"), true, "ENABLED")
     checkExistence(sql("show materialized views on table sales"), true, "ENABLED")
-    sql("show materialized views").show(false)
+    sql("show materialized views").collect()
     result = sql("show materialized views on table products").collectAsList()
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
     assert(result.get(0).get(3).toString.equalsIgnoreCase("full"))
@@ -360,7 +361,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
-    sql("select name from maintable where name like '%b%'").show(false)
+    sql("select name from maintable where name like '%b%'").collect()
     sql("drop materialized view if exists dm_like ")
     sql("create materialized view dm_like  as select name from maintable where name like '%b%'")
     checkAnswer(sql("select name from maintable where name like '%b%'"), Seq(Row("abc")))
@@ -515,10 +516,10 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create materialized view dm  as select name, sum(price) from maintable group by name")
     sql("select name, sum(price) from maintable group by name").collect()
     intercept[UnsupportedOperationException] {
-      sql("show metacache on table dm").show(false)
+      sql("show metacache on table dm").collect()
     }.getMessage.contains("Operation not allowed on child table.")
     intercept[UnsupportedOperationException] {
-      sql("drop metacache on table dm").show(false)
+      sql("drop metacache on table dm").collect()
     }.getMessage.contains("Operation not allowed on child table.")
   }
 
@@ -624,14 +625,14 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable values('abc',21,2000),('mno',24,3000)")
     sql("drop materialized view if exists mv1")
     sql("create materialized view mv1  as select name,c_code from maintable")
-    sql("update maintable set(name) = ('aaa') where c_code = 21").show(false)
+    sql("update maintable set(name) = ('aaa') where c_code = 21").collect()
     var df = sql("select name,c_code from maintable")
     TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1")
-    checkAnswer(df, Seq(Row("aaa",21), Row("mno",24)))
-    sql("update maintable set(name) = ('mmm') where c_code = 24").show(false)
+    checkAnswer(df, Seq(Row("aaa", 21), Row("mno", 24)))
+    sql("update maintable set(name) = ('mmm') where c_code = 24").collect()
     df = sql("select name,c_code from maintable")
     TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1")
-    checkAnswer(df, Seq(Row("aaa",21), Row("mmm",24)))
+    checkAnswer(df, Seq(Row("aaa", 21), Row("mmm", 24)))
     sql("drop table IF EXISTS maintable")
   }
 
@@ -657,7 +658,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     checkAnswer(res3, df3)
     val df4 = sql("select c_code,price,price,c_code from maintable")
     TestUtil.verifyMVHit(df4.queryExecution.optimizedPlan, "mv2")
-    checkAnswer(df4, Seq(Row(21,2000,2000,21), Row(24,3000,3000,24)))
+    checkAnswer(df4, Seq(Row(21, 2000, 2000, 21), Row(24, 3000, 3000, 24)))
     sql("drop table IF EXISTS maintable")
   }
 
@@ -711,7 +712,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("select name, sum(price) from maintable group by name").collect()
     val droppedCacheKeys = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
 
-    sql("drop metacache on table maintable").show(false)
+    sql("drop metacache on table maintable").collect()
 
     val cacheAfterDrop = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
     droppedCacheKeys.removeAll(cacheAfterDrop)
@@ -742,4 +743,5 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     newSet.addAll(oldSet)
     newSet
   }
+  // scalastyle:on lineLength
 }

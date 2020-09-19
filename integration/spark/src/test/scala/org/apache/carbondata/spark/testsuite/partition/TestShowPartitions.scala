@@ -17,18 +17,16 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
-import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
-
-import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
-  override def beforeAll = {
+  override def beforeAll: Unit = {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
@@ -66,7 +64,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
 
   test("show partition table: exception when show not partition table") {
     val errorMessage = intercept[AnalysisException] {
-      sql("show partitions notPartitionTable").show()
+      sql("show partitions notPartitionTable").collect()
     }
     assert(errorMessage.getMessage.contains(
       "SHOW PARTITIONS is not allowed on a table that is not partitioned"))
@@ -75,12 +73,12 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   test("show partition table: hive partition table") {
     // EqualTo
     checkAnswer(sql("show partitions hiveTable"), Seq(Row("city=Hangzhou")))
-    sql("use hiveDB").show()
+    sql("use hiveDB").collect()
     checkAnswer(sql("show partitions hiveTable"), Seq(Row("city=Shanghai")))
-    sql("use default").show()
+    sql("use default").collect()
   }
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     sql("use default")
     sql("drop table if exists notPartitionTable")
     sql("drop table if exists  hiveTable")

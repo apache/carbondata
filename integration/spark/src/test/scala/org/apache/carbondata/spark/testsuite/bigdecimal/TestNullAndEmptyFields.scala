@@ -17,14 +17,15 @@
 
 package org.apache.carbondata.spark.testsuite.bigdecimal
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * Test cases for testing columns having null value
-  */
+ * Test cases for testing columns having null value
+ */
 class TestNullAndEmptyFields extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -93,15 +94,19 @@ class TestNullAndEmptyFields extends QueryTest with BeforeAndAfterAll {
 
   test("test  subquery on column having null values") {
     checkAnswer(
-      sql("select * from (select if(country='china','c', country) test from carbonTable)qq where test is null"),
-      sql("select * from (select if(country='china','c', country) test from hiveTable)qq where test is null")
+      sql("select * from (select if(country='china','c', country) test " +
+          "from carbonTable)qq where test is null"),
+      sql("select * from (select if(country='china','c', country) test " +
+          "from hiveTable)qq where test is null")
     )
   }
 
   test("test  subquery on column having not null values") {
     checkAnswer(
-      sql("select * from (select if(country='china','c', country) test from carbonTable)qq where test is not null"),
-      sql("select * from (select if(country='china','c', country) test from hiveTable)qq where test is not null")
+      sql("select * from (select if(country='china','c', country) test " +
+          "from carbonTable)qq where test is not null"),
+      sql("select * from (select if(country='china','c', country) test " +
+          "from hiveTable)qq where test is not null")
     )
   }
 

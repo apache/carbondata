@@ -16,11 +16,11 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
-.isFilterPushedDownToSI;
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
 
@@ -299,7 +299,7 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
       " 'abc'"),
       Seq(Row(4)))
 
-    sql("delete from uniqdata1 where CUST_NAME='CUST_NAME_00108'").show()
+    sql("delete from uniqdata1 where CUST_NAME='CUST_NAME_00108'").collect()
 
     checkAnswer(sql(
       "select count(*) from uniqdata1 where CUST_NAME='CUST_NAME_00108' and ACTIVE_EMUI_VERSION =" +
@@ -325,7 +325,7 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
       "select count(*) from uniqdata1 where CUST_ID='9000' and ACTIVE_EMUI_VERSION = 'abc'"),
       Seq(Row(4)))
     intercept[RuntimeException] {
-      sql("update uniqdata1 d set (d.CUST_ID) = ('8000')  where d.CUST_ID = '9000'").show()
+      sql("update uniqdata1 d set (d.CUST_ID) = ('8000')  where d.CUST_ID = '9000'").collect()
     }
   }
 
@@ -359,7 +359,8 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
   test("test secondary index with partition table having mutiple partition columns") {
     sql("drop table if exists partition_table")
     sql(s"""
-         | CREATE TABLE partition_table (stringField string, intField int, shortField short, stringField1 string)
+         | CREATE TABLE partition_table (
+         | stringField string, intField int, shortField short, stringField1 string)
          | STORED AS carbondata
          | PARTITIONED BY (hour_ string, date_ string, sec_ string)
          | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
@@ -368,8 +369,9 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
     sql(s"create index si_on_multi_part on partition_table(stringField1) as 'carbondata'")
     sql("insert into partition_table select 'abc', 1,123,'abc1',2,'mon','ten'")
     checkAnswer(sql(s"select count(*) from si_on_multi_part"), Seq(Row(1)))
-    val dataFrame = sql(s"select stringField,date_,sec_ from partition_table where stringField1='abc1'")
-    checkAnswer(dataFrame, Seq(Row("abc","mon","ten")))
+    val dataFrame =
+      sql(s"select stringField,date_,sec_ from partition_table where stringField1='abc1'")
+    checkAnswer(dataFrame, Seq(Row("abc", "mon", "ten")))
     if (!isFilterPushedDownToSI(dataFrame.queryExecution.sparkPlan)) {
       assert(false)
     } else {

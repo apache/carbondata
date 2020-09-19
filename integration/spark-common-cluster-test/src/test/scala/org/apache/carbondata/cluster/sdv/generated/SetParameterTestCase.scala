@@ -28,7 +28,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
  */
 
 class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll(): Unit = {
     cleanAllTable()
   }
@@ -199,7 +199,8 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       "create table carbon_table(empno int, empname String, designation String, doj Timestamp," +
       "workgroupcategory int) STORED AS carbondata TBLPROPERTIES('SORT_COLUMNS'='empno,empname')")
     checkExistence(sql("DESC FORMATTED carbon_table"), true, "local_sort")
-    val sortscope=sql("DESC FORMATTED carbon_table").collect().filter(_.getString(1).trim.equals("local_sort"))
+    val sortscope = sql("DESC FORMATTED carbon_table").collect()
+      .filter(_.getString(1).trim.equals("local_sort"))
     assertResult(1)(sortscope.length)
     assertResult("local_sort")(sortscope(0).getString(1).trim)
   }
@@ -265,4 +266,5 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       0
     }
   }
+  // scalastyle:on lineLength
 }

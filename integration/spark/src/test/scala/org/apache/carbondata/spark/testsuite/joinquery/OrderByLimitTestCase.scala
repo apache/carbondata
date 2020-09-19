@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.joinquery
 
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -28,6 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 class OrderByLimitTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    dropTable
     sql(
       "CREATE TABLE carbon1 (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
@@ -82,9 +82,13 @@ class OrderByLimitTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table carbon1")
-    sql("drop table carbon2")
-    sql("drop table carbon1_hive")
-    sql("drop table carbon2_hive")
+    dropTable
+  }
+
+  private def dropTable = {
+    sql("drop table if exists carbon1")
+    sql("drop table if exists carbon2")
+    sql("drop table if exists carbon1_hive")
+    sql("drop table if exists carbon2_hive")
   }
 }

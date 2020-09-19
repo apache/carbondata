@@ -19,7 +19,6 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.io.File
 
-import org.apache.spark.SparkContext
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil4Test
@@ -48,7 +47,7 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
   }
 
   private def initYarnLocalDir = {
-    //set all the possible env for yarn local dirs in case of various deploy environment
+    // set all the possible env for yarn local dirs in case of various deploy environment
     val sparkConf = sqlContext.sparkContext.getConf
     sparkConf.set("SPARK_EXECUTOR_DIRS", getMockedYarnLocalDirs)
     sparkConf.set("SPARK_LOCAL_DIRS", getMockedYarnLocalDirs)
@@ -93,7 +92,7 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("drop table if exists carbontable_yarnLocalDirs")
-    
+
     cleanUpYarnLocalDir
   }
 }

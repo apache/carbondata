@@ -74,7 +74,8 @@ class TestLoadOptions extends QueryTest with BeforeAndAfterAll {
     sql("""CREATE TABLE IF NOT EXISTS carriage_return_in_string(ID BigInt, name String,
           |city String) STORED AS carbondata""".stripMargin.replace('\n', ' '))
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/carriage_return_in_string.csv' INTO TABLE
-         |carriage_return_in_string OPTIONS ('fileheader'='id, name, city', 'line_separator'='\\n')"""
+         |carriage_return_in_string
+         | OPTIONS ('fileheader'='id, name, city', 'line_separator'='\\n')"""
         .stripMargin.replace('\n', ' '));
     checkAnswer(sql("select * from carriage_return_in_string where id = 1"),
       Row(1, "2\r", "3"))

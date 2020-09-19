@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import org.apache.spark.util.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.FileUtils
 
 /**
  * Test class of loading data for carbon table with not proper input file

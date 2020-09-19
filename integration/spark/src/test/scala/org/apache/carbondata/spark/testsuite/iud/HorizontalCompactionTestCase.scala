@@ -17,21 +17,21 @@
 
 package org.apache.carbondata.spark.testsuite.iud
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.spark.sql.CarbonEnv
-import org.apache.spark.sql.test.util.QueryTest
 
 class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
+  // scalastyle:off lineLength
   override def beforeAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
     sql("""drop database if exists iud4 cascade""")
     sql("""create database iud4""")
     sql("""use iud4""")
@@ -72,13 +72,13 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""")
     sql(
       """update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""")
-      .show()
+      .collect()
     sql(
       """update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and (s.c22 > 3 and s.c22 < 5) or (s.c22 > 13 and s.c22 < 15) or (s.c22 > 23 and s.c22 < 25) or (s.c22 > 33 and s.c22 < 35))""")
-      .show()
+      .collect()
     sql(
       """update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and (s.c22 > 5 and c22 < 8) or (s.c22 > 15 and s.c22 < 18 ) or (s.c22 > 25 and c22 < 28) or (s.c22 > 35 and c22 < 38))""")
-      .show()
+      .collect()
     sql("""alter table dest2 compact 'minor'""")
     sql("""clean files for table dest2""")
     checkAnswer(
@@ -143,11 +143,11 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
       """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""")
     sql("""select * from source2""")
-    sql("""delete from dest2 where (c2 < 3) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").show()
+    sql("""delete from dest2 where (c2 < 3) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").collect()
     sql("""select * from dest2 order by 2""")
-    sql("""delete from dest2 where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""").show()
+    sql("""delete from dest2 where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""").collect()
     sql("""select * from dest2 order by 2""")
-    sql("""delete from dest2 where (c2 > 5 and c2 < 8) or (c2 > 15 and c2 < 18 ) or (c2 > 25 and c2 < 28) or (c2 > 35 and c2 < 38)""").show()
+    sql("""delete from dest2 where (c2 > 5 and c2 < 8) or (c2 > 15 and c2 < 18 ) or (c2 > 25 and c2 < 28) or (c2 > 35 and c2 < 38)""").collect()
     sql("""clean files for table dest2""")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from dest2 order by c2"""),
@@ -188,12 +188,12 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""")
-    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").show()
-    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c11,s.c66 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").show()
-    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and (s.c22 > 3 and s.c22 < 5) or (s.c22 > 13 and s.c22 < 15) or (s.c22 > 23 and s.c22 < 25) or (s.c22 > 33 and s.c22 < 35))""").show()
-    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c11,s.c66 from source2 s where d.c1 = s.c11 and (s.c22 > 3 and s.c22 < 5) or (s.c22 > 13 and s.c22 < 15) or (s.c22 > 23 and s.c22 < 25) or (s.c22 > 33 and s.c22 < 35))""").show()
-    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and (s.c22 > 5 and c22 < 8) or (s.c22 > 15 and s.c22 < 18 ) or (s.c22 > 25 and c22 < 28) or (s.c22 > 35 and c22 < 38))""").show()
-    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c11,s.c66 from source2 s where d.c1 = s.c11 and (s.c22 > 5 and c22 < 8) or (s.c22 > 15 and s.c22 < 18 ) or (s.c22 > 25 and c22 < 28) or (s.c22 > 35 and c22 < 38))""").show()
+    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").collect()
+    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c11,s.c66 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").collect()
+    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and (s.c22 > 3 and s.c22 < 5) or (s.c22 > 13 and s.c22 < 15) or (s.c22 > 23 and s.c22 < 25) or (s.c22 > 33 and s.c22 < 35))""").collect()
+    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c11,s.c66 from source2 s where d.c1 = s.c11 and (s.c22 > 3 and s.c22 < 5) or (s.c22 > 13 and s.c22 < 15) or (s.c22 > 23 and s.c22 < 25) or (s.c22 > 33 and s.c22 < 35))""").collect()
+    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and (s.c22 > 5 and c22 < 8) or (s.c22 > 15 and s.c22 < 18 ) or (s.c22 > 25 and c22 < 28) or (s.c22 > 35 and c22 < 38))""").collect()
+    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c11,s.c66 from source2 s where d.c1 = s.c11 and (s.c22 > 5 and c22 < 8) or (s.c22 > 15 and s.c22 < 18 ) or (s.c22 > 25 and c22 < 28) or (s.c22 > 35 and c22 < 38))""").collect()
     sql("""alter table dest2 compact 'major'""")
     sql("""clean files for table dest2""")
     checkAnswer(
@@ -257,10 +257,10 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""")
-    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").show()
-    sql("""delete from dest2 where (c2 < 2) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").show()
-    sql("""delete from dest2 where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""").show()
-    sql("""delete from dest2 where (c2 > 5 and c2 < 8) or (c2 > 15 and c2 < 18 ) or (c2 > 25 and c2 < 28) or (c2 > 35 and c2 < 38)""").show()
+    sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").collect()
+    sql("""delete from dest2 where (c2 < 2) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").collect()
+    sql("""delete from dest2 where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""").collect()
+    sql("""delete from dest2 where (c2 > 5 and c2 < 8) or (c2 > 15 and c2 < 18 ) or (c2 > 25 and c2 < 28) or (c2 > 35 and c2 < 38)""").collect()
     sql("""clean files for table dest2""")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from dest2 order by c2"""),
@@ -296,9 +296,9 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/T_Hive1.csv' INTO table t_carbn01 options ('BAD_RECORDS_LOGGER_ENABLE' = 'FALSE', 'BAD_RECORDS_ACTION' = 'FORCE','DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""")
-    sql("""update t_carbn01 set (item_code) = ('Orange') where item_type_cd = 14""").show()
-    sql("""update t_carbn01 set (item_code) = ('Banana') where item_type_cd = 2""").show()
-    sql("""delete from t_carbn01 where item_code in ('RE3423ee','Orange','Banana')""").show()
+    sql("""update t_carbn01 set (item_code) = ('Orange') where item_type_cd = 14""").collect()
+    sql("""update t_carbn01 set (item_code) = ('Banana') where item_type_cd = 2""").collect()
+    sql("""delete from t_carbn01 where item_code in ('RE3423ee','Orange','Banana')""").collect()
     checkAnswer(
       sql("""select item_code from t_carbn01 where item_code not in ('RE3423ee','Orange','Banana')"""),
       Seq(Row("SAD423ee"),
@@ -323,12 +323,12 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp4.csv' INTO table dest2""")
     sql(
-      """delete from dest2 where (c2 < 3) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").show()
+      """delete from dest2 where (c2 < 3) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").collect()
     sql("""delete from table dest2 where segment.id in (0) """)
     sql("""clean files for table dest2""")
     sql(
       """update dest2 set (c5) = ('8RAM size') where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""")
-      .show()
+      .collect()
     checkAnswer(
       sql("""select count(*) from dest2"""),
       Seq(Row(24))
@@ -346,7 +346,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""load data local inpath '$resourcesPath/IUD/comp2.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp4.csv' INTO table dest2""")
-    sql("""delete from dest2 where c2 < 41""").show()
+    sql("""delete from dest2 where c2 < 41""").collect()
     sql("""alter table dest2 compact 'major'""")
     checkAnswer(
       sql("""select count(*) from dest2"""),
@@ -354,38 +354,29 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     )
     sql("""drop table dest2""")
   }
-  test("test the compaction after alter command") // As per bug Carbondata-2016
-  {
-      sql(
-        "CREATE TABLE CUSTOMER1 ( C_CUSTKEY INT , C_NAME STRING , C_ADDRESS STRING , C_NATIONKEY INT , C_PHONE STRING , C_ACCTBAL DECIMAL(15,2) , C_MKTSEGMENT STRING , C_COMMENT STRING) STORED AS carbondata")
 
-      sql(
-        "insert into customer1 values(1,'vandana','noida',1,'123456789',45987.78,'hello','comment')")
-
-      sql(
-        "insert into customer1 values(2,'vandana','noida',2,'123456789',487.78,'hello','comment')")
-
-      sql(
-        " insert into customer1 values(3,'geetika','delhi',3,'123456789',487897.78,'hello','comment')")
-
-      sql(
-        "insert into customer1 values(4,'sangeeta','delhi',3,'123456789',48789.78,'hello','comment')")
-
-      sql(
-        "alter table customer1 add columns (shortfield short) TBLPROPERTIES ('DEFAULT.VALUE.shortfield'='32767')")
-
-      sql(
-        "alter table customer1 add columns (intfield int) TBLPROPERTIES ('DEFAULT.VALUE.intfield'='2147483647')")
-
-      sql(
-        "alter table customer1 add columns (longfield bigint) TBLPROPERTIES ('DEFAULT.VALUE.longfield'='9223372036854775807')")
-
-      sql("alter table customer1 compact 'minor' ").show()
-
-    checkAnswer(sql("select shortfield from customer1"),Seq(Row(32767),Row(32767),Row(32767),Row(32767)))
-    checkAnswer(sql("select intfield from customer1"),Seq(Row(2147483647),Row(2147483647),Row(2147483647),Row(2147483647)))
-    checkAnswer(sql("select longfield from customer1"),Seq(Row(9223372036854775807L),Row(9223372036854775807L),Row(9223372036854775807L),Row(9223372036854775807L)))
-
+  // As per bug Carbondata-2016
+  test("test the compaction after alter command") {
+    sql("CREATE TABLE CUSTOMER1 ( C_CUSTKEY INT , C_NAME STRING , C_ADDRESS STRING , C_NATIONKEY INT , C_PHONE STRING , C_ACCTBAL DECIMAL(15,2) , C_MKTSEGMENT STRING , C_COMMENT STRING) STORED AS carbondata")
+    sql("insert into customer1 values(1,'vandana','noida',1,'123456789',45987.78,'hello','comment')")
+    sql("insert into customer1 values(2,'vandana','noida',2,'123456789',487.78,'hello','comment')")
+    sql(" insert into customer1 values(3,'geetika','delhi',3,'123456789',487897.78,'hello','comment')")
+    sql("insert into customer1 values(4,'sangeeta','delhi',3,'123456789',48789.78,'hello','comment')")
+    sql("alter table customer1 add columns (shortfield short) TBLPROPERTIES ('DEFAULT.VALUE.shortfield'='32767')")
+    sql("alter table customer1 add columns (intfield int) TBLPROPERTIES ('DEFAULT.VALUE.intfield'='2147483647')")
+    sql("alter table customer1 add columns (longfield bigint) TBLPROPERTIES ('DEFAULT.VALUE.longfield'='9223372036854775807')")
+    sql("alter table customer1 compact 'minor' ").collect()
+    checkAnswer(
+      sql("select shortfield from customer1"),
+      Seq(Row(32767), Row(32767), Row(32767), Row(32767)))
+    checkAnswer(
+      sql("select intfield from customer1"),
+      Seq(Row(2147483647), Row(2147483647), Row(2147483647), Row(2147483647)))
+    checkAnswer(sql("select longfield from customer1"),
+      Seq(Row(9223372036854775807L),
+        Row(9223372036854775807L),
+        Row(9223372036854775807L),
+        Row(9223372036854775807L)))
   }
 
   def getDeltaFiles(carbonFile: CarbonFile, fileSuffix: String): Array[CarbonFile] = {
@@ -398,17 +389,13 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("[CARBONDATA-3483] Don't require update.lock and compaction.lock again when execute 'IUD_UPDDEL_DELTA' compaction") {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM, "1")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
+      .addProperty(CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM, "1")
     sql("""drop database if exists iud10 cascade""")
     sql("""create database iud10""")
     sql("""use iud10""")
-
-    sql(
-      """create table dest10 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql("""create table dest10 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest10""")
-
     val carbonTable = CarbonEnv.getCarbonTable(Some("iud10"), "dest10")(sqlContext.sparkSession)
     val identifier = carbonTable.getAbsoluteTableIdentifier()
     val dataFilesDir = CarbonTablePath.getSegmentPath(identifier.getTablePath, "0")
@@ -420,7 +407,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     assert(updateDeltaFiles.length == 0)
     assert(deletaDeltaFiles.length == 0)
 
-    sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 3 or c2 = 6""").show()
+    sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 3 or c2 = 6""").collect()
 
     updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
@@ -428,7 +415,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     assert(updateDeltaFiles.length == 1)
     assert(deletaDeltaFiles.length == 1)
 
-    sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 5 or c2 = 8""").show()
+    sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 5 or c2 = 8""").collect()
 
     updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
@@ -442,19 +429,19 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table dest10""")
     sql("""drop database if exists iud10 cascade""")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
   }
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
     sql("use default")
     sql("drop database if exists iud4 cascade")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE , "true")
+      .addProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE, "true")
     sql("""drop table if exists t_carbn01""")
     sql("""drop table if exists customer1""")
   }
-
+  // scalastyle:on lineLength
 }
 

@@ -23,24 +23,23 @@ import java.util.{Date, Random}
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.RandomStringUtils
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import org.apache.spark.sql.common.util.DataSourceTestUtil._
-import org.apache.spark.util.SparkUtil
-
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.DataSourceTestUtil._
 import org.apache.spark.sql.test.TestQueryExecutor
+import org.apache.spark.util.SparkUtil
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
+import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
 class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with BeforeAndAfterAll {
+  // scalastyle:off lineLength
   import spark._
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -80,7 +79,7 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     }
   }
 
-  def cleanTestData() = {
+  def cleanTestData(): Unit = {
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
@@ -106,12 +105,12 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //data source file format
+    // data source file format
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      //data source file format
+      // data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      //data source file format
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
+      // data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$writerPath' """.stripMargin)
@@ -134,12 +133,12 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     val exception = intercept[Exception] {
-      //    data source file format
+      // data source file format
       if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-        //data source file format
+        // data source file format
         sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-        //data source file format
+      } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
+        // data source file format
         sql(
           s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
              |'$writerPath' """.stripMargin)
@@ -160,15 +159,15 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      //data source file format
+      // data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      //data source file format
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
+      // data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$writerPath' """.stripMargin)
     }
-    //org.apache.spark.SparkException: Index file not present to read the carbondata file
+    // org.apache.spark.SparkException: Index file not present to read the carbondata file
     assert(sql("select * from sdkOutputTable").collect().length == 100)
     assert(sql("select * from sdkOutputTable where name='robot0'").collect().length == 1)
 
@@ -183,10 +182,10 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      //data source file format
+      // data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
     } else {
-      //data source file format
+      // data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$writerPath' """.stripMargin)
@@ -288,16 +287,16 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     }
     writer.close()
 
-    //--------------- data source external table with schema ---------------------------
+    // --------------- data source external table with schema ---------------------------
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
-      //data source file format
+      // data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable (name string, address string, age int, note string)
            |USING carbon OPTIONS (PATH '$writerPath', "long_String_columns" "address, note") """
           .stripMargin)
     } else {
-      //data source file format
+      // data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable (name string, address string, age int, note string) USING
            | carbon
@@ -312,15 +311,15 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     checkAnswer(sql("select name from  sdkOutputTable where age = 2"), Seq(Row("name_2")))
     sql("DROP TABLE sdkOutputTable")
 
-    //--------------- data source external table without schema ---------------------------
+    // --------------- data source external table without schema ---------------------------
     sql("DROP TABLE IF EXISTS sdkOutputTableWithoutSchema")
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
-      //data source file format
+      // data source file format
       sql(
         s"""CREATE TABLE sdkOutputTableWithoutSchema USING carbon OPTIONS (PATH
            |'$writerPath', "long_String_columns" "address, note") """.stripMargin)
     } else {
-      //data source file format
+      // data source file format
       sql(
         s"""CREATE TABLE sdkOutputTableWithoutSchema USING carbon OPTIONS
            |("long_String_columns"="address, note") LOCATION '$writerPath' """.stripMargin)
@@ -336,4 +335,5 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     clearIndexCache
     cleanTestData()
   }
+  // scalastyle:on lineLength
 }

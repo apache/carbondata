@@ -18,10 +18,11 @@
 package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test cases for testing columns having \N or \null values for non numeric columns
@@ -39,9 +40,8 @@ class TestNotNullFilter extends QueryTest with BeforeAndAfterAll {
            name String, phonetype String, serialname char(10), salary Int)
            STORED AS carbondata
            """)
-     sql(s"""
-           LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableNotNull OPTIONS('BAD_RECORDS_ACTION'='FORCE')
-           """)
+     sql(s"LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableNotNull " +
+         s"OPTIONS('BAD_RECORDS_ACTION'='FORCE')")
   }
 
 

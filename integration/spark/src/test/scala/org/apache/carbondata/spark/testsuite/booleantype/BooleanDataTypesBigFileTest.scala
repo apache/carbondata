@@ -18,11 +18,12 @@ package org.apache.carbondata.spark.testsuite.booleantype
 
 import java.io.{File, PrintWriter}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 
 class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -45,8 +46,10 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
     assert(BooleanFile.deleteFile(pathOfOnlyBoolean))
   }
 
-  val pathOfManyDataType = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBigFile.csv"
-  val pathOfOnlyBoolean = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBigFileOnlyBoolean.csv"
+  val pathOfManyDataType =
+    s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBigFile.csv"
+  val pathOfOnlyBoolean =
+    s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBigFileOnlyBoolean.csv"
   val trueNum = 10000
 
   override def beforeAll(): Unit = {
@@ -222,16 +225,19 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
 
     checkAnswer(
       sql("select booleanField from boolean_table where intField >=1 and intField <11"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true))
+      Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true),
+        Row(true), Row(true))
     )
 
     checkAnswer(
-      sql(s"select booleanField from boolean_table where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
+      sql("select booleanField from boolean_table " +
+          s"where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
       Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false))
     )
 
     checkAnswer(
-      sql(s"select count(*) from boolean_table where intField >='${trueNum - 5}' and doubleField <=${trueNum + 1} and booleanField=false"),
+      sql(s"select count(*) from boolean_table where intField >='${trueNum - 5}' " +
+          s"and doubleField <=${trueNum + 1} and booleanField=false"),
       Seq(Row(2))
     )
 
@@ -331,18 +337,21 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
 
     checkAnswer(
       sql("select booleanField from boolean_table where intField >=1 and intField <11"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true),
-        Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true))
+      Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true),
+        Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true),
+        Row(true), Row(true), Row(true), Row(true))
     )
 
     checkAnswer(
-      sql(s"select booleanField from boolean_table where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
+      sql(s"select booleanField from boolean_table " +
+          s"where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
       Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false),
         Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false))
     )
 
     checkAnswer(
-      sql(s"select count(*) from boolean_table where intField >='${trueNum - 5}' and doubleField <=${trueNum + 1} and booleanField=false"),
+      sql(s"select count(*) from boolean_table where intField >='${trueNum - 5}' and " +
+          s"doubleField <=${trueNum + 1} and booleanField=false"),
       Seq(Row(4))
     )
 
@@ -438,12 +447,14 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
            """.stripMargin)
 
     checkAnswer(
-      sql(s"select booleanField from boolean_table where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
+      sql(s"select booleanField from boolean_table where intField >='${trueNum - 5}' " +
+          s"and intField <=${trueNum + 1}"),
       Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false))
     )
   }
 
-  test("Inserting into Hive table from carbon table: support boolean data type and other format, big file") {
+  test("Inserting into Hive table from carbon table: " +
+       "support boolean data type and other format, big file") {
     sql(
       s"""
          | CREATE TABLE carbon_table(
@@ -478,7 +489,8 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
     sql("insert into hive_table select * from carbon_table")
 
     checkAnswer(
-      sql(s"select booleanField from hive_table where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
+      sql(s"select booleanField from hive_table where intField >='${trueNum - 5}' " +
+          s"and intField <=${trueNum + 1}"),
       Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false))
     )
 
@@ -500,7 +512,8 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
       Row(trueNum / 10))
   }
 
-  test("Inserting into carbon table from Hive table: support boolean data type and other format, big file") {
+  test("Inserting into carbon table from Hive table: " +
+       "support boolean data type and other format, big file") {
     sql(
       s"""
          | CREATE TABLE hive_table(
@@ -534,7 +547,8 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
     sql("insert into carbon_table select * from hive_table")
 
     checkAnswer(
-      sql(s"select booleanField from carbon_table where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
+      sql(s"select booleanField from carbon_table where intField >='${trueNum - 5}' " +
+          s"and intField <=${trueNum + 1}"),
       Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false))
     )
 
@@ -582,18 +596,21 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
 
     checkAnswer(
       sql("select booleanField from boolean_table where intField >=1 and intField <11"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true),
-        Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true))
+      Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true),
+        Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true),
+        Row(true), Row(true), Row(true), Row(true))
     )
 
     checkAnswer(
-      sql(s"select booleanField from boolean_table where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
+      sql(s"select booleanField from boolean_table where intField >='${trueNum - 5}' " +
+          s"and intField <=${trueNum + 1}"),
       Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false),
         Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false))
     )
 
     checkAnswer(
-      sql(s"select count(*) from boolean_table where intField >='${trueNum - 5}' and doubleField <=${trueNum + 1} and booleanField=false"),
+      sql(s"select count(*) from boolean_table where intField >='${trueNum - 5}' " +
+          s"and doubleField <=${trueNum + 1} and booleanField=false"),
       Seq(Row(4))
     )
 
@@ -686,14 +703,17 @@ object BooleanFile {
     try {
       val write = new PrintWriter(path)
       var d: Double = 0.0
+      // scalastyle:off println
       for (i <- 0 until trueLines) {
         write.println(i + "," + true + ",num" + i + "," + d + "," + false)
         d = d + 1
       }
       for (i <- 0 until trueLines / 10) {
-        write.println((trueLines + i) + "," + false + ",num" + (trueLines + i) + "," + d + "," + true)
+        write.println(
+          (trueLines + i) + "," + false + ",num" + (trueLines + i) + "," + d + "," + true)
         d = d + 1
       }
+      // scalastyle:on println
       write.close()
     } catch {
       case _: Exception => assert(false)
@@ -713,13 +733,16 @@ object BooleanFile {
 
   def createOnlyBooleanFile(path: String, num: Int): Boolean = {
     try {
+
       val write = new PrintWriter(path)
+      // scalastyle:off println
       for (i <- 0 until num) {
         write.println(true)
       }
       for (i <- 0 until num / 10) {
         write.println(false)
       }
+      // scalastyle:on println
       write.close()
     } catch {
       case _: Exception => assert(false)

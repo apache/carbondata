@@ -16,8 +16,8 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, DataFrame, Row}
+import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.test.util.QueryTest
@@ -26,7 +26,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
-
+  // scalastyle:off lineLength
   var count1BeforeIndex : Array[Row] = null
   var count2BeforeIndex : Array[Row] = null
 
@@ -147,7 +147,7 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
     try {
       sql("set carbon.si.lookup.partialstring=true")
       val ch21 = sql("select * from seccust where c_phone like '25%989-741-2988'")
-      //startsWith & endsWith so SI -yes
+      // startsWith & endsWith so SI -yes
       assert(checkSIColumnsSize(ch21, 3)) // size = length, startsWith and EndsWith
 
       val ch22 = sql("select count(*) from seccust where c_phone like '%989-741-2988'")
@@ -163,8 +163,10 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
       // Query has EqualTo - So SI = Yes
       assert(checkSIColumnsSize(ch24, 1)) // EqualTo
 
-    }finally{
-      sql(s"set carbon.si.lookup.partialstring=${CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT}")
+    } finally {
+      sql(s"set carbon.si.lookup.partialstring=${
+        CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT
+      }")
     }
   }
 
@@ -188,14 +190,16 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
 
       val ch15 = sql("select count(*) from seccust where c_phone='25-989-741-2988' and c_mktsegment like 'BUI%LDING'")
       // equals on c_phone of I1, I2 & (length & startsWith & endswith) on c_mktsegment of I2 so SI - Yes
-      assert(checkSIColumnsSize(ch15, 3)) //size = EqualTo on c_phone, length, StartsWith
+      assert(checkSIColumnsSize(ch15, 3)) // size = EqualTo on c_phone, length, StartsWith
 
       val ch16 = sql("select * from seccust where c_phone='25-989-741-2988'")
       // Query has EqualTo so SI - Yes
       assert(checkSIColumnsSize(ch16, 1)) // size = EqualTo
 
-    } finally{
-      sql(s"set carbon.si.lookup.partialstring=${CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT}")
+    } finally {
+      sql(s"set carbon.si.lookup.partialstring=${
+        CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT
+      }")
     }
   }
 
@@ -219,7 +223,7 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
     sql(
       "select designation from testOrderBy where deptname IN ('network', " +
       "'protocol','security') OR workgroupcategoryname IN ('developer','tester','manager') " +
-      "order by designation desc limit 1").show(false)
+      "order by designation desc limit 1").collect()
     sql("drop table if exists testOrderBy")
   }
 
@@ -239,8 +243,9 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
       case PhysicalOperation(projects, filters, l: LogicalRelation)
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-        lazy val ll = filters.map( _.collect {
-          case atr:AttributeReference => atr }
+        lazy val ll = filters.map(_.collect {
+          case atr: AttributeReference => atr
+        }
         ).foldLeft(Seq[Expression]())((cs, s) => cs ++ s)
         relation.carbonTable.isIndexTable && ll.size == size
       case _ => false
@@ -250,4 +255,5 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
   override def afterAll: Unit = {
     sql("drop table if exists seccust")
   }
+  // scalastyle:on lineLength
 }

@@ -82,16 +82,20 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       sql(s"select * from $bloomSampleTable where id = 1 and city='city_1'", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 1 and city='city_1'"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id = 999 and city='city_999'", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 999 and city='city_999'",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where id = 999 and city='city_999'"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city = 'city_1' and id = 0", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_1' and id = 0",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_1' and id = 0"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n999'", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n999'",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n999'"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n1'", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n1'",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n1'"))
 
     /**
@@ -111,19 +115,24 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       sql(s"select * from $normalTable where city in ('city_999')"))
     // query with two index_columns
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id in (1) and city in ('city_1')", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (1) and city in ('city_1')",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where id in (1) and city in ('city_1')"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id in (999) and city in ('city_999')", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (999) and city in ('city_999')",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where id in (999) and city in ('city_999')"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city in ('city_1') and id in (0)", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_1') and id in (0)",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_1') and id in (0)"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n999')", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n999')",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999') and name in ('n999')"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n1')", indexName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n1')",
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999') and name in ('n1')"))
 
     checkAnswer(
@@ -154,7 +163,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     // load two segments
     (1 to 2).foreach { i =>
@@ -170,9 +180,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          """.stripMargin)
     }
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
-    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
     checkQuery(indexName)
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -210,7 +221,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     val exception = intercept[MalformedIndexCommandException] {
       sql(s"REFRESH INDEX $indexName ON TABLE $bloomSampleTable")
     }
-    assert(exception.getMessage.contains(s"Non-lazy index $indexName does not support manual refresh"))
+    assert(exception.getMessage
+      .contains(s"Non-lazy index $indexName does not support manual refresh"))
   }
 
   ignore("test create bloom index and REFRESH INDEX") {
@@ -249,7 +261,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
     checkQuery(indexName)
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -290,7 +302,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -303,13 +316,15 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     // once we rebuild, it should be enabled
     sql(s"REFRESH INDEX $indexName ON $bloomSampleTable")
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
-    sql(s"SHOW INDEXES ON $bloomSampleTable").show(false)
+    sql(s"SHOW INDEXES ON $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON $bloomSampleTable"), true, indexName)
     checkQuery(indexName)
 
@@ -324,7 +339,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomSampleTable
          | OPTIONS('header'='false')
          """.stripMargin)
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     checkQuery(indexName, shouldHit = false)
 
@@ -374,7 +390,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     sql(s"DROP TABLE IF EXISTS $bloomSampleTable")
   }
 
-  test("test bloom index: multiple indexes with each on one column vs one index on multiple columns") {
+  test("test bloom index: " +
+       "multiple indexes with each on one column vs one index on multiple columns") {
     val iterations = 1
     // 500000 lines will result to 3 blocklets and bloomfilter index will prune 2 blocklets.
     val index11 = "index11"
@@ -440,7 +457,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          """.stripMargin)
     }
 
-    var res = sql(s"explain select * from $bloomSampleTable where id = 1 and city = 'city_1' and name='n1'")
+    var res = sql(
+      s"explain select * from $bloomSampleTable where id = 1 and city = 'city_1' and name='n1'")
     checkExistence(res, true, index11, index12, index13)
     res = sql(s"explain select * from $normalTable where id = 1 and city = 'city_1' and name='n1'")
     checkExistence(res, true, index2)
@@ -512,14 +530,16 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | AS 'bloomfilter'
          | properties( 'BLOOM_SIZE'='640000')
       """.stripMargin)
-    val changeDataTypeException: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
-      sql(s"ALTER TABLE $normalTable CHANGE id id bigint")
-    }
+    val changeDataTypeException: MalformedCarbonCommandException =
+      intercept[MalformedCarbonCommandException] {
+        sql(s"ALTER TABLE $normalTable CHANGE id id bigint")
+      }
     assert(changeDataTypeException.getMessage.contains(
       "alter table change datatype is not supported for index"))
-    val columnRenameException: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
-      sql(s"ALTER TABLE $normalTable CHANGE id test int")
-    }
+    val columnRenameException: MalformedCarbonCommandException =
+      intercept[MalformedCarbonCommandException] {
+        sql(s"ALTER TABLE $normalTable CHANGE id test int")
+      }
     assert(columnRenameException.getMessage.contains(
       "alter table column rename is not supported for index"))
   }
@@ -622,7 +642,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
   test("test create bloom index on newly added column") {
     // Fix the loading cores to ensure number of buckets.
-    CarbonProperties.getInstance().addProperty("carbon.number.of.cores.while.loading","1")
+    CarbonProperties.getInstance().addProperty("carbon.number.of.cores.while.loading", "1")
 
     val index1 = "index1"
     val index2 = "index2"
@@ -737,7 +757,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
   test("test bloom index on all basic data types") {
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
 
@@ -918,10 +939,11 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | 'GLOBAL_SORT_PARTITIONS'='2'
          | )""".stripMargin)
 
+    // scalastyle:off lineLength
     sql(s"""insert into store values('a', 'ios-phone', 'EE', 100021, 590416158, '2016-09-01', 100, 200, 300)""")
     sql(s"""insert into store values('b', 'ios-phone', 'EE', 100021, 590437560, '2016-09-03', 100, 200, 300)""")
     sql(s"""insert into store values('a', 'ios-phone', 'EF', 100022, 590416159, '2016-09-04', 100, 200, 300)""")
-
+    // scalastyle:on lineLength
     sql(
       s"""
          | CREATE INDEX IF NOT EXISTS bloomfilter_all_dimensions
@@ -932,7 +954,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | 'BLOOM_FPP'='0.000001',
          | 'BLOOM_COMPRESS'='true'
          | )
-       """.stripMargin).show()
+       """.stripMargin).collect()
 
     checkAnswer(sql(
       s"""SELECT market_code, device_code, country_code,
@@ -946,9 +968,11 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       s"""SELECT market_code, device_code, country_code,
          |category_id, sum(est_free_app_download) FROM store WHERE (device_code='ios-phone'
          |AND country_code='EF') or (category_id=100021 AND product_id IN (590416158, 590437560))
-         |GROUP BY date, market_code, device_code, country_code, category_id""".stripMargin).collect().length == 3)
+         |GROUP BY date, market_code, device_code, country_code, category_id
+         |""".stripMargin).collect().length == 3)
 
-    checkAnswer(sql("select device_code from store where product_id=590416158"), Seq(Row("ios-phone")))
+    checkAnswer(sql("select device_code from store where product_id=590416158"),
+      Seq(Row("ios-phone")))
 
     sql("drop table if exists store")
   }
@@ -967,12 +991,14 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     if (!new File(fileName).exists()) {
       val write = new PrintWriter(new File(fileName))
       for (i <- start until (start + line)) {
+        // scalastyle:off println
         write.println(
           s"$i,n$i,city_$i,${ Random.nextInt(80) }," +
           s"${ UUID.randomUUID().toString },${ UUID.randomUUID().toString }," +
           s"${ UUID.randomUUID().toString },${ UUID.randomUUID().toString }," +
           s"${ UUID.randomUUID().toString },${ UUID.randomUUID().toString }," +
           s"${ UUID.randomUUID().toString },${ UUID.randomUUID().toString }")
+        // scalastyle:on println
       }
       write.close()
     }

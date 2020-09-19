@@ -17,17 +17,15 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import org.scalatest.BeforeAndAfterAll
 import org.apache.spark.sql.test.util.QueryTest
-
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.scalatest.BeforeAndAfterAll
 
 /**
  * This class will test data load in which number of columns in data are more than
  * the number of columns in schema
  */
 class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     sql("DROP TABLE IF EXISTS char_test")
     sql("DROP TABLE IF EXISTS hive_char_test")
@@ -154,4 +152,5 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
     sql("DROP TABLE IF EXISTS max_columns_test")
     sql("DROP TABLE IF EXISTS smart_500_DE")
   }
+  // scalastyle:on lineLength
 }

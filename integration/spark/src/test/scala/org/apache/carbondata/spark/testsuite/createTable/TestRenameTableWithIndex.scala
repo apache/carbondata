@@ -76,17 +76,17 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | show indexes on table carbon_table
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
 
     sql(
       s"""
          | select * from carbon_table where name='eason'
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
 
     sql(
       s"""
          | explain select * from carbon_table where name='eason'
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
 
     sql(
       s"""
@@ -96,17 +96,17 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | show indexes on table carbon_tb
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
 
     sql(
       s"""
          | select * from carbon_tb where name='eason'
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
 
     sql(
       s"""
          | explain select * from carbon_tb where name='eason'
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
   }
 
   /*
@@ -120,8 +120,10 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
         |  utilization int,salary int)
         | STORED AS carbondata
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2
+        OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2
+        OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     sql("drop materialized view if exists mv1")
     sql("create materialized view mv1 as select empname, designation from fact_table2")
@@ -130,7 +132,7 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | show materialized views on table fact_table2
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
 
     val exception_tb_rename: Exception = intercept[Exception] {
       sql(

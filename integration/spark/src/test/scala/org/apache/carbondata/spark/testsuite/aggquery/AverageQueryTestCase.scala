@@ -17,10 +17,11 @@
 package org.apache.carbondata.spark.testsuite.aggquery
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * test cases for aggregate query
@@ -34,7 +35,8 @@ class AverageQueryTestCase extends QueryTest with BeforeAndAfterAll {
        phonetype string, serialname string, salary double)
        STORED AS carbondata""")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/avgTest.csv' INTO table carbonTable""")
 
     // create a hive table for compatible check

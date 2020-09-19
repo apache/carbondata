@@ -16,8 +16,8 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 class TestCarbonJoin extends QueryTest with BeforeAndAfterAll {
@@ -37,7 +37,8 @@ class TestCarbonJoin extends QueryTest with BeforeAndAfterAll {
 
     val df2 = sql("select id as f91 from table1")
     df2.createOrReplaceTempView("tempTable_2")
-    sql("select t1.f91 from tempTable_2 t1, ptable t2 where t1.f91 = t2.pid ").write.saveAsTable("result")
+    sql("select t1.f91 from tempTable_2 t1, ptable t2 where t1.f91 = t2.pid ").write
+      .saveAsTable("result")
     checkAnswer(sql("select count(*) from result"), Seq(Row(1)))
     checkAnswer(sql("select * from result"), Seq(Row("person")))
 

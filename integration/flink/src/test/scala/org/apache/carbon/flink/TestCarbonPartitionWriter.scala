@@ -18,8 +18,8 @@
 package org.apache.carbon.flink
 
 import java.text.SimpleDateFormat
-import java.util.concurrent.{Executors, TimeUnit}
 import java.util.{Base64, Properties}
+import java.util.concurrent.Executors
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.java.functions.KeySelector
@@ -27,19 +27,18 @@ import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
-import org.scalatest.BeforeAndAfterAll
-
-class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
+class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
 
   val tableName = "test_flink_partition"
   val dataTempPath = targetTestClass + "/data/temp/"
@@ -58,7 +57,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
 
       val dataCount = 1000
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
+        source)
 
       sql(s"INSERT INTO $tableName STAGE")
 
@@ -78,7 +78,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       environment.enableCheckpointing(2000L)
       val dataCount = 1000
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
+        source)
 
       // 1. Test "SHOW SEGMENT ON $tableanme WITH STAGE"
       var rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE").collect()
@@ -190,7 +191,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
 
       val dataCount = 1000
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
+        source)
 
       Thread.sleep(5000)
       val executorService = Executors.newFixedThreadPool(10)
@@ -211,7 +213,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
     sql(
       s"""
          | CREATE TABLE $tableName (stringField string, intField int, shortField short,
-         | structField struct<value1:string,value2:int,value3:int>, binaryField struct<value1:binary>)
+         | structField struct<value1:string,value2:int,value3:int>,
+         | binaryField struct<value1:binary>)
          | STORED AS carbondata
          | PARTITIONED BY (hour_ string, date_ string)
          | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
@@ -247,7 +250,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
           Thread.sleep(5000L)
         }
       }
-      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
+        source)
 
       sql(s"INSERT INTO $tableName STAGE")
 
@@ -258,7 +262,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
 
       val rows = sql(s"SELECT * FROM $tableName limit 1").collect()
       assertResult(1)(rows.length)
-      assertResult(Array[Byte](2, 3, 4))(rows(0).get(rows(0).fieldIndex("binaryfield")).asInstanceOf[GenericRowWithSchema](0))
+      assertResult(Array[Byte](2, 3, 4))(rows(0).get(rows(0).fieldIndex("binaryfield"))
+        .asInstanceOf[GenericRowWithSchema](0))
 
     }
   }
@@ -280,7 +285,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
 
       val dataCount = 10
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
+        source)
 
       sql(s"INSERT INTO $tableName STAGE")
 
@@ -303,7 +309,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
     createPartitionTable
     // create materialized view
     sql(s"drop materialized view if exists mv_1")
-    sql(s"create materialized view mv_1 as select stringField, shortField from $tableName where intField=9")
+    sql("create materialized view mv_1 " +
+        s"as select stringField, shortField from $tableName where intField=9")
 
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
@@ -317,7 +324,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
 
       val dataCount = 10
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
+        source)
 
       sql(s"INSERT INTO $tableName STAGE")
 
@@ -327,7 +335,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
         case l: LogicalRelation => l.catalogTable.get
       }
       assert(tables.exists(_.identifier.table.equalsIgnoreCase("mv_1")))
-      checkAnswer(df, Seq(Row("test9",12345)))
+      checkAnswer(df, Seq(Row("test9", 12345)))
 
     }
   }
@@ -356,7 +364,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
     sql(s"DROP TABLE IF EXISTS $tableName")
     sql(
       s"""
-         | CREATE TABLE $tableName (stringField string, intField int, shortField short, stringField1 string)
+         | CREATE TABLE $tableName (
+         | stringField string, intField int, shortField short, stringField1 string)
          | STORED AS carbondata
          | PARTITIONED BY (hour_ string)
          | TBLPROPERTIES ('SORT_COLUMNS'='hour_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
@@ -380,7 +389,9 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       new Properties,
       writerProperties,
       carbonProperties)
-    val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+    val streamSink = StreamingFileSink
+      .forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory)
+      .build
 
     stream.keyBy(new KeySelector[Array[AnyRef], AnyRef] {
       override def getKey(value: Array[AnyRef]): AnyRef = value(3) // return hour_

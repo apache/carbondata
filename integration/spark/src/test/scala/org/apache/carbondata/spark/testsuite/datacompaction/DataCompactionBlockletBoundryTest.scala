@@ -16,16 +16,15 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-import org.scalatest.BeforeAndAfterAll
-
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
-  * FT for data compaction scenario.
-  */
+ * FT for data compaction scenario.
+ */
 class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -38,7 +37,7 @@ class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll
         "125")
     sql(
       "CREATE TABLE IF NOT EXISTS blocklettest (country String, ID String, date Timestamp, name " +
-        "String, phonetype String, serialname String, salary Int) STORED AS carbondata"
+      "String, phonetype String, serialname String, salary Int) STORED AS carbondata"
     )
 
 
@@ -49,25 +48,24 @@ class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll
 
 
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE blocklettest OPTIONS" +
-      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE blocklettest  OPTIONS" +
-      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     // compaction will happen here.
     sql("alter table blocklettest compact 'major'"
     )
 
-    sql(
-      "create table Carbon_automation_hive (ID String, date " +
-      "Timestamp,country String, name String, phonetype String, serialname String, salary Int ) row format " +
-      "delimited fields terminated by ',' TBLPROPERTIES ('skip.header.line.count'='1') "
+    sql("create table Carbon_automation_hive (ID String, date Timestamp,country String, " +
+        "name String, phonetype String, serialname String, salary Int ) row format " +
+        "delimited fields terminated by ',' TBLPROPERTIES ('skip.header.line.count'='1') "
     )
 
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/compaction/compaction1_forhive.csv" + "' INTO " +
-        "table Carbon_automation_hive ")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/compaction/compactioncard2_forhive.csv" + "' INTO " +
-        "table Carbon_automation_hive ")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/compaction/compaction1_forhive.csv" +
+        "' INTO table Carbon_automation_hive ")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/compaction/compactioncard2_forhive.csv" +
+        "' INTO table Carbon_automation_hive ")
 
   }
 

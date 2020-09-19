@@ -35,9 +35,9 @@ class TestRegisterIndexCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists carbon cascade")
   }
 
-  def restoreData(dblocation: String, tableName: String) = {
+  private def restoreData(dblocation: String, tableName: String) = {
     val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dblocation+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
     try {
       FileUtils.copyDirectory(new File(source), new File(destination))
       FileUtils.deleteDirectory(new File(source))
@@ -48,9 +48,9 @@ class TestRegisterIndexCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     }
   }
-  def backUpData(dblocation: String, tableName: String) = {
+  private def backUpData(dblocation: String, tableName: String) = {
     val source = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val destination = dblocation+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val destination = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
     try {
       FileUtils.copyDirectory(new File(source), new File(destination))
     } catch {
@@ -64,7 +64,8 @@ class TestRegisterIndexCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '${location}'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql("create table carbon.carbontable (" +
+        "c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("create index index_on_c3 on table carbontable (c3, c5) AS 'carbondata'")
     backUpData(location, "carbontable")

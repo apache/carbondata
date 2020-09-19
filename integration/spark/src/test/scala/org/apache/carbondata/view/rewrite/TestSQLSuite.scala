@@ -17,20 +17,21 @@
 
 package org.apache.carbondata.view.rewrite
 
-import org.apache.carbondata.view.MVCatalogInSpark
-import org.apache.carbondata.view.testutil.ModularPlanTest
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.optimizer.MVRewrite
 import org.scalatest.BeforeAndAfter
 
-class TestSQLSuite extends ModularPlanTest with BeforeAndAfter { 
+import org.apache.carbondata.view.MVCatalogInSpark
+import org.apache.carbondata.view.testutil.ModularPlanTest
+
+class TestSQLSuite extends ModularPlanTest with BeforeAndAfter {
   import org.apache.carbondata.view.rewrite.matching.TestSQLBatch._
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
 
   ignore("protypical mqo rewrite test") {
-    
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists Fact (
@@ -44,10 +45,10 @@ class TestSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |  `disc`    string
            |)
            |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-           |STORED AS TEXTFILE       
+           |STORED AS TEXTFILE
         """.stripMargin.trim
         )
-        
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists Dim (
@@ -57,10 +58,10 @@ class TestSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |  `country` string
            |)
            |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-           |STORED AS TEXTFILE   
+           |STORED AS TEXTFILE
         """.stripMargin.trim
-        )    
-        
+        )
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists Item (
@@ -68,12 +69,12 @@ class TestSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |  `i_item_sk`     int
            |)
            |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-           |STORED AS TEXTFILE   
+           |STORED AS TEXTFILE
         """.stripMargin.trim
         )
 
     val dest = "case_11"
-        
+
     sampleTestCases.foreach { testcase =>
       if (testcase._1 == dest) {
         val mvSession = new MVCatalogInSpark(testHive)
@@ -91,8 +92,7 @@ class TestSQLSuite extends ModularPlanTest with BeforeAndAfter {
               """.stripMargin)
               }
         }
-    
+
     }
   }
-
 }

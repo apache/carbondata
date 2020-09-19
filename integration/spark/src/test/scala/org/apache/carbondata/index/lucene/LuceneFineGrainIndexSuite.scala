@@ -19,19 +19,19 @@ package org.apache.carbondata.index.lucene
 
 import java.io.{File, PrintWriter}
 
-import scala.util.Random
 import scala.collection.JavaConverters._
+import scala.util.Random
 
 import org.apache.spark.SparkException
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.metadata.index.IndexType
+import org.apache.carbondata.core.util.CarbonProperties
 
 class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
@@ -79,7 +79,8 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | AS 'lucene'
     """.stripMargin))
 
-    assertResult("column 'school' does not exist in table. Please check create index statement.")(exception.getMessage)
+    assertResult("column 'school' does not exist in table. Please check create index statement.")(
+      exception.getMessage)
 
     // duplicate columns
     exception = intercept[MalformedIndexCommandException](sql(
@@ -110,8 +111,10 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | ON index_test (Name, cIty)
          | AS 'lucene'
       """.stripMargin)
-    checkAnswer(sql("SELECT * FROM index_test WHERE TEXT_MATCH('name:n10')"), sql(s"select * from index_test where name='n10'"))
-    checkAnswer(sql("SELECT * FROM index_test WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM index_test WHERE city='c020'"))
+    checkAnswer(sql("SELECT * FROM index_test WHERE TEXT_MATCH('name:n10')"),
+      sql(s"select * from index_test where name='n10'"))
+    checkAnswer(sql("SELECT * FROM index_test WHERE TEXT_MATCH('city:c020')"),
+      sql(s"SELECT * FROM index_test WHERE city='c020'"))
 
     sql("drop index dm on table index_test")
   }
@@ -163,8 +166,10 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
     sql("REFRESH INDEX dm4 ON TABLE index_test4")
 
-    checkAnswer(sql("SELECT * FROM index_test4 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from index_test where name='n10'"))
-    checkAnswer(sql("SELECT * FROM index_test4 WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM index_test4 WHERE city='c020'"))
+    checkAnswer(sql("SELECT * FROM index_test4 WHERE TEXT_MATCH('name:n10')"),
+      sql(s"select * from index_test where name='n10'"))
+    checkAnswer(sql("SELECT * FROM index_test4 WHERE TEXT_MATCH('city:c020')"),
+      sql(s"SELECT * FROM index_test4 WHERE city='c020'"))
 
     sql("drop table index_test4")
   }
@@ -186,12 +191,18 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test1 OPTIONS('header'='false')")
 
-    checkAnswer(sql("SELECT * FROM index_test1 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from index_test1 where name='n10'"))
+    checkAnswer(sql("SELECT * FROM index_test1 WHERE TEXT_MATCH('name:n10')"),
+      sql(s"select * from index_test1 where name='n10'"))
 
-    var carbonTable = CarbonEnv.getCarbonTable(Some("lucene"), "index_test1")(sqlContext.sparkSession)
-    var indexes = carbonTable.getIndexMetadata.getIndexesMap.get(IndexType.LUCENE.getIndexProviderName)
-      .asScala.filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(IndexStatus.ENABLED.name()))
-    assert(indexes.exists(p => p._1.equals("dm12") && p._2.get(CarbonCommonConstants.INDEX_STATUS) == IndexStatus.ENABLED.name()))
+    var carbonTable = CarbonEnv.getCarbonTable(Some("lucene"), "index_test1")(sqlContext
+      .sparkSession)
+    val indexes = carbonTable.getIndexMetadata.getIndexesMap
+      .get(IndexType.LUCENE.getIndexProviderName).asScala
+      .filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS)
+        .equalsIgnoreCase(IndexStatus.ENABLED.name()))
+    assert(indexes.exists(p => p._1.equals("dm12") &&
+                               p._2.get(CarbonCommonConstants.INDEX_STATUS) ==
+                               IndexStatus.ENABLED.name()))
 
     sql("drop index dm12 on table index_test1")
     carbonTable = CarbonEnv.getCarbonTable(Some("lucene"), "index_test1")(sqlContext.sparkSession)
@@ -230,7 +241,8 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test2 OPTIONS('header'='false')")
 
-    checkAnswer(sql("SELECT * FROM index_test2 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from index_test2 where name='n10'"))
+    checkAnswer(sql("SELECT * FROM index_test2 WHERE TEXT_MATCH('name:n10')"),
+      sql(s"select * from index_test2 where name='n10'"))
 
     assert(sql("show indexes on table index_test2").count() == 1)
     sql("DROP TABLE IF EXISTS index_test2")
@@ -381,7 +393,8 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE index_test_table(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT', 'CACHE_LEVEL'='BLOCKLET')
+        | TBLPROPERTIES(
+        | 'SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       s"""
@@ -389,10 +402,12 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | ON index_test_table (name,city)
          | AS 'lucene'
       """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table " +
+        s"OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')")
     checkAnswer(sql("SELECT * FROM index_test_table WHERE TEXT_MATCH('name:n10')"),
       sql("select * from index_test_table where name='n10'"))
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table " +
+        s"OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')")
     checkAnswer(sql("SELECT * FROM index_test_table WHERE TEXT_MATCH('name:n10')"),
       sql("select * from index_test_table where name='n10'"))
     sql("DROP TABLE IF EXISTS index_test_table")
@@ -438,13 +453,13 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | AS 'lucene'
           """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
-    //check NOT filter with TEXTMATCH term-search
+    // check NOT filter with TEXTMATCH term-search
     checkAnswer(sql("SELECT * FROM index_test_table WHERE TEXT_MATCH('name:n0 NOT n1')"),
       sql("select *from index_test_table where name='n0' AND not name='n1'"))
-    //check NOT filter with TEXTMATCH wildcard-search
+    // check NOT filter with TEXTMATCH wildcard-search
     checkAnswer(sql("SELECT * FROM index_test_table WHERE TEXT_MATCH('name:n1* NOT n2*')"),
       sql("select *from index_test_table where name like'n1%' AND not name like 'n2%'"))
-    //check NOT filter with TEXTMATCH wildcard-search using AND on different columns
+    // check NOT filter with TEXTMATCH wildcard-search using AND on different columns
     checkAnswer(sql(
       "select *from index_test_table where TEXT_MATCH('name:n1* AND city:c01* NOT " +
       "c02*')"),
@@ -497,8 +512,12 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_limit OPTIONS('header'='false')")
-    checkAnswer(sql("select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),Seq(Row(10)))
-    checkAnswer(sql("select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',50)"),Seq(Row(50)))
+    checkAnswer(sql(
+      "select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),
+      Seq(Row(10)))
+    checkAnswer(sql(
+      "select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',50)"),
+      Seq(Row(50)))
     sql("drop index dm on table index_test_limit")
   }
 
@@ -517,15 +536,17 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | AS 'lucene'
       """.stripMargin)
 
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_overwrite OPTIONS('header'='false')")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' " +
+        "INTO TABLE index_test_overwrite OPTIONS('header'='false')")
     sql(
       """
         | CREATE TABLE table1(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    sql("INSERT OVERWRITE TABLE table1 select *from index_test_overwrite where TEXT_MATCH('name:n*')")
-    checkAnswer(sql("select count(*) from table1"),Seq(Row(10000)))
+    sql("INSERT OVERWRITE TABLE table1 " +
+        "select *from index_test_overwrite where TEXT_MATCH('name:n*')")
+    checkAnswer(sql("select count(*) from table1"), Seq(Row(10000)))
     sql("drop index dm on table index_test_overwrite")
   }
 
@@ -550,7 +571,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
     sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE main OPTIONS('header'='false')")
 
-    sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").show(false)
+    sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").collect()
     val rows = sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").collect()
     // sometimes the plan comparison is failing even in case of both the plan being same.
     // once the failure happens the dropped index is not getting executed
@@ -613,12 +634,12 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test7 OPTIONS('header'='false')")
     val ex5 = intercept[MalformedCarbonCommandException] {
-      sql("UPDATE index_test7 d set(d.city)=('luc') where d.name='n10'").show()
+      sql("UPDATE index_test7 d set(d.city)=('luc') where d.name='n10'").collect()
     }
     assert(ex5.getMessage.contains("update operation is not supported for index"))
 
     val ex6 = intercept[MalformedCarbonCommandException] {
-      sql("delete from index_test7 where name = 'n10'").show()
+      sql("delete from index_test7 where name = 'n10'").collect()
     }
     assert(ex6.getMessage.contains("delete operation is not supported for index"))
 
@@ -634,7 +655,8 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE index_test5(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'CACHE_LEVEL'='BLOCKLET')
+        | TBLPROPERTIES(
+        | 'SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       s"""
@@ -654,7 +676,8 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM index_test5 WHERE TEXT_MATCH('city:c020')"),
       sql(s"SELECT * FROM index_test5 WHERE city='c020'"))
 
-    var explainString = sql("explain select * from index_test5 where TEXT_MATCH('name:n10')").collect()
+    val explainString = sql("explain select * from index_test5 where TEXT_MATCH('name:n10')")
+      .collect()
     assert(explainString(0).getString(0).contains(
       "pruned by FG Index\n    - name: dm_name\n    - provider: lucene"))
 
@@ -693,7 +716,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE table1 OPTIONS('header'='false')")
     val msg = intercept[SparkException] {
-      sql("select * from table1 where TEXT_MATCH('name:n*')").show()
+      sql("select * from table1 where TEXT_MATCH('name:n*')").collect()
     }
     assert(msg.getCause.getMessage.contains("TEXT_MATCH is not supported on table"))
     sql("DROP TABLE table1")
@@ -762,7 +785,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     val msg = intercept[MalformedCarbonCommandException] {
       sql("SELECT * FROM index_test_table WHERE TEXT_MATCH('name:n0*') AND TEXT_MATCH" +
-          "('city:c0*')").show()
+          "('city:c0*')").collect()
     }
     assert(msg.getMessage
       .contains("Specify all search filters for Lucene within a single text_match UDF"))
@@ -773,7 +796,8 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists table_stop")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "false")
-    sql("create table table_stop(suggestion string,goal string) STORED AS carbondata TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET')")
+    sql("create table table_stop(suggestion string,goal string) " +
+        "STORED AS carbondata TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET')")
     sql(
       "create index stop_dm on table table_stop (suggestion) as 'lucene'")
     sql("insert into table_stop select 'The is the stop word','abcde'")
@@ -839,7 +863,8 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
            | AS 'lucene'
       """.stripMargin)
     }
-    assertResult("column 'name' already has lucene index created")(exception_duplicate_column.getMessage)
+    assertResult("column 'name' already has lucene index created")(
+      exception_duplicate_column.getMessage)
     sql("drop table if exists index_test_table")
   }
 
@@ -863,8 +888,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | ON index_test_table (name)
          | AS 'bloomfilter'
       """.stripMargin)
-    sql("show indexes on table index_test_table").show(false)
-    checkExistence(sql("show indexes on table index_test_table"), true, "dm", "dm1", "lucene", "bloomfilter")
+    sql("show indexes on table index_test_table").collect()
+    checkExistence(sql("show indexes on table index_test_table"),
+      true, "dm", "dm1", "lucene", "bloomfilter")
     sql("drop table if exists index_test_table")
   }
 
@@ -898,10 +924,12 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 }
 
 object LuceneFineGrainIndexSuite {
-  def createFile(fileName: String, line: Int = 10000, start: Int = 0) = {
+  def createFile(fileName: String, line: Int = 10000, start: Int = 0): Unit = {
     val write = new PrintWriter(new File(fileName))
     for (i <- start until (start + line)) {
+      // scalastyle:off println
       write.println(i + "," + "n" + i + "," + "c0" + i + "," + Random.nextInt(80))
+      // scalastyle:on println
     }
     write.close()
   }

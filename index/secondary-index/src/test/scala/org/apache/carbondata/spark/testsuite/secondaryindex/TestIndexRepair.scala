@@ -16,11 +16,10 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
-.isFilterPushedDownToSI;
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 /**
  * test cases for testing reindex command on index table/main table/DB level
@@ -28,9 +27,9 @@ import org.apache.spark.sql.test.util.QueryTest
 class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop index if exists indextable1 on maintable")
+    sql("drop index if exists indextable2 on maintable")
     sql("drop table if exists maintable")
-    sql("drop table if exists indextable1")
-    sql("drop table if exists indextable2")
   }
 
   test("reindex command after deleting segments from SI table") {
@@ -81,6 +80,7 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     val postRepairSegments = sql("SHOW SEGMENTS FOR TABLE test.INDEXTABLE1").count()
     assert(preDeleteSegments == postRepairSegments)
     assert(isFilterPushedDownToSI(df2))
+    sql("drop index if exists indextable1 on test.maintable")
     sql("drop table if exists test.maintable")
     sql("drop database if exists test cascade")
   }
@@ -190,12 +190,12 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
   }
 
 
-    test("reindex command on database") {
+  test("reindex command on database") {
     sql("drop database if exists test cascade")
     sql("create database test")
     sql("drop table if exists maintable1")
 
-    //table 1
+    // table 1
     sql("CREATE TABLE test.maintable1(a INT, b STRING, c STRING, d STRING) stored as carbondata")
     sql("CREATE INDEX indextable1 on table test.maintable1(c) as 'carbondata'")
     sql("CREATE INDEX indextable2 on table test.maintable1(d) as 'carbondata'")
@@ -238,16 +238,20 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     assert(preDeleteSegmentsTableOne == postRepairSegmentsIndexTwo)
     assert(preDeleteSegmentsTableTwo == postRepairSegmentsIndexThree)
     assert(preDeleteSegmentsTableTwo == postRepairSegmentsIndexFour)
+    sql("drop index if exists indextable1 on test.maintable1")
+    sql("drop index if exists indextable2 on test.maintable1")
     sql("drop table if exists test.maintable1")
+    sql("drop index if exists indextable3 on test.maintable2")
+    sql("drop index if exists indextable4 on test.maintable2")
     sql("drop table if exists test.maintable2")
     sql("drop database if exists test cascade")
   }
 
 
   override def afterAll {
+    sql("drop index if exists indextable1 on maintable")
+    sql("drop index if exists indextable2 on maintable")
     sql("drop table if exists maintable")
-    sql("drop table if exists indextable1")
-    sql("drop table if exists indextable2")
   }
 
 }

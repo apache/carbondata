@@ -23,19 +23,21 @@ import java.time.LocalDateTime
 
 import scala.collection.JavaConverters._
 import scala.util.Random
+
+import org.apache.spark.sql._
+import org.apache.spark.sql.CarbonSession._
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.execution.command.mutation.merge._
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.types._
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.spark.sql._
-import org.apache.spark.sql.CarbonSession._
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.mutation.merge.{CarbonMergeDataSetCommand, DeleteAction, InsertAction, InsertInHistoryTableAction, MergeDataSetMatches, MergeMatch, UpdateAction, WhenMatched, WhenNotMatched, WhenNotMatchedAndExistsOnlyOnTarget}
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.types.{BooleanType, DateType, IntegerType, StringType, StructField, StructType}
-import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for join query with orderby and limit
@@ -50,7 +52,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
   def generateData(numOrders: Int = 10): DataFrame = {
     import sqlContext.implicits._
     sqlContext.sparkContext.parallelize(1 to numOrders, 4)
-      .map { x => ("id"+x, s"order$x",s"customer$x", x*10, x*75, 1)
+      .map { x => ("id" + x, s"order$x", s"customer$x", x * 10, x * 75, 1)
       }.toDF("id", "name", "c_name", "quantity", "price", "state")
   }
 
@@ -62,16 +64,16 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       numNewOrders: Int
   ): DataFrame = {
     import sqlContext.implicits._
-    val ds1 = sqlContext.sparkContext.parallelize(numNewOrders+1 to (numOrders), 4)
-      .map {x =>
+    val ds1 = sqlContext.sparkContext.parallelize(numNewOrders + 1 to (numOrders), 4)
+      .map { x =>
         if (x <= numNewOrders + numUpdatedOrders) {
-          ("id"+x, s"order$x",s"customer$x", x*10, x*75, newState)
+          ("id" + x, s"order$x", s"customer$x", x * 10, x * 75, newState)
         } else {
-          ("id"+x, s"order$x",s"customer$x", x*10, x*75, oldState)
+          ("id" + x, s"order$x", s"customer$x", x * 10, x * 75, oldState)
         }
       }.toDF("id", "name", "c_name", "quantity", "price", "state")
     val ds2 = sqlContext.sparkContext.parallelize(1 to numNewOrders, 4)
-      .map {x => ("newid"+x, s"order$x",s"customer$x", x*10, x*75, oldState)
+      .map { x => ("newid" + x, s"order$x", s"customer$x", x * 10, x * 75, oldState)
       }.toDS().toDF()
     ds1.union(ds2)
   }
@@ -231,7 +233,10 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     val updateMap = Map(col("id") -> col("A.id"),
       col("state") -> col("B.state")).asInstanceOf[Map[Any, Any]]
 
-    dwSelframe.merge(odsframe, "A.id=B.id").whenMatched("A.state <> B.state").updateExpr(updateMap).execute()
+    dwSelframe.merge(odsframe, "A.id=B.id")
+      .whenMatched("A.state <> B.state")
+      .updateExpr(updateMap)
+      .execute()
 
     assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
@@ -307,7 +312,10 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     val updateMap = Map(col("id") -> col("A.id"),
       col("state") -> col("B.state")).asInstanceOf[Map[Any, Any]]
 
-    dwSelframe.merge(odsframe, col("A.id").equalTo(col("B.id"))).whenMatched().updateExpr(updateMap).execute()
+    dwSelframe.merge(odsframe, col("A.id").equalTo(col("B.id")))
+      .whenMatched()
+      .updateExpr(updateMap)
+      .execute()
     assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
   }
@@ -346,13 +354,15 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> col("B.price"),
       col("state") -> col("B.state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state")))
+      .addAction(UpdateAction(updateMap)))
     matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
 
     val st = System.currentTimeMillis()
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
@@ -374,12 +384,15 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> col("B.price"),
       col("state") -> col("B.state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
-    matches ++= Seq(WhenNotMatched(Some(col("A.id").isNull.and(col("B.id").isNotNull))).addAction(InsertAction(insertMap)))
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state")))
+      .addAction(UpdateAction(updateMap)))
+    matches ++= Seq(WhenNotMatched(Some(col("A.id").isNull.and(col("B.id").isNotNull)))
+      .addAction(InsertAction(insertMap)))
 
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
     checkAnswer(sql("select count(*) from order"), Seq(Row(12)))
@@ -402,12 +415,15 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> expr("B.price * 100"),
       col("state") -> col("B.state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
-    matches ++= Seq(WhenNotMatched(Some(col("A.id").isNull.and(col("B.id").isNotNull))).addAction(InsertAction(insertMap)))
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state")))
+      .addAction(UpdateAction(updateMap)))
+    matches ++= Seq(WhenNotMatched(Some(col("A.id").isNull.and(col("B.id").isNotNull)))
+      .addAction(InsertAction(insertMap)))
 
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
     checkAnswer(sql("select count(*) from order"), Seq(Row(12)))
@@ -424,7 +440,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
 
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order"), Seq(Row(8)))
   }
@@ -438,12 +455,14 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> expr("B.price + 1"),
       col("state") -> col("B.state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state")))
+      .addAction(UpdateAction(updateMap)))
     matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()))
 
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order"), Seq(Row(8)))
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
@@ -465,13 +484,15 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> expr("B.price * 100"),
       col("state") -> col("B.state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state")))
+      .addAction(UpdateAction(updateMap)))
     matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
     matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()))
 
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
     checkAnswer(sql("select count(*) from order"), Seq(Row(10)))
@@ -479,7 +500,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select price from order where id = 'newid1'"), Seq(Row(7500)))
   }
 
-  test("test merge update with insert, insert with condition and expression and delete with insert action") {
+  test("test merge update with insert, insert with condition and expression " +
+       "and delete with insert action") {
     sql("drop table if exists order")
     val (dwSelframe, odsframe) = initialize
 
@@ -526,10 +548,12 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select price from order where id = 'newid1'"), Seq(Row(7500)))
   }
 
-  test("test merge update with insert, insert with condition and expression and delete with insert history action") {
+  test("test merge update with insert, insert with condition and expression " +
+       "and delete with insert history action") {
     sql("drop table if exists order")
     sql("drop table if exists order_hist")
-    sql("create table order_hist(id string, name string, c_name string, quantity int, price int, state int) stored as carbondata")
+    sql("create table order_hist(id string, name string, c_name string, quantity int, " +
+        "price int, state int) stored as carbondata")
     val (dwSelframe, odsframe) = initialize
 
     var matches = Seq.empty[MergeMatch]
@@ -558,13 +582,18 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> expr("price"),
       col("state") -> col("state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)).addAction(InsertInHistoryTableAction(insertMap_u, TableIdentifier("order_hist"))))
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state")))
+      .addAction(UpdateAction(updateMap))
+      .addAction(InsertInHistoryTableAction(insertMap_u, TableIdentifier("order_hist"))))
     matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
-    matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()).addAction(InsertInHistoryTableAction(insertMap_d, TableIdentifier("order_hist"))))
+    matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget()
+      .addAction(DeleteAction())
+      .addAction(InsertInHistoryTableAction(insertMap_d, TableIdentifier("order_hist"))))
 
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 3)
     checkAnswer(sql("select count(*) from order"), Seq(Row(10)))
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
@@ -573,10 +602,12 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from order_hist where c_name = 'insert'"), Seq(Row(2)))
   }
 
-  test("test merge update with insert, insert with condition and expression and delete with insert history action with partition") {
+  test("test merge update with insert, insert with condition and expression " +
+       "and delete with insert history action with partition") {
     sql("drop table if exists order")
     sql("drop table if exists order_hist")
-    sql("create table order_hist(id string, name string, quantity int, price int, state int) PARTITIONED BY (c_name String) STORED AS carbondata")
+    sql("create table order_hist(id string, name string, quantity int, price int, " +
+        "state int) PARTITIONED BY (c_name String) STORED AS carbondata")
     val (dwSelframe, odsframe) = initializePartition
 
     var matches = Seq.empty[MergeMatch]
@@ -605,13 +636,18 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> expr("price"),
       col("state") -> col("state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)).addAction(InsertInHistoryTableAction(insertMap_u, TableIdentifier("order_hist"))))
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state")))
+      .addAction(UpdateAction(updateMap))
+      .addAction(InsertInHistoryTableAction(insertMap_u, TableIdentifier("order_hist"))))
     matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
-    matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()).addAction(InsertInHistoryTableAction(insertMap_d, TableIdentifier("order_hist"))))
+    matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget()
+      .addAction(DeleteAction())
+      .addAction(InsertInHistoryTableAction(insertMap_d, TableIdentifier("order_hist"))))
 
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     checkAnswer(sql("select count(*) from order"), Seq(Row(10)))
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
     checkAnswer(sql("select price from order where id = 'newid1'"), Seq(Row(7500)))
@@ -622,13 +658,16 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
   test("check the scd ") {
     sql("drop table if exists customers")
 
-    val initframe =
-      sqlContext.sparkSession.createDataFrame(Seq(
-        Row(1, "old address for 1", false, null, Date.valueOf("2018-02-01")),
+    val initframe = sqlContext.sparkSession.createDataFrame(
+      Seq(Row(1, "old address for 1", false, null, Date.valueOf("2018-02-01")),
         Row(1, "current address for 1", true, Date.valueOf("2018-02-01"), null),
         Row(2, "current address for 2", true, Date.valueOf("2018-02-01"), null),
-        Row(3, "current address for 3", true, Date.valueOf("2018-02-01"), null)
-      ).asJava, StructType(Seq(StructField("customerId", IntegerType), StructField("address", StringType), StructField("current", BooleanType), StructField("effectiveDate", DateType), StructField("endDate", DateType))))
+        Row(3, "current address for 3", true, Date.valueOf("2018-02-01"), null)).asJava,
+      StructType(Seq(StructField("customerId", IntegerType),
+        StructField("address", StringType),
+        StructField("current", BooleanType),
+        StructField("effectiveDate", DateType),
+        StructField("endDate", DateType))))
     initframe.printSchema()
     initframe.write
       .format("carbondata")
@@ -637,12 +676,14 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       .save()
     var customer = sqlContext.read.format("carbondata").option("tableName", "customers").load()
     customer = customer.as("A")
-    var updates =
-    sqlContext.sparkSession.createDataFrame(Seq(
-      Row(1, "new address for 1", Date.valueOf("2018-03-03")),
-      Row(3, "current address for 3", Date.valueOf("2018-04-04")),    // new address same as current address for customer 3
-      Row(4, "new address for 4", Date.valueOf("2018-04-04"))
-    ).asJava, StructType(Seq(StructField("customerId", IntegerType), StructField("address", StringType), StructField("effectiveDate", DateType))))
+    var updates = sqlContext.sparkSession.createDataFrame(
+      Seq(Row(1, "new address for 1", Date.valueOf("2018-03-03")),
+        // new address same as current address for customer 3
+        Row(3, "current address for 3", Date.valueOf("2018-04-04")),
+        Row(4, "new address for 4", Date.valueOf("2018-04-04"))).asJava,
+      StructType(Seq(StructField("customerId", IntegerType),
+        StructField("address", StringType),
+        StructField("effectiveDate", DateType))))
     updates = updates.as("B")
 
     val updateMap = Map(col("current") -> lit(false),
@@ -671,7 +712,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     assert(getDeleteDeltaFileCount("customers", "0") == 1)
     checkAnswer(sql("select count(*) from customers"), Seq(Row(6)))
     checkAnswer(sql("select count(*) from customers where current='true'"), Seq(Row(4)))
-    checkAnswer(sql("select count(*) from customers where effectivedate is not null and enddate is not null"), Seq(Row(1)))
+    checkAnswer(sql("select count(*) from customers " +
+                    "where effectivedate is not null and enddate is not null"), Seq(Row(1)))
 
   }
 
@@ -694,7 +736,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
     var cdc =
       sqlContext.sparkSession.createDataFrame(Seq(
-        Row("a", "10", false,  0),
+        Row("a", "10", false, 0),
         Row("a", null, true, 1),   // a was updated and then deleted
         Row("b", null, true, 2),   // b was just deleted once
         Row("c", null, true, 3),   // c was deleted and then updated twice
@@ -707,7 +749,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
           StructField("deleted", BooleanType), StructField("time", IntegerType))))
     cdc.createOrReplaceTempView("changes")
 
-    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
+    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT " +
+              "key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
 
     val updateMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
 
@@ -722,7 +765,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       delete().execute()
     assert(getDeleteDeltaFileCount("target", "0") == 0)
     checkAnswer(sql("select count(*) from target"), Seq(Row(3)))
-    checkAnswer(sql("select * from target order by key"), Seq(Row("c", "200"), Row("d", "3"), Row("e", "100")))
+    checkAnswer(sql("select * from target order by key"),
+      Seq(Row("c", "200"), Row("d", "3"), Row("e", "100")))
   }
 
   test("check the cdc ") {
@@ -743,7 +787,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
     var cdc =
       sqlContext.sparkSession.createDataFrame(Seq(
-        Row("a", "10", false,  0),
+        Row("a", "10", false, 0),
         Row("a", null, true, 1),   // a was updated and then deleted
         Row("b", null, true, 2),   // b was just deleted once
         Row("c", null, true, 3),   // c was deleted and then updated twice
@@ -756,7 +800,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
           StructField("deleted", BooleanType), StructField("time", IntegerType))))
     cdc.createOrReplaceTempView("changes")
 
-    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
+    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT " +
+              "key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
 
     val updateMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
 
@@ -771,7 +816,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       delete().execute()
     assert(getDeleteDeltaFileCount("target", "0") == 1)
     checkAnswer(sql("select count(*) from target"), Seq(Row(3)))
-    checkAnswer(sql("select * from target order by key"), Seq(Row("c", "200"), Row("d", "3"), Row("e", "100")))
+    checkAnswer(sql("select * from target order by key"),
+      Seq(Row("c", "200"), Row("d", "3"), Row("e", "100")))
   }
 
   test("check the cdc delete with partition") {
@@ -805,14 +851,15 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
           StructField("deleted", BooleanType), StructField("time", IntegerType))))
     cdc.createOrReplaceTempView("changes")
 
-    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
+    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT " +
+              "key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
 
     target.as("A").merge(cdc.as("B"), "A.key=B.key").
       whenMatched("B.deleted=true").delete().execute()
 
     assert(getDeleteDeltaFileCount("target", "0") == 1)
     checkAnswer(sql("select count(*) from target"), Seq(Row(2)))
-    checkAnswer(sql("select * from target order by key"), Seq(Row("a1","0"),Row("d", "3")))
+    checkAnswer(sql("select * from target order by key"), Seq(Row("a1", "0"), Row("d", "3")))
   }
 
   test("test merge with table level date and timestamp format") {
@@ -845,7 +892,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       ))
   }
 
-  test("test merge update and insert with condition and expression and delete action with target table as bucketing") {
+  test("test merge update and insert with condition and expression " +
+       "and delete action with target table as bucketing") {
     sql("drop table if exists order")
     val (dwSelframe, odsframe) = initializeWithBucketing(Seq("id"))
 
@@ -861,13 +909,15 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> expr("B.price * 100"),
       col("state") -> col("B.state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state")))
+      .addAction(UpdateAction(updateMap)))
     matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
     matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()))
 
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
-      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList))
+      .run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 2)
     checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
     checkAnswer(sql("select count(*) from order"), Seq(Row(10)))
@@ -891,7 +941,8 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("price") -> expr("B.price * 100"),
       col("state") -> col("B.state"))
 
-    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
+    matches ++= Seq(
+      WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
     matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
     matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()))
 
@@ -1024,7 +1075,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
 
       // find the latest value for each key
       val latestChangeForEachKey = readChangeData(sqlContext.sparkSession)
-        .selectExpr("id", "struct(mdt, value, change_type) as otherCols" )
+        .selectExpr("id", "struct(mdt, value, change_type) as otherCols")
         .groupBy("id")
         .agg(max("otherCols").as("latest"))
         .selectExpr("id", "latest.*")

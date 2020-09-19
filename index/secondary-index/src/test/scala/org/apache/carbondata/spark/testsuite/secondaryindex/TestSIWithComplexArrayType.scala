@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
-
+  // scalastyle:off lineLength
   override def beforeEach(): Unit = {
     sql("drop table if exists complextable")
   }
@@ -71,10 +71,10 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("insert into complextable select 2, array('pak'), 'v'")
     sql("insert into complextable select 3, array('china'), 'f'")
     sql("insert into complextable select 4, array('india'),'g'")
-    val result =  sql(" select * from complextable where array_contains(country,'china') and name='f'")
+    val result = sql(" select * from complextable where array_contains(country,'china') and name='f'")
     sql("drop index if exists index_1 on complextable")
     sql("create index index_1 on table complextable(country, name) as 'carbondata'")
-    val df =  sql(" select * from complextable where array_contains(country,'china') and name='f'")
+    val df = sql(" select * from complextable where array_contains(country,'china') and name='f'")
     if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
       assert(false)
     } else {
@@ -88,10 +88,10 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql(
       s"load data inpath '$resourcesPath/secindex/array.csv' into table complextable options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='id,name,country','complex_delimiter_level_1'='$')")
-    val result =  sql(" select * from complextable where array_contains(country,'china')")
+    val result = sql(" select * from complextable where array_contains(country,'china')")
     sql("drop index if exists index_1 on complextable")
     sql("create index index_1 on table complextable(country) as 'carbondata'")
-    val df =  sql(" select * from complextable where array_contains(country,'china')")
+    val df = sql(" select * from complextable where array_contains(country,'china')")
     if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
       assert(false)
     } else {
@@ -139,7 +139,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     val result = sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01' as date))")
     sql("create index index_1 on table complextable(projectdate) as 'carbondata'")
     checkAnswer(sql("select count(*) from index_1"), Seq(Row(2)))
-    val df =  sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01' as date))")
+    val df = sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01' as date))")
     if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
       assert(false)
     } else {
@@ -156,7 +156,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     val result = sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01 00:01:00' as timestamp))")
     sql("create index index_1 on table complextable(projectdate) as 'carbondata'")
     checkAnswer(sql("select count(*) from index_1"), Seq(Row(2)))
-    val df =  sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01 00:01:00' as timestamp))")
+    val df = sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01 00:01:00' as timestamp))")
     if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
       assert(false)
     } else {
@@ -171,10 +171,10 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("insert into complextable select 2, array('pak'), 'v'")
     sql("insert into complextable select 3, array('china'), 'f'")
     sql("insert into complextable select 4, array('india'),'g'")
-    val result =  sql(" select * from complextable where array_contains(country,'china') and name='f'")
+    val result = sql(" select * from complextable where array_contains(country,'china') and name='f'")
     sql("drop index if exists index_1 on complextable")
     sql("create index index_1 on table complextable(country, name) as 'carbondata'")
-    val df =  sql(" select * from complextable where array_contains(country,'china') and name='f'")
+    val df = sql(" select * from complextable where array_contains(country,'china') and name='f'")
     if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
       assert(false)
     } else {
@@ -188,13 +188,13 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("insert into complextable select 1, array('china', 'us'), 'b', 'b1'")
     sql("insert into complextable select 2, array('pak', 'india'), 'v', 'v'")
     val result1 = sql("select * from complextable where addr='v' and array_contains(country,'pak')")
-    val result2 =  sql("select * from complextable where array_contains(country,'pak') and addr='v'")
+    val result2 = sql("select * from complextable where array_contains(country,'pak') and addr='v'")
     sql("drop index if exists index_1 on complextable")
     sql("create index index_1 on table complextable(country, name) as 'carbondata'")
     sql("drop index if exists index_2 on complextable")
     sql("create index index_2 on table complextable(addr) as 'carbondata'")
-    val df1 =  sql("select * from complextable where addr='v' and array_contains(country,'pak')")
-    val df2 =  sql("select * from complextable where array_contains(country,'pak') and addr='v'")
+    val df1 = sql("select * from complextable where addr='v' and array_contains(country,'pak')")
+    val df2 = sql("select * from complextable where array_contains(country,'pak') and addr='v'")
     if (!isFilterPushedDownToSI(df1.queryExecution.sparkPlan)) {
       assert(false)
     } else {
@@ -216,7 +216,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     val result1 = sql("select * from complextable where array_contains(country,'india') and array_contains(country,'pak')")
     sql("drop index if exists index_1 on complextable")
     sql("create index index_1 on table complextable(country, name) as 'carbondata'")
-    val df1 =  sql("select * from complextable where array_contains(country,'india') and array_contains(country,'pak')")
+    val df1 = sql("select * from complextable where array_contains(country,'india') and array_contains(country,'pak')")
     if (isFilterPushedDownToSI(df1.queryExecution.sparkPlan)) {
       assert(false)
     } else {
@@ -224,5 +224,5 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     }
     checkAnswer(result1, df1)
   }
-
+  // scalastyle:on lineLength
 }

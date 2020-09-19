@@ -22,7 +22,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-
 class MajorCompactionWithMeasureSortColumns extends QueryTest with BeforeAndAfterAll {
 
   val csvFilePath = s"$resourcesPath/compaction/nodictionary_compaction.csv"
@@ -75,14 +74,14 @@ class MajorCompactionWithMeasureSortColumns extends QueryTest with BeforeAndAfte
          | LOAD DATA LOCAL INPATH '$csvFilePath'
          | INTO TABLE store
          | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
 
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '$csvFilePath'
          | INTO TABLE store
          | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
-       """.stripMargin).show(false)
+       """.stripMargin).collect()
 
     val csvRows = sqlContext.sparkSession.read.option("header", "true")
       .csv(csvFilePath).orderBy("code1")

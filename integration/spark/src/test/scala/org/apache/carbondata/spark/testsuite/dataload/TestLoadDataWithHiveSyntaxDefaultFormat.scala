@@ -20,19 +20,18 @@ package org.apache.carbondata.spark.testsuite.dataload
 import java.io.File
 
 import org.apache.spark.sql.{AnalysisException, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
-
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
-  * Test Class for data loading with hive syntax and old syntax
-  *
-  */
+ * Test Class for data loading with hive syntax and old syntax
+ *
+ */
 class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -116,7 +115,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
   test("test data loading and validate query output") {
     sql("drop table if exists testtable")
     sql("drop table if exists testhivetable")
-    //Create test cube and hive table
+    // Create test cube and hive table
     sql(
       "CREATE table testtable (empno string, empname String, designation String, doj String, " +
         "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
@@ -129,14 +128,14 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
         "projectcode string, projectjoindate String,projectenddate String, attendance double," +
         "utilization double,salary double)row format delimited fields terminated by ','"
     )
-    //load data into test cube and hive table and validate query result
+    // load data into test cube and hive table and validate query result
     sql(s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO table testtable")
     sql(
       s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' overwrite INTO table " +
         "testhivetable"
     )
     checkAnswer(sql("select * from testtable"), sql("select * from testhivetable"))
-    //load data incrementally and validate query result
+    // load data incrementally and validate query result
     sql(
       s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE testtable OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
@@ -145,19 +144,19 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO table testhivetable"
     )
     checkAnswer(sql("select * from testtable"), sql("select * from testhivetable"))
-    //drop test cube and table
+    // drop test cube and table
     sql("drop table if exists testtable")
     sql("drop table if exists testhivetable")
   }
 
   /**
-    * TODO: temporarily changing cube names to different names,
-    * however deletion and creation of cube with same name
-    */
+   * TODO: temporarily changing cube names to different names,
+   * however deletion and creation of cube with same name
+   */
   test("test data loading with different case file header and validate query output") {
     sql("drop table if exists testtable1")
     sql("drop table if exists testhivetable1")
-    //Create test cube and hive table
+    // Create test cube and hive table
     sql(
       "CREATE table testtable1 (empno string, empname String, designation String, doj String, " +
         "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
@@ -170,7 +169,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
         "projectcode string, projectjoindate String,projectenddate String, attendance double," +
         "utilization double,salary double)row format delimited fields terminated by ','"
     )
-    //load data into test cube and hive table and validate query result
+    // load data into test cube and hive table and validate query result
     sql(
       s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO table testtable1 " +
         "options('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='EMPno, empname,designation,doj," +
@@ -182,7 +181,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
         "testhivetable1"
     )
     checkAnswer(sql("select * from testtable1"), sql("select * from testhivetable1"))
-    //drop test cube and table
+    // drop test cube and table
     sql("drop table if exists testtable1")
     sql("drop table if exists testhivetable1")
   }
@@ -215,11 +214,10 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     try {
       sql(s"LOAD DATA local inpath '$resourcesPath/data.csv' overwrite INTO table carbontable")
     } catch {
-      case e: Throwable => {
+      case e: Throwable =>
         assert(e.getMessage
           .equals("Overwrite is not supported for carbon table with default.carbontable")
         )
-      }
     }
   }
 
@@ -288,10 +286,9 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       sql("create table duplicateColTest(col1 string, Col1 string)")
     }
     catch {
-      case e: Exception => {
+      case e: Exception =>
         assert(e.getMessage.contains("Duplicate column name") ||
           e.getMessage.contains("Found duplicate column"))
-      }
     }
   }
 
@@ -357,12 +354,14 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
 
   test("test Complex Data type - Array and Struct of timestamp with dictionary include") {
     sql("DROP TABLE IF EXISTS array_timestamp")
-    sql(
-      "create table array_timestamp (date1 array<timestamp>,date2 struct<date:timestamp> ) STORED AS carbondata ")
+    sql("create table array_timestamp (" +
+        "date1 array<timestamp>,date2 struct<date:timestamp> ) STORED AS carbondata ")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    sql("insert into array_timestamp values(array('2015-01-01 00:00:00','2016-01-01 00:00:00'),named_struct('date','2017-01-01 00:00:00'))")
-    sql("insert into array_timestamp values(array('2015-01-01 00:00:00','2016-01-01 00:00:00'),named_struct('date','2017-01-01 00:00:00'))")
+    sql("insert into array_timestamp values(array('2015-01-01 00:00:00'," +
+        "'2016-01-01 00:00:00'),named_struct('date','2017-01-01 00:00:00'))")
+    sql("insert into array_timestamp values(array('2015-01-01 00:00:00'," +
+        "'2016-01-01 00:00:00'),named_struct('date','2017-01-01 00:00:00'))")
     checkExistence(sql("select * from array_timestamp "),
       true, "2015-01-01 00:00:00.0, 2016-01-01 00:00:00.0")
     checkExistence(sql("select * from array_timestamp "),
@@ -371,19 +370,17 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
   }
 
   test("array<string> and string datatype for same column is not working properly") {
+    // scalastyle:off lineLength
     sql("drop table if exists complexcarbontable")
-    sql("create table complexcarbontable(deviceInformationId int, MAC array<string>, channelsId string, "+
-        "ROMSize string, purchasedate string, gamePointId double,contractNumber double) STORED AS carbondata ")
-    sql(s"LOAD DATA local inpath '$resourcesPath/complexdatareordered.csv' INTO table complexcarbontable "+
-        "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,MAC,channelsId,ROMSize,purchasedate,gamePointId,contractNumber',"+
-        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
+    sql("create table complexcarbontable(deviceInformationId int, MAC array<string>, channelsId string, ROMSize string, purchasedate string, gamePointId double,contractNumber double) STORED AS carbondata ")
+    sql(s"LOAD DATA local inpath '$resourcesPath/complexdatareordered.csv' INTO table complexcarbontable " +
+        "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,MAC,channelsId,ROMSize,purchasedate,gamePointId,contractNumber','COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
     sql("drop table if exists complexcarbontable")
-    sql("create table primitivecarbontable(deviceInformationId int, MAC string, channelsId string, "+
-        "ROMSize string, purchasedate string, gamePointId double,contractNumber double) STORED AS carbondata ")
-    sql(s"LOAD DATA local inpath '$resourcesPath/complexdatareordered.csv' INTO table primitivecarbontable "+
-        "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,MAC,channelsId,ROMSize,purchasedate,gamePointId,contractNumber',"+
-        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
+    sql("create table primitivecarbontable(deviceInformationId int, MAC string, channelsId string, ROMSize string, purchasedate string, gamePointId double,contractNumber double) STORED AS carbondata ")
+    sql(s"LOAD DATA local inpath '$resourcesPath/complexdatareordered.csv' INTO table primitivecarbontable " +
+        "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,MAC,channelsId,ROMSize,purchasedate,gamePointId,contractNumber','COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
     sql("drop table if exists primitivecarbontable")
+    // scalastyle:on lineLength
   }
 
   test(
@@ -462,7 +459,8 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       """
     )
     checkAnswer(sql("select count(*) from escapechar2"), Seq(Row(21)))
-    checkAnswer(sql("select specialchar from escapechar2 where imei = '1AA44'"), Seq(Row("escapeesc")))
+    checkAnswer(sql("select specialchar from escapechar2 where imei = '1AA44'"),
+      Seq(Row("escapeesc")))
     sql("DROP TABLE IF EXISTS escapechar2")
   }
 
@@ -500,14 +498,12 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       """
     )
 
-    sql(
-      s"""
-       LOAD DATA LOCAL INPATH '$resourcesPath/datawithspecialcharacter.csv' into table specialcharacter1
-          options ('DELIMITER'=',', 'QUOTECHAR'='"')
-      """
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithspecialcharacter.csv' " +
+        "into table specialcharacter1 options ('DELIMITER'=',', 'QUOTECHAR'='\"')"
     )
     checkAnswer(sql("select count(*) from specialcharacter1"), Seq(Row(37)))
-    checkAnswer(sql("select specialchar from specialcharacter1 where imei='1AA36'"), Seq(Row("\"i\"")))
+    checkAnswer(sql("select specialchar from specialcharacter1 where imei='1AA36'"),
+      Seq(Row("\"i\"")))
     sql("DROP TABLE IF EXISTS specialcharacter1")
   }
 
@@ -516,13 +512,13 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
 
     sql(
       """
-        CREATE table specialcharacter2(customer_id int, 124_string_level_province String, date_level String,
-        Time_level String, lname String, fname String, mi String, address1 String, address2
-        String, address3 String, address4 String, city String, country String, phone1 String,
-        phone2 String, marital_status String, yearly_income String, gender String, education
-        String, member_card String, occupation String, houseowner String, fullname String,
-        numeric_level double, account_num double, customer_region_id int, total_children int,
-        num_children_at_home int, num_cars_owned int)
+        CREATE table specialcharacter2(customer_id int, 124_string_level_province String,
+         date_level String, Time_level String, lname String, fname String, mi String,
+         address1 String, address2 String, address3 String, address4 String, city String,
+         country String, phone1 String, phone2 String, marital_status String, yearly_income String,
+         gender String, education String, member_card String, occupation String, houseowner String,
+         fullname String, numeric_level double, account_num double, customer_region_id int,
+         total_children int, num_children_at_home int, num_cars_owned int)
         STORED AS carbondata
       """
     )
@@ -534,13 +530,14 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       """
     )
     checkAnswer(sql("select count(*) from specialcharacter2"), Seq(Row(150)))
-    checkAnswer(sql("select 124_string_level_province from specialcharacter2 where customer_id=103"),
+    checkAnswer(
+      sql("select 124_string_level_province from specialcharacter2 where customer_id=103"),
       Seq(Row("\"state province # 124\""))
     )
     sql("DROP TABLE IF EXISTS specialcharacter2")
   }
 
-  test("test data which contain column less than schema"){
+  test("test data which contain column less than schema") {
     sql("DROP TABLE IF EXISTS collessthanschema")
 
     sql(
@@ -553,14 +550,13 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    sql(s"""
-         LOAD DATA LOCAL INPATH '$resourcesPath/lessthandatacolumndata.csv' into table collessthanschema
-        """)
-    checkAnswer(sql("select count(*) from collessthanschema"),Seq(Row(10)))
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/lessthandatacolumndata.csv' " +
+        s"into table collessthanschema")
+    checkAnswer(sql("select count(*) from collessthanschema"), Seq(Row(10)))
     sql("DROP TABLE IF EXISTS collessthanschema")
   }
 
-  test("test data which contain column with decimal data type in array."){
+  test("test data which contain column with decimal data type in array.") {
     sql("DROP TABLE IF EXISTS decimalarray")
 
     sql(
@@ -578,11 +574,11 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimal.csv' into table decimalarray
         """)
-    checkAnswer(sql("select count(*) from decimalarray"),Seq(Row(8)))
+    checkAnswer(sql("select count(*) from decimalarray"), Seq(Row(8)))
     sql("DROP TABLE IF EXISTS decimalarray")
   }
 
-  test("test data which contain column with decimal data type in struct."){
+  test("test data which contain column with decimal data type in struct.") {
     sql("DROP TABLE IF EXISTS decimalstruct")
 
     sql(
@@ -600,11 +596,11 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimal.csv' into table decimalstruct
         """)
-    checkAnswer(sql("select count(*) from decimalstruct"),Seq(Row(8)))
+    checkAnswer(sql("select count(*) from decimalstruct"), Seq(Row(8)))
     sql("DROP TABLE IF EXISTS decimalstruct")
   }
 
-  test("test data which contain column with decimal data type in array of struct."){
+  test("test data which contain column with decimal data type in array of struct.") {
     sql("DROP TABLE IF EXISTS complex_t3")
     sql("DROP TABLE IF EXISTS complex_hive_t3")
 
@@ -632,11 +628,11 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimalNested.csv' into table complex_t3
         """)
-    sql(s"""
-         LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimalNestedHive.csv' into table complex_hive_t3
-        """)
-    checkAnswer(sql("select count(*) from complex_t3"),sql("select count(*) from complex_hive_t3"))
-    checkAnswer(sql("select id from complex_t3 where salary = 15000"),sql("select id from complex_hive_t3 where salary = 15000"))
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimalNestedHive.csv' " +
+        s"into table complex_hive_t3")
+    checkAnswer(sql("select count(*) from complex_t3"), sql("select count(*) from complex_hive_t3"))
+    checkAnswer(sql("select id from complex_t3 where salary = 15000"),
+      sql("select id from complex_hive_t3 where salary = 15000"))
   }
 
   test("test data loading when delimiter is '|' and data with header") {
@@ -669,12 +665,12 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       "create table comment_test(imei string, age int, task bigint, num double, level decimal(10," +
         "3), productdate timestamp, mark int, name string) STORED AS carbondata"
     )
-    sql(
-      s"LOAD DATA local inpath '$resourcesPath/comment.csv' INTO TABLE comment_test " +
-        "options('DELIMITER' = ',', 'QUOTECHAR' = '.', 'COMMENTCHAR' = '?','FILEHEADER'='imei,age,task,num,level,productdate,mark,name', 'maxcolumns'='180')"
+    sql(s"LOAD DATA local inpath '$resourcesPath/comment.csv' INTO TABLE comment_test " +
+        "options('DELIMITER' = ',', 'QUOTECHAR' = '.', 'COMMENTCHAR' = '?'," +
+        "'FILEHEADER'='imei,age,task,num,level,productdate,mark,name', 'maxcolumns'='180')"
     )
-    checkAnswer(sql("select imei from comment_test"),Seq(Row("\".carbon"),Row("#?carbon"), Row(""),
-      Row("~carbon,")))
+    checkAnswer(sql("select imei from comment_test"),
+      Seq(Row("\".carbon"), Row("#?carbon"), Row(""), Row("~carbon,")))
   }
 
   test("test data load with double datatype") {
@@ -682,7 +678,8 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("CREATE table double_test (empno string, salary double) STORED AS carbondata ")
     sql(
       s"load data local inpath '$resourcesPath/double.csv' into table double_test")
-    checkAnswer(sql("select salary from double_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
+    checkAnswer(sql("select salary from double_test where empno =\"'abc'\" limit 1"),
+      Row(7.756787654567891E23))
   }
 
   test("test table with specified table path") {
@@ -695,7 +692,8 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql(
       s"load data local inpath '$resourcesPath/double.csv' into table table_path_test")
     assert(new File(path).exists())
-    checkAnswer(sql("select salary from table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
+    checkAnswer(sql("select salary from table_path_test where empno =\"'abc'\" limit 1"),
+      Row(7.756787654567891E23))
     sql("drop table table_path_test")
     assert(new File(path).exists())
     FileFactory.deleteAllFilesOfDir(new File(path))
@@ -711,11 +709,11 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("create database if not exists test")
     sql("CREATE table test.table_path_test (empno string, salary double) " +
         s"STORED AS carbondata LOCATION '$path'")
-    sql(
-      s"load data local inpath '$resourcesPath/double.csv' into table test.table_path_test options" +
-      "('FILEHEADER'='empno,salary')")
+    sql(s"load data local inpath '$resourcesPath/double.csv' " +
+        s"into table test.table_path_test options('FILEHEADER'='empno,salary')")
     assert(new File(path).exists())
-    checkAnswer(sql("select salary from test.table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
+    checkAnswer(sql("select salary from test.table_path_test where empno =\"'abc'\" limit 1"),
+      Row(7.756787654567891E23))
     sql("drop table test.table_path_test")
     assert(new File(path).exists())
     FileFactory.deleteAllFilesOfDir(new File(path))

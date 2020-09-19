@@ -32,14 +32,14 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists table1")
     sql("drop table if exists table2")
 
-    sql("CREATE TABLE IF NOT EXISTS table1(empno Int, empname Array<String>, designation String, doj Timestamp, "
-        + "workgroupcategory Int, workgroupcategoryname String, deptno Int, deptname String, projectcode Int, "
-        + "projectjoindate Timestamp, projectenddate Timestamp , attendance Int,utilization Int,salary Int )"
-        + " STORED AS carbondata ")
-    sql("CREATE TABLE IF NOT EXISTS table2(empno Int, empname Array<String>, designation String, doj Timestamp, "
-        + "workgroupcategory Int, workgroupcategoryname String, deptno Int, deptname String, projectcode Int, "
-        + "projectjoindate Timestamp, projectenddate Timestamp , attendance Int,utilization Int,salary Int )"
-        + " STORED AS carbondata ")
+    sql("CREATE TABLE IF NOT EXISTS table1(empno Int, empname Array<String>, designation String, " +
+        "doj Timestamp, workgroupcategory Int, workgroupcategoryname String, deptno Int, " +
+        "deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, " +
+        "attendance Int,utilization Int,salary Int ) STORED AS carbondata ")
+    sql("CREATE TABLE IF NOT EXISTS table2(empno Int, empname Array<String>, designation String, " +
+        "doj Timestamp, workgroupcategory Int, workgroupcategoryname String, deptno Int, " +
+        "deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp , " +
+        "attendance Int,utilization Int,salary Int ) STORED AS carbondata ")
 
   }
 
@@ -62,8 +62,8 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists testdb cascade")
     sql("create database testdb")
     sql("use testdb")
-    sql("CREATE TABLE IF NOT EXISTS testtable(empno Int, empname string, utilization Int,salary Int)"
-        + " STORED AS carbondata ")
+    sql("CREATE TABLE IF NOT EXISTS testtable(" +
+        "empno Int, empname string, utilization Int,salary Int) STORED AS carbondata ")
     intercept[Exception] {
       sql("drop database testdb")
     }
@@ -189,18 +189,16 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
         "String," +
         "phonetype String, serialname String, salary int) STORED AS carbondata "
       )
-      sql(
-        s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE test.dropTableTest3 " +
-        "OPTIONS('DELIMITER' =  ',')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' " +
+          s"INTO TABLE test.dropTableTest3 OPTIONS('DELIMITER' =  ',')")
       sql("drop table test.dropTableTest3")
       sql(
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
         "String," +
         "phonetype String, serialname String, salary decimal) STORED AS carbondata "
       )
-      sql(
-        s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE test.dropTableTest3 " +
-        "OPTIONS('DELIMITER' =  ',')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' " +
+          s"INTO TABLE test.dropTableTest3 OPTIONS('DELIMITER' =  ',')")
     } finally {
       sql("drop table test.dropTableTest3")
       sql("drop database test")

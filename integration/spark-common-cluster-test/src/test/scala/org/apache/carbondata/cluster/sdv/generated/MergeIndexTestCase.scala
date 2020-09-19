@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -24,13 +23,11 @@ import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
@@ -39,7 +36,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
 
-
+  // scalastyle:off lineLength
   override protected def afterAll(): Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
@@ -139,4 +136,5 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
       }
     }
   }
+  // scalastyle:on lineLength
 }

@@ -19,24 +19,23 @@ package org.apache.carbondata.integration.spark.testsuite.binary
 import java.io.{ByteArrayOutputStream, DataOutputStream}
 import java.util.Arrays
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.ProcessMetaDataException
 import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.spark.SparkException
-import org.apache.spark.sql.execution.exchange.Exchange
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
 /**
-  * Test cases for testing binary
-  */
+ * Test cases for testing binary
+ */
 class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
+    // scalastyle:off lineLength
     override def beforeAll {
     }
 
@@ -69,8 +68,10 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
         assert(flag)
 
-        sqlContext.udf.register("decodeHex", (str: String) => Hex.decodeHex(str.toCharArray))
-        sqlContext.udf.register("decodeBase64", (str: String) => Base64.decodeBase64(str.getBytes()))
+        sqlContext.udf.register("decodeHex",
+            (str: String) => Hex.decodeHex(str.toCharArray))
+        sqlContext.udf.register("decodeBase64",
+            (str: String) => Base64.decodeBase64(str.getBytes()))
 
         val udfHexResult = sql("SELECT decodeHex(binaryField) FROM binaryTable")
         val unhexResult = sql("SELECT unhex(binaryField) FROM binaryTable")
@@ -88,15 +89,18 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       (each(1).toString.equalsIgnoreCase("true")))
                 assert(each(2).toString.contains(".png"))
 
                 val bytes40 = each.getAs[Array[Byte]](3).slice(0, 40)
                 val binaryName = each(2).toString
                 val expectedBytes = Hex.encodeHex(firstBytes20.get(binaryName).get)
-                assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40), "incorrect value for binary data")
+                assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40),
+                    "incorrect value for binary data")
 
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       (each(4).toString.equalsIgnoreCase("true")))
 
                 val df = sql("SELECT name,binaryField FROM binaryTable").collect()
                 assert(3 == df.length)
@@ -105,7 +109,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                     val binaryName = each(0).toString
                     val bytes40 = each.getAs[Array[Byte]](1).slice(0, 40)
                     val expectedBytes = Hex.encodeHex(firstBytes20.get(binaryName).get)
-                    assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40), "incorrect value for binary data")
+                    assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40),
+                        "incorrect value for binary data")
                 }
             }
         } catch {
@@ -142,13 +147,16 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             df.foreach { each =>
                 assert(5 == each.length)
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       (each(1).toString.equalsIgnoreCase("true")))
                 assert(each(2).toString.contains(".png"))
                 val bytes40 = each.getAs[Array[Byte]](3).slice(0, 40)
                 val binaryName = each(2).toString
                 val expectedBytes = Hex.encodeHex(firstBytes20.get(binaryName).get)
-                assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40), "incorrect value for binary data")
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40),
+                    "incorrect value for binary data")
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       (each(4).toString.equalsIgnoreCase("true")))
             }
         } catch {
             case e: Exception =>
@@ -157,7 +165,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
     }
 
-    private val firstBytes20 = Map("1.png" -> Array[Byte](-119, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 1, 74),
+    private val firstBytes20 = Map(
+        "1.png" -> Array[Byte](-119, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 1, 74),
         "2.png" -> Array[Byte](-119, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 2, -11),
         "3.png" -> Array[Byte](-119, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 1, 54)
     )
@@ -177,7 +186,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    | TBLPROPERTIES('SORT_COLUMNS'='binaryField')
              """.stripMargin)
         }
-        assert(exception.getMessage.contains("sort_columns is unsupported for binary datatype column"))
+        assert(exception.getMessage.contains(
+            "sort_columns is unsupported for binary datatype column"))
     }
 
     test("Unsupport LOCAL_DICTIONARY_INCLUDE for binary") {
@@ -197,8 +207,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 """.stripMargin)
         }
         assert(exception.getMessage.contains(
-            "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: binaryfield is not a string/complex/varchar datatype column. " +
-                    "LOCAL_DICTIONARY_COLUMN should be no dictionary string/complex/varchar datatype column"))
+            "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: binaryfield is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN should be no dictionary string/complex/varchar datatype column"))
     }
 
     test("Supports LOCAL_DICTIONARY_EXCLUDE for binary") {
@@ -232,7 +241,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                   | tblproperties('inverted_index'='binaryField')
                 """.stripMargin)
         }
-        assert(exception.getMessage.contains("INVERTED_INDEX column: binaryfield should be present in SORT_COLUMNS"))
+        assert(exception.getMessage.contains(
+            "INVERTED_INDEX column: binaryfield should be present in SORT_COLUMNS"))
     }
 
     test("Unsupport inverted_index and sort_columns for binary") {
@@ -250,7 +260,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                   | tblproperties('inverted_index'='binaryField','SORT_COLUMNS'='binaryField')
                 """.stripMargin)
         }
-        assert(exception.getMessage.contains("sort_columns is unsupported for binary datatype column: binaryfield"))
+        assert(exception.getMessage.contains(
+            "sort_columns is unsupported for binary datatype column: binaryfield"))
     }
 
     test("COLUMN_META_CACHE doesn't support binary") {
@@ -268,7 +279,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    | TBLPROPERTIES('COLUMN_META_CACHE'='binaryField')
              """.stripMargin)
         }
-        assert(exception.getMessage.contains("binaryfield is a binary data type column and binary data type is not allowed for the option"))
+        assert(exception.getMessage.contains(
+            "binaryfield is a binary data type column and binary data type is not allowed for the option"))
     }
 
     test("RANGE_COLUMN doesn't support binary") {
@@ -314,7 +326,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             assert(5 == each.length)
             assert(1 == each.getAs[Int](0) || 2 == each.getAs[Int](0) || 3 == each.getAs[Int](0))
             assert(".png".equals(each.getAs(2).toString.substring(1, 5)))
-            assert("89504e470d0a1a0a0000000d4948445200000".equals(new String(each.getAs[Array[Byte]](3).slice(0, 37))))
+            assert("89504e470d0a1a0a0000000d4948445200000".equals(
+                new String(each.getAs[Array[Byte]](3).slice(0, 37))))
         }
     }
 
@@ -343,7 +356,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             assert(5 == each.length)
             assert(1 == each.getAs[Int](0) || 2 == each.getAs[Int](0) || 3 == each.getAs[Int](0))
             assert(".png".equals(each.getAs(2).toString.substring(1, 5)))
-            assert("89504e470d0a1a0a0000000d4948445200000".equals(new String(each.getAs[Array[Byte]](3).slice(0, 37))))
+            assert("89504e470d0a1a0a0000000d4948445200000".equals(
+                new String(each.getAs[Array[Byte]](3).slice(0, 37))))
         }
     }
 
@@ -372,7 +386,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             assert(5 == each.length)
             assert(1 == each.getAs[Int](0) || 2 == each.getAs[Int](0) || 3 == each.getAs[Int](0))
             assert(".png".equals(each.getAs(2).toString.substring(1, 5)))
-            assert("89504e470d0a1a0a0000000d4948445200000".equals(new String(each.getAs[Array[Byte]](3).slice(0, 37))))
+            assert("89504e470d0a1a0a0000000d4948445200000".equals(
+                new String(each.getAs[Array[Byte]](3).slice(0, 37))))
         }
     }
 
@@ -399,7 +414,9 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
 
         sql("insert into binaryTable values(1,true,'Bob','hello',false)")
-        checkAnswer(sql("SELECT COUNT(*) FROM binaryTable where binaryField =cast('hello' as binary)"), Seq(Row(1)))
+        checkAnswer(
+            sql("SELECT COUNT(*) FROM binaryTable where binaryField =cast('hello' as binary)"),
+            Seq(Row(1)))
     }
 
     test("Test create table with binary datatype in bucket table") {
@@ -510,7 +527,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql("insert into carbontable values(1,true,'Bob','binary',false)")
         sql("insert into carbontable values(2,false,'Xu','test',true)")
-        val carbonResult = sql("SELECT * FROM carbontable where binaryField=cast('binary' as binary)")
+        val carbonResult =
+            sql("SELECT * FROM carbontable where binaryField=cast('binary' as binary)")
         checkAnswer(hiveResult, carbonResult)
         assert(1 == carbonResult.collect().length)
         carbonResult.collect().foreach { each =>
@@ -531,7 +549,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         // filter with not equal
         val hiveResult3 = sql("SELECT * FROM hivetable where binaryField!=cast('binary' as binary)")
-        val carbonResult3 = sql("SELECT * FROM carbontable where binaryField!=cast('binary' as binary)")
+        val carbonResult3 =
+            sql("SELECT * FROM carbontable where binaryField!=cast('binary' as binary)")
         checkAnswer(hiveResult3, carbonResult3)
         assert(1 == carbonResult3.collect().length)
         carbonResult3.collect().foreach { each =>
@@ -541,7 +560,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         // filter with in
         val hiveResult4 = sql("SELECT * FROM hivetable where binaryField in (cast('binary' as binary))")
-        val carbonResult4 = sql("SELECT * FROM carbontable where binaryField in (cast('binary' as binary))")
+        val carbonResult4 =
+            sql("SELECT * FROM carbontable where binaryField in (cast('binary' as binary))")
         checkAnswer(hiveResult4, carbonResult4)
         assert(1 == carbonResult4.collect().length)
         carbonResult4.collect().foreach { each =>
@@ -551,7 +571,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         // filter with not in
         val hiveResult5 = sql("SELECT * FROM hivetable where binaryField not in (cast('binary' as binary))")
-        val carbonResult5 = sql("SELECT * FROM carbontable where binaryField not in (cast('binary' as binary))")
+        val carbonResult5 =
+            sql("SELECT * FROM carbontable where binaryField not in (cast('binary' as binary))")
         checkAnswer(hiveResult5, carbonResult5)
         assert(1 == carbonResult5.collect().length)
         carbonResult5.collect().foreach { each =>
@@ -575,7 +596,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql("insert into carbontable values(1,true,'Bob','binary',false)")
         sql("insert into carbontable values(2,false,'Xu','test',true)")
-        var carbonResult = sql("SELECT * FROM carbontable where binaryField=cast('binary' as binary)")
+        var carbonResult =
+            sql("SELECT * FROM carbontable where binaryField=cast('binary' as binary)")
         assert(1 == carbonResult.collect().length)
         carbonResult.collect().foreach { each =>
             if (1 == each.get(0)) {
@@ -588,8 +610,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
 
         // Update for binary in carbon
-        sql("UPDATE carbontable SET (name) = ('David') WHERE id = 1").show()
-        sql("UPDATE carbontable SET (binaryField) = ('carbon2') WHERE id = 1").show()
+        sql("UPDATE carbontable SET (name) = ('David') WHERE id = 1").collect()
+        sql("UPDATE carbontable SET (binaryField) = ('carbon2') WHERE id = 1").collect()
 
         carbonResult = sql("SELECT * FROM carbontable where binaryField=cast('binary' as binary)")
         carbonResult.collect().foreach { each =>
@@ -613,7 +635,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
 
         // Test delete
-        sql("DELETE FROM carbontable WHERE id = 2").show()
+        sql("DELETE FROM carbontable WHERE id = 2").collect()
 
         carbonResult = sql("SELECT * FROM carbontable where binaryField=cast('binary' as binary)")
         carbonResult.collect().foreach { each =>
@@ -625,7 +647,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
     }
 
-    test("Create table and load data with binary column for hive and carbon, CTAS and insert int hive table select from carbon table") {
+    test("Create table and load data with binary column for hive and carbon, " +
+         "CTAS and insert int hive table select from carbon table") {
         sql("DROP TABLE IF EXISTS hivetable")
         sql("DROP TABLE IF EXISTS hivetable2")
         sql("DROP TABLE IF EXISTS hivetable3")
@@ -667,7 +690,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         val hexCarbonResult = sql("SELECT hex(binaryField) FROM carbontable")
         checkAnswer(hexHiveResult, hexCarbonResult)
         hexCarbonResult.collect().foreach { each =>
-            val result = new String(Hex.decodeHex((each.getAs[Array[Char]](0)).toString.toCharArray))
+            val result = new String(
+                Hex.decodeHex((each.getAs[Array[Char]](0)).toString.toCharArray))
             assert("\u0001history\u0002".equals(result)
                     || "\u0001biology\u0002".equals(result)
                     || "\u0001education\u0002".equals(result))
@@ -695,13 +719,15 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       (each(1).toString.equalsIgnoreCase("true")))
                 assert(each(2).toString.contains(".png"))
 
                 val value = new String(each.getAs[Array[Byte]](3))
                 assert("\u0001history\u0002".equals(value) || "\u0001biology\u0002".equals(value)
                         || "\u0001education\u0002".equals(value) || "".equals(value))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       (each(4).toString.equalsIgnoreCase("true")))
             }
 
             val df = hiveResult.collect()
@@ -710,14 +736,16 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       (each(1).toString.equalsIgnoreCase("true")))
                 assert(each(2).toString.contains(".png"))
 
 
                 val value = new String(each.getAs[Array[Byte]](3))
                 assert("\u0001history\u0002".equals(value) || "\u0001biology\u0002".equals(value)
                         || "\u0001education\u0002".equals(value) || "".equals(value))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       (each(4).toString.equalsIgnoreCase("true")))
             }
 
             sql(
@@ -744,7 +772,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
     }
 
     // TODO
-    ignore("Create table and load data with binary column for hive and carbon, CTAS and insert int hive table select from carbon table, for null value") {
+    ignore("Create table and load data with binary column for hive and carbon, " +
+           "CTAS and insert int hive table select from carbon table, for null value") {
         sql("DROP TABLE IF EXISTS hivetable")
         sql("DROP TABLE IF EXISTS hivetable2")
         sql("DROP TABLE IF EXISTS hivetable3")
@@ -793,13 +822,15 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       each(1).toString.equalsIgnoreCase("true"))
                 assert(each(2).toString.contains(".png"))
 
                 val value = new String(each.getAs[Array[Byte]](3))
                 assert("\u0001history\u0002".equals(value) || "\u0001biology\u0002".equals(value)
                         || "\u0001education\u0002".equals(value) || "".equals(value))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       each(4).toString.equalsIgnoreCase("true"))
             }
 
             val df = hiveResult.collect()
@@ -808,14 +839,16 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       each(1).toString.equalsIgnoreCase("true"))
                 assert(each(2).toString.contains(".png"))
 
 
                 val value = new String(each.getAs[Array[Byte]](3))
                 assert("\u0001history\u0002".equals(value) || "\u0001biology\u0002".equals(value)
                         || "\u0001education\u0002".equals(value) || "".equals(value))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       each(4).toString.equalsIgnoreCase("true"))
             }
 
             sql(
@@ -1185,12 +1218,14 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       each(1).toString.equalsIgnoreCase("true"))
                 assert(each(2).toString.contains(".png"))
 
                 val value = each.getAs[Array[Byte]](3).slice(0, 10)
                 assert(new String(Base64.encodeBase64(value)).equals("iVBORw0KGgoAAA=="))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       each(4).toString.equalsIgnoreCase("true"))
             }
 
             val df = hiveResult.collect()
@@ -1199,13 +1234,15 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       each(1).toString.equalsIgnoreCase("true"))
                 assert(each(2).toString.contains(".png"))
 
 
                 val value = each.getAs[Array[Byte]](3).slice(0, 10)
                 assert(new String(Base64.encodeBase64(value)).equals("iVBORw0KGgoAAA=="))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       each(4).toString.equalsIgnoreCase("true"))
             }
         } catch {
             case e: Exception =>
@@ -1214,7 +1251,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
     }
 
-    test("Create table and load data with binary column for hive: test encode with base64 and streaming = true") {
+    test("Create table and load data with binary column for hive: " +
+         "test encode with base64 and streaming = true") {
         sql("DROP TABLE IF EXISTS hivetable")
         sql("DROP TABLE IF EXISTS carbontable")
         sql(
@@ -1263,12 +1301,14 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       each(1).toString.equalsIgnoreCase("true"))
                 assert(each(2).toString.contains(".png"))
 
                 val value = each.getAs[Array[Byte]](3).slice(0, 10)
                 assert(new String(Base64.encodeBase64(value)).equals("iVBORw0KGgoAAA=="))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       each(4).toString.equalsIgnoreCase("true"))
             }
 
             val df = hiveResult.collect()
@@ -1277,13 +1317,15 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       each(1).toString.equalsIgnoreCase("true"))
                 assert(each(2).toString.contains(".png"))
 
 
                 val value = each.getAs[Array[Byte]](3).slice(0, 10)
                 assert(new String(Base64.encodeBase64(value)).equals("iVBORw0KGgoAAA=="))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       each(4).toString.equalsIgnoreCase("true"))
             }
         } catch {
             case e: Exception =>
@@ -1292,9 +1334,10 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
     }
 
-    test("Create table and load data with binary column for hive: test encode without \u0001 and not base64") {
-        // Carbon will throw exception if the data is not base64 when carbon set binary_decoder is base64
-        // hive will save as original data if the data is not base64
+    test("Create table and load data with binary column for hive: " +
+         "test encode without \u0001 and not base64") {
+        // Carbon will throw exception if the data is not base64 when carbon set binary_decoder
+        // to base64, hive will save as original data if the data is not base64
         sql("DROP TABLE IF EXISTS hivetable")
         sql("DROP TABLE IF EXISTS carbontable")
         sql(
@@ -1371,14 +1414,17 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(5 == each.length)
 
                 assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(1).toString.equalsIgnoreCase("false") ||
+                       each(1).toString.equalsIgnoreCase("true"))
                 assert(each(2).toString.contains(".png"))
 
                 val bytes20 = each.getAs[Array[Byte]](3).slice(0, 20)
                 val binaryName = each(2).toString
-                assert(Arrays.equals(firstBytes20.get(binaryName).get, bytes20), "incorrect value for binary data")
+                assert(Arrays.equals(firstBytes20.get(binaryName).get, bytes20),
+                    "incorrect value for binary data")
 
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+                assert(each(4).toString.equalsIgnoreCase("false") ||
+                       each(4).toString.equalsIgnoreCase("true"))
 
                 val df = sql("SELECT name,binaryField FROM binaryTable").collect()
                 assert(3 == df.length)
@@ -1386,7 +1432,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                     assert(2 == each.length)
                     val binaryName = each(0).toString
                     val bytes20 = each.getAs[Array[Byte]](1).slice(0, 20)
-                    assert(Arrays.equals(firstBytes20.get(binaryName).get, bytes20), "incorrect value for binary data")
+                    assert(Arrays.equals(firstBytes20.get(binaryName).get, bytes20),
+                        "incorrect value for binary data")
                 }
             }
         } catch {
@@ -1440,7 +1487,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         sql("INSERT INTO hive_table PARTITION(photo='binary') select 'a','b'");
         sql("INSERT INTO hive_table PARTITION(photo='1') select 'a','b'");
-        checkAnswer(sql("select cast(photo as string) from hive_table"), Seq(Row("binary"), Row("1")));
+        checkAnswer(sql("select cast(photo as string) from hive_table"),
+            Seq(Row("binary"), Row("1")));
 
 
         sql(
@@ -1453,7 +1501,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         sql("INSERT INTO hive_table2 PARTITION(photo='binary') select 'a','b'");
         sql("INSERT INTO hive_table2 PARTITION(photo='1') select 'a','b'");
-        checkAnswer(sql("select cast(photo as string) from hive_table2"), Seq(Row("binary"), Row("1")));
+        checkAnswer(sql("select cast(photo as string) from hive_table2"),
+            Seq(Row("binary"), Row("1")));
 
         sql(
             s"""
@@ -1467,9 +1516,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         sql("INSERT INTO parquet_table PARTITION(photo='binary') select 'a','b'");
         sql("INSERT INTO parquet_table PARTITION(photo='1') select 'a','b'");
 
-        sql("select cast(photo as string) from parquet_table").show()
-        //TODO： is it a bug in parquet?
-        //        checkAnswer(sql("select cast(photo as string) from parquet_table"), Seq(Row(),Row()));
+        sql("select cast(photo as string) from parquet_table").collect()
 
         sql(
             s"""
@@ -1483,16 +1530,18 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         sql("INSERT INTO carbon_partition_table PARTITION(photo='binary') select 'a','b'");
         sql("INSERT INTO carbon_partition_table PARTITION(photo='1') select 'a','b'");
-        sql("select * from carbon_partition_table").show()
-        sql("select cast(photo as string) from carbon_partition_table").show()
-        checkAnswer(sql("select cast(photo as string) from carbon_partition_table"), Seq(Row("binary"), Row("1")))
+        sql("select * from carbon_partition_table").collect()
+        sql("select cast(photo as string) from carbon_partition_table").collect()
+        checkAnswer(sql("select cast(photo as string) from carbon_partition_table"),
+            Seq(Row("binary"), Row("1")))
         checkAnswer(sql("select * from carbon_partition_table"), sql("select * from hive_table"))
 
         val e = intercept[SparkException] {
             sql("insert into hive_table select 'a','b','binary'");
         }
 
-        assert(e.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
+        assert(e.getMessage.contains(
+            "Dynamic partition strict mode requires at least one static partition column"))
 
         val eInt = intercept[Exception] {
             sql("insert into hive_table select 'a','b','1'");
@@ -1502,7 +1551,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             sql("insert into hive_table2 select 'a','b','binary'");
         }
 
-        assert(e2.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
+        assert(e2.getMessage.contains(
+            "Dynamic partition strict mode requires at least one static partition column"))
 
         val eInt2 = intercept[Exception] {
             sql("insert into hive_table2 select 'a','b','1'");
@@ -1512,7 +1562,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             sql("insert into parquet_table select 'a','b','binary'");
         }
 
-        assert(e3.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
+        assert(e3.getMessage.contains(
+            "Dynamic partition strict mode requires at least one static partition column"))
 
         val eInt3 = intercept[Exception] {
             sql("insert into parquet_table select 'a','b','1'");
@@ -1524,7 +1575,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         checkAnswer(sql("select cast(photo as string) from carbon_partition_table"),
             Seq(Row("binary"), Row("1"), Row("binary"), Row("1")))
 
-        sql("select * from carbon_partition_table").show()
+        sql("select * from carbon_partition_table").collect()
 
         // set hive.exec.dynamic.partition.mode=nonstrict
         sql("set hive.exec.dynamic.partition.mode=nonstrict")
@@ -1532,7 +1583,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         val eInt11 = intercept[AnalysisException] {
             sql("insert into hive_table select 'a','b',1");
         }
-        assert(eInt11.getMessage.contains("cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+        assert(eInt11.getMessage.contains(
+            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
 
         checkAnswer(sql("select cast(photo as string) from hive_table"),
             Seq(Row("binary"), Row("1"), Row("binary")))
@@ -1541,7 +1593,8 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         val eInt22 = intercept[AnalysisException] {
             sql("insert into hive_table2 select 'a','b',1");
         }
-        assert(eInt22.getMessage.contains("cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+        assert(eInt22.getMessage.contains(
+            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
 
         checkAnswer(sql("select cast(photo as string) from hive_table2"),
             Seq(Row("binary"), Row("1"), Row("binary")))
@@ -1550,11 +1603,12 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         val eInt32 = intercept[AnalysisException] {
             sql("insert into parquet_table select 'a','b',1");
         }
-        assert(eInt32.getMessage.contains("cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+        assert(eInt32.getMessage.contains(
+            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
 
-        //TODO: is it bug in parquet?
-        //        checkAnswer(sql("select cast(photo as string) from parquet_table"),
-        //            Seq(Row(),Row(),Row()))
+        // TODO: is it bug in parquet?
+        // checkAnswer(sql("select cast(photo as string) from parquet_table"),
+        // Seq(Row(),Row(),Row()))
 
         sql("insert into carbon_partition_table select 'a','b','binary'");
         sql("insert into carbon_partition_table select 'a','b','1'");
@@ -1597,13 +1651,13 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         sql(
             s"""select substr(CUST_NAME,1,2)
                | from uniqdata
-              """.stripMargin).show()
+              """.stripMargin).collect()
 
         val e1 = intercept[Exception] {
             sql(
                 s"""select avg(substr(CUST_NAME,1,2))
                    | from uniqdata
-              """.stripMargin).show()
+              """.stripMargin).collect()
         }
         val e2 = intercept[Exception] {
             sql(
@@ -1673,9 +1727,10 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         sql("DROP TABLE IF EXISTS binaryTable")
         sql("DROP TABLE IF EXISTS binaryTable_carbondata")
         sql("DROP TABLE IF EXISTS binaryTable_carbon")
-        sql(s"""CREATE TABLE IF NOT EXISTS binaryTable( binaryField binary ) STORED AS carbondata""")
-        sql(s"""CREATE TABLE IF NOT EXISTS binaryTable_carbondata( binaryField binary ) USING CARBONDATA""")
-        sql(s"""CREATE TABLE IF NOT EXISTS binaryTable_carbon( binaryField binary ) USING CARBON""")
+        sql("CREATE TABLE IF NOT EXISTS binaryTable(binaryField binary) STORED AS carbondata")
+        sql("CREATE TABLE IF NOT EXISTS binaryTable_carbondata(" +
+            "binaryField binary) USING CARBONDATA")
+        sql("CREATE TABLE IF NOT EXISTS binaryTable_carbon(binaryField binary) USING CARBON")
         // create binary data
         val baos = new ByteArrayOutputStream()
         val dos = new DataOutputStream(baos)
@@ -1705,4 +1760,5 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         sql("DROP TABLE IF EXISTS hiveTable")
         sql("DROP TABLE IF EXISTS hive_table")
     }
+    // scalastyle:on lineLength
 }

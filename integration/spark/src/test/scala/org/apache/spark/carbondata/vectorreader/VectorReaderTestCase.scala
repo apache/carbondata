@@ -35,8 +35,8 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    sql("CREATE TABLE vectorreader (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED AS carbondata")
+    sql("CREATE TABLE vectorreader (ID Int, date Timestamp, country String, name String, " +
+        "phonetype String,serialname String, salary Int) STORED AS carbondata")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE vectorreader")
   }
 
@@ -46,7 +46,7 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
       """select * from vectorreader""".stripMargin).queryExecution.executedPlan
     var batchReader = false
     plan.collect {
-      case s: CarbonDataSourceScan => batchReader = true
+      case _: CarbonDataSourceScan => batchReader = true
     }
     assert(batchReader, "batch reader should exist when carbon.enable.vector.reader is true")
   }
@@ -57,7 +57,7 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
       """select * from vectorreader""".stripMargin).queryExecution.executedPlan
     var rowReader = false
     plan.collect {
-      case s: RowDataSourceScanExec => rowReader = true
+      case _: RowDataSourceScanExec => rowReader = true
     }
     assert(rowReader, "row reader should exist by default")
   }

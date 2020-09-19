@@ -47,14 +47,17 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength maxParameters
   private val spark = sqlContext.sparkSession
   private val dataFilePath = s"$resourcesPath/streamSample.csv"
-  def currentPath: String = new File(this.getClass.getResource("/").getPath + "../../")
-    .getCanonicalPath
-  val badRecordFilePath: File =new File(currentPath + "/target/test/badRecords")
+
+  val currentPath: String =
+    new File(this.getClass.getResource("/").getPath + "../../").getCanonicalPath
+
+  val badRecordFilePath: File = new File(currentPath + "/target/test/badRecords")
 
   override def beforeAll {
+    defaultConfig()
     badRecordFilePath.delete()
     badRecordFilePath.mkdirs()
     CarbonProperties.getInstance().addProperty(
@@ -900,7 +903,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select * from stream_table_filter_complex where register between '2010-01-04 10:01:01' and '2010-01-05 10:01:01'"),
       Seq(Row(9, "name_9", "city_9", 90000.0, BigDecimal.valueOf(0.04), 80.04, Date.valueOf("1990-01-04"), Timestamp.valueOf("2010-01-04 10:01:01.0"), Timestamp.valueOf("2010-01-04 10:01:01.0"), Row(wrap(Array("school_9", "school_99")), 9)),
-        Row(100000004, "batch_4", "city_4", 0.4, BigDecimal.valueOf(0.04), 80.04, Date.valueOf("1990-01-04"), Timestamp.valueOf("2010-01-04 10:01:01.0"), Timestamp.valueOf("2010-01-04 10:01:01.0"), Row(wrap(Array("school_4", "school_44")),50)),
+        Row(100000004, "batch_4", "city_4", 0.4, BigDecimal.valueOf(0.04), 80.04, Date.valueOf("1990-01-04"), Timestamp.valueOf("2010-01-04 10:01:01.0"), Timestamp.valueOf("2010-01-04 10:01:01.0"), Row(wrap(Array("school_4", "school_44")), 50)),
         Row(100000005, "batch_5", "city_5", 0.5, BigDecimal.valueOf(0.05), 80.05, Date.valueOf("1990-01-05"), Timestamp.valueOf("2010-01-05 10:01:01.0"), Timestamp.valueOf("2010-01-05 10:01:01.0"), Row(wrap(Array("school_5", "school_55")), 60))))
 
     checkAnswer(
@@ -1248,7 +1251,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     assertResult(newSegments.length / 2)(newSegments.filter(_.getString(1).equals("Success")).length)
     assertResult(newSegments.length / 2)(newSegments.filter(_.getString(1).equals("Compacted")).length)
 
-    //Verify MergeTO column entry for compacted Segments
+    // Verify MergeTO column entry for compacted Segments
     newSegments.filter(_.getString(1).equals("Compacted")).foreach{ rw =>
       assertResult("Compacted")(rw.getString(1))
       assert(Integer.parseInt(rw.getString(0)) < Integer.parseInt(rw.getString(7)))
@@ -1416,10 +1419,10 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
         |  SELECT *
         |  FROM source
         |  WHERE id % 2 = 1
-      """.stripMargin).show(false)
+      """.stripMargin).collect()
 
     Thread.sleep(200)
-    sql("select * from sink").show
+    sql("select * from sink").collect()
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append)
     Thread.sleep(7000)
@@ -1431,7 +1434,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     val exceptedRow = Row(11, "name_11", "city_11", 110000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))
     assertResult(exceptedRow)(row)
 
-    sql("SHOW STREAMS").show(false)
+    sql("SHOW STREAMS").collect()
 
     rows = sql("SHOW STREAMS").collect()
     assertResult(1)(rows.length)
@@ -1519,7 +1522,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
         |  SELECT *
         |  FROM source
         |  WHERE id % 2 = 1
-      """.stripMargin).show(false)
+      """.stripMargin).collect()
     sql(
       s"""
         |CREATE STREAM IF NOT EXISTS stream123 ON TABLE sink
@@ -1533,9 +1536,9 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
         |  SELECT *
         |  FROM source
         |  WHERE id % 2 = 1
-      """.stripMargin).show(false)
+      """.stripMargin).collect()
     Thread.sleep(200)
-    sql("select * from sink").show
+    sql("select * from sink").collect()
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append)
     Thread.sleep(5000)
@@ -1547,7 +1550,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     val exceptedRow = Row(11, "name_11", "city_11", 110000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))
     assertResult(exceptedRow)(row)
 
-    sql("SHOW STREAMS").show(false)
+    sql("SHOW STREAMS").collect()
 
     rows = sql("SHOW STREAMS").collect()
     assertResult(1)(rows.length)
@@ -1664,7 +1667,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
           |  SELECT *
           |  FROM source
           |  WHERE id % 2 = 1
-        """.stripMargin).show(false)
+        """.stripMargin).collect()
     }
     sql("DROP TABLE IF EXISTS sink")
   }
@@ -1775,7 +1778,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
           |  SELECT *
           |  FROM notsource
           |  WHERE id % 2 = 1
-        """.stripMargin).show(false)
+        """.stripMargin).collect()
     }
     assert(ex.getMessage.contains("Must specify stream source table in the stream query"))
     sql("DROP TABLE sink")
@@ -1814,7 +1817,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     spark.createDataset(Seq((1, "alice", "india"), (2, "bob", "france"), (3, "chris", "canada")))
       .write.mode("overwrite").csv(inputDir)
     sql(s"LOAD DATA INPATH '$inputDir' INTO TABLE dim OPTIONS('header'='false')")
-    sql("SELECT * FROM dim").show
+    sql("SELECT * FROM dim").collect()
 
     var rows = sql("SHOW STREAMS").collect()
     assertResult(0)(rows.length)
@@ -1869,10 +1872,10 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
         |  SELECT s.id, d.name, d.country, s.salary, s.tax, s.percent, s.birthday, s.register, s.updated
         |  FROM source s
         |  JOIN dim d ON s.id = d.id
-      """.stripMargin).show(false)
+      """.stripMargin).collect()
 
     Thread.sleep(2000)
-    sql("select * from sink").show
+    sql("select * from sink").collect()
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append, false)
     Thread.sleep(5000)
@@ -1880,7 +1883,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     // after 2 minibatch, there should be 10 row added (filter condition: id%2=1)
     checkAnswer(sql("select count(*) from sink"), Seq(Row(20)))
 
-    sql("select * from sink order by id").show
+    sql("select * from sink order by id").collect()
     val row = sql("select * from sink order by id, salary").head()
     val exceptedRow = Row(1, "alice", "india", 120000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))
     assertResult(exceptedRow)(row)
@@ -2165,7 +2168,9 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
           qry.awaitTermination()
         } catch {
           case _: InterruptedException =>
+            // scalastyle:off println
             println("Done reading and writing streaming data")
+            // scalastyle:on println
         } finally {
           if (qry != null) {
             qry.stop()
@@ -2235,7 +2240,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
       "('HEADER'='true','COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
   }
 
-  def wrap(array: Array[String]) = {
+  private def wrap(array: Array[String]) = {
     new mutable.WrappedArray.ofRef(array)
   }
 
@@ -2277,5 +2282,5 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     val rdd = findCarbonScanRDD(sql(sqlString).rdd)
     rdd.partitions.length
   }
-
+  // scalastyle:on lineLength maxParameters
 }

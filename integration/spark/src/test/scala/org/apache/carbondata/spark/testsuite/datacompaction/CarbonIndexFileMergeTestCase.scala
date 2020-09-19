@@ -21,15 +21,15 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -43,7 +43,7 @@ class CarbonIndexFileMergeTestCase
   val file2 = resourcesPath + "/compaction/fil2.csv"
 
   override protected def beforeAll(): Unit = {
-    val n = 150000
+    val n = 15000
     CompactionSupportGlobalSortBigFileTest.createFile(file2, n * 4, n)
   }
 
@@ -68,8 +68,8 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     sql("DROP TABLE IF EXISTS indexmerge")
@@ -80,7 +80,7 @@ class CarbonIndexFileMergeTestCase
         |  TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE indexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     assert(getIndexFileCount("default_indexmerge", "0") == 0)
     checkAnswer(sql("""Select count(*) from nonindexmerge"""),
       sql("""Select count(*) from indexmerge"""))
@@ -97,12 +97,12 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     val rows = sql("""Select count(*) from nonindexmerge""").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     sql("ALTER TABLE nonindexmerge COMPACT 'SEGMENT_INDEX'").collect()
@@ -122,12 +122,12 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     val rows = sql("""Select count(*) from nonindexmerge""").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
     sql("ALTER TABLE nonindexmerge COMPACT 'SEGMENT_INDEX'").collect()
     assert(getIndexFileCount("default_nonindexmerge", "0") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "1") == 0)
@@ -146,12 +146,12 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     val rows = sql("""Select count(*) from nonindexmerge""").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     sql("ALTER TABLE nonindexmerge COMPACT 'minor'").collect()
@@ -174,16 +174,16 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-        s"'GLOBAL_SORT_PARTITIONS'='100')")
+        s"'GLOBAL_SORT_PARTITIONS'='20')")
     val rows = sql("""Select count(*) from nonindexmerge""").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
     sql("ALTER TABLE nonindexmerge COMPACT 'minor'").collect()
     sql("ALTER TABLE nonindexmerge COMPACT 'segment_index'").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
     assert(getIndexFileCount("default_nonindexmerge", "0.1") == 0)
     checkAnswer(sql("""Select count(*) from nonindexmerge"""), rows)
     CarbonProperties.getInstance()
@@ -197,9 +197,9 @@ class CarbonIndexFileMergeTestCase
     sql("drop table if exists mitable")
     sql("create table mitable(id int, issue date) STORED AS carbondata")
     sql("insert into table mitable select '1','2000-02-01'")
-    sql("update mitable set(id)=(2) where issue = '2000-02-01'").show()
+    sql("update mitable set(id)=(2) where issue = '2000-02-01'").collect()
     sql("clean files for table mitable")
-    sql("select * from mitable").show()
+    sql("select * from mitable")collect()
 }
 
   test("Verify index merge for compacted segments MINOR") {
@@ -215,25 +215,25 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     val rows = sql("""Select count(*) from nonindexmerge""").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "2") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "3") == 20)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     sql("ALTER TABLE nonindexmerge COMPACT 'minor'").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "2") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "3") == 20)
     assert(getIndexFileCount("default_nonindexmerge", "0.1") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "2.1") == 0)
     checkAnswer(sql("""Select count(*) from nonindexmerge"""), rows)
@@ -241,7 +241,8 @@ class CarbonIndexFileMergeTestCase
 
   // CARBONDATA-2704, test the index file size after merge
   test("Verify the size of the index file after merge") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
     sql("DROP TABLE IF EXISTS fileSize")
     sql(
       """
@@ -253,18 +254,19 @@ class CarbonIndexFileMergeTestCase
     val table = CarbonMetadata.getInstance().getCarbonTable("default", "fileSize")
     var loadMetadataDetails = SegmentStatusManager
       .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(table.getTablePath))
-    var segment0 = loadMetadataDetails.filter(x=> x.getLoadName.equalsIgnoreCase("0"))
+    var segment0 = loadMetadataDetails.filter(x => x.getLoadName.equalsIgnoreCase("0"))
     Assert
       .assertEquals(getIndexOrMergeIndexFileSize(table, "0", CarbonTablePath.INDEX_FILE_EXT),
         segment0.head.getIndexSize.toLong)
     sql("Alter table fileSize compact 'segment_index'")
     loadMetadataDetails = SegmentStatusManager
       .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(table.getTablePath))
-    segment0 = loadMetadataDetails.filter(x=> x.getLoadName.equalsIgnoreCase("0"))
+    segment0 = loadMetadataDetails.filter(x => x.getLoadName.equalsIgnoreCase("0"))
     Assert
       .assertEquals(getIndexOrMergeIndexFileSize(table, "0", CarbonTablePath.MERGE_INDEX_FILE_EXT),
         segment0.head.getIndexSize.toLong)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     sql("DROP TABLE IF EXISTS fileSize")
   }
 
@@ -281,25 +283,25 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     val rows = sql("""Select count(*) from nonindexmerge""").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "2") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "3") == 20)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     sql("ALTER TABLE nonindexmerge COMPACT 'minor'").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "2") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "3") == 20)
     assert(getIndexFileCount("default_nonindexmerge", "0.1") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "2.1") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "0.2") == 0)
@@ -319,33 +321,33 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     val rows = sql("""Select count(*) from nonindexmerge""").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "2") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "3") == 20)
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE, "true")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')"
+    s"'GLOBAL_SORT_PARTITIONS'='20')"
     )
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "2") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "3") == 20)
     assert(getIndexFileCount("default_nonindexmerge", "4") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "0.1") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "2.1") == 0)
-    checkAnswer(sql("""Select count(*) from nonindexmerge"""), Seq(Row(3000000)))
+    checkAnswer(sql("""Select count(*) from nonindexmerge"""), Seq(Row(300000)))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE, "false")
   }
@@ -363,37 +365,35 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')")
+    s"'GLOBAL_SORT_PARTITIONS'='20')")
     val rows = sql("""Select count(*) from nonindexmerge""").collect()
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "2") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "3") == 20)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
-    CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE, "true")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
-    s"'GLOBAL_SORT_PARTITIONS'='100')"
+    s"'GLOBAL_SORT_PARTITIONS'='20')"
     )
-    assert(getIndexFileCount("default_nonindexmerge", "0") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "1") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "2") == 20)
+    assert(getIndexFileCount("default_nonindexmerge", "3") == 20)
     assert(getIndexFileCount("default_nonindexmerge", "4") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "0.1") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "2.1") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "0.2") == 0)
-    checkAnswer(sql("""Select count(*) from nonindexmerge"""), Seq(Row(3000000)))
+    checkAnswer(sql("""Select count(*) from nonindexmerge"""), Seq(Row(300000)))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE, "false")
-    CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
   }
@@ -427,7 +427,8 @@ class CarbonIndexFileMergeTestCase
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE streamingTable OPTIONS('header'='false')")
     // check for one merge index file
-    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
+    assert(
+      getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
     sql("DROP TABLE IF EXISTS streamingTable")
   }
 
@@ -443,13 +444,15 @@ class CarbonIndexFileMergeTestCase
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE streamingTable OPTIONS('header'='false')")
     // check for zero merge index file
-    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 0)
+    assert(
+      getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 0)
     // check for one index file
     assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.INDEX_FILE_EXT) == 1)
     sql("alter table streamingTable compact 'segment_index'")
     sql("alter table streamingTable compact 'segment_index' where segment.id in (0)")
     // check for one merge index file
-    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
+    assert(
+      getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
     sql("DROP TABLE IF EXISTS streamingTable")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
@@ -467,12 +470,14 @@ class CarbonIndexFileMergeTestCase
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE streamingTable OPTIONS('header'='false')")
     // check for zero merge index file
-    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 0)
+    assert(
+      getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 0)
     // check for one index file
     assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.INDEX_FILE_EXT) == 1)
     sql("alter table streamingTable compact 'segment_index' where segment.id in (0)")
     // check for one merge index file
-    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
+    assert(
+      getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
     sql("DROP TABLE IF EXISTS streamingTable")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")

@@ -20,9 +20,8 @@ import java.io.File
 
 import scala.collection.JavaConverters._
 
-
-import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.util.sideBySide
 

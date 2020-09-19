@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfterAll, ConfigMap}
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -45,11 +46,16 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         | STORED AS carbondata
       """.stripMargin)
 
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
 
   }
 
-  def validateDataFiles(tableUniqueName: String, segmentId: String, partition: Int, indexes: Int): Unit = {
+  def validateDataFiles(tableUniqueName: String,
+      segmentId: String,
+      partition: Int,
+      indexes: Int): Unit = {
     val tableAndDbName = tableUniqueName.split("_")
     val carbonTable = CarbonEnv.getCarbonTable(Some(tableAndDbName(0)), tableAndDbName(1))(
       sqlContext.sparkSession)
@@ -58,7 +64,8 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
       sqlContext.sparkSession,
       TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName)))
     assert(partitions.get.length == partition)
-    val details = SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(carbonTable.getTablePath))
+    val details = SegmentStatusManager.readLoadMetadata(
+      CarbonTablePath.getMetadataPath(carbonTable.getTablePath))
     val segLoad = details.find(_.getLoadName.equals(segmentId)).get
     val seg = new SegmentFileStore(carbonTable.getTablePath, segLoad.getSegmentFile)
     assert(seg.getIndexOrMergeFiles.size == indexes)
@@ -74,7 +81,9 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         | PARTITIONED BY (empno int)
         | STORED AS carbondata
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
     checkAnswer(
       sql(s"""select count (*) from partitionone"""),
       sql(s"""select count (*) from originTable"""))
@@ -85,7 +94,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
 
     sql(s"""ALTER TABLE partitionone DROP PARTITION(empno='11')""")
     validateDataFiles("default_partitionone", "0", 9, 9)
-    sql(s"CLEAN FILES FOR TABLE partitionone").show()
+    sql(s"CLEAN FILES FOR TABLE partitionone").collect()
     validateDataFiles("default_partitionone", "0", 9, 9)
     checkExistence(sql(s"""SHOW PARTITIONS partitionone"""), false, "empno=11")
     checkAnswer(
@@ -104,15 +113,22 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
           | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
           | STORED AS carbondata
         """.stripMargin)
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+      sql(
+        s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+           | INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+      sql(
+        s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+           | INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
       sql(s"""ALTER TABLE partitionmany DROP PARTITION(deptname='Learning')""")
       validateDataFiles("default_partitionmany", "0", 8, 8)
       validateDataFiles("default_partitionmany", "1", 8, 8)
-      sql(s"CLEAN FILES FOR TABLE partitionmany").show()
+      sql(s"CLEAN FILES FOR TABLE partitionmany").collect()
       validateDataFiles("default_partitionmany", "0", 8, 8)
       validateDataFiles("default_partitionmany", "1", 8, 8)
-      checkExistence(sql(s"""SHOW PARTITIONS partitionmany"""), false, "deptname=Learning", "projectcode=928479")
+      checkExistence(sql(s"""SHOW PARTITIONS partitionmany"""),
+        false,
+        "deptname=Learning",
+        "projectcode=928479")
       checkAnswer(
         sql(s"""select count (*) from partitionmany where deptname='Learning'"""),
         Seq(Row(0)))
@@ -128,8 +144,12 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
         | STORED AS carbondata
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionall OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionall OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partitionall OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partitionall OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
     sql(s"""ALTER TABLE partitionall DROP PARTITION(deptname='Learning')""")
     sql(s"""ALTER TABLE partitionall DROP PARTITION(deptname='configManagement')""")
     sql(s"""ALTER TABLE partitionall DROP PARTITION(deptname='network')""")
@@ -137,7 +157,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     sql(s"""ALTER TABLE partitionall DROP PARTITION(deptname='security')""")
     assert(sql(s"""SHOW PARTITIONS partitionall""").collect().length == 0)
     validateDataFiles("default_partitionall", "0", 0, 0)
-    sql(s"CLEAN FILES FOR TABLE partitionall").show()
+    sql(s"CLEAN FILES FOR TABLE partitionall").collect()
     validateDataFiles("default_partitionall", "0", 0, 0)
     checkAnswer(
       sql(s"""select count (*) from partitionall"""),
@@ -154,21 +174,33 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
         | STORED AS carbondata
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
     assert(sql(s"show segments for table partitionalldeleteseg").count == 4)
     checkAnswer(sql(s"Select count(*) from partitionalldeleteseg"), Seq(Row(40)))
-    sql(s"delete from table partitionalldeleteseg where segment.id in (1)").show()
+    sql(s"delete from table partitionalldeleteseg where segment.id in (1)").collect()
     checkExistence(sql(s"show segments for table partitionalldeleteseg"), true, "Marked for Delete")
     checkAnswer(sql(s"Select count(*) from partitionalldeleteseg"), Seq(Row(30)))
-    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg").show()
+    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg").collect()
     assert(sql(s"show segments for table partitionalldeleteseg").count == 3)
   }
 
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -177,7 +209,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     dropTable
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists originTable")
     sql("drop table if exists originMultiLoads")
     sql("drop table if exists partitionone")

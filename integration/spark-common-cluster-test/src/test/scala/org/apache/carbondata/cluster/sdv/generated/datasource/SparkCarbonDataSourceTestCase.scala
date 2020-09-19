@@ -28,14 +28,14 @@ import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.common.util.DataSourceTestUtil._
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.junit.Assert
-import org.scalatest.{BeforeAndAfterAll,FunSuite}
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field, StructField}
 import org.apache.carbondata.hadoop.testutil.StoreCreator
-import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
 class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
   import spark._
@@ -877,9 +877,8 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
     sql("drop table if exists complextable")
     val fields = List(new StructField
     ("byteField", DataTypes.BYTE), new StructField("floatField", DataTypes.FLOAT))
-    val structType = Array(new Field("stringfield", DataTypes.STRING), new Field
-    ("structField", "struct", fields.asJava))
-
+    val structType = Array(new Field("stringfield", DataTypes.STRING),
+      new Field("structField", "struct", fields.asJava))
 
     try {
       val builder = CarbonWriter.builder()
@@ -1354,7 +1353,7 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
   def WriteFilesWithAvroWriter(writerPath: String,
       rows: Int,
       mySchema: String,
-      json: String) = {
+      json: String): Unit = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
     val record = jsonToAvro(json, mySchema)
@@ -1371,10 +1370,9 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
       writer.close()
     }
     catch {
-      case e: Exception => {
+      case e: Exception =>
         e.printStackTrace()
         Assert.fail(e.getMessage)
-      }
     }
   }
 }

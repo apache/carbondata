@@ -17,15 +17,14 @@
 
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
-import org.scalatest.BeforeAndAfterAll
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for no inverted index load and query
@@ -48,7 +47,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            """)
   }
 
-  def clean = {
+  private def clean = {
     sql("DROP TABLE IF EXISTS index1")
     sql("DROP TABLE IF EXISTS index2")
     sql("DROP TABLE IF EXISTS hiveNoInvertedIndexTable")
@@ -220,14 +219,20 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city > 'Shanghai'"))
     // range filter test
     checkAnswer(
-      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city > 'Shanghai' and city < 'Washington'"),
-      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city > 'Shanghai' and city < 'Washington'"))
+      sql("SELECT * FROM hiveNoInvertedIndexTable " +
+          "WHERE city > 'Shanghai' and city < 'Washington'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable " +
+          "WHERE city > 'Shanghai' and city < 'Washington'"))
     checkAnswer(
-      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city >= 'Shanghai' and city < 'Washington'"),
-      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city >= 'Shanghai' and city < 'Washington'"))
+      sql("SELECT * FROM hiveNoInvertedIndexTable " +
+          "WHERE city >= 'Shanghai' and city < 'Washington'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable " +
+          "WHERE city >= 'Shanghai' and city < 'Washington'"))
     checkAnswer(
-      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city > 'Shanghai' and city <= 'Washington'"),
-      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city > 'Shanghai' and city <= 'Washington'"))
+      sql("SELECT * FROM hiveNoInvertedIndexTable " +
+          "WHERE city > 'Shanghai' and city <= 'Washington'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable " +
+          "WHERE city > 'Shanghai' and city <= 'Washington'"))
   }
 
   test("no inverted index with describe formatted query") {
@@ -244,23 +249,23 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            LOAD DATA LOCAL INPATH '$testData1' into table indexFormat
            """)
     checkExistence(
-      sql(
-        """
-           describe formatted indexFormat
-        """),
-      true,"Inverted Index Columns")
+      sql("describe formatted indexFormat"),
+      true, "Inverted Index Columns")
 
     sql(
       """
            describe formatted indexFormat
-        """).show(100, false)
+        """).collect()
   }
 
-  test("filter query on dictionary and no inverted index column where all values are null"){
-    sql("""create table testNull (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata TBLPROPERTIES('NO_INVERTED_INDEX'='C2')""")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table testNull OPTIONS('delimiter'=';','fileheader'='c1,c2,c3,c5')""")
-    sql("""select c2 from testNull where c2 is null""").show()
-    checkAnswer(sql("""select c2 from testNull where c2 is null"""), Seq(Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
+  test("filter query on dictionary and no inverted index column where all values are null") {
+    sql("create table testNull (c1 string,c2 int,c3 string,c5 string) " +
+        "STORED AS carbondata TBLPROPERTIES('NO_INVERTED_INDEX'='C2')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table testNull " +
+        "OPTIONS('delimiter'=';','fileheader'='c1,c2,c3,c5')")
+    sql("""select c2 from testNull where c2 is null""").collect()
+    checkAnswer(sql("""select c2 from testNull where c2 is null"""),
+      Seq(Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
   }
 
   test("inverted index with measure column in INVERTED_INDEX") {
@@ -281,7 +286,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       .contains(Encoding.INVERTED_INDEX))
   }
 
-  test("test same column configured in inverted and no inverted index"){
+  test("test same column configured in inverted and no inverted index") {
     sql("drop table if exists index1")
     val exception = intercept[MalformedCarbonCommandException] {
       sql(

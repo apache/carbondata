@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
 import org.apache.spark.sql.test.util.QueryTest
@@ -24,19 +25,23 @@ class TestIndexModelWithLocalDictionary extends QueryTest with BeforeAndAfterAll
     sql("drop table if exists local_sec")
   }
 
-  test("test invalid properties in secondary index creation"){
+  test("test invalid properties in secondary index creation") {
     sql("drop table if exists local_sec")
-    sql("create table local_sec (a string,b string) STORED AS carbondata tblproperties('local_dictionary_enable'='true', 'local_dictionary_exclude'='b','local_dictionary_threshold'='20000')")
+    sql("create table local_sec (a string,b string) STORED AS carbondata tblproperties(" +
+        "'local_dictionary_enable'='true', 'local_dictionary_exclude'='b'," +
+        "'local_dictionary_threshold'='20000')")
     val exception = intercept[Exception] {
-      sql(
-        "create index index1 on table local_sec(b) AS 'carbondata' tblproperties('local_dictionary_enable'='true')")
+      sql("create index index1 on table local_sec(b) AS 'carbondata' " +
+          "tblproperties('local_dictionary_enable'='true')")
     }
-    exception.getMessage.contains("Unsupported Table property in index creation: local_dictionary_enable")
+    exception.getMessage.contains(
+      "Unsupported Table property in index creation: local_dictionary_enable")
   }
 
-  test("test local dictionary for index when main table is disable"){
+  test("test local dictionary for index when main table is disable") {
     sql("drop table if exists local_sec")
-    sql("create table local_sec (a string,b string) STORED AS carbondata tblproperties('local_dictionary_enable'='false')")
+    sql("create table local_sec (a string,b string) STORED AS carbondata " +
+        "tblproperties('local_dictionary_enable'='false')")
     sql("create index index1 on table local_sec(b) AS 'carbondata'")
     checkExistence(sql("DESC FORMATTED index1"), false,
       "Local Dictionary Include")
@@ -44,7 +49,8 @@ class TestIndexModelWithLocalDictionary extends QueryTest with BeforeAndAfterAll
 
   test("test local dictionary for index with default properties when enabled") {
     sql("drop table if exists local_sec")
-    sql("create table local_sec (a string,b string) STORED AS carbondata tblproperties('local_dictionary_enable'='true')")
+    sql("create table local_sec (a string,b string) STORED AS carbondata " +
+        "tblproperties('local_dictionary_enable'='true')")
     sql("create index index1 on table local_sec(b) AS 'carbondata'")
     val descLoc = sql("describe formatted index1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
@@ -63,7 +69,9 @@ class TestIndexModelWithLocalDictionary extends QueryTest with BeforeAndAfterAll
 
   test("test local dictionary for index when index column is dictionary excluded") {
     sql("drop table if exists local_sec")
-    sql("create table local_sec (a string,b string) STORED AS carbondata tblproperties('local_dictionary_enable'='true','local_dictionary_exclude'='b','local_dictionary_threshold'='20000')")
+    sql("create table local_sec (a string,b string) STORED AS carbondata " +
+        "tblproperties('local_dictionary_enable'='true','local_dictionary_exclude'='b'," +
+        "'local_dictionary_threshold'='20000')")
     sql("create index index1 on table local_sec(b) AS 'carbondata'")
     val descLoc = sql("describe formatted index1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
@@ -80,9 +88,11 @@ class TestIndexModelWithLocalDictionary extends QueryTest with BeforeAndAfterAll
     }
   }
 
-  test("test local dictionary for index when index column is dictionary excluded, but dictionary is disabled") {
+  test("test local dictionary for index " +
+       "when index column is dictionary excluded, but dictionary is disabled") {
     sql("drop table if exists local_sec")
-    sql("create table local_sec (a string,b string) STORED AS carbondata tblproperties('local_dictionary_exclude'='b','local_dictionary_enable'='false')")
+    sql("create table local_sec (a string,b string) STORED AS carbondata " +
+        "tblproperties('local_dictionary_exclude'='b','local_dictionary_enable'='false')")
     sql("create index index1 on table local_sec(b) AS 'carbondata'")
     checkExistence(sql("DESC FORMATTED index1"), false,
       "Local Dictionary Include")

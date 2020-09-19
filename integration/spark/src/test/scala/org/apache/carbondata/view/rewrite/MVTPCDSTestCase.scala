@@ -14,16 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
 import java.io.File
+
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.view.rewrite.matching.TestTPCDS_1_4_Batch._
 import org.apache.carbondata.view.testutil.Tpcds_1_4_Tables.tpcds1_4Tables
-import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
 
 class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
 

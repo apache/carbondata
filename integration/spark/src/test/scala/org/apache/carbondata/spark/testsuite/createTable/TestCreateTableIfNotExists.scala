@@ -19,8 +19,8 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.util.concurrent.{Callable, Executors, ExecutorService, Future, TimeUnit}
 
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {

@@ -30,18 +30,20 @@ class PrestoSampleTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test read spark store from presto ") {
-    sql("show tables").show(false)
+    sql("show tables").collect()
 
     sql("DROP TABLE IF EXISTS sample_table")
     sql("CREATE TABLE sample_table (name string) STORED AS carbondata")
     sql("insert into sample_table select 'ajantha'")
-    sql("select * from sample_table ").show(200, false)
-    sql("describe formatted sample_table ").show(200, false)
+    sql("select * from sample_table ").collect()
+    sql("describe formatted sample_table ").collect()
     if (System.getProperty("spark.master.url") != null) {
       // supports only running through cluster
       val actualResult: List[Map[String, Any]] = QueryTest.PrestoQueryTest
               .executeQuery("select * from sample_table")
-     println("ans---------" + actualResult(0).toString())
+      // scalastyle:off println
+      println("ans---------" + actualResult(0).toString())
+      // scalastyle:on println
       val expectedResult: List[Map[String, Any]] = List(Map(
         "name" -> "ajantha"))
       assert(actualResult.toString() equals expectedResult.toString())

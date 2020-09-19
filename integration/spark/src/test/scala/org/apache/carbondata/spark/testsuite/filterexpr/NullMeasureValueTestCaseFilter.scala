@@ -17,10 +17,11 @@
 package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 class NullMeasureValueTestCaseFilter extends QueryTest with BeforeAndAfterAll {
 
@@ -38,13 +39,13 @@ class NullMeasureValueTestCaseFilter extends QueryTest with BeforeAndAfterAll {
   test("select ID from t3 where salary is not null") {
     checkAnswer(
       sql("select ID from t3 where salary is not null"),
-      Seq(Row(1),Row(4)))
+      Seq(Row(1), Row(4)))
   }
 
   test("select ID from t3 where salary is null") {
     checkAnswer(
       sql("select ID from t3 where salary is null"),
-      Seq(Row(2),Row(3)))
+      Seq(Row(2), Row(3)))
   }
 
   override def afterAll {

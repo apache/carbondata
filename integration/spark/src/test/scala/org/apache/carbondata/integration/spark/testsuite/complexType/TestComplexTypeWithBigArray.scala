@@ -33,7 +33,9 @@ class TestComplexTypeWithBigArray extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     // write a CSV containing 32000 row, each row has an array with 10 elements
     val out = new PrintStream(new FileOutputStream(file))
-    (1 to 33000).foreach(i=>out.println(s"$i,$i\0011"))
+    // scalastyle:off println
+    (1 to 33000).foreach(i => out.println(s"$i,$i\0011"))
+    // scalastyle:on println
     out.close()
   }
 

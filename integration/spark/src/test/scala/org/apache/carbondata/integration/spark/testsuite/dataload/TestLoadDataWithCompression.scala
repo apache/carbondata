@@ -20,14 +20,14 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 import java.io.File
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util.concurrent.{ExecutorService, Executors, Future}
 import java.util.Calendar
+import java.util.concurrent.{Executors, ExecutorService, Future}
 
 import scala.util.Random
 
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
-import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
+import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -48,7 +48,9 @@ case class Rcd(booleanField: Boolean, shortField: Short, intField: Int, bigintFi
  * It is used for test case of specifying customized compressor.
  */
 class CustomizeCompressor extends Compressor {
-  override def getName: String = "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
+  // scalastyle:off lineLength
+  override def getName: String =
+    "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
 
   override def compressByte(compInput: ByteBuffer): ByteBuffer = compInput
 
@@ -58,7 +60,11 @@ class CustomizeCompressor extends Compressor {
 
   override def unCompressByte(compInput: Array[Byte]): Array[Byte] = compInput
 
-  override def unCompressByte(compInput: Array[Byte], offset: Int, length: Int): Array[Byte] = compInput
+  override def unCompressByte(compInput: Array[Byte],
+      offset: Int,
+      length: Int): Array[Byte] = {
+    compInput
+  }
 
   override def compressShort(unCompInput: Array[Short]): ByteBuffer = {
     val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_SHORT)
@@ -170,7 +176,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   private val tableName = "load_test_with_compressor"
   private var executorService: ExecutorService = _
   private val csvDataDir = s"$integrationPath/spark/target/csv_load_compression"
-  private val compressors = Array("snappy","zstd","gzip")
+  private val compressors = Array("snappy", "zstd", "gzip")
 
   override protected def beforeAll(): Unit = {
     executorService = Executors.newFixedThreadPool(3)
@@ -205,6 +211,11 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
 
   private def createTable(streaming: Boolean = false, columnCompressor: String = ""): Unit = {
     sql(s"DROP TABLE IF EXISTS $tableName")
+    val compressor = if (StringUtils.isBlank(columnCompressor)) {
+      ""
+    } else {
+      s"'${ CarbonCommonConstants.COMPRESSOR }'='$columnCompressor',"
+    }
     sql(
       s"""
          | CREATE TABLE $tableName(
@@ -226,12 +237,13 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
          | )
          | STORED AS carbondata
          | TBLPROPERTIES(
-         |  ${if (StringUtils.isBlank(columnCompressor)) "" else s"'${CarbonCommonConstants.COMPRESSOR}'='$columnCompressor',"}
+         |  ${compressor}
          |  ${if (streaming) "" else s"'LONG_STRING_COLUMNS'='longStringField',"}
          |  'SORT_COLUMNS'='stringSortField',
          |  'local_dictionary_enable'='true',
          |  'local_dictionary_threshold'='10000',
-         |  'local_dictionary_include'='stringLocalDictField' ${if (streaming) s", 'STREAMING'='true'" else ""})
+         |  'local_dictionary_include'='stringLocalDictField'
+         |   ${if (streaming) s", 'STREAMING'='true'" else ""})
        """.stripMargin)
   }
 
@@ -255,7 +267,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   }
 
   test("test data loading with different compressors and offheap") {
-    for(comp <- compressors){
+    for (comp <- compressors) {
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, comp)
       createTable()
@@ -265,7 +277,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   }
 
   test("test data loading with different compressors and onheap") {
-    for(comp <- compressors){
+    for (comp <- compressors) {
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, comp)
       createTable()
@@ -435,17 +447,22 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     var future = loadDataAsync()
     // change the compressor randomly during the loading
     while (!future.isDone) {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, if (Random.nextBoolean()) "snappy" else "zstd")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR,
+        if (Random.nextBoolean()) "snappy" else "zstd")
     }
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
     future = loadDataAsync()
     while (!future.isDone) {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, if (Random.nextBoolean()) "snappy" else "zstd")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR,
+        if (Random.nextBoolean()) "snappy" else "zstd")
     }
 
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 2)))
-    checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"), Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
+    checkAnswer(
+      sql(s"SELECT stringDictField, stringSortField FROM $tableName " +
+          "WHERE stringDictField='stringDict1'"),
+      Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
 
     def compactAsync(): Future[_] = {
       executorService.submit(new Runnable {
@@ -459,17 +476,22 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
     future = compactAsync()
     while (!future.isDone) {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, if (Random.nextBoolean()) "snappy" else "zstd")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR,
+        if (Random.nextBoolean()) "snappy" else "zstd")
     }
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "gzip")
     future = compactAsync()
     while (!future.isDone) {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, if (Random.nextBoolean()) "snappy" else "gzip")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR,
+        if (Random.nextBoolean()) "snappy" else "gzip")
     }
 
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 2)))
-    checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"), Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
+    checkAnswer(
+      sql(s"SELECT stringDictField, stringSortField FROM $tableName " +
+          "WHERE stringDictField='stringDict1'"),
+      Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
   }
 
   test("test creating table with specified zstd compressor") {
@@ -480,8 +502,12 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     createTable(columnCompressor = "zstd")
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
-    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
-    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    val carbonTable = CarbonEnv.getCarbonTable(
+      Option("default"), tableName)(sqlContext.sparkSession)
+    val tableColumnCompressor = carbonTable.getTableInfo
+      .getFactTable
+      .getTableProperties
+      .get(CarbonCommonConstants.COMPRESSOR)
     assertResult("zstd")(tableColumnCompressor)
   }
 
@@ -493,8 +519,12 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     createTable(columnCompressor = "gzip")
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
-    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
-    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    val carbonTable = CarbonEnv.getCarbonTable(
+      Option("default"), tableName)(sqlContext.sparkSession)
+    val tableColumnCompressor = carbonTable.getTableInfo
+      .getFactTable
+      .getTableProperties
+      .get(CarbonCommonConstants.COMPRESSOR)
     assert("gzip".equalsIgnoreCase(tableColumnCompressor))
   }
 
@@ -512,7 +542,8 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   test("test load data with customize compressor") {
     createTable()
     // fist usage of this compressor will register it
-    var compressorName = "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
+    var compressorName =
+      "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, compressorName)
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
@@ -529,7 +560,6 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
       loadData()
     }
     assertResult("For not carbondata native supported compressor, the result of method getName() should be the full class name. Expected 'org.apache.carbondata.core.datastore.compression.ZstdCompressor', found 'zstd'")(exception.getMessage)
-
     // cannot register compressor with reflection error
     compressorName = "some.unknow.fakecompressor"
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, compressorName)
@@ -540,13 +570,18 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   }
 
   test("test create table with customize compressor") {
-    val compressorName = "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
+    val compressorName =
+      "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
     // first usage of this customize compressor will register it
     createTable(columnCompressor = compressorName)
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
-    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
-    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    val carbonTable = CarbonEnv.getCarbonTable(
+      Option("default"), tableName)(sqlContext.sparkSession)
+    val tableColumnCompressor = carbonTable.getTableInfo
+      .getFactTable
+      .getTableProperties
+      .get(CarbonCommonConstants.COMPRESSOR)
     assertResult(compressorName)(tableColumnCompressor)
 
     sql(s"DROP TABLE IF EXISTS $tableName")
@@ -554,8 +589,12 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     createTable(columnCompressor = compressorName)
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
-    val carbonTable2 = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
-    val tableColumnCompressor2 = carbonTable2.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    val carbonTable2 = CarbonEnv.getCarbonTable(
+      Option("default"), tableName)(sqlContext.sparkSession)
+    val tableColumnCompressor2 = carbonTable2.getTableInfo
+      .getFactTable
+      .getTableProperties
+      .get(CarbonCommonConstants.COMPRESSOR)
     assertResult(compressorName)(tableColumnCompressor2)
   }
 
@@ -591,15 +630,17 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
         override def run(): Unit = {
           var streamingQuery: StreamingQuery = null
           try {
-            val streamingQuery = sqlContext.sparkSession.readStream
+            streamingQuery = sqlContext.sparkSession.readStream
               .text(dataLocation)
               .writeStream
               .format("carbondata")
               .trigger(ProcessingTime(s"1 seconds"))
-              .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
+              .option("checkpointLocation",
+                CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
               .option("dbName", "default")
               .option("tableName", tableName)
-              .option(CarbonStreamParser.CARBON_STREAM_PARSER, CarbonStreamParser.CARBON_STREAM_PARSER_CSV)
+              .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+                CarbonStreamParser.CARBON_STREAM_PARSER_CSV)
               .start()
             streamingQuery.awaitTermination()
           } catch {
@@ -630,18 +671,29 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     Thread.sleep(40 * 1000)
     thread.interrupt()
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 4)))
-    checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"),
-      Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
+    checkAnswer(
+      sql(s"SELECT stringDictField, stringSortField FROM $tableName " +
+          "WHERE stringDictField='stringDict1'"),
+      Seq(Row("stringDict1", "stringSort1"),
+        Row("stringDict1", "stringSort1"),
+        Row("stringDict1", "stringSort1"),
+        Row("stringDict1", "stringSort1")))
 
     sql(s"alter table $tableName compact 'streaming'")
 
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 4)))
-    checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"),
-      Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
+    checkAnswer(
+      sql(s"SELECT stringDictField, stringSortField FROM $tableName " +
+          "WHERE stringDictField='stringDict1'"),
+      Seq(Row("stringDict1", "stringSort1"),
+        Row("stringDict1", "stringSort1"),
+        Row("stringDict1", "stringSort1"),
+        Row("stringDict1", "stringSort1")))
     try {
       sql(s"DROP TABLE IF EXISTS $tableName")
     } catch {
       case _: Exception =>
     }
   }
+  // scalastyle:on lineLength
 }

@@ -33,7 +33,7 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test change datatype on existing column and load data, insert into hive table") {
-    def test_change_column_load_insert() = {
+    def test_change_column_load_insert(): Unit = {
       beforeAll
       sql(
         "CREATE TABLE changedatatypetest(intField INT,stringField STRING,charField STRING," +
@@ -55,7 +55,7 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test datatype change and filter") {
-    def test_change_datatype_and_filter() = {
+    def test_change_datatype_and_filter(): Unit = {
       beforeAll
       sql(
         "CREATE TABLE changedatatypetest(intField INT,stringField STRING,charField STRING," +
@@ -82,7 +82,7 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
 
 
   test("test change int datatype and load data") {
-    def test_change_int_and_load() = {
+    def test_change_int_and_load(): Unit = {
       beforeAll
       sql(
         "CREATE TABLE changedatatypetest(intField INT,stringField STRING,charField STRING," +
@@ -104,7 +104,7 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test change decimal datatype and compaction") {
-    def test_change_decimal_and_compaction() = {
+    def test_change_decimal_and_compaction(): Unit = {
       beforeAll
       sql(
         "CREATE TABLE changedatatypetest(intField INT,stringField STRING,charField STRING," +
@@ -131,7 +131,7 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test to change int datatype to long") {
-    def test_change_int_to_long() = {
+    def test_change_int_to_long(): Unit = {
       beforeAll
       sql(
         "CREATE TABLE changedatatypetest(intField INT,stringField STRING,charField STRING," +
@@ -150,10 +150,11 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test data type change for dictionary exclude INT type column") {
-    def test_change_data_type() = {
+    def test_change_data_type(): Unit = {
       beforeAll
     sql("drop table if exists table_sort")
-    sql("CREATE TABLE table_sort (imei int,age int,mac string) STORED AS carbondata TBLPROPERTIES('SORT_COLUMNS'='imei,age')")
+    sql("CREATE TABLE table_sort (imei int,age int,mac string) STORED AS carbondata " +
+        "TBLPROPERTIES('SORT_COLUMNS'='imei,age')")
     sql("insert into table_sort select 32674,32794,'MAC1'")
     sql("alter table table_sort change age age bigint")
     sql("insert into table_sort select 32675,9223372036854775807,'MAC2'")

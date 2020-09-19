@@ -22,9 +22,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * Test Class for data loading when there are blank lines in data
-  *
-  */
+ * Test Class for data loading when there are blank lines in data
+ */
 class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists carbontable")
@@ -49,8 +48,9 @@ class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test carbon table data loading when the first line is blank") {
-    sql(s"LOAD DATA LOCAL INPATH '${resourcesPath}/dataWithNullFirstLine.csv' INTO TABLE " +
-      "carbontable2 OPTIONS('DELIMITER'= ',','FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')")
+    // scalastyle:off lineLength
+    sql(s"LOAD DATA LOCAL INPATH '${resourcesPath}/dataWithNullFirstLine.csv' INTO TABLE carbontable2 OPTIONS('DELIMITER'= ',','FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')")
+    // scalastyle:on lineLength
     checkAnswer(sql("select count(*) from carbontable2"),
       Seq(Row(11)))
   }

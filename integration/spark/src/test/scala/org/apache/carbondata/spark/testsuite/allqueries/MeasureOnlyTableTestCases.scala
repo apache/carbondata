@@ -19,18 +19,13 @@ package org.apache.carbondata.spark.testsuite.allqueries
 
 import java.io.File
 
-import org.scalatest.BeforeAndAfterAll
-
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.test.util.QueryTest
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.scalatest.BeforeAndAfterAll
 
 /**
-  * Test Class for all query on multiple datatypes
-  *
-  */
+ * Test Class for all query on multiple datatypes
+ */
 class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
 
   val rootPath = new File(this.getClass.getResource("/").getPath
@@ -51,20 +46,20 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
 
           val path = s"$rootPath/examples/spark/src/main/resources/data.csv"
-
-          sql(
-            s"""
-               | LOAD DATA LOCAL INPATH '$path'
-               | INTO TABLE carbon_table
-               | OPTIONS('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData',
-               | 'COMPLEX_DELIMITER_LEVEL_1'='#')
-             """.stripMargin)
-
-
+    // scalastyle:off lineLength
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path'
+         | INTO TABLE carbon_table
+         | OPTIONS('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData',
+         | 'COMPLEX_DELIMITER_LEVEL_1'='#')
+       """.stripMargin)
+    // scalastyle:on lineLength
 
     sql("create table if not exists carbon_table_hive (shortField SMALLINT,intField INT," +
       "bigintField BIGINT,doubleField DOUBLE,stringField STRING,timestampField TIMESTAMP," +
-      "decimalField DECIMAL(18,2),dateField DATE,charField CHAR(5),floatField FLOAT,complexData ARRAY<STRING>)row format delimited fields terminated by ','")
+      "decimalField DECIMAL(18,2),dateField DATE,charField CHAR(5),floatField FLOAT," +
+        "complexData ARRAY<STRING>)row format delimited fields terminated by ','")
     sql(s"""LOAD DATA LOCAL INPATH '$path' INTO table carbon_table_hive""")
   }
 
@@ -84,7 +79,8 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("SELECT sum(intField),sum(doubleField) FROM carbon_table where intField > 10 OR doubleField > 10") {
+  test("SELECT sum(intField),sum(doubleField) FROM carbon_table " +
+       "where intField > 10 OR doubleField > 10") {
     checkAnswer(
       sql("SELECT sum(intField),sum(doubleField) FROM carbon_table where intField > 10 OR " +
       "doubleField > 10"),
@@ -144,8 +140,8 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
   test("select shortField, avg(intField+ intField) as a from carbon_table group by shortField " +
     "order by a") {
     checkAnswer(
-      sql("select shortField, avg(intField+ intField) as a from carbon_table group by shortField order " +
-        "by a"),
+      sql("select shortField, avg(intField+ intField) as a from carbon_table " +
+          "group by shortField order by a"),
       sql("select shortField, avg(intField+ intField) as a from carbon_table_hive group by " +
         "shortField order by a")
     )
@@ -206,12 +202,13 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("select count(distinct floatField) + 7.28 a, intField from carbon_table group by " +
-    "intField") {
+  test("select count(distinct floatField) + 7.28 a, intField " +
+       "from carbon_table group by intField") {
     checkAnswer(
-      sql("select count(distinct floatField) + 7.28 a, intField from carbon_table group by intField"),
-      sql("select count(distinct floatField) + 7.28 a, intField from carbon_table_hive group" +
-        " by intField")
+      sql("select count(distinct floatField) + 7.28 a, intField " +
+          "from carbon_table group by intField"),
+      sql("select count(distinct floatField) + 7.28 a, intField " +
+          "from carbon_table_hive group by intField")
     )
   }
 
@@ -272,7 +269,7 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     )
   })
 
-  //TC_106
+  // TC_106
   test("select stddev_samp(doubleField)  as a from carbon_table")({
     checkAnswer(
       sql("select stddev_samp(doubleField)  as a from carbon_table"),
@@ -348,9 +345,11 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     )
   })
 
-  test("select doubleField from carbon_table where doubleField NOT BETWEEN intField AND floatField")({
+  test("select doubleField from carbon_table " +
+       "where doubleField NOT BETWEEN intField AND floatField")({
     checkAnswer(
-      sql("select doubleField from carbon_table where doubleField NOT BETWEEN intField AND floatField"),
+      sql("select doubleField from carbon_table " +
+          "where doubleField NOT BETWEEN intField AND floatField"),
       sql("select doubleField from carbon_table_hive where doubleField NOT BETWEEN intField AND " +
         "floatField")
     )
@@ -373,7 +372,10 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
   test("CARBONDATA-60-union-defect")({
     sql("drop table if exists carbonunion")
     import sqlContext.implicits._
-    val df = sqlContext.sparkContext.parallelize(1 to 1000).map(x => (x, (x+100))).toDF("c1", "c2")
+    val df = sqlContext.sparkContext
+      .parallelize(1 to 1000)
+      .map(x => (x, (x + 100)))
+      .toDF("c1", "c2")
     df.createOrReplaceTempView("sparkunion")
     df.write
       .format("carbondata")
@@ -381,14 +383,19 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
       .option("tableName", "carbonunion")
       .save()
     checkAnswer(
-      sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from carbonunion union all select c2 as c1,c1 as c2 from carbonunion)t where c1=200 group by c1"),
-      sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from sparkunion union all select c2 as c1,c1 as c2 from sparkunion)t where c1=200 group by c1"))
+      sql("select c1,count(c1) from (" +
+          "select c1 as c1,c2 as c2 from carbonunion " +
+          "union all select c2 as c1,c1 as c2 from carbonunion)t where c1=200 group by c1"),
+      sql("select c1,count(c1) from (" +
+          "select c1 as c1,c2 as c2 from sparkunion " +
+          "union all select c2 as c1,c1 as c2 from sparkunion)t where c1=200 group by c1"))
     sql("drop table if exists carbonunion")
   })
 
   test("select b.intField from carbon_table a join carbon_table b on a.intField=b.intField")({
     checkAnswer(
       sql("select b.intField from carbon_table a join carbon_table b on a.intField=b.intField"),
-      sql("select b.intField from carbon_table_hive a join carbon_table_hive b on a.intField=b.intField"))
+      sql("select b.intField from " +
+          "carbon_table_hive a join carbon_table_hive b on a.intField=b.intField"))
   })
 }

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.carbondata.datasource
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, File, InputStream}
@@ -30,7 +31,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.types.{BinaryType, IntegerType, StringType, StructType, StructField => SparkStructField}
+import org.apache.spark.sql.types.{BinaryType, IntegerType, StringType, StructField => SparkStructField, StructType}
 import org.apache.spark.util.SparkUtil
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
@@ -47,7 +48,7 @@ import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
 
   var writerOutputPath = s"$target/SparkCarbonFileFormat/SDKWriterOutput/"
-  //getCanonicalPath gives path with \, but the code expects /.
+  // getCanonicalPath gives path with \, but the code expects /.
   writerOutputPath = writerOutputPath.replace("\\", "/")
 
   def buildTestData(rows: Int,
@@ -112,7 +113,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       sql("DROP TABLE IF EXISTS carbontable_varchar2")
       sql(s"CREATE TABLE carbontable_varchar USING CARBON LOCATION '$writerOutputPath'")
       val e = intercept[Exception] {
-        sql("SELECT COUNT(*) FROM carbontable_varchar").show()
+        sql("SELECT COUNT(*) FROM carbontable_varchar").collect()
       }
       assert(e.getMessage
         .contains(
@@ -310,7 +311,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test change data type for table of using carbon") {
-    //TODO: Limit from spark
+    // TODO: Limit from spark
     try {
       import sqlContext.sparkSession.implicits._
       val df = sqlContext.sparkContext.parallelize(1 to 10)
@@ -522,7 +523,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     df.write.format("carbon").save(warehouse + "/test_folder/")
 
     val frame = sqlContext.sparkSession.read.format("carbon").load(warehouse + "/test_folder")
-    frame.show()
+    frame.collect()
     assert(frame.count() == 10)
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
   }
@@ -624,7 +625,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
 
     df.write
       .format("parquet").saveAsTable("parquet_table")
-    sql("describe parquet_table").show(false)
+    sql("describe parquet_table").collect()
     sql(
       "create table carbon_table(c1 string, c2 array<struct<a1:string, a2:string>>, number int)" +
       " using carbon")
@@ -856,11 +857,11 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table carbon_table(c1 string, c2 string, number int) using carbon options" +
       "('table_blocksize'='256','inverted_index'='c1')")
-    sql("describe formatted carbon_table").show()
+    sql("describe formatted carbon_table").collect()
     checkExistence(sql("describe formatted carbon_table"), true, "table_blocksize")
     checkExistence(sql("describe formatted carbon_table"), true, "inverted_index")
     sql("insert into carbon_table select * from testparquet")
-    sql("select * from carbon_table").show()
+    sql("select * from carbon_table").collect()
     sql("drop table if exists carbon_table")
     sql("drop table if exists testparquet")
   }
@@ -879,7 +880,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     val frame = sql("select * from parquet_table")
     frame.write.format("carbon").save(warehouse + "/test_carbon_folder")
     val dfread = sqlContext.read.format("carbon").load(warehouse + "/test_carbon_folder")
-    dfread.show(false)
+    dfread.collect()
     FileFactory
       .deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_carbon_folder"))
     sql("drop table if exists parquet_table")
@@ -904,7 +905,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists date_parquet_table")
     sql("create table date_table(empno int, empname string, projdate Date) using carbon")
     sql("insert into  date_table select 11, 'ravi', '2017-11-11'")
-    sql("select * from date_table where projdate=cast('2017-11-11' as date)").show()
+    sql("select * from date_table where projdate=cast('2017-11-11' as date)").collect()
     sql("create table date_parquet_table(empno int, empname string, projdate Date) using " +
         "parquet")
     sql("insert into  date_parquet_table select 11, 'ravi', '2017-11-11'")
@@ -1365,7 +1366,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_0/0"))
     val dfread = sqlContext.sparkSession.read.format("carbon")
       .load(warehouse + "/testdb/testtable/Fact/Part0/Segment_0")
-    dfread.show(false)
+    dfread.collect()
     sql("drop table if exists parquet_table")
   }
 
@@ -1874,7 +1875,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     writeFilesWithAvroWriter(writerPath, rows, mySchema, json)
   }
 
-  def writeFilesWithAvroWriter(writerPath: String,
+  private def writeFilesWithAvroWriter(writerPath: String,
       rows: Int,
       mySchema: String,
       json: String) = {
@@ -1884,7 +1885,10 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     try {
       val writer = CarbonWriter.builder
         .outputPath(writerPath)
-        .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("DataSource").build()
+        .uniqueIdentifier(System.currentTimeMillis())
+        .withAvroInput(nn)
+        .writtenBy("DataSource")
+        .build()
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -1893,10 +1897,9 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       writer.close()
     }
     catch {
-      case e: Exception => {
+      case e: Exception =>
         e.printStackTrace()
         Assert.fail(e.getMessage)
-      }
     }
   }
 

@@ -17,22 +17,20 @@
 
 package org.apache.carbondata.spark.testsuite.directdictionary
 
-import java.io.File
 import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * Test Class for detailed query on timestamp datatypes
-  *
-  *
-  */
+ * Test Class for detailed query on timestamp datatypes
+ */
 class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
@@ -70,6 +68,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
       )
     )
   }
+
   test("SELECT * FROM timestampTyeNullData where dateField is null") {
     checkAnswer(
       sql("SELECT dateField FROM timestampTyeNullData where dateField is null"),
@@ -84,5 +83,4 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
-
 }

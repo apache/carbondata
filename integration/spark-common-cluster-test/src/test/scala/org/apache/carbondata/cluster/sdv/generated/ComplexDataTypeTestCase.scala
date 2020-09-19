@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -25,7 +24,7 @@ import scala.collection.mutable
 
 import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
-import org.apache.avro.io.{DecoderFactory, Encoder}
+import org.apache.avro.io.DecoderFactory
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
@@ -45,7 +44,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   val filePath = TestQueryExecutor.integrationPath + "/spark/src/test/resources"
   val writerPath =
     s"${ resourcesPath }" + "/SparkCarbonFileFormat/WriterOutputComplex/"
-
+  // scalastyle:off lineLength
   override def beforeAll(): Unit = {
     FileUtils.deleteDirectory(new File(writerPath))
     sql("DROP TABLE IF EXISTS complexcarbontable")
@@ -191,7 +190,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from test"), Seq(Row(100)))
   }
 
-  //check projection pushdown with complex- STRUCT data type
+  // check projection pushdown with complex- STRUCT data type
   test("test Complex_DataType-005") {
     sql("DROP TABLE IF EXISTS complexcarbontable")
     sql(
@@ -291,7 +290,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(1, Row(1, "abc", mutable.WrappedArray.make(Array(1, null, null))))))
   }
 
-  //check create table with complex double and insert bigger value and check
+  // check create table with complex double and insert bigger value and check
   test("test Complex_DataType-009") {
     sql("Drop table if exists complexcarbontable")
     sql(
@@ -314,31 +313,31 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   test("test Complex_DataType-010") {
     val mySchema =
       """ {
-        |	"name": "address",
-        |	"type": "record",
-        |	"fields": [
-        |		{
-        |			"name": "name",
-        |			"type": "string"
-        |		},
-        |		{
-        |			"name": "age",
-        |			"type": "int"
-        |		},
-        |		{
+        | "name": "address",
+        | "type": "record",
+        | "fields": [
+        |  {
+        |   "name": "name",
+        |   "type": "string"
+        |  },
+        |  {
+        |   "name": "age",
+        |   "type": "int"
+        |  },
+        |  {
         |   "name" :"my_address",
         |   "type" :{
-        |							"name": "my_address",
-        |							"type": "record",
-        |							"fields": [
+        |       "name": "my_address",
+        |       "type": "record",
+        |       "fields": [
         |               {
-        |									"name": "Temperaturetest",
-        |									"type": "double"
-        |								}
-        |							]
+        |         "name": "Temperaturetest",
+        |         "type": "double"
+        |        }
+        |       ]
         |       }
-        |			}
-        |	]
+        |   }
+        | ]
         |} """.stripMargin
 
     val jsonvalue =
@@ -382,4 +381,5 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       writer.close()
     }
   }
+  // scalastyle:on lineLength
 }

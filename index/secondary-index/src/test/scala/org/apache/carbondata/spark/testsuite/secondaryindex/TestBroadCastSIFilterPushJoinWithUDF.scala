@@ -16,18 +16,18 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
-.isFilterPushedDownToSI;
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
+
 /**
  * test cases for testing BroadCastSIFilterPushJoin with udf
  */
 class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   val testSecondaryIndexForORFilterPushDown = new TestIndexModelForORFilterPushDown
   var carbonQuery: DataFrame = null
   var hiveQuery: DataFrame = null
@@ -255,8 +255,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
   test("test all the above udfs") {
     // all the above udf
     // TO DO, need to remove this check, once JIRA for spark 2.4 has been resolved (SPARK-30974)
-    if(SparkUtil.isSparkVersionEqualTo("2.3"))
-      {
+    if (SparkUtil.isSparkVersionEqualTo("2.3")) {
         carbonQuery = sql(
           "select approx_count_distinct(empname), approx_count_distinct(deptname), collect_list" +
           "(empname), collect_set(deptname), corr(deptno, empno), covar_pop(deptno, empno), " +
@@ -290,9 +289,8 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
   test("test alias of all the above udf") {
     // alias all the above udf
     // TO DO, need to remove this check, once JIRA for spark 2.4 has been resolved (SPARK-30974)
-    if(SparkUtil.isSparkVersionEqualTo("2.3"))
-      {
-        carbonQuery = sql(
+    if (SparkUtil.isSparkVersionEqualTo("2.3")) {
+      carbonQuery = sql(
           "select approx_count_distinct(empname) as c1, approx_count_distinct(deptname) as c2, collect_list" +
           "(empname) as c3, collect_set(deptname) as c4, corr(deptno, empno) as c5, covar_pop(deptno, empno) as c6, " +
           "covar_samp(deptno, empno) as c7, grouping(designation) as c8, grouping(deptname) as c9, mean(deptno) as c10, mean" +
@@ -302,7 +300,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), '') as c25, COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') as c26 from udfValidation where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        hiveQuery = sql(
+      hiveQuery = sql(
           "select approx_count_distinct(empname) as c1, approx_count_distinct(deptname) as c2, collect_list" +
           "(empname) as c3, collect_set(deptname) as c4, corr(deptno, empno) as c5, covar_pop(deptno, empno) as c6, " +
           "covar_samp(deptno, empno) as c7, grouping(designation) as c8, grouping(deptname) as c9, mean(deptno) as c10, mean" +
@@ -312,22 +310,20 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), '') as c25, COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') as c26 from udfHive where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
-          assert(true)
-        } else {
-          assert(false)
-        }
-        checkAnswer(carbonQuery, hiveQuery)
+      if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+        assert(true)
+      } else {
+        assert(false)
       }
-
+      checkAnswer(carbonQuery, hiveQuery)
+    }
   }
 
   test("test cast of all the above udf") {
     // cast all the above udf
     // TO DO, need to remove this check, once JIRA for spark 2.4 has been resolved (SPARK-30974)
-    if(SparkUtil.isSparkVersionEqualTo("2.3"))
-      {
-        carbonQuery = sql(
+    if (SparkUtil.isSparkVersionEqualTo("2.3")) {
+      carbonQuery = sql(
           "select cast(approx_count_distinct(empname) as string), cast(approx_count_distinct(deptname) as string), collect_list" +
           "(empname), collect_set(deptname), cast(corr(deptno, empno) as string), cast(covar_pop(deptno, empno) as string), " +
           "cast(covar_samp(deptno, empno) as string), cast(grouping(designation) as string), cast(grouping(deptname) as string), cast(mean(deptno) as string), cast(mean" +
@@ -337,7 +333,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), ''), COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') from udfValidation where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        hiveQuery = sql(
+      hiveQuery = sql(
           "select cast(approx_count_distinct(empname) as string), cast(approx_count_distinct(deptname) as string), collect_list" +
           "(empname), collect_set(deptname), cast(corr(deptno, empno) as string), cast(covar_pop(deptno, empno) as string), " +
           "cast(covar_samp(deptno, empno) as string), cast(grouping(designation) as string), cast(grouping(deptname) as string), cast(mean(deptno) as string), cast(mean" +
@@ -347,22 +343,20 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), ''), COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') from udfHive where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
-          assert(true)
-        } else {
-          assert(false)
-        }
-        checkAnswer(carbonQuery, hiveQuery)
+      if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+        assert(true)
+      } else {
+        assert(false)
       }
-
+      checkAnswer(carbonQuery, hiveQuery)
+    }
   }
 
   test("test cast and alias with all the above udf") {
     // cast and alias with all the above udf
     // TO DO, need to remove this check, once JIRA for spark 2.4 has been resolved (SPARK-30974)
-    if(SparkUtil.isSparkVersionEqualTo("2.3"))
-      {
-        carbonQuery = sql(
+    if (SparkUtil.isSparkVersionEqualTo("2.3")) {
+      carbonQuery = sql(
           "select cast(approx_count_distinct(empname) as string) as c1, cast(approx_count_distinct(deptname) as string) as c2, collect_list" +
           "(empname) as c3, collect_set(deptname) as c4, cast(corr(deptno, empno) as string) as c5, cast(covar_pop(deptno, empno) as string) as c6, " +
           "cast(covar_samp(deptno, empno) as string) as c7, cast(grouping(designation) as string) as c8, cast(grouping(deptname) as string) as c9, cast(mean(deptno) as string) as c10, cast(mean" +
@@ -372,7 +366,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), '') as c26, COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') as c27 from udfValidation where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        hiveQuery = sql(
+      hiveQuery = sql(
           "select cast(approx_count_distinct(empname) as string) as c1, cast(approx_count_distinct(deptname) as string) as c2, collect_list" +
           "(empname) as c3, collect_set(deptname) as c4, cast(corr(deptno, empno) as string) as c5, cast(covar_pop(deptno, empno) as string) as c6, " +
           "cast(covar_samp(deptno, empno) as string) as c7, cast(grouping(designation) as string) as c8, cast(grouping(deptname) as string) as c9, cast(mean(deptno) as string) as c10, cast(mean" +
@@ -382,14 +376,13 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), '') as c26, COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') as c27 from udfHive where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
-          assert(true)
-        } else {
-          assert(false)
-        }
-        checkAnswer(carbonQuery, hiveQuery)
+      if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+        assert(true)
+      } else {
+        assert(false)
       }
-
+      checkAnswer(carbonQuery, hiveQuery)
+    }
   }
 
   test("test udf on filter - concat") {
@@ -434,5 +427,5 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     sql("drop table if exists udfValidation")
     sql("drop table if exists udfHive")
   }
-
+  // scalastyle:on lineLength
 }

@@ -120,7 +120,8 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
     checkExistence(sql("describe formatted carbon_table"), true, "dd")
   }
 
-  test("Altering table and add column and insert values: exists boolean column, add boolean type column") {
+  test("Altering table and add column and insert values: " +
+       "exists boolean column, add boolean type column") {
     sql(
       s"""
          |CREATE TABLE if not exists carbon_table(
@@ -131,7 +132,8 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select * from carbon_table"), Seq(Row("adam", 11, true, false)))
   }
 
-  test("Altering table and drop column and insert values: exists boolean column, add boolean type column") {
+  test("Altering table and drop column and insert values: " +
+       "exists boolean column, add boolean type column") {
     sql(
       s"""
          |CREATE TABLE if not exists carbon_table(
@@ -142,7 +144,8 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select * from carbon_table"), Seq(Row("adam", 11, true)))
   }
 
-  test("Deleting table and drop column and insert values: exists boolean column, add boolean type column") {
+  test("Deleting table and drop column and insert values: " +
+       "exists boolean column, add boolean type column") {
     sql(
       s"""
          |CREATE TABLE if not exists carbon_table(
@@ -155,7 +158,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select COUNT(*) from carbon_table"), Row(0))
   }
 
-  test("test boolean as dictionary include column and codegen=false"){
+  test("test boolean as dictionary include column and codegen=false") {
     sql("drop table if exists carbon_table")
     sql("create table carbon_table(a1 boolean,a2 string,a3 int) STORED AS carbondata ")
     sql("insert into carbon_table select false,'a',1")

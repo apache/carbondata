@@ -1,10 +1,27 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.carbondata.spark.testsuite.segmentreading
 
 import java.util.concurrent.TimeUnit
 
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
 
 import org.apache.spark.sql.{CarbonUtils, Row}
 import org.apache.spark.sql.test.util.QueryTest
@@ -19,8 +36,8 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
   override def beforeAll: Unit = {
     sql("DROP TABLE IF EXISTS carbon_table_MulTI_THread")
     sql(
-      "CREATE TABLE carbon_table_MulTI_THread (empno int, empname String, designation String, doj " +
-      "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
+      "CREATE TABLE carbon_table_MulTI_THread (empno int, empname String, designation String, doj" +
+      " Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
       "String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance " +
       "int,utilization int,salary int) STORED AS carbondata")
     sql(
@@ -38,8 +55,6 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
   }
 
   test("test multithreading for segment reading") {
-
-
     CarbonUtils.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "1,2,3")
     val df = sql("select count(empno) from carbon_table_MulTI_THread")
     checkAnswer(df, Seq(Row(30)))
@@ -68,7 +83,9 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
       val df = sql("select count(empno) from carbon_table_MulTI_THread")
       checkAnswer(df, Seq(Row(10)))
     }
+    // scalastyle:off awaitresult
     Await.result(Future.sequence(Seq(one, two, three, four)), Duration(300, TimeUnit.SECONDS))
+    // scalastyle:on awaitresult
   }
 
   override def afterAll: Unit = {

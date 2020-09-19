@@ -18,9 +18,8 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import scala.collection.JavaConverters._
 
-import org.scalatest.BeforeAndAfterAll
-
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -28,18 +27,18 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
-  * FT for compaction scenario where major compaction will only compact the segments which are
-  * present at the time of triggering the compaction.
-  */
+ * FT for compaction scenario where major compaction will only compact the segments which are
+ * present at the time of triggering the compaction.
+ */
 class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists  stopmajor")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
-    sql(
-      "CREATE TABLE IF NOT EXISTS stopmajor (country String, ID decimal(7,4), date Timestamp, name " +
-        "String, phonetype String, serialname String, salary Int) STORED AS carbondata"
+    sql("CREATE TABLE IF NOT EXISTS stopmajor (country String, ID decimal(7,4), " +
+        "date Timestamp, name String, phonetype String, serialname String, salary Int) " +
+        "STORED AS carbondata"
     )
 
     val csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
@@ -68,11 +67,11 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
   }
 
   /**
-    * Check if the compaction is completed or not.
-    *
-    * @param requiredSeg
-    * @return
-    */
+   * Check if the compaction is completed or not.
+   *
+   * @param requiredSeg
+   * @return
+   */
   def checkCompactionCompletedOrNot(requiredSeg: String): Boolean = {
     var status = false
     var noOfRetries = 0
@@ -93,7 +92,9 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
 
       if (!segments.contains(requiredSeg)) {
         // wait for 2 seconds for compaction to complete.
+        // scalastyle:off println
         System.out.println("sleping for 2 seconds.")
+        // scalastyle:on println
         Thread.sleep(2000)
         noOfRetries += 1
       }
@@ -101,12 +102,12 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
         status = true
       }
     }
-    return status
+    status
   }
 
   /**
-    * Test whether major compaction is not included in minor compaction.
-    */
+   * Test whether major compaction is not included in minor compaction.
+   */
   test("delete merged folder and check segments") {
     // delete merged segments
     sql("clean files for table stopmajor")
@@ -121,7 +122,12 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
       absoluteTableIdentifier)
 
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
+    val segments = segmentStatusManager
+      .getValidAndInvalidSegments
+      .getValidSegments
+      .asScala
+      .map(_.getSegmentNo)
+      .toList
     assert(segments.contains("0.1"))
     assert(!segments.contains("0.2"))
     assert(!segments.contains("0"))

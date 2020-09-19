@@ -17,12 +17,12 @@
 
 package org.apache.carbondata.spark.testsuite.aggquery
 
-
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test Class for aggregate query on Integer datatypes
@@ -33,8 +33,10 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("DROP TABLE IF EXISTS integertypetableAgg")
     sql("DROP TABLE IF EXISTS short_table")
-    sql("CREATE TABLE integertypetableAgg (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE integertypetableAgg OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
+    sql("CREATE TABLE integertypetableAgg (empno int, workgroupcategory string, " +
+        "deptno int, projectcode int, attendance int) STORED AS carbondata")
+    sql(s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE integertypetableAgg " +
+        "OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')")
   }
 
   test("select empno from integertypetableAgg") {
@@ -62,13 +64,14 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     checkAnswer(
       sql("select value from short_int_table"),
-      Seq(Row(0), Row(127), Row(128), Row(-127), Row(-128), Row(32767), Row(-32767), Row(32768), Row(-32768), Row(65535),
-        Row(-65535), Row(8388606), Row(-8388606), Row(8388607), Row(-8388607), Row(0), Row(0), Row(0), Row(0))
+      Seq(Row(0), Row(127), Row(128), Row(-127), Row(-128), Row(32767), Row(-32767), Row(32768),
+        Row(-32768), Row(65535), Row(-65535), Row(8388606), Row(-8388606), Row(8388607),
+        Row(-8388607), Row(0), Row(0), Row(0), Row(0))
     )
     checkAnswer(
       sql("select value2 from short_int_table"),
-      Seq(Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0),
-        Row(0), Row(0), Row(0), Row(0), Row(0), Row(8388608), Row(-8388608), Row(8388609), Row(-8388609))
+      Seq(Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0),
+        Row(0), Row(0), Row(0), Row(0), Row(8388608), Row(-8388608), Row(8388609), Row(-8388609))
     )
     sql(
       """
@@ -98,13 +101,14 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     checkAnswer(
       sql("select value from short_int_table"),
-      Seq(Row(0), Row(127), Row(128), Row(-127), Row(-128), Row(32767), Row(-32767), Row(32768), Row(-32768), Row(65535),
-        Row(-65535), Row(8388606), Row(-8388606), Row(8388607), Row(-8388607), Row(0), Row(0), Row(0), Row(0))
+      Seq(Row(0), Row(127), Row(128), Row(-127), Row(-128), Row(32767), Row(-32767), Row(32768),
+        Row(-32768), Row(65535), Row(-65535), Row(8388606), Row(-8388606), Row(8388607),
+        Row(-8388607), Row(0), Row(0), Row(0), Row(0))
     )
     checkAnswer(
       sql("select value2 from short_int_table"),
-      Seq(Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0),
-        Row(0), Row(0), Row(0), Row(0), Row(0), Row(8388608), Row(-8388608), Row(8388609), Row(-8388609))
+      Seq(Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0),
+        Row(0), Row(0), Row(0), Row(0), Row(8388608), Row(-8388608), Row(8388609), Row(-8388609))
     )
     sql(
       """
@@ -118,7 +122,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         | DROP TABLE IF EXISTS all_encoding_table
       """.stripMargin)
 
-    //begin_time column will be encoded by deltaIntegerCodec
+    // begin_time column will be encoded by deltaIntegerCodec
     sql(
       """
         | CREATE TABLE all_encoding_table
@@ -142,11 +146,13 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     )
 
     val ff = BigInt(2147484000L)
+    // scalastyle:off lineLength
     checkAnswer(
       sql("select begin_time,begin_time1,begin_time2,begin_time3,begin_time4,begin_time5,begin_time6,begin_time7,begin_time8,begin_time9,begin_time10,begin_time11,begin_time12,begin_time13,begin_time14,begin_time15,begin_time16,begin_time17,begin_time18,begin_time19,begin_time20 from all_encoding_table"),
-      Seq(Row(1497376581,10000,8388600,125,1497376581,8386600,10000,100,125,1497376581,1497423738,2139095000,1497376581,1497423738,32000,123.4,11.1,3200.1,214744460.2,1497376581,1497376581),
-        Row(1497408581,32000,45000,25,10000,55000,32000,75,35,1497423838,1497423838,ff,1497423838,1497423838,31900,838860.7,12.3,127.1,214748360.2,1497408581,1497408581))
+      Seq(Row(1497376581, 10000, 8388600, 125, 1497376581, 8386600, 10000, 100, 125, 1497376581, 1497423738, 2139095000, 1497376581, 1497423738, 32000, 123.4, 11.1, 3200.1, 214744460.2, 1497376581, 1497376581),
+        Row(1497408581, 32000, 45000, 25, 10000, 55000, 32000, 75, 35, 1497423838, 1497423838, ff, 1497423838, 1497423838, 31900, 838860.7, 12.3, 127.1, 214748360.2, 1497408581, 1497408581))
     )
+    // scalastyle:on lineLength
 
     sql(
       """

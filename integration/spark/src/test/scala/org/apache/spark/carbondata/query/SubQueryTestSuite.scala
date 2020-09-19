@@ -26,7 +26,7 @@ class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
 
   val tempDirPath = s"$resourcesPath/temp"
 
-  override def beforeAll(){
+  override def beforeAll() {
     sql("drop table if exists subquery")
     sql("create table subquery(id int, name string, rating float) STORED AS carbondata")
     sql(s"load data local inpath '$tempDirPath/data1.csv' into table subquery")
@@ -36,7 +36,7 @@ class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(
       "select * from subquery where id in(select id from subquery where name in(select name from" +
       " subquery where rating=2.0))"),
-      Seq(Row(2,"ghj",2.0), Row(3,"ghj",3.0)))
+      Seq(Row(2, "ghj", 2.0), Row(3, "ghj", 3.0)))
   }
 
   test("test to check Broad cast filter works") {

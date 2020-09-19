@@ -14,11 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.testutil
 
 object TestSQLBatch2 {
-
-  val testSQLBatch2 = Seq[String](
+    // scalastyle:off lineLength
+    val testSQLBatch2 = Seq[String](
       s"""
          |SELECT f1.A,COUNT(*) AS B
          |FROM
@@ -133,5 +134,6 @@ object TestSQLBatch2 {
          |WHERE date_dim.d_date_sk = store_sales.ss_sold_date_sk
          |GROUP BY ROLLUP(date_dim.d_moy,date_dim.d_qoy, date_dim.d_year)
       """.stripMargin.trim
-      )
+    )
+    // scalastyle:off lineLength
 }

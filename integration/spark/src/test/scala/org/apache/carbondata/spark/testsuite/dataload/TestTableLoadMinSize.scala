@@ -18,17 +18,15 @@
 package org.apache.carbondata.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * Test Class for load_min_size
-  *
-  */
-
+ * Test Class for load_min_size
+ */
 class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
   val testData1 = s"$resourcesPath/source.csv"
 
@@ -51,9 +49,8 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         TBLPROPERTIES('table_blocksize'='128 MB')
       """)
 
-    sql(s"""
-           LOAD DATA LOCAL INPATH '$testData1' into table table_loadminsize1 OPTIONS('load_min_size_inmb'='256 MB')
-           """)
+    sql(s"LOAD DATA LOCAL INPATH '$testData1' " +
+        s"into table table_loadminsize1 OPTIONS('load_min_size_inmb'='256 MB')")
 
     checkAnswer(
       sql("""
@@ -77,9 +74,8 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         TBLPROPERTIES('table_blocksize'='128 MB')
       """)
 
-    sql(s"""
-           LOAD DATA LOCAL INPATH '$testData1' into table table_loadminsize2 OPTIONS('load_min_size_inmb'='256')
-           """)
+    sql(s"LOAD DATA LOCAL INPATH '$testData1' " +
+        s"into table table_loadminsize2 OPTIONS('load_min_size_inmb'='256')")
 
     checkAnswer(
       sql("""
@@ -134,12 +130,12 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         desc formatted table_loadminsize4
-      """).show(false)
+      """).collect()
 
     sql(
       """
         alter table table_loadminsize4 set TBLPROPERTIES('load_min_size_inmb'='512')
-      """).show(false)
+      """).collect()
 
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData1' into table table_loadminsize4

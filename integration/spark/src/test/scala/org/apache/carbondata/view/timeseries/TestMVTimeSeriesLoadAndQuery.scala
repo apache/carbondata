@@ -1,32 +1,33 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*    http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.carbondata.view.timeseries
+
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.view.rewrite.TestUtil
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
 
 class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll(): Unit = {
     drop()
     createTable()
@@ -46,7 +47,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       "create materialized view mv1 as " +
       "select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable where timeseries(projectjoindate,'minute') = '2016-02-23 09:17:00' group by timeseries(projectjoindate,'minute')")
 
-    sql("select * from mv1").show(false)
+    sql("select * from mv1").collect()
     val df1 = sql("select timeseries(projectjoindate,'minute'),sum(projectcode) from maintable where timeseries(projectjoindate,'minute') = '2016-02-23 09:17:00'" +
                   "group by timeseries(projectjoindate,'minute')")
     assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv1"))
@@ -144,15 +145,16 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     sql(
       "create materialized view mv1 as " +
       "select timeseries(projectjoindate,'week'), sum(salary) from maintable group by timeseries(projectjoindate,'week')")
-/*
-    +-----------------------------------+----------+
-    |UDF:timeseries_projectjoindate_week|sum_salary|
-    +-----------------------------------+----------+
-    |2016-02-21 00:00:00                |3801      |
-    |2016-03-20 00:00:00                |400.2     |
-    |2016-04-17 00:00:00                |350.0     |
-    |2016-03-27 00:00:00                |150.6     |
-    +-----------------------------------+----------+*/
+   /*
+    * +-----------------------------------+----------+
+    * |UDF:timeseries_projectjoindate_week|sum_salary|
+    * +-----------------------------------+----------+
+    * |2016-02-21 00:00:00                |3801      |
+    * |2016-03-20 00:00:00                |400.2     |
+    * |2016-04-17 00:00:00                |350.0     |
+    * |2016-03-27 00:00:00                |150.6     |
+    * +-----------------------------------+----------+
+    */
     val df1 = sql("select timeseries(projectjoindate,'week'), sum(salary) from maintable group by timeseries(projectjoindate,'week')")
     checkPlan("mv1", df1)
     checkExistence(df1, true, "2016-02-21 00:00:00.0" )
@@ -342,8 +344,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       "select timeseries(t1.projectjoindate,'month'), sum(t1.projectcode), sum(t2.projectcode) " +
       " from maintable t1 inner join secondtable t2 where" +
       " t2.projectcode = t1.projectcode group by timeseries(t1.projectjoindate,'month')")
-    val df =  sql(
-      "select timeseries(t1.projectjoindate,'month'), sum(t1.projectcode), sum(t2.projectcode)" +
+    val df = sql("select timeseries(t1.projectjoindate,'month'), sum(t1.projectcode), sum(t2.projectcode)" +
       " from maintable t1 inner join secondtable t2 where" +
       " t2.projectcode = t1.projectcode group by timeseries(t1.projectjoindate,'month')")
     checkPlan("mv1", df)
@@ -392,4 +393,5 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     val analyzed = df.queryExecution.optimizedPlan
     assert(TestUtil.verifyMVHit(analyzed, mvName))
   }
+  // scalastyle:on lineLength
 }

@@ -21,16 +21,15 @@ import java.sql.Date
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * Test Class for detailed query on timestamp datatypes
-  *
-  *
-  */
+ * Test Class for detailed query on timestamp datatypes
+ */
 class DateDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 

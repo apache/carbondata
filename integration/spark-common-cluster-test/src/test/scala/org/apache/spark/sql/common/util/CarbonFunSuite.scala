@@ -17,8 +17,9 @@
 
 package org.apache.spark.sql.common.util
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.scalatest.{FunSuite, Outcome}
+
+import org.apache.carbondata.common.logging.LogServiceFactory
 
 
 private[spark] abstract class CarbonFunSuite extends FunSuite {

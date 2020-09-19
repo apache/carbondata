@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.view.rewrite
 
 import org.apache.spark.sql.Row
@@ -42,26 +43,30 @@ class MVFilterAndJoinTest extends QueryTest with BeforeAndAfterAll {
     val querySQL = "select sum(age),name from main_table where name = 'tom' group by name"
     sql("insert into main_table select 'tom',20,170")
     sql("insert into main_table select 'lily',30,160")
-    sql("create materialized view main_table_mv as select sum(age),name from main_table group by name")
+    sql("create materialized view main_table_mv as select sum(age),name " +
+        "from main_table group by name")
     sql("refresh materialized view main_table_mv")
     assert(TestUtil.verifyMVHit(sql(querySQL).queryExecution.optimizedPlan, "main_table_mv"))
-    checkAnswer(sql(querySQL), Seq(Row(20,"tom")))
+    checkAnswer(sql(querySQL), Seq(Row(20, "tom")))
   }
 
   test("test mv rebuild twice and varchar string") {
-    val querySQL = "select A.sum_score,A.name from (select sum(score) as sum_score,age,sdr.name as name from sdr_table sdr " +
-      "left join dim_table dim on sdr.name = dim.name where sdr.name in ('tom','lily') group by sdr.name,age) A where name = 'tom'"
+    val querySQL = "select A.sum_score,A.name from (select sum(score) as sum_score,age,sdr.name " +
+                   "as name from sdr_table sdr left join dim_table dim on sdr.name = dim.name " +
+                   "where sdr.name in ('tom','lily') group by sdr.name,age) A where name = 'tom'"
     sql("insert into dim_table select 'tom',20,170")
     sql("insert into dim_table select 'lily',30,160")
-    sql("create materialized view main_table_mv1 " +
-      "as select count(score),sum(score),count(dim.name),age,sdr.name from sdr_table sdr left join dim_table dim on sdr.name = dim.name group by sdr.name,age")
+    sql(
+      "create materialized view main_table_mv1 as select count(score),sum(score),count(dim.name)," +
+      "age,sdr.name from sdr_table sdr left join dim_table dim on sdr.name = dim.name group by " +
+      "sdr.name,age")
     sql("refresh materialized view main_table_mv1")
     sql("insert into sdr_table select 'tom',70")
     sql("insert into sdr_table select 'tom',50")
     sql("insert into sdr_table select 'lily',80")
     sql("refresh materialized view main_table_mv1")
     assert(TestUtil.verifyMVHit(sql(querySQL).queryExecution.optimizedPlan, "main_table_mv1"))
-    checkAnswer(sql(querySQL), Seq(Row(120,"tom")))
+    checkAnswer(sql(querySQL), Seq(Row(120, "tom")))
   }
 
   override def afterAll(): Unit = {

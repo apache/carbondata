@@ -19,19 +19,18 @@ package org.apache.carbondata.spark.testsuite.dataretention
 
 import java.text.SimpleDateFormat
 
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
-import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.commons.lang3.time.DateUtils
 import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * This class contains data retention feature test cases
@@ -53,9 +52,10 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists DataRetentionTable")
     sql("drop table if exists retentionlock")
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK, "1")
-    CarbonProperties.getInstance.addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME, "1")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK, "1")
+      .addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME, "1")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
       "CREATE table DataRetentionTable (ID int, date String, country String, name " +
       "String," +
@@ -80,7 +80,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       .getMetadataPath(absoluteTableIdentifierForRetention.getTablePath)
     carbonTableStatusLock = CarbonLockFactory
       .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.TABLE_STATUS_LOCK)
-    carbonDeleteSegmentLock= CarbonLockFactory
+    carbonDeleteSegmentLock = CarbonLockFactory
       .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.DELETE_SEGMENT_LOCK)
     carbonCleanFilesLock = CarbonLockFactory
       .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.CLEAN_FILES_LOCK)
@@ -273,13 +273,13 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       sql("clean files for table retentionlock")
     }
 
-    sql("SHOW SEGMENTS FOR TABLE retentionlock").show
+    sql("SHOW SEGMENTS FOR TABLE retentionlock").collect()
     carbonTableStatusLock.unlock()
     carbonCleanFilesLock.unlock()
     carbonDeleteSegmentLock.unlock()
 
     sql("delete from table retentionlock where segment.id in (0)")
-    //load and delete should execute parallely
+    // load and delete should execute parallely
     carbonMetadataLock.lockWithRetries()
     sql("delete from table retentionlock where segment.id in (1)")
     carbonMetadataLock.unlock()

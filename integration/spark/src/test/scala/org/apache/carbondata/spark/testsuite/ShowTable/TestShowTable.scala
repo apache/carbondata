@@ -23,8 +23,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 
 /**
-  * Test class for show tables.
-  */
+ * Test class for show tables.
+ */
 class TestShowTable extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   val dbName = "testshowtable"
   override def beforeAll: Unit = {

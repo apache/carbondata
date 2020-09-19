@@ -136,6 +136,8 @@ class QueryTest extends PlanTest {
     Option(CacheProvider.getInstance().getCarbonCache).map(_.clear())
     CarbonProperties.getInstance()
       .addProperty("enable.unsafe.sort", "true")
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_AUDIT, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false")
       .removeProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
       .removeProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE)
     sqlContext.setConf("enable.unsafe.sort", "true")
@@ -157,7 +159,8 @@ class QueryTest extends PlanTest {
   }
 
   def printConfiguration(): Unit = {
-    CarbonProperties.getInstance().print()
+    LOGGER.error("------Using Carbon.properties --------")
+    LOGGER.error(CarbonProperties.getInstance().toString)
     LOGGER.error("------spark conf--------------------------")
     LOGGER.error(sqlContext.sessionState.conf.getAllConfs
       .map(x => x._1 + "=" + x._2).mkString(", "))

@@ -16,19 +16,20 @@
  */
 package org.apache.carbondata.spark.testsuite.dblocation
 
+import org.apache.spark.sql.{AnalysisException, Row}
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterEach
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
-import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterEach
 
 /**
  *
  */
 class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
 
-  def getMdtFileAndType() = {
+  private def getMdtFileAndType() = {
     // if mdt file path is configured then take configured path else take default path
     val configuredMdtPath = CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
@@ -46,7 +47,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("drop database if exists carbon2 cascade")
   }
 
-  //TODO fix this test case
+  // TODO fix this test case
   test("Update operation on carbon table with insert into") {
     sql(s"create database carbon2 location '$dbLocation'")
     sql("use carbon2")
@@ -54,11 +55,11 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     // update operation
-    sql("""update carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
-    sql("""update carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").show()
+    sql("""update carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").collect()
+    sql("""update carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").collect()
     checkAnswer(
       sql("""select c1,c2,c3,c5 from carbontable"""),
-      Seq(Row("a",2,"aa","aaa"),Row("b",2,"bb","bbb"))
+      Seq(Row("a", 2, "aa", "aaa"), Row("b", 2, "bb", "bbb"))
     )
     sql("drop database if exists carbon2 cascade")
   }
@@ -81,15 +82,21 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("create table and load data") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/dblocation/test.csv' INTO table carbon.carbontable""")
+    sql(
+      """create table carbon.carbontable (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin)
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/dblocation/test.csv'
+         | INTO table carbon.carbontable""".stripMargin)
     checkAnswer(sql("select count(*) from carbontable"), Row(5))
   }
 
   test("create table and insert data") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(
+      """create table carbon.carbontable (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     checkAnswer(sql("select count(*) from carbontable"), Row(1))
     checkAnswer(sql("select c1 from carbontable"), Seq(Row("a")))
@@ -98,7 +105,9 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("create table and 2 times data load") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(
+      """create table carbon.carbontable (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'aa','aaa'")
     checkAnswer(sql("select count(*) from carbontable"), Row(2))
@@ -117,7 +126,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table automerge")
     // update operation
-    sql("""update carbon1.automerge d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    sql("""update carbon1.automerge d  set (d.id) = (d.id + 1) where d.id > 2""").collect()
     checkAnswer(
       sql("select count(*) from automerge"),
       Seq(Row(6))
@@ -128,14 +137,16 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Delete operation on carbon table") {
     sql(s"create database carbon1 location '$dbLocation'")
     sql("use carbon1")
-    sql("""create table carbon1.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(
+      """create table carbon1.carbontable (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     // delete operation
-    sql("""delete from carbontable where c3 = 'aa'""").show
+    sql("""delete from carbontable where c3 = 'aa'""").collect()
     checkAnswer(
       sql("""select c1,c2,c3,c5 from carbon1.carbontable"""),
-      Seq(Row("b",1,"bb","bbb"))
+      Seq(Row("b", 1, "bb", "bbb"))
     )
     sql("drop table carbontable")
   }
@@ -143,14 +154,16 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Alter table add column test") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(
+      """create table carbon.carbontable (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     sql("Alter table carbontable add columns(c4 string) " +
         "TBLPROPERTIES('DEFAULT.VALUE.c4'='def')")
     checkAnswer(
       sql("""select c1,c2,c3,c5,c4 from carbon.carbontable"""),
-      Seq(Row("a",1,"aa","aaa","def"), Row("b",1,"bb","bbb","def"))
+      Seq(Row("a", 1, "aa", "aaa", "def"), Row("b", 1, "bb", "bbb", "def"))
     )
     sql("drop table carbontable")
   }
@@ -158,18 +171,20 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Alter table change column datatype test") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(
+      """create table carbon.carbontable (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     sql("Alter table carbontable change c2 c2 long")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
-      Seq(Row("a",1,"aa","aaa"), Row("b",1,"bb","bbb"))
+      Seq(Row("a", 1, "aa", "aaa"), Row("b", 1, "bb", "bbb"))
     )
     sql("drop table carbontable")
   }
 
-  test("Alter table change dataType with sort column after adding measure column test"){
+  test("Alter table change dataType with sort column after adding measure column test") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql(
@@ -183,12 +198,13 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("Alter table carbontable change c2 c2 bigint")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
-      Seq(Row("a",1,"aa","aaa"), Row("b",1,"bb","bbb"))
+      Seq(Row("a", 1, "aa", "aaa"), Row("b", 1, "bb", "bbb"))
     )
     sql("drop table carbontable")
   }
 
-  test("Alter table change dataType with sort column after adding date datatype with default value test"){
+  test("Alter table change dataType with sort column " +
+       "after adding date datatype with default value test") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql(
@@ -198,16 +214,18 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
         |""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
-    sql("Alter table carbontable add columns (dateData date) TBLPROPERTIES('DEFAULT.VALUE.dateData' = '1999-01-01')")
+    sql("Alter table carbontable add columns (dateData date) " +
+        "TBLPROPERTIES('DEFAULT.VALUE.dateData' = '1999-01-01')")
     sql("Alter table carbontable change c2 c2 bigint")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
-      Seq(Row("a",1,"aa","aaa"), Row("b",1,"bb","bbb"))
+      Seq(Row("a", 1, "aa", "aaa"), Row("b", 1, "bb", "bbb"))
     )
     sql("drop table carbontable")
   }
 
-  test("Alter table change dataType with sort column after adding dimension column with default value test"){
+  test("Alter table change dataType with sort column " +
+       "after adding dimension column with default value test") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql(
@@ -217,16 +235,17 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
         |""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
-    sql("Alter table carbontable add columns (name String) TBLPROPERTIES('DEFAULT.VALUE.name' = 'hello')")
+    sql("Alter table carbontable add columns (name String) " +
+        "TBLPROPERTIES('DEFAULT.VALUE.name' = 'hello')")
     sql("Alter table carbontable change c2 c2 bigint")
     checkAnswer(
       sql("""select c1,c2,c3,c5,name from carbon.carbontable"""),
-      Seq(Row("a",1,"aa","aaa","hello"), Row("b",1,"bb","bbb","hello"))
+      Seq(Row("a", 1, "aa", "aaa", "hello"), Row("b", 1, "bb", "bbb", "hello"))
     )
     sql("drop table carbontable")
   }
 
-  test("Alter table change dataType with sort column after rename test"){
+  test("Alter table change dataType with sort column after rename test") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql(
@@ -236,12 +255,13 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
         |""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
-    sql("Alter table carbontable add columns (name String) TBLPROPERTIES('DEFAULT.VALUE.name' = 'hello')")
+    sql("Alter table carbontable add columns (name String) " +
+        "TBLPROPERTIES('DEFAULT.VALUE.name' = 'hello')")
     sql("Alter table carbontable rename to carbontable1")
     sql("Alter table carbontable1 change c2 c2 bigint")
     checkAnswer(
       sql("""select c1,c2,c3,c5,name from carbon.carbontable1"""),
-      Seq(Row("a",1,"aa","aaa","hello"), Row("b",1,"bb","bbb","hello"))
+      Seq(Row("a", 1, "aa", "aaa", "hello"), Row("b", 1, "bb", "bbb", "hello"))
     )
     sql("drop table if exists carbontable")
     sql("drop table if exists carbontable1")
@@ -250,13 +270,15 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Alter table drop column test") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(
+      """create table carbon.carbontable (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     sql("Alter table carbontable drop columns(c2)")
     checkAnswer(
       sql("""select * from carbon.carbontable"""),
-      Seq(Row("a","aa","aaa"), Row("b","bb","bbb"))
+      Seq(Row("a", "aa", "aaa"), Row("b", "bb", "bbb"))
     )
     sql("drop table carbontable")
   }

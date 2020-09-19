@@ -20,10 +20,10 @@ package org.apache.carbondata.spark.testsuite.badrecordloger
 import java.io.File
 
 import scala.collection.mutable.ListBuffer
+
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -182,7 +182,8 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales_no_sort")
     sql(
       """CREATE TABLE IF NOT EXISTS sales_no_sort(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
+         actual_price Double, Quantity int, sold_price Decimal(19,2))
+         STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
 
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_no_sort OPTIONS" +
         "('bad_records_action'='FORCE', 'DELIMITER'=" +
@@ -195,7 +196,8 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales_no_sort")
     sql(
       """CREATE TABLE IF NOT EXISTS sales_no_sort(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
+        |actual_price Double, Quantity int, sold_price Decimal(19,2))
+        |STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""".stripMargin)
 
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_no_sort OPTIONS" +
         "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
@@ -209,7 +211,8 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales_no_sort")
     sql(
       """CREATE TABLE IF NOT EXISTS sales_no_sort(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2))
+          STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
 
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_no_sort OPTIONS" +
         "('bad_records_action'='IGNORE', 'DELIMITER'=" +
@@ -222,7 +225,8 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales_no_sort")
     sql(
       """CREATE TABLE IF NOT EXISTS sales_no_sort(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2))
+          STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
 
     val exception = intercept[Exception] {
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_no_sort OPTIONS" +
@@ -239,7 +243,8 @@ class BadRecordActionTest extends QueryTest {
   test("test bad record with IGNORE option for bucketed table") {
     sql("drop table if exists sales_bucket")
     sql("CREATE TABLE IF NOT EXISTS sales_bucket(ID BigInt, date Timestamp, country String," +
-          "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='2', 'BUCKET_COLUMNS'='country')")
+          "actual_price Double, Quantity int, sold_price Decimal(19,2))" +
+        "STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='2', 'BUCKET_COLUMNS'='country')")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_bucket OPTIONS" +
         "('bad_records_action'='IGNORE', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
@@ -250,7 +255,8 @@ class BadRecordActionTest extends QueryTest {
   test("test bad record with REDIRECT option for bucketed table") {
     sql("drop table if exists sales_bucket")
     sql("CREATE TABLE IF NOT EXISTS sales_bucket(ID BigInt, date Timestamp, country String," +
-        "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='2', 'BUCKET_COLUMNS'='country')")
+        "actual_price Double, Quantity int, sold_price Decimal(19,2))" +
+        "STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='2', 'BUCKET_COLUMNS'='country')")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_bucket OPTIONS" +
         "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"', 'BAD_RECORD_PATH'='" + { badRecordFilePath.getCanonicalPath } +
@@ -260,16 +266,23 @@ class BadRecordActionTest extends QueryTest {
   }
 
   test("test bad record IGNORE with complex data types") {
-    val timeStampFormat = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    val timeStampFormat = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("drop table if exists complextable")
-    sql("create table complextable(arrayColumn array<timestamp>, structColumn struct<s1:int,s2:timestamp>,arraystruct array<Struct<as1:int,as2:timestamp>>) stored as carbondata")
-    sql(s"LOAD DATA local inpath '$resourcesPath/badrecords/complexdata.csv' INTO TABLE complextable OPTIONS('bad_records_action'='ignore', 'DELIMITER'=',', " +
-        "'QUOTECHAR'= '\"','COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='#')")
+    sql("create table complextable(arrayColumn array<timestamp>, structColumn struct<s1:int," +
+        "s2:timestamp>,arraystruct array<Struct<as1:int,as2:timestamp>>) stored as carbondata")
+    sql(
+      s"LOAD DATA local inpath '$resourcesPath/badrecords/complexdata.csv' INTO TABLE " +
+      s"complextable OPTIONS('bad_records_action'='ignore', 'DELIMITER'=',', " +
+      "'QUOTECHAR'= '\"','COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='#')")
     checkAnswer(sql("select count(*) from complextable"), Seq(Row(5)))
     sql("drop table if exists complextable")
-    if(null != timeStampFormat) {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeStampFormat)
+    if (null != timeStampFormat) {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeStampFormat)
     }
   }
 
@@ -280,14 +293,17 @@ class BadRecordActionTest extends QueryTest {
     rows += Array("1", "2016-7-24", "342016-7-24 01:02:30")
     BadRecordUtil.createCSV(rows, csvPath)
     sql("DROP TABLE IF EXISTS test_time")
-    sql("CREATE TABLE IF NOT EXISTS test_time (ID Int, date Date, time Timestamp) STORED AS carbondata " +
+    sql("CREATE TABLE IF NOT EXISTS test_time (ID Int, date Date, time Timestamp) " +
+        "STORED AS carbondata " +
         "TBLPROPERTIES('dateformat'='yyyy-MM-dd', 'timestampformat'='yyyy-MM-dd HH:mm:ss') ")
     val exception = intercept[Exception] {
       sql(s" LOAD DATA LOCAL INPATH '$resourcesPath/badrecords/invalidTimeStampRange.csv' " +
           s"into table test_time options ('bad_records_action'='fail')")
     }
-    assert(exception.getMessage.contains("Data load failed due to bad record: The value with column name time and column data" +
-        " type TIMESTAMP is not a valid TIMESTAMP type.Please enable bad record logger to know the detail reason"))
+    // scalastyle:off lineLength
+    assert(exception.getMessage.contains(
+      "Data load failed due to bad record: The value with column name time and column data type TIMESTAMP is not a valid TIMESTAMP type.Please enable bad record logger to know the detail reason"))
+    // scalastyle:on lineLength
     sql("DROP TABLE IF EXISTS test_time")
     FileUtils.forceDelete(new File(csvPath))
   }

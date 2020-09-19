@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.sortexpr
 
-import java.nio.ByteBuffer
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -31,7 +29,7 @@ import org.apache.carbondata.core.util.CarbonProperties
  */
 
 class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     sql("drop table if exists alldatatypestablesort")
     sql("drop table if exists alldatatypestablesort_hive")
@@ -48,7 +46,7 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='true', 'long_string_columns'='id')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
@@ -56,14 +54,14 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='false', 'long_string_columns'='id')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='true')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
@@ -71,23 +69,24 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='false')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
     sql("drop table if exists source")
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='true')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='false')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
@@ -116,4 +115,5 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists alldatatypestablesort")
     sql("drop table if exists alldatatypestablesort_hive")
   }
+  // scalastyle:on lineLength
 }

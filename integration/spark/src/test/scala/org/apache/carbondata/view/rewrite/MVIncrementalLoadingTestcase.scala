@@ -1,32 +1,32 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*    http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.carbondata.view.rewrite
 
 import java.util
 
 import com.google.gson.Gson
+import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row}
-import org.scalatest.BeforeAndAfterAll
-
 
 /**
  * Test Class to verify Incremental Load on MV
@@ -47,12 +47,12 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test Incremental Loading on refresh MV") {
-    //create table and load data
+    // create table and load data
     createTableFactTable("test_table")
     loadDataToFactTable("test_table")
     createTableFactTable("test_table1")
     loadDataToFactTable("test_table1")
-    //create materialized view on table test_table
+    // create materialized view on table test_table
     sql("drop materialized view if exists mv1")
     sql(
       "create materialized view mv1  with deferred refresh as select empname, designation " +
@@ -111,7 +111,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
       "mv1")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(viewTable.getMetadataPath)
-    
+
     val segmentMap = getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("1")
@@ -133,15 +133,16 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into testtable values('a','abc',1)")
     sql("insert into testtable values('b','bcd',2)")
     sql("drop materialized view if exists mv1")
-    sql("create materialized view mv1 with deferred refresh as select a, sum(b) from main_table group by a")
+    sql("create materialized view mv1 with deferred refresh " +
+        "as select a, sum(b) from main_table group by a")
     sql(s"refresh materialized view mv1")
     var df = sql(
       s"""select a, sum(b) from main_table group by a""".stripMargin)
     assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
-    sql("update main_table set(a) = ('aaa') where b = 'abc'").show(false)
-    sql("update testtable set(a) = ('aaa') where b = 'abc'").show(false)
+    sql("update main_table set(a) = ('aaa') where b = 'abc'").collect()
+    sql("update testtable set(a) = ('aaa') where b = 'abc'").collect()
     val viewTable = CarbonEnv.getCarbonTable(
       Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "mv1")(sqlContext.sparkSession)
@@ -236,10 +237,11 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into test_table values('a','abc',1)")
     sql("insert into test_table values('b','bcd',2)")
     sql("drop materialized view if exists mv1")
-    sql(
-      "create materialized view mv1 with deferred refresh as select a, sum(b) from test_table  group by a")
+    sql("create materialized view mv1 with deferred refresh " +
+        "as select a, sum(b) from test_table  group by a")
     sql(s"refresh materialized view mv1")
-    checkAnswer(sql(" select a, sum(b) from test_table  group by a"), Seq(Row("a", null), Row("b", null)))
+    checkAnswer(sql(" select a, sum(b) from test_table  group by a"),
+      Seq(Row("a", null), Row("b", null)))
     sql("insert overwrite table test_table select 'd','abc',3")
     val viewTable = CarbonEnv.getCarbonTable(
       Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
@@ -264,7 +266,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("create table sales (product string, quantity int) STORED AS carbondata")
     sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales")
     sql("drop materialized view if exists innerjoin")
-    sql("Create materialized view innerjoin with deferred refresh as Select p.product, p.amount, s.quantity, s.product from " +
+    sql("Create materialized view innerjoin with deferred refresh " +
+        "as Select p.product, p.amount, s.quantity, s.product from " +
         "products p, sales s where p.product=s.product")
     sql("drop table if exists products1")
     sql("create table products1 (product string, amount int) STORED AS carbondata ")
@@ -273,17 +276,26 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("create table sales1 (product string, quantity int) STORED AS carbondata")
     sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales1")
     sql(s"refresh materialized view innerjoin")
-    checkAnswer(sql("Select p.product, p.amount, s.quantity from products1 p, sales1 s where p.product=s.product"),
-      sql("Select p.product, p.amount, s.quantity from products p, sales s where p.product=s.product"))
+    checkAnswer(
+      sql("Select p.product, p.amount, s.quantity " +
+          "from products1 p, sales1 s where p.product=s.product"),
+      sql("Select p.product, p.amount, s.quantity " +
+          "from products p, sales s where p.product=s.product"))
     sql("insert into products values('Biscuits',10)")
     sql("insert into products1 values('Biscuits',10)")
     sql("refresh materialized view innerjoin")
-    checkAnswer(sql("Select p.product, p.amount, s.quantity from products1 p, sales1 s where p.product=s.product"),
-      sql("Select p.product, p.amount, s.quantity from products p, sales s where p.product=s.product"))
+    checkAnswer(
+      sql("Select p.product, p.amount, s.quantity " +
+          "from products1 p, sales1 s where p.product=s.product"),
+      sql("Select p.product, p.amount, s.quantity " +
+          "from products p, sales s where p.product=s.product"))
     sql("insert into sales values('Biscuits',100)")
     sql("insert into sales1 values('Biscuits',100)")
-    checkAnswer(sql("Select p.product, p.amount, s.quantity from products1 p, sales1 s where p.product=s.product"),
-      sql("Select p.product, p.amount, s.quantity from products p, sales s where p.product=s.product"))
+    checkAnswer(
+      sql("Select p.product, p.amount, s.quantity " +
+          "from products1 p, sales1 s where p.product=s.product"),
+      sql("Select p.product, p.amount, s.quantity " +
+          "from products p, sales s where p.product=s.product"))
   }
 
   test("test set segments with main table having mv") {
@@ -296,8 +308,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into test_table values('a','abc',1)")
     sql("insert into test_table values('b','bcd',2)")
     sql("drop materialized view if exists mv_mt")
-    sql(
-      "create materialized view mv_mt with deferred refresh as select a, sum(b) from main_table  group by a")
+    sql("create materialized view mv_mt with deferred refresh " +
+        "as select a, sum(b) from main_table  group by a")
     sql(s"refresh materialized view mv_mt")
     checkAnswer(sql("select a, sum(b) from main_table  group by a"),
       sql("select a, sum(b) from test_table  group by a"))
@@ -315,7 +327,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
     sql("drop materialized view if exists mv1")
-    sql("create materialized view mv1 with deferred refresh as select a, sum(c) from main_table  group by a")
+    sql("create materialized view mv1 with deferred refresh " +
+        "as select a, sum(c) from main_table  group by a")
     sql("SET carbon.input.segments.default.main_table=1")
     sql(s"refresh materialized view mv1")
     val df = sql("select a, sum(c) from main_table  group by a")
@@ -323,7 +336,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     defaultConfig()
     sqlContext.sparkSession.conf.unset("carbon.input.segments.default.main_table")
     checkAnswer(sql("select a, sum(c) from main_table  group by a"), Seq(Row("a", 1), Row("b", 2)))
-    val df1= sql("select a, sum(c) from main_table  group by a")
+    val df1 = sql("select a, sum(c) from main_table  group by a")
     assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv1"))
     sql("drop table IF EXISTS main_table")
   }
@@ -334,7 +347,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
     sql("drop materialized view if exists mv1")
-    sql("create materialized view mv1 with deferred refresh as select a, sum(b) from main_table  group by a")
+    sql("create materialized view mv1 with deferred refresh " +
+        "as select a, sum(b) from main_table  group by a")
     sql("refresh materialized view mv1")
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
@@ -363,7 +377,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into main_table values(1,2,3)")
     sql("insert into main_table values(1,4,5)")
     sql("drop materialized view if exists mv_1")
-    sql("create materialized view mv_1 with deferred refresh as select sum(a)+sum(b) from main_table")
+    sql("create materialized view mv_1 with deferred refresh " +
+        "as select sum(a)+sum(b) from main_table")
     checkAnswer(sql("select sum(a)+sum(b) from main_table"), Seq(Row(8)))
     sql("refresh materialized view mv_1")
     checkAnswer(sql("select sum(a)+sum(b) from main_table"), Seq(Row(8)))
@@ -376,12 +391,12 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test Incremental Loading on non-lazy mv") {
-    //create table and load data
+    // create table and load data
     createTableFactTable("test_table")
     loadDataToFactTable("test_table")
     createTableFactTable("test_table1")
     loadDataToFactTable("test_table1")
-    //create materialized view on table test_table
+    // create materialized view on table test_table
     sql("drop materialized view if exists mv1")
     sql(
       "create materialized view mv1  as select empname, designation " +
@@ -417,7 +432,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       sql("select empname, designation from test_table1"))
   }
 
-  test("test MV incremental loading on non-lazy materialized view with update operation on main table") {
+  test("test MV incremental loading on non-lazy materialized view " +
+       "with update operation on main table") {
     sql("drop table IF EXISTS main_table")
     sql("drop table IF EXISTS testtable")
     sql("create table main_table(a string,b string,c int) STORED AS carbondata")
@@ -432,8 +448,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
-    sql("update main_table set(a) = ('aaa') where b = 'abc'").show(false)
-    sql("update testtable set(a) = ('aaa') where b = 'abc'").show(false)
+    sql("update main_table set(a) = ('aaa') where b = 'abc'").collect()
+    sql("update testtable set(a) = ('aaa') where b = 'abc'").collect()
     val viewTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
       "mv1")
@@ -452,7 +468,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS testtable")
   }
 
-  test("test MV incremental loading on non-lazy materialized view with delete operation on main table") {
+  test("test MV incremental loading on non-lazy materialized view " +
+       "with delete operation on main table") {
     sql("drop table IF EXISTS main_table")
     sql("drop table IF EXISTS testtable")
     sql("create table main_table(a string,b string,c int) STORED AS carbondata")
@@ -467,8 +484,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
-    sql("delete from  main_table  where b = 'abc'").show(false)
-    sql("delete from  testtable  where b = 'abc'").show(false)
+    sql("delete from  main_table  where b = 'abc'").collect()
+    sql("delete from  testtable  where b = 'abc'").collect()
     val viewTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
       "mv1")
@@ -508,7 +525,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into main_table values('a','abc',1)")
     sql("drop materialized view if exists mv1")
     sql("create materialized view mv1  as select a, sum(b) from main_table group by a")
-    sql("delete from  main_table  where b = 'abc'").show(false)
+    sql("delete from  main_table  where b = 'abc'").collect()
     val viewTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
       "mv1")
@@ -566,7 +583,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
          |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
          |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
          |  utilization int,salary int)
-         | STORED AS carbondata TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='6,0')
+         | STORED AS carbondata
+         | TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='6,0')
       """.stripMargin)
     loadDataToFactTable("test_table")
     sql("drop materialized view if exists mv1")
@@ -655,7 +673,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE $tableName  OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
   }
-  
+
   private def getSegmentMap(extraInfo: String): util.Map[String, util.List[String]] = {
     new Gson().fromJson(extraInfo, classOf[util.Map[_, _]])
   }

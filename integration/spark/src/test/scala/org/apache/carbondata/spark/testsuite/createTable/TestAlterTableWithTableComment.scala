@@ -21,8 +21,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * test functionality for alter table with table comment
-  */
+ * test functionality for alter table with table comment
+ */
 class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {

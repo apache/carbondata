@@ -17,27 +17,26 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeAndAfterAll {
   var filePath: String = _
   var pwd: String = _
 
-  def buildTestData() = {
+  private def buildTestData() = {
     filePath = s"$resourcesPath/emptyDimensionData.csv"
   }
 
-  def dropTable() = {
+  private def dropTable() = {
     sql("DROP TABLE IF EXISTS exclude_include_t3")
     sql("DROP TABLE IF EXISTS exclude_include_hive_t3")
   }
 
-  def buildTable() = {
+  private def buildTable() = {
     try {
       sql(
         """
@@ -58,7 +57,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
     }
   }
 
-  def loadTable() = {
+  private def loadTable() = {
     try {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
@@ -66,10 +65,8 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
         s"""
            LOAD DATA LOCAL INPATH '$filePath' into table exclude_include_t3
            """)
-      sql(
-        s"""
-           LOAD DATA LOCAL INPATH '$resourcesPath/emptyDimensionDataHive.csv' into table exclude_include_hive_t3
-           """)
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptyDimensionDataHive.csv' " +
+          "into table exclude_include_hive_t3")
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }

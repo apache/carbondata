@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.view.plans
 
-import org.apache.carbondata.mv.dsl.Plans._
-import org.apache.carbondata.mv.plans.modular.ModularPlan
-import org.apache.carbondata.view.testutil.ModularPlanTest
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.dsl.plans._
 import org.apache.spark.sql.catalyst.plans.logical.LocalRelation
+
+import org.apache.carbondata.mv.dsl.Plans._
+import org.apache.carbondata.mv.plans.modular.ModularPlan
+import org.apache.carbondata.view.testutil.ModularPlanTest
 
 /**
  * Tests for the isSPJGH function of [[ModularPlan]].
@@ -34,25 +35,45 @@ class IsSPJGHSuite extends ModularPlanTest {
   def assertIsSPJGH(plan: ModularPlan, result: Boolean = true): Unit = {
     if (plan.isSPJGH != result) {
       val ps = plan.toString
+      // scalastyle:off println
       println(s"Plans should return sameResult = $result\n$ps")
+      // scalastyle:on println
     }
   }
 
   test("project only") {
     assertIsSPJGH(testRelation0.select('a).analyze.modularize)
-    assertIsSPJGH(testRelation0.select('a,'b).analyze.modularize)
+    assertIsSPJGH(testRelation0.select('a, 'b).analyze.modularize)
   }
 
   test("groupby-project") {
     assertIsSPJGH(testRelation0.select('a).groupBy('a)('a).select('a).analyze.modularize)
-    assertIsSPJGH(testRelation0.select('a,'b).groupBy('a,'b)('a,'b).select('a).analyze.modularize)
+    assertIsSPJGH(testRelation0
+      .select('a, 'b)
+      .groupBy('a, 'b)('a, 'b)
+      .select('a)
+      .analyze
+      .modularize)
   }
 
   test("groupby-project-filter") {
-    assertIsSPJGH(testRelation0.where('a === 1).select('a,'b).groupBy('a,'b)('a,'b).select('a).analyze.modularize)   
+    assertIsSPJGH(testRelation0
+      .where('a === 1)
+      .select('a, 'b)
+      .groupBy('a, 'b)('a, 'b)
+      .select('a)
+      .analyze
+      .modularize)
   }
 
   test("groupby-project-filter-join") {
-    assertIsSPJGH(testRelation0.where('b === 1).join(testRelation1.where('d === 1),condition = Some("d".attr === "b".attr || "d".attr === "c".attr)).groupBy('b,'c)('b,'c).select('b).analyze.modularize)
+    assertIsSPJGH(testRelation0
+      .where('b === 1)
+      .join(testRelation1.where('d === 1),
+        condition = Some("d".attr === "b".attr || "d".attr === "c".attr))
+      .groupBy('b, 'c)('b, 'c)
+      .select('b)
+      .analyze
+      .modularize)
   }
 }

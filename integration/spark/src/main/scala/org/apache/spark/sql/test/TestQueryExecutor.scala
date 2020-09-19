@@ -165,6 +165,7 @@ object TestQueryExecutor {
   lazy val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
+    .addProperty(CarbonCommonConstants.CARBON_ENABLE_AUDIT, "false")
     .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, badStoreLocation)
     .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "1024")
     .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")

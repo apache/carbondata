@@ -22,7 +22,6 @@ import java.util
 
 import org.apache.avro
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang.CharEncoding
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
@@ -35,16 +34,12 @@ import org.apache.carbondata.sdk.file.CarbonWriter
 
 class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with BeforeAndAfterAll {
 
-  var writerPath = new File(this.getClass.getResource("/").getPath
-                            +
-                            "../." +
-                            "./target/SparkCarbonFileFormat/WriterOutput/")
-    .getCanonicalPath
-  //getCanonicalPath gives path with \, but the code expects /.
+  var writerPath = new File(this.getClass.getResource("/").getPath +
+                            "../../target/SparkCarbonFileFormat/WriterOutput/").getCanonicalPath
+  // getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
 
-
-  def cleanTestData() = {
+  private def cleanTestData() = {
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
@@ -59,7 +54,10 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
-  private def WriteFilesWithAvroWriter(rows: Int, mySchema: String, json: String, isLocalDictionary: Boolean): Unit = {
+  private def WriteFilesWithAvroWriter(rows: Int,
+      mySchema: String,
+      json: String,
+      isLocalDictionary: Boolean): Unit = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
     val record = testUtil.jsonToAvro(json, mySchema)
@@ -68,11 +66,17 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
         CarbonWriter.builder
           .outputPath(writerPath).enableLocalDictionary(true)
           .localDictionaryThreshold(2000)
-          .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
+          .uniqueIdentifier(System.currentTimeMillis())
+          .withAvroInput(nn)
+          .writtenBy("TestNonTransactionalCarbonTableWithComplexType")
+          .build()
       } else {
         CarbonWriter.builder
           .outputPath(writerPath)
-          .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
+          .uniqueIdentifier(System.currentTimeMillis())
+          .withAvroInput(nn)
+          .writtenBy("TestNonTransactionalCarbonTableWithComplexType")
+          .build()
       }
       var i = 0
       while (i < rows) {
@@ -82,102 +86,115 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       writer.close()
     }
     catch {
-      case e: Exception => {
+      case e: Exception =>
         e.printStackTrace()
         Assert.fail(e.getMessage)
-      }
     }
   }
 
   // test multi level -- 4 levels [array of array of array of struct]
-  def buildAvroTestDataMultiLevel4(rows: Int, options: util.Map[String, String], isLocalDictionary: Boolean): Any = {
+  def buildAvroTestDataMultiLevel4(rows: Int,
+      options: util.Map[String, String],
+      isLocalDictionary: Boolean): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
 
-    val mySchema =  """ {
-                      |	"name": "address",
-                      |	"type": "record",
-                      |	"fields": [
-                      |		{
-                      |			"name": "name",
-                      |			"type": "string"
-                      |		},
-                      |		{
-                      |			"name": "age",
-                      |			"type": "int"
-                      |		},
-                      |		{
-                      |			"name": "BuildNum",
-                      |			"type": {
-                      |				"type": "array",
-                      |				"items": {
-                      |					"name": "FloorNum",
-                      |					"type": "array",
-                      |					"items": {
-                      |						"name": "doorNum",
-                      |						"type": "array",
-                      |						"items": {
-                      |							"name": "my_address",
-                      |							"type": "record",
-                      |							"fields": [
-                      |								{
-                      |									"name": "street",
-                      |									"type": "string"
-                      |								},
-                      |								{
-                      |									"name": "city",
-                      |									"type": "string"
-                      |								},
+    val mySchema = """ {
+                      |  "name": "address",
+                      |  "type": "record",
+                      |  "fields": [
+                      |    {
+                      |      "name": "name",
+                      |      "type": "string"
+                      |    },
+                      |    {
+                      |      "name": "age",
+                      |      "type": "int"
+                      |    },
+                      |    {
+                      |      "name": "BuildNum",
+                      |      "type": {
+                      |        "type": "array",
+                      |        "items": {
+                      |          "name": "FloorNum",
+                      |          "type": "array",
+                      |          "items": {
+                      |            "name": "doorNum",
+                      |            "type": "array",
+                      |            "items": {
+                      |              "name": "my_address",
+                      |              "type": "record",
+                      |              "fields": [
+                      |                {
+                      |                  "name": "street",
+                      |                  "type": "string"
+                      |                },
+                      |                {
+                      |                  "name": "city",
+                      |                  "type": "string"
+                      |                },
                       |               {
-                      |									"name": "Temperature",
-                      |									"type": "double"
-                      |								},
+                      |                  "name": "Temperature",
+                      |                  "type": "double"
+                      |                },
                       |               {
-                      |									"name": "WindSpeed",
-                      |									"type": "string"
-                      |								},
+                      |                  "name": "WindSpeed",
+                      |                  "type": "string"
+                      |                },
                       |               {
-                      |									"name": "year",
-                      |									"type": "string"
-                      |								}
-                      |							]
-                      |						}
-                      |					}
-                      |				}
-                      |			}
-                      |		}
-                      |	]
+                      |                  "name": "year",
+                      |                  "type": "string"
+                      |                }
+                      |              ]
+                      |            }
+                      |          }
+                      |        }
+                      |      }
+                      |    }
+                      |  ]
                       |} """.stripMargin
 
     val json =
       """ {
-        |	"name": "bob",
-        |	"age": 10,
-        |	"BuildNum": [
-        |		[
-        |			[
-        |				{"street":"abc", "city":"city1", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"},
-        |				{"street":"def", "city":"city2", "Temperature":13.6, "WindSpeed":"1234.56", "year":"2018-05-10"},
-        |				{"street":"cfg", "city":"city3", "Temperature":14.6, "WindSpeed":"1234.56", "year":"2018-05-10"}
-        |			],
-        |			[
-        |				 {"street":"abc1", "city":"city3", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"},
-        |				 {"street":"def1", "city":"city4", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"},
-        |				 {"street":"cfg1", "city":"city5", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"}
-        |			]
-        |		],
-        |		[
-        |			[
-        |				 {"street":"abc2", "city":"cityx", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"},
-        |				 {"street":"abc3", "city":"cityy", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"},
-        |				 {"street":"abc4", "city":"cityz", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"}
-        |			],
-        |			[
-        |				 {"street":"a1bc", "city":"cityA", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"},
-        |				 {"street":"a1bc", "city":"cityB", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"},
-        |				 {"street":"a1bc", "city":"cityc", "Temperature":12.6, "WindSpeed":"1234.56", "year":"2018-05-10"}
-        |			]
-        |		]
-        |	]
+        |  "name": "bob",
+        |  "age": 10,
+        |  "BuildNum": [
+        |    [
+        |      [
+        |        {"street":"abc", "city":"city1", "Temperature":12.6,
+        |         "WindSpeed":"1234.56", "year":"2018-05-10"},
+        |        {"street":"def", "city":"city2", "Temperature":13.6,
+        |         "WindSpeed":"1234.56", "year":"2018-05-10"},
+        |        {"street":"cfg", "city":"city3", "Temperature":14.6,
+        |         "WindSpeed":"1234.56", "year":"2018-05-10"}
+        |      ],
+        |      [
+        |         {"street":"abc1", "city":"city3", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"},
+        |         {"street":"def1", "city":"city4", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"},
+        |         {"street":"cfg1", "city":"city5", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"}
+        |      ]
+        |    ],
+        |    [
+        |      [
+        |         {"street":"abc2", "city":"cityx", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"},
+        |         {"street":"abc3", "city":"cityy", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"},
+        |         {"street":"abc4", "city":"cityz", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"}
+        |      ],
+        |      [
+        |         {"street":"a1bc", "city":"cityA", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"},
+        |         {"street":"a1bc", "city":"cityB", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"},
+        |         {"street":"a1bc", "city":"cityc", "Temperature":12.6,
+        |          "WindSpeed":"1234.56", "year":"2018-05-10"}
+        |      ]
+        |    ]
+        |  ]
         |} """.stripMargin
 
     WriteFilesWithAvroWriter(rows, mySchema, json, isLocalDictionary)
@@ -197,7 +214,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
-    sql("select * from sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable").collect()
 
     // TODO: Add a validation
 
@@ -214,8 +231,8 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       s"""CREATE EXTERNAL TABLE localComplex STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
-    sql("describe formatted localComplex").show(30, false)
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0, writerPath)))
+    sql("describe formatted localComplex").collect
     val descLoc = sql("describe formatted localComplex").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
@@ -231,44 +248,48 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
 
   test("test multi level support : array of array of array of with Double data type") {
     cleanTestData()
-    val mySchema =  """ {
-                      |	"name": "address",
-                      |	"type": "record",
-                      |	"fields": [
-                      |		{
-                      |			"name": "name",
-                      |			"type": "string"
-                      |		},
-                      |		{
-                      |			"name": "age",
-                      |			"type": "int"
-                      |		},
-                      |		{
+    val mySchema = """ {
+                      |  "name": "address",
+                      |  "type": "record",
+                      |  "fields": [
+                      |    {
+                      |      "name": "name",
+                      |      "type": "string"
+                      |    },
+                      |    {
+                      |      "name": "age",
+                      |      "type": "int"
+                      |    },
+                      |    {
                       |   "name" :"my_address",
                       |   "type" :{
-                      |							"name": "my_address",
-                      |							"type": "record",
-                      |							"fields": [
+                      |              "name": "my_address",
+                      |              "type": "record",
+                      |              "fields": [
                       |               {
-                      |									"name": "Temperaturetest",
-                      |									"type": "double"
-                      |								}
-                      |							]
+                      |                  "name": "Temperaturetest",
+                      |                  "type": "double"
+                      |                }
+                      |              ]
                       |       }
-                      |			}
-                      |	]
+                      |      }
+                      |  ]
                       |} """.stripMargin
 
-    val jsonvalue=
+    val jsonvalue =
       """{
         |"name" :"babu",
         |"age" :12,
         |"my_address" :{ "Temperaturetest" :123 }
         |}
       """.stripMargin
-    val pschema= org.apache.avro.Schema.parse(mySchema)
+    val pschema = org.apache.avro.Schema.parse(mySchema)
     val records = testUtil.jsonToAvro(jsonvalue, mySchema)
-    val writer = CarbonWriter.builder().outputPath(writerPath).withAvroInput(pschema).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
+    val writer = CarbonWriter.builder()
+      .outputPath(writerPath)
+      .withAvroInput(pschema)
+      .writtenBy("TestNonTransactionalCarbonTableWithComplexType")
+      .build()
     writer.write(records)
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -276,7 +297,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
-    sql("select * from sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable").collect()
 
     // TODO: Add a validation
 
@@ -310,143 +331,145 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
   }
 
   // test multi level -- 6 levels
-  def buildAvroTestDataMultiLevel6(rows: Int, options: util.Map[String, String], isLocalDictionary: Boolean): Any = {
+  def buildAvroTestDataMultiLevel6(rows: Int,
+      options: util.Map[String, String],
+      isLocalDictionary: Boolean): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
 
     val mySchema =
       """ {
         |"type": "record",
-        |	"name": "UserInfo",
-        |	"namespace": "com.apache.schema.schemalevel6_struct",
-        |	"fields": [
-        |		{
-        |			"name": "username",
-        |			"type": "string",
-        |			"default": "NONE"
-        |		},
-        |		{
-        |			"name": "age",
-        |			"type": "int",
-        |			"default": -1
-        |		},
-        |		{
-        |			"name": "phone",
-        |			"type": "string",
-        |			"default": "NONE"
-        |		},
-        |		{
-        |			"name": "housenum",
-        |			"type": "string",
-        |			"default": "NONE"
-        |		},
-        |		{
-        |			"name": "address",
-        |			"type": {
-        |				"type": "record",
-        |				"name": "Mailing_Address",
-        |				"fields": [
-        |					{
-        |						"name": "Address_Detail",
-        |						"type": {
-        |							"type": "record",
-        |							"name": "Address_Detail",
-        |							"fields": [
-        |								{
-        |									"name": "Building_Detail",
-        |									"type": {
-        |										"type": "record",
-        |										"name": "Building_Address",
-        |										"fields": [
-        |											{
-        |												"name": "Society_name",
-        |												"type": "string"
-        |											},
-        |											{
-        |												"name": "building_no",
-        |												"type": "string"
-        |											},
-        |											{
-        |												"name": "house_no",
-        |												"type": "int"
-        |											},
-        |											{
-        |												"name": "Building_Type",
-        |												"type": {
-        |													"type": "record",
-        |													"name": "Building_Type",
-        |													"fields": [
-        |														{
-        |															"name":"Buildingname",
-        |															"type":"string"
-        |														},
-        |														{
-        |															"name":"buildingArea",
-        |															"type":"int"
-        |														},
-        |														{
-        |															"name":"Building_Criteria",
-        |															"type":{
-        |																"type":"record",
-        |																"name":"BuildDet",
-        |																"fields":[
-        |																	{
-        |																		"name":"f1",
-        |																		"type":"int"
-        |																	},
-        |																	{
-        |																		"name":"f2",
-        |																		"type":"string"
-        |																	},
-        |																	{
-        |																		"name":"BuildDetInner",
-        |																		"type":
-        |																			{
-        |																				"type":"record",
-        |																				"name":"BuildInner",
-        |																				"fields":[
-        |																						{
-        |																							"name": "duplex",
-        |																							"type": "boolean"
-        |																						},
-        |																						{
-        |																							"name": "Price",
-        |																							"type": "int"
-        |																						},
-        |																						{
-        |																							"name": "TotalCost",
-        |																							"type": "int"
-        |																						},
-        |																						{
-        |																							"name": "Floor",
-        |																							"type": "int"
-        |																						},
-        |																						{
-        |																							"name": "PhoneNo",
-        |																							"type": "long"
-        |																						},
-        |																						{
-        |																							"name": "value",
-        |																							"type": "string"
-        |																						}
-        |																				]
-        |																			}
-        |																	}
-        |																]
-        |															}
-        |														}
-        |													]
-        |												}
-        |											}
-        |										]
-        |									}
-        |								}
-        |							]
-        |						}
-        |					}
-        |				]
-        |			}
-        |		}
-        |	]
+        |  "name": "UserInfo",
+        |  "namespace": "com.apache.schema.schemalevel6_struct",
+        |  "fields": [
+        |    {
+        |      "name": "username",
+        |      "type": "string",
+        |      "default": "NONE"
+        |    },
+        |    {
+        |      "name": "age",
+        |      "type": "int",
+        |      "default": -1
+        |    },
+        |    {
+        |      "name": "phone",
+        |      "type": "string",
+        |      "default": "NONE"
+        |    },
+        |    {
+        |      "name": "housenum",
+        |      "type": "string",
+        |      "default": "NONE"
+        |    },
+        |    {
+        |      "name": "address",
+        |      "type": {
+        |        "type": "record",
+        |        "name": "Mailing_Address",
+        |        "fields": [
+        |          {
+        |            "name": "Address_Detail",
+        |            "type": {
+        |              "type": "record",
+        |              "name": "Address_Detail",
+        |              "fields": [
+        |                {
+        |                  "name": "Building_Detail",
+        |                  "type": {
+        |                    "type": "record",
+        |                    "name": "Building_Address",
+        |                    "fields": [
+        |                      {
+        |                        "name": "Society_name",
+        |                        "type": "string"
+        |                      },
+        |                      {
+        |                        "name": "building_no",
+        |                        "type": "string"
+        |                      },
+        |                      {
+        |                        "name": "house_no",
+        |                        "type": "int"
+        |                      },
+        |                      {
+        |                        "name": "Building_Type",
+        |                        "type": {
+        |                          "type": "record",
+        |                          "name": "Building_Type",
+        |                          "fields": [
+        |                            {
+        |                              "name":"Buildingname",
+        |                              "type":"string"
+        |                            },
+        |                            {
+        |                              "name":"buildingArea",
+        |                              "type":"int"
+        |                            },
+        |                            {
+        |                              "name":"Building_Criteria",
+        |                              "type":{
+        |                                "type":"record",
+        |                                "name":"BuildDet",
+        |                                "fields":[
+        |                                  {
+        |                                    "name":"f1",
+        |                                    "type":"int"
+        |                                  },
+        |                                  {
+        |                                    "name":"f2",
+        |                                    "type":"string"
+        |                                  },
+        |                                  {
+        |                                    "name":"BuildDetInner",
+        |                                    "type":
+        |                                      {
+        |                                        "type":"record",
+        |                                        "name":"BuildInner",
+        |                                        "fields":[
+        |                                            {
+        |                                              "name": "duplex",
+        |                                              "type": "boolean"
+        |                                            },
+        |                                            {
+        |                                              "name": "Price",
+        |                                              "type": "int"
+        |                                            },
+        |                                            {
+        |                                              "name": "TotalCost",
+        |                                              "type": "int"
+        |                                            },
+        |                                            {
+        |                                              "name": "Floor",
+        |                                              "type": "int"
+        |                                            },
+        |                                            {
+        |                                              "name": "PhoneNo",
+        |                                              "type": "long"
+        |                                            },
+        |                                            {
+        |                                              "name": "value",
+        |                                              "type": "string"
+        |                                            }
+        |                                        ]
+        |                                      }
+        |                                  }
+        |                                ]
+        |                              }
+        |                            }
+        |                          ]
+        |                        }
+        |                      }
+        |                    ]
+        |                  }
+        |                }
+        |              ]
+        |            }
+        |          }
+        |        ]
+        |      }
+        |    }
+        |  ]
         |} """.stripMargin
 
     val json =
@@ -494,16 +517,27 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
+    // scalastyle:off lineLength
     checkAnswer(sql("select * from sdkOutputTable"),
       Seq(Row("DON", 21, "9888", "44", Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34,
-        Row(23, "RRR", Row(true, 3434, 7777, 4, 5656,  "Value")))))))))
+        Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))))))
     checkAnswer(sql("select address from sdkOutputTable"),
-      Seq(Row(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))))))
+      Seq(Row(Row(Row(Row("TTTT",
+        "5",
+        78,
+        Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))))))
     checkAnswer(sql("select address.Address_Detail from sdkOutputTable"),
-      Seq(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))))
+      Seq(Row(Row(Row("TTTT",
+        "5",
+        78,
+        Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))))
     checkAnswer(sql("select address.Address_Detail.Building_Detail from sdkOutputTable"),
-      Seq(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))))
-    checkAnswer(sql("select address.Address_Detail.Building_Detail.Building_Type from sdkOutputTable"),
+      Seq(Row(Row("TTTT",
+        "5",
+        78,
+        Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type from sdkOutputTable"),
       Seq(Row(Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))
     checkAnswer(sql(
       "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria from " +
@@ -527,15 +561,46 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria" +
       ".BuildDetInner.value from sdkOutputTable"), Seq(Row("Value")))
     checkAnswer(sql("select address,address.Address_Detail from sdkOutputTable"),
-      Seq(Row(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))
-      , Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))))
-    checkAnswer(sql("select address.Address_Detail.Building_Detail.Building_Type,address.Address_Detail.Building_Detail.Building_Type.Building_Criteria from sdkOutputTable"), Seq(Row(Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))),Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))
-    checkAnswer(sql("select address.Address_Detail,address.Address_Detail.Building_Detail.Building_Type.Building_Criteria from sdkOutputTable"),Seq(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))),Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))
-    checkAnswer(sql("select address.Address_Detail,address.Address_Detail.Building_Detail.Society_name,address.Address_Detail.Building_Detail.Building_Type.Building_Criteria.f1 from sdkOutputTable"),
-      Seq(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))),"TTTT",23)))
-    checkAnswer(sql("select address.Address_Detail.Building_Detail.Society_name,address.Address_Detail.Building_Detail.building_no from sdkOutputTable"),Seq(Row("TTTT","5")))
-    sql("select address.Address_Detail.Building_Detail.Society_name,address.Address_Detail.Building_Detail.building_no from sdkOutputTable where address.Address_Detail.Building_Detail.Society_name ='TTTT'").show(false)
+      Seq(Row(Row(Row(Row("TTTT",
+        "5",
+        78,
+        Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))
+        ,
+        Row(Row("TTTT",
+          "5",
+          78,
+          Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type,address.Address_Detail" +
+      ".Building_Detail.Building_Type.Building_Criteria from sdkOutputTable"),
+      Seq(Row(Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))),
+        Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))
+    checkAnswer(sql(
+      "select address.Address_Detail,address.Address_Detail.Building_Detail.Building_Type" +
+      ".Building_Criteria from sdkOutputTable"),
+      Seq(Row(Row(Row("TTTT",
+        "5",
+        78,
+        Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))),
+        Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))
+    checkAnswer(sql(
+      "select address.Address_Detail,address.Address_Detail.Building_Detail.Society_name,address" +
+      ".Address_Detail.Building_Detail.Building_Type.Building_Criteria.f1 from sdkOutputTable"),
+      Seq(Row(Row(Row("TTTT",
+        "5",
+        78,
+        Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))),
+        "TTTT",
+        23)))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Society_name,address.Address_Detail" +
+      ".Building_Detail.building_no from sdkOutputTable"),
+      Seq(Row("TTTT", "5")))
+    sql("select address.Address_Detail.Building_Detail.Society_name," +
+        "address.Address_Detail.Building_Detail.building_no from sdkOutputTable " +
+        "where address.Address_Detail.Building_Detail.Society_name ='TTTT'").collect()
     sql("DROP TABLE sdkOutputTable")
+    // scalastyle:on lineLength
     cleanTestData()
   }
 }

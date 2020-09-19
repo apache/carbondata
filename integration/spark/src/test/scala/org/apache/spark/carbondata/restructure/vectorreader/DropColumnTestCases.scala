@@ -32,7 +32,7 @@ class DropColumnTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test drop column and insert into hive table") {
-    def test_drop_and_insert() = {
+    def test_drop_and_insert(): Unit = {
       beforeAll
       sql(
         "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
@@ -54,7 +54,7 @@ class DropColumnTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test drop column and load data") {
-    def test_drop_and_load() = {
+    def test_drop_and_load(): Unit = {
       beforeAll
       sql(
         "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
@@ -75,7 +75,7 @@ class DropColumnTestCases extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test drop column and compaction") {
-    def test_drop_and_compaction() = {
+    def test_drop_and_compaction(): Unit = {
       beforeAll
       sql(
         "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
@@ -101,7 +101,7 @@ class DropColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintbl")
     sql("create table maintbl (a string, b string, c struct<si:int>) STORED AS carbondata")
     assert(intercept[ProcessMetaDataException] {
-      sql("alter table maintbl drop columns(b,c)").show
+      sql("alter table maintbl drop columns(b,c)").collect()
     }.getMessage.contains("Complex column cannot be dropped"))
     sql("drop table if exists maintbl")
   }

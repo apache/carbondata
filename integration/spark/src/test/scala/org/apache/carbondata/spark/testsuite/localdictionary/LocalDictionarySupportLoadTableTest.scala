@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.localdictionary
 
 import java.io.{File, PrintWriter}
@@ -54,7 +55,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("drop table if exists local2")
   }
 
-  test("test LocalDictionary Load For FallBackScenario"){
+  test("test LocalDictionary Load For FallBackScenario") {
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED AS carbondata tblproperties" +
@@ -63,18 +64,19 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     assert(!checkForLocalDictionary(getDimRawChunk(0)))
   }
 
-  test("test successful local dictionary generation"){
+  test("test successful local dictionary generation") {
     sql("drop table if exists local2")
-    sql(
-      "CREATE TABLE local2(name string) STORED AS carbondata tblproperties" +
-      "('local_dictionary_enable'='true','local_dictionary_threshold'='9001','local_dictionary_include'='name')")
+    sql("CREATE TABLE local2(name string) STORED AS carbondata " +
+        "tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='9001'," +
+        "'local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
 
   test("test successful local dictionary generation for default configs") {
     sql("drop table if exists local2")
-    sql("CREATE TABLE local2(name string) STORED AS carbondata tblproperties('local_dictionary_enable'='true')")
+    sql("CREATE TABLE local2(name string) STORED AS carbondata " +
+        "tblproperties('local_dictionary_enable'='true')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
@@ -87,7 +89,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
 
-  test("test local dictionary generation for local dictioanry exclude"){
+  test("test local dictionary generation for local dictioanry exclude") {
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED AS carbondata tblproperties" +
@@ -96,7 +98,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
 
-  test("test local dictionary generation when it is disabled"){
+  test("test local dictionary generation when it is disabled") {
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED AS carbondata tblproperties" +
@@ -105,30 +107,30 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     assert(!checkForLocalDictionary(getDimRawChunk(0)))
   }
 
-  test("test local dictionary generation for invalid threshold configurations"){
+  test("test local dictionary generation for invalid threshold configurations") {
     sql("drop table if exists local2")
     sql(
-      "CREATE TABLE local2(name string) STORED AS carbondata tblproperties" +
-      "('local_dictionary_enable'='true','local_dictionary_include'='name','local_dictionary_threshold'='300000')")
+      "CREATE TABLE local2(name string) STORED AS carbondata " +
+      "tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name'," +
+      "'local_dictionary_threshold'='300000')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
 
-  test("test local dictionary generation for include and exclude"){
+  test("test local dictionary generation for include and exclude") {
     sql("drop table if exists local2")
-    sql(
-      "CREATE TABLE local2(name string, age string) STORED AS carbondata tblproperties" +
-      "('local_dictionary_enable'='true','local_dictionary_include'='name', 'local_dictionary_exclude'='age')")
+    sql("CREATE TABLE local2(name string, age string) STORED AS carbondata " +
+        "tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name', " +
+        "'local_dictionary_exclude'='age')")
     sql("insert into table local2 values('vishal', '30')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
     assert(!checkForLocalDictionary(getDimRawChunk(1)))
   }
 
-  test("test local dictionary generation for complex type"){
+  test("test local dictionary generation for complex type") {
     sql("drop table if exists local2")
-    sql(
-      "CREATE TABLE local2(name struct<i:string,s:string>) STORED AS carbondata tblproperties" +
-      "('local_dictionary_enable'='true','local_dictionary_include'='name')")
+    sql("CREATE TABLE local2(name struct<i:string,s:string>) STORED AS carbondata " +
+        "tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name')")
     sql("load data inpath '" + file2 +
         "' into table local2 OPTIONS('header'='false','COMPLEX_DELIMITER_LEVEL_1'='$', " +
         "'COMPLEX_DELIMITER_LEVEL_2'=':')")
@@ -142,7 +144,8 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql(
       "CREATE TABLE local2(name map<string,string>) STORED AS carbondata tblproperties" +
       "('local_dictionary_enable'='true','local_dictionary_include'='name')")
-    sql("insert into local2 values(map('Manish','Gupta','Manish','Nalla','Shardul','Singh','Vishal','Kumar'))")
+    sql("insert into local2 values(" +
+        "map('Manish','Gupta','Manish','Nalla','Shardul','Singh','Vishal','Kumar'))")
     checkAnswer(sql("select * from local2"), Seq(
       Row(Map("Manish" -> "Nalla", "Shardul" -> "Singh", "Vishal" -> "Kumar"))))
     assert(!checkForLocalDictionary(getDimRawChunk(0)))
@@ -162,12 +165,14 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
       "CREATE TABLE local_query_disable(name string) STORED AS carbondata tblproperties" +
       "('local_dictionary_enable'='true','local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local_query_disable OPTIONS('header'='false')")
-    checkAnswer(sql("select name from local_query_enable"), sql("select name from local_query_disable"))
+    checkAnswer(sql("select name from local_query_enable"),
+      sql("select name from local_query_disable"))
   }
 
-  test("test to validate local dictionary values"){
+  test("test to validate local dictionary values") {
     sql("drop table if exists local2")
-    sql("CREATE TABLE local2(name string) STORED AS carbondata tblproperties('local_dictionary_enable'='true')")
+    sql("CREATE TABLE local2(name string) STORED AS carbondata " +
+        "tblproperties('local_dictionary_enable'='true')")
     sql("load data inpath '" + resourcesPath + "/localdictionary.csv" + "' into table local2")
     val dimRawChunk = getDimRawChunk(0)
     val dictionaryData = Array("vishal", "kumar", "akash", "praveen", "brijoo")
@@ -201,7 +206,9 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     }
     Collections.sort(data)
     data.asScala.foreach { eachdata =>
+      // scalastyle:off println
       writer.println(eachdata)
+      // scalastyle:on println
     }
     writer.close()
   }
@@ -219,7 +226,9 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     }
     Collections.sort(data)
     data.asScala.foreach { eachdata =>
+      // scalastyle:off println
       writer.println(eachdata)
+      // scalastyle:on println
     }
     writer.close()
   }
@@ -237,8 +246,8 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
   private def checkForLocalDictionary(dimensionRawColumnChunks: util
   .List[DimensionRawColumnChunk]): Boolean = {
     var isLocalDictionaryGenerated = false
-    import scala.collection.JavaConversions._
-    for (dimensionRawColumnChunk <- dimensionRawColumnChunks) {
+    import scala.collection.JavaConverters._
+    for (dimensionRawColumnChunk <- dimensionRawColumnChunks.asScala) {
       if (dimensionRawColumnChunk.getDataChunkV3
         .isSetLocal_dictionary) {
         isLocalDictionaryGenerated = true
@@ -286,8 +295,8 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
       null)
     val dataFileFooter = converter.readDataFileFooter(blockInfo)
     val blockletList = dataFileFooter.getBlockletList
-    import scala.collection.JavaConversions._
-    for (blockletInfo <- blockletList) {
+    import scala.collection.JavaConverters._
+    for (blockletInfo <- blockletList.asScala) {
       val dimensionColumnChunkReader =
         CarbonDataReaderFactory
           .getInstance

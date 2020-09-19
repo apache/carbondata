@@ -18,17 +18,18 @@ package org.apache.carbondata.spark.testsuite.booleantype
 
 import java.io.File
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.SparkTestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val rootPath = new File(this.getClass.getResource("/").getPath
     + "../../../..").getCanonicalPath
-
+  // scalastyle:off lineLength
   override def beforeEach(): Unit = {
     sql("drop table if exists carbon_table")
     sql("drop table if exists boolean_table")
@@ -90,7 +91,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
   }
 
   test("Loading table: support boolean data type format") {
-    val fileLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanOnlyBoolean.csv"
+    val fileLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanOnlyBoolean.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '$fileLocation'
@@ -102,11 +104,13 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
       Seq(Row(true), Row(true), Row(true), Row(true)))
 
     checkAnswer(sql("select * from carbon_table"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false), Row(null), Row(null), Row(null)))
+      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false),
+        Row(false), Row(null), Row(null), Row(null)))
   }
 
   test("Loading table: support boolean data type format, different format") {
-    val fileLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanDifferentFormat.csv"
+    val fileLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanDifferentFormat.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '$fileLocation'
@@ -118,8 +122,9 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
       Seq(Row(true), Row(true), Row(true), Row(true)))
 
     checkAnswer(sql("select * from carbon_table"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)
-        , Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
+      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false),
+        Row(false), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null),
+        Row(null), Row(null), Row(null), Row(null), Row(null)))
   }
 
   test("Loading table: support boolean and other data type") {
@@ -155,9 +160,11 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     )
   }
 
-  test("Loading table: support boolean and other data type, data columns bigger than table defined columns") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/mm/dd")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+  test("Loading table: support boolean and other data type, " +
+       "data columns bigger than table defined columns") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/mm/dd")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
     sql("drop table if exists boolean_table")
     sql(
       s"""
@@ -168,7 +175,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | STORED AS carbondata
        """.stripMargin)
 
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
@@ -182,7 +190,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
 //        Row(true, 10), Row(true, 10), Row(true, 14),
 //        Row(false, 10), Row(false, 10), Row(false, 16), Row(false, 10))
 //    )
-    sql("select * from boolean_table where dateField < '2015-01-24'").show
+    sql("select * from boolean_table where dateField < '2015-01-24'").collect()
   }
 
   test("Loading table: support boolean and other data type, with file header") {
@@ -207,7 +215,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanWithFileHeader.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanWithFileHeader.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
@@ -242,7 +251,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField2 BOOLEAN
          | )
          | STORED AS carbondata
-         | TBLPROPERTIES('TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES('TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField',
+         |  'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBoolean.csv"
@@ -275,7 +285,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select count(*) from boolean_table where booleanField = null"),
       Row(0))
 
-    checkAnswer(sql("select count(*) from boolean_table where booleanField = false or booleanField = true"),
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField = false or booleanField = true"),
       Row(10))
 
     if (SparkTestQueryExecutor.spark.version.startsWith("2.1")) {
@@ -313,7 +324,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     }
   }
 
-  test("Loading table: load with DELIMITER, QUOTECHAR, COMMENTCHAR, MULTILINE, ESCAPECHAR, COMPLEX_DELIMITER_LEVEL_1") {
+  test("Loading table: load with DELIMITER, QUOTECHAR, COMMENTCHAR, MULTILINE, " +
+       "ESCAPECHAR, COMPLEX_DELIMITER_LEVEL_1") {
     sql("drop table if exists boolean_table")
     sql(
       s"""
@@ -332,15 +344,18 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>
          | )
          | STORED AS carbondata
-         | TBLPROPERTIES('TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES('TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField',
+         |  'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanWithFileHeader.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanWithFileHeader.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
          | INTO TABLE boolean_table
-         | options('DELIMITER'=',','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='#','COMPLEX_DELIMITER_LEVEL_2'=':')
+         | options('DELIMITER'=',','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true',
+         | 'ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='#','COMPLEX_DELIMITER_LEVEL_2'=':')
            """.stripMargin)
 
     checkAnswer(
@@ -365,7 +380,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select count(*) from boolean_table where booleanField = null"),
       Row(0))
 
-    checkAnswer(sql("select count(*) from boolean_table where booleanField = false or booleanField = true"),
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField = false or booleanField = true"),
       Row(10))
 
     if (SparkTestQueryExecutor.spark.version.startsWith("2.1")) {
@@ -403,12 +419,14 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
   }
 
   test("Loading table: bad_records_action is FORCE") {
-    val fileLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanDifferentFormat.csv"
+    val fileLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanDifferentFormat.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '$fileLocation'
          | INTO TABLE carbon_table
-         | OPTIONS('FILEHEADER' = 'booleanField','bad_records_logger_enable'='true','bad_records_action'='FORCE')
+         | OPTIONS('FILEHEADER' = 'booleanField','bad_records_logger_enable'='true',
+         | 'bad_records_action'='FORCE')
        """.stripMargin)
 
     checkAnswer(sql("select * from carbon_table where booleanField = true"),
@@ -422,12 +440,14 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
   }
 
   test("Loading table: bad_records_action is FORCE, support boolean and other data type") {
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
          | INTO TABLE badRecords
-         | options('bad_records_logger_enable'='true','bad_records_action'='FORCE','FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
+         | options('bad_records_logger_enable'='true','bad_records_action'='FORCE',
+         | 'FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
 
     checkAnswer(
@@ -439,12 +459,14 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
   }
 
   test("Loading table: bad_records_action is IGNORE, support boolean and other data type") {
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
          | INTO TABLE badRecords
-         | options('bad_records_logger_enable'='true','bad_records_action'='IGNORE','FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
+         | options('bad_records_logger_enable'='true','bad_records_action'='IGNORE',
+         | 'FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
 
     checkAnswer(
@@ -454,12 +476,14 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
   }
 
   test("Loading table: bad_records_action is REDIRECT, support boolean and other data type") {
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
          | INTO TABLE badRecords
-         | options('bad_records_logger_enable'='true','bad_records_action'='REDIRECT','FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
+         | options('bad_records_logger_enable'='true','bad_records_action'='REDIRECT',
+         | 'FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
 
     checkAnswer(
@@ -469,19 +493,24 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
   }
 
   test("Loading table: bad_records_action is FAIL") {
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
     val exception_insert: Exception = intercept[Exception] {
       sql(
         s"""
            | LOAD DATA LOCAL INPATH '${storeLocation}'
            | INTO TABLE badRecords
-           | options('bad_records_logger_enable'='true','bad_records_action'='FAIL','FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
+           | options('bad_records_logger_enable'='true','bad_records_action'='FAIL',
+           | 'FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
     }
-    assert(exception_insert.getMessage.contains("The value with column name booleanfield and column data type BOOLEAN is not a valid BOOLEAN type"))
+    assert(exception_insert.getMessage.contains(
+      "The value with column name booleanfield " +
+      "and column data type BOOLEAN is not a valid BOOLEAN type"))
   }
 
-  test("Loading overwrite: into and then overwrite table with another table: support boolean data type and other format") {
+  test("Loading overwrite: into and then overwrite table with another table: " +
+       "support boolean data type and other format") {
     sql(
       s"""
          | CREATE TABLE boolean_table2(
@@ -530,7 +559,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
 
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
       s"""
@@ -547,8 +577,10 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
            """.stripMargin)
 
     sql("insert overwrite table boolean_table2 select * from boolean_table")
-    sql("insert overwrite table boolean_table3 select shortField,booleanField,intField,stringField,booleanField2 from boolean_table")
-    sql("insert overwrite table boolean_table4 select shortField,booleanField,intField,stringField,booleanField2 from boolean_table where shortField > 3")
+    sql("insert overwrite table boolean_table3 select shortField,booleanField,intField," +
+        "stringField,booleanField2 from boolean_table")
+    sql("insert overwrite table boolean_table4 select shortField,booleanField,intField," +
+        "stringField,booleanField2 from boolean_table where shortField > 3")
 
     checkAnswer(
       sql("select booleanField,intField from boolean_table2"),
@@ -585,7 +617,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
   }
 
   test("Loading overwrite: support boolean data type format, different format") {
-    val fileLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanDifferentFormat.csv"
+    val fileLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanDifferentFormat.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '$fileLocation'
@@ -605,8 +638,9 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
       Seq(Row(true), Row(true), Row(true), Row(true)))
 
     checkAnswer(sql("select * from carbon_table"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)
-        , Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
+      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false),
+        Row(false), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null), Row(null),
+        Row(null), Row(null), Row(null), Row(null), Row(null)))
   }
 
   test("Loading overwrite: support boolean and other data type") {
@@ -653,7 +687,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
@@ -661,7 +696,8 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
 
-    sql("insert into boolean_table2 select * from boolean_table where shortField = 1 and booleanField = true")
+    sql("insert into boolean_table2 select * from boolean_table " +
+        "where shortField = 1 and booleanField = true")
 
     checkAnswer(
       sql("select booleanField,intField,booleanField2 from boolean_table"),
@@ -683,9 +719,11 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     )
 
     checkAnswer(
-      sql("select booleanField,intField,booleanField2 from boolean_table where exists (select booleanField,intField,booleanField2 " +
+      sql("select booleanField,intField,booleanField2 from boolean_table " +
+          "where exists (select booleanField,intField,booleanField2 " +
         "from boolean_table2 where boolean_table.intField=boolean_table2.intField)"),
-      Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false), Row(false, 10, false), Row(false, 10, false))
+      Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false),
+        Row(false, 10, false), Row(false, 10, false))
     )
   }
 
@@ -751,12 +789,14 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | )
          | STORED AS carbondata
        """.stripMargin)
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanBadRecords.csv"
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
          | INTO TABLE badRecords
-         | options('bad_records_logger_enable'='true','bad_records_action'='IGNORE','FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
+         | options('bad_records_logger_enable'='true','bad_records_action'='IGNORE',
+         | 'FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
 
     checkAnswer(
@@ -767,15 +807,16 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     defaultConf()
   }
 
-  def initConf(): Unit ={
+  def initConf(): Unit = {
     CarbonProperties.getInstance().
       addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
         "true")
   }
 
-  def defaultConf(): Unit ={
+  def defaultConf(): Unit = {
     CarbonProperties.getInstance().
       addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
         CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT)
   }
+  // scalastyle:on lineLength
 }

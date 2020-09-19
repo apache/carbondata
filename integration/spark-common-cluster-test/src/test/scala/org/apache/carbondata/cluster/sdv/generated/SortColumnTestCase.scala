@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -29,9 +28,9 @@ import org.apache.carbondata.core.util.CarbonProperties
  */
 
 class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
-         
 
-  //create table with no dictionary sort_columns
+  // scalastyle:off lineLength
+  // create table with no dictionary sort_columns
   test("Sortcolumn-001_TC001", Include) {
     sql(s"""drop table if exists sorttable1""").collect
      sql(s"""CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='empno')""").collect
@@ -42,7 +41,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with dictionary sort_columns
+  // create table with dictionary sort_columns
   test("Sortcolumn-001_TC002", Include) {
      sql(s"""CREATE TABLE sorttable2 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -52,7 +51,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with direct-dictioanry sort_columns
+  // create table with direct-dictioanry sort_columns
   test("Sortcolumn-001_TC003", Include) {
      sql(s"""CREATE TABLE sorttable3 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='doj')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable3 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -62,7 +61,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with multi-sort_columns and data loading with offheap safe
+  // create table with multi-sort_columns and data loading with offheap safe
   test("Sortcolumn-001_TC004", Include) {
      sql(s"""CREATE TABLE sorttable4_offheap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable4_offheap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -72,7 +71,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with multi-sort_columns and data loading with offheap and unsafe sort
+  // create table with multi-sort_columns and data loading with offheap and unsafe sort
   test("Sortcolumn-001_TC005", Include) {
      sql(s"""CREATE TABLE sorttable4_offheap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable4_offheap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -82,7 +81,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with multi-sort_columns and data loading with offheap and inmemory sort
+  // create table with multi-sort_columns and data loading with offheap and inmemory sort
   test("Sortcolumn-001_TC006", Include) {
      sql(s"""CREATE TABLE sorttable4_offheap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable4_offheap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -92,7 +91,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with multi-sort_columns and data loading with heap
+  // create table with multi-sort_columns and data loading with heap
   test("Sortcolumn-001_TC007", Include) {
      sql(s"""CREATE TABLE sorttable4_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable4_heap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -102,7 +101,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with multi-sort_columns and data loading with heap and unsafe sort
+  // create table with multi-sort_columns and data loading with heap and unsafe sort
   test("Sortcolumn-001_TC008", Include) {
      sql(s"""CREATE TABLE sorttable4_heap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable4_heap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -112,7 +111,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with multi-sort_columns and data loading with heap and inmemory sort
+  // create table with multi-sort_columns and data loading with heap and inmemory sort
   test("Sortcolumn-001_TC009", Include) {
      sql(s"""CREATE TABLE sorttable4_heap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable4_heap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -122,7 +121,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with multi-sort_columns and data loading with heap and inmemory sort
+  // create table with multi-sort_columns and data loading with heap and inmemory sort
   test("Sortcolumn-001_TC010", Include) {
     sql(s"""drop table if exists origintable2""").collect
     sql(s"""drop table if exists sorttable5""").collect
@@ -144,7 +143,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //filter on sort_columns include no-dictionary
+  // filter on sort_columns include no-dictionary
   test("Sortcolumn-001_TC011", Include) {
     sql(s"""drop table if exists sorttable6""").collect
      sql(s"""CREATE TABLE sorttable6 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, doj, empname')""").collect
@@ -155,7 +154,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //filter on sort_columns include direct-dictionary
+  // filter on sort_columns include direct-dictionary
   test("Sortcolumn-001_TC012", Include) {
      sql(s"""CREATE TABLE sorttable6 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, doj, empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -165,7 +164,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //filter on sort_columns include dictioanry
+  // filter on sort_columns include dictioanry
   test("Sortcolumn-001_TC013", Include) {
     sql(s"""drop table if exists sorttable6""").collect
      sql(s"""CREATE TABLE sorttable6 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='workgroupcategory, doj, empname')""").collect
@@ -176,7 +175,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query data loading with heap and safe sort config
+  // unsorted table creation, query data loading with heap and safe sort config
   test("Sortcolumn-001_TC014", Include) {
      sql(s"""CREATE TABLE unsortedtable_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_c+C17olumns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_heap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -186,7 +185,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query data loading with heap and safe sort config with order by
+  // unsorted table creation, query data loading with heap and safe sort config with order by
   test("Sortcolumn-001_TC015", Include) {
     sql(s"""drop table if exists unsortedtable_heap_safe""").collect
      sql(s"""CREATE TABLE unsortedtable_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
@@ -197,7 +196,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query and data loading with heap and unsafe sort config
+  // unsorted table creation, query and data loading with heap and unsafe sort config
   test("Sortcolumn-001_TC016", Include) {
      sql(s"""CREATE TABLE unsortedtable_heap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_heap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -207,7 +206,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query and data loading with heap and unsafe sort config with order by
+  // unsorted table creation, query and data loading with heap and unsafe sort config with order by
   test("Sortcolumn-001_TC017", Include) {
     sql(s"""drop table if exists unsortedtable_heap_unsafe""").collect
      sql(s"""CREATE TABLE unsortedtable_heap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
@@ -218,7 +217,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query and data loading with offheap and safe sort config
+  // unsorted table creation, query and data loading with offheap and safe sort config
   test("Sortcolumn-001_TC018", Include) {
      sql(s"""CREATE TABLE unsortedtable_offheap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_offheap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -228,7 +227,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query and data loading with offheap and safe sort config with order by
+  // unsorted table creation, query and data loading with offheap and safe sort config with order by
   test("Sortcolumn-001_TC019", Include) {
      sql(s"""CREATE TABLE unsortedtable_offheap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_offheap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -238,7 +237,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query and data loading with offheap and unsafe sort config
+  // unsorted table creation, query and data loading with offheap and unsafe sort config
   test("Sortcolumn-001_TC020", Include) {
      sql(s"""CREATE TABLE unsortedtable_offheap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_offheap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -248,7 +247,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query and data loading with offheap and unsafe sort config with order by
+  // unsorted table creation, query and data loading with offheap and unsafe sort config with order by
   test("Sortcolumn-001_TC021", Include) {
      sql(s"""CREATE TABLE unsortedtable_offheap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_offheap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -258,7 +257,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query and data loading with offheap and inmemory sort config
+  // unsorted table creation, query and data loading with offheap and inmemory sort config
   test("Sortcolumn-001_TC022", Include) {
      sql(s"""CREATE TABLE unsortedtable_offheap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_offheap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -268,7 +267,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //unsorted table creation, query and data loading with offheap and inmemory sort config with order by
+  // unsorted table creation, query and data loading with offheap and inmemory sort config with order by
   test("Sortcolumn-001_TC023", Include) {
      sql(s"""CREATE TABLE unsortedtable_offheap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_offheap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
@@ -278,7 +277,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with dictioanry_exclude sort_columns
+  // create table with dictioanry_exclude sort_columns
   test("Sortcolumn-001_TC024", Include) {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='empname')""").collect
@@ -288,7 +287,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists sorttable""").collect
   }
 
-  //create table with alter table and sort_columns with dimension
+  // create table with alter table and sort_columns with dimension
   test("Sortcolumn-001_TC027", Include) {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='doj')""").collect
@@ -301,7 +300,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with alter table and sort_columns with measure
+  // create table with alter table and sort_columns with measure
   test("Sortcolumn-001_TC028", Include) {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='doj')""").collect
@@ -314,7 +313,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //create table with no_inverted_index and sort_columns
+  // create table with no_inverted_index and sort_columns
   test("Sortcolumn-001_TC029", Include) {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='doj','no_inverted_index'='doj')""").collect
@@ -324,7 +323,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists sorttable""").collect
   }
 
-  //test sort_column for different order of column name
+  // test sort_column for different order of column name
   test("Sortcolumn-001_TC032", Include) {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties( 'sort_columns'='empname,empno,workgroupcategory,doj')""").collect
@@ -335,7 +334,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //default behavior if sort_column not provided
+  // default behavior if sort_column not provided
   test("Sortcolumn-001_TC033", Include) {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata """).collect
@@ -346,7 +345,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //test sort_column for alter table
+  // test sort_column for alter table
   test("Sortcolumn-001_TC035", Include) {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='doj')""").collect
@@ -359,7 +358,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //test sort_column for float data_type with alter query
+  // test sort_column for float data_type with alter query
   test("Sortcolumn-001_TC037", Include) {
     sql(s"""drop table if exists sorttable""").collect
     sql(s"""drop table if exists sorttable1""").collect
@@ -373,7 +372,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //test sort_column for decimal data_type with alter query
+  // test sort_column for decimal data_type with alter query
   test("Sortcolumn-001_TC038", Include) {
     sql(s"""drop table if exists sorttable""").collect
     sql(s"""drop table if exists sorttable1""").collect
@@ -387,7 +386,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //test sort_column for decimal data_type
+  // test sort_column for decimal data_type
   test("Sortcolumn-001_TC039", Include) {
     sql(s"""drop table if exists sorttable""").collect
     sql(s"""drop table if exists sorttable1""").collect
@@ -411,9 +410,10 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
-    //Reverting to old
+    // Reverting to old
     prop.addProperty("carbon.load.sort.scope", p1)
     prop.addProperty("enable.unsafe.sort", p2)
     prop.addProperty("enable.offheap.sort", p3)
   }
+  // scalastyle:on lineLength
 }

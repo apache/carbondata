@@ -17,10 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.aggquery
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test Class for aggregate query on multiple datatypes
@@ -46,8 +47,8 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
       "String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance " +
       "int,utilization int,salary int)row format delimited fields terminated by ','")
-    sql(
-      s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithoutheader.csv' INTO TABLE alldatatypesAGG_hive")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithoutheader.csv' " +
+        "INTO TABLE alldatatypesAGG_hive")
   }
 
   test(
@@ -55,12 +56,14 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     "empname in ('arvind','ayushi') group by empno,empname,utilization")
   {
     checkAnswer(
-      sql(
-        "select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableAGG where" +
-        " empname in ('arvind','ayushi') group by empno,empname,utilization"),
-      sql(
-        "select empno,empname,utilization,count(salary),sum(empno) from alldatatypesAGG_hive where" +
-        " empname in ('arvind','ayushi') group by empno,empname,utilization"))
+      sql("select empno,empname,utilization,count(salary),sum(empno) " +
+          "from alldatatypestableAGG " +
+          "where empname in ('arvind','ayushi') " +
+          "group by empno,empname,utilization"),
+      sql("select empno,empname,utilization,count(salary),sum(empno) " +
+          "from alldatatypesAGG_hive " +
+          "where empname in ('arvind','ayushi') " +
+          "group by empno,empname,utilization"))
   }
 
   test(

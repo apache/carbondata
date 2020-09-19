@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import org.apache.spark.sql.Row
@@ -24,7 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     dropTable
 
@@ -296,7 +297,7 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     assert(sql("select * from partitionLoadTable").collect().length == 2)
   }
 
-  override def afterAll = {
+  override def afterAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -305,7 +306,7 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     dropTable
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists originTable")
     sql("drop table if exists partitiondateinsert")
     sql("drop table if exists staticpartitiondateinsert")
@@ -322,5 +323,5 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql("drop table if exists noLoadTable")
     sql("drop table if exists partitiondateinserthive")
   }
-
+  // scalastyle:on lineLength
 }

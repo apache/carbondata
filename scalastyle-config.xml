@@ -73,7 +73,7 @@ This file is divided into 3 sections:
 
  <check level="error" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="true"/>
 
- <check level="error" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
+ <check customId="lineLength" level="error" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
   <parameters>
    <parameter name="maxLineLength"><![CDATA[100]]></parameter>
    <parameter name="tabSize"><![CDATA[2]]></parameter>
@@ -99,7 +99,7 @@ This file is divided into 3 sections:
   </parameters>
  </check>
 
- <check level="error" class="org.scalastyle.scalariform.ParameterNumberChecker" enabled="true">
+ <check customId="maxParameters" level="error" class="org.scalastyle.scalariform.ParameterNumberChecker" enabled="true">
   <parameters>
    <parameter name="maxParameters"><![CDATA[10]]></parameter>
   </parameters>
@@ -141,7 +141,7 @@ This file is divided into 3 sections:
  </check>
 
  <!-- ??? usually shouldn't be checked into the code base. -->
- <check level="error" class="org.scalastyle.scalariform.NotImplementedErrorUsage" enabled="true"/>
+ <check customId="???" level="error" class="org.scalastyle.scalariform.NotImplementedErrorUsage" enabled="true"/>
 
  <check customId="println" level="error" class="org.scalastyle.scalariform.TokenChecker" enabled="true">
   <parameters>

@@ -27,9 +27,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.execution.exchange.Exchange
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -37,8 +38,6 @@ import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFi
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-
-import org.scalatest.BeforeAndAfterAll
 
 class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
 
@@ -60,17 +59,21 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
       checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(0)))
 
       // query with stage input
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "true")
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "true")
       checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(1000)))
-      sql(s"select * from $tableName limit 10").show
+      sql(s"select * from $tableName limit 10").collect()
       checkAnswer(sql(s"select max(intField) from $tableName"), Seq(Row(999)))
-      checkAnswer(sql(s"select count(intField) from $tableName where intField >= 900"), Seq(Row(100)))
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "false")
+      checkAnswer(sql(s"select count(intField) from $tableName where intField >= 900"),
+        Seq(Row(100)))
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "false")
 
       sql(s"INSERT INTO $tableName STAGE")
 
       checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(1000)))
-      checkAnswer(sql(s"select count(intField) from $tableName where intField >= 900"), Seq(Row(100)))
+      checkAnswer(sql(s"select count(intField) from $tableName where intField >= 900"),
+        Seq(Row(100)))
       checkIfStageFilesAreDeleted(tablePath)
     }
   }
@@ -100,13 +103,15 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
     sql(s"DROP TABLE IF EXISTS $bucketTableName").collect()
     sql(
       s"""
-         | CREATE TABLE $tableName (stringField string, intField int, shortField short, stringField1 string)
+         | CREATE TABLE $tableName (
+         | stringField string, intField int, shortField short, stringField1 string)
          | STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='stringField')
       """.stripMargin
     ).collect()
     sql(
       s"""
-         | CREATE TABLE $bucketTableName (stringField string, intField int, shortField short, stringField1 string)
+         | CREATE TABLE $bucketTableName (
+         | stringField string, intField int, shortField short, stringField1 string)
          | STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='stringField')
       """.stripMargin
     ).collect()
@@ -119,7 +124,8 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
       executeFlinkStreamingEnvironment(environment, writerProperties, carbonProperties)
 
       sql(s"INSERT INTO $tableName STAGE OPTIONS ('batch_file_count' = '5')")
-      val table = CarbonEnv.getCarbonTable(Option("default"), s"$tableName")(sqlContext.sparkSession)
+      val table = CarbonEnv.getCarbonTable(
+        Option("default"), s"$tableName")(sqlContext.sparkSession)
       val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0")
       val dataFiles = segmentDir.listFiles(new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
@@ -132,7 +138,8 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
         override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
       })
       assert(dataFiles2.length == 10)
-      checkAnswer(sql(s"SELECT count(*) FROM $tableName where stringField != 'AAA'"), Seq(Row(1000)))
+      checkAnswer(sql(s"SELECT count(*) FROM $tableName where stringField != 'AAA'"),
+        Seq(Row(1000)))
       sql(s"insert into $bucketTableName select * from $tableName").collect()
 
       val plan = sql(
@@ -196,9 +203,12 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
       assert(isFilterHitSecondaryIndex)
 
       // check if query hits bloom filter
-      checkAnswer(sql(s"select intField,stringField1 from $tableName where intField = 99"), Seq(Row(99, "si99")))
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
-      val explainBloom = sql(s"explain select intField,stringField1 from $tableName where intField = 99").collect()
+      checkAnswer(sql(s"select intField,stringField1 from $tableName where intField = 99"),
+        Seq(Row(99, "si99")))
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
+      val explainBloom =
+        sql(s"explain select intField,stringField1 from $tableName where intField = 99").collect()
       assert(explainBloom(0).getString(0).contains(
         """
           |Table Scan on test_flink
@@ -218,7 +228,8 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
     createTable
     // create materialized view
     sql(s"drop materialized view if exists mv_1")
-    sql(s"create materialized view mv_1 as select stringField, shortField from $tableName where intField=99 ")
+    sql(s"create materialized view mv_1 " +
+        s"as select stringField, shortField from $tableName where intField=99 ")
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
       val writerProperties = newWriterProperties(dataTempPath)
@@ -238,7 +249,7 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
         case l: LogicalRelation => l.catalogTable.get
       }
       assert(tables.exists(_.identifier.table.equalsIgnoreCase("mv_1")))
-      checkAnswer(df, Seq(Row("test99",12345)))
+      checkAnswer(df, Seq(Row("test99", 12345)))
       checkIfStageFilesAreDeleted(tablePath)
     }
   }
@@ -370,7 +381,9 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
       new Properties,
       writerProperties,
       carbonProperties)
-    val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+    val streamSink = StreamingFileSink
+      .forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory)
+      .build
     stream.addSink(streamSink)
 
     try environment.execute
@@ -384,13 +397,17 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
   private def checkIfStageFilesAreDeleted(tablePath: String): Unit = {
     // ensure the stage snapshot file and all stage files are deleted
     assertResult(false)(FileFactory.isFileExist(CarbonTablePath.getStageSnapshotFile(tablePath)))
-    assertResult(true)(FileFactory.getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
+    assertResult(true)(FileFactory
+      .getCarbonFile(CarbonTablePath.getStageDir(tablePath))
+      .listFiles()
+      .isEmpty)
   }
 
   private def createTable = {
     sql(s"DROP TABLE IF EXISTS $tableName")
     sql(s"""
-           | CREATE TABLE $tableName (stringField string, intField int, shortField short, stringField1 string)
+           | CREATE TABLE $tableName (
+           | stringField string, intField int, shortField short, stringField1 string)
            | STORED AS carbondata
       """.stripMargin)
   }

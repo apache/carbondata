@@ -18,7 +18,7 @@
 package org.apache.carbondata.spark.testsuite.partition
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest. BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterAll
 
 class TestUpdateForPartitionTable extends QueryTest with BeforeAndAfterAll {
 
@@ -29,7 +29,7 @@ class TestUpdateForPartitionTable extends QueryTest with BeforeAndAfterAll {
       "STORED AS carbondata")
   }
 
-  def dropTable = {
+  private def dropTable = {
     sql("drop table if exists test_hive_partition_table")
   }
 
@@ -37,7 +37,9 @@ class TestUpdateForPartitionTable extends QueryTest with BeforeAndAfterAll {
 
     sql("insert into test_hive_partition_table select 1,'b' ")
     sql("update test_hive_partition_table set (name) = ('c') where id = 1").collect()
-    assertResult(1)(sql("select * from test_hive_partition_table where name = 'c'").collect().length)
+    assertResult(1)(sql("select * from test_hive_partition_table where name = 'c'")
+      .collect()
+      .length)
   }
 
   override def afterAll() : Unit = {

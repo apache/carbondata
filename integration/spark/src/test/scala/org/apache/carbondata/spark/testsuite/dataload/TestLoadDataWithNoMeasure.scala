@@ -22,9 +22,9 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * Test Class for data loading with hive syntax and old syntax
-  *
-  */
+ * Test Class for data loading with hive syntax and old syntax
+ *
+ */
 class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -73,7 +73,7 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test data loading with single complex struct type column") {
-    //only data load check
+    // only data load check
     sql("DROP TABLE IF EXISTS nomeasureTest_scd")
     sql(
       "CREATE TABLE nomeasureTest_scd (cityDetail struct<cityName:string,cityCode:string>) " +
@@ -87,7 +87,7 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test data loading with single complex array type column") {
-    //only data load check
+    // only data load check
     sql("DROP TABLE IF EXISTS nomeasureTest_scd")
     sql(
       "CREATE TABLE nomeasureTest_scd (cityDetail array<string>) " +

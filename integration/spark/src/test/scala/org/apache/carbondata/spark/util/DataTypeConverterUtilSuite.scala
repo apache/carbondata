@@ -17,15 +17,14 @@
 
 package org.apache.carbondata.spark.util
 
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 
 /**
-  * test [[DataTypeConverterUtil]]
-  */
+ * test [[DataTypeConverterUtil]]
+ */
 class DataTypeConverterUtilSuite extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   test("test short convert") {
     assert(DataTypeConverterUtil.convertToCarbonType("short") == DataTypes.SHORT)

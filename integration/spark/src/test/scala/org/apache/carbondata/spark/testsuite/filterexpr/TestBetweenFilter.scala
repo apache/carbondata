@@ -35,11 +35,9 @@ class TestBetweenFilter extends QueryTest with BeforeAndAfterAll {
            (id String, name String, orders int)
            STORED AS carbondata
         """)
-    sql(s"""
-           LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableBetween OPTIONS('BAD_RECORDS_ACTION'='FORCE')
-           """)
+    sql(s" LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableBetween " +
+        "OPTIONS('BAD_RECORDS_ACTION'='FORCE')")
   }
-
 
   test("SELECT id FROM carbonTableBetween where id >= 1") {
     checkAnswer(
@@ -62,10 +60,8 @@ class TestBetweenFilter extends QueryTest with BeforeAndAfterAll {
   test("SELECT id FROM carbonTableBetween where id between 1 and 3") {
     checkAnswer(
       sql("SELECT id FROM carbonTableBetween where id between 1 and 3"),
-      Seq(Row("1"),Row("2"),Row("3")))
+      Seq(Row("1"), Row("2"), Row("3")))
   }
-
-
 
   override def afterAll {
     sql("drop table if exists carbonTableBetween")

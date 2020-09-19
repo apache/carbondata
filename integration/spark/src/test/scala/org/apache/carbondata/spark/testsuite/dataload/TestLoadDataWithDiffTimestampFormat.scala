@@ -23,16 +23,16 @@ import java.text.SimpleDateFormat
 import java.util.TimeZone
 
 import scala.collection.mutable.ListBuffer
+
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
-import org.scalatest.BeforeAndAfterAll
-
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.BadRecordUtil
 
 class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterAll {
@@ -100,7 +100,8 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
            OPTIONS('timestampformat' = 'timestamp')
            """)
     }
-    assertResult(ex0.getMessage)("Error: Wrong option: timestamp is provided for option TimestampFormat")
+    assertResult(ex0.getMessage)(
+      "Error: Wrong option: timestamp is provided for option TimestampFormat")
 
     val ex1 = intercept[MalformedCarbonCommandException] {
       sql(
@@ -127,7 +128,8 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
            OPTIONS('dateformat' = 'fasfdas:yyyy/MM/dd')
            """)
     }
-    assertResult(ex3.getMessage)("Error: Wrong option: fasfdas:yyyy/MM/dd is provided for option DateFormat")
+    assertResult(ex3.getMessage)(
+      "Error: Wrong option: fasfdas:yyyy/MM/dd is provided for option DateFormat")
 
   }
 
@@ -317,27 +319,37 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
 
   test("test load, update data with setlenient carbon property for daylight " +
        "saving time from different timezone") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE, "true")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE, "true")
     sql("DROP TABLE IF EXISTS test_time")
     sql("DROP TABLE IF EXISTS testhivetable")
     // Create test_time and hive table
-    sql("CREATE TABLE IF NOT EXISTS test_time (ID Int, date Date, time Timestamp) STORED AS carbondata " +
+    sql("CREATE TABLE IF NOT EXISTS test_time (ID Int, date Date, time Timestamp) " +
+        "STORED AS carbondata " +
         "TBLPROPERTIES('dateformat'='yyyy-MM-dd', 'timestampformat'='yyyy-MM-dd HH:mm:ss') ")
-    sql("CREATE TABLE testhivetable (ID Int, date Date, time TIMESTAMP) row format delimited fields terminated by ',' ")
+    sql("CREATE TABLE testhivetable (ID Int, date Date, time TIMESTAMP) " +
+        "row format delimited fields terminated by ',' ")
     // load data into test_time and hive table and validate query result
-    sql(s" LOAD DATA LOCAL INPATH '$resourcesPath/differentZoneTimeStamp.csv' into table test_time options('fileheader'='ID,date,time')")
-    sql(s"LOAD DATA local inpath '$resourcesPath/differentZoneTimeStamp.csv' overwrite INTO table testhivetable")
+    sql(s" LOAD DATA LOCAL INPATH '$resourcesPath/differentZoneTimeStamp.csv' " +
+        s"into table test_time options('fileheader'='ID,date,time')")
+    sql(s"LOAD DATA local inpath '$resourcesPath/differentZoneTimeStamp.csv' " +
+        s"overwrite INTO table testhivetable")
     checkAnswer(sql("select * from test_time"), sql("select * from testhivetable"))
     sql(s"insert into test_time select 11, '2016-7-24', '2019-3-10 02:00:00' ")
     sql("update test_time set (time) = ('2019-3-10 02:00:00') where ID='2'")
     // Using America/Los_Angeles timezone (timezone is fixed to America/Los_Angeles for all tests)
     // Here, 2019-3-10 02:00:00 is invalid data in America/Los_Angeles zone, as DST is observed and
-    // clocks were turned forward 1 hour to 2019-3-10 03:00:00. With lenience property enabled, can parse the time according to DST.
-    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 1"), Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
-    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 11"), Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
-    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 2"), Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
+    // clocks were turned forward 1 hour to 2019-3-10 03:00:00. With lenience property enabled,
+    // can parse the time according to DST.
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 1"),
+      Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 11"),
+      Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 2"),
+      Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
     sql("DROP TABLE test_time")
-    CarbonProperties.getInstance().removeProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE)
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE)
   }
 
   test("test load, update data with setlenient session level property for daylight " +
@@ -348,19 +360,26 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
     // Create test_time and hive table
     sql("CREATE TABLE test_time (ID Int, date Date, time Timestamp) STORED AS carbondata " +
         "TBLPROPERTIES('dateformat'='yyyy-MM-dd', 'timestampformat'='yyyy-MM-dd HH:mm:ss') ")
-    sql("CREATE TABLE testhivetable (ID Int, date Date, time TIMESTAMP) row format delimited fields terminated by ',' ")
+    sql("CREATE TABLE testhivetable (ID Int, date Date, time TIMESTAMP) " +
+        "row format delimited fields terminated by ',' ")
     // load data into test_time and hive table and validate query result
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/differentZoneTimeStamp.csv' into table test_time options('fileheader'='ID,date,time')")
-    sql(s"LOAD DATA local inpath '$resourcesPath/differentZoneTimeStamp.csv' overwrite INTO table testhivetable")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/differentZoneTimeStamp.csv' " +
+        s"into table test_time options('fileheader'='ID,date,time')")
+    sql(s"LOAD DATA local inpath '$resourcesPath/differentZoneTimeStamp.csv' " +
+        s"overwrite INTO table testhivetable")
     checkAnswer(sql("select * from test_time"), sql("select * from testhivetable"))
     sql(s"insert into test_time select 11, '2016-7-24', '2019-3-10 02:00:00' ")
     sql("update test_time set (time) = ('2019-3-10 02:00:00') where ID='2'")
     // Using America/Los_Angeles timezone (timezone is fixed to America/Los_Angeles for all tests)
     // Here, 2019-3-10 02:00:00 is invalid data in America/Los_Angeles zone, as DST is observed and
-    // clocks were turned forward 1 hour to 2019-3-10 03:00:00. With lenience property enabled, can parse the time according to DST.
-    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 1"), Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
-    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 11"), Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
-    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 2"), Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
+    // clocks were turned forward 1 hour to 2019-3-10 03:00:00. With lenience property enabled,
+    // can parse the time according to DST.
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 1"),
+      Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 11"),
+      Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 2"),
+      Seq(Row(Timestamp.valueOf("2019-3-10 03:00:00"))))
     sql("DROP TABLE testhivetable")
     sql("DROP TABLE test_time")
     sql("set carbon.load.dateformat.setlenient.enable = false")
@@ -376,7 +395,8 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
   override def afterAll {
     sql("DROP TABLE IF EXISTS t3")
     FileUtils.forceDelete(new File(csvPath))
-    CarbonProperties.getInstance().removeProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE)
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE)
     sql("set carbon.load.dateformat.setlenient.enable = false")
   }
 }

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.spark.testsuite.index
 
 import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
@@ -28,16 +29,15 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.dev.fgindex.{FineGrainBlocklet, FineGrainIndex, FineGrainIndexFactory}
-import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexModel, IndexWriter}
-import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexModel, IndexWriter}
+import org.apache.carbondata.core.index.dev.fgindex.{FineGrainBlocklet, FineGrainIndex, FineGrainIndexFactory}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
@@ -46,18 +46,20 @@ import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.executer.FilterExecutor
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
 class FGIndexFactory(carbonTable: CarbonTable,
     indexSchema: IndexSchema) extends FineGrainIndexFactory(carbonTable, indexSchema) {
-
+  // scalastyle:off ???
   /**
    * Return a new write for this indexSchema
    */
-  override def createWriter(segment: Segment, dataWritePath: String, segmentProperties: SegmentProperties): IndexWriter = {
+  override def createWriter(segment: Segment,
+      dataWritePath: String,
+      segmentProperties: SegmentProperties): IndexWriter = {
     new FGIndexWriter(carbonTable, segment, dataWritePath, indexSchema)
   }
 
@@ -79,7 +81,7 @@ class FGIndexFactory(carbonTable: CarbonTable,
   /**
    * Get indexSchema for distributable object.
    */
-  override def getIndexes(distributable: IndexInputSplit): java.util.List[FineGrainIndex]= {
+  override def getIndexes(distributable: IndexInputSplit): java.util.List[FineGrainIndex] = {
     val mapDistributable = distributable.asInstanceOf[BlockletIndexInputSplit]
     val index: FineGrainIndex = new FGIndex()
     index.init(new IndexModel(mapDistributable.getFilePath, new Configuration(false)))
@@ -106,10 +108,9 @@ class FGIndexFactory(carbonTable: CarbonTable,
   }
 
   /**
-   *
    * @param event
    */
-  override def fireEvent(event: Event):Unit = {
+  override def fireEvent(event: Event): Unit = {
     ???
   }
 
@@ -168,7 +169,7 @@ class FGIndex extends FineGrainIndex {
   var FileReader: FileReader = _
   var filePath: String = _
   val compressor = new SnappyCompressor
-  var taskName:String = _
+  var taskName: String = _
 
   /**
    * It is called to load the index to memory or to initialize it.
@@ -268,7 +269,7 @@ class FGIndex extends FineGrainIndex {
   /**
    * Clear complete index table and release memory.
    */
-  override def clear():Unit = {
+  override def clear(): Unit = {
 
   }
 
@@ -277,7 +278,7 @@ class FGIndex extends FineGrainIndex {
   /**
    * clears all the resources for indexs
    */
-  override def finish() = {
+  override def finish(): Unit = {
 
   }
 
@@ -442,7 +443,7 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
   val file2 = resourcesPath + "/compaction/fil2.csv"
 
   override protected def beforeAll(): Unit = {
-    //n should be about 5000000 of reset if size is default 1024
+    // n should be about 5000000 of reset if size is default 1024
     val n = 150000
     CompactionSupportGlobalSortBigFileTest.createFile(file2, n * 4, n)
     CarbonProperties.getInstance()
@@ -532,14 +533,16 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
          | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
-    val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName " +
+                  s"WHERE name='n502670' AND city='c2670'").collect()
     assert(df1(0).getString(0).contains("FG Index"))
     assert(df1(0).getString(0).contains(indexName1))
     assert(df1(0).getString(0).contains(indexName2))
 
     // make index1 invisible
     sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName1 = false")
-    val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName " +
+                  s"WHERE name='n502670' AND city='c2670'").collect()
     val e = intercept[Exception] {
       assert(df2(0).getString(0).contains(indexName1))
     }
@@ -552,7 +555,8 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName2 = false")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
-    val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName " +
+                  s"WHERE name='n502670' AND city='c2670'").collect()
     val e31 = intercept[Exception] {
       assert(df3(0).getString(0).contains(indexName1))
     }
@@ -567,7 +571,8 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName2 = true")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
-    val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName " +
+                  s"WHERE name='n502670' AND city='c2670'").collect()
     assert(df4(0).getString(0).contains(indexName1))
     assert(df4(0).getString(0).contains(indexName2))
   }
@@ -578,8 +583,9 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
 //    sql("DROP TABLE IF EXISTS normal_test")
 //    sql("DROP TABLE IF EXISTS index_test")
 //    sql("DROP TABLE IF EXISTS index_testFG")
-//    CarbonProperties.getInstance()
-//      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-//        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
+  // scalastyle:on ???
 }

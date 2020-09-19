@@ -17,21 +17,19 @@
 
 package org.apache.carbondata.spark.testsuite.directdictionary
 
-import java.io.File
 import java.sql.Date
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * Test Class for detailed query on timestamp datatypes
-  *
-  *
-  */
+ * Test Class for detailed query on timestamp datatypes
+ */
 class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
@@ -49,7 +47,9 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
       val csvFilePath = s"$resourcesPath/datasample.csv"
+      // scalastyle:off println
       println(csvFilePath)
+      // scalastyle:off println
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS"
         + "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     } catch {

@@ -18,13 +18,15 @@ package org.apache.carbondata.spark.testsuite.booleantype
 
 import java.io.File
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
+class BooleanDataTypesParameterTest
+  extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val filePath: String = s"$resourcesPath/globalsort"
   val file1: String = resourcesPath + "/globalsort/sample1.csv"
   val file2: String = resourcesPath + "/globalsort/sample2.csv"
@@ -54,8 +56,10 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     sql("drop table if exists boolean_table")
   }
 
-  test("ENABLE_AUTO_LOAD_MERGE: false, and Inserting and selecting table: one column boolean and many rows, should support") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  test("ENABLE_AUTO_LOAD_MERGE: false, and Inserting and selecting table: " +
+       "one column boolean and many rows, should support") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
     sql("insert into boolean_one_column values(true)")
     sql("insert into boolean_one_column values(True)")
     sql("insert into boolean_one_column values(TRUE)")
@@ -86,7 +90,8 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
       CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
-  test("ENABLE_AUTO_LOAD_MERGE: true, and Inserting and selecting table: one column boolean and many rows, should support") {
+  test("ENABLE_AUTO_LOAD_MERGE: true, and Inserting and selecting table: " +
+       "one column boolean and many rows, should support") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     sql("insert into boolean_one_column values(true)")
     sql("insert into boolean_one_column values(True)")
@@ -119,7 +124,8 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("ENABLE_AUTO_LOAD_MERGE: false, and Loading table: support boolean and other data type") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
     sql(
       s"""
          | CREATE TABLE boolean_table(
@@ -143,12 +149,14 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
 
     val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBoolean.csv"
     for (i <- 0 until 4) {
+      // scalastyle:off lineLength
       sql(
         s"""
            | LOAD DATA LOCAL INPATH '${storeLocation}'
            | INTO TABLE boolean_table
            | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
+      // scalastyle:on lineLength
     }
 
     checkAnswer(
@@ -164,7 +172,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("ENABLE_AUTO_LOAD_MERGE: true, and Loading table: support boolean and other data type") {
-    //unfinish
+    // unfinish
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     sql(
       s"""
@@ -186,14 +194,17 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
-    val storeLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
+    val storeLocation =
+      s"$rootPath/integration/spark/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     for (i <- 0 until 4) {
+      // scalastyle:off lineLength
       sql(
         s"""
            | LOAD DATA LOCAL INPATH '${storeLocation}'
            | INTO TABLE boolean_table
            | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
            """.stripMargin)
+      // scalastyle:on lineLength
     }
 
     checkAnswer(
@@ -216,7 +227,8 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          |STORED AS carbondata
          |TBLPROPERTIES('sort_columns'='booleanField','SORT_SCOPE'='GLOBAL_SORT')
          |""".stripMargin)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
     sql("insert into boolean_one_column values(true)")
     sql("insert into boolean_one_column values(True)")
     sql("insert into boolean_one_column values(TRUE)")

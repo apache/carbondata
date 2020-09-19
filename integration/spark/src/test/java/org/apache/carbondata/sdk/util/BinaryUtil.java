@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.sdk.util;
 
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.sdk.file.CarbonWriter;
-import org.apache.carbondata.core.metadata.datatype.Field;
-import org.apache.carbondata.sdk.file.Schema;
-
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
+import org.apache.carbondata.sdk.file.CarbonWriter;
+import org.apache.carbondata.sdk.file.Schema;
 
 import static org.apache.carbondata.sdk.file.utils.SDKUtil.listFiles;
 
@@ -72,10 +73,10 @@ public class BinaryUtil {
           byte[] labelBinary = null;
           labelBinary = new byte[txtBis.available()];
           while ((txtBis.read(labelBinary)) != -1) {
-            labelValue = new String(labelBinary, "UTF-8");
+            labelValue = new String(labelBinary, StandardCharsets.UTF_8);
           }
           // write data
-          writer.write(new Object[]{i, (String) files[i], originBinary,
+          writer.write(new Object[]{i, files[i], originBinary,
               labelFileName, labelValue});
           bis.close();
           txtBis.close();

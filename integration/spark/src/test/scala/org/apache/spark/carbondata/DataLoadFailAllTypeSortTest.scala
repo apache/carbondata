@@ -53,11 +53,10 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
 
 
     } catch {
-      case x: Throwable => {
+      case x: Throwable =>
         assert(x.getMessage.contains("Data load failed due to bad record"))
         CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-      }
     }
     finally {
       CarbonProperties.getInstance()
@@ -81,11 +80,10 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
 
 
     } catch {
-      case x: Throwable => {
+      case x: Throwable =>
         assert(x.getMessage.contains("Data load failed due to bad record"))
         CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-      }
     }
     finally {
       CarbonProperties.getInstance()
@@ -109,11 +107,10 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_bm""")
     } catch {
-      case x: Throwable => {
+      case x: Throwable =>
         assert(x.getMessage.contains("Data load failed due to bad record"))
         CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-      }
     }
     finally {
       CarbonProperties.getInstance()
@@ -140,11 +137,10 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
 
 
     } catch {
-      case x: Throwable => {
+      case _: Throwable =>
         assert(false)
         CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-      }
     }
     finally {
       CarbonProperties.getInstance()
@@ -169,11 +165,10 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
         s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_bm_no_good_data options
            ('IS_EMPTY_DATA_BAD_RECORD'='true','BAD_RECORDS_ACTION'='REDIRECT')""")
     } catch {
-      case x: Throwable => {
+      case x: Throwable =>
         assert(x.getMessage.contains("No Data to load"))
         CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-      }
     }
     finally {
       CarbonProperties.getInstance()
@@ -197,11 +192,10 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_tbm""")
     } catch {
-      case x: Throwable => {
+      case x: Throwable =>
         assert(x.getMessage.contains("Data load failed due to bad record"))
         CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-      }
     }
     finally {
 

@@ -17,22 +17,21 @@
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
 import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.test.SparkTestQueryExecutor
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.test.SparkTestQueryExecutor
-import org.apache.spark.sql.test.util.QueryTest
-
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * test cases for testing creation of index table with load and compaction
  */
 class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
     sql("drop table if exists index_test")
     sql("CREATE TABLE index_test (integer_column1 string,date1 timestamp,date2 timestamp,ID String,string_column1 string,string_column2 string) STORED AS CARBONDATA")
@@ -115,7 +114,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
         "TABLE compaction_load OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
 
     sql("alter table compaction_load compact 'major'")
-    
+
     sql("drop index if exists index_no_dictionary2 on compaction_load")
 
     sql("create index index_no_dictionary2 on table compaction_load (workgroupcategoryname,empname) AS 'carbondata'")
@@ -138,7 +137,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
 //        "TABLE auto_compaction_index OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
 //    sql("LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO " +
 //        "TABLE auto_compaction_index OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
-//   
+//
 //    sql("drop index if exists index_no_dictionary3 on auto_compaction_index")
 //    sql("create index index_no_dictionary3 on table auto_compaction_index (empname) AS 'carbondata'")
 //
@@ -148,7 +147,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
 //
 //    sql("drop table if exists auto_compaction_index")
 //  }
-  
+
   test("test create index with jumbled order of parent table cols") {
     sql("drop index if exists indextable05 ON index_test")
     sql("CREATE INDEX indextable05 ON TABLE index_test (string_column2,id,date2,date1) AS 'carbondata'")
@@ -174,7 +173,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     sql("drop table if exists seccust")
   }
 
-  /*test("Load once and create sec index and load again and do select ") {
+  /* test("Load once and create sec index and load again and do select ") {
     sql("drop table if exists seccust1")
     sql("create table seccust1 (id string, c_custkey string, c_name string, c_address string, c_nationkey string, c_phone string,c_acctbal decimal, c_mktsegment string, c_comment string) STORED AS carbondata")
     sql("load data  inpath './src/test/resources/secindex/firstunique.csv' into table seccust1 options('DELIMITER'='|','QUOTECHAR'='\"','FILEHEADER'='id,c_custkey,c_name,c_address,c_nationkey,c_phone,c_acctbal,c_mktsegment,c_comment')")
@@ -184,7 +183,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     checkAnswer(sql("select c_phone from sc_indx5"),
       Seq(Row("25-989-741-2989"),Row("25-989-741-2989")))
     sql("drop table if exists seccust1")
-  }*/
+  } */
 
   test("test SI with auto compaction and check that table status is changed to compacted") {
     try {
@@ -263,5 +262,5 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     sql("drop table if exists table_with_flat")
     sql("drop table if exists table1")
   }
-
+  // scalastyle:on lineLength
 }

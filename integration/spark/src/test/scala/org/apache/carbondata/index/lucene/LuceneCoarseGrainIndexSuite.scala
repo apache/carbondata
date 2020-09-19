@@ -29,7 +29,7 @@ class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
   val file2 = resourcesPath + "/index_input.csv"
 
   override protected def beforeAll(): Unit = {
-    //n should be about 5000000 of reset if size is default 1024
+    // n should be about 5000000 of reset if size is default 1024
     val n = 15000
     LuceneFineGrainIndexSuite.createFile(file2, n * 4, n)
     sql("DROP TABLE IF EXISTS normal_test")

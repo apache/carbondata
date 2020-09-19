@@ -18,14 +18,15 @@
 package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * Test Class for filter expression query on String datatypes
-  */
+ * Test Class for filter expression query on String datatypes
+ */
 class CountStarTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -110,6 +111,9 @@ class CountStarTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
     sql("drop table if exists filtertestTables")
     sql("drop table if exists filterTimestampDataType")
   }

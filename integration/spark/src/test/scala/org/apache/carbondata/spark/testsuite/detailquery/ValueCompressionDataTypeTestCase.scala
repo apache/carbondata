@@ -16,10 +16,10 @@
  */
 package org.apache.carbondata.spark.testsuite.detailquery
 
-import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   val tempDirPath = s"$resourcesPath/tempdir"
@@ -32,17 +32,21 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
     val tempFilePath = s"$tempDirPath/double2short.csv"
     try {
       sql("CREATE TABLE double2short (name String, value double) STORED AS carbondata")
-      sql("CREATE TABLE double2short_hive (name String, value double)row format delimited fields terminated by ','")
-      val data ="a,3.141111\nb,3.141212\nc,3.141313\nd,3.141515\ne,3.141616\nf,3.141616\ng,3.141717\nh,3.141818";
+      sql("CREATE TABLE double2short_hive (" +
+          "name String, value double)row format delimited fields terminated by ','")
+      val data = "a,3.141111\nb,3.141212\nc,3.141313\nd,3.141515\n" +
+                 "e,3.141616\nf,3.141616\ng,3.141717\nh,3.141818";
       writeData(tempFilePath, data)
-      sql(s"LOAD data local inpath '${tempFilePath}' into table double2short options('fileheader'='name,value')")
+      sql(s"LOAD data local inpath '${tempFilePath}' " +
+          s"into table double2short options('fileheader'='name,value')")
       sql(s"LOAD data local inpath '${tempFilePath}' into table double2short_hive")
       checkAnswer(sql("select * from double2short"),
         sql("select * from double2short_hive"))
 
-    } catch{
-      case ex:Exception => ex.printStackTrace()
-                           assert(false)
+    } catch {
+      case ex: Exception =>
+        ex.printStackTrace()
+        assert(false)
     } finally {
       sql("drop table if exists double2short")
       sql("drop table if exists double2short_hive")
@@ -54,17 +58,20 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
     val tempFilePath = s"$tempDirPath/double2byte.csv"
     try {
       sql("CREATE TABLE double2byte (name String, value double) STORED AS carbondata")
-      sql("CREATE TABLE double2byte_hive (name String, value double)row format delimited fields terminated by ','")
-      val data ="a,4.200001\nb,4.200009";
+      sql("CREATE TABLE double2byte_hive (" +
+          "name String, value double)row format delimited fields terminated by ','")
+      val data = "a,4.200001\nb,4.200009";
       writeData(tempFilePath, data)
-      sql(s"LOAD data local inpath '${tempFilePath}' into table double2byte options('fileheader'='name,value')")
+      sql(s"LOAD data local inpath '${tempFilePath}' " +
+          "into table double2byte options('fileheader'='name,value')")
       sql(s"LOAD data local inpath '${tempFilePath}' into table double2byte_hive")
       checkAnswer(sql("select * from double2byte"),
         sql("select * from double2byte_hive"))
 
-    } catch{
-      case ex:Exception => ex.printStackTrace()
-                           assert(false)
+    } catch {
+      case ex: Exception =>
+        ex.printStackTrace()
+        assert(false)
     } finally {
       sql("drop table if exists double2byte")
       sql("drop table if exists double2byte_hive")
@@ -78,16 +85,20 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
       sql("drop table if exists doubleISnegtive")
       sql("drop table if exists doubleISnegtive_hive")
       sql("CREATE TABLE doubleISnegtive (name String, value double) STORED AS carbondata")
-      sql("CREATE TABLE doubleISnegtive_hive (name String, value double)row format delimited fields terminated by ','")
-      val data ="a,-7489.7976000000\nb,-11234567489.797\nc,-11234567489.7\nd,-1.2\ne,-2\nf,-11234567489.7976000000\ng,-11234567489.7976000000"
+      sql("CREATE TABLE doubleISnegtive_hive (name String, value double)" +
+          "row format delimited fields terminated by ','")
+      val data = "a,-7489.7976000000\nb,-11234567489.797\nc,-11234567489.7\n" +
+                 "d,-1.2\ne,-2\nf,-11234567489.7976000000\ng,-11234567489.7976000000"
       writeData(tempFilePath, data)
-      sql(s"LOAD data local inpath '${tempFilePath}' into table doubleISnegtive options('fileheader'='name,value')")
+      sql(s"LOAD data local inpath '${tempFilePath}' " +
+          s"into table doubleISnegtive options('fileheader'='name,value')")
       sql(s"LOAD data local inpath '${tempFilePath}' into table doubleISnegtive_hive")
 
       checkAnswer(sql("select * from doubleISnegtive"),
         sql("select * from doubleISnegtive_hive"))
-    } catch{
-      case ex:Exception => ex.printStackTrace()
+    } catch {
+      case ex: Exception =>
+        ex.printStackTrace()
         assert(false)
     } finally {
       sql("drop table if exists doubleISnegtive")
@@ -102,16 +113,20 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
       sql("drop table if exists doublePAN")
       sql("drop table if exists doublePAN_hive")
       sql("CREATE TABLE doublePAN (name String, value double) STORED AS carbondata")
-      sql("CREATE TABLE doublePAN_hive (name String, value double)row format delimited fields terminated by ','")
-      val data ="a,-7489.7976000000\nb,11234567489.797\nc,-11234567489.7\nd,-1.2\ne,2\nf,-11234567489.7976000000\ng,11234567489.7976000000"
+      sql("CREATE TABLE doublePAN_hive (" +
+          "name String, value double)row format delimited fields terminated by ','")
+      val data = "a,-7489.7976000000\nb,11234567489.797\nc,-11234567489.7\n" +
+                 "d,-1.2\ne,2\nf,-11234567489.7976000000\ng,11234567489.7976000000"
       writeData(tempFilePath, data)
-      sql(s"LOAD data local inpath '${tempFilePath}' into table doublePAN options('fileheader'='name,value')")
+      sql(s"LOAD data local inpath '${tempFilePath}' " +
+          s"into table doublePAN options('fileheader'='name,value')")
       sql(s"LOAD data local inpath '${tempFilePath}' into table doublePAN_hive")
 
       checkAnswer(sql("select * from doublePAN"),
         sql("select * from doublePAN_hive"))
-    } catch{
-      case ex:Exception => ex.printStackTrace()
+    } catch {
+      case ex: Exception =>
+        ex.printStackTrace()
         assert(false)
     } finally {
       sql("drop table if exists doublePAN")
@@ -120,9 +135,9 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
     }
   }
 
-  def writeData(filePath: String, data: String) = {
+  private def writeData(filePath: String, data: String) = {
     val dis = FileFactory.getDataOutputStream(filePath)
-    dis.writeBytes(data.toString())
+    dis.writeBytes(data)
     dis.close()
   }
 

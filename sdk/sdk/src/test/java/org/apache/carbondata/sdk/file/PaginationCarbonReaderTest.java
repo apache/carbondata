@@ -132,7 +132,7 @@ public class PaginationCarbonReaderTest {
     fields[2] = new Field("id", DataTypes.LONG);
 
 
-    String data = RandomStringUtils.randomAlphabetic(10 * 1024);
+    String data = RandomStringUtils.randomAlphabetic(1024);
     // create more than one blocklet
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()

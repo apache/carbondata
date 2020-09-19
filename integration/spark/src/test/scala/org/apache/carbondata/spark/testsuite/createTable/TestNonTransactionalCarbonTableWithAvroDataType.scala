@@ -23,8 +23,8 @@ import javax.xml.bind.DatatypeConverter
 
 import scala.collection.mutable
 
-import org.apache.avro.Conversions.DecimalConversion
 import org.apache.avro.{LogicalTypes, Schema}
+import org.apache.avro.Conversions.DecimalConversion
 import org.apache.avro.generic.GenericData
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
@@ -65,13 +65,13 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
         | "fields":
         | [{
         | "name": "id",
-        |						"type": {
+        |      "type": {
         |                    "type": "enum",
         |                    "name": "Suit",
         |                    "symbols": ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
@@ -86,7 +86,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -131,7 +135,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(mySchema)
     val record = testUtil.jsonToAvro(json1, mySchema)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -173,7 +181,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(mySchema)
     val record = testUtil.jsonToAvro(json, mySchema)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -188,10 +200,10 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |       { "name": "first", "type": ["string", "int", "long"] }
         |     ]
         |}""".stripMargin
@@ -202,7 +214,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -216,10 +232,10 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |       { "name": "first", "type": ["boolean", "int", "long"] }
         |     ]
         |}""".stripMargin
@@ -230,7 +246,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -244,10 +264,10 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |       { "name": "first", "type": ["string", "int", "long"] }
         |     ]
         |}""".stripMargin
@@ -258,7 +278,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -272,10 +296,10 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |       { "name": "first", "type": ["string", "int", "long"] }
         |     ]
         |}""".stripMargin
@@ -286,7 +310,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -300,10 +328,10 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |       { "name": "first", "type": ["null", "int"] }
         |     ]
         |}""".stripMargin
@@ -314,7 +342,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -328,10 +360,10 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |       { "name": "first", "type": ["null"] }
         |     ]
         |}""".stripMargin
@@ -342,7 +374,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
     val exception1 = intercept[UnsupportedOperationException] {
-      val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+      val writer = CarbonWriter.builder
+        .outputPath(writerPath)
+        .withAvroInput(nn)
+        .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+        .build()
       writer.write(record)
       writer.close()
     }
@@ -355,21 +391,21 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |      {
-        |		  "name": "enum_field", "type": [{
+        |    "name": "enum_field", "type": [{
         |          "namespace": "org.example.avro",
         |          "name": "EnumField",
         |          "type": "enum",
         |          "symbols": [
-        |				"VAL_0",
-        |				"VAL_1"
-        |			]
+        |    "VAL_0",
+        |    "VAL_1"
+        |   ]
         |        },"null"], "default": null
-        |	}]
+        | }]
         |}""".stripMargin
 
     val json1 =
@@ -378,7 +414,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -392,18 +432,18 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |      {
-        |		  "name": "map_field", "type": [{
+        |    "name": "map_field", "type": [{
         |          "namespace": "org.example.avro",
         |          "name": "mapField",
         |          "type": "map",
         |          "values":"string"
         |        },"int"], "default": null
-        |	}]
+        | }]
         |}""".stripMargin
 
     val json1 =
@@ -412,13 +452,17 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata
          |LOCATION '$writerPath' """.stripMargin)
-    sql("select * from sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable").collect()
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row(Row(Map("city" -> "bangalore", "street" -> "k-lane"), null))))
   }
@@ -428,18 +472,18 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |      {
-        |		  "name": "struct_field", "type": [{
+        |    "name": "struct_field", "type": [{
         |          "namespace": "org.example.avro",
         |          "name": "structField",
         |          "type": "array",
         |          "items": { "name" : "name0", "type":"string"}
         |        },"int"], "default": null
-        |	}]
+        | }]
         |}""".stripMargin
 
     val json1 =
@@ -448,7 +492,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -479,16 +527,22 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata
          |LOCATION '$writerPath' """.stripMargin)
-    sql("describe formatted sdkOutputTable").show(false)
+    sql("describe formatted sdkOutputTable").collect()
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(Row(null, 1)))))
-    sql("insert into sdkOutputTable values(named_struct('city', named_struct('city0', 'abc', 'city1', 12)))")
-    sql("select address.city.city0 from sdkOutputTable").show(false)
+    sql(
+      "insert into sdkOutputTable values(named_struct('city', named_struct('city0', 'abc', " +
+      "'city1', 12)))")
+    sql("select address.city.city0 from sdkOutputTable").collect()
   }
 
   test("test Union with struct of array") {
@@ -536,7 +590,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -629,13 +687,17 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata
          |LOCATION '$writerPath' """.stripMargin)
-    sql("describe formatted sdkOutputTable").show(false)
+    sql("describe formatted sdkOutputTable").collect()
     checkAnswer(sql("select * from sdkOutputTable"),
       Seq(Row(Row(Row(null,
         mutable.WrappedArray.make(Array(Row(Row("abc"), Row(null, null, "bcd"), Row("cde")))))))))
@@ -646,12 +708,12 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |      {
-        |		  "name": "union_field", "type": [{
+        |    "name": "union_field", "type": [{
         |          "namespace": "org.example.avro",
         |          "name": "dec",
         |          "type": "bytes",
@@ -659,14 +721,14 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
         |                     "precision": 10,
         |                     "scale": 2
         |        },"null"]
-        |	}]
+        | }]
         |}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val decimalConversion = new DecimalConversion
     val logicalType = LogicalTypes.decimal(10, 2)
     val decimal = new java.math.BigDecimal("1010").setScale(2)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes =
       decimalConversion.toBytes(decimal, nn.getField("union_field").schema, logicalType)
     val data = DatatypeConverter.printBase64Binary(bytes.array())
@@ -676,11 +738,15 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val data1 = new String(record.get(0).asInstanceOf[ByteBuffer].array(),
       CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
     val bytes1 = ByteBuffer.wrap(DatatypeConverter.parseBase64Binary(data1))
-    val avroRec = new GenericData. Record(nn)
+    val avroRec = new GenericData.Record(nn)
     avroRec.put("union_field", bytes1)
 
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(avroRec)
     writer.close()
     sql(
@@ -715,11 +781,13 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
 
     val logicalType = LogicalTypes.decimal(4, 2)
     val decimal1 = new java.math.BigDecimal("32").setScale(2)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes =
       decimalConversion.toBytes(decimal1, nn.getField("struct_field_decimal").schema, logicalType)
     val data = DatatypeConverter.printBase64Binary(bytes.array())
-    val json1 = s""" {"record1":"bob", "record2":10.24, "struct_field_decimal" : {"record3":"abc", "record4":"$data"}} """
+    val json1 =
+      s""" {"record1":"bob", "record2":10.24, "struct_field_decimal" :
+         | {"record3":"abc", "record4":"$data"}} """.stripMargin
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val jsonData = new String(record.get(2).asInstanceOf[GenericData.Record].get(1)
@@ -748,7 +816,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     avroRec.put("record2", 10.24)
     avroRec.put("struct_field_decimal", genericByteArray)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(avroRec)
     writer.close()
     sql(
@@ -791,7 +863,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val logicalType = LogicalTypes.decimal(4, 1)
     val decimal1 = new java.math.BigDecimal("32").setScale(1)
     val decimal2 = new java.math.BigDecimal("42").setScale(1)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes1 =
       decimalConversion.toBytes(decimal1, nn.getField("dec_fields").schema, logicalType)
     val bytes2 =
@@ -818,7 +890,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     avroRec.put("age", 10)
     avroRec.put("dec_fields", genericByteArray)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(avroRec)
     writer.close()
     sql(
@@ -832,28 +908,28 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
-        |		{
-        |			"name": "id",
-        |						"type": {"type" : "int", "logicalType": "time-millis"}
-        |		},
-        |		{
-        |			"name": "course_details",
-        |			"type": {
-        |				"name": "course_details",
-        |				"type": "record",
-        |				"fields": [
-        |					{
-        |						"name": "course_struct_course_time",
-        |						"type": {"type" : "int", "logicalType": "time-millis"}
-        |					}
-        |				]
-        |			}
-        |		}
-        |	]
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
+        |  {
+        |   "name": "id",
+        |      "type": {"type" : "int", "logicalType": "time-millis"}
+        |  },
+        |  {
+        |   "name": "course_details",
+        |   "type": {
+        |    "name": "course_details",
+        |    "type": "record",
+        |    "fields": [
+        |     {
+        |      "name": "course_struct_course_time",
+        |      "type": {"type" : "int", "logicalType": "time-millis"}
+        |     }
+        |    ]
+        |   }
+        |  }
+        | ]
         |}""".stripMargin
 
     val json1 =
@@ -863,7 +939,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -877,28 +957,28 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
-        |		{
-        |			"name": "id",
-        |						"type": {"type" : "long", "logicalType": "time-micros"}
-        |		},
-        |		{
-        |			"name": "course_details",
-        |			"type": {
-        |				"name": "course_details",
-        |				"type": "record",
-        |				"fields": [
-        |					{
-        |						"name": "course_struct_course_time",
-        |						"type": {"type" : "long", "logicalType": "time-micros"}
-        |					}
-        |				]
-        |			}
-        |		}
-        |	]
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
+        |  {
+        |   "name": "id",
+        |      "type": {"type" : "long", "logicalType": "time-micros"}
+        |  },
+        |  {
+        |   "name": "course_details",
+        |   "type": {
+        |    "name": "course_details",
+        |    "type": "record",
+        |    "fields": [
+        |     {
+        |      "name": "course_struct_course_time",
+        |      "type": {"type" : "long", "logicalType": "time-micros"}
+        |     }
+        |    ]
+        |   }
+        |  }
+        | ]
         |}""".stripMargin
 
     val json1 =
@@ -908,7 +988,11 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
@@ -922,24 +1006,24 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
-        |		{
-        |			"name": "id",
-        |						"type": {"type" : "bytes",
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
+        |  {
+        |   "name": "id",
+        |      "type": {"type" : "bytes",
         |                     "logicalType": "decimal",
         |                     "precision": 5,
         |                     "scale": 2
         |                    }
         |}
-        |	]
+        | ]
         |}""".stripMargin
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val logicalType = LogicalTypes.decimal(5, 2)
     val decimal = new java.math.BigDecimal("12.8").setScale(2)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes =
       decimalConversion.toBytes(decimal, nn.getField("id").schema, logicalType)
     val data = DatatypeConverter.printBase64Binary(bytes.array())
@@ -949,9 +1033,13 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val data1 = new String(record.get(0).asInstanceOf[ByteBuffer].array(),
       CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
     val bytes1 = ByteBuffer.wrap(DatatypeConverter.parseBase64Binary(data1))
-    val avroRec = new GenericData. Record(nn)
+    val avroRec = new GenericData.Record(nn)
     avroRec.put("id", bytes1)
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(avroRec)
     writer.close()
     sql(
@@ -965,24 +1053,24 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
-        |		{
-        |			"name": "dec_field",
-        |						"type": {"type" : "bytes",
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
+        |  {
+        |   "name": "dec_field",
+        |      "type": {"type" : "bytes",
         |                     "logicalType": "decimal",
         |                     "precision": 30,
         |                     "scale": 10
         |                    }
         |}
-        |	]
+        | ]
         |}""".stripMargin
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val logicalType = LogicalTypes.decimal(30, 10)
     val decimal = new java.math.BigDecimal("12672346879023.845789").setScale(10)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes =
       decimalConversion.toBytes(decimal, nn.getField("dec_field").schema, logicalType)
     val data = DatatypeConverter.printBase64Binary(bytes.array())
@@ -992,9 +1080,13 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val data1 = new String(record.get(0).asInstanceOf[ByteBuffer].array(),
       CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
     val bytes1 = ByteBuffer.wrap(DatatypeConverter.parseBase64Binary(data1))
-    val avroRec = new GenericData. Record(nn)
+    val avroRec = new GenericData.Record(nn)
     avroRec.put("dec_field", bytes1)
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(avroRec)
     writer.close()
     sql(
@@ -1008,24 +1100,24 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
-        |		{
-        |			"name": "dec_field",
-        |						"type": {"type" : "bytes",
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
+        |  {
+        |   "name": "dec_field",
+        |      "type": {"type" : "bytes",
         |                     "logicalType": "decimal",
         |                     "precision": 30,
         |                     "scale": 6
         |                    }
         |}
-        |	]
+        | ]
         |}""".stripMargin
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val logicalType = LogicalTypes.decimal(30, 6)
     val decimal = new java.math.BigDecimal("-12672346879023.845").setScale(6)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes =
       decimalConversion.toBytes(decimal, nn.getField("dec_field").schema, logicalType)
     val data = DatatypeConverter.printBase64Binary(bytes.array())
@@ -1035,9 +1127,13 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val data1 = new String(record.get(0).asInstanceOf[ByteBuffer].array(),
       CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
     val bytes1 = ByteBuffer.wrap(DatatypeConverter.parseBase64Binary(data1))
-    val avroRec = new GenericData. Record(nn)
+    val avroRec = new GenericData.Record(nn)
     avroRec.put("dec_field", bytes1)
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(avroRec)
     writer.close()
     sql(
@@ -1051,32 +1147,36 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
-        |		{
-        |			"name": "dec_field",
-        |						"type": {"type" : "bytes",
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
+        |  {
+        |   "name": "dec_field",
+        |      "type": {"type" : "bytes",
         |                     "logicalType": "decimal",
         |                     "precision": 5,
         |                     "scale": 2
         |                    }
         |}
-        |	]
+        | ]
         |}""".stripMargin
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val logicalType = LogicalTypes.decimal(5, 2)
     val decimal = new java.math.BigDecimal("12.8").setScale(2)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes =
       decimalConversion.toBytes(decimal, nn.getField("dec_field").schema, logicalType)
     val data = DatatypeConverter.printBase64Binary(bytes.array())
     val json1 =
       s"""{"dec_field":"$data"}""".stripMargin
-    val avroRec = new GenericData. Record(nn)
+    val avroRec = new GenericData.Record(nn)
     avroRec.put("dec_field", bytes)
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(avroRec)
     writer.close()
     sql(
@@ -1090,38 +1190,44 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
-        |		{
-        |			"name": "dec_field",
-        |						"type": {"type" : "bytes",
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
+        |  {
+        |   "name": "dec_field",
+        |      "type": {"type" : "bytes",
         |                     "logicalType": "decimal",
         |                     "precision": 5,
         |                     "scale": 2
         |                    }
         |}
-        |	]
+        | ]
         |}""".stripMargin
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val logicalType = LogicalTypes.decimal(5, 2)
     val decimal = new java.math.BigDecimal("1218").setScale(2)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes =
       decimalConversion.toBytes(decimal, nn.getField("dec_field").schema, logicalType)
     val data = DatatypeConverter.printBase64Binary(bytes.array())
     val json1 =
       s"""{"dec_field":"$data"}""".stripMargin
-    val avroRec = new GenericData. Record(nn)
+    val avroRec = new GenericData.Record(nn)
     avroRec.put("dec_field", bytes)
     val exception1 = intercept[Exception] {
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
-    writer.write(avroRec)
-    writer.close()
+      val writer = CarbonWriter.builder
+        .outputPath(writerPath)
+        .withAvroInput(nn)
+        .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+        .build()
+      writer.write(avroRec)
+      writer.close()
     }
     assert(exception1.getMessage
-      .contains("Data Loading failed as value Precision 6 is greater than specified Precision 5 in Avro Schema"))
+      .contains(
+        "Data Loading failed as value Precision 6 is greater than specified Precision 5 in Avro " +
+        "Schema"))
   }
 
   test("test union with multiple record type") {
@@ -1129,12 +1235,12 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "test.avro",
-        |	"type": "record",
-        |	"name": "NewCar2",
-        |	"fields": [
+        | "namespace": "test.avro",
+        | "type": "record",
+        | "name": "NewCar2",
+        | "fields": [
         |      {
-        |		  "name": "optionalExtra",
+        |    "name": "optionalExtra",
         |    "type": ["null",{
         |       "type":"record",
         |       "name":"Stereo",
@@ -1165,13 +1271,17 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata
          |LOCATION '$writerPath' """.stripMargin)
-    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(Row(null,null),Row("ab")))))
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(Row(null, null), Row("ab")))))
   }
 
   test("test union with multiple Enum type") {
@@ -1179,12 +1289,12 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "test.avro",
-        |	"type": "record",
-        |	"name": "Union_data3",
-        |	"fields": [
+        | "namespace": "test.avro",
+        | "type": "record",
+        | "name": "Union_data3",
+        | "fields": [
         |      {
-        |		  "name": "enum_record",
+        |    "name": "enum_record",
         |    "type":
         |    ["long","null","string",
         |    {"type":"enum","name":"t1","symbols":["red","blue","yellow"]},
@@ -1199,13 +1309,17 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val record = testUtil.jsonToAvro(json1, schema1)
 
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(record)
     writer.close()
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata
          |LOCATION '$writerPath' """.stripMargin)
-    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(null,null,null,"sun",null))))
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(null, null, null, "sun", null))))
   }
 
   test("test spark file format") {
@@ -1213,12 +1327,12 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
     val schema1 =
       """{
-        |	"namespace": "com.apache.schema",
-        |	"type": "record",
-        |	"name": "StudentActivity",
-        |	"fields": [
+        | "namespace": "com.apache.schema",
+        | "type": "record",
+        | "name": "StudentActivity",
+        | "fields": [
         |      {
-        |		  "name": "union_field", "type": [{
+        |    "name": "union_field", "type": [{
         |          "namespace": "org.example.avro",
         |          "name": "dec",
         |          "type": "bytes",
@@ -1226,14 +1340,14 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
         |                     "precision": 10,
         |                     "scale": 2
         |        },"int"]
-        |	}]
+        | }]
         |}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
     val decimalConversion = new DecimalConversion
     val logicalType = LogicalTypes.decimal(10, 2)
     val decimal = new java.math.BigDecimal("1010").setScale(2)
-    //get unscaled 2's complement bytearray
+    // get unscaled 2's complement bytearray
     val bytes =
       decimalConversion.toBytes(decimal, nn.getField("union_field").schema, logicalType)
     val data = DatatypeConverter.printBase64Binary(bytes.array())
@@ -1243,16 +1357,21 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val data1 = new String(record.get(0).asInstanceOf[ByteBuffer].array(),
       CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
     val bytes1 = ByteBuffer.wrap(DatatypeConverter.parseBase64Binary(data1))
-    val avroRec = new GenericData. Record(nn)
+    val avroRec = new GenericData.Record(nn)
     avroRec.put("union_field", bytes1)
 
-
-    val writer = CarbonWriter.builder.outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithAvroDataType").build()
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withAvroInput(nn)
+      .writtenBy("TestNonTransactionalCarbonTableWithAvroDataType")
+      .build()
     writer.write(avroRec)
     writer.close()
-    sql(s"create table sdkOutputTable(union_field struct<union_field0:decimal(10,2),union_field1:int>) " +
-        s"using carbon options(path='$writerPath')")
-    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(decimal,null))))
+    sql(
+      s"create table sdkOutputTable(union_field struct<union_field0:decimal(10,2)," +
+      s"union_field1:int>) " +
+      s"using carbon options(path='$writerPath')")
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(decimal, null))))
   }
 
 }

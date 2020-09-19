@@ -22,8 +22,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.expression.{ColumnExpression, LiteralExpression}
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 
 class SparkCarbonStoreTest extends QueryTest with BeforeAndAfterAll {
 
@@ -37,7 +37,9 @@ class SparkCarbonStoreTest extends QueryTest with BeforeAndAfterAll {
         "projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
         "attendance int,utilization int,salary int)" +
         "STORED AS carbondata")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE t1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv'
+         | INTO TABLE t1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
 
     store = new SparkCarbonStore(sqlContext.sparkSession)
   }

@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -30,9 +29,9 @@ import org.apache.carbondata.core.util.CarbonProperties
  */
 
 class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
-         
 
-  //timestamp in yyyy.MMM.dd HH:mm:ss
+  // scalastyle:off lineLength
+  // timestamp in yyyy.MMM.dd HH:mm:ss
   test("TimeStampType_001", Include) {
      sql(s""" create table if not exists ddMMMyyyy (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED AS carbondata""").collect
    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructddMMMyyyy.csv' INTO TABLE ddMMMyyyy OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
@@ -42,7 +41,7 @@ class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //timestamp in dd.MM.yyyy HH:mm:ss
+  // timestamp in dd.MM.yyyy HH:mm:ss
   ignore("TimeStampType_002", Include) {
      sql(s""" create table if not exists ddMMyyyy (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED AS carbondata""").collect
    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructddMMyyyy.csv' INTO TABLE ddMMyyyy OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
@@ -52,7 +51,7 @@ class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //timestamp in yyyy.MM.dd HH:mm:ss
+  // timestamp in yyyy.MM.dd HH:mm:ss
   ignore("TimeStampType_003", Include) {
      sql(s""" create table if not exists yyyyMMdd (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED AS carbondata""").collect
    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructyyyyMMdd.csv' INTO TABLE yyyyMMdd OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
@@ -62,7 +61,7 @@ class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //timestamp in dd.MMM.yyyy HH:mm:ss
+  // timestamp in dd.MMM.yyyy HH:mm:ss
   test("TimeStampType_004", Include) {
      sql(s""" create table if not exists yyyyMMMdd (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED AS carbondata""").collect
    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructyyyyMMMdd.csv' INTO TABLE yyyyMMMdd OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
@@ -80,8 +79,8 @@ class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
-    //Reverting to old
+    // Reverting to old
     prop.addProperty("carbon.timestamp.format", p1)
   }
-
+  // scalastyle:on lineLength
 }

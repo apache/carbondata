@@ -18,7 +18,6 @@ package org.apache.spark.util
 
 import java.util
 
-import org.junit.Test
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.CarbonEnv
@@ -28,6 +27,7 @@ import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.spark.sql.test.{SparkTestQueryExecutor, TestQueryExecutor}
 import org.apache.spark.sql.test.util.QueryTest
+import org.junit.Test
 
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
@@ -113,7 +113,7 @@ class TestCarbonSegmentUtil extends QueryTest {
     sql(s"delete from table $tableName where SEGMENT.ID in (3)")
     sql(s"delete from table $tableName where SEGMENT.ID in (2)")
     sql(s"delete from table $tableName where SEGMENT.ID in (1)")
-    sql(s"show segments for table $tableName").show(false)
+    sql(s"show segments for table $tableName").collect()
     val expected = SecondaryIndexUtil
       .identifySegmentsToBeMerged(SparkTestQueryExecutor.spark,
         tableName,
@@ -191,7 +191,9 @@ class TestCarbonSegmentUtil extends QueryTest {
     segments.add(load)
     val expected = SecondaryIndexUtil
       .getMergedLoadName(segments)
+    // scalastyle:off println
     println(expected)
+    // scalastyle:on println
     assert(expected.equalsIgnoreCase("Segment_0.1"))
     dropTables(tableName)
   }

@@ -20,8 +20,8 @@ package org.apache.carbondata.spark.testsuite.createTable
 import java.io.File
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{AnalysisException, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -35,7 +35,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
   var writerPath = new File(this.getClass.getResource("/").getPath +
                             "../../src/test/resources/SparkCarbonFileFormat/WriterOutput")
     .getCanonicalPath
-  //getCanonicalPath gives path with \, but the code expects /.
+  // getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
 
 
@@ -55,7 +55,9 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(writerPath)
-          .withCsvInput(Schema.parseJson(schema)).writtenBy("TestCarbonFileInputFormatWithExternalCarbonTable").build()
+          .withCsvInput(Schema.parseJson(schema))
+          .writtenBy("TestCarbonFileInputFormatWithExternalCarbonTable")
+          .build()
 
       var i = 0
       while (i < 100) {
@@ -68,7 +70,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     }
   }
 
-  def cleanTestData() = {
+  private def cleanTestData() = {
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
@@ -94,40 +96,40 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
-  //TO DO, need to remove segment dependency and tableIdentifier Dependency
+  // TODO, need to remove segment dependency and tableIdentifier Dependency
   test("read carbondata files (sdk Writer Output) using the carbonfile ") {
     buildTestData()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //new provider carbonfile
+    // new provider carbonfile
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
 
-    sql("Describe formatted sdkOutputTable").show(false)
+    sql("Describe formatted sdkOutputTable").collect()
 
-    sql("select * from sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable").collect()
 
-    sql("select * from sdkOutputTable limit 3").show(false)
+    sql("select * from sdkOutputTable limit 3").collect()
 
-    sql("select name from sdkOutputTable").show(false)
+    sql("select name from sdkOutputTable").collect()
 
-    sql("select age from sdkOutputTable").show(false)
+    sql("select age from sdkOutputTable").collect()
 
-    sql("select * from sdkOutputTable where age > 2 and age < 8").show(200, false)
+    sql("select * from sdkOutputTable where age > 2 and age < 8").collect()
 
-    sql("select * from sdkOutputTable where name = 'robot3'").show(200, false)
+    sql("select * from sdkOutputTable where name = 'robot3'").collect()
 
-    sql("select * from sdkOutputTable where name like 'robo%' limit 5").show(200, false)
+    sql("select * from sdkOutputTable where name like 'robo%' limit 5").collect()
 
-    sql("select * from sdkOutputTable where name like '%obot%' limit 2").show(200, false)
+    sql("select * from sdkOutputTable where name like '%obot%' limit 2").collect()
 
-    sql("select sum(age) from sdkOutputTable where name like 'robot1%' ").show(200, false)
+    sql("select sum(age) from sdkOutputTable where name like 'robot1%' ").collect()
 
-    sql("select count(*) from sdkOutputTable where name like 'robot%' ").show(200, false)
+    sql("select count(*) from sdkOutputTable where name like 'robot%' ").collect()
 
-    sql("select count(*) from sdkOutputTable").show(200, false)
+    sql("select count(*) from sdkOutputTable").collect()
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -140,7 +142,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //data source file format
+    // data source file format
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
@@ -150,7 +152,8 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
       sql("Alter table sdkOutputTable change age age BIGINT")
     }
     assert(exception.getMessage().contains(
-      "ALTER TABLE CHANGE COLUMN is not supported for changing column 'age' with type 'IntegerType' to 'age' with type 'LongType'"))
+      "ALTER TABLE CHANGE COLUMN is not supported for changing column 'age' " +
+      "with type 'IntegerType' to 'age' with type 'LongType'"))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -164,12 +167,12 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //data source file format
+    // data source file format
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
 
-    //org.apache.spark.SparkException: Index file not present to read the carbondata file
+    // org.apache.spark.SparkException: Index file not present to read the carbondata file
     checkAnswer(sql("select count(*) from sdkOutputTable"), Seq(Row(100)))
 
     sql("DROP TABLE sdkOutputTable")
@@ -209,12 +212,12 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     val exception = intercept[Exception] {
-      //data source file format
+      // data source file format
       sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
 
-      sql("select * from sdkOutputTable").show(false)
+      sql("select * from sdkOutputTable").collect()
     }
     assert(exception.getMessage()
         .contains("Unable to infer the schema"))

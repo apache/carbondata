@@ -18,15 +18,14 @@ package org.apache.carbondata.cluster.sdv.register
 
 import java.io.IOException
 
-import org.scalatest.BeforeAndAfterAll
 import org.apache.hadoop.fs.{FileUtil, Path}
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 /**
  *
@@ -34,13 +33,14 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   var dbLocationCustom = TestQueryExecutor.warehouse +
                          CarbonCommonConstants.FILE_SEPARATOR + "dbName"
+  // scalastyle:off lineLength
   override def beforeAll {
     sql("drop database if exists carbon cascade")
   }
 
-  def restoreData(dbLocationCustom: String, tableName: String) = {
+  def restoreData(dbLocationCustom: String, tableName: String): Boolean = {
     val destination = dbLocationCustom + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dbLocationCustom+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val source = dbLocationCustom + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
     try {
       val fs = new Path(source).getFileSystem(FileFactory.getConfiguration)
       val sourceFileStatus = fs.getFileStatus(new Path(source))
@@ -58,9 +58,9 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     }
   }
-  def backUpData(dbLocationCustom: String, tableName: String) = {
+  def backUpData(dbLocationCustom: String, tableName: String): Boolean = {
     val source = dbLocationCustom + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val destination = dbLocationCustom+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val destination = dbLocationCustom + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
     try {
       val fs = new Path(source).getFileSystem(FileFactory.getConfiguration)
       val sourceFileStatus = fs.getFileStatus(new Path(source))
@@ -123,8 +123,8 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
       sql("refresh table carbontable")
     }
     // update operation
-    sql("""update carbon.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
-    sql("""update carbon.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").show()
+    sql("""update carbon.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").collect()
+    sql("""update carbon.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").collect()
     checkAnswer(
       sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
       Seq(Row("a", 2, "aa", "aaa"), Row("b", 2, "bb", "bbb"))
@@ -145,7 +145,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
       sql("refresh table carbontable")
     }
     // delete operation
-    sql("""delete from carbontable where c3 = 'aa'""").show
+    sql("""delete from carbontable where c3 = 'aa'""").collect()
     checkAnswer(
       sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
       Seq(Row("b", 1, "bb", "bbb"))
@@ -221,4 +221,5 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("use default")
     sql("drop database if exists carbon cascade")
   }
+  // scalastyle:on lineLength
 }

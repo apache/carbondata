@@ -16,12 +16,14 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
+// scalastyle:off lineLength
 class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
 
   private val timestampFormat = CarbonProperties.getInstance()
@@ -40,7 +42,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
-    if(null != dateFormat) {
+    if (null != dateFormat) {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, dateFormat)
     }
@@ -71,15 +73,10 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test insert into array of all primitive types") {
-    val schema = "(smallintColumn array<short>, intColumn array<int>, " +
-    "bigintColumn array<bigint>, doubleColumn array<double>, decimalColumn array<decimal(10,3)>, " +
-    "floatColumn array<float>,timestampColumn array<timestamp>, dateColumn array<date>, " +
-    "stringColumn array<string>, booleanColumn array<boolean>)"
+    val schema = "(smallintColumn array<short>, intColumn array<int>, bigintColumn array<bigint>, doubleColumn array<double>, decimalColumn array<decimal(10,3)>, floatColumn array<float>,timestampColumn array<timestamp>, dateColumn array<date>, stringColumn array<string>, booleanColumn array<boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
-      sql(s"insert into $tableName values(array(1,2,3), array(4,5,6), array(456,789,123), array(1.2,2.3,3.4), " +
-      "array(23.2,23.4,34.5), array(23,56,78), array('2017-01-01 12:00:00.0','2017-04-01 12:00:00.0','2017-05-01 12:00:00.0'), " +
-      "array('2017-09-08','2018-08-03','2016-01-08'), array('abc','cde','def'), array(true, false, true))")
+    def insertData(tableName: String): DataFrame = {
+      sql(s"insert into $tableName values(array(1,2,3), array(4,5,6), array(456,789,123), array(1.2,2.3,3.4), array(23.2,23.4,34.5), array(23,56,78), array('2017-01-01 12:00:00.0','2017-04-01 12:00:00.0','2017-05-01 12:00:00.0'), array('2017-09-08','2018-08-03','2016-01-08'), array('abc','cde','def'), array(true, false, true))")
     }
     insertData("fileformatTable")
     insertData("complextable")
@@ -93,7 +90,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn array<array<float>>,timestampColumn array<array<timestamp>>, dateColumn array<array<date>>, " +
     "stringColumn array<array<string>>, booleanColumn array<array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(array(array(1,2,3)), array(array(4,5,6)), array(array(456," +
         "789,123)), array(array(1.2,2.3,3.4)), array(array(23.2,23.4,34.5)), array(array(23,56,78))," +
         "array(array('2017-01-01 12:00:00.0','2017-04-01 12:00:00.0','2017-05-01 12:00:00.0')), " +
@@ -112,7 +109,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn array<struct<f:float>>,timestampColumn array<struct<t:timestamp>>, dateColumn array<struct<d:date>>, " +
     "stringColumn array<struct<s:string>>, booleanColumn array<struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(array(named_struct('s',1)), array(named_struct('i',4)), " +
           "array(named_struct('b',456)), array(named_struct('d',1.2)), array(named_struct('d',23.2))," +
           "array(named_struct('f',23)), array(named_struct('t','2017-01-01 12:00:00.0')), " +
@@ -130,7 +127,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn struct<f:float>,timestampColumn struct<t:timestamp>, dateColumn struct<d:date>, " +
     "stringColumn struct<s:string>, booleanColumn struct<b:boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(named_struct('s',1), named_struct('i',4), named_struct('b',456), " +
         "named_struct('d',1.2), named_struct('d',23.2), named_struct('f',23),named_struct('t','2017-01-01 12:00:00.0'), " +
         "named_struct('d','2017-09-08'), named_struct('s','abc'), named_struct('b',true))")
@@ -147,7 +144,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn struct<f:array<float>>,timestampColumn struct<t:array<timestamp>>, dateColumn struct<d:array<date>>, " +
     "stringColumn struct<s:array<string>>, booleanColumn struct<b:array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(named_struct('s',array(1)), named_struct('i',array(4)), " +
         "named_struct('b',array(456)), named_struct('d',array(1.2)), named_struct('d',array(23.2))," +
         "named_struct('f',array(23)), named_struct('t',array('2017-01-01 12:00:00.0')), " +
@@ -165,7 +162,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn struct<f:struct<f1:float>>,timestampColumn struct<t:struct<t1:timestamp>>, dateColumn struct<d:struct<d1:date>>, " +
     "stringColumn struct<s:struct<s1:string>>, booleanColumn struct<b:struct<b1:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(named_struct('s',named_struct('s1',1)), named_struct('i',named_struct('i1',4)), " +
           "named_struct('b',named_struct('b1',456)), named_struct('d',named_struct('d1',1.2)), named_struct('d',named_struct('d1',23.2)), " +
           "named_struct('f',named_struct('f1',23)), named_struct('t',named_struct('t1','2017-01-01 12:00:00.0')), " +
@@ -183,7 +180,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<short,float>,timestampColumn map<short,timestamp>, dateColumn map<short,date>, " +
     "stringColumn map<short,string>, booleanColumn map<short,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,1),map(4,5), map(4,789), map(1,2.3), map(2,23), map(2,56)," +
         "map(2,'2017-04-01 12:00:00.0'), map(1,'2017-09-08'), map(4,'abc'), map(1,true))")
     }
@@ -199,7 +196,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<int,float>,timestampColumn map<int,timestamp>, dateColumn map<int,date>," +
     "stringColumn map<int,string>, booleanColumn map<int,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,1),map(4,5), map(4,789), map(1,2.3), map(2,23), map(2,56), " +
         "map(2,'2017-04-01 12:00:00.0'), map(1,'2017-09-08'), map(4,'abc'), map(1,true))")
     }
@@ -215,7 +212,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<bigint,float>,timestampColumn map<bigint,timestamp>, dateColumn map<bigint,date>, " +
     "stringColumn map<bigint,string>, booleanColumn map<bigint,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,1),map(4,5), map(4,789), map(1,2.3), map(2,23), map(2,56), " +
         "map(2,'2017-04-01 12:00:00.0'), map(1,'2017-09-08'), map(4,'abc'), map(1,true))")
     }
@@ -231,7 +228,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<double,float>,timestampColumn map<double,timestamp>, dateColumn map<double,date>, " +
     "stringColumn map<double,string>, booleanColumn map<double,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1.1,1),map(4.1,5), map(4.1,789), map(1.1,2.3), map(2.1,23), map(2.1,56), " +
         "map(2.1,'2017-04-01 12:00:00.0'), map(1.1,'2017-09-08'), map(4.1,'abc'), map(1.1,true))")
     }
@@ -247,7 +244,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<decimal(10,2),float>,timestampColumn map<decimal(10,2),timestamp>, dateColumn map<decimal(10,2),date>, " +
     "stringColumn map<decimal(10,2),string>, booleanColumn map<decimal(10,2),boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map((cast(\"12\" as decimal(10,2))),1),map((cast(\"12\" as decimal(10,2))),5), " +
           "map((cast(\"12\" as decimal(10,2))),789), map((cast(\"12\" as decimal(10,2))),2.3), " +
@@ -267,7 +264,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<float,float>,timestampColumn map<float,timestamp>, dateColumn map<float,date>, " +
     "stringColumn map<float,string>, booleanColumn map<float,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,1),map(4,5), map(4,789), map(1,2.3), map(2,23), map(2,56), " +
         "map(2,'2017-04-01 12:00:00.0'), map(1,'2017-09-08'), map(4,'abc'), map(1,true))")
     }
@@ -283,7 +280,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<timestamp,float>, timestampColumn map<timestamp,timestamp>, dateColumn map<timestamp,date>, " +
     "stringColumn map<timestamp,string>, booleanColumn map<timestamp,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map((cast(\"2017-04-01 12:00:00.0\" as timestamp)),1),map((cast(\"2017-04-01 12:00:00.0\" as timestamp)),5), " +
           "map((cast(\"2017-04-01 12:00:00.0\" as timestamp)),789), map((cast(\"2017-04-01 12:00:00.0\" as timestamp)),2.3), " +
@@ -302,7 +299,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<date,double>, decimalColumn map<date,decimal(10,3)>, floatColumn map<date,float>,timestampColumn map<date,timestamp>, " +
     "dateColumn map<date,date>, stringColumn map<date,string>, booleanColumn map<date,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map((cast(\"2017-04-01\" as date)),1), map((cast(\"2017-04-01\" as date)),5), " +
           "map((cast(\"2017-04-01\" as date)),789), map((cast(\"2017-04-01\" as date)),2.3), " +
@@ -321,7 +318,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<string,double>, decimalColumn map<string,decimal(10,3)>, floatColumn map<string,float>,timestampColumn map<string,timestamp>, " +
     "dateColumn map<string,date>, stringColumn map<string,string>, booleanColumn map<string,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map('abcd',1),map('2017-04-01',5), map('abcd',789), map('abcd',2.3), map('abcd',23)," +
         "map('abcd',56), map('abcd','2017-04-01 12:00:00.0'), map('abcd','2017-09-08'), map('abcd','abc'), map('abcd',true))")
     }
@@ -336,7 +333,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<boolean,double>, decimalColumn map<boolean,decimal(10,3)>, floatColumn map<boolean,float>,timestampColumn map<boolean,timestamp>, " +
     "dateColumn map<boolean,date>, stringColumn map<boolean,string>, booleanColumn map<boolean,boolean>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(true,1),map(true,5), map(true,789), map(false,2.3), map(false,23)," +
           "map(false,56), map(false,'2017-04-01 12:00:00.0'), map(true,'2017-09-08'), map(false,'abc'), map(false,true))")
     }
@@ -352,7 +349,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<short,array<float>>,timestampColumn map<short,array<timestamp>>, dateColumn map<short,array<date>>, " +
     "stringColumn map<short,array<string>>, booleanColumn map<short,array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,array(1)),map(4,array(5)), map(4,array(789)), map(1,array(2.3)), map(2,array(23)), " +
         "map(2,array(56)), map(2,array('2017-04-01 12:00:00.0')), map(1,array('2017-09-08')), map(4,array('abc')), map(1,array(true)))")
     }
@@ -368,7 +365,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<bigint,array<float>>,timestampColumn map<bigint,array<timestamp>>, dateColumn map<bigint,array<date>>, " +
     "stringColumn map<bigint,array<string>>, booleanColumn map<bigint,array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,array(1)),map(4,array(5)), map(4,array(789)), map(1,array(2.3)), map(2,array(23)), " +
           "map(2,array(56)), map(2,array('2017-04-01 12:00:00.0')), map(1,array('2017-09-08')), map(4,array('abc')), map(1,array(true)))")
     }
@@ -384,7 +381,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<bigint,array<float>>,timestampColumn map<bigint,array<timestamp>>, dateColumn map<bigint,array<date>>, " +
     "stringColumn map<bigint,array<string>>, booleanColumn map<bigint,array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,array(1)),map(4,array(5)), map(4,array(789)), map(1,array(2.3)), map(2,array(23)), " +
           "map(2,array(56)), map(2,array('2017-04-01 12:00:00.0')), map(1,array('2017-09-08')), map(4,array('abc')), map(1,array(true)))")
     }
@@ -399,7 +396,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<double,array<double>>, decimalColumn map<double,array<decimal(10,3)>>, floatColumn map<double,array<float>>,timestampColumn map<double,array<timestamp>>, " +
     "dateColumn map<double,array<date>>, stringColumn map<double,array<string>>, booleanColumn map<double,array<boolean>>)"
     sql("create table complextable" + schema + " STORED AS carbondata")
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1.1,array(1)),map(4.1,array(5)), map(4.1,array(789)), map(1.1,array(2.3)), map(2.1,array(23)), " +
           "map(2.1,array(56)), map(2.1,array('2017-04-01 12:00:00.0')), map(1.1,array('2017-09-08')), map(4.1,array('abc')), map(1.1,array(true)))")
     }
@@ -418,7 +415,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "timestampColumn map<decimal(10,2),array<timestamp>>, dateColumn map<decimal(10,2),array<date>>, stringColumn map<decimal(10,2),array<string>>, " +
     "booleanColumn map<decimal(10,2),array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map((cast(\"12\" as decimal(10,2))),array(1)), map((cast(\"12\" as decimal(10,2))),array(5)), " +
           "map((cast(\"12\" as decimal(10,2))),array(789)), map((cast(\"12\" as decimal(10,2))),array(2.3)), " +
@@ -437,7 +434,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<float,array<double>>, decimalColumn map<float,array<decimal(10,3)>>, floatColumn map<float,array<float>>, timestampColumn map<float,array<timestamp>>, " +
     "dateColumn map<float,array<date>>, stringColumn map<float,array<string>>, booleanColumn map<float,array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,array(1)),map(4,array(5)), map(4,array(789)), map(1,array(2.3)), map(2,array(23)), map(2,array(56)), " +
         "map(2,array('2017-04-01 12:00:00.0')), map(1,array('2017-09-08')), map(4,array('abc')), map(1,array(true)))")
     }
@@ -453,7 +450,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "timestampColumn map<timestamp,array<timestamp>>, dateColumn map<timestamp,array<date>>, stringColumn map<timestamp,array<string>>, " +
     "booleanColumn map<timestamp,array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map((cast(\"2017-04-01 12:00:00.0\" as timestamp)),array(1))," +
           "map((cast(\"2017-04-01 12:00:00.0\" as timestamp)),array(5)), " +
@@ -477,7 +474,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<date,array<double>>, decimalColumn map<date,array<decimal(10,3)>>, floatColumn map<date,array<float>>,timestampColumn map<date,array<timestamp>>, " +
     "dateColumn map<date,array<date>>, stringColumn map<date,array<string>>, booleanColumn map<date,array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map((cast(\"2017-04-01\" as date)),array(1))," +
           "map((cast(\"2017-04-01\" as date)),array(5)), " +
@@ -502,7 +499,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "timestampColumn map<string,array<timestamp>>, dateColumn map<string,array<date>>, stringColumn map<string,array<string>>, " +
     "booleanColumn map<string,array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map('abcd',array(1)),map('2017-04-01',array(5)), map('abcd',array(789)), map('abcd',array(2.3)), map('abcd',array(23))," +
         "map('abcd',array(56)), map('abcd',array('2017-04-01 12:00:00.0')), map('abcd',array('2017-09-08')), map('abcd',array('abc')), map('abcd',array(true)))")
     }
@@ -517,7 +514,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<boolean,array<double>>, decimalColumn map<boolean,array<decimal(10,3)>>, floatColumn map<boolean,array<float>>, timestampColumn map<boolean,array<timestamp>>," +
     "dateColumn map<boolean,array<date>>, stringColumn map<boolean,array<string>>, booleanColumn map<boolean,array<boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(true,array(1)),map(true,array(5)), map(true,array(789)), map(false,array(2.3)), map(false,array(23))," +
         "map(false,array(56)), map(false,array('2017-04-01 12:00:00.0')), map(true,array('2017-09-08')), map(false,array('abc')), map(false,array(true)))")
     }
@@ -532,7 +529,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<short,struct<d:double>>, decimalColumn map<short,struct<d:decimal(10,3)>>, floatColumn map<short,struct<f:float>>,timestampColumn map<short,struct<t:timestamp>>," +
     "dateColumn map<short,struct<d:date>>, stringColumn map<short,struct<s:string>>, booleanColumn map<short,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,named_struct('s',1)),map(4,named_struct('i',5)), map(4,named_struct('b',789)), map(1,named_struct('d',2.3)), " +
           "map(2,named_struct('d',23)), map(2,named_struct('f',56)), map(2,named_struct('t','2017-04-01 12:00:00.0')), map(1,named_struct('d','2017-09-08'))," +
           "map(4,named_struct('s','abc')), map(1,named_struct('b', true)))")
@@ -548,7 +545,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<int,struct<d:double>>, decimalColumn map<int,struct<d:decimal(10,3)>>, floatColumn map<int,struct<f:float>>,timestampColumn map<int,struct<t:timestamp>>, " +
     "dateColumn map<int,struct<d:date>>, stringColumn map<int,struct<s:string>>, booleanColumn map<int,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,named_struct('s',1)),map(4,named_struct('i',5)),map(4,named_struct('b',789)), map(1,named_struct('d',2.3)), " +
           "map(2,named_struct('d',23)),map(2,named_struct('f',56)), map(2,named_struct('t','2017-04-01 12:00:00.0')), map(1,named_struct('d','2017-09-08'))," +
           "map(4,named_struct('s','abc')), map(1,named_struct('b', true)))")
@@ -564,7 +561,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<bigint,struct<d:double>>, decimalColumn map<bigint,struct<d:decimal(10,3)>>, floatColumn map<bigint,struct<f:float>>,timestampColumn map<bigint,struct<t:timestamp>>, " +
     "dateColumn map<bigint,struct<d:date>>, stringColumn map<bigint,struct<s:string>>, booleanColumn map<bigint,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(map(1,named_struct('s',1)),map(4,named_struct('i',5)), map(4,named_struct('b',789)), map(1,named_struct('d',2.3)), " +
           "map(2,named_struct('d',23)), map(2,named_struct('f',56)), map(2,named_struct('t','2017-04-01 12:00:00.0')), map(1,named_struct('d','2017-09-08'))," +
           "map(4,named_struct('s','abc')), map(1,named_struct('b', true)))")
@@ -581,7 +578,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<double,struct<f:float>>,timestampColumn map<double,struct<t:timestamp>>, dateColumn map<double,struct<d:date>>, " +
     "stringColumn map<double,struct<s:string>>, booleanColumn map<double,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map(1.1,named_struct('s',1)),map(4.1,named_struct('i',5))," +
           "map(4.1,named_struct('b',789)), map(1.1,named_struct('d',2.3)), " +
@@ -601,7 +598,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "floatColumn map<decimal(10,2),struct<f:float>>,timestampColumn map<decimal(10,2),struct<t:timestamp>>, dateColumn map<decimal(10,2),struct<d:date>>, " +
     "stringColumn map<decimal(10,2),struct<s:string>>, booleanColumn map<decimal(10,2),struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(
         s"insert into $tableName values(" +
         "map((cast(\"12\" as decimal(10,2))),named_struct('s',1)),map((cast(\"12\" as decimal(10,2))),named_struct('i',5)), " +
@@ -621,7 +618,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<float,struct<d:double>>, decimalColumn map<float,struct<d:decimal(10,3)>>, floatColumn map<float,struct<f:float>>, timestampColumn map<float,struct<t:timestamp>>, " +
     "dateColumn map<float,struct<d:date>>, stringColumn map<float,struct<s:string>>, booleanColumn map<float,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map(1,named_struct('s',1)),map(4,named_struct('i',5)), " +
           "map(4,named_struct('b',789)), map(1,named_struct('d',2.3)), map(2,named_struct('d',23)), " +
@@ -639,7 +636,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<timestamp,struct<d:double>>, decimalColumn map<timestamp,struct<d:decimal(10,3)>>, floatColumn map<timestamp,struct<f:float>>,timestampColumn map<timestamp,struct<t:timestamp>>, " +
     "dateColumn map<timestamp,struct<d:date>>, stringColumn map<timestamp,struct<s:string>>, booleanColumn map<timestamp,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map((cast(\"2017-04-01 12:00:00.0\" as timestamp)),named_struct('s',1)), " +
           "map((cast(\"2017-04-01 12:00:00.0\" as timestamp)),named_struct('i',5)), " +
@@ -663,7 +660,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<date,struct<d:double>>, decimalColumn map<date,struct<d:decimal(10,3)>>, floatColumn map<date,struct<f:float>>,timestampColumn map<date,struct<t:timestamp>>, " +
     "dateColumn map<date,struct<d:date>>, stringColumn map<date,struct<s:string>>, booleanColumn map<date,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
           "map((cast(\"2017-04-01\" as date)),named_struct('s',1)), " +
           "map((cast(\"2017-04-01\" as date)),named_struct('i',5)), " +
@@ -687,7 +684,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<string,struct<d:double>>, decimalColumn map<string,struct<d:decimal(10,3)>>, floatColumn map<string,struct<f:float>>,timestampColumn map<string,struct<t:timestamp>>, " +
     "dateColumn map<string,struct<d:date>>, stringColumn map<string,struct<s:string>>, booleanColumn map<string,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
         "map('abcd',named_struct('s',1)),map('2017-04-01',named_struct('i',5)), " +
         "map('abcd',named_struct('b',789)), map('abcd',named_struct('d',2.3)), " +
@@ -706,7 +703,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     "doubleColumn map<boolean,struct<d:double>>, decimalColumn map<boolean,struct<d:decimal(10,3)>>, floatColumn map<boolean,struct<f:float>>,timestampColumn map<boolean,struct<t:timestamp>>, " +
     "dateColumn map<boolean,struct<d:date>>, stringColumn map<boolean,struct<s:string>>, booleanColumn map<boolean,struct<b:boolean>>)"
     createTables(schema)
-    def insertData(tableName: String) = {
+    def insertData(tableName: String): DataFrame = {
       sql(s"insert into $tableName values(" +
         "map(true,named_struct('s',1)),map(true,named_struct('i',5)), " +
         "map(true,named_struct('b',789)), map(false,named_struct('d',2.3)), " +
@@ -720,3 +717,4 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkResults()
   }
 }
+// scalastyle:on lineLength

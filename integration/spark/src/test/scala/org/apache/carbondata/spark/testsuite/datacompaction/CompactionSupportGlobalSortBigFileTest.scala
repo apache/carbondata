@@ -27,7 +27,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
+class CompactionSupportGlobalSortBigFileTest
+  extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val file1 = resourcesPath + "/compaction/fil1.csv"
   val file2 = resourcesPath + "/compaction/fil2.csv"
   val file3 = resourcesPath + "/compaction/fil3.csv"
@@ -36,7 +37,7 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
 
   override protected def beforeAll(): Unit = {
     resetConf("10")
-    //n should be about 5000000 of reset if size is default 1024
+    // n should be about 5000000 of reset if size is default 1024
     val n = 150000
     CompactionSupportGlobalSortBigFileTest.createFile(file1, n, 0)
     CompactionSupportGlobalSortBigFileTest.createFile(file2, n * 4, n)
@@ -82,13 +83,13 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
     sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file4' INTO TABLE carbon_localsort OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file5' INTO TABLE carbon_localsort OPTIONS('header'='false')")
-
+    // scalastyle:off lineLength
     sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file4' INTO TABLE compaction_globalsort OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file5' INTO TABLE compaction_globalsort OPTIONS('header'='false')")
-
+    // scalastyle:on lineLength
     sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
 
@@ -96,13 +97,14 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
 
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
 
-    checkAnswer(sql("select count(*) from compaction_globalsort"),sql("select count(*) from carbon_localsort"))
+    checkAnswer(sql("select count(*) from compaction_globalsort"),
+      sql("select count(*) from carbon_localsort"))
     val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(SegmentSequenceIds.contains("0.1"))
   }
 
-  private def resetConf(size:String) {
+  private def resetConf(size: String) {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE, size)
   }
@@ -113,7 +115,9 @@ object CompactionSupportGlobalSortBigFileTest {
     try {
       val write = new PrintWriter(fileName);
       for (i <- start until (start + line)) {
+        // scalastyle:off println
         write.println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + Random.nextInt(80))
+        // scalastyle:on println
       }
       write.close()
     } catch {

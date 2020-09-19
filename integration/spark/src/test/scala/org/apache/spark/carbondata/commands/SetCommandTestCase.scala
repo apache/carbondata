@@ -43,7 +43,7 @@ class SetCommandTestCase extends QueryTest with BeforeAndAfterAll{
       checkAnswer(sql("set enable.unsafe.sort=123"), sql("set enable.unsafe.sort"))
     }
   }
-  //is_empty_data_bad_record
+  // is_empty_data_bad_record
   test(s"test set command for" +
        s" ${ CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE }=true") {
     checkAnswer(sql(s"set ${
@@ -72,15 +72,15 @@ class SetCommandTestCase extends QueryTest with BeforeAndAfterAll{
       sql(s"set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD }"))
   }
 
-  test(s"test set command for ${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD} " +
-       s"for invalid option") {
+  test("test set command for " +
+       s"${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD} for invalid option") {
     intercept[InvalidConfigurationException] {
       checkAnswer(
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD}=123"),
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD}"))
     }
   }
-  //carbon.custom.block.distribution
+  // carbon.custom.block.distribution
   test("test set command for carbon.custom.block.distribution=true") {
     checkAnswer(sql("set carbon.custom.block.distribution=true"),
       sql("set carbon.custom.block.distribution"))
@@ -98,7 +98,8 @@ class SetCommandTestCase extends QueryTest with BeforeAndAfterAll{
       sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE}"))
   }
 
-  test(s"test set command for ${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE} for invalid option") {
+  test("test set command for " +
+       s"${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE} for invalid option") {
     intercept[InvalidConfigurationException] {
       checkAnswer(sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE}=123"),
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE}"))

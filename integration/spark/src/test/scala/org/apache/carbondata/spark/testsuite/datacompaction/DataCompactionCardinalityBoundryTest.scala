@@ -19,17 +19,17 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
-  * FT for data compaction scenario.
-  */
+ * FT for data compaction scenario.
+ */
 class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -37,9 +37,8 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     sql("drop table if exists  cardinalityTest")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
-    sql(
-      "CREATE TABLE IF NOT EXISTS cardinalityTest (country String, ID String, date Timestamp, name " +
-        "String, phonetype String, serialname String, salary Int) STORED AS carbondata"
+    sql("CREATE TABLE IF NOT EXISTS cardinalityTest (country String, ID String, date Timestamp, " +
+        "name String, phonetype String, serialname String, salary Int) STORED AS carbondata"
     )
 
 
@@ -52,14 +51,14 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
 
 
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE cardinalityTest OPTIONS" +
-      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE cardinalityTest  OPTIONS" +
-      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     // compaction will happen here.
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE cardinalityTest  OPTIONS" +
-      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     // compaction will happen here.
     sql("alter table cardinalityTest compact 'major'"
@@ -72,10 +71,10 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     var noOfRetries = 0
     while (status && noOfRetries < 10) {
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-          AbsoluteTableIdentifier.from(
-            CarbonProperties.getStorePath(),
-            new CarbonTableIdentifier("default", "cardinalityTest", "1")
-          )
+        AbsoluteTableIdentifier.from(
+          CarbonProperties.getStorePath(),
+          new CarbonTableIdentifier("default", "cardinalityTest", "1")
+        )
       )
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 
@@ -91,20 +90,20 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     // now check the answers it should be same.
     checkAnswer(
       sql("select country,count(*) from cardinalityTest group by country"),
-      Seq(Row("america",1),
-        Row("canada",1),
-        Row("chile",1),
-        Row("china",2),
-        Row("england",1),
-        Row("burma",152),
-        Row("butan",101),
-        Row("mexico",1),
-        Row("newzealand",1),
-        Row("westindies",1),
-        Row("india",1),
-        Row("iran",1),
-        Row("iraq",1),
-        Row("ireland",1)
+      Seq(Row("america", 1),
+        Row("canada", 1),
+        Row("chile", 1),
+        Row("china", 2),
+        Row("england", 1),
+        Row("burma", 152),
+        Row("butan", 101),
+        Row("mexico", 1),
+        Row("newzealand", 1),
+        Row("westindies", 1),
+        Row("india", 1),
+        Row("iran", 1),
+        Row("iraq", 1),
+        Row("ireland", 1)
       )
     )
   }

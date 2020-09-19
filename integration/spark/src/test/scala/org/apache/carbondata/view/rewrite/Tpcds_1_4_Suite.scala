@@ -17,13 +17,14 @@
 
 package org.apache.carbondata.view.rewrite
 
-import org.apache.carbondata.view.MVCatalogInSpark
-import org.apache.carbondata.view.testutil.ModularPlanTest
+import java.io.{File, PrintWriter}
+
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.optimizer.MVRewrite
 import org.scalatest.BeforeAndAfter
-//import org.apache.spark.sql.catalyst.SQLBuilder
-import java.io.{File, PrintWriter}
+
+import org.apache.carbondata.view.MVCatalogInSpark
+import org.apache.carbondata.view.testutil.ModularPlanTest
 
 class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
   import org.apache.carbondata.view.rewrite.matching.TestTPCDS_1_4_Batch._
@@ -44,22 +45,26 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
 //    val dest = "case_33"
 // case_15 and case_16 need revisit
 
-    val dest = "case_39"   /** to run single case, uncomment out this **/
-    
+    val dest = "case_39"   /* to run single case, uncomment out this */
+
     tpcds_1_4_testCases.foreach { testcase =>
-      if (testcase._1 == dest) { /** to run single case, uncomment out this **/
+      if (testcase._1 == dest) { /* to run single case, uncomment out this */
         val mvSession = new MVCatalogInSpark(testHive)
         val summaryDF = testHive.sql(testcase._2)
         mvSession.registerSchema(summaryDF)
 
-        writer.print(s"\n\n==== ${testcase._1} ====\n\n==== mv ====\n\n${testcase._2}\n\n==== original query ====\n\n${testcase._3}\n")
-        
-        val rewriteSQL = new MVRewrite(mvSession, mvSession.session.sql(testcase._3).queryExecution.optimizedPlan, mvSession.session).toCompactSQL.trim
+        writer.print(s"\n\n==== ${testcase._1} ====\n\n==== mv ====" +
+                     s"\n\n${testcase._2}\n\n==== original query ====\n\n${testcase._3}\n")
+
+        val rewriteSQL = new MVRewrite(mvSession,
+          mvSession.session.sql(testcase._3).queryExecution.optimizedPlan,
+          mvSession.session).toCompactSQL.trim
         LOGGER.info(s"\n\n\n\n===== Rewritten query for ${testcase._1} =====\n\n${rewriteSQL}\n")
-        
+
         if (!rewriteSQL.trim.equals(testcase._4)) {
           LOGGER.error(s"===== Rewrite not matched for ${testcase._1}\n")
-          LOGGER.error(s"\n\n===== Rewrite failed for ${testcase._1}, Expected: =====\n\n${testcase._4}\n")
+          LOGGER.error(s"\n\n===== Rewrite failed for ${testcase._1}, Expected: =====" +
+                       s"\n\n${testcase._4}\n")
           LOGGER.error(
               s"""
               |=== FAIL: SQLs do not match ===
@@ -74,8 +79,8 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
           writer.print(s"\n\n==== rewritten query ====\n\n${rewriteSQL}\n")
         }
 
-        }  /**to run single case, uncomment out this **/
-    
+        }  /* to run single case, uncomment out this */
+
     }
 
     writer.close()

@@ -18,25 +18,24 @@
 package org.apache.carbondata.spark.testsuite.cloud
 
 import java.io.File
-import java.util.concurrent.Executors
 
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
-  * Test Class for all data source
-  *
-  */
+ * Test Class for all data source
+ *
+ */
 class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
@@ -94,7 +93,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists alldatasource cascade")
   }
 
-  def dropTableByName(tableName: String) :Unit = {
+  def dropTableByName(tableName: String): Unit = {
     sql(s"drop table if exists $tableName")
     sql(s"drop table if exists ${tableName}_p")
     sql(s"drop table if exists ${tableName}_ctas")
@@ -112,16 +111,17 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
           CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE,
           CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DEFAULT
         )
-      CarbonProperties.getInstance().removeProperty(CarbonCommonConstants.DATABASE_LOCATION_PROVIDER)
+      CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.DATABASE_LOCATION_PROVIDER)
     }
   }
 
-  test("test carbon"){
+  test("test carbon") {
     verifyDataSourceTable("carbon", "ds_carbon")
     verifyHiveTable("carbon", "hive_carbon")
   }
 
-  test("test carbondata"){
+  test("test carbondata") {
     verifyDataSourceTable("carbondata", "ds_carbondata")
     verifyHiveTable("carbondata", "hive_carbondata")
   }
@@ -153,7 +153,8 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
       )
     )
     checkExistence(sql(s"show create table ${ tableName }"), true, "sort_columns")
-    sql(s"alter table ${ tableName } set tblproperties('sort_Columns'='col2,col1', 'LOAD_MIN_SIZE_INMB'='256')")
+    sql(s"alter table ${ tableName } " +
+        "set tblproperties('sort_Columns'='col2,col1', 'LOAD_MIN_SIZE_INMB'='256')")
     checkExistence(sql(s"show create table ${ tableName }"), true, "load_min_size_inmb")
     sql(s"alter table ${ tableName } unset tblproperties('LOAD_MIN_SIZE_INMB')")
     checkExistence(sql(s"show create table ${ tableName }"), false, "load_min_size_inmb")
@@ -187,7 +188,8 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          | col1 int, col2 string, col3 date
          |)
          | stored as carbondata
-         | tblproperties("sort_sCope"="global_Sort", "sort_Columns"="coL2", 'global_Sort_partitions'='1')
+         | tblproperties(
+         | "sort_sCope"="global_Sort", "sort_Columns"="coL2", 'global_Sort_partitions'='1')
          | """.stripMargin)
 
     checkExistence(sql(s"describe formatted ${ tableName }"), true, "global_sort")
@@ -201,7 +203,8 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
       )
     )
     checkExistence(sql(s"show create table ${ tableName }"), true, "sort_columns")
-    sql(s"alter table ${ tableName } set tblproperties('sort_Columns'='col2,col1', 'LOAD_MIN_SIZE_INMB'='256')")
+    sql(s"alter table ${ tableName } " +
+        s"set tblproperties('sort_Columns'='col2,col1', 'LOAD_MIN_SIZE_INMB'='256')")
     checkExistence(sql(s"show create table ${ tableName }"), true, "load_min_size_inmb")
     sql(s"alter table ${ tableName } unset tblproperties('LOAD_MIN_SIZE_INMB')")
     checkExistence(sql(s"show create table ${ tableName }"), false, "load_min_size_inmb")
@@ -231,7 +234,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          | using carbondata
          | as select * from origin_csv
          | """.stripMargin)
-    sql(s"show create table $tableName").show(100, false)
+    sql(s"show create table $tableName").collect()
     checkAnswer(sql(s"show create table $tableName"),
       Seq(Row(
         """CREATE TABLE `ds_sct` (`col1` INT, `col2` STRING, `col3` DATE)
@@ -252,7 +255,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          | options("global_sort_partitions"="1")
          | as select * from origin_csv
          | """.stripMargin)
-    sql(s"show create table $tableName").show(100, false)
+    sql(s"show create table $tableName").collect()
     checkAnswer(sql(s"show create table $tableName"),
       Seq(Row(
         """CREATE TABLE `ds_sct` (`col1` INT, `col2` STRING, `col3` DATE)
@@ -339,7 +342,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          | options("sort_scope"="global_sort", "sort_columns"="col2")
          | partitioned by (col3)
          | """.stripMargin)
-    sql(s"show create table $tableName").show(100, false)
+    sql(s"show create table $tableName").collect()
     checkAnswer(sql(s"show create table $tableName"),
       Seq(Row("""CREATE TABLE `ds_sct` (`col1` INT, `col2` STRING, `col3` DATE)
                 |USING carbondata
@@ -372,8 +375,8 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test external table") {
-    verifyExternalDataSourceTable("carbondata",  "ds_carbondata")
-    verifyExternalHiveTable("carbondata",  "hive_carbondata")
+    verifyExternalDataSourceTable("carbondata", "ds_carbondata")
+    verifyExternalHiveTable("carbondata", "hive_carbondata")
   }
 
   test("test truncate table") {
@@ -386,12 +389,14 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test float") {
     val tableName = "tbl_float"
-    sql(s"create table ${tableName}1 (col1 string, col2 float, col3 char(10), col4 varchar(20), col5 decimal(10,2)) using carbondata")
-    sql(s"describe formatted ${tableName}1").show(100, false)
+    sql(s"create table ${tableName}1 (col1 string, col2 float, col3 char(10), " +
+        "col4 varchar(20), col5 decimal(10,2)) using carbondata")
+    sql(s"describe formatted ${tableName}1").collect()
     sql(s"insert into table ${tableName}1 select 'abc', 1.0, 'a3','b3', 12.34")
     checkAnswer(sql(s"select * from ${tableName}1"), Seq(Row("abc", 1.0f, "a3", "b3", 12.34)))
-    sql(s"create table ${tableName}2 (col1 string, col2 float, col3 char(10), col4 varchar(20), col5 decimal(10,2)) stored as carbondata")
-    sql(s"describe formatted ${tableName}2").show(100, false)
+    sql(s"create table ${tableName}2 (col1 string, col2 float, col3 char(10), " +
+        "col4 varchar(20), col5 decimal(10,2)) stored as carbondata")
+    sql(s"describe formatted ${tableName}2").collect()
     sql(s"insert into table ${tableName}2 select 'abc', 1.0, 'a3','b3', 12.34")
     checkAnswer(sql(s"select * from ${tableName}2"), Seq(Row("abc", 1.0f, "a3", "b3", 12.34)))
   }
@@ -512,13 +517,13 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          | insert into $tableName
          |  select 123,'abc'
          |  """.stripMargin
-    ).show(100, false)
+    ).collect()
     sql(
       s"""
          | insert overwrite table $tableName
          |  select 321,'cba'
          |  """.stripMargin
-    ).show(100, false)
+    ).collect()
 
     checkAnswer(
       sql(s"select * from $tableName"),
@@ -543,7 +548,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          | insert into $tableName
          |  select 123,'abc'
          |  """.stripMargin
-    ).show(100, false)
+    ).collect()
     sql(
       s"""
          | insert into $tableName (
@@ -551,21 +556,21 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          |  union all
          |  select 789, 'edf'
          |  )""".stripMargin
-    ).show(100, false)
+    ).collect()
     sql(
       s"""
          | insert into $tableName
          |  select 345,'cba'
          |  """.stripMargin
-    ).show(100, false)
+    ).collect()
     sql(
       s"""
          | insert overwrite table $tableName
          |  select 321,'abc'
          |  """.stripMargin
-    ).show(100, false)
+    ).collect()
 
-    sql(s"clean files for table $tableName").show(100, false)
+    sql(s"clean files for table $tableName").collect()
 
     checkAnswer(
       sql(s"select * from $tableName order by col1"),
@@ -747,7 +752,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          |  """.stripMargin
     )
     checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(8)))
-    sql(s"describe formatted $tableName").show(100, false)
+    sql(s"describe formatted $tableName").collect()
     checkExistence(
       sql(s"describe formatted $tableName"),
       true,
@@ -784,28 +789,29 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop table if exists ${tableName}")
     sql(s"create table ${tableName}(col1 int, col2 string) using $provider partitioned by (col2)")
     checkLoading(s"${tableName}")
-    val carbonTable = CarbonEnv.getCarbonTable(Option("alldatasource"),tableName)(sqlContext.sparkSession)
+    val carbonTable = CarbonEnv.getCarbonTable(
+      Option("alldatasource"), tableName)(sqlContext.sparkSession)
     assert(carbonTable.isHivePartitionTable)
-    sql(s"describe formatted ${tableName}").show(100, false)
-    sql(s"show partitions ${tableName}").show(100, false)
-    sql(s"show create table ${tableName}").show(100, false)
-    sql(s"alter table ${tableName} add partition(col2='dd')").show(100, false)
+    sql(s"describe formatted ${tableName}").collect()
+    sql(s"show partitions ${tableName}").collect()
+    sql(s"show create table ${tableName}").collect()
+    sql(s"alter table ${tableName} add partition(col2='dd')").collect()
   }
 
   def createHivePartitionTable(provider: String, tableName: String): Unit = {
     sql(s"drop table if exists ${tableName}")
     sql(s"create table ${tableName}(col1 int) partitioned by (col2 string) stored as carbondata")
     checkLoading(s"${tableName}")
-    sql(s"describe formatted ${tableName}").show(100, false)
-    sql(s"show partitions ${tableName}").show(100, false)
-    sql(s"alter table ${tableName} add partition(col2='dd')").show(100, false)
+    sql(s"describe formatted ${tableName}").collect()
+    sql(s"show partitions ${tableName}").collect()
+    sql(s"alter table ${tableName} add partition(col2='dd')").collect()
   }
 
   def verifyDataSourceTable(provider: String, tableName: String): Unit = {
     sql(s"create table ${tableName}(col1 int, col2 string) using $provider")
     checkLoading(tableName)
     val table1 = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(
-      TableIdentifier(s"${tableName}",Option("alldatasource")))
+      TableIdentifier(s"${ tableName }", Option("alldatasource")))
     assert(table1.tableType == CatalogTableType.MANAGED)
     sql(s"create table ${tableName}_ctas using $provider as select * from ${tableName}")
     checkAnswer(sql(s"select * from ${tableName}_ctas"),
@@ -814,7 +820,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(s"select * from ${tableName}_ctas"),
       Seq(Row(123, "abc"), Row(123, "abc")))
     val table2 = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(
-      TableIdentifier(s"${tableName}_ctas",Option("alldatasource")))
+      TableIdentifier(s"${ tableName }_ctas", Option("alldatasource")))
     assert(table2.tableType == CatalogTableType.MANAGED)
   }
 
@@ -822,7 +828,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create table ${tableName}(col1 int, col2 string) stored as $provider")
     checkLoading(tableName)
     val table1 = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(
-      TableIdentifier(s"${tableName}",Option("alldatasource")))
+      TableIdentifier(s"${ tableName }", Option("alldatasource")))
     assert(table1.tableType == CatalogTableType.MANAGED)
     sql(s"create table ${tableName}_ctas stored as $provider as select * from ${tableName}")
     checkAnswer(sql(s"select * from ${tableName}_ctas"),
@@ -831,12 +837,12 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(s"select * from ${tableName}_ctas"),
       Seq(Row(123, "abc"), Row(123, "abc")))
     val table2 = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(
-      TableIdentifier(s"${tableName}_ctas",Option("alldatasource")))
+      TableIdentifier(s"${ tableName }_ctas", Option("alldatasource")))
     assert(table2.tableType == CatalogTableType.MANAGED)
   }
 
   def verifyExternalDataSourceTable(provider: String, tableName: String): Unit = {
-    val path  = s"${warehouse}/ds_external"
+    val path = s"${ warehouse }/ds_external"
     val ex = intercept[MalformedCarbonCommandException](
       sql(
         s"""
@@ -854,7 +860,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create table  ${tableName}_e using ${provider} location '${tablePath}'")
     checkAnswer(sql(s"select count(*) from ${tableName}_e"), Seq(Row(3)))
     val table2 = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(
-      TableIdentifier(s"${tableName}_e",Option("alldatasource")))
+      TableIdentifier(s"${ tableName }_e", Option("alldatasource")))
     assert(table2.tableType == CatalogTableType.EXTERNAL)
     sql(s"drop table if exists ${tableName}_e")
     assert(!CarbonPlanHelper.isCarbonTable(
@@ -863,7 +869,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   def verifyExternalHiveTable(provider: String, tableName: String): Unit = {
-    val path  = s"${warehouse}/hive_external"
+    val path = s"${ warehouse }/hive_external"
     val ex = intercept[MalformedCarbonCommandException](
       sql(
         s"""
@@ -881,7 +887,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create table  ${tableName}_e stored as ${provider} location '${tablePath}'")
     checkAnswer(sql(s"select count(*) from ${tableName}_e"), Seq(Row(3)))
     val table2 = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(
-      TableIdentifier(s"${tableName}_e",Option("alldatasource")))
+      TableIdentifier(s"${ tableName }_e", Option("alldatasource")))
     assert(table2.tableType == CatalogTableType.EXTERNAL)
     sql(s"drop table if exists ${tableName}_e")
     assert(!CarbonPlanHelper.isCarbonTable(

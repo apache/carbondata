@@ -2122,4 +2122,12 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_REORDER_FILTER_DEFAULT)
     );
   }
+
+  /**
+   * for test to print current configuration
+   */
+  @Override
+  public String toString() {
+    return carbonProperties.toString();
+  }
 }

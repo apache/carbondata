@@ -17,9 +17,10 @@
 
 package org.apache.carbondata.view.plans
 
+import org.scalatest.BeforeAndAfter
+
 import org.apache.carbondata.mv.dsl.Plans._
 import org.apache.carbondata.view.testutil.ModularPlanTest
-import org.scalatest.BeforeAndAfter
 
 class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
@@ -27,9 +28,9 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  
+
   ignore("convert modular plans to sqls") {
-    
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists Fact (
@@ -40,10 +41,10 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |  `K` int
            |)
            |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-           |STORED AS TEXTFILE        
+           |STORED AS TEXTFILE
         """.stripMargin.trim
         )
-        
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists Dim (
@@ -52,10 +53,10 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |  `K` int
            |)
            |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-           |STORED AS TEXTFILE        
+           |STORED AS TEXTFILE
         """.stripMargin.trim
         )
-        
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists Dim1 (
@@ -64,10 +65,10 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |  `K` int
            |)
            |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-           |STORED AS TEXTFILE        
+           |STORED AS TEXTFILE
         """.stripMargin.trim
         )
-        
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists store_sales (
@@ -82,7 +83,7 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |STORED AS TEXTFILE
         """.stripMargin.trim
     )
-    
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists date_dim (
@@ -96,7 +97,7 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |STORED AS TEXTFILE
         """.stripMargin.trim
     )
-    
+
     hiveClient.runSqlHive(
         s"""
            |CREATE TABLE if not exists item (
@@ -116,30 +117,28 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
            |STORED AS TEXTFILE
         """.stripMargin.trim
     )
-        
+
     testHive.udf.register("my_fun", (s: Integer) => s)
-    
+
     testSQLBatch.foreach { query =>
       val analyzed = testHive.sql(query).queryExecution.optimizedPlan
       val modularPlan = analyzed.optimize.modularize
 
       LOGGER.info(s"\n\n===== MODULAR PLAN =====\n\n${modularPlan.treeString} \n")
-      
+
       val compactSql = modularPlan.asCompactSQL
       val convertedSql = modularPlan.asOneLineSQL
 
       LOGGER.info(s"\n\n===== CONVERTED SQL =====\n\n$compactSql \n")
-      
+
       val analyzed1 = testHive.sql(convertedSql).queryExecution.optimizedPlan
       val modularPlan1 = analyzed1.optimize.modularize
 
       LOGGER.info(s"\n\n===== CONVERTED SQL =====\n\n$compactSql \n")
 
       LOGGER.info(s"\n\n===== MODULAR PLAN1 =====\n\n${modularPlan1.treeString} \n")
-      
+
       comparePlans(modularPlan, modularPlan1)
     }
-
   }
-  
 }

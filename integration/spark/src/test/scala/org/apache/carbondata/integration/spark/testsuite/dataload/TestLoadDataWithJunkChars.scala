@@ -25,9 +25,11 @@ import org.scalatest.BeforeAndAfterAll
 
 class TestLoadDataWithJunkChars extends QueryTest with BeforeAndAfterAll {
   var filePath = ""
+  // scalastyle:off
   val junkchars = "ǍǎǏǐǑǒǓǔǕǖǗǘǙǚǛǜǝǞǟǠǡǢǣǤǥǦǧǨǩǪǫǬǭǮǯǰ"
+  // scalastyle:on
 
-  def buildTestData() = {
+  def buildTestData(): Unit = {
     filePath = s"$integrationPath/spark/target/junkcharsdata.csv"
     val file = new File(filePath)
     val writer = new BufferedWriter(new FileWriter(file))

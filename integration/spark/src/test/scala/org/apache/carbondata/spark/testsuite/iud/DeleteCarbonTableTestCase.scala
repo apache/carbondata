@@ -18,22 +18,19 @@ package org.apache.carbondata.spark.testsuite.iud
 
 import java.io.File
 
+import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.SparkTestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-
 
 class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
@@ -51,7 +48,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("delete data from carbon table with alias [where clause ]") {
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest d where d.c1 = 'a'""").show
+    sql("""delete from iud_db.dest d where d.c1 = 'a'""").collect()
     checkAnswer(
       sql("""select c2 from iud_db.dest"""),
       Seq(Row(2), Row(3), Row(4), Row(5))
@@ -61,7 +58,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest where c2 = 2""").show
+    sql("""delete from iud_db.dest where c2 = 2""").collect()
     checkAnswer(
       sql("""select c1 from iud_db.dest"""),
       Seq(Row("a"), Row("c"), Row("d"), Row("e"))
@@ -71,7 +68,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from dest where c1 IN ('d', 'e')""").show
+    sql("""delete from dest where c1 IN ('d', 'e')""").collect()
     checkAnswer(
       sql("""select c1 from dest"""),
       Seq(Row("a"), Row("b"), Row("c"))
@@ -82,7 +79,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest a""").show
+    sql("""delete from iud_db.dest a""").collect()
     checkAnswer(
       sql("""select c1 from iud_db.dest"""),
       Seq()
@@ -92,7 +89,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from dest""").show()
+    sql("""delete from dest""").collect()
     checkAnswer(
       sql("""select c1 from dest"""),
       Seq()
@@ -103,7 +100,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql(""" DELETE FROM dest t1 INNER JOIN source2 t2 ON t1.c1 = t2.c11""").show(truncate = false)
+    sql(""" DELETE FROM dest t1 INNER JOIN source2 t2 ON t1.c1 = t2.c11""").collect()
     checkAnswer(
       sql("""select c1 from iud_db.dest"""),
       Seq(Row("c"), Row("d"), Row("e"))
@@ -114,7 +111,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from  iud_db.dest where c2 >= 4""").show()
+    sql("""delete from  iud_db.dest where c2 >= 4""").collect()
     checkAnswer(
       sql("""select count(*) from iud_db.dest"""),
       Seq(Row(3))
@@ -127,7 +124,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       """create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED AS
         |carbondata""".stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest d where d.c1 = 'a'""").show
+    sql("""delete from iud_db.dest d where d.c1 = 'a'""").collect()
     checkAnswer(
       sql("""select c2 from iud_db.dest"""),
       Seq(Row(2), Row(3), Row(4), Row(5))
@@ -140,7 +137,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       """create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED
         |AS carbondata""".stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest where c2 = 2""").show
+    sql("""delete from iud_db.dest where c2 = 2""").collect()
     checkAnswer(
       sql("""select c1 from iud_db.dest"""),
       Seq(Row("a"), Row("c"), Row("d"), Row("e"))
@@ -187,7 +184,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql("select count(*) from carbon2"), Seq(Row(2000000)))
 
-    sql("delete from carbon2 where c1 = '99999a'").show()
+    sql("delete from carbon2 where c1 = '99999a'").collect()
 
     checkAnswer(sql("select count(*) from carbon2"), Seq(Row(1999999)))
 
@@ -221,8 +218,8 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into update_status_files select 'xyz',4")
     sql("insert into update_status_files select 'abc',6")
     sql("alter table update_status_files compact 'minor'")
-    sql("delete from update_status_files where age=3").show()
-    sql("delete from update_status_files where age=5").show()
+    sql("delete from update_status_files where age=3").collect()
+    sql("delete from update_status_files where age=5").collect()
     val carbonTable = CarbonEnv
       .getCarbonTable(Some("iud_db"), "update_status_files")(sqlContext.sparkSession)
     val metaPath = carbonTable.getMetadataPath
@@ -367,11 +364,11 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test_return_row_count")
 
     sql("create table test_return_row_count (a string, b string, c string) STORED AS carbondata")
-      .show()
-    sql("insert into test_return_row_count select 'aaa','bbb','ccc'").show()
-    sql("insert into test_return_row_count select 'bbb','bbb','ccc'").show()
-    sql("insert into test_return_row_count select 'ccc','bbb','ccc'").show()
-    sql("insert into test_return_row_count select 'ccc','bbb','ccc'").show()
+      .collect()
+    sql("insert into test_return_row_count select 'aaa','bbb','ccc'").collect()
+    sql("insert into test_return_row_count select 'bbb','bbb','ccc'").collect()
+    sql("insert into test_return_row_count select 'ccc','bbb','ccc'").collect()
+    sql("insert into test_return_row_count select 'ccc','bbb','ccc'").collect()
 
     checkAnswer(sql("delete from test_return_row_count where a = 'aaa'"),
       Seq(Row(1))
@@ -380,7 +377,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row("bbb", "bbb", "ccc"), Row("ccc", "bbb", "ccc"), Row("ccc", "bbb", "ccc"))
     )
 
-    sql("drop table if exists test_return_row_count").show()
+    sql("drop table if exists test_return_row_count").collect()
   }
 
   test(
@@ -392,7 +389,8 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val tableName = "fix_incorrect_results_for_iud"
     sql(s"drop table if exists ${ tableName }")
 
-    sql(s"create table ${ tableName } (a string, b string, c string) STORED AS carbondata").show()
+    sql(s"create table ${ tableName } (a string, b string, c string) STORED AS carbondata")
+      .collect()
     sql(
       s"""insert into table ${ tableName }
               select '1','1','2017' union all
@@ -404,7 +402,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
               select '7','7','2017' union all
               select '8','8','2017' union all
               select '9',null,'2017' union all
-              select '10',null,'2017'""").show()
+              select '10',null,'2017'""").collect()
 
     checkAnswer(sql(s"select count(1) from ${ tableName } where b is null"), Seq(Row(4)))
 
@@ -416,7 +414,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(s"select * from ${ tableName } where a = '1'"), Seq(Row("1", "1", "2017")))
     checkAnswer(sql(s"select * from ${ tableName } where a = '10'"), Seq(Row("10", "10", "2017")))
 
-    sql(s"drop table if exists ${ tableName }").show()
+    sql(s"drop table if exists ${ tableName }").collect()
   }
 
   override def afterAll {

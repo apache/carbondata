@@ -19,12 +19,13 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.util
 
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
 class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll{
 
@@ -71,7 +72,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     if (left.size != right.size) {
       false
     } else {
-      for(i <- 0 until left.size()) {
+      for (i <- 0 until left.size()) {
         if (!left.get(i).equals(right.get(i))) {
           return false
         }
@@ -104,7 +105,8 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     } else {
       assert(null != fact_dst.getBucketingInfo)
       assert(fact_src.getBucketingInfo.getNumOfRanges == fact_dst.getBucketingInfo.getNumOfRanges)
-      assert(checkColumns(fact_src.getBucketingInfo.getListOfColumns,fact_dst.getBucketingInfo.getListOfColumns))
+      assert(checkColumns(fact_src.getBucketingInfo.getListOfColumns,
+        fact_dst.getBucketingInfo.getListOfColumns))
     }
 
     // check partition info same
@@ -112,13 +114,17 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
       assert(null == fact_dst.getPartitionInfo)
     } else {
       assert(null != fact_dst.getPartitionInfo)
-      assert(fact_src.getPartitionInfo.getPartitionType == fact_dst.getPartitionInfo.getPartitionType)
-      assert(checkColumns(fact_src.getPartitionInfo.getColumnSchemaList, fact_dst.getPartitionInfo.getColumnSchemaList))
+      assert(
+        fact_src.getPartitionInfo.getPartitionType == fact_dst.getPartitionInfo.getPartitionType)
+      assert(checkColumns(fact_src.getPartitionInfo.getColumnSchemaList,
+        fact_dst.getPartitionInfo.getColumnSchemaList))
     }
 
     // check different id
     assert(!info_src.getTableUniqueName.equals(info_dst.getTableUniqueName))
-    assert(!info_src.getOrCreateAbsoluteTableIdentifier().getTablePath.equals(info_dst.getOrCreateAbsoluteTableIdentifier.getTablePath))
+    assert(!info_src.getOrCreateAbsoluteTableIdentifier()
+      .getTablePath
+      .equals(info_dst.getOrCreateAbsoluteTableIdentifier.getTablePath))
     assert(!info_src.getFactTable.getTableId.equals(info_dst.getFactTable.getTableId))
     assert(!info_src.getFactTable.getTableName.equals(info_dst.getFactTable.getTableName))
   }
@@ -136,7 +142,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
   }
 
   // ignore this test case since Spark 2.1 does not support specify location
-  // and also current implementation in carbon does not use this parameter. 
+  // and also current implementation in carbon does not use this parameter.
   ignore("command with location") {
     sql(s"create table targetTable like sourceTable location '$warehouse/tbl_with_loc' ")
     checkTableProperties(TableIdentifier("sourceTable"), TableIdentifier("targetTable"))

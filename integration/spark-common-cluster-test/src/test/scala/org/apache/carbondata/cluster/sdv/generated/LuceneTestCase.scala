@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -34,7 +33,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS index_main")
   }
 
-  //Create Lucene Index With DMProperties(String DataType) on MainTable
+  // Create Lucene Index With DMProperties(String DataType) on MainTable
   test("Luceneindex_TC001", Include) {
     sql("DROP TABLE IF EXISTS index_main")
     sql(
@@ -50,7 +49,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists lucene_index on table index_main")
   }
 
-  //Create Lucene Index With DMProperties(Other DataTypes) on MainTable
+  // Create Lucene Index With DMProperties(Other DataTypes) on MainTable
   test("Luceneindex_TC002", Include) {
     sql("DROP TABLE IF EXISTS index_main")
     sql(
@@ -68,7 +67,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       .contains("Only String column is supported, column 'id' is INT type."))
   }
 
-  //Create Lucene Index With DMProperties on MainTable and Load Data and Query
+  // Create Lucene Index With DMProperties on MainTable and Load Data and Query
   ignore("Luceneindex_TC003", Include) {
     sql("DROP TABLE IF EXISTS index_main")
     sql(
@@ -89,7 +88,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists lucene_index on table index_main")
   }
 
-  //Create Different Lucene Index With DMProperties on MainTable and filter using 'like','AND'
+  // Create Different Lucene Index With DMProperties on MainTable and filter using 'like','AND'
   // & 'OR'
   ignore("Luceneindex_TC004", Include) {
     sql("DROP TABLE IF EXISTS index_main")
@@ -120,7 +119,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists lucene_index on table index_main")
   }
 
-  //Create Different Lucene Index With Properties on MainTable and check index after Delete
+  // Create Different Lucene Index With Properties on MainTable and check index after Delete
   // Segment
   ignore("Luceneindex_TC005", Include) {
     sql("DROP TABLE IF EXISTS index_main")
@@ -145,7 +144,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists lucene_index on table index_main")
   }
 
-  //Create Different Lucene Index With DMProperties on MainTable with different 'TBLProperties'
+  // Create Different Lucene Index With DMProperties on MainTable with different 'TBLProperties'
   // and Load Data with Differnt OPTIONS & Verify
   ignore("Luceneindex_TC006", Include) {
     sql("DROP TABLE IF EXISTS index_main")
@@ -167,7 +166,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists lucene_index on table index_main")
   }
 
-  //Create LuceneIndex With Properties on MainTable and Insert data and Update and
+  // Create LuceneIndex With Properties on MainTable and Insert data and Update and
   // Verify
   ignore("Luceneindex_TC007", Include) {
     sql("DROP TABLE IF EXISTS index_main")

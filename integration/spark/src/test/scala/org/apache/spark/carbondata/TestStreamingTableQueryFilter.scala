@@ -41,7 +41,7 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
   private val spark = sqlContext.sparkSession
   private val dataFilePath = s"$resourcesPath/streamSample_with_long_string.csv"
   private val longStrValue = "abc" * 12000
-
+  // scalastyle:off lineLength
   override def beforeAll {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -68,7 +68,8 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming_table_filter.stream_filter")
   }
 
-  test("[CARBONDATA-3611] Fix failed when filter with measure columns on stream table when this stream table includes complex columns") {
+  test("[CARBONDATA-3611] Fix failed when filter with measure columns on stream table " +
+       "when this stream table includes complex columns") {
     executeStreamingIngest(
       tableName = "stream_filter",
       batchNums = 2,
@@ -81,7 +82,8 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
     )
 
     // non-filter
-    val result = sql("select * from streaming_table_filter.stream_filter order by id, name").collect()
+    val result = sql(
+      "select * from streaming_table_filter.stream_filter order by id, name").collect()
     assert(result != null)
     assert(result.length == 55)
     // check one row of streaming data
@@ -133,11 +135,12 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
           val stringBuilder = new StringBuilder()
           for (_ <- 1 to rowNums) {
             index = index + 1
-            stringBuilder.append(index.toString + ",name_" + index
-                                 + ",city_" + index + "," + (10000.00 * index).toString + ",0.01,80.01" +
-                                 ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01," +
-                                 index.toString() + ("abc" * 12000) +
-                                 ",school_" + index + ":school_" + index + index + "$" + index)
+            stringBuilder.append(
+              index.toString + ",name_" + index + ",city_" + index + "," +
+              (10000.00 * index).toString + ",0.01,80.01" +
+              ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01," +
+              index.toString() + ("abc" * 12000) + ",school_" + index + ":school_" +
+              index + index + "$" + index)
             stringBuilder.append("\n")
           }
           socketWriter.append(stringBuilder.toString())
@@ -182,7 +185,8 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
           qry = readSocketDF.repartition(2).writeStream
             .format("carbondata")
             .trigger(ProcessingTime(s"$intervalSecond seconds"))
-            .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
+            .option("checkpointLocation",
+              CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
             .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
@@ -281,12 +285,11 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
   }
 
   def executeBatchLoad(tableName: String): Unit = {
-    sql(
-      s"LOAD DATA LOCAL INPATH '$dataFilePath' INTO TABLE streaming_table_filter.$tableName OPTIONS" +
-      "('HEADER'='true','COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
+    sql(s"LOAD DATA LOCAL INPATH '$dataFilePath' INTO TABLE streaming_table_filter.$tableName " +
+        "OPTIONS('HEADER'='true','COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
   }
 
-  def wrap(array: Array[String]) = {
+  private def wrap(array: Array[String]) = {
     new mutable.WrappedArray.ofRef(array)
   }
 
@@ -315,4 +318,5 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
     } while (retry)
     serverSocket
   }
+  // scalastyle:on lineLength
 }

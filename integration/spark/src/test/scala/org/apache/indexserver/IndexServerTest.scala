@@ -17,10 +17,11 @@
 
 package org.apache.indexserver
 
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
+
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonUtil
 
 
 class IndexServerTest extends FunSuite with BeforeAndAfterEach {
@@ -33,6 +34,7 @@ class IndexServerTest extends FunSuite with BeforeAndAfterEach {
     FileFactory.createDirectoryAndSetPermission(folderPath,
       new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
   }
+
   override protected def afterEach(): Unit = {
     if (FileFactory.isFileExist(folderPath)) {
       FileFactory.deleteFile(folderPath)
@@ -54,20 +56,25 @@ class IndexServerTest extends FunSuite with BeforeAndAfterEach {
     val tmpPathII = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b8411"
     val tmpPathIII = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b84121"
     val tmpPathV = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b84121V"
-    FileFactory.createDirectoryAndSetPermission(tmpPath, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    FileFactory.createDirectoryAndSetPermission(tmpPathII, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    FileFactory.createDirectoryAndSetPermission(tmpPathIII, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    FileFactory.createDirectoryAndSetPermission(newPath, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(tmpPath,
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(tmpPathII,
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(tmpPathIII,
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(newPath,
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     FileFactory.createNewFile(newFile)
     Thread.sleep(5000)
     val age = System.currentTimeMillis() - 3000
-    FileFactory.createDirectoryAndSetPermission(tmpPathV, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(tmpPathV,
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     CarbonUtil.agingTempFolderForIndexServer(age)
     assert(!FileFactory.isFileExist(tmpPath))
+    // scalastyle:off println
     System.out.println(folderPath)
+    // scalastyle:on println
     assert(FileFactory.isFileExist(folderPath))
     assert(FileFactory.isFileExist(tmpPathV))
   }
-
-
 }

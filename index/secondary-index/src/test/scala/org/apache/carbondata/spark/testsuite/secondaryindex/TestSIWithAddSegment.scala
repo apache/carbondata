@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.testsuite.secondaryindex
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.Field
@@ -54,7 +54,9 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
   }
 
   private def dropTables(): Unit = {
+    sql("drop index if exists maintable_si on maintable")
     sql("drop table if exists maintable")
+    sql("drop index if exists maintable1_si on maintable1")
     sql("drop table if exists maintable1")
   }
 

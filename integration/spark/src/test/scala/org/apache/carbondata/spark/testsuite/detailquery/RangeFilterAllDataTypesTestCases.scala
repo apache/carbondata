@@ -20,19 +20,20 @@ package org.apache.carbondata.spark.testsuite.detailquery
 import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test Class for Range Filters.
  */
 class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override def beforeAll {
-    //For the Hive table creation and data loading
+    // For the Hive table creation and data loading
     sql("drop table if exists filtertestTable")
     sql("drop table if exists NO_DICTIONARY_HIVE_1")
     sql("drop table if exists NO_DICTIONARY_CARBON_1")
@@ -50,7 +51,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_8")
     sql("drop table if exists NO_DICTIONARY_HIVE_8")
 
-    //For Carbon cube creation.
+    // For Carbon cube creation.
     sql("CREATE TABLE DICTIONARY_CARBON_6 (empno string, " +
         "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
@@ -160,7 +161,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
         "double,contractNumber double) " +
         "STORED AS carbondata "
     )
-    //CarbonProperties.getInstance()
+    // CarbonProperties.getInstance()
     //  .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
 
     sql(
@@ -210,42 +211,42 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test for dictionary columns"){
+  test("test for dictionary columns") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where workgroupcategory > 1 and workgroupcategory < 5"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where workgroupcategory > 1 and workgroupcategory < 5")
     )
   }
 
-  test("test for dictionary columns OR "){
+  test("test for dictionary columns OR ") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where workgroupcategory > 1 or workgroupcategory < 5"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where workgroupcategory > 1 or workgroupcategory < 5")
     )
   }
 
-  test("test for dictionary columns OR AND"){
+  test("test for dictionary columns OR AND") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where workgroupcategory > 1 or workgroupcategory < 5 and workgroupcategory > 3"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where workgroupcategory > 1 or workgroupcategory < 5 and workgroupcategory > 3")
     )
   }
 
-  test("test for dictionary columns OR AND OR"){
+  test("test for dictionary columns OR AND OR") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where workgroupcategory > 1 or workgroupcategory < 5 and workgroupcategory > 3 or workgroupcategory < 10"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where workgroupcategory > 1 or workgroupcategory < 5 and workgroupcategory > 3 or workgroupcategory < 10")
     )
   }
 
-  test("test range filter for direct dictionary"){
+  test("test range filter for direct dictionary") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > '2016-03-14 15:00:17'"),
       sql("select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:17'")
     )
   }
 
-  test("test range filter for direct dictionary and"){
+  test("test range filter for direct dictionary and") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > '2016-03-14 15:00:16' and doj < '2016-03-14 15:00:18'"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0"))
@@ -253,7 +254,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for direct dictionary equality"){
+  test("test range filter for direct dictionary equality") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj = '2016-03-14 15:00:16'"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:16.0"))
@@ -261,7 +262,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for less than filter"){
+  test("test range filter for less than filter") {
     sql("drop table if exists timestampTable")
     sql("create table timestampTable (timestampCol timestamp) STORED AS carbondata ")
     sql(s"load data local inpath '$resourcesPath/timestamp.csv' into table timestampTable")
@@ -270,7 +271,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists timestampTable")
   }
 
-  test("test range filter for direct dictionary not equality"){
+  test("test range filter for direct dictionary not equality") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj != '2016-03-14 15:00:16'"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
@@ -295,7 +296,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for direct dictionary and with explicit casts"){
+  test("test range filter for direct dictionary and with explicit casts") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > cast ('2016-03-14 15:00:16' as timestamp) and doj < cast ('2016-03-14 15:00:18' as timestamp)"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0"))
@@ -317,7 +318,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
 
 
   // Test of Cast Optimization
-  test("test range filter for different Timestamp formats"){
+  test("test range filter for different Timestamp formats") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj = '2016-03-14 15:00:180000000'"),
       Seq(Row(0)
@@ -325,7 +326,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for different Timestamp formats1"){
+  test("test range filter for different Timestamp formats1") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj = '03-03-14 15:00:18'"),
       Seq(Row(0)
@@ -333,7 +334,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for different Timestamp formats2"){
+  test("test range filter for different Timestamp formats2") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj = '2016-03-14'"),
       Seq(Row(0)
@@ -341,14 +342,14 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for different Timestamp formats3"){
+  test("test range filter for different Timestamp formats3") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:18.000'"),
       sql("select count(*) from directDictionaryTable_hive where doj > '2016-03-14 15:00:18.000'")
       )
   }
 
-  test("test range filter for different Timestamp In format "){
+  test("test range filter for different Timestamp In format ") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj in ('2016-03-14 15:00:18', '2016-03-14 15:00:17')"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0")),
@@ -357,7 +358,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
   /*
-  test("test range filter for different Timestamp Not In format 5"){
+  test("test range filter for different Timestamp Not In format 5") {
     sql("select doj from directDictionaryTable where doj not in (null, '2016-03-14 15:00:18', '2016-03-14 15:00:17','2016-03-14 15:00:11', '2016-03-14 15:00:12')").show(200, false)
     checkAnswer(
       sql("select doj from directDictionaryTable where doj Not in (null, '2016-03-14 15:00:18', '2016-03-14 15:00:17','2016-03-14 15:00:11', '2016-03-14 15:00:12')"),
@@ -372,7 +373,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   */
 
 
-  test("test range filter for direct dictionary and boundary"){
+  test("test range filter for direct dictionary and boundary") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:18.0' and doj < '2016-03-14 15:00:09.0'"),
       Seq(Row(0)
@@ -380,7 +381,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for direct dictionary and boundary 2"){
+  test("test range filter for direct dictionary and boundary 2") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:60.0'"),
       sql("select count(*) from directDictionaryTable_hive where doj > '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:60.0'")
@@ -388,7 +389,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("test range filter for direct dictionary and boundary 3"){
+  test("test range filter for direct dictionary and boundary 3") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj >= '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:60.0'"),
       sql("select count(*) from directDictionaryTable_hive where doj >= '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:60.0'")
@@ -396,42 +397,42 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("test range filter for direct dictionary and boundary 4"){
+  test("test range filter for direct dictionary and boundary 4") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:40.0'"),
       sql("select count(*) from directDictionaryTable_hive where doj > '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:40.0'")
     )
   }
 
-  test("test range filter for direct dictionary and boundary 5"){
+  test("test range filter for direct dictionary and boundary 5") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:23.0' and doj <= '2016-03-14 15:00:40.0'"),
       sql("select count(*) from directDictionaryTable_hive where doj > '2016-03-14 15:00:23.0' and doj <= '2016-03-14 15:00:40.0'")
     )
   }
 
-  test("test range filter for direct dictionary more values after filter"){
+  test("test range filter for direct dictionary more values after filter") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > '2016-03-14 15:00:09'"),
       sql("select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09'")
     )
   }
 
-  test("test range filter for direct dictionary or condition"){
+  test("test range filter for direct dictionary or condition") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15'"),
       sql("select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15'")
     )
   }
 
-  test("test range filter for direct dictionary or and condition"){
+  test("test range filter for direct dictionary or and condition") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15' and doj < '2016-03-14 15:00:13'"),
       sql("select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15' and doj < '2016-03-14 15:00:13'")
     )
   }
 
-  test("test range filter for direct dictionary with no data in csv"){
+  test("test range filter for direct dictionary with no data in csv") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > '2016-03-14 15:05:09' or doj > '2016-03-14 15:05:15' and doj < '2016-03-14 15:50:13'"),
       sql("select doj from directDictionaryTable_hive where doj > '2016-03-14 15:05:09' or doj > '2016-03-14 15:05:15' and doj < '2016-03-14 15:50:13'")
@@ -439,14 +440,14 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
   // use cast for range
-  test("test range filter for direct dictionary cast"){
+  test("test range filter for direct dictionary cast") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > cast ('2016-03-14 15:00:17' as timestamp)"),
       sql("select doj from directDictionaryTable_hive where doj > cast ('2016-03-14 15:00:17' as timestamp)")
     )
   }
 
-  test("test range filter for direct dictionary cast and"){
+  test("test range filter for direct dictionary cast and") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > cast ('2016-03-14 15:00:16' as timestamp) and doj < cast ('2016-03-14 15:00:18' as timestamp)"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0"))
@@ -454,7 +455,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for direct dictionary and boundary cast "){
+  test("test range filter for direct dictionary and boundary cast ") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > cast ('2016-03-14 15:00:18.0' as timestamp) and doj < cast ('2016-03-14 15:00:09.0' as timestamp)"),
       Seq(Row(0)
@@ -462,7 +463,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("test range filter for direct dictionary and boundary 2 cast "){
+  test("test range filter for direct dictionary and boundary 2 cast ") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast ('2016-03-14 15:00:60.0' as timestamp)"),
       sql("select count(*) from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast ('2016-03-14 15:00:60.0' as timestamp)")
@@ -470,7 +471,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("test range filter for direct dictionary and boundary 3 cast"){
+  test("test range filter for direct dictionary and boundary 3 cast") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj >= cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast('2016-03-14 15:00:60.0' as timestamp)"),
       sql("select count(*) from directDictionaryTable_hive where doj >= cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast('2016-03-14 15:00:60.0' as timestamp)")
@@ -478,42 +479,42 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("test range filter for direct dictionary and boundary 4 cast"){
+  test("test range filter for direct dictionary and boundary 4 cast") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast('2016-03-14 15:00:40.0' as timestamp)"),
       sql("select count(*) from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast('2016-03-14 15:00:40.0' as timestamp)")
     )
   }
 
-  test("test range filter for direct dictionary and boundary 5 cast "){
+  test("test range filter for direct dictionary and boundary 5 cast ") {
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj <= cast('2016-03-14 15:00:40.0' as timestamp)"),
       sql("select count(*) from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj <= cast('2016-03-14 15:00:40.0' as timestamp)")
     )
   }
 
-  test("test range filter for direct dictionary more values after filter cast"){
+  test("test range filter for direct dictionary more values after filter cast") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:00:09' as timestamp)"),
       sql("select doj from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:09' as timestamp)")
     )
   }
 
-  test("test range filter for direct dictionary or condition cast"){
+  test("test range filter for direct dictionary or condition cast") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:00:09' as timestamp) or doj > cast('2016-03-14 15:00:15' as timestamp)"),
       sql("select doj from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:09' as timestamp) or doj > cast('2016-03-14 15:00:15' as timestamp)")
     )
   }
 
-  test("test range filter for direct dictionary or and condition cast"){
+  test("test range filter for direct dictionary or and condition cast") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:00:09' as timestamp) or doj > cast('2016-03-14 15:00:15' as timestamp) and doj < cast('2016-03-14 15:00:13' as timestamp)"),
       sql("select doj from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:09' as timestamp) or doj > cast('2016-03-14 15:00:15' as timestamp) and doj < cast('2016-03-14 15:00:13' as timestamp)")
     )
   }
 
-  test("test range filter for direct dictionary with no data in csv cast"){
+  test("test range filter for direct dictionary with no data in csv cast") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:05:09' as timestamp) or doj > cast('2016-03-14 15:05:15' as timestamp) and doj < cast('2016-03-14 15:50:13' as timestamp)"),
       sql("select doj from directDictionaryTable_hive where doj > cast('2016-03-14 15:05:09' as timestamp) or doj > cast('2016-03-14 15:05:15' as timestamp) and doj < cast('2016-03-14 15:50:13' as timestamp)")
@@ -521,133 +522,133 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("test range filter for measure in dictionary include"){
+  test("test range filter for measure in dictionary include") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where deptno > 10 "),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where deptno > 10 ")
     )
   }
 
-  test("test range filter for measure in dictionary include and condition"){
+  test("test range filter for measure in dictionary include and condition") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where deptno > 10 and deptno < 10"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where deptno > 10 and deptno < 10")
     )
   }
 
-  test("test range filter for measure in dictionary include or condition"){
+  test("test range filter for measure in dictionary include or condition") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where deptno > 10 or deptno < 10"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where deptno > 10 or deptno < 10")
     )
   }
 
-  test("test range filter for measure in dictionary include or and condition"){
+  test("test range filter for measure in dictionary include or and condition") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where deptno > 10 or deptno < 15 and deptno >12"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where deptno > 10 or deptno < 10 and deptno >12")
     )
   }
 
-  test("test range filter for measure in dictionary include or and condition 1"){
+  test("test range filter for measure in dictionary include or and condition 1") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where deptno > 10 or deptno < 15 and deptno > 12"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where deptno > 10 or deptno < 15 and deptno > 12")
     )
   }
 
-  test("test range filter for measure in dictionary include boundary values"){
+  test("test range filter for measure in dictionary include boundary values") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where deptno > 14 or deptno < 10 and deptno > 12"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where deptno > 14 or deptno < 10 and deptno > 12")
     )
   }
 
-  test("test range filter for measure in dictionary include same values and"){
+  test("test range filter for measure in dictionary include same values and") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where deptno > 14 and deptno < 14"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where deptno > 14 and deptno < 14")
     )
   }
 
-  test("test range filter for measure in dictionary include same values or"){
+  test("test range filter for measure in dictionary include same values or") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where deptno > 14 or deptno < 14"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where deptno > 14 or deptno < 14")
     )
   }
 
-  test("test for dictionary exclude columns"){
+  test("test for dictionary exclude columns") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' and empno < '15'"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where empno > '11' and empno < '15'")
     )
   }
 
-  test("test for dictionary exclude columns or condition"){
+  test("test for dictionary exclude columns or condition") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' or empno > '15'"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where empno > '11' or empno > '15'")
     )
   }
 
-  test("test for dictionary exclude columns or and condition"){
+  test("test for dictionary exclude columns or and condition") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' or empno > '20' and empno < '18'"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where empno > '11' or empno > '20' and empno < '18'")
     )
   }
 
-  test("test for dictionary exclude columns boundary condition"){
+  test("test for dictionary exclude columns boundary condition") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno < '11' or empno > '20'"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where empno < '11' or empno > '20'")
     )
   }
 
-  test("test range filter for multiple columns and condition"){
+  test("test range filter for multiple columns and condition") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' and workgroupcategory > 2"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where empno > '11' and workgroupcategory > 2")
     )
   }
 
-  test("test range filter for multiple columns or condition"){
+  test("test range filter for multiple columns or condition") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' or workgroupcategory > 2"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_6 where empno > '11' or workgroupcategory > 2")
     )
   }
 
-  test("test range filter for multiplecolumns conditions"){
+  test("test range filter for multiplecolumns conditions") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8 where empno > '13' and workgroupcategory < 3 "),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_8 where empno > '13' and workgroupcategory < 3 ")
     )
   }
 
-  test("test range filter No Dictionary Range"){
+  test("test range filter No Dictionary Range") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8 where empno > '13' and empno < '17'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_8 where empno > '13' and empno < '17'")
     )
   }
 
-  test("test range filter for more columns conditions"){
+  test("test range filter for more columns conditions") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8 where empno > '13' and workgroupcategory < 3 and deptno > 12 and empno < '17'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_8 where empno > '13' and workgroupcategory < 3 and deptno >12 and empno < '17'")
     )
   }
 
-  test("test range filter for multiple columns and or combination"){
+  test("test range filter for multiple columns and or combination") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8 where empno > '13' or workgroupcategory < 3 and deptno > 12 and projectcode > 928478 and empno > '17' "),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_8 where empno > '13' or workgroupcategory < 3 and deptno >12 and projectcode > 928478 and empno > '17'")
     )
   }
 
-  test("test range filter for more columns boundary conditions"){
+  test("test range filter for more columns boundary conditions") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8 where empno > '13' and empno < '17' and workgroupcategory < 1 and deptno > 14 "),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_8 where empno > '13' and empno < '17' and workgroupcategory < 1 and deptno > 14 ")
@@ -676,6 +677,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_8")
     sql("drop table if exists NO_DICTIONARY_HIVE_8")
     sql("drop table if exists directdictionarytable_hive")
-    //sql("drop cube NO_DICTIONARY_CARBON_1")
+    // sql("drop cube NO_DICTIONARY_CARBON_1")
   }
+  // scalastyle:on lineLength
 }

@@ -40,11 +40,12 @@ class TestCreateIndexForCleanAndDeleteSegment extends QueryTest with BeforeAndAf
         "projectjoindate Timestamp, projectenddate Timestamp, attendance int, " +
         "utilization int,salary int) STORED AS carbondata")
 
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO " +
-    "TABLE delete_segment_by_id OPTIONS('DELIMITER'=',', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE delete_segment_by_id " +
+        "OPTIONS('DELIMITER'=',','BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')")
 
 
-    sql("create index index_no_dictionary on table delete_segment_by_id (workgroupcategoryname, empname) AS 'carbondata'")
+    sql("create index index_no_dictionary on table delete_segment_by_id (" +
+        "workgroupcategoryname, empname) AS 'carbondata'")
 
     sql("delete from table delete_segment_by_id where segment.id IN(0)")
 
@@ -65,7 +66,8 @@ class TestCreateIndexForCleanAndDeleteSegment extends QueryTest with BeforeAndAf
 //        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empname')")
 //
 //    sql("LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO " +
-//        "TABLE clean_files_test OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
+//        "TABLE clean_files_test OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"',
+//        'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
 //
 //    sql("drop index if exists index_no_dictionary on clean_files_test")
 //
@@ -76,7 +78,8 @@ class TestCreateIndexForCleanAndDeleteSegment extends QueryTest with BeforeAndAf
 //    sql("clean files for table clean_files_test")
 //
 //    val indexTable = CarbonMetadata.getInstance().getCarbonTable("default_index_no_dictionary")
-//    val carbonTablePath: CarbonTablePath = CarbonStorePath.getCarbonTablePath(indexTable.getStorePath, indexTable.getCarbonTableIdentifier)
+//    val carbonTablePath: CarbonTablePath = CarbonStorePath.getCarbonTablePath(
+//    indexTable.getStorePath, indexTable.getCarbonTableIdentifier)
 //    val dataDirectoryPath: String = carbonTablePath.getCarbonDataDirectoryPath("0", "0")
 //    if (CarbonUtil.isFileExists(dataDirectoryPath)) {
 //      assert(false)

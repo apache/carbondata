@@ -16,12 +16,12 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
-.isFilterPushedDownToSI;
-import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.spark.exception.ProcessMetaDataException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 class TestAlterTableColumnRenameWithIndex extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
@@ -73,9 +73,11 @@ class TestAlterTableColumnRenameWithIndex extends QueryTest with BeforeAndAfterA
     sql("alter table si_rename change c test string")
     sql("alter table si_rename change d testSI string")
     sql("show indexes on si_rename").collect
-    val query2 = sql("select test,testsi from si_rename where testsi = 'pqr' or test = 'def'").count()
+    val query2 = sql("select test,testsi from si_rename where testsi = 'pqr' or test = 'def'")
+      .count()
     assert(query1 == query2)
-    val df = sql("select test,testsi from si_rename where testsi = 'pqr' or test = 'def'").queryExecution.sparkPlan
+    val df = sql("select test,testsi from si_rename where testsi = 'pqr' or test = 'def'")
+      .queryExecution.sparkPlan
     if (!isFilterPushedDownToSI(df)) {
       assert(false)
     } else {

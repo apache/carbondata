@@ -21,17 +21,15 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * Test Class for filter expression query on String datatypes
-  */
+ * Test Class for filter expression query on String datatypes
+ */
 class TestLikeQueryWithIndex extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists TCarbon")
 
-    sql("CREATE TABLE IF NOT EXISTS TCarbon(ID Int, country String, "+
-          "name String, phonetype String, serialname String) "+
-        "STORED AS carbondata"
-    )
+    sql("CREATE TABLE IF NOT EXISTS TCarbon(ID Int, country String, " +
+        "name String, phonetype String, serialname String) STORED AS carbondata")
     var csvFilePath = s"$resourcesPath/secindex/secondaryIndexLikeTest.csv"
 
     sql(
@@ -47,7 +45,7 @@ class TestLikeQueryWithIndex extends QueryTest with BeforeAndAfterAll {
 
   test("select secondary index like query Contains") {
     val df = sql("select * from TCarbon where name like '%aaa1%'")
-    secondaryIndexTableCheck(df,_.equalsIgnoreCase("TCarbon"))
+    secondaryIndexTableCheck(df, _.equalsIgnoreCase("TCarbon"))
 
     checkAnswer(
       sql("select * from TCarbon where name like '%aaa1%'"),
@@ -58,7 +56,7 @@ class TestLikeQueryWithIndex extends QueryTest with BeforeAndAfterAll {
 
     test("select secondary index like query ends with") {
       val df = sql("select * from TCarbon where name like '%aaa1'")
-      secondaryIndexTableCheck(df,_.equalsIgnoreCase("TCarbon"))
+      secondaryIndexTableCheck(df, _.equalsIgnoreCase("TCarbon"))
 
       checkAnswer(
         sql("select * from TCarbon where name like '%aaa1'"),
@@ -69,7 +67,7 @@ class TestLikeQueryWithIndex extends QueryTest with BeforeAndAfterAll {
 
       test("select secondary index like query starts with") {
         val df = sql("select * from TCarbon where name like 'aaa1%'")
-        secondaryIndexTableCheck(df, Set("insert_index","TCarbon").contains(_))
+        secondaryIndexTableCheck(df, Set("insert_index", "TCarbon").contains(_))
 
         checkAnswer(
           sql("select * from TCarbon where name like 'aaa1%'"),
@@ -78,11 +76,11 @@ class TestLikeQueryWithIndex extends QueryTest with BeforeAndAfterAll {
         )
       }
 
-  def secondaryIndexTableCheck(dataFrame:DataFrame,
-      tableNameMatchCondition :(String) => Boolean): Unit ={
+  def secondaryIndexTableCheck(dataFrame: DataFrame,
+      tableNameMatchCondition: (String) => Boolean): Unit = {
     dataFrame.queryExecution.sparkPlan.collect {
       case bcf: CarbonDatasourceHadoopRelation =>
-        if(!tableNameMatchCondition(bcf.carbonTable.getTableUniqueName)){
+        if (!tableNameMatchCondition(bcf.carbonTable.getTableUniqueName)) {
           assert(true)
         }
     }

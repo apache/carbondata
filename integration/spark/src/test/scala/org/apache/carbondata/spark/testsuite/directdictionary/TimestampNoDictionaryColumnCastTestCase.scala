@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.directdictionary
 
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -57,9 +56,11 @@ class TimestampNoDictionaryColumnCastTestCase extends QueryTest with BeforeAndAf
     sql(s"LOAD DATA LOCAL INPATH '$csvFilePath1' into table datetype")
   }
 
-  ignore("select count(*) from timestamp_nodictionary where timestamptype BETWEEN '2018-09-11' AND '2018-09-16'") {
+  ignore("select count(*) from timestamp_nodictionary " +
+         "where timestamptype BETWEEN '2018-09-11' AND '2018-09-16'") {
     checkAnswer(
-      sql("select count(*) from timestamp_nodictionary where timestamptype BETWEEN '2018-09-11' AND '2018-09-16'"),
+      sql("select count(*) from timestamp_nodictionary " +
+          "where timestamptype BETWEEN '2018-09-11' AND '2018-09-16'"),
       Seq(Row(6)
       )
     )

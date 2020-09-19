@@ -32,7 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
  */
 class NumericDimensionBadRecordTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
-
+  // scalastyle:off println
   override def beforeAll {
     defaultConfig()
     try {
@@ -86,11 +86,10 @@ class NumericDimensionBadRecordTest extends QueryTest with BeforeAndAfterAll {
           "('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORDS_ACTION'='IGNORE')");
 
     } catch {
-      case x: Throwable => {
+      case x: Throwable =>
         System.out.println(x.getMessage)
         CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-      }
     }
   }
 
@@ -100,15 +99,14 @@ class NumericDimensionBadRecordTest extends QueryTest with BeforeAndAfterAll {
     sql("create table num_dic(cust_name string, cust_id int) " +
         "row format delimited fields terminated by ','")
     sql("""insert into num_dic select 'sam','\N'""")
-    sql("select * from num_dic").show()
+    sql("select * from num_dic").collect()
     sql("create table num_dicc(cust_name string, cust_id int) STORED AS carbondata")
     try {
       sql("insert into table num_dicc select * from num_dic")
     } catch {
-      case x : Throwable => {
+      case x : Throwable =>
         System.out.println(x)
         assert(false)
-      }
     }
   }
 
@@ -174,4 +172,5 @@ class NumericDimensionBadRecordTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists num_dic")
     sql("drop table if exists num_dicc")
   }
+  // scalastyle:on println
 }
