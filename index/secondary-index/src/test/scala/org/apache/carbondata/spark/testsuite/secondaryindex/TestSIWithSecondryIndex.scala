@@ -126,6 +126,30 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table table1")
   }
 
+  test("test create secondary index global sort on partition table") {
+    sql("drop table if exists partition_carbon_table")
+    sql("create table partition_carbon_table (name string, id string, country string) PARTITIONED BY(dateofjoin " +
+      "string) stored as carbondata")
+    // create SI before the inserting the data
+    sql("create index partition_carbon_table_index on table partition_carbon_table(id, country) as 'carbondata' properties" +
+        "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
+    sql("insert into partition_carbon_table select 'xx', '2', 'china', '2020' " +
+        "union all select 'xx', '1', 'india', '2021'")
+    checkAnswerWithoutSort(sql("select id, country from partition_carbon_table_index"),
+      Seq(Row("1", "india"), Row("2", "china")))
+    // check for valid sort_scope
+    checkExistence(sql("describe formatted partition_carbon_table_index"), true, "Sort Scope global_sort")
+    sql("drop index partition_carbon_table_index on partition_carbon_table")
+    // create SI after the inserting the data
+    sql("create index partition_carbon_table_index on table partition_carbon_table(id, country) as 'carbondata' properties" +
+        "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
+    checkAnswerWithoutSort(sql("select id, country from partition_carbon_table_index"),
+      Seq(Row("1", "india"), Row("2", "china")))
+    // check for valid sort_scope
+    checkExistence(sql("describe formatted partition_carbon_table_index"), true, "Sort Scope global_sort")
+    sql("drop table partition_carbon_table")
+  }
+
   test("test array<string> and string as index columns on secondary index with global sort") {
     sql("drop table if exists complextable")
     sql(
