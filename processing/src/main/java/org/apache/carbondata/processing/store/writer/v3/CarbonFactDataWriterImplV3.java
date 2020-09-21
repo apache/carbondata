@@ -114,6 +114,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
         throw new CarbonDataWriterException(
             "DataLoading failed as CARBON_WRITTEN_BY_APPNAME is null");
       }
+      LOGGER.info("test CI");
       convertFileMeta.putToExtra_info(CarbonCommonConstants.CARBON_WRITTEN_BY_FOOTER_INFO, appName);
       convertFileMeta.putToExtra_info(CarbonCommonConstants.CARBON_WRITTEN_VERSION,
           CarbonVersionConstants.CARBONDATA_VERSION);
