@@ -158,7 +158,9 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     try {
       splitList = carbonInputFormat.getSplits(jobContext);
     } catch (IOException ex) {
-      if (ex.getMessage().contains("No Index files are present in the table location :")) {
+      LOGGER.error("Unable to get splits: ", ex);
+      if (ex.getMessage().contains("No Index files are present in the table location :") ||
+          ex.getMessage().contains("CarbonData file is not present in the table location")) {
         splitList = new ArrayList<>();
       } else {
         throw ex;
