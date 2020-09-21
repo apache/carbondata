@@ -208,15 +208,27 @@ object SecondaryIndexCreator {
                 try {
                   val configuration = FileFactory.getConfiguration
                   configuration.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, eachSegment)
-                  def findCarbonScanRDD(rdd: RDD[_]): Unit = {
+                  val currentSegmentFileName = if (mainTable.isHivePartitionTable) {
+                    eachSegment + CarbonCommonConstants.UNDERSCORE +
+                    carbonLoadModel.getFactTimeStamp
+                  } else {
+                    null
+                  }
+
+                  def findCarbonScanRDD(rdd: RDD[_], currentSegmentFileName: String): Unit = {
                     rdd match {
                       case carbonScanRDD: CarbonScanRDD[_] =>
                         carbonScanRDD.setValidateSegmentToAccess(false)
+                        if (currentSegmentFileName != null) {
+                          carbonScanRDD.setCurrentSegmentFileName(currentSegmentFileName)
+                        }
                       case others =>
-                        others.dependencies.foreach {x => findCarbonScanRDD(x.rdd)}
+                        others.dependencies
+                          .foreach { x => findCarbonScanRDD(x.rdd, currentSegmentFileName) }
                     }
                   }
-                  findCarbonScanRDD(dataFrame.rdd)
+
+                  findCarbonScanRDD(dataFrame.rdd, currentSegmentFileName)
                   // accumulator to collect segment metadata
                   val segmentMetaDataAccumulator = sc.sparkSession.sqlContext
                     .sparkContext
@@ -571,9 +583,19 @@ object SecondaryIndexCreator {
         case p: Project =>
           Project(p.projectList :+ positionId, p.child)
       }
-      carbonTable.getTableInfo
-        .getFactTable
-        .getTableProperties.put("isPositionIDRequested", "true")
+      val tableProperties = if (carbonTable.isHivePartitionTable) {
+        // in case of partition table, TableProperties object in carbonEnv is not same as
+        // in carbonTable object, so update from carbon env itself.
+        CarbonEnv.getCarbonTable(Some(carbonTable.getDatabaseName), carbonTable.getTableName)(
+          sparkSession).getTableInfo
+          .getFactTable
+          .getTableProperties
+      } else {
+        carbonTable.getTableInfo
+          .getFactTable
+          .getTableProperties
+      }
+      tableProperties.put("isPositionIDRequested", "true")
       SparkSQLUtil.execute(newLogicalPlan, sparkSession)
     } finally {
       CarbonUtils
