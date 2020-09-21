@@ -131,6 +131,8 @@ public interface CarbonFile {
 
   boolean createNewFile(final FsPermission permission) throws IOException;
 
+  boolean createNewFile(final boolean overwrite) throws IOException;
+
   boolean deleteFile() throws IOException;
 
   boolean mkdirs() throws IOException;

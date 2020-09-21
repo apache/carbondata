@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.filesystem;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -35,17 +36,11 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AlluxioCarbonFileTest {
 
@@ -83,6 +78,57 @@ public class AlluxioCarbonFileTest {
     @AfterClass
     static public void cleanUp() {
         file.delete();
+    }
+
+    @Test
+    public void testCreateNewTable() throws IOException {
+        new MockUp<Path>() {
+            @Mock
+            public FileSystem getFileSystem(Configuration conf) throws IOException {
+                return new DistributedFileSystem();
+            }
+        };
+        new MockUp<DistributedFileSystem>() {
+            @Mock
+            public boolean exists(Path f) throws IOException {
+                return true;
+            }
+            @Mock
+            public FileStatus getFileStatus(Path f) throws IOException {
+                return new FileStatus(0L, false, 0, 0L, 1L, f);
+            }
+        };
+        new MockUp<FileFactory>(){
+            @Mock
+            public FileFactory.FileType getFileType(String path) {
+                return FileFactory.FileType.ALLUXIO;
+            }
+        };
+        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        assertFalse(alluxioCarbonFile.createNewFile(false));
+        new MockUp<DistributedFileSystem>() {
+            @Mock
+            public FSDataOutputStream create(Path f, boolean overwrite, int bufferSize, short replication, long blockSize, Progressable progress) throws  IOException{
+                new File(f.toString()).createNewFile();
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                FSDataOutputStream fsOutput = new FSDataOutputStream(output, new FileSystem.Statistics("scheme"));
+                return fsOutput;
+            }
+            @Mock
+            public Configuration getConf() {
+                return new Configuration();
+            }
+            @Mock
+            public short getDefaultReplication(Path path) {
+                return 1;
+            }
+            @Mock
+            public long getDefaultBlockSize(Path f) {
+                return 1;
+            }
+        };
+        assertEquals(FileFactory.setLastModifiedTimeToCurrentTime(fileStatus.getPath().toString()), 1L);
+        assertTrue(alluxioCarbonFile.createNewFile(true));
     }
 
     @Test
@@ -398,7 +444,7 @@ public class AlluxioCarbonFileTest {
         }
 
         @Override
-        public FileStatus[] listStatus(Path path) throws FileNotFoundException, IOException {
+        public FileStatus[] listStatus(Path path) throws IOException {
             return new FileStatus[0];
         }
 

@@ -860,6 +860,8 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     assert(!CarbonPlanHelper.isCarbonTable(
       TableIdentifier(s"${tableName}_e", Option("alldatasource")), sqlContext.sparkSession))
     assert(new File(tablePath).exists())
+    sql(s"drop table if exists ${tableName}_s")
+    assert(new File(tablePath).exists().equals(false))
   }
 
   def verifyExternalHiveTable(provider: String, tableName: String): Unit = {

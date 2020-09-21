@@ -21,6 +21,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -40,9 +43,7 @@ import org.junit.Test;
 
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class FileFactoryImplUnitTest {
 
@@ -168,6 +169,19 @@ public class FileFactoryImplUnitTest {
   @Test public void testGetCarbonFile() throws IOException {
     FileFactory.getDataOutputStream(filePath);
     assertNotNull(FileFactory.getCarbonFile(filePath));
+  }
+
+  @Test public void testSetLastModifiedTimeToCurrentTime()
+      throws IOException, ParseException, InterruptedException {
+    File file = new File(filePath);
+    if (file.exists()) {
+      file.delete();
+    }
+    FileFactory.createNewFile(filePath);
+    long lastModifiedTimeBeforeUpdate = FileFactory.getCarbonFile(filePath).getLastModifiedTime();
+    FileFactory.setLastModifiedTimeToCurrentTime(filePath);
+    long lastModifiedTimeAfterUpdate = FileFactory.getCarbonFile(filePath).getLastModifiedTime();
+    assertTrue(lastModifiedTimeAfterUpdate >= lastModifiedTimeBeforeUpdate);
   }
 
   @Test public void testTruncateFile() {
