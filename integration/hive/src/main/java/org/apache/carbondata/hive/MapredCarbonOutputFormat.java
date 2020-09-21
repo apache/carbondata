@@ -100,10 +100,9 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getPartitionInfo();
     final int partitionColumn =
         partitionInfo != null ? partitionInfo.getColumnSchemaList().size() : 0;
-    String finalOutputPath = FileFactory.getCarbonFile(finalOutPath.toString()).getAbsolutePath();
     if (carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable()) {
-      carbonLoadModel.getMetrics().addToPartitionPath(finalOutputPath);
-      context.getConfiguration().set("carbon.outputformat.writepath", finalOutputPath);
+      carbonLoadModel.getMetrics().addToPartitionPath(finalOutPath.toString());
+      context.getConfiguration().set("carbon.outputformat.writepath", finalOutPath.toString());
     }
     CarbonTableOutputFormat.setLoadModel(jc, carbonLoadModel);
     org.apache.hadoop.mapreduce.RecordWriter<NullWritable, ObjectArrayWritable> re =
@@ -116,7 +115,8 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
           if (isHivePartitionedTable) {
             Object[] actualRow = ((CarbonHiveRow) writable).getData();
             Object[] newData = Arrays.copyOf(actualRow, actualRow.length + partitionColumn);
-            String[] partitionValues = finalOutputPath.substring(tablePath.length()).split("/");
+            String[] partitionValues = finalOutPath.toString().substring(tablePath.length())
+                .split("/");
             for (int j = 0, i = actualRow.length; j < partitionValues.length; j++) {
               if (partitionValues[j].contains("=")) {
                 newData[i++] = partitionValues[j].split("=")[1];
