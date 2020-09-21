@@ -451,7 +451,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
                                            + "\001" + "2019-02-12 03:03:34"
                                            + "\001" + "true"
                                            + "\001" + longChar
-                                           + "\001" + "1.234567"
+                                           + "\001" + "-2.2"
                                            + "\001" + "stringName")
       writer.write(array1)
       writer.write(array2)
@@ -493,7 +493,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
         assert(result.get("timestampfield") == "2019-02-12 03:03:34.000")
         assert(result.get("booleanfield") == true)
         assert(result.get("longstringfield") == longChar)
-        assert(result.get("decimalfield") == "1.23")
+        assert(result.get("decimalfield") == "-2.20")
         assert(result.get("stringchildfield") == "stringName")
       }
     }

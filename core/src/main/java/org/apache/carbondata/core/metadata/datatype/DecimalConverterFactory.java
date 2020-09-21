@@ -229,26 +229,7 @@ public final class DecimalConverterFactory {
               vector.putNull(j);
               continue;
             }
-            // jump the scale offset
-            offset += 1;
-            // remove scale from the length
-            length -= 1;
-            byte[] row = new byte[length];
-            System.arraycopy(data, offset, row, 0, length);
-            long val;
-            if (length == 1) {
-              val = row[0];
-            } else if (length == 2) {
-              val = ByteUtil.toShort(row, 0);
-            } else if (length == 4) {
-              val = ByteUtil.toInt(row, 0);
-            } else if (length == 3) {
-              val = ByteUtil.valueOf3Bytes(row, 0);
-            } else {
-              // TODO: check if other value can come
-              val = ByteUtil.toLong(row, 0, length);
-            }
-            BigDecimal value = BigDecimal.valueOf(val, scale);
+            BigDecimal value = DataTypeUtil.byteToBigDecimal(data, offset, length);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
             }
