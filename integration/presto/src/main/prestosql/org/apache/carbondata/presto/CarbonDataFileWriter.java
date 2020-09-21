@@ -61,7 +61,7 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.COMPRESSRESULT;
 
 /**
- * This class implements HiveFileWriter and it creates the carbonFileWriter to write the age data
+ * This class implements HiveFileWriter and it creates the carbonFileWriter to write the page data
  * sent from presto.
  */
 public class CarbonDataFileWriter implements HiveFileWriter {
@@ -70,7 +70,7 @@ public class CarbonDataFileWriter implements HiveFileWriter {
       LogServiceFactory.getLogService(CarbonDataFileWriter.class.getName());
 
   private final JobConf configuration;
-  private Path outPutPath;
+  private final Path outPutPath;
   private final FileSinkOperator.RecordWriter recordWriter;
   private final CarbonHiveSerDe serDe;
   private final int fieldCount;
@@ -83,41 +83,41 @@ public class CarbonDataFileWriter implements HiveFileWriter {
 
   public CarbonDataFileWriter(Path outPutPath, List<String> inputColumnNames, Properties properties,
       JobConf configuration, TypeManager typeManager) throws SerDeException {
-    this.outPutPath = requireNonNull(outPutPath, "path is null");
+    requireNonNull(outPutPath, "path is null");
+    // take the outputPath same as location in compliance with the carbon store folder structure.
     this.outPutPath = new Path(properties.getProperty("location"));
-    outPutPath = new Path(properties.getProperty("location"));
     this.configuration = requireNonNull(configuration, "conf is null");
     List<String> columnNames = Arrays
         .asList(properties.getProperty(IOConstants.COLUMNS, "").split(CarbonCommonConstants.COMMA));
     List<Type> fileColumnTypes =
         HiveType.toHiveTypes(properties.getProperty(IOConstants.COLUMNS_TYPES, "")).stream()
             .map(hiveType -> hiveType.getType(typeManager)).collect(toList());
-    fieldCount = columnNames.size();
-    serDe = new CarbonHiveSerDe();
+    this.fieldCount = columnNames.size();
+    this.serDe = new CarbonHiveSerDe();
     serDe.initialize(configuration, properties);
-    tableInspector = (ArrayWritableObjectInspector) serDe.getObjectInspector();
+    this.tableInspector = (ArrayWritableObjectInspector) serDe.getObjectInspector();
 
-    structFields = ImmutableList.copyOf(
-        inputColumnNames.stream().map(tableInspector::getStructFieldRef)
+    this.structFields =
+        ImmutableList.copyOf(inputColumnNames.stream().map(tableInspector::getStructFieldRef)
             .collect(toImmutableList()));
 
-    row = tableInspector.create();
+    this.row = tableInspector.create();
 
-    setters = new HiveWriteUtils.FieldSetter[structFields.size()];
+    this.setters = new HiveWriteUtils.FieldSetter[structFields.size()];
     for (int i = 0; i < setters.length; i++) {
       setters[i] = HiveWriteUtils.createFieldSetter(tableInspector, row, structFields.get(i),
           fileColumnTypes.get(structFields.get(i).getFieldID()));
     }
-    String encodedLoadModel = configuration.get(CarbonTableConfig.CARBON_PRESTO_LOAD_MODEL);
+    String encodedLoadModel = this.configuration.get(CarbonTableConfig.CARBON_PRESTO_LOAD_MODEL);
     if (StringUtils.isNotEmpty(encodedLoadModel)) {
-      configuration.set(CarbonTableOutputFormat.LOAD_MODEL, encodedLoadModel);
+      this.configuration.set(CarbonTableOutputFormat.LOAD_MODEL, encodedLoadModel);
     }
     try {
-      boolean compress = HiveConf.getBoolVar(configuration, COMPRESSRESULT);
+      boolean compress = HiveConf.getBoolVar(this.configuration, COMPRESSRESULT);
       Object writer =
           Class.forName(MapredCarbonOutputFormat.class.getName()).getConstructor().newInstance();
-      recordWriter = ((MapredCarbonOutputFormat<?>) writer)
-          .getHiveRecordWriter(this.configuration, outPutPath, Text.class, compress,
+      this.recordWriter = ((MapredCarbonOutputFormat<?>) writer)
+          .getHiveRecordWriter(this.configuration, this.outPutPath, Text.class, compress,
               properties, Reporter.NULL);
     } catch (Exception e) {
       LOG.error("error while initializing writer", e);
@@ -125,7 +125,8 @@ public class CarbonDataFileWriter implements HiveFileWriter {
     }
   }
 
-  @Override public long getWrittenBytes() {
+  @Override
+  public long getWrittenBytes() {
     if (isCommitDone) {
       try {
         return outPutPath.getFileSystem(configuration).getFileStatus(outPutPath).getLen();
@@ -136,17 +137,19 @@ public class CarbonDataFileWriter implements HiveFileWriter {
     return 0;
   }
 
-  @Override public long getSystemMemoryUsage() {
+  @Override
+  public long getSystemMemoryUsage() {
     return 0;
   }
 
-  @Override public void appendRows(Page dataPage) {
+  @Override
+  public void appendRows(Page dataPage) {
     for (int position = 0; position < dataPage.getPositionCount(); position++) {
       appendRow(dataPage, position);
     }
   }
 
-  public void appendRow(Page dataPage, int position) {
+  private void appendRow(Page dataPage, int position) {
     for (int field = 0; field < fieldCount; field++) {
       Block block = dataPage.getBlock(field);
       if (block.isNull(position)) {
@@ -155,7 +158,6 @@ public class CarbonDataFileWriter implements HiveFileWriter {
         setters[field].setField(block, position);
       }
     }
-
     try {
       recordWriter.write(serDe.serialize(row, tableInspector));
     } catch (SerDeException | IOException e) {
@@ -163,7 +165,8 @@ public class CarbonDataFileWriter implements HiveFileWriter {
     }
   }
 
-  @Override public void commit() {
+  @Override
+  public void commit() {
     try {
       recordWriter.close(false);
     } catch (Exception ex) {
@@ -173,11 +176,13 @@ public class CarbonDataFileWriter implements HiveFileWriter {
     isCommitDone = true;
   }
 
-  @Override public void rollback() {
-
+  @Override
+  public void rollback() {
+    throw new UnsupportedOperationException("Operation Not Supported");
   }
 
-  @Override public long getValidationCpuNanos() {
+  @Override
+  public long getValidationCpuNanos() {
     return 0;
   }
 }

@@ -40,7 +40,7 @@ public class CarbonDataLocationService extends HiveLocationService {
   @Override
   public LocationHandle forNewTable(SemiTransactionalHiveMetastore metastore,
       ConnectorSession session, String schemaName, String tableName) {
-    // TODO: check and make it compatible for cloud scenario
+    // TODO: test in cloud scenario in S3/OBS and make it compatible for cloud scenario
     super.forNewTable(metastore, session, schemaName, tableName);
     HdfsEnvironment.HdfsContext context =
         new HdfsEnvironment.HdfsContext(session, schemaName, tableName);
@@ -53,7 +53,7 @@ public class CarbonDataLocationService extends HiveLocationService {
   @Override
   public LocationHandle forExistingTable(SemiTransactionalHiveMetastore metastore,
       ConnectorSession session, Table table) {
-    // TODO: check and make it compatible for cloud scenario
+    // TODO: test in cloud scenario in S3/OBS and make it compatible for cloud scenario
     super.forExistingTable(metastore, session, table);
     Path targetPath = new Path(table.getStorage().getLocation());
     return new LocationHandle(targetPath, targetPath, true,

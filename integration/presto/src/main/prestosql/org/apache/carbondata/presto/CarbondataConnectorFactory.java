@@ -227,7 +227,8 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
     values.set(null, hiveStorageFormats);
   }
 
-  @Override public ConnectorHandleResolver getHandleResolver() {
+  @Override
+  public ConnectorHandleResolver getHandleResolver() {
     return new CarbonDataHandleResolver();
   }
 }

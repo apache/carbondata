@@ -95,6 +95,9 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     }
     String tablePath = FileFactory.getCarbonFile(carbonLoadModel.getTablePath()).getAbsolutePath();
     TaskAttemptID taskAttemptID = TaskAttemptID.forName(jc.get("mapred.task.id"));
+    // taskAttemptID will be null when the insert job is fired from presto. Presto send the JobConf
+    // and since presto does not use the MR framework for execution, the mapred.task.id will be
+    // null, so prepare a new ID.
     if (taskAttemptID == null) {
       SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmm");
       String jobTrackerId = formatter.format(new Date());

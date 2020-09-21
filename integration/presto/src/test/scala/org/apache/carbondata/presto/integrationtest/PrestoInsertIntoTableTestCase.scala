@@ -20,6 +20,7 @@ package org.apache.carbondata.presto.integrationtest
 import java.io.File
 import java.util
 import java.util.UUID
+import java.util.concurrent.{Callable, Executor, Executors, Future}
 
 import scala.collection.JavaConverters._
 
@@ -45,8 +46,8 @@ class PrestoInsertIntoTableTestCase extends FunSuiteLike with BeforeAndAfterAll 
   private val rootPath = new File(this.getClass.getResource("/").getPath
                                   + "../../../..").getCanonicalPath
   private val storePath = s"$rootPath/integration/presto/target/store"
-  private val systemPath = s"$rootPath/integration/presto/target/system"
   private val prestoServer = new PrestoServer
+  private val executorService = Executors.newFixedThreadPool(1)
 
   override def beforeAll: Unit = {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
@@ -163,8 +164,44 @@ class PrestoInsertIntoTableTestCase extends FunSuiteLike with BeforeAndAfterAll 
     }
   }
 
+  test("test for query when insert in progress") {
+    prestoServer.execute("insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', 'usn20392',10000.0,16.234567,25.678,timestamp '1994-06-14 05:00:09',smallint '23', true)")
+    val query = "insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', 'usn20392',10000.0,16.234567,25.678,timestamp '1994-06-14 05:00:09',smallint '23', true)"
+    val asyncQuery = runSqlAsync(query)
+    val actualResult1: List[Map[String, Any]] = prestoServer.executeQuery("select count(*) AS RESULT from testdb.testtable WHERE dob = timestamp '1994-06-14 05:00:09'")
+    val expectedResult1: List[Map[String, Any]] = List(Map("RESULT" -> 1))
+    assert(actualResult1.equals(expectedResult1))
+    assert(asyncQuery.get().equalsIgnoreCase("PASS"))
+    val actualResult2: List[Map[String, Any]] = prestoServer.executeQuery("select count(*) AS RESULT from testdb.testtable WHERE dob = timestamp '1994-06-14 05:00:09'")
+    val expectedResult2: List[Map[String, Any]] = List(Map("RESULT" -> 2))
+    assert(actualResult2.equals(expectedResult2))
+  }
+
+  class QueryTask(query: String) extends Callable[String] {
+    override def call(): String = {
+      var result = "PASS"
+      try {
+        prestoServer.execute(query)
+      } catch {
+        case ex: Exception =>
+          println(ex.printStackTrace())
+          result = "FAIL"
+      }
+      result
+    }
+  }
+
+  private def runSqlAsync(sql: String): Future[String] = {
+    val future = executorService.submit(
+      new QueryTask(sql)
+    )
+    Thread.sleep(2)
+    future
+  }
+
   override def afterAll(): Unit = {
     prestoServer.stopServer()
     CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(storePath))
+    executorService.shutdownNow()
   }
 }

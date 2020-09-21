@@ -22,7 +22,8 @@ import io.prestosql.spi.connector.ConnectorInsertTableHandle;
 
 public class CarbonDataHandleResolver extends HiveHandleResolver {
 
-  @Override public Class<? extends ConnectorInsertTableHandle> getInsertTableHandleClass() {
+  @Override
+  public Class<? extends ConnectorInsertTableHandle> getInsertTableHandleClass() {
     return CarbonDataInsertTableHandle.class;
   }
 }

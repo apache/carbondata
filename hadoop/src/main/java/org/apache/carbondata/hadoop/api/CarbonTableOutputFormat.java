@@ -77,16 +77,7 @@ import org.apache.log4j.Logger;
 public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, ObjectArrayWritable> {
 
   public static final String LOAD_MODEL = "mapreduce.carbontable.load.model";
-  private static final String DATABASE_NAME = "mapreduce.carbontable.databaseName";
-  private static final String TABLE_NAME = "mapreduce.carbontable.tableName";
-  private static final String TABLE = "mapreduce.carbontable.table";
-  private static final String TABLE_PATH = "mapreduce.carbontable.tablepath";
-  private static final String INPUT_SCHEMA = "mapreduce.carbontable.inputschema";
-  private static final String TEMP_STORE_LOCATIONS = "mapreduce.carbontable.tempstore.locations";
-  private static final String OVERWRITE_SET = "mapreduce.carbontable.set.overwrite";
   public static final String COMPLEX_DELIMITERS = "mapreduce.carbontable.complex_delimiters";
-  private static final String CARBON_TRANSACTIONAL_TABLE =
-      "mapreduce.input.carboninputformat.transactional";
   public static final String SERIALIZATION_NULL_FORMAT =
       "mapreduce.carbontable.serialization.null.format";
   public static final String BAD_RECORDS_LOGGER_ENABLE =
@@ -102,6 +93,17 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   public static final String BAD_RECORD_PATH = "mapreduce.carbontable.bad.record.path";
   public static final String DATE_FORMAT = "mapreduce.carbontable.date.format";
   public static final String TIMESTAMP_FORMAT = "mapreduce.carbontable.timestamp.format";
+
+  private static final String DATABASE_NAME = "mapreduce.carbontable.databaseName";
+  private static final String TABLE_NAME = "mapreduce.carbontable.tableName";
+  private static final String TABLE = "mapreduce.carbontable.table";
+  private static final String TABLE_PATH = "mapreduce.carbontable.tablepath";
+  private static final String INPUT_SCHEMA = "mapreduce.carbontable.inputschema";
+  private static final String TEMP_STORE_LOCATIONS = "mapreduce.carbontable.tempstore.locations";
+  private static final String OVERWRITE_SET = "mapreduce.carbontable.set.overwrite";
+  private static final String CARBON_TRANSACTIONAL_TABLE =
+      "mapreduce.input.carboninputformat.transactional";
+
   /**
    * Set the update timestamp if user sets in case of update query. It needs to be updated
    * in load status update time

@@ -61,18 +61,29 @@ public class MapredCarbonOutputCommitter extends OutputCommitter {
         new TaskAttemptContextImpl(jobContext.getJobConf(), attemptID);
     CarbonLoadModel carbonLoadModel = null;
     String encodedString = jobContext.getJobConf().get(CarbonTableOutputFormat.LOAD_MODEL);
+    // The encodedString, which is serialized loadModel will be null in case of when the data is
+    // written via hive. In that case mapreduce.map.env will be set with load model, so that, when
+    // the containers are launched, the loadModel is published to all containers from
+    // mapreduce.map.env.
+    // But In case, when the data is written via presto, since it's not exactly MR job,we send the
+    // load model from coordinator to worker using
+    // org.apache.carbondata.presto.impl.CarbonTableConfig.CARBON_PRESTO_LOAD_MODEL
     if (encodedString != null) {
       carbonLoadModel =
           (CarbonLoadModel) ObjectSerializationUtil.convertStringToObject(encodedString);
     }
     if (null == carbonLoadModel) {
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(jobContext.getConfiguration());
-      String a = jobContext.getJobConf().get(JobConf.MAPRED_MAP_TASK_ENV);
+      String mapReduceMapTaskEnv = jobContext.getJobConf().get(JobConf.MAPRED_MAP_TASK_ENV);
       carbonLoadModel = HiveCarbonUtil.getCarbonLoadModel(jobContext.getConfiguration());
       CarbonTableOutputFormat.setLoadModel(jobContext.getConfiguration(), carbonLoadModel);
       String loadModelStr = jobContext.getConfiguration().get(CarbonTableOutputFormat.LOAD_MODEL);
-      jobContext.getJobConf().set(JobConf.MAPRED_MAP_TASK_ENV, a + ",carbon=" + loadModelStr);
-      jobContext.getJobConf().set(JobConf.MAPRED_REDUCE_TASK_ENV, a + ",carbon=" + loadModelStr);
+      // Set the loadModel string to mapreduce.map.env so that it will be published to all
+      // containers later during job execution.
+      jobContext.getJobConf()
+          .set(JobConf.MAPRED_MAP_TASK_ENV, mapReduceMapTaskEnv + ",carbon=" + loadModelStr);
+      jobContext.getJobConf()
+          .set(JobConf.MAPRED_REDUCE_TASK_ENV, mapReduceMapTaskEnv + ",carbon=" + loadModelStr);
     }
     carbonOutputCommitter =
         new CarbonOutputCommitter(new Path(carbonLoadModel.getTablePath()), context);

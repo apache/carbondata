@@ -38,7 +38,8 @@ public class CarbonDataInsertTableHandle extends HiveInsertTableHandle implement
 
   private final Map<String, String> additionalConf;
 
-  @JsonCreator public CarbonDataInsertTableHandle(@JsonProperty("schemaName") String schemaName,
+  @JsonCreator public CarbonDataInsertTableHandle(
+      @JsonProperty("schemaName") String schemaName,
       @JsonProperty("tableName") String tableName,
       @JsonProperty("inputColumns") List<HiveColumnHandle> inputColumns,
       @JsonProperty("pageSinkMetadata") HivePageSinkMetadata pageSinkMetadata,

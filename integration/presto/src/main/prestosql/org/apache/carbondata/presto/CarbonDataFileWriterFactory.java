@@ -50,9 +50,7 @@ public class CarbonDataFileWriterFactory implements HiveFileWriterFactory {
   }
 
   public CarbonDataFileWriterFactory(TypeManager typeManager, HdfsEnvironment hdfsEnvironment,
-      NodeVersion nodeVersion,
-      FileFormatDataSourceStats stats)
-  {
+      NodeVersion nodeVersion, FileFormatDataSourceStats stats) {
     this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
     this.typeManager = requireNonNull(typeManager, "typeManager is null");
     this.nodeVersion = requireNonNull(nodeVersion, "nodeVersion is null");
