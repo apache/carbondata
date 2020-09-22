@@ -627,9 +627,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           .getFactTable
           .getTableProperties
         val isPosIDRequested = if (tblProperties.containsKey("isPositionIDRequested")) {
-          val flag = java.lang.Boolean.parseBoolean(tblProperties.get("isPositionIDRequested"))
-          tblProperties.remove("isPositionIDRequested")
-          flag
+          java.lang.Boolean.parseBoolean(tblProperties.get("isPositionIDRequested"))
         } else {
           false
         }
