@@ -3302,13 +3302,12 @@ public final class CarbonUtil {
     // so just take all other columns at once.
     int otherColumnStartIndex = -1;
     for (int i = 0; i < columns.size(); i++) {
-      if (columns.get(i).getColumnProperties() != null) {
-        String isSortColumn =
-            columns.get(i).getColumnProperties().get(CarbonCommonConstants.SORT_COLUMNS);
-        if ((isSortColumn != null) && (isSortColumn.equalsIgnoreCase("true"))) {
-          // add sort column dimensions
-          sortColumns.add(columns.get(i));
-        }
+      Map<String, String> columnProperties = columns.get(i).getColumnProperties();
+      if (columnProperties != null
+          && columnProperties.get(CarbonCommonConstants.SORT_COLUMNS) != null
+          && columnProperties.get(CarbonCommonConstants.SORT_COLUMNS).equalsIgnoreCase("true")) {
+        // add sort column dimensions
+        sortColumns.add(columns.get(i));
       } else if ((columns.get(i).getData_type() == org.apache.carbondata.format.DataType.ARRAY
           || columns.get(i).getData_type() == org.apache.carbondata.format.DataType.STRUCT
           || columns.get(i).getData_type() == org.apache.carbondata.format.DataType.MAP || (!columns

@@ -35,6 +35,9 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
+import scala.collection.mutable
+import scala.collection.JavaConverters._
+
 class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   private val longStringTable = "long_string_table"
   private val inputDir = s"$resourcesPath${File.separator}varchartype${File.separator}"
@@ -433,6 +436,43 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
         "longstr21",mutable.WrappedArray.make(Array("ar1.2","ar1.3")))))
 
     sql("DROP TABLE IF EXISTS varchar_complex_table")
+  }
+
+  test("check new schema after modifying schema through alter table queries when long_string_column is not present") {
+    sql(
+      s"""
+         | CREATE TABLE if not exists $longStringTable(
+         | id INT, name STRING, description STRING, address STRING, note STRING
+         | ) STORED AS carbondata
+         | TBLPROPERTIES('sort_columns'='id,name')
+         |""".
+        stripMargin)
+    sql(s"alter table long_string_table set tblproperties('sort_columns'='ID','sort_scope'='no_sort')")
+    sql(s"alter table long_string_table unset tblproperties('long_string_columns')")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "long_string_table")
+    val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala.toList
+      .filter(column => column.getColumnName.equalsIgnoreCase("name"))
+    assert(columns != null && columns.size > 0 && columns.head.getColumnName.equals("name"))
+  }
+
+  test("check new schema after modifying schema through alter table queries when long_string_column is present") {
+    sql(
+      s"""
+         | CREATE TABLE if not exists $longStringTable(
+         | id INT, name STRING, description STRING, address STRING, note STRING
+         | ) STORED AS carbondata
+         | TBLPROPERTIES('sort_columns'='id,name')
+         |""".
+        stripMargin)
+    sql(s"alter table long_string_table set tblproperties('long_string_columns'='address')")
+    sql(s"alter table long_string_table set tblproperties('sort_columns'='ID','sort_scope'='no_sort')")
+    sql(s"alter table long_string_table unset tblproperties('long_string_columns')")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "long_string_table")
+    val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala.toList
+      .filter(column => column.getColumnName.equalsIgnoreCase("name"))
+    assert(columns != null && columns.size > 0 && columns.head.getColumnName.equals("name"))
   }
   
   test("update table with long string column") {
