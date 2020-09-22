@@ -198,6 +198,26 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from maintableeee where c>1"), Seq(Row("k","x",2)))
   }
 
+  test("test secondary index with cache_level as blocklet") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c int) STORED AS carbondata")
+    sql("insert into maintable values('k','x',2)")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    sql("ALTER TABLE maintable SET TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET')")
+    checkAnswer(sql("select * from maintable where b='x'"), Seq(Row("k","x",2)))
+    sql("drop table maintable")
+  }
+
+  test("test secondary index with cache_level as blocklet on partitioned table") {
+    sql("drop table if exists partitionTable")
+    sql("create table partitionTable (a string,b string) partitioned by (c int) STORED AS carbondata")
+    sql("insert into partitionTable values('k','x',2)")
+    sql("create index indextable on table partitionTable(b) AS 'carbondata'")
+    sql("ALTER TABLE partitionTable SET TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET')")
+    checkAnswer(sql("select * from partitionTable where b='x'"), Seq(Row("k","x",2)))
+    sql("drop table partitionTable")
+  }
+
   test("validate column_meta_cache and cache_level on SI table") {
     sql("drop table if exists column_meta_cache")
     sql("create table column_meta_cache(c1 String, c2 String, c3 int, c4 double) STORED AS carbondata")

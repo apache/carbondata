@@ -648,33 +648,23 @@ public class CarbonTablePath {
             .replace(DATA_PART_PREFIX, "").replace(CARBON_DATA_EXT, "");
     // to remove compressor name
     if (!blockId.equalsIgnoreCase(blockIdWithCompressorName)) {
-      int index = blockIdWithCompressorName.lastIndexOf(".");
-      if (index != -1) {
-        String replace =
-            blockIdWithCompressorName.replace(blockIdWithCompressorName.substring(index), "");
-        return replace;
-      } else {
-        return blockIdWithCompressorName;
-      }
-    } else {
-      return blockIdWithCompressorName;
-    }
-  }
-
-  /**
-   * This method will remove strings in path and return short block id
-   *
-   * @param blockId
-   * @return shortBlockId
-   */
-  public static String getShortBlockIdForPartitionTable(String blockId) {
-    String blockIdWithCompressorName = blockId.replace(DATA_PART_PREFIX, "")
-        .replace(BATCH_PREFIX, CarbonCommonConstants.UNDERSCORE).replace(CARBON_DATA_EXT, "");
-    // to remove compressor name
-    if (!blockId.equalsIgnoreCase(blockIdWithCompressorName)) {
       int index = blockIdWithCompressorName.lastIndexOf(POINT);
+      int fileSeperatorIndex = blockIdWithCompressorName.lastIndexOf(File.separator);
       if (index != -1) {
-        return blockIdWithCompressorName.replace(blockIdWithCompressorName.substring(index), "");
+        String modifiedBlockId;
+        if (index > fileSeperatorIndex) {
+          // Default case when path ends with compressor name.
+          // Example: 0/0-0_0-0-0-1600789595862.snappy
+          modifiedBlockId =
+              blockIdWithCompressorName.replace(blockIdWithCompressorName.substring(index), "");
+        } else {
+          // in case of CACHE_LEVEL = BLOCKLET, blockId path contains both block id and blocklet id
+          // so check for next file seperator and remove compressor name.
+          // Example: 0/0-0_0-0-0-1600789595862.snappy/0
+          modifiedBlockId = blockIdWithCompressorName
+              .replace(blockIdWithCompressorName.substring(index, fileSeperatorIndex), "");
+        }
+        return modifiedBlockId;
       } else {
         return blockIdWithCompressorName;
       }
