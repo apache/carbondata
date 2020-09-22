@@ -927,7 +927,12 @@ public class CarbonUtilTest {
     String blockId = "Part0/Segment_0/part-0-0_batchno0-0-0-1597409791503.snappy.carbondata";
     Assert.assertEquals(CarbonTablePath.getShortBlockId(blockId), "0/0-0_0-0-0-1597409791503");
     blockId = "c3=aa/part-0-100100000100001_batchno0-0-0-1597411003332.snappy.carbondata";
-    Assert.assertEquals(CarbonTablePath.getShortBlockIdForPartitionTable(blockId), "c3=aa/0-100100000100001_0-0-0-1597411003332");
+    Assert.assertEquals(CarbonTablePath.getShortBlockId(blockId), "c3=aa/0-100100000100001_0-0-0-1597411003332");
+    // CACHE_LEVEL = BLOCKLET case
+    blockId = "Part0/Segment_0/part-0-0_batchno0-0-0-1597409791503.snappy.carbondata/0";
+    Assert.assertEquals(CarbonTablePath.getShortBlockId(blockId), "0/0-0_0-0-0-1597409791503/0");
+    blockId = "c3=aa/part-0-100100000100001_batchno0-0-0-1597411003332.snappy.carbondata/0";
+    Assert.assertEquals(CarbonTablePath.getShortBlockId(blockId), "c3=aa/0-100100000100001_0-0-0-1597411003332/0");
     // external segment case
     blockId = "#home#root1#Projects#carbondata#integration#spark#target#warehouse#addsegtest#/Segment_2/part-0-0_batchno0-0-1-1597411388431.snappy.carbondata";
     Assert.assertEquals(CarbonTablePath.getShortBlockId(blockId), "#home#root1#Projects#carbondata#integration#spark#target#warehouse#addsegtest#/2/0-0_0-0-1-1597411388431");
