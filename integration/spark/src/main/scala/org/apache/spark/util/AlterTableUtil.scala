@@ -442,7 +442,9 @@ object AlterTableUtil {
         // update schema for long string columns
         updateSchemaForLongStringColumns(thriftTable, longStringColumns.get)
       } else if (propKeys.exists(_.equalsIgnoreCase("long_string_columns") && !set)) {
-        updateSchemaForLongStringColumns(thriftTable, "")
+        if (tblPropertiesMap.exists(prop => prop._1.equalsIgnoreCase("long_string_columns"))) {
+          updateSchemaForLongStringColumns(thriftTable, "")
+        }
       }
       // below map will be used for cache invalidation. As tblProperties map is getting modified
       // in the next few steps the original map need to be retained for any decision making
