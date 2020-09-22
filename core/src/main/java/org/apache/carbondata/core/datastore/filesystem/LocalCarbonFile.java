@@ -422,6 +422,15 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
+  public boolean createNewFile(boolean overwrite, final FsPermission permission)
+      throws IOException {
+    if (overwrite) {
+      return file.createNewFile();
+    }
+    return false;
+  }
+
+  @Override
   public boolean deleteFile() {
     return FileFactory.deleteAllFilesOfDir(file);
   }
