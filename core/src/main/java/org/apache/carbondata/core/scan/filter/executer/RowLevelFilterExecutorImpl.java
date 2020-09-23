@@ -36,6 +36,8 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityTypeValue;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -106,6 +108,11 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
    */
   boolean isNaturalSorted;
 
+  /**
+   * date direct dictionary generator
+   */
+  private DirectDictionaryGenerator dateDictionaryGenerator;
+
   public RowLevelFilterExecutorImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
@@ -138,6 +145,8 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
     this.exp = exp;
     this.tableIdentifier = tableIdentifier;
     this.complexDimensionInfoMap = complexDimensionInfoMap;
+    this.dateDictionaryGenerator =
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
     initDimensionChunkIndexes();
     initMeasureChunkIndexes();
   }
@@ -438,9 +447,11 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
         DimensionColumnPage columnDataChunk =
             blockChunkHolder.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]
                 .decodeColumnPage(pageIndex);
-        if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.DATE &&
-            (columnDataChunk instanceof VariableLengthDimensionColumnPage ||
-                columnDataChunk instanceof ColumnPageWrapper)) {
+        if (dimColumnEvaluatorInfo.getDimension().getDataType() == DataTypes.DATE) {
+          record[dimColumnEvaluatorInfo.getRowIndex()] = dateDictionaryGenerator
+              .getValueFromSurrogate(ByteUtil.toInt(columnDataChunk.getChunkData(index), 0));
+        } else if (columnDataChunk instanceof VariableLengthDimensionColumnPage
+            || columnDataChunk instanceof ColumnPageWrapper) {
 
           byte[] memberBytes = columnDataChunk.getChunkData(index);
           if (null != memberBytes) {
