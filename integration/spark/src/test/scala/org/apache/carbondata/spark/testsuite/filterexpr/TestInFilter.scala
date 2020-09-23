@@ -17,26 +17,29 @@
 
 package org.apache.carbondata.spark.testsuite.filterexpr
 
+import java.sql.{Date, Timestamp}
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-class TestInFilter extends QueryTest with BeforeAndAfterAll{
+class TestInFilter extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
 
   override def beforeAll: Unit = {
     sql("drop table if exists test_table")
-    sql("create table test_table(intField INT, floatField FLOAT, doubleField DOUBLE, " +
-        "decimalField DECIMAL(18,2))  STORED AS carbondata")
-
     // turn on  row level filter in carbon
     // because only row level is on, 'in' will be pushdowned into CarbonScanRDD
     //  or in filter will be handled by spark.
     sql("set carbon.push.rowfilters.for.vector=true")
-    sql("insert into test_table values(8,8,8,8),(5,5.0,5.0,5.0),(4,1.00,2.00,3.00)," +
-        "(6,6.0000,6.0000,6.0000),(4743,4743.00,4743.0000,4743.0),(null,null,null,null)")
   }
 
   test("sql with in different measurement type") {
+    sql("create table test_table(intField INT, floatField FLOAT, doubleField DOUBLE, " +
+        "decimalField DECIMAL(18,2))  STORED AS carbondata")
+
+    sql("insert into test_table values(8,8,8,8),(5,5.0,5.0,5.0),(4,1.00,2.00,3.00)," +
+        "(6,6.0000,6.0000,6.0000),(4743,4743.00,4743.0000,4743.0),(null,null,null,null)")
+
     // the precision of filter value is less one digit than column value
     // float type test
     checkAnswer(
@@ -165,8 +168,27 @@ class TestInFilter extends QueryTest with BeforeAndAfterAll{
       Seq(Row(4, 1.00, 2.00, 3.00)))
   }
 
-  override def afterAll(): Unit = {
+  test("test infilter with date, timestamp columns") {
+    sql("create table test_table(i int, dt date, ts timestamp) stored as carbondata")
+    sql("insert into test_table select 1, '2020-03-30', '2020-03-30 10:00:00'")
+    sql("insert into test_table select 2, '2020-07-04', '2020-07-04 14:12:15'")
+    sql("insert into test_table select 3, '2020-09-23', '2020-09-23 12:30:45'")
+
+    checkAnswer(sql("select * from test_table where dt IN ('2020-03-30', '2020-09-23')"),
+      Seq(Row(1, Date.valueOf("2020-03-30"), Timestamp.valueOf("2020-03-30 10:00:00")),
+        Row(3, Date.valueOf("2020-09-23"), Timestamp.valueOf("2020-09-23 12:30:45"))))
+
+    checkAnswer(sql(
+      "select * from test_table where ts IN ('2020-03-30 10:00:00', '2020-07-04 14:12:15')"),
+      Seq(Row(1, Date.valueOf("2020-03-30"), Timestamp.valueOf("2020-03-30 10:00:00")),
+        Row(2, Date.valueOf("2020-07-04"), Timestamp.valueOf("2020-07-04 14:12:15"))))
+  }
+
+  override def afterEach(): Unit = {
     sql("drop table if exists test_table")
+  }
+
+  override def afterAll(): Unit = {
     sql("set carbon.push.rowfilters.for.vector=false")
     defaultConfig()
   }
