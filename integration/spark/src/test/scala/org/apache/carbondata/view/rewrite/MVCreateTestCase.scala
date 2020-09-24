@@ -104,6 +104,44 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
   }
 
+  test("test if partial query with group by hits mv when all columns present in mv") {
+    sql("drop table if exists sales")
+    sql(" CREATE TABLE sales (id int, name string)  STORED AS carbondata")
+    sql("insert into sales values(1,'ab'),(2,'bc')")
+    val result1 = sql("SELECT id, name, sum(id)  FROM sales GROUP BY id, name")
+    val result2 = sql("SELECT name, sum(id)  FROM sales GROUP BY id, name")
+    val result3 = sql("SELECT name, sum(id)  FROM sales GROUP BY name")
+    sql("drop materialized view if exists agg_sale")
+    sql("CREATE MATERIALIZED VIEW agg_sale AS SELECT id, name, sum(id)  FROM sales GROUP BY id, name")
+    val df1 = sql("SELECT id, name, sum(id)  FROM sales GROUP BY id, name")
+    val df2 = sql("SELECT name, sum(id)  FROM sales GROUP BY id, name")
+    val df3 = sql("SELECT name, sum(id)  FROM sales GROUP BY name")
+    TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "agg_sale")
+    TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "agg_sale")
+    TestUtil.verifyMVHit(df3.queryExecution.optimizedPlan, "agg_sale")
+    checkAnswer(df1, result1)
+    checkAnswer(df2, result2)
+    checkAnswer(df3, result3)
+    sql("drop table if exists sales")
+  }
+
+  test("test if partial query with group by hits mv when some columns present in mv") {
+    sql("drop table if exists sales")
+    sql(" CREATE TABLE sales (id int, name string, sal int)  STORED AS carbondata")
+    sql("insert into sales values(1,'ab', 100),(2,'bc', 100)")
+    val result1 = sql("SELECT id, name, sum(id)  FROM sales GROUP BY id, name")
+    val result2 = sql("SELECT name, sum(id)  FROM sales GROUP BY id, name")
+    sql("drop materialized view if exists agg_sale")
+    sql("CREATE MATERIALIZED VIEW agg_sale AS SELECT id, name, sum(id)  FROM sales GROUP BY id, name")
+    val df1 = sql("SELECT id, name, sum(id)  FROM sales GROUP BY id, name")
+    val df2 = sql("SELECT name, sum(id)  FROM sales GROUP BY id, name")
+    TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "agg_sale")
+    TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "agg_sale")
+    checkAnswer(df1, result1)
+    checkAnswer(df2, result2)
+    sql("drop table if exists sales")
+  }
+
   test("test create mv on parquet spark table") {
     sql("drop materialized view if exists mv1")
     sql("drop table if exists source")

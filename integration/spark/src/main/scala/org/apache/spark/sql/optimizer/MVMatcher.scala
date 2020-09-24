@@ -873,8 +873,15 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
           gb_2q.predicateList.exists(_.semanticEquals(expr)) ||
           isExpressionMatches(expr, gb_2q.predicateList))
         val isOutputEmR = gb_2q.outputList.forall {
+          case Alias(cast: Cast, _) =>
+            gb_2a.outputList.exists {
+              case Alias(castExp: Cast, _) => castExp.child.semanticEquals(cast.child)
+              case alias: Alias => alias.child.semanticEquals(cast.child)
+              case exp => exp.semanticEquals(cast.child)
+            }
           case a @ Alias(_, _) =>
             gb_2a.outputList.exists {
+              case Alias(cast: Cast, _) => cast.child.semanticEquals(a.child)
               case alias: Alias => alias.child.semanticEquals(a.child)
               case exp => exp.semanticEquals(a.child)
             }
@@ -917,6 +924,7 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
           val aliasMap = AttributeMap(gb_2a.outputList.collect { case a: Alias =>
             (a.toAttribute, a)})
           if (isGroupingEmR) {
+            val subsumerName = Seq(0 -> generator.newSubsumerName()).toMap
             tryMatch(
               gb_2a, gb_2q, aliasMap).flatMap {
               case g: GroupBy =>
@@ -932,16 +940,13 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
                   val tChildren = new collection.mutable.ArrayBuffer[ModularPlan]()
                   val sel_1a = g.child.asInstanceOf[Select]
 
-                  val usel_1a = sel_1a.copy(outputList = sel_1a.outputList)
                   tChildren += gb_2a
                   val sel_1q_temp = sel_1a.copy(
                     predicateList = sel_1a.predicateList,
                     children = tChildren,
                     joinEdges = sel_1a.joinEdges,
-                    aliasMap = Seq(0 -> generator.newSubsumerName()).toMap)
-
-                  val res = factorOutSubsumer(sel_1q_temp, usel_1a, sel_1q_temp.aliasMap)
-                  Some(g.copy(child = res))
+                    aliasMap = subsumerName)
+                  Some(g.copy(child = sel_1q_temp))
                 } else {
                   Some(g.copy(child = g.child.withNewChildren(
                     g.child.children.map {
@@ -949,7 +954,11 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
                       case other => other
                     })));
                 }
-              case _ => None}.map(Seq(_)).getOrElse(Nil)
+              case _ => None
+            }.map { wip =>
+              factorOutSubsumer(wip, gb_2a, subsumerName)
+            }.map(Seq(_))
+              .getOrElse(Nil)
           } else {
             Nil
           }
