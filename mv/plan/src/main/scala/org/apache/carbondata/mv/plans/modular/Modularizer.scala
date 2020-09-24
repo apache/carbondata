@@ -18,9 +18,10 @@
 package org.apache.carbondata.mv.plans.modular
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.expressions.{Exists, ListQuery, ScalarSubquery}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.expressions.{Exists, ListQuery, NamedExpression, ScalarSubquery}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project, SubqueryAlias}
 import org.apache.spark.sql.catalyst.trees.TreeNode
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans._
@@ -37,7 +38,8 @@ abstract class Modularizer[TreeType <: TreeNode[TreeType]] {
   // protected def modularizeLater(plan: LogicalPlan) = this.modularize(plan).next()
 
   def modularize(plan: LogicalPlan): Iterator[TreeType] = {
-    val replaced = plan.transformAllExpressions {
+    val logicalPlan = checkAndAddProjectToGroupByInPlan(plan)
+    val replaced = logicalPlan.transformAllExpressions {
       case s: ScalarSubquery =>
         if (s.children.isEmpty) {
           ScalarModularSubquery(
@@ -64,6 +66,22 @@ abstract class Modularizer[TreeType <: TreeNode[TreeType]] {
     //    val replaced = plan
     val mplans = modularizeCore(replaced)
     makeupAliasMappings(mplans)
+  }
+
+  private def checkAndAddProjectToGroupByInPlan(plan: LogicalPlan) = {
+    // If plan contains Group by with only LogicalRelation, which means, all the columns of fact
+    // table is used in mv. In that case, add Project node to the plan, to match partial queries
+    plan.transform {
+      case Aggregate(groupBy, aggregations, lr: LogicalRelation) =>
+        Aggregate(groupBy, aggregations, Project(lr.output.asInstanceOf[Seq[NamedExpression]], lr))
+      case Aggregate(groupBy, aggregations, alias: SubqueryAlias) =>
+        if (alias.child.isInstanceOf[LogicalRelation]) {
+          Aggregate(groupBy,
+            aggregations,
+            Project(alias.child.output.asInstanceOf[Seq[NamedExpression]], alias.child))
+        }
+        Aggregate(groupBy, aggregations, alias)
+    }
   }
 
   private def modularizeCore(plan: LogicalPlan): Iterator[TreeType] = {
