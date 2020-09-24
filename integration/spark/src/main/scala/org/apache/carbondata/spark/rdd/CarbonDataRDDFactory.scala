@@ -812,7 +812,8 @@ object CarbonDataRDDFactory {
         override def numPartitions: Int = segmentIdIndex.size * parallelism
 
         override def getPartition(key: Any): Int = {
-          val segId = key.asInstanceOf[String]
+          var segId = key.asInstanceOf[String]
+          segId = segId.substring(0, segId.size/2)
           segmentIdIndex(segId) * parallelism + Random.nextInt(parallelism)
         }
       }

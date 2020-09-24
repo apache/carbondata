@@ -93,11 +93,11 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
         "('BUCKET_NUMBER'='4', 'BUCKET_COLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
     val table = CarbonEnv.getCarbonTable(Option("default"), "t4")(sqlContext.sparkSession)
-    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0")
-    val dataFiles = segmentDir.listFiles(new CarbonFileFilter {
+    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0")
+    val dataFiles = segmentDir.listFiles(true, new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
     })
-    assert(dataFiles.length == 4)
+    assert(dataFiles.size == 4)
     checkAnswer(sql("select count(*) from t4"), Row(100))
     checkAnswer(sql("select count(*) from t4 where name='aaa99'"), Row(1))
     if (table != null && table.getBucketingInfo() != null) {
@@ -236,11 +236,11 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       "serialname String, salary Int) STORED AS carbondata CLUSTERED BY (name) INTO 4 BUCKETS")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t13")
     val table = CarbonEnv.getCarbonTable(Option("default"), "t13")(sqlContext.sparkSession)
-    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0")
-    val dataFiles = segmentDir.listFiles(new CarbonFileFilter {
+    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0")
+    val dataFiles = segmentDir.listFiles(true, new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
     })
-    assert(dataFiles.length == 4)
+    assert(dataFiles.size == 4)
     checkAnswer(sql("select count(*) from t13"), Row(100))
     checkAnswer(sql("select count(*) from t13 where name='aaa99'"), Row(1))
     if (table != null && table.getBucketingInfo() != null) {
@@ -818,7 +818,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
     val table = CarbonEnv.getCarbonTable(Option("default"), "t27")(sqlContext.sparkSession)
     // data should store into diff files bases on bucket id in compaction
-    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0.1")
+    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0.1" + "0.1")
     val dataFiles = segmentDir.listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
     })
@@ -927,11 +927,11 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"INSERT INTO t46 SELECT * FROM t45")
 
     val table = CarbonEnv.getCarbonTable(Option("default"), "t46")(sqlContext.sparkSession)
-    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0")
-    val dataFiles = segmentDir.listFiles(new CarbonFileFilter {
+    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0")
+    val dataFiles = segmentDir.listFiles(true, new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
     })
-    assert(dataFiles.length == 4)
+    assert(dataFiles.size == 4)
     checkAnswer(sql(
       """select count(*) from t46
       """.stripMargin), Row(100))
@@ -980,11 +980,11 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"INSERT INTO t48 SELECT * FROM t47")
 
     val table = CarbonEnv.getCarbonTable(Option("default"), "t48")(sqlContext.sparkSession)
-    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0")
-    val dataFiles = segmentDir.listFiles(new CarbonFileFilter {
+    val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0")
+    val dataFiles = segmentDir.listFiles(true, new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
     })
-    assert(dataFiles.length == 4)
+    assert(dataFiles.size == 4)
     checkAnswer(sql(
       """select count(*) from t48
       """.stripMargin), Row(100))

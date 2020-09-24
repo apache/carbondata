@@ -2758,12 +2758,20 @@ public final class CarbonUtil {
       String segmentId, boolean isTransactionalTable, boolean isStandardTable,
       boolean isPartitionTable) {
     String blockId;
-    String blockName = filePath.substring(filePath.lastIndexOf("/") + 1);
+    String blockName;
+    if (filePath.lastIndexOf("/") != -1) {
+      blockName = filePath.substring(filePath.lastIndexOf("/") + 1);
+    } else {
+      blockName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
+      filePath = filePath.replace(File.separator, CarbonCommonConstants.FILE_SEPARATOR);
+    }
+
     String tablePath = identifier.getTablePath();
 
     if (filePath.startsWith(tablePath)) {
       if (!isTransactionalTable || isStandardTable) {
-        blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
+        blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_"
+            + segmentId + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       } else {
         // This is the case with partition table.
@@ -2783,10 +2791,10 @@ public final class CarbonUtil {
           // Replace / with # on partition director to support multi level partitioning. And access
           // them all as a single entity.
           if (partitionDir.isEmpty()) {
-            blockId = segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+            blockId = segmentId + segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
           } else {
             blockId = partitionDir.replace(CarbonCommonConstants.FILE_SEPARATOR, "#")
-                + CarbonCommonConstants.FILE_SEPARATOR + segmentId
+                + CarbonCommonConstants.FILE_SEPARATOR + segmentId + segmentId
                 + CarbonCommonConstants.FILE_SEPARATOR + blockName;
           }
 
@@ -2794,7 +2802,7 @@ public final class CarbonUtil {
       }
     } else {
       blockId = filePath.substring(0, filePath.length() - blockName.length()).replace("/", "#")
-          + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
+          + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId + segmentId
           + CarbonCommonConstants.FILE_SEPARATOR + blockName;
     }
     return blockId;

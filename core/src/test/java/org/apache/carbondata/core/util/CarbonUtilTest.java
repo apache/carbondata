@@ -942,7 +942,7 @@ public class CarbonUtilTest {
     Assert.assertEquals(CarbonUpdateUtil.getSegmentWithBlockFromTID(TID, false), "2/0-0_0-0-1-1597412329342");
     String blockName = "part-0-0_batchno0-0-0-1597412488102.snappy.carbondata";
     // non partition table
-    Assert.assertEquals(CarbonUpdateUtil.getSegmentBlockNameKey("0", blockName, false), "0/0-0_0-0-0-1597412488102");
+    Assert.assertEquals(CarbonUpdateUtil.getSegmentBlockNameKey("0", blockName, false), "00/0-0_0-0-0-1597412488102");
     // partition table
     Assert.assertEquals(CarbonUpdateUtil.getSegmentBlockNameKey("0", blockName, true), "0-0_0-0-0-1597412488102");
   }

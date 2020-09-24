@@ -120,8 +120,8 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
 
       sql(s"INSERT INTO $tableName STAGE OPTIONS ('batch_file_count' = '5')")
       val table = CarbonEnv.getCarbonTable(Option("default"), s"$tableName")(sqlContext.sparkSession)
-      val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0")
-      val dataFiles = segmentDir.listFiles(new CarbonFileFilter {
+      val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0")
+      val dataFiles = segmentDir.listFiles(true, new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
       })
       assert(dataFiles.length == 10)

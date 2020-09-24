@@ -60,7 +60,8 @@ public class ImplicitExpression extends Expression {
   }
 
   private void addBlockEntry(String blockletPath) {
-    String blockId = blockletPath.substring(0, blockletPath.lastIndexOf(File.separator));
+    String blockId = blockletPath.substring(0,
+        blockletPath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
     // Check if blockId contains old tuple id format, and convert it to compatible format.
     // Example for non-partition table:
     //    Old tuple id format: 0/0/0-0_batchno0-0-0-1599806689305.snappy
@@ -82,7 +83,8 @@ public class ImplicitExpression extends Expression {
       blockIdToBlockletIdMapping.put(blockId, blockletIds);
     }
     blockletIds.add(
-        Integer.parseInt(blockletPath.substring(blockletPath.lastIndexOf(File.separator) + 1)));
+        Integer.parseInt(blockletPath.substring(blockletPath
+            .lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1)));
   }
 
   @Override

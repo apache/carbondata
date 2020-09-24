@@ -45,7 +45,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
 
   val file2 = resourcesPath + "/local_dictionary_complex_data.csv"
 
-  val storePath = warehouse + "/local2/Fact/Part0/Segment_0"
+  val storePath = warehouse + "/local2/Fact/Part0/Segment_00"
 
   override protected def beforeAll(): Unit = {
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.BLOCKLET_SIZE, "10000")

@@ -145,7 +145,7 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     val table = CarbonEnv.getCarbonTable(Some("default"), "employeeTable")(sqlContext.sparkSession)
     val location = FileFactory
       .getUpdatedFilePath(
-        table.getTablePath + CarbonCommonConstants.FILE_SEPARATOR + "/Fact/Part0/Segment_0")
+        table.getTablePath + CarbonCommonConstants.FILE_SEPARATOR + "/Fact/Part0/Segment_00")
     sql(s"CREATE EXTERNAL TABLE extTable stored as carbondata LOCATION '${location}'")
     sql("select * from extTable").show()
     val rows = sql("SHOW METACACHE ON TABLE extTable").collect()

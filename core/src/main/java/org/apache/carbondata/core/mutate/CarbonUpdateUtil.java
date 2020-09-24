@@ -117,9 +117,10 @@ public class CarbonUpdateUtil {
       }
     }
     String part = CarbonTablePath.addPartPrefix(partField);
-    String segment =
-            CarbonTablePath.addSegmentPrefix(getRequiredFieldFromTID(tid, TupleIdEnum.SEGMENT_ID));
-    return CarbonTablePath.getFactDir(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + part
+    String segment = CarbonTablePath.SEGMENT_PREFIX
+            + getRequiredFieldFromTID(tid, TupleIdEnum.SEGMENT_ID);
+    return CarbonTablePath.getFactDir(tablePath)
+            + CarbonCommonConstants.FILE_SEPARATOR + part
             + CarbonCommonConstants.FILE_SEPARATOR + segment;
   }
 
@@ -974,7 +975,7 @@ public class CarbonUpdateUtil {
     if (isPartitionTable) {
       return blockNameWithOutPartAndBatchNo;
     } else {
-      return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPartAndBatchNo;
+      return segID + segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPartAndBatchNo;
     }
   }
 

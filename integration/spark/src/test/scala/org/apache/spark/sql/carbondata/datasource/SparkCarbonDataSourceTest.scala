@@ -1362,9 +1362,9 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     val store = new StoreCreator(warehouse, s"$projectPath/hadoop/src/test/resources/data.csv")
     store.createCarbonStore()
     FileFactory
-      .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_0/0"))
+      .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_00/0"))
     val dfread = sqlContext.sparkSession.read.format("carbon")
-      .load(warehouse + "/testdb/testtable/Fact/Part0/Segment_0")
+      .load(warehouse + "/testdb/testtable/Fact/Part0/Segment_00")
     dfread.show(false)
     sql("drop table if exists parquet_table")
   }
@@ -1381,25 +1381,25 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       model.setSegmentId("0")
       store.createCarbonStore(model)
       FileFactory
-        .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_0/0"))
+        .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_00/0"))
       store.setSortColumns(new util.ArrayList[String](Seq("country", "phonetype").asJava))
       model = store.createTableAndLoadModel(false)
       model.setSegmentId("1")
       store.createCarbonStore(model)
       FileFactory
-        .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_1/0"))
+        .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_11/0"))
       store.setSortColumns(new util.ArrayList[String](Seq("date").asJava))
       model = store.createTableAndLoadModel(false)
       model.setSegmentId("2")
       store.createCarbonStore(model)
       FileFactory
-        .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_2/0"))
+        .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_22/0"))
       store.setSortColumns(new util.ArrayList[String](Seq("serialname").asJava))
       model = store.createTableAndLoadModel(false)
       model.setSegmentId("3")
       store.createCarbonStore(model)
       FileFactory
-        .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_3/0"))
+        .deleteAllFilesOfDir(new File(warehouse + "/testdb/testtable/Fact/Part0/Segment_33/0"))
       sql(s"create table old_comp(id int, date string, country string, name string, phonetype " +
           s"string, serialname string, salary int) using carbon options" +
           s"(path='$warehouse/testdb/testtable/Fact/Part0/', 'sort_columns'='name')")

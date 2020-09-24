@@ -288,16 +288,17 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val carbonTable = CarbonEnv.getInstance(SparkTestQueryExecutor.spark).carbonMetaStore
       .lookupRelation(Option("iud_db"), "dest_tuple")(SparkTestQueryExecutor.spark)
       .asInstanceOf[CarbonRelation].carbonTable
-
-    val carbonDataFilename = new File(carbonTable.getTablePath + "/Fact/Part0/Segment_0/")
-      .listFiles().filter(fn => fn.getName.endsWith(".carbondata"))
+    val segmentDir = FileFactory.getCarbonFile(carbonTable.getTablePath + "/Fact/Part0")
+    val carbonDataFilename = segmentDir.listFiles(true, new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
+    })
     val blockId = CarbonUtil.getBlockId(carbonTable.getAbsoluteTableIdentifier,
-      carbonDataFilename(0).getAbsolutePath,
+      carbonDataFilename.get(0).getAbsolutePath,
       "0",
       carbonTable.isTransactionalTable,
       CarbonUtil.isStandardCarbonTable(carbonTable))
 
-    assert(blockId.startsWith("Part0/Segment_0/part-0-0_batchno0-0-0-"))
+    assert(blockId.startsWith("Part0/Segment_00/part-0-0_batchno0-0-0-"))
     val carbonDataFilename_part = new File(carbonTable_part.getTablePath + "/c3=aa").listFiles()
       .filter(fn => fn.getName.endsWith(".carbondata"))
     val blockId_part = CarbonUtil.getBlockId(carbonTable.getAbsoluteTableIdentifier,
@@ -305,7 +306,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       "0",
       carbonTable.isTransactionalTable,
       CarbonUtil.isStandardCarbonTable(carbonTable))
-    assert(blockId_part.startsWith("Part0/Segment_0/part-0-100100000100001_batchno0-0-0-"))
+    assert(blockId_part.startsWith("Part0/Segment_00/part-0-100100000100001_batchno0-0-0-"))
     val tableBlockPath = CarbonUpdateUtil
       .getTableBlockPath(listOfTupleId(0),
         carbonTable.getTablePath,
@@ -315,7 +316,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
         carbonTable_part.getTablePath,
         CarbonUtil.isStandardCarbonTable(carbonTable_part), true)
     assert(tableBl0ckPath_part.endsWith("iud_db.db/dest_tuple_part/c3=aa"))
-    assert(tableBlockPath.endsWith("iud_db.db/dest_tuple/Fact/Part0/Segment_0"))
+    assert(tableBlockPath.endsWith("iud_db.db/dest_tuple/Fact/Part0/Segment_00"))
 
     sql("drop table if exists iud_db.dest_tuple_part")
     sql("drop table if exists iud_db.dest_tuple")

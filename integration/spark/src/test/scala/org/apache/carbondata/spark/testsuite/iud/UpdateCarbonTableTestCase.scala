@@ -831,6 +831,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("check data after update with row.filter pushdown as false") {
     sql("""drop table if exists iud.dest33_flat""")
+    sql("""drop table if exists iud.dest33_part""")
     sql(
       """create table iud.dest33_part (c1 int,c2 string, c3 short) STORED AS carbondata"""
         .stripMargin)

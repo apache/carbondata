@@ -297,7 +297,7 @@ public class CarbonTablePath {
    */
   public static String getSegmentPath(String tablePath, String segmentId) {
     return getPartitionDir(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
-        + SEGMENT_PREFIX + segmentId;
+        + SEGMENT_PREFIX + segmentId + segmentId;
   }
 
   /**
@@ -704,7 +704,7 @@ public class CarbonTablePath {
    * @return partition prefix
    */
   public static String addSegmentPrefix(String value) {
-    return SEGMENT_PREFIX + value;
+    return SEGMENT_PREFIX + value + value;
   }
 
   /**
