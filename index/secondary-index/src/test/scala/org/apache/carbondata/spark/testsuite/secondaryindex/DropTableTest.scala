@@ -74,4 +74,16 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage.contains("Index with name indtestdrop does not exist"))
     sql("drop table if exists testDrop")
   }
+
+  test("test drop index command after refresh the index for empty index table") {
+    sql("drop table if exists testDrop")
+    sql("create table testDrop (a string, b string, c string) STORED AS carbondata")
+    sql("create index helloIndex1 on table testDrop (c) AS 'carbondata' properties" +
+        "('table_blocksize'='1')")
+    assert(!sql("show indexes on testDrop").collect().isEmpty)
+    sql("refresh index helloIndex1 on table testDrop")
+    sql("drop index helloIndex1 on table testDrop")
+    assert(sql("show indexes on testDrop").collect().isEmpty)
+    sql("drop table if exists testDrop")
+  }
 }
