@@ -315,7 +315,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       //        val tablePath = tableIdentifier.getTablePath
       val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
       // set index information in index table
-      val indexTableMeta = new IndexMetadata(indexTableName, true, carbonTable.getTablePath)
+      val indexTableMeta = new IndexMetadata(tableName, true, carbonTable.getTablePath)
       tableInfo.getFactTable.getTableProperties
         .put(tableInfo.getFactTable.getTableId, indexTableMeta.serialize)
       // set index information in parent table
