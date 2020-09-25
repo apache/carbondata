@@ -802,7 +802,19 @@ Users can specify which columns to include and exclude for local dictionary gene
        ```
        ALTER TABLE tablename UNSET TBLPROPERTIES('SORT_SCOPE')
        ```
+     - ##### Long String Columns
+       Example to SET Long String Columns:
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('LONG_STRING_COLUMNS'='column1')
+       ```
+       **NOTE:** Only string columns can be set to long string columns. Cannot set sort columns to long string columns.
 
+       Example to UNSET Long String Columns:
+       ```
+       ALTER TABLE tablename UNSET TBLPROPERTIES('LONG_STRING_COLUMNS')
+       ```
+       **NOTE:** On unset long string columns are set to their original datatypes.
+ 
      - ##### SORT COLUMNS
        Example to SET SORT COLUMNS:
        ```
