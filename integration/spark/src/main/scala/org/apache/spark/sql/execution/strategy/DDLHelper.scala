@@ -31,12 +31,13 @@ import org.apache.spark.sql.execution.command.table._
 import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
-import org.apache.spark.sql.types.DecimalType
+import org.apache.spark.sql.types.{DecimalType, Metadata}
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
@@ -218,6 +219,7 @@ object DDLHelper {
     } else {
       val columnName = changeColumnCommand.columnName
       val newColumn = changeColumnCommand.newColumn
+      val newColumnMetaData = newColumn.metadata
       val isColumnRename = !columnName.equalsIgnoreCase(newColumn.name)
       val values = newColumn.dataType match {
         case d: DecimalType => Some(List((d.precision, d.scale)))
@@ -228,8 +230,14 @@ object DDLHelper {
           .convertToCarbonType(newColumn.dataType.typeName)
           .getName
           .toLowerCase,
-        values,
-        isColumnRename)
+        values)
+      var newColumnComment: Option[String] = Option.empty
+      if (newColumnMetaData != null &&
+        newColumnMetaData.contains(CarbonCommonConstants.COLUMN_COMMENT)) {
+        newColumnComment =
+          Some(newColumnMetaData.getString(CarbonCommonConstants.COLUMN_COMMENT))
+      }
+
       val alterTableColRenameAndDataTypeChangeModel =
         AlterTableDataTypeChangeModel(
           dataTypeInfo,
@@ -237,7 +245,8 @@ object DDLHelper {
           tableName.table.toLowerCase,
           columnName.toLowerCase,
           newColumn.name.toLowerCase,
-          isColumnRename)
+          isColumnRename,
+          newColumnComment)
 
       CarbonAlterTableColRenameDataTypeChangeCommand(
         alterTableColRenameAndDataTypeChangeModel

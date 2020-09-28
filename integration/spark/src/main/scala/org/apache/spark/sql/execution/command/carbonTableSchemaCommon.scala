@@ -169,7 +169,8 @@ case class AlterTableDataTypeChangeModel(dataTypeInfo: DataTypeInfo,
     tableName: String,
     columnName: String,
     newColumnName: String,
-    isColumnRename: Boolean)
+    isColumnRename: Boolean,
+    newColumnComment: Option[String] = None)
   extends AlterTableColumnRenameModel(columnName, newColumnName, isColumnRename)
 
 case class AlterTableRenameModel(

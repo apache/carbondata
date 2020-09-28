@@ -366,7 +366,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(11,3)")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
     intercept[ProcessMetaDataException] {
-      sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
+      sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,2)")
     }
     intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,1)")
