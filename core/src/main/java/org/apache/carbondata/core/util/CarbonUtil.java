@@ -1881,7 +1881,9 @@ public final class CarbonUtil {
     gsonBuilder.registerTypeAdapter(DataType.class, new DataTypeAdapter());
 
     Gson gson = gsonBuilder.create();
-    TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
+    // if the column name contains backslash in the column name, then fromJson will remove that,
+    // so replace like below to keep the "\" in column name and write the proper name in the schema
+    TableInfo tableInfo = gson.fromJson(builder.toString().replace("\\", "\\\\"), TableInfo.class);
 
     // The tableInfo is deserialize from GSON string, need to update the scale and
     // precision if there are any decimal field, because DecimalType is added in Carbon 1.3,
