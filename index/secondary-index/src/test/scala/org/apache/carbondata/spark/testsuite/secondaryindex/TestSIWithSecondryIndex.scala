@@ -423,6 +423,17 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table table2")
   }
 
+  test("test SI creation with special char column") {
+    sql("drop table if exists special_char")
+    sql("create table special_char(`i#d` string, `nam(e` string,`ci)&#@!ty` string,`a\be` int, `ag!e` float, `na^me1` Decimal(8,4)) stored as carbondata")
+    sql("create index special_char_index on table special_char(`nam(e`) as 'carbondata'")
+    sql("insert into special_char values('1','joey','hud', 2, 2.2, 2.3456)")
+    val plan = sql("explain select * from special_char where `nam(e` = 'joey'").collect()(0).toString()
+    assert(plan.contains("special_char_index"))
+    val df = sql("describe formatted special_char_index").collect()
+    assert(df.exists(_.get(0).toString.contains("nam(e")))
+  }
+
   override def afterAll {
     sql("drop index si_altercolumn on table_WithSIAndAlter")
     sql("drop table if exists table_WithSIAndAlter")
@@ -433,5 +444,6 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists uniqdataTable")
     sql("drop table if exists table_drop_columns")
     sql("drop table if exists table_drop_columns_fail")
+    sql("drop table if exists special_char")
   }
 }
