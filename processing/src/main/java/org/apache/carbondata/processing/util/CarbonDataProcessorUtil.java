@@ -336,10 +336,10 @@ public final class CarbonDataProcessorUtil {
     Map<String, String> properties =
         schema.getCarbonTable().getTableInfo().getFactTable().getTableProperties();
     String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
+    spatialProperty = spatialProperty != null ? spatialProperty.trim() : null;
     for (CarbonDimension dimension : dimensions) {
-      if (spatialProperty != null && !dimension.getColName()
-          .equalsIgnoreCase(spatialProperty.trim())) {
-        // skip the non-schema column
+      // skip the non-schema column
+      if (!dimension.getColName().equalsIgnoreCase(spatialProperty)) {
         columnNames.add(dimension.getColName());
       }
     }

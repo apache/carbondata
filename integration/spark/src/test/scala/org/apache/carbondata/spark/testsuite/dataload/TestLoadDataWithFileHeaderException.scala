@@ -91,14 +91,22 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
   }
 
   test("test load data with header=false and wrong fileheader") {
-    val e = intercept[Exception] {
+    val e1 = intercept[Exception] {
       sql(
         s"""
         LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3
         options('header'='false', 'fileheader'='ID1,date2,country,name,phonetype,serialname,salary')
         """)
     }
-    assert(e.getMessage.contains("CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
+    val e2 = intercept[Exception] {
+      sql(
+        s"""
+        LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3
+        options('header'='false', 'fileheader'='ID,date2,country,name,phonetype,serialnames,salary')
+        """)
+    }
+    assert(e1.getMessage.contains("CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
+    assert(e2.getMessage.contains("CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
   }
 
   test("test load data with header=true, but without fileheader") {
