@@ -91,8 +91,11 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     (dwSelframe, odsframe)
   }
 
-  private def initializeWithBucketing = {
-    sql("create table order(id string, name string, c_name string, quantity int, price int, state int) stored as carbondata tblproperties('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='id')")
+  private def initializeWithBucketing(bucketingColumns: Seq[String]) = {
+    sql(s"create table order(id string, name string, c_name string, quantity int, price int, " +
+        s"state int) stored as carbondata tblproperties('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='${
+      bucketingColumns.mkString(",")
+    }')")
     initialize
   }
 
@@ -844,7 +847,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test merge update and insert with condition and expression and delete action with target table as bucketing") {
     sql("drop table if exists order")
-    val (dwSelframe, odsframe) = initializeWithBucketing
+    val (dwSelframe, odsframe) = initializeWithBucketing(Seq("id"))
 
     var matches = Seq.empty[MergeMatch]
     val updateMap = Map(col("id") -> col("A.id"),
@@ -866,6 +869,37 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       odsframe,
       MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
     assert(getDeleteDeltaFileCount("order", "0") == 2)
+    checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
+    checkAnswer(sql("select count(*) from order"), Seq(Row(10)))
+    checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
+    checkAnswer(sql("select price from order where id = 'newid1'"), Seq(Row(7500)))
+  }
+
+  test("test merge with target table as multiple bucketing columns and join columns") {
+    sql("drop table if exists order")
+    val (dwSelframe, odsframe) = initializeWithBucketing(Seq("id", "quantity"))
+
+    var matches = Seq.empty[MergeMatch]
+    val updateMap = Map(col("id") -> col("A.id"),
+      col("price") -> expr("B.price + 1"),
+      col("state") -> col("B.state"))
+
+    val insertMap = Map(col("id") -> col("B.id"),
+      col("name") -> col("B.name"),
+      col("c_name") -> col("B.c_name"),
+      col("quantity") -> col("B.quantity"),
+      col("price") -> expr("B.price * 100"),
+      col("state") -> col("B.state"))
+
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
+    matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
+    matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()))
+
+    CarbonMergeDataSetCommand(dwSelframe,
+      odsframe,
+      MergeDataSetMatches((col("A.id").equalTo(col("B.id"))).and(col("A.quantity").equalTo(col(
+        "B.quantity"))), matches.toList)).run(sqlContext.sparkSession)
+    assert(getDeleteDeltaFileCount("order", "0") == 1)
     checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
     checkAnswer(sql("select count(*) from order"), Seq(Row(10)))
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))

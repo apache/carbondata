@@ -106,18 +106,28 @@ case class CarbonMergeDataSetCommand(
     // decide join type based on match conditions
     val joinType = decideJoinType
 
-    val joinColumn = mergeMatches.joinExpr.expr.asInstanceOf[EqualTo].left
-      .asInstanceOf[UnresolvedAttribute].nameParts.tail.head
-    // repartition the srsDs, if the target has bucketing and the bucketing column and join column
-    // are same
+    val joinColumns = mergeMatches.joinExpr.expr.collect {
+      case unresolvedAttribute: UnresolvedAttribute if unresolvedAttribute.nameParts.nonEmpty =>
+        // Let's say the join condition will be something like A.id = B.id, then it will be an
+        // EqualTo expression, with left expression as UnresolvedAttribute(A.id) and right will
+        // be a Literal(B.id). Since we need the column name here, we can directly check the left
+        // which is UnresolvedAttribute. We take nameparts from UnresolvedAttribute which is an
+        // ArrayBuffer containing "A" and "id", since "id" is column name, we take
+        // nameparts.tail.head which gives us "id" column name.
+        unresolvedAttribute.nameParts.tail.head
+    }.distinct
+
+    // repartition the srsDs, if the target has bucketing and the bucketing columns contains join
+    // columns
     val repartitionedSrcDs =
       if (carbonTable.getBucketingInfo != null &&
           carbonTable.getBucketingInfo
             .getListOfColumns
             .asScala
-            .exists(_.getColumnName.equalsIgnoreCase(joinColumn))) {
-      srcDS.repartition(carbonTable.getBucketingInfo.getNumOfRanges, srcDS.col(joinColumn))
-    } else {
+            .map(_.getColumnName).containsSlice(joinColumns)) {
+        srcDS.repartition(carbonTable.getBucketingInfo.getNumOfRanges,
+          joinColumns.map(srcDS.col): _*)
+      } else {
       srcDS
     }
     // Add the getTupleId() udf to get the tuple id to generate delete delta.
