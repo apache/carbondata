@@ -49,7 +49,7 @@ CarbonData DDL statements are documented here,which includes:
     * [ADD COLUMNS](#add-columns)
     * [DROP COLUMNS](#drop-columns)
     * [RENAME COLUMN](#change-column-nametype)
-    * [CHANGE COLUMN NAME/TYPE](#change-column-nametype)
+    * [CHANGE COLUMN NAME/TYPE/COMMENT](#change-column-nametype)
     * [MERGE INDEXES](#merge-index)
     * [SET/UNSET](#set-and-unset)
   * [DROP TABLE](#drop-table)
@@ -719,18 +719,23 @@ Users can specify which columns to include and exclude for local dictionary gene
 
      **NOTE:** Drop Complex child column is not supported.
 
-   - #### CHANGE COLUMN NAME/TYPE
+   - #### CHANGE COLUMN NAME/TYPE/COMMENT
    
-     This command is used to change column name and the data type from INT to BIGINT or decimal precision from lower to higher.
+     This command is used to change column name and comment and the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
+     Change of comment will only be supported for columns other than the partition column
 
      ```
-     ALTER TABLE [db_name.]table_name CHANGE col_old_name col_new_name column_type
+     ALTER TABLE [db_name.]table_name CHANGE col_old_name col_new_name column_type [COMMENT 'col_comment']
      ```
 
      Valid Scenarios
-     - Invalid scenario - Change of decimal precision from (10,2) to (10,5) is invalid as in this case only scale is increased but total number of digits remains the same.
-     - Valid scenario - Change of decimal precision from (10,2) to (12,3) is valid as the total number of digits are increased by 2 but scale is increased only by 1 which will not lead to any data loss.
+     - Invalid scenarios 
+       * Change of decimal precision from (10,2) to (10,5) is invalid as in this case only scale is increased but total number of digits remains the same.
+       * Change the comment of the partition column
+     - Valid scenarios
+       * Change of decimal precision from (10,2) to (12,3) is valid as the total number of digits are increased by 2 but scale is increased only by 1 which will not lead to any data loss.
+       * Change the comment of columns other than partition column
      - **NOTE:** The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
 
      Example1:Change column a1's name to a2 and its data type from INT to BIGINT.
@@ -749,6 +754,11 @@ Users can specify which columns to include and exclude for local dictionary gene
 
      ```
      ALTER TABLE test_db.carbon CHANGE a3 a4 STRING
+     ```
+     Example3:Change column a3's comment to "col_comment".
+     
+     ```
+     ALTER TABLE test_db.carbon CHANGE a3 a3 STRING COMMENT 'col_comment'
      ```
 
      **NOTE:** Once the column is renamed, user has to take care about replacing the fileheader with the new name or changing the column header in csv file.

@@ -1110,8 +1110,7 @@ object CarbonParserUtil {
    */
   def parseDataType(
       dataType: String,
-      values: Option[List[(Int, Int)]],
-      isColumnRename: Boolean): DataTypeInfo = {
+      values: Option[List[(Int, Int)]]): DataTypeInfo = {
     var precision: Int = 0
     var scale: Int = 0
     dataType match {
@@ -1135,11 +1134,7 @@ object CarbonParserUtil {
         }
         DataTypeInfo("decimal", precision, scale)
       case _ =>
-        if (isColumnRename) {
-          DataTypeInfo(DataTypeConverterUtil.convertToCarbonType(dataType).getName.toLowerCase)
-        } else {
-          throw new MalformedCarbonCommandException("Data type provided is invalid.")
-        }
+        DataTypeInfo(DataTypeConverterUtil.convertToCarbonType(dataType).getName.toLowerCase)
     }
   }
 

@@ -44,7 +44,7 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
 
     val alterTableColRenameAndDataTypeChangeModel =
       AlterTableDataTypeChangeModel(
-        CarbonParserUtil.parseDataType(typeString, values, isColumnRename),
+        CarbonParserUtil.parseDataType(typeString, values),
         CarbonParserUtil.convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),
         ctx.tableIdentifier().table.getText.toLowerCase,
         ctx.identifier.getText.toLowerCase,

@@ -32,6 +32,7 @@ import org.apache.spark.util.{CarbonReflectionUtils, PartitionCacheKey, Partitio
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonUtil
@@ -142,14 +143,16 @@ object CarbonSessionUtil {
       if (!column.isInvisible) {
         val structFiled =
           if (null != column.getColumnProperties &&
-              column.getColumnProperties.get("comment") != null) {
+              column.getColumnProperties.get(CarbonCommonConstants.COLUMN_COMMENT) != null) {
             StructField(column.getColumnName,
               SparkTypeConverter
                 .convertCarbonToSparkDataType(column,
                   carbonTable),
               true,
               // update the column comment if present in the schema
-              new MetadataBuilder().putString("comment", column.getColumnProperties.get("comment"))
+              new MetadataBuilder().putString(
+                CarbonCommonConstants.COLUMN_COMMENT,
+                column.getColumnProperties.get(CarbonCommonConstants.COLUMN_COMMENT))
                 .build())
           } else {
             StructField(column.getColumnName,

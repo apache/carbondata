@@ -17,16 +17,20 @@
 
 package org.apache.spark.sql.execution.command.schema
 
+import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, DataTypeInfo, MetadataCommand}
 import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
-import org.apache.spark.util.{AlterTableUtil, SparkUtil}
+import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -55,20 +59,6 @@ abstract class CarbonAlterTableColumnRenameCommand(oldColumnName: String, newCol
       throw new MalformedCarbonCommandException(s"Column Rename Operation failed. Rename " +
                                                 s"column is unsupported for complex datatype " +
                                                 s"column ${ oldCarbonColumn.getColName }")
-    }
-
-    // if column rename operation is on partition column, then fail the rename operation
-    if (null != carbonTable.getPartitionInfo) {
-      val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList
-      partitionColumns.asScala.foreach {
-        col =>
-          if (col.getColumnName.equalsIgnoreCase(oldColumnName)) {
-            throw new MalformedCarbonCommandException(
-              s"Column Rename Operation failed. Renaming " +
-              s"the partition column $newColumnName is not " +
-              s"allowed")
-          }
-      }
     }
 
     // if column rename operation is on bucket column, then fail the rename operation
@@ -139,6 +129,8 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         .fireEvent(alterTableColRenameAndDataTypeChangePreEvent, operationContext)
       val newColumnName = alterTableColRenameAndDataTypeChangeModel.newColumnName.toLowerCase
       val oldColumnName = alterTableColRenameAndDataTypeChangeModel.columnName.toLowerCase
+      val isColumnRename = alterTableColRenameAndDataTypeChangeModel.isColumnRename
+      val newColumnComment = alterTableColRenameAndDataTypeChangeModel.newColumnComment
       val carbonColumns = carbonTable.getCreateOrderColumn().asScala.filter(!_.isInvisible)
       if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(oldColumnName))) {
         throwMetadataException(dbName, tableName, s"Column does not exist: $oldColumnName")
@@ -150,45 +142,48 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       }
       val newColumnPrecision = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.precision
       val newColumnScale = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.scale
-      if (alterTableColRenameAndDataTypeChangeModel.isColumnRename) {
-        // validate the columns to be renamed
-        validColumnsForRenaming(carbonColumns, oldCarbonColumn.head, carbonTable)
-        // if the datatype is source datatype, then it is just a column rename operation, else set
-        // the isDataTypeChange flag to true
-        if (oldCarbonColumn.head.getDataType.getName
-          .equalsIgnoreCase(alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.dataType)) {
-          val newColumnPrecision =
-            alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.precision
-          val newColumnScale = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.scale
-          // if the source datatype is decimal and there is change in precision and scale, then
-          // along with rename, datatype change is also required for the command, so set the
-          // isDataTypeChange flag to true in this case
-          if (oldCarbonColumn.head.getDataType.getName.equalsIgnoreCase("decimal") &&
-              (oldCarbonColumn.head.getDataType.asInstanceOf[DecimalType].getPrecision !=
-               newColumnPrecision ||
-               oldCarbonColumn.head.getDataType.asInstanceOf[DecimalType].getScale !=
-               newColumnScale)) {
-            isDataTypeChange = true
-          }
-        } else {
+      // set isDataTypeChange flag
+      if (oldCarbonColumn.head.getDataType.getName
+        .equalsIgnoreCase(alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.dataType)) {
+        val newColumnPrecision =
+          alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.precision
+        val newColumnScale = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.scale
+        // if the source datatype is decimal and there is change in precision and scale, then
+        // along with rename, datatype change is also required for the command, so set the
+        // isDataTypeChange flag to true in this case
+        if (oldCarbonColumn.head.getDataType.getName.equalsIgnoreCase("decimal") &&
+            (oldCarbonColumn.head.getDataType.asInstanceOf[DecimalType].getPrecision !=
+             newColumnPrecision ||
+             oldCarbonColumn.head.getDataType.asInstanceOf[DecimalType].getScale !=
+             newColumnScale)) {
           isDataTypeChange = true
         }
       } else {
         isDataTypeChange = true
       }
-      if (isDataTypeChange) {
-        // if column datatype change operation is on partition column, then fail the datatype change
-        // operation
-        if (null != carbonTable.getPartitionInfo) {
-          val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList
-          partitionColumns.asScala.foreach {
-            col =>
-              if (col.getColumnName.equalsIgnoreCase(oldColumnName)) {
-                throw new MalformedCarbonCommandException(
-                  s"Alter datatype of the partition column $newColumnName is not allowed")
-              }
-          }
+      // If there is no columnrename and datatype change and comment change
+      // return directly without execution
+      if (!isColumnRename && !isDataTypeChange && !newColumnComment.isDefined) {
+        return Seq.empty
+      }
+      // if column datatype change operation is on partition column, then fail the
+      // chang column operation
+      if (null != carbonTable.getPartitionInfo) {
+        val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList
+        partitionColumns.asScala.foreach {
+          col =>
+            if (col.getColumnName.equalsIgnoreCase(oldColumnName)) {
+              throw new InvalidOperationException(
+                s"Alter on partition column $newColumnName is not supported")
+            }
         }
+      }
+      if (alterTableColRenameAndDataTypeChangeModel.isColumnRename) {
+        // validate the columns to be renamed
+        validColumnsForRenaming(carbonColumns, oldCarbonColumn.head, carbonTable)
+      }
+      if (isDataTypeChange) {
+        // validate the columns to change datatype
         validateColumnDataType(alterTableColRenameAndDataTypeChangeModel.dataTypeInfo,
           oldCarbonColumn.head)
       }
@@ -221,6 +216,14 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
             columnSchema
               .setPrecision(newColumnPrecision)
             columnSchema.setScale(newColumnScale)
+          }
+          if (newColumnComment.isDefined && columnSchema.getColumnProperties != null) {
+            columnSchema.getColumnProperties.put(
+              CarbonCommonConstants.COLUMN_COMMENT, newColumnComment.get)
+          } else if (newColumnComment.isDefined) {
+            val newColumnProperties = new util.HashMap[String, String]
+            newColumnProperties.put(CarbonCommonConstants.COLUMN_COMMENT, newColumnComment.get)
+            columnSchema.setColumnProperties(newColumnProperties)
           }
           addColumnSchema = columnSchema
           timeStamp = System.currentTimeMillis()

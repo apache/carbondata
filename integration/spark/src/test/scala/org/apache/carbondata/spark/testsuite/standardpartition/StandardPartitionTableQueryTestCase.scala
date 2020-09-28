@@ -515,12 +515,10 @@ test("Creation of partition table should fail if the colname in table schema and
       sql("alter table onlyPart drop columns(name)")
     }
     assert(ex1.getMessage.contains("alter table drop column is failed, cannot have the table with all columns as partition column"))
-    if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
-      val ex2 = intercept[MalformedCarbonCommandException] {
-        sql("alter table onlyPart change age age bigint")
-      }
-      assert(ex2.getMessage.contains("Alter datatype of the partition column age is not allowed"))
+    val ex2 = intercept[MalformedCarbonCommandException] {
+      sql("alter table onlyPart change age age bigint")
     }
+    assert(ex2.getMessage.contains("Alter on partition column age is not supported"))
     sql("drop table if exists onlyPart")
   }
 
