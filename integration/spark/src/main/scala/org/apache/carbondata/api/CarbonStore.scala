@@ -17,16 +17,16 @@
 
 package org.apache.carbondata.api
 
-import java.io.InputStreamReader
+import java.io.{DataInputStream, File, FileNotFoundException, InputStreamReader}
 import java.time.{Duration, Instant}
 import java.util
 import java.util.{Collections, Comparator}
 
 import scala.collection.JavaConverters._
+import scala.util.control.Breaks.{break, breakable}
 
 import com.google.gson.Gson
 import org.apache.commons.lang3.StringUtils
-import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -46,6 +46,10 @@ import org.apache.carbondata.streaming.segment.StreamSegment
 
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  val READ_FILE_RETRY_TIMES = 3
+
+  val READ_FILE_RETRY_INTERVAL = 1000
 
   def readSegments(
       tablePath: String,
@@ -77,12 +81,12 @@ object CarbonStore {
   /**
    * Read stage files and return input files
    */
-  def readStages(tablePath: String): Seq[StageInput] = {
-    val stageFiles = listStageFiles(CarbonTablePath.getStageDir(tablePath))
+  def readStages(tableStagePath: String): Seq[StageInput] = {
+    val stageFiles = listStageFiles(tableStagePath)
     var output = Collections.synchronizedList(new util.ArrayList[StageInput]())
-    output.addAll(readStageInput(stageFiles._1,
+    output.addAll(readStageInput(tableStagePath, stageFiles._1,
       StageInput.StageStatus.Unload).asJavaCollection)
-    output.addAll(readStageInput(stageFiles._2,
+    output.addAll(readStageInput(tableStagePath, stageFiles._2,
       StageInput.StageStatus.Loading).asJavaCollection)
     Collections.sort(output, new Comparator[StageInput]() {
       def compare(stageInput1: StageInput, stageInput2: StageInput): Int = {
@@ -96,20 +100,46 @@ object CarbonStore {
    * Read stage files and return input files
    */
   def readStageInput(
+      tableStagePath: String,
       stageFiles: Seq[CarbonFile],
       status: StageInput.StageStatus): Seq[StageInput] = {
     val gson = new Gson()
     val output = Collections.synchronizedList(new util.ArrayList[StageInput]())
-    stageFiles.map { stage =>
-      val filePath = stage.getAbsolutePath
-      val stream = FileFactory.getDataInputStream(filePath)
+    stageFiles.foreach { stage =>
+      val filePath = tableStagePath + CarbonCommonConstants.FILE_SEPARATOR + stage.getName
+      var stream: DataInputStream = null
       try {
-        val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
-        stageInput.setCreateTime(stage.getLastModifiedTime)
-        stageInput.setStatus(status)
-        output.add(stageInput)
+        stream = FileFactory.getDataInputStream(filePath)
+        var retry = READ_FILE_RETRY_TIMES
+        breakable {
+          while (retry > 0) {
+            try {
+              val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
+              stageInput.setCreateTime(stage.getLastModifiedTime)
+              stageInput.setStatus(status)
+              output.add(stageInput)
+              break()
+            } catch {
+              case _ : FileNotFoundException =>
+                LOGGER.warn(s"The stage file $filePath does not exist")
+                break()
+              case ex: Exception => retry -= 1
+                if (retry > 0) {
+                  LOGGER.warn(s"The stage file $filePath can't be read, retry " +
+                    s"$retry times: ${ex.getMessage}")
+                  Thread.sleep(READ_FILE_RETRY_INTERVAL)
+                } else {
+                  LOGGER.error(s"The stage file $filePath can't be" +
+                    s" read: ${ex.getMessage}")
+                  throw ex
+                }
+            }
+          }
+        }
       } finally {
-        stream.close()
+        if (stream != null) {
+          stream.close()
+        }
       }
     }
     output.asScala

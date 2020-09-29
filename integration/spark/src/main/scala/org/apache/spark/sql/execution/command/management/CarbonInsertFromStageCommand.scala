@@ -17,12 +17,13 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.io.{File, InputStreamReader, IOException}
+import java.io.{DataInputStream, File, InputStreamReader, IOException}
 import java.util
 import java.util.Collections
 import java.util.concurrent.{Callable, Executors, ExecutorService}
 
 import scala.collection.JavaConverters._
+import scala.util.control.Breaks.{break, breakable}
 
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
@@ -171,7 +172,7 @@ case class CarbonInsertFromStageCommand(
     try{
       // 2) read all stage files to collect input files for data loading
       // create a thread pool to read them
-      val stageInputs = collectStageInputs(executorService, stageFiles)
+      val stageInputs = collectStageInputs(executorService, stagePath, stageFiles)
 
       // 3) perform data loading
       if (table.isHivePartitionTable) {
@@ -469,6 +470,7 @@ case class CarbonInsertFromStageCommand(
    */
   private def collectStageInputs(
       executorService: ExecutorService,
+      tableStagePath: String,
       stageFiles: Array[(CarbonFile, CarbonFile)]
   ): Seq[StageInput] = {
     val startTime = System.currentTimeMillis()
@@ -477,13 +479,34 @@ case class CarbonInsertFromStageCommand(
     stageFiles.map { stage =>
       executorService.submit(new Runnable {
         override def run(): Unit = {
-          val filePath = stage._1.getAbsolutePath
-          val stream = FileFactory.getDataInputStream(filePath)
+          val filePath = tableStagePath + CarbonCommonConstants.FILE_SEPARATOR + stage._1.getName
+          var stream: DataInputStream = null
           try {
-            val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
-            output.add(stageInput)
+            stream = FileFactory.getDataInputStream(filePath)
+            var retry = CarbonInsertFromStageCommand.DELETE_FILES_RETRY_TIMES
+            breakable (
+              while (retry > 0) {
+                try {
+                  val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
+                  output.add(stageInput)
+                  break()
+                } catch {
+                  case ex: Exception => retry -= 1
+                    if (retry > 0) {
+                      LOGGER.warn(s"The stage file $filePath can't be read, retry " +
+                        s"$retry times: ${ex.getMessage}")
+                      Thread.sleep(CarbonInsertFromStageCommand.DELETE_FILES_RETRY_INTERVAL)
+                    } else {
+                      LOGGER.error(s"The stage file $filePath can't be read: ${ex.getMessage}")
+                      throw ex
+                    }
+                }
+              }
+            )
           } finally {
-            stream.close()
+            if (stream != null) {
+              stream.close()
+            }
           }
         }
       })
@@ -744,6 +767,8 @@ case class CarbonInsertFromStageCommand(
 object CarbonInsertFromStageCommand {
 
   val DELETE_FILES_RETRY_TIMES = 3
+
+  val DELETE_FILES_RETRY_INTERVAL = 1000
 
   val BATCH_FILE_COUNT_KEY = "batch_file_count"
 

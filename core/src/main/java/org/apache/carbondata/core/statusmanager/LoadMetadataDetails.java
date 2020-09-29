@@ -492,6 +492,9 @@ public class LoadMetadataDetails implements Serializable {
     if (!StringUtils.isEmpty(updateDeltaEndTimestamp)) {
       return convertTimeStampToLong(updateDeltaEndTimestamp);
     }
-    return convertTimeStampToLong(timestamp);
+    if (!StringUtils.isEmpty(timestamp)) {
+      return convertTimeStampToLong(timestamp);
+    }
+    return CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT;
   }
 }

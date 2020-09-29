@@ -73,10 +73,11 @@ case class CarbonShowSegmentsAsSelectCommand(
   override protected def opName: String = "SHOW SEGMENTS"
 
   private def createDataFrame: DataFrame = {
+    val tableStagePath = carbonTable.getStagePath
     val tablePath = carbonTable.getTablePath
     var rows: Seq[SegmentRow] = Seq()
     if (withStage) {
-      val stageRows = CarbonShowSegmentsCommand.showStages(tablePath)
+      val stageRows = CarbonShowSegmentsCommand.showStages(tableStagePath)
       if (stageRows.nonEmpty) {
         rows = stageRows.map(
           stageRow =>
@@ -134,7 +135,11 @@ case class CarbonShowSegmentsAsSelectCommand(
       val endTime = CarbonStore.getLoadEndTime(segment)
       val timeTaken = CarbonStore.getLoadTimeTakenAsMillis(segment)
       val (dataSize, indexSize) = CarbonStore.getDataAndIndexSize(tablePath, segment)
-      val partitions = CarbonStore.getPartitions(tablePath, segment)
+      val partitions = if (carbonTable.isHivePartitionTable) {
+        CarbonStore.getPartitions(tablePath, segment)
+      } else {
+        Seq.empty
+      }
       SegmentRow(
         segment.getLoadName,
         segment.getSegmentStatus.toString,

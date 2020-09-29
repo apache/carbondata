@@ -60,27 +60,33 @@ case class CarbonShowSegmentsCommand(
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
+    val tableStagePath = carbonTable.getStagePath
     val tablePath = carbonTable.getTablePath
     var rows: Seq[Row] = Seq()
     if (withStage) {
-      rows = CarbonShowSegmentsCommand.showStages(tablePath)
+      rows = CarbonShowSegmentsCommand.showStages(tableStagePath)
     }
 
     val segments = readSegments(tablePath, showHistory, limit)
-    rows ++ showBasic(segments, tablePath)
+    rows ++ showBasic(segments, tablePath, carbonTable.isHivePartitionTable)
   }
 
   override protected def opName: String = "SHOW SEGMENTS"
 
   private def showBasic(
       segments: Array[LoadMetadataDetails],
-      tablePath: String): Seq[Row] = {
+      tablePath: String,
+      isPartitionTable: Boolean): Seq[Row] = {
     segments
       .map { segment =>
         val startTime = getLoadStartTime(segment)
         val timeTaken = getLoadTimeTaken(segment)
         val (dataSize, indexSize) = getDataAndIndexSize(tablePath, segment)
-        val partitions = getPartitions(tablePath, segment)
+        val partitions = if (isPartitionTable) {
+          getPartitions(tablePath, segment)
+        } else {
+          Seq.empty
+        }
         val partitionString = if (partitions.size == 1) {
           partitions.head
         } else if (partitions.size > 1) {
@@ -103,8 +109,8 @@ case class CarbonShowSegmentsCommand(
 
 object CarbonShowSegmentsCommand {
 
-  def showStages(tablePath: String): Seq[Row] = {
-    toRows(readStages(tablePath))
+  def showStages(tableStagePath: String): Seq[Row] = {
+    toRows(readStages(tableStagePath))
   }
 
   private def toRows(stages: Seq[StageInput]): Seq[Row] = {
