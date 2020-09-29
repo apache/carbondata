@@ -321,7 +321,7 @@ case class CarbonAlterTableCompactionCommand(
         // COMPACTION_LOCK and UPDATE_LOCK are already locked when start to execute update sql,
         // so it don't need to require locks again when compactionType is IUD_UPDDEL_DELTA.
         if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
-          if (!updateLock.lockWithRetries(3, 3)) {
+          if (!updateLock.lockWithRetries()) {
             throw new ConcurrentOperationException(carbonTable, "update", "compaction")
           }
           if (!lock.lockWithRetries()) {

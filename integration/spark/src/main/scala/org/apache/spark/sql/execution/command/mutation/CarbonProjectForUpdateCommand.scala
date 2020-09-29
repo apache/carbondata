@@ -128,8 +128,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
 
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      if (updateLock.lockWithRetries(3, 3)) {
-        if (compactionLock.lockWithRetries(3, 3)) {
+      if (updateLock.lockWithRetries()) {
+        if (compactionLock.lockWithRetries()) {
           // Get RDD.
           dataSet = if (isPersistEnabled) {
             Dataset.ofRows(sparkSession, plan).persist(StorageLevel.fromString(

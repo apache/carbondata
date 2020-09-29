@@ -86,7 +86,7 @@ case class CarbonAddLoadCommand(
     }
     // if insert overwrite in progress, do not allow add segment
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
-      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
+      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "add segment")
     }
 
     val inputPath = options.getOrElse(

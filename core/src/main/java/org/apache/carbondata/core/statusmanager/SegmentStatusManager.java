@@ -876,7 +876,7 @@ public class SegmentStatusManager {
   /**
    * Return true if any load or insert overwrite is in progress for specified table
    */
-  public static Boolean isLoadInProgressInTable(CarbonTable carbonTable) {
+  public static boolean isLoadInProgressInTable(CarbonTable carbonTable) {
     if (carbonTable == null) {
       return false;
     }
@@ -903,7 +903,7 @@ public class SegmentStatusManager {
    * @param carbonTable
    * @return
    */
-  public static Boolean isCompactionInProgress(CarbonTable carbonTable) {
+  public static boolean isCompactionInProgress(CarbonTable carbonTable) {
     if (carbonTable == null) {
       return false;
     }
@@ -921,7 +921,7 @@ public class SegmentStatusManager {
   /**
    * Return true if insert overwrite is in progress for specified table
    */
-  public static Boolean isOverwriteInProgressInTable(CarbonTable carbonTable) {
+  public static boolean isOverwriteInProgressInTable(CarbonTable carbonTable) {
     if (carbonTable == null) {
       return false;
     }
@@ -945,7 +945,7 @@ public class SegmentStatusManager {
   /**
    * Return true if the specified `loadName` is in progress, by checking the load lock.
    */
-  public static Boolean isLoadInProgress(AbsoluteTableIdentifier absoluteTableIdentifier,
+  public static boolean isLoadInProgress(AbsoluteTableIdentifier absoluteTableIdentifier,
       String loadName) {
     ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
         CarbonTablePath.addSegmentPrefix(loadName) + LockUsage.LOCK);
