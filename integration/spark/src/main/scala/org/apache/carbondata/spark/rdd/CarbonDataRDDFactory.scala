@@ -974,7 +974,7 @@ object CarbonDataRDDFactory {
         val updateLock = CarbonLockFactory.getCarbonLockObj(carbonTable
           .getAbsoluteTableIdentifier, LockUsage.UPDATE_LOCK)
         try {
-          if (updateLock.lockWithRetries(3, 3)) {
+          if (updateLock.lockWithRetries()) {
             if (lock.lockWithRetries()) {
               LOGGER.info("Acquired the compaction lock.")
               startCompactionThreads(sqlContext,

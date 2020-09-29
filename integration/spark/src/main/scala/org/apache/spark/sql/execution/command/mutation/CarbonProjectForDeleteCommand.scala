@@ -96,10 +96,10 @@ private[sql] case class CarbonProjectForDeleteCommand(
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
-        if (!compactionLock.lockWithRetries(3, 3)) {
+        if (!compactionLock.lockWithRetries()) {
           throw new ConcurrentOperationException(carbonTable, "compaction", "delete")
         }
-        if (!updateLock.lockWithRetries(3, 3)) {
+        if (!updateLock.lockWithRetries()) {
           throw new ConcurrentOperationException(carbonTable, "update/delete", "delete")
         }
         LOGGER.info("Successfully able to get the table metadata file lock")
