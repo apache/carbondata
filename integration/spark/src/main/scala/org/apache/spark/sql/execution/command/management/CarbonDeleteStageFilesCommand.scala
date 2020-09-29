@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.io.InputStreamReader
+import java.io.{DataInputStream, InputStreamReader}
 import java.util
 import java.util.Collections
 
@@ -63,6 +63,7 @@ case class CarbonDeleteStageFilesCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on materialized view")
     }
     val tablePath = table.getTablePath
+    val tableStagePath = table.getStagePath
     val startTime = System.currentTimeMillis()
     val stageDataFileActiveTime = try {
       Integer.valueOf(options.getOrElse("retain_hour", "0")) * 3600000
@@ -76,7 +77,8 @@ case class CarbonDeleteStageFilesCommand(
         "Option [retain_hour] is negative.")
     }
     val stageDataFilesReferenced =
-      listStageDataFilesReferenced(listStageMetadataFiles(tablePath, configuration), configuration)
+      listStageDataFilesReferenced(listStageMetadataFiles(tablePath, configuration),
+        tableStagePath, configuration)
     val stageDataFiles = listStageDataFiles(tablePath, configuration)
     stageDataFiles.collect {
       case stageDataFile: CarbonFile =>
@@ -129,6 +131,7 @@ case class CarbonDeleteStageFilesCommand(
    */
   private def listStageDataFilesReferenced(
       stageFiles: Seq[CarbonFile],
+      tableStagePath: String,
       configuration: Configuration
   ): Set[String] = {
     if (stageFiles.isEmpty) {
@@ -138,8 +141,10 @@ case class CarbonDeleteStageFilesCommand(
     val stageDataFilesReferenced = Collections.synchronizedSet(new util.HashSet[String]())
     val startTime = System.currentTimeMillis()
     stageFiles.foreach { stageFile =>
-      val stream = FileFactory.getDataInputStream(stageFile.getAbsolutePath, configuration)
+      val filePath = tableStagePath + CarbonCommonConstants.FILE_SEPARATOR + stageFile.getName
+      var stream: DataInputStream = null
       try {
+        stream = FileFactory.getDataInputStream(filePath, configuration)
         val stageInput =
           new Gson().fromJson(new InputStreamReader(stream), classOf[StageInput])
         val stageDataBase = stageInput.getBase + CarbonCommonConstants.FILE_SEPARATOR
@@ -171,7 +176,9 @@ case class CarbonDeleteStageFilesCommand(
           )
         }
       } finally {
-        stream.close()
+        if (stream != null) {
+          stream.close()
+        }
       }
     }
     LOGGER.info(s"Read stage files taken ${ System.currentTimeMillis() - startTime }ms.")
