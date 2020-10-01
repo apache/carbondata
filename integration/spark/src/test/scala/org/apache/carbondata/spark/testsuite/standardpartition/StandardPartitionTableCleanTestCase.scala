@@ -23,6 +23,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, ConfigMap}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
@@ -64,6 +66,23 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     assert(seg.getIndexOrMergeFiles.size == indexes)
   }
 
+  def validateTmpIndexFilesCleaned(tableUniqueName: String): Unit = {
+    val tableAndDbName = tableUniqueName.split("_")
+    val carbonTable = CarbonEnv.getCarbonTable(Some(tableAndDbName(0)), tableAndDbName(1))(
+      sqlContext.sparkSession)
+    val partitions = CarbonFilters.getPartitions(
+      Seq.empty,
+      sqlContext.sparkSession,
+      TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName)))
+      .get.map(partition => partition.getLocation.getName)
+    partitions.map { partition =>
+      assert(FileFactory.getCarbonFile(partition).listFiles(false,
+        new CarbonFileFilter {
+          override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".tmp")
+        }).isEmpty)
+    }
+  }
+
   test("clean up partition table for int partition column") {
     sql(
       """
@@ -83,6 +102,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
       sql(s"""select count (*) from partitionone where empno=11"""),
       sql(s"""select count (*) from originTable where empno=11"""))
 
+    validateTmpIndexFilesCleaned("default_partitionone")
     sql(s"""ALTER TABLE partitionone DROP PARTITION(empno='11')""")
     validateDataFiles("default_partitionone", "0", 9, 9)
     sql(s"CLEAN FILES FOR TABLE partitionone").show()
