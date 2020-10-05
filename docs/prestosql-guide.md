@@ -300,6 +300,8 @@ carbondata files.
 
 ### Supported features of presto carbon
 Presto carbon only supports reading the carbon table which is written by spark carbon or carbon SDK. 
+Regarding complex datatypes- currently reading of only Array and Struct datatypes are supported, 
+while Map datatype is not yet supported.
 During reading, it supports the non-distributed index like block index and bloom index.
 It doesn't support Materialized View as it needs query plan to be changed and presto does not allow it.
 Also, Presto carbon supports streaming segment read from streaming table created by spark.

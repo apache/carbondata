@@ -242,4 +242,8 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
       columnVector.putArray(counter++, offset, length);
     }
   }
+
+  public CarbonColumnVector getColumnVector() {
+    return this.columnVector;
+  }
 }

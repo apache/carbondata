@@ -125,6 +125,17 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
   }
 
   @Override
+  public void putAllByteArray(byte[] data, int offset, int length) {
+    int[] lengths = getLengths();
+    int[] offsets = getOffsets();
+    for (int i = 0; i < lengths.length; i++) {
+      if (offsets[i] != 0) {
+        putByteArray(i, offsets[i], lengths[i], data);
+      }
+    }
+  }
+
+  @Override
   public void putNull(int rowId) {
     if (dictionaryBlock == null) {
       builder.appendNull();
