@@ -87,6 +87,10 @@ object GeoTableExampleWithCarbonSession {
     }
     spark.sql(s"""LOAD DATA local inpath '$path' INTO TABLE geoTable OPTIONS
            |('DELIMITER'= ',')""".stripMargin)
+    // Test for MV creation
+    spark.sql(s"CREATE MATERIALIZED VIEW view1 AS SELECT longitude, latitude FROM geoTable")
+    val result = spark.sql("show materialized views on table geoTable").collectAsList()
+    assert(result.get(0).get(1).toString.equalsIgnoreCase("view1"))
     spark.sql("select *from geoTable").show()
     spark.sql("DROP TABLE IF EXISTS geoTable")
   }
