@@ -277,6 +277,11 @@ public class DirectCompressCodec implements ColumnPageCodec {
         vector = ColumnarVectorWrapperDirectFactory
             .getDirectVectorWrapperFactory(vectorInfo, parentVector, vectorInfo.invertedIndex,
                 nullBits, vectorInfo.deletedRows, true, false);
+        // In case of update there will be two wrappers enclosing columnVector
+        if (vector.getColumnVector() != null
+            && vector.getColumnVector().getColumnVector() != null) {
+          vector = vector.getColumnVector();
+        }
         fillVectorBasedOnType(pageData, vector, vectorDataType, pageDataType, pageSize,
             vectorInfo, nullBits);
       } else {
