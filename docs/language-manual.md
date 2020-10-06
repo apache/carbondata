@@ -31,7 +31,7 @@ CarbonData has its own parser, in addition to Spark's SQL Parser, to parse and p
   - [Materialized Views](./mv-guide.md)
   - [Streaming](./streaming-guide.md)
 - Data Manipulation Statements
-  - [DML:](./dml-of-carbondata.md) [Load](./dml-of-carbondata.md#load-data), [Insert](./dml-of-carbondata.md#insert-data-into-carbondata-table), [Update](./dml-of-carbondata.md#update), [Delete](./dml-of-carbondata.md#delete)
+  - [DML:](./dml-of-carbondata.md) [Load](./dml-of-carbondata.md#load-data), [Insert](./dml-of-carbondata.md#insert-data-into-carbondata-table), [Update](./dml-of-carbondata.md#update), [Delete](./dml-of-carbondata.md#delete), [Compaction](./dml-of-carbondata.md#compaction)
   - [Segment Management](./segment-management-on-carbondata.md)
 - [CarbonData as Spark's Datasource](./carbon-as-spark-datasource-guide.md)
 - [Configuration Properties](./configuration-parameters.md)
