@@ -726,24 +726,24 @@ object CarbonParserUtil {
           dimFields += field
           // consider all String and binary cols as noDictionaryDims by default
           if ((DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) ||
-              (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
+            (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
             noDictionaryDims :+= field.column
             dimFields += field
           } else if (isDetectAsDimensionDataType(field.dataType.get)) {
             dimFields += field
             // consider all String and binary cols as noDicitonaryDims by default
             if ((DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) ||
-                (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
+              (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
               noDictionaryDims :+= field.column
             }
           } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column)) &&
-                     isDefaultMeasure(field.dataType) &&
-                     (!field.dataType.get.equalsIgnoreCase("STRING"))) {
+            isDefaultMeasure(field.dataType) &&
+            (!field.dataType.get.equalsIgnoreCase("STRING"))) {
             throw new MalformedCarbonCommandException(
               s"Illegal argument in sort_column.Check if you " +
-              s"have included UNSUPPORTED DataType column{${
-                field.column
-              }}in sort_columns.")
+                s"have included UNSUPPORTED DataType column{${
+                  field.column
+                }}in sort_columns.")
           } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column))) {
             noDictionaryDims :+= field.column
             dimFields += field
@@ -752,6 +752,7 @@ object CarbonParserUtil {
           }
         }
       }
+    }
 
     if (sortKeyDimsTmp.isEmpty) {
       // no SORT_COLUMNS

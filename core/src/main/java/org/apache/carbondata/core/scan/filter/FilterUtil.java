@@ -191,14 +191,14 @@ public final class FilterUtil {
           RowLevelFilterResolverImpl rowLevelFilterResolver =
               (RowLevelFilterResolverImpl) filterExpressionResolverTree;
           // TODO: check this
-//          if (rowLevelFilterResolver.getDimColEvaluatorInfoList().size() + rowLevelFilterResolver
-//              .getMsrColEvalutorInfoList().size() == 0) {
-//            return new TrueFilterExecutor();
-//          } else
-            if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
+          /* if (rowLevelFilterResolver.getDimColEvaluatorInfoList().size() + rowLevelFilterResolver
+                  .getMsrColEvalutorInfoList().size() == 0) {
+            return new TrueFilterExecutor();
+          } else*/
+          if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
             FilterExecutor filterExecutor =
-                ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
-                    .getFilterExecutor(filterExpressionResolverTree, segmentProperties);
+                    ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
+                            .getFilterExecutor(filterExpressionResolverTree, segmentProperties);
             if (filterExecutor != null) {
               return filterExecutor;
             }
