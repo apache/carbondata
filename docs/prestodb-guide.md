@@ -108,7 +108,7 @@ Currently carbondata supports only one version of presto, cannot handle multiple
   query.max-memory-per-node=3GB
   memory.heap-headroom-per-node=1GB
   discovery-server.enabled=true
-  discovery.uri=<coordinator_ip>:8086
+  discovery.uri=http://<coordinator_ip>:8086
   ```
 The options `node-scheduler.include-coordinator=false` and `coordinator=true` indicate that the node is the coordinator and tells the coordinator not to do any of the computation work itself and to use the workers.
 
@@ -128,7 +128,7 @@ Then, `query.max-memory=<30GB * number of nodes>`.
   http-server.http.port=8086
   query.max-memory=5GB
   query.max-memory-per-node=2GB
-  discovery.uri=<coordinator_ip>:8086
+  discovery.uri=http://<coordinator_ip>:8086
   ```
 
 **Note**: `jvm.config` and `node.properties` files are same for all the nodes (worker + coordinator). All the nodes should have different `node.id`.

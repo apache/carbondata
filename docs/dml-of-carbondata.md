@@ -402,6 +402,11 @@ CarbonData DML statements are documented here,which includes:
 
 ## UPDATE AND DELETE
 
+  Since the data stored in a file system like HDFS is immutable, the update and delete in carbondata are done via maintaining two files namely:
+  
+  * Insert Delta: Stores newly added rows (CarbonData file format)
+  * Delete Delta: Store RowId of rows that are deleted (Bitmap file format)
+  
 ### UPDATE
 
   This command will allow to update the CarbonData table based on the column expression and optional filter conditions.
@@ -451,8 +456,13 @@ CarbonData DML statements are documented here,which includes:
   ```
   DELETE FROM table_name [WHERE expression]
   ```
+  Note: If the WHERE clause with expression is not provided in the above syntax, all of the records from the table will be deleted.
 
   Examples:
+
+  ```
+  DELETE FROM carbontable
+  ```
 
   ```
   DELETE FROM carbontable WHERE column1  = 'china'
