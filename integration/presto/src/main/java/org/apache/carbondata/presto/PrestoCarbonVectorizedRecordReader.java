@@ -116,6 +116,11 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
+  public QueryModel getQueryModel() {
+    return queryModel;
+  }
+
+  @Override
   public void close() throws IOException {
     logStatistics(rowCount, queryModel.getStatisticsRecorder());
     if (columnarBatch != null) {

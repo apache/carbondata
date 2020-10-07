@@ -32,9 +32,7 @@ import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.sdk.file.Schema;
 
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.types.DateUnit;
 import org.apache.arrow.vector.types.FloatingPointPrecision;
-import org.apache.arrow.vector.types.TimeUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.FieldType;
 
@@ -43,7 +41,8 @@ public class ArrowUtils {
   public static final RootAllocator rootAllocator = new RootAllocator(Long.MAX_VALUE);
 
   public static ArrowType toArrowType(DataType carbonDataType, String timeZoneId) {
-    if (carbonDataType == DataTypes.STRING || carbonDataType == DataTypes.VARCHAR) {
+    if (carbonDataType == DataTypes.STRING || carbonDataType == DataTypes.VARCHAR
+            || carbonDataType == DataTypes.TIMESTAMP || carbonDataType == DataTypes.DATE) {
       return ArrowType.Utf8.INSTANCE;
     } else if (carbonDataType == DataTypes.BYTE) {
       return new ArrowType.Int(DataTypes.BYTE.getSizeInBytes() * 8, true);
@@ -63,10 +62,6 @@ public class ArrowUtils {
       // instance of check is for findbugs, instead of datatypes check
       DecimalType decimal = (DecimalType) carbonDataType;
       return new ArrowType.Decimal(decimal.getPrecision(), decimal.getScale());
-    } else if (carbonDataType == DataTypes.TIMESTAMP) {
-      return new ArrowType.Timestamp(TimeUnit.MICROSECOND, timeZoneId);
-    } else if (carbonDataType == DataTypes.DATE) {
-      return new ArrowType.Date(DateUnit.DAY);
     } else if (carbonDataType == DataTypes.BINARY) {
       return ArrowType.Binary.INSTANCE;
     } else {

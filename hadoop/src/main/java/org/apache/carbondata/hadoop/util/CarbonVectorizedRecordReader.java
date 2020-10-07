@@ -58,7 +58,6 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonVectorizedRecordReader.class.getName());
-  private static final int DEFAULT_BATCH_SIZE = 4 * 1024;
 
   private CarbonColumnarBatch carbonColumnarBatch;
 
@@ -137,6 +136,11 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     return true;
   }
 
+  @Override
+  public QueryModel getQueryModel() {
+    return queryModel;
+  }
+
   private boolean nextBatch() {
     carbonColumnarBatch.reset();
     if (iterator.hasNext()) {
@@ -194,7 +198,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       }
       carbonColumnarBatch = new CarbonColumnarBatch(vectors,
           CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT,
-          new boolean[DEFAULT_BATCH_SIZE]);
+          new boolean[CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT]);
     }
   }
 

@@ -20,8 +20,6 @@ package org.apache.carbondata.examples.sdk;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.sql.Date;
-import java.sql.Timestamp;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -114,13 +112,11 @@ public class CarbonReaderExample {
           .build();
 
       System.out.println("\nData:");
-      long day = 24L * 3600 * 1000;
       int i = 0;
       while (reader.hasNext()) {
         Object[] row = (Object[]) reader.readNextRow();
         System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
-            i, row[0], row[1], row[2], row[3], row[4], row[5],
-            new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000),
+            i, row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
             row[8], row[9]
         ));
         Object[] arr = (Object[]) row[10];
@@ -144,7 +140,7 @@ public class CarbonReaderExample {
       while (reader2.hasNext()) {
         Object[] row = (Object[]) reader2.readNextRow();
         System.out.print(String.format("%s\t%s\t%s\t%s\t%s\t",
-            i, row[0], new Date((day * ((int) row[1]))), new Timestamp((long) row[2] / 1000),
+            i, row[0], row[1], row[2],
             row[3]));
         Object[] arr = (Object[]) row[4];
         for (int j = 0; j < arr.length; j++) {

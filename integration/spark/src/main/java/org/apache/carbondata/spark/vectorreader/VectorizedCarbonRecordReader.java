@@ -164,6 +164,11 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
+  public QueryModel getQueryModel() {
+    return queryModel;
+  }
+
+  @Override
   public boolean nextKeyValue() {
     resultBatch();
 

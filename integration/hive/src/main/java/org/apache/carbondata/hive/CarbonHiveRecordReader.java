@@ -116,6 +116,11 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
   }
 
   @Override
+  public QueryModel getQueryModel() {
+    return queryModel;
+  }
+
+  @Override
   public Void createKey() {
     return null;
   }

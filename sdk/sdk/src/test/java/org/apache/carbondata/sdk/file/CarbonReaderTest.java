@@ -50,8 +50,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -1148,9 +1146,8 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(Long.MAX_VALUE - id, row[3]);
       Assert.assertEquals((double) id / 2, row[4]);
       Assert.assertEquals(true, (boolean) row[5]);
-      long day = 24L * 3600 * 1000;
-      Assert.assertEquals("2019-03-02", new Date((day * ((int) row[6]))).toString());
-      Assert.assertEquals("2019-02-12 03:03:34.0", new Timestamp((long) row[7] / 1000).toString());
+      Assert.assertEquals("2019-03-02", row[6]);
+      Assert.assertEquals("2019-02-12 03:03:34", row[7]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -1259,9 +1256,8 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(Long.MAX_VALUE - id, row[3]);
       Assert.assertEquals((double) id / 2, row[4]);
       Assert.assertEquals(true, (boolean) row[5]);
-      long day = 24L * 3600 * 1000;
-      Assert.assertEquals("2019-03-02", new Date((day * ((int) row[6]))).toString());
-      Assert.assertEquals("2019-02-12 03:03:34.0", new Timestamp((long) row[7] / 1000).toString());
+      Assert.assertEquals("2019-03-02", row[6]);
+      Assert.assertEquals("2019-02-12 03:03:34", row[7]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -1371,9 +1367,8 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(Long.MAX_VALUE - id, row[3]);
       Assert.assertEquals((double) id / 2, row[4]);
       Assert.assertEquals(true, (boolean) row[5]);
-      long day = 24L * 3600 * 1000;
-      Assert.assertEquals("2019-03-02", new Date((day * ((int) row[6]))).toString());
-      Assert.assertEquals("2019-02-12 03:03:34.0", new Timestamp((long) row[7] / 1000).toString());
+      Assert.assertEquals("2019-03-02", row[6]);
+      Assert.assertEquals("2019-02-12 03:03:34", row[7]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -1732,7 +1727,7 @@ public class CarbonReaderTest extends TestCase {
         Object[] row = (Object[]) reader.readNextRow();
         assert (row[0].equals("robot" + i));
         assert (row[2].equals(i));
-        assert (row[6].equals(17957));
+        assert (row[6].equals("2019-03-02"));
         Object[] arr = (Object[]) row[10];
         assert (arr[0].equals("Hello"));
         assert (arr[3].equals("Carbon"));
@@ -1839,7 +1834,7 @@ public class CarbonReaderTest extends TestCase {
         assertEquals(RowUtil.getLong(data, 3), Long.MAX_VALUE - i);
         assertEquals(RowUtil.getDouble(data, 4), ((double) i) / 2);
         assert (RowUtil.getBoolean(data, 5));
-        assertEquals(RowUtil.getInt(data, 6), 17957);
+        assertEquals(RowUtil.getString(data, 6), "2019-03-02");
         assert (RowUtil.getDecimal(data, 8).equals("12.35"));
         assert (RowUtil.getVarchar(data, 9).equals("varchar"));
 
@@ -1924,7 +1919,7 @@ public class CarbonReaderTest extends TestCase {
         Object[] data = (Object[]) reader.readNextRow();
 
         assert (RowUtil.getString(data, 0).equals("robot" + i));
-        assertEquals(RowUtil.getInt(data, 1), 17957);
+        assertEquals(RowUtil.getString(data, 1), "2019-03-02");
         assert (RowUtil.getVarchar(data, 3).equals("varchar"));
         Object[] arr = RowUtil.getArray(data, 4);
         assert (arr[0].equals("Hello"));
@@ -2017,7 +2012,7 @@ public class CarbonReaderTest extends TestCase {
         assert (RowUtil.getLong(data, 6) == Long.MAX_VALUE - i);
         assertEquals(RowUtil.getDouble(data, 7), ((double) i) / 2);
         assert (RowUtil.getBoolean(data, 8));
-        assertEquals(RowUtil.getInt(data, 1), 17957);
+        assertEquals(RowUtil.getString(data, 1), "2019-03-02");
         assert (RowUtil.getDecimal(data, 9).equals("12.35"));
         assert (RowUtil.getString(data, 3).equals("varchar"));
         assertEquals(RowUtil.getByte(data, 10), new Byte(String.valueOf(i)));
@@ -2102,7 +2097,7 @@ public class CarbonReaderTest extends TestCase {
 
           Object[] data = (Object[]) batch[j];
           assert (RowUtil.getString(data, 0).equals("robot" + i));
-          assertEquals(RowUtil.getInt(data, 1), 17957);
+          assertEquals(RowUtil.getString(data, 1), "2019-03-02");
           assert (RowUtil.getVarchar(data, 3).equals("varchar"));
           Object[] arr = RowUtil.getArray(data, 4);
           assert (arr[0].equals("Hello"));
@@ -2196,7 +2191,7 @@ public class CarbonReaderTest extends TestCase {
 
           Object[] data = (Object[]) batch[j];
           assert (RowUtil.getString(data, 0).equals("robot" + i));
-          assertEquals(RowUtil.getInt(data, 1), 17957);
+          assertEquals(RowUtil.getString(data, 1), "2019-03-02");
           assert (RowUtil.getVarchar(data, 3).equals("varchar"));
           assertEquals(RowUtil.getShort(data, 4), i);
           assertEquals(RowUtil.getInt(data, 5), i);
@@ -2584,7 +2579,7 @@ public class CarbonReaderTest extends TestCase {
         Object[] data = (Object[]) reader.readNextRow();
 
         assert (RowUtil.getString(data, 0).equals("robot" + i));
-        assertEquals(RowUtil.getInt(data, 1), 17957);
+        assertEquals(RowUtil.getString(data, 1), "2019-03-02");
         Assert.assertEquals(new String(value), new String(RowUtil.getBinary(data, 3)));
         assert (RowUtil.getVarchar(data, 4).equals("varchar"));
         Object[] arr = RowUtil.getArray(data, 5);

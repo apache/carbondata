@@ -173,7 +173,6 @@ public class CarbonIUD {
     RecordWriter<NullWritable, ObjectArrayWritable> deleteDeltaWriter =
         CarbonTableOutputFormat.getDeleteDeltaRecordWriter(path);
     ObjectArrayWritable writable = new ObjectArrayWritable();
-
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
       writable.set(Arrays.copyOfRange(row, row.length - 1, row.length));

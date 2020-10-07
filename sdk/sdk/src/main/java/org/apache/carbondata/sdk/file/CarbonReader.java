@@ -18,6 +18,8 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +27,14 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
@@ -109,7 +118,45 @@ public class CarbonReader<T> {
    */
   public T readNextRow() throws IOException, InterruptedException {
     validateReader();
-    return currentReader.getCurrentValue();
+    T row = currentReader.getCurrentValue();
+    // For CarbonRow date and timestamp are already in their correct form
+    if (row instanceof CarbonRow) {
+      return row;
+    }
+    return formatDateAndTimeStamp((Object []) row);
+  }
+
+  public T formatDateAndTimeStamp(Object[] row) {
+    List<ProjectionDimension> dimensions = ((AbstractRecordReader) currentReader)
+            .getQueryModel().getProjectionDimensions();
+    String carbonDateFormat = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT);
+    if (carbonDateFormat == null) {
+      carbonDateFormat = CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT;
+    }
+    SimpleDateFormat dateFormat = new SimpleDateFormat(carbonDateFormat);
+    String carbonTimeStampFormat = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
+    if (carbonTimeStampFormat  == null) {
+      carbonTimeStampFormat  = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT;
+    }
+    SimpleDateFormat timeStampFormat = new SimpleDateFormat(carbonTimeStampFormat);
+    for (ProjectionDimension dimension : dimensions) {
+      ColumnSchema columnSchema = dimension.getDimension().getColumnSchema();
+      if (columnSchema == null) {
+        continue;
+      }
+      DataType dataType = columnSchema.getDataType();
+      if (dataType == DataTypes.DATE) {
+        row[dimension.getOrdinal()] = dateFormat
+                .format(new Date(DateDirectDictionaryGenerator.MILLIS_PER_DAY
+                        * (int)row[dimension.getOrdinal()]));
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        row[dimension.getOrdinal()] = timeStampFormat
+                .format(new Date((long)row[dimension.getOrdinal()] / 1000));
+      }
+    }
+    return (T)row;
   }
 
   /**
@@ -122,7 +169,11 @@ public class CarbonReader<T> {
       if (batchValue == null) {
         return null;
       } else {
-        return batchValue.toArray();
+        Object[] rows =  batchValue.toArray();
+        for (Object row : rows) {
+          row = formatDateAndTimeStamp((Object[]) row);
+        }
+        return rows;
       }
     } else if (currentReader instanceof CarbonVectorizedRecordReader) {
       int batch = Integer.parseInt(CarbonProperties.getInstance()
@@ -131,7 +182,7 @@ public class CarbonReader<T> {
       batchRows = new Object[batch];
       int sum = 0;
       for (int i = 0; i < batch; i++) {
-        batchRows[i] = currentReader.getCurrentValue();
+        batchRows[i] = formatDateAndTimeStamp((Object[]) currentReader.getCurrentValue());
         sum++;
         if (i != batch - 1) {
           if (!hasNext()) {
