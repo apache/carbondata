@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.hadoop.api;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +28,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
 
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -576,7 +574,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
         String blockName;
         for (String tuple : tupleId) {
           blockName = CarbonUpdateUtil.getBlockName(
-              (tuple.split(Pattern.quote(File.separator))[TupleIdEnum.BLOCK_ID.getTupleIdIndex()]));
+              (tuple.split(CarbonCommonConstants.FILE_SEPARATOR)
+                      [TupleIdEnum.BLOCK_ID.getTupleIdIndex()]));
 
           if (!blockToDeleteDeltaBlockMapping.containsKey(blockName)) {
             blockDetails = new DeleteDeltaBlockDetails(blockName);

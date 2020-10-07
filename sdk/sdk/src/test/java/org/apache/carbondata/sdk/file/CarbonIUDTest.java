@@ -22,6 +22,7 @@ import java.io.FilenameFilter;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -31,6 +32,7 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 
 import org.apache.avro.generic.GenericData;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -68,6 +70,50 @@ public class CarbonIUDTest {
       i++;
     }
     Assert.assertEquals(i, 2);
+    reader.close();
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testUpdateOnDateType() throws Exception {
+    String path = "./testWriteFiles";
+    CarbonProperties.getInstance()
+            .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                    CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+            .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+                    CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+    FileUtils.deleteDirectory(new File(path));
+    Field[] fields = new Field[3];
+    fields[0] = new Field("intField", DataTypes.INT);
+    fields[1] = new Field("dateField", DataTypes.DATE);
+    fields[2] = new Field("timeField", DataTypes.TIMESTAMP);
+    CarbonWriter writer = CarbonWriter.builder()
+            .outputPath(path)
+            .withCsvInput(new Schema(fields))
+            .writtenBy("IUDTest")
+            .build();
+    for (int i = 0; i < 10; i++) {
+      String[] row2 = new String[]{
+              String.valueOf(i % 10000),
+              "2019-03-02",
+              "2019-02-12 03:03:34",
+      };
+      writer.write(row2);
+    }
+    writer.close();
+    CarbonIUD.getInstance().update(path, "intField", "0", "intField", "20").commit();
+    CarbonReader reader =
+            CarbonReader.builder(path).projection(new String[] { "intField", "dateField", "timeField" })
+                    .build();
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert ((int) row[0] != 0);
+      assert (row[1].equals("2019-03-02"));
+      assert (row[2].equals("2019-02-12 03:03:34"));
+      i++;
+    }
+    Assert.assertEquals(i, 10);
     reader.close();
     FileUtils.deleteDirectory(new File(path));
   }

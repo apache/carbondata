@@ -19,6 +19,7 @@ package org.apache.carbondata.sdk.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +36,15 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.Float4Vector;
 import org.apache.arrow.vector.SmallIntVector;
+import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.assertArrayEquals;
 
 public class ArrowCarbonReaderTest extends TestCase {
 
@@ -115,6 +119,16 @@ public class ArrowCarbonReaderTest extends TestCase {
       // validate float column
       for (int i = 0; i < vectorSchemaRoot.getRowCount(); i++) {
         assertEquals(((Float4Vector)fieldVectors.get(12)).get(i), (float) 1.23);
+      }
+      // validate date column
+      for (int i = 0; i < vectorSchemaRoot.getRowCount(); i++) {
+        assertArrayEquals(((VarCharVector)fieldVectors.get(1)).get(i),
+                "2019-03-02".getBytes((StandardCharsets.UTF_8)));
+      }
+      // validate timestamp column
+      for (int i = 0; i < vectorSchemaRoot.getRowCount(); i++) {
+        assertArrayEquals(((VarCharVector)fieldVectors.get(2)).get(i),
+                "2019-02-12 03:03:34".getBytes((StandardCharsets.UTF_8)));
       }
       arrowRecordBatch.close();
       vectorSchemaRoot.close();

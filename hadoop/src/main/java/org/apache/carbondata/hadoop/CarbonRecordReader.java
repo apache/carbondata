@@ -118,6 +118,11 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   }
 
   @Override
+  public QueryModel getQueryModel() {
+    return queryModel;
+  }
+
+  @Override
   public boolean nextKeyValue() {
     return carbonIterator.hasNext();
   }

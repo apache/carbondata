@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.hadoop;
 
+import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
@@ -41,4 +42,6 @@ public abstract class AbstractRecordReader<T> extends RecordReader<Void, T> {
       recorder.recordStatistics(queryStatistic);
     }
   }
+
+  public abstract QueryModel getQueryModel();
 }
