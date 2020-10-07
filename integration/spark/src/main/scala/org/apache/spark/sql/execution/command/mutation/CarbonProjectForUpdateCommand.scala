@@ -217,14 +217,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
       case e: HorizontalCompactionException =>
         LOGGER.error(
           "Update operation passed. Exception in Horizontal Compaction. Please check logs." + e)
-        // In case of failure , clean all related delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
 
       case e: Exception =>
         LOGGER.error("Exception in update operation", e)
-        // ****** start clean up.
-        // In case of failure , clean all related delete delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, currentTime + "")
 
         // *****end clean up.
         if (null != e.getMessage) {

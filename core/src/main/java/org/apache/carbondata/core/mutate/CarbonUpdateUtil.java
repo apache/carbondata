@@ -353,41 +353,6 @@ public class CarbonUpdateUtil {
   }
 
   /**
-   * This will handle the clean up cases if the update fails.
-   *
-   * @param table
-   * @param timeStamp
-   */
-  public static void cleanStaleDeltaFiles(CarbonTable table, final String timeStamp) {
-
-    AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
-    String partitionDir = CarbonTablePath.getPartitionDir(identifier.getTablePath());
-    CarbonFile file =
-            FileFactory.getCarbonFile(partitionDir);
-    if (!file.exists()) {
-      return;
-    }
-    for (CarbonFile eachDir : file.listFiles()) {
-      // for each dir check if the file with the delta timestamp is present or not.
-      CarbonFile[] toBeDeleted = eachDir.listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile file) {
-          String fileName = file.getName();
-          return (fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_DELTA_FILE_EXT)
-                  || fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
-                  || fileName.endsWith(timeStamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT));
-        }
-      });
-      // deleting the files of a segment.
-      try {
-        CarbonUtil.deleteFoldersAndFilesSilent(toBeDeleted);
-      } catch (IOException | InterruptedException e) {
-        LOGGER.error("Exception in deleting the delta files." + e);
-      }
-    }
-  }
-
-  /**
    * returns timestamp as long value
    *
    * @param timestamp
@@ -614,7 +579,7 @@ public class CarbonUpdateUtil {
         }
         // handle cleanup of merge index files and data files after small files merge happened for
         // SI table
-        cleanUpDataFilesAfterSmallFilesMergeForSI(table, segment);
+        cleanUpDataFilesAfterSmallFilesMergeForSI(table, segment, forceDelete);
       }
     }
     String UUID = String.valueOf(System.currentTimeMillis());
@@ -694,7 +659,7 @@ public class CarbonUpdateUtil {
    * refer {@link org.apache.spark.sql.secondaryindex.rdd.CarbonSIRebuildRDD}
    */
   private static void cleanUpDataFilesAfterSmallFilesMergeForSI(CarbonTable table,
-      LoadMetadataDetails segment) throws IOException {
+      LoadMetadataDetails segment, boolean forceDelete) throws IOException {
     if (table.isIndexTable()) {
       String segmentPath = CarbonTablePath
           .getSegmentPath(table.getAbsoluteTableIdentifier().getTablePath(),
@@ -719,7 +684,7 @@ public class CarbonUpdateUtil {
             && Long.parseLong(fileTimestamp) < startTimeStampFinal) {
           deleteFile = true;
         }
-        if (deleteFile) {
+        if (deleteFile && forceDelete) {
           // delete the files and folders.
           try {
             LOGGER.info("Deleting the invalid file : " + file.getName());
@@ -821,7 +786,7 @@ public class CarbonUpdateUtil {
       if (tableUpdateStatusFilename.endsWith(".write")) {
         long tableUpdateStatusFileTimeStamp = Long.parseLong(
             CarbonTablePath.DataFileUtil.getTimeStampFromFileName(tableUpdateStatusFilename));
-        if (isMaxQueryTimeoutExceeded(tableUpdateStatusFileTimeStamp)) {
+        if (isMaxQueryTimeoutExceeded(tableUpdateStatusFileTimeStamp) && forceDelete) {
           isDeleted = deleteInvalidFiles(invalidFile);
         }
       }

@@ -19,10 +19,6 @@ package org.apache.carbondata.processing.loading;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -83,57 +79,6 @@ public class TableProcessingOperations {
           // so it should stop immediately.
           if (details == null || details.length == 0) {
             return;
-          }
-          Set<String> metadataSet = new HashSet<>(details.length);
-          for (LoadMetadataDetails detail : details) {
-            metadataSet.add(detail.getLoadName());
-          }
-          List<CarbonFile> staleSegments = new ArrayList<>(allSegments.length);
-          Set<String> staleSegmentsId = new HashSet<>(allSegments.length);
-          for (CarbonFile segment : allSegments) {
-            String segmentName = segment.getName();
-            // check segment folder pattern
-            if (segmentName.startsWith(CarbonTablePath.SEGMENT_PREFIX)) {
-              String[] parts = segmentName.split(CarbonCommonConstants.UNDERSCORE);
-              if (parts.length == 2) {
-                boolean isOriginal = !parts[1].contains(".");
-                if (isCompactionFlow) {
-                  // in compaction flow,
-                  // it should be merged segment and segment metadata doesn't exists
-                  if (!isOriginal && !metadataSet.contains(parts[1])) {
-                    staleSegments.add(segment);
-                    staleSegmentsId.add(parts[1]);
-                  }
-                } else {
-                  // in loading flow,
-                  // it should be original segment and segment metadata doesn't exists
-                  if (isOriginal && !metadataSet.contains(parts[1])) {
-                    staleSegments.add(segment);
-                    staleSegmentsId.add(parts[1]);
-                  }
-                }
-              }
-            }
-          }
-          // delete segment folders one by one
-          for (CarbonFile staleSegment : staleSegments) {
-            try {
-              CarbonUtil.deleteFoldersAndFiles(staleSegment);
-            } catch (IOException | InterruptedException e) {
-              LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
-            }
-          }
-          if (staleSegments.size() > 0) {
-            // get the segment metadata path
-            String segmentFilesLocation =
-                CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath());
-            // delete the segment metadata files also
-            CarbonFile[] staleSegmentMetadataFiles = FileFactory.getCarbonFile(segmentFilesLocation)
-                .listFiles(file -> (staleSegmentsId
-                    .contains(file.getName().split(CarbonCommonConstants.UNDERSCORE)[0])));
-            for (CarbonFile staleSegmentMetadataFile : staleSegmentMetadataFiles) {
-              staleSegmentMetadataFile.delete();
-            }
           }
         } else {
           String errorMessage =
