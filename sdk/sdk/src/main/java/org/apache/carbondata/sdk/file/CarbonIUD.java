@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +36,7 @@ import java.util.stream.Stream;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -155,7 +158,15 @@ public class CarbonIUD {
     Schema schema = CarbonSchemaReader.readSchema(indexFiles.get(0)).asOriginOrder();
     Field[] fields = schema.getFields();
     String[] projectionColumns = new String[fields.length + 1];
+    List<Integer> dateIndexes = new ArrayList<>();
+    List<Integer> timeStampIndexes = new ArrayList<>();
     for (int i = 0; i < fields.length; i++) {
+      if (fields[i].getDataType() == DataTypes.DATE) {
+        dateIndexes.add(i);
+      }
+      if (fields[i].getDataType() == DataTypes.TIMESTAMP) {
+        timeStampIndexes.add(i);
+      }
       projectionColumns[i] = (fields[i].getFieldName());
     }
     projectionColumns[projectionColumns.length - 1] =
@@ -173,10 +184,16 @@ public class CarbonIUD {
     RecordWriter<NullWritable, ObjectArrayWritable> deleteDeltaWriter =
         CarbonTableOutputFormat.getDeleteDeltaRecordWriter(path);
     ObjectArrayWritable writable = new ObjectArrayWritable();
-
+    long day = 24L * 3600 * 1000;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
       writable.set(Arrays.copyOfRange(row, row.length - 1, row.length));
+      for (Integer dateIndex : dateIndexes) {
+        row[dateIndex] = new Date((day * ((int) row[dateIndex])));
+      }
+      for (Integer timeStampIndex : timeStampIndexes) {
+        row[timeStampIndex] = new Timestamp((long) row[timeStampIndex] / 1000);
+      }
       for (Map.Entry<String, String> column : updatedColumnToValueMapping.entrySet()) {
         row[getColumnIndex(fields, column.getKey())] = column.getValue();
       }

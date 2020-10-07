@@ -73,6 +73,43 @@ public class CarbonIUDTest {
   }
 
   @Test
+  public void testUpdateOnDateType() throws Exception {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+    Field[] fields = new Field[3];
+    fields[0] = new Field("intField", DataTypes.INT);
+    fields[1] = new Field("dateField", DataTypes.DATE);
+    fields[2] = new Field("timeField", DataTypes.TIMESTAMP);
+    CarbonWriter writer = CarbonWriter.builder()
+            .outputPath(path)
+            .withCsvInput(new Schema(fields))
+            .writtenBy("IUDTest")
+            .build();
+    for (int i = 0; i < 10; i++) {
+      String[] row2 = new String[]{
+              String.valueOf(i % 10000),
+              "2019-03-02",
+              "2019-02-12 03:03:34",
+      };
+      writer.write(row2);
+    }
+    writer.close();
+    CarbonIUD.getInstance().update(path, "intField", "0", "intField", "20").commit();
+    CarbonReader reader =
+            CarbonReader.builder(path).projection(new String[] { "intField", "dateField", "timeField" })
+                    .build();
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert ((int) row[0] != 0);
+      i++;
+    }
+    Assert.assertEquals(i, 10);
+    reader.close();
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
   public void testDeleteWithConditionalExpressions() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));

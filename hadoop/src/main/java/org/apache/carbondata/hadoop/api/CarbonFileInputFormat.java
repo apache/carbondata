@@ -279,7 +279,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   private String[] getDeleteDeltaFiles(String segmentFilePath, List<String> allDeleteDeltaFiles) {
     List<String> deleteDeltaFiles = new ArrayList<>();
     String segmentFileName = null;
-    String[] pathElements = segmentFilePath.split(Pattern.quote(File.separator));
+    segmentFilePath = segmentFilePath.replace("\\", "/");
+    String[] pathElements = segmentFilePath.split(CarbonCommonConstants.FILE_SEPARATOR);
     if (ArrayUtils.isNotEmpty(pathElements)) {
       segmentFileName = pathElements[pathElements.length - 1];
     }
