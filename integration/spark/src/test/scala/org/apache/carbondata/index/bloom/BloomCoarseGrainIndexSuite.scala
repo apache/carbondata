@@ -17,12 +17,14 @@
 
 package org.apache.carbondata.index.bloom
 
-import java.io.{File, PrintWriter}
+import java.io.{BufferedWriter, File, FileWriter, PrintWriter}
 import java.util.UUID
 
+import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
-import org.apache.spark.sql.{DataFrame, Row}
+import au.com.bytecode.opencsv.CSVWriter
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -680,13 +682,16 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          """.stripMargin)
 
     // load data into table (segment1)
-    sql(
-      s"""
-         | INSERT INTO TABLE $bloomSampleTable VALUES
-         | (100,'name0','city0',10,'s10','s20','s30','s40','s50','s60','s70','s80',0,'S01','S02'),
-         | (101,'name1','city1',11,'s11','s21','s31','s41','s51','s61','s71','s81',4,'S11','S12'),
-         | (102,'name2','city2',12,'s12','s22','s32','s42','s52','s62','s72','s82',5,'S21','S22')
-           """.stripMargin)
+    val csv = s"$resourcesPath/bloomCoarseGrainIndexSuiteLoad.csv"
+    val rows1 = new ListBuffer[Array[String]]
+    // scalastyle:off lineLength
+    rows1 += Array("100", "name0", "city0", "10", "s10", "s20", "s30", "s40", "s50", "s60", "s70", "s80", "0", "S01", "S02")
+    rows1 += Array("101", "name1", "city1", "11", "s11", "s21", "s31", "s41", "s51", "s61", "s71", "s81", "4", "S11", "S12")
+    rows1 += Array("102", "name2", "city2", "12", "s12", "s22", "s32", "s42", "s52", "s62", "s72", "s82", "5", "S21", "S22")
+    // scalastyle:on lineLength
+    createCSV(rows1, csv)
+    sql(s"""LOAD DATA LOCAL INPATH '$csv' INTO TABLE $bloomSampleTable OPTIONS('header'='false')"""
+      .stripMargin)
 
     // check data after columns added
     var res = sql(
@@ -707,14 +712,16 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       """.stripMargin)
 
     // load data into table (segment2)
-    sql(
-      s"""
-         | INSERT INTO TABLE $bloomSampleTable VALUES
-         | (100,'name0','city0',10,'s10','s20','s30','s40','s50','s60','s70','s80',1,'S01','S02'),
-         | (101,'name1','city1',11,'s11','s21','s31','s41','s51','s61','s71','s81',2,'S11','S12'),
-         | (102,'name2','city1',12,'s12','s22','s32','s42','s52','s62','s72','s82',3,'S21','S22')
-           """.stripMargin)
-
+    val rows2 = new ListBuffer[Array[String]]
+    // scalastyle:off lineLength
+    rows2 += Array("100", "name0", "city0", "10", "s10", "s20", "s30", "s40", "s50", "s60", "s70", "s80", "1", "S01", "S02")
+    rows2 += Array("101", "name1", "city1", "11", "s11", "s21", "s31", "s41", "s51", "s61", "s71", "s81", "2", "S11", "S12")
+    rows2 += Array("102", "name2", "city2", "12", "s12", "s22", "s32", "s42", "s52", "s62", "s72", "s82", "3", "S21", "S22")
+    // scalastyle:on lineLength
+    createCSV(rows2, csv)
+    sql(s"""LOAD DATA LOCAL INPATH '$csv' INTO TABLE $bloomSampleTable OPTIONS('header'='false')"""
+      .stripMargin)
+    deleteFile(csv)
     var explainString = sql(
       s"""
          | explain SELECT id, name, num1, dictString
@@ -985,6 +992,19 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
         CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+  }
+
+  def createCSV(rows: ListBuffer[Array[String]], csvPath: String): Unit = {
+    val out = new BufferedWriter(new FileWriter(csvPath))
+    val writer: CSVWriter = new CSVWriter(out, ',', CSVWriter.NO_QUOTE_CHARACTER)
+    try {
+      for (row <- rows) {
+        writer.writeNext(row)
+      }
+    } finally {
+      out.close()
+      writer.close()
+    }
   }
 
   private def createFile(fileName: String, line: Int = 10000, start: Int = 0) = {

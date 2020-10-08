@@ -258,7 +258,7 @@ class NewDataFrameLoaderRDD[K, V](
     @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    prev: DataLoadCoalescedRDD[_],
+    prev: CarbonRDD[_],
     segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
     ) extends CarbonRDD[(K, V)](ss, prev) {
 
