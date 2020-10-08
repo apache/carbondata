@@ -30,7 +30,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, TaskContext}
-import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, RDD}
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, DataLoadWrapperRDD, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
@@ -390,6 +390,12 @@ object CarbonDataRDDFactory {
                 convertedRdd,
                 carbonLoadModel,
                 hadoopConf,
+                segmentMetaDataAccumulator)
+            } else if (sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
+              loadDataFrameForNoSort(sqlContext,
+                None,
+                Some(convertedRdd),
+                carbonLoadModel,
                 segmentMetaDataAccumulator)
             } else {
               loadDataFrame(sqlContext,
@@ -1107,6 +1113,46 @@ object CarbonDataRDDFactory {
             scanResultRDD.get,
             nodes.toArray.distinct)
         }
+      new NewDataFrameLoaderRDD(
+        sqlContext.sparkSession,
+        new DataLoadResultImpl(),
+        carbonLoadModel,
+        newRdd,
+        segmentMetaDataAccumulator
+      ).collect()
+    } catch {
+      case ex: Exception =>
+        LOGGER.error("load data frame failed", ex)
+        throw ex
+    }
+  }
+
+  /**
+   * Execute load process to load from input DataFrame
+   *
+   * @param sqlContext sql context
+   * @param dataFrame optional DataFrame for insert
+   * @param scanResultRDD optional internal row rdd for direct insert
+   * @param carbonLoadModel load model
+   * @param segmentMetaDataAccumulator segment metadata accumulator
+   * @return Return an array of tuple of uniqueLoadStatusId and tuple of LoadMetadataDetails and
+   *         ExecutionErrors
+   */
+  def loadDataFrameForNoSort(
+      sqlContext: SQLContext,
+      dataFrame: Option[DataFrame],
+      scanResultRDD: Option[RDD[InternalRow]],
+      carbonLoadModel: CarbonLoadModel,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
+  ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+    try {
+      val newRdd = if (dataFrame.isDefined) {
+        new DataLoadWrapperRDD[Row](sqlContext.sparkSession, dataFrame.get.rdd)
+      } else {
+        // For internal row, no need of converter and re-arrange step,
+        carbonLoadModel.setLoadWithoutConverterWithoutReArrangeStep(true)
+        new DataLoadWrapperRDD[InternalRow](sqlContext.sparkSession, scanResultRDD.get)
+      }
       new NewDataFrameLoaderRDD(
         sqlContext.sparkSession,
         new DataLoadResultImpl(),

@@ -89,7 +89,7 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("insert into table1 select 'xx', '2', 'china' union all select 'xx', '1', 'india'")
     sql("create index table1_index on table table1(id, country) as 'carbondata' properties" +
         "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
-    checkAnswerWithoutSort(sql("select id, country from table1_index"),
+    checkAnswer(sql("select id, country from table1_index"),
       Seq(Row("1", "india"), Row("2", "china")))
     // check for valid sort_scope
     checkExistence(sql("describe formatted table1_index"), true, "Sort Scope global_sort")
@@ -112,7 +112,7 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("create index table11_index on table table11(id, country) as 'carbondata' properties" +
         "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
     sql("insert into table11 select 'xx', '2', 'china' union all select 'xx', '1', 'india'")
-    checkAnswerWithoutSort(sql("select id, country from table11_index"),
+    checkAnswer(sql("select id, country from table11_index"),
       Seq(Row("1", "india"), Row("2", "china")))
     // check for valid sort_scope
     checkExistence(sql("describe formatted table11_index"), true, "Sort Scope global_sort")
@@ -128,7 +128,7 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
         "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
     sql("insert into partition_carbon_table select 'xx', '2', 'china', '2020' " +
         "union all select 'xx', '1', 'india', '2021'")
-    checkAnswerWithoutSort(sql("select id, country from partition_carbon_table_index"),
+    checkAnswer(sql("select id, country from partition_carbon_table_index"),
       Seq(Row("1", "india"), Row("2", "china")))
     // check for valid sort_scope
     checkExistence(sql("describe formatted partition_carbon_table_index"),
@@ -138,7 +138,7 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("create index partition_carbon_table_index on table partition_carbon_table(" +
         "id, country) as 'carbondata' properties" +
         "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
-    checkAnswerWithoutSort(sql("select id, country from partition_carbon_table_index"),
+    checkAnswer(sql("select id, country from partition_carbon_table_index"),
       Seq(Row("1", "india"), Row("2", "china")))
     // check for valid sort_scope
     checkExistence(sql("describe formatted partition_carbon_table_index"),
@@ -155,7 +155,7 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists complextable_index_1 on complextable")
     sql("create index complextable_index_1 on table complextable(country, name) " +
         "as 'carbondata' properties('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
-    checkAnswerWithoutSort(sql("select country,name from complextable_index_1"),
+    checkAnswer(sql("select country,name from complextable_index_1"),
       Seq(Row("china", "b"), Row("china", "v"), Row("india", "v"), Row("pak", "v"), Row("us", "b")))
     // check for valid sort_scope
     checkExistence(sql("describe formatted complextable_index_1"), true, "Sort Scope global_sort")

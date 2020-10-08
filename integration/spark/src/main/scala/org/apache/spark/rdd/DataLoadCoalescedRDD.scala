@@ -70,3 +70,33 @@ class DataLoadCoalescedRDD[T: ClassTag](
     partition.asInstanceOf[CoalescedRDDPartition].preferredLocation.toSeq
   }
 }
+
+class DataLoadWrapperRDD[T: ClassTag](@transient private val sparkSession: SparkSession,
+    @transient private var prev: RDD[T])
+  extends CarbonRDD[DataLoadPartitionWrap[T]](sparkSession, Nil) {
+
+  override def internalGetPartitions: Array[Partition] = {
+    prev.partitions
+  }
+
+  override def getDependencies: Seq[Dependency[_]] = {
+    Seq(new OneToOneDependency[T](prev))
+  }
+
+  override def clearDependencies() {
+    super.clearDependencies()
+    prev = null
+  }
+
+  override def internalCompute(split: Partition,
+      context: TaskContext): Iterator[DataLoadPartitionWrap[T]] = {
+    new Iterator[DataLoadPartitionWrap[T]] {
+      var first = false
+      override def hasNext: Boolean = !first
+      override def next: DataLoadPartitionWrap[T] = {
+        first = true
+        DataLoadPartitionWrap(firstParent[T], split)
+      }
+    }
+  }
+}
