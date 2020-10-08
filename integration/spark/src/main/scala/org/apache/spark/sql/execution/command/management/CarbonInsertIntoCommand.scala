@@ -171,8 +171,8 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
       if (indexToColumnMapping.length != logicalPartitionRelation.output.length) {
         throw new RuntimeException(" schema length doesn't match partition length")
       }
-      val isNotReArranged = indexToColumnMapping.exists {
-        case (index, cs) => !cs.getColumnName.equals(logicalPartitionRelation.output(index).name)
+      val isNotReArranged = indexToColumnMapping.zipWithIndex.exists {
+        case (cs, i) => !cs._2.getColumnName.equals(logicalPartitionRelation.output(i).name)
       }
       if (isNotReArranged) {
         // Re-arrange the catalog table schema and output for partition relation

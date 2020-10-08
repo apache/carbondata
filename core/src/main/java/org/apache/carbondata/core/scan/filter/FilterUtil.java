@@ -190,26 +190,25 @@ public final class FilterUtil {
         default:
           RowLevelFilterResolverImpl rowLevelFilterResolver =
               (RowLevelFilterResolverImpl) filterExpressionResolverTree;
-          // TODO: check this
-          //          if (rowLevelFilterResolver.getDimColEvaluatorInfoList().size() +
-          //          rowLevelFilterResolver
-          //              .getMsrColEvalutorInfoList().size() == 0) {
-          //            return new TrueFilterExecutor();
-          //          } else
-          if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
-            FilterExecutor filterExecutor =
-                ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
-                    .getFilterExecutor(filterExpressionResolverTree, segmentProperties);
-            if (filterExecutor != null) {
-              return filterExecutor;
+          if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
+              rowLevelFilterResolver, segmentProperties, minMaxCacheColumns, isStreamDataFile)) {
+            return new TrueFilterExecutor();
+          } else {
+            if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
+              FilterExecutor filterExecutor =
+                  ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
+                      .getFilterExecutor(filterExpressionResolverTree, segmentProperties);
+              if (filterExecutor != null) {
+                return filterExecutor;
+              }
             }
+            return new RowLevelFilterExecutorImpl(
+                rowLevelFilterResolver.getDimColEvaluatorInfoList(),
+                rowLevelFilterResolver.getMsrColEvalutorInfoList(),
+                rowLevelFilterResolver.getFilterExpresion(),
+                rowLevelFilterResolver.getTableIdentifier(), segmentProperties,
+                complexDimensionInfoMap);
           }
-          return new RowLevelFilterExecutorImpl(
-              rowLevelFilterResolver.getDimColEvaluatorInfoList(),
-              rowLevelFilterResolver.getMsrColEvalutorInfoList(),
-              rowLevelFilterResolver.getFilterExpresion(),
-              rowLevelFilterResolver.getTableIdentifier(),
-              segmentProperties, complexDimensionInfoMap);
       }
     }
     return new RowLevelFilterExecutorImpl(
@@ -325,10 +324,14 @@ public final class FilterUtil {
               minMaxCacheColumns, true, isStreamDataFile);
     } else {
       columnResolvedFilterInfo = filterExpressionResolverTree.getDimColResolvedFilterInfo();
-      if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
-        replaceCurrentNodeWithTrueFilter =
-            checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
-                minMaxCacheColumns, false, isStreamDataFile);
+      if (columnResolvedFilterInfo.getDimension() == null) {
+        replaceCurrentNodeWithTrueFilter = true;
+      } else {
+        if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+          replaceCurrentNodeWithTrueFilter =
+              checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
+                  minMaxCacheColumns, false, isStreamDataFile);
+        }
       }
     }
     return replaceCurrentNodeWithTrueFilter;

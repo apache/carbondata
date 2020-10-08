@@ -168,11 +168,12 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
   }
 
   protected void fillPartitionData(String blockId, Object[] row) {
+    String newBlockId = blockId.replaceAll("#" , "/");
     for (ProjectionColumn partitionColumn : projectionPartitionColumns) {
-      int partitionIndex = blockId.indexOf(partitionColumn.getColumnName() + "=");
-      row[partitionColumn.getOrdinal()] = DataTypeUtil.getDataBasedOnDataType(blockId
+      int partitionIndex = newBlockId.indexOf(partitionColumn.getColumnName() + "=");
+      row[partitionColumn.getOrdinal()] = DataTypeUtil.getDataBasedOnDataType(newBlockId
           .substring(partitionIndex + partitionColumn.getColumnName().length() + 1,
-              blockId.indexOf("/", partitionIndex)), partitionColumn.getDataType());
+              newBlockId.indexOf("/", partitionIndex)), partitionColumn.getDataType());
     }
   }
 
