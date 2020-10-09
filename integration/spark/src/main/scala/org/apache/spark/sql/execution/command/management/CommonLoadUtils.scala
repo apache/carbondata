@@ -461,8 +461,12 @@ object CommonLoadUtils {
       val isPartitionColumn = catalogTable.partitionColumnNames.contains(attr.name)
       // Update attribute datatypes in case of dictionary columns, in case of dictionary columns
       // datatype is always int
-      val column = table.getColumnByName(attr.name)
-      val updatedDataType = if (!isPartitionColumn && column.getDataType ==
+      val column = if (isPartitionColumn) {
+        table.getPartitionColumn(attr.name)
+      } else {
+        table.getColumnByName(attr.name)
+      }
+      val updatedDataType = if (column.getDataType ==
                                 org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
         IntegerType
       } else {

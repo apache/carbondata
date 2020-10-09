@@ -310,7 +310,7 @@ object CarbonScalaUtil {
       } else {
         pValue
       }
-      val carbonColumn = table.getColumnByName(col.toLowerCase)
+      val carbonColumn = table.getPartitionColumn(col.toLowerCase)
       try {
         if (value.equals(hiveDefaultPartition)) {
           (col.toLowerCase, value)
