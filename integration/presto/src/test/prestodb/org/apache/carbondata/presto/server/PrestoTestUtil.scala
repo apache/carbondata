@@ -114,4 +114,60 @@ object PrestoTestUtil {
       }
     }
   }
+
+  // this method depends on prestodb jdbc PrestoArray class
+  def validateArrayOfPrimitiveTypeDataWithLocalDict(actualResult: List[Map[String, Any]],
+      longChar: String): Unit = {
+    assert(actualResult.size == 3)
+    for (i <- 0 to actualResult.size - 1) {
+      val rowId = actualResult(i)("stringfield")
+      if (rowId == "row1") {
+        val column2 = actualResult(i)("arraystring")
+          .asInstanceOf[PrestoArray]
+          .getArray()
+          .asInstanceOf[Array[Object]]
+        assert(column2(0) == null)
+
+        val column3 = actualResult(i)("arraydate")
+          .asInstanceOf[PrestoArray]
+          .getArray()
+          .asInstanceOf[Array[Object]]
+        assert(column3(0) == null)
+
+        val column4 = actualResult(i)("arrayvarchar")
+          .asInstanceOf[PrestoArray]
+          .getArray()
+          .asInstanceOf[Array[Object]]
+        assert(column4(0) == null)
+      } else if (rowId == "row2") {
+        val column2 = actualResult(i)("arraystring")
+          .asInstanceOf[PrestoArray]
+          .getArray()
+          .asInstanceOf[Array[Object]]
+        assert(column2.sameElements(Array("India", "Japan", "India")))
+
+        val column3 = actualResult(i)("arraydate")
+          .asInstanceOf[PrestoArray]
+          .getArray()
+          .asInstanceOf[Array[Object]]
+        assert(column3.sameElements(Array("2019-03-02", "2020-03-02")))
+      } else if (rowId == "row3") {
+        val column2 = actualResult(i)("arraystring")
+          .asInstanceOf[PrestoArray]
+          .getArray()
+          .asInstanceOf[Array[Object]]
+        assert(column2.sameElements(Array("Iceland")))
+
+        val column3 = actualResult(i)("arraydate")
+          .asInstanceOf[PrestoArray]
+          .getArray()
+          .asInstanceOf[Array[Object]]
+        assert(column3.sameElements(Array("2019-03-02",
+          "2020-03-02",
+          "2021-04-02",
+          "2021-04-03",
+          "2021-04-02")))
+      }
+    }
+  }
 }

@@ -42,6 +42,7 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
@@ -296,6 +297,13 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
         }
       }
       BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
+      // Store local dictionary from rawColumnPage so it can be used while filling the vector
+      if (vectorInfo != null && !vectorInfo.vectorStack.isEmpty()
+          && rawColumnPage.getLocalDictionary() != null) {
+        ((CarbonColumnVectorImpl) (vectorInfo.vectorStack.peek().getColumnVector()))
+            .setLocalDictionary(rawColumnPage.getLocalDictionary());
+      }
+
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, dataOffset,
           null != rawColumnPage.getLocalDictionary(), vectorInfo, nullBitSet, reusableDataBuffer);
       if (decodedPage != null) {
