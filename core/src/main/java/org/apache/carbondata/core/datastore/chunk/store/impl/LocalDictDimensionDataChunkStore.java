@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -64,6 +65,14 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
     int rowsNum = dataLength / columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
+    if (vector.getType().isComplexType()) {
+      vector = vectorInfo.vectorStack.peek();
+      rowsNum = dataLength;
+      CarbonColumnVector sliceVector = vector.getColumnVector();
+      // use rowsNum as positionCount in order to create dictionary block
+      sliceVector.setPositionCount(rowsNum);
+      sliceVector.setIsLocalDictEnabledForComplextype(true);
+    }
     if (!dictionary.isDictionaryUsed()) {
       vector.setDictionary(dictionary);
       dictionary.setDictionaryUsed();
@@ -77,7 +86,11 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
             vectorInfo.deletedRows, false, false);
     for (int i = 0; i < rowsNum; i++) {
       int surrogate = CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-      if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+      // If complex string primitive value is null then surrogate will be unequal to
+      // MEMBER_DEFAULT_VAL_SURROGATE_KEY. Therefore check should be using MEMBER_DEFAULT_VAL_ARRAY
+      if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY || Arrays
+          .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY,
+              dictionary.getDictionaryValue(surrogate))) {
         vector.putNull(i);
         dictionaryVector.putNull(i);
       } else {

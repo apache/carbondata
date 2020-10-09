@@ -81,6 +81,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private List<Integer> childElementsForEachRow;
 
+  private CarbonDictionary localDictionary;
+
   public CarbonColumnVectorImpl(int batchSize, DataType dataType) {
     this.batchSize = batchSize;
     nullBytes = new BitSet(batchSize);
@@ -154,6 +156,14 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       childElementsForEachRow.add(elements);
     }
     setNumberOfChildElementsInEachRow(childElementsForEachRow);
+  }
+
+  public CarbonDictionary getLocalDictionary() {
+    return localDictionary;
+  }
+
+  public void setLocalDictionary(CarbonDictionary localDictionary) {
+    this.localDictionary = localDictionary;
   }
 
   @Override

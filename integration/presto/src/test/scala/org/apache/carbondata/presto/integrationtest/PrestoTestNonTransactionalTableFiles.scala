@@ -648,4 +648,133 @@ class PrestoTestNonTransactionalTableFiles
     FileUtils.deleteDirectory(new File(writerPathComplex))
   }
 
+  test("test Array with local dictionary") {
+    val writerPathComplex = storePath + "/sdk_output/files7"
+    import scala.collection.JavaConverters._
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+    prestoServer.execute("drop table if exists sdk_output.files7")
+    prestoServer
+      .execute(
+        "create table sdk_output.files7(arrayString ARRAY(varchar), arrayDate ARRAY(DATE), " +
+        "arrayVarchar ARRAY(varchar), stringField varchar ) with(format='CARBON') ")
+
+    val field1 = List(new StructField("stringField", DataTypes.STRING))
+    val structType1 = new Field("arrayString", "array", field1.asJava)
+    val field2 = List(new StructField("dateField", DataTypes.DATE))
+    val structType2 = new Field("arrayDate", "array", field2.asJava)
+    val fields3 = List(new StructField("varcharField", DataTypes.VARCHAR))
+    val structType3 = new Field("arrayVarchar", "array", fields3.asJava)
+    val structType4 = new Field("stringField", DataTypes.STRING)
+
+    val longChar = RandomStringUtils.randomAlphabetic(33000)
+
+    try {
+      val options: util.Map[String, String] = Map("bAd_RECords_action" -> "FORCE",
+        "quotechar" -> "\"").asJava
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(writerPathComplex).withLoadOptions(options)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2).enableLocalDictionary(true)
+          .withCsvInput(new Schema(Array[Field](structType1,
+            structType2,
+            structType3,
+            structType4))).writtenBy("presto").build()
+
+      var array = Array[String](null,
+        null,
+        null,
+        "row1")
+      writer.write(array)
+      array = Array[String]("India" + "\001" + "Japan" + "\001" + "India",
+        "2019-03-02" + "\001" + "2020-03-02",
+        longChar,
+        "row2")
+      writer.write(array)
+      array = Array[String](
+        "Iceland",
+        "2019-03-02" + "\001" + "2020-03-02" + "\001" + "2021-04-02" + "\001" + "2021-04-03" +
+        "\001" + "2021-04-02",
+        longChar,
+        "row3")
+      writer.write(array)
+
+      writer.close()
+    } catch {
+      case e: Exception =>
+        assert(false)
+    }
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select * from files7 ")
+    PrestoTestUtil.validateArrayOfPrimitiveTypeDataWithLocalDict(actualResult, longChar)
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+  }
+
+  test("test Struct with local dictionary") {
+    import scala.collection.JavaConverters._
+    val writerPathComplex = storePath + "/sdk_output/files8"
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+    prestoServer.execute("drop table if exists sdk_output.files8")
+    prestoServer
+      .execute(
+        "create table sdk_output.files8(stringField varchar, structField ROW(stringChildField " +
+        "varchar, dateField date, longStringField varchar)) with(format='CARBON') ")
+    val longChar = RandomStringUtils.randomAlphabetic(33000)
+
+    val fields = List(new StructField("stringChildField", DataTypes.STRING),
+      new StructField("dateField", DataTypes.DATE),
+      new StructField("longStringField", DataTypes.VARCHAR)
+    )
+    val structType = Array(new Field("stringField", DataTypes.STRING), new Field
+    ("structField", "struct", fields.asJava))
+    try {
+      val options: util.Map[String, String] = Map("bAd_RECords_action" -> "FORCE",
+        "quotechar" -> "\"").asJava
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(writerPathComplex)
+          .uniqueIdentifier(System.nanoTime())
+          .withLoadOptions(options)
+          .withBlockSize(2)
+          .enableLocalDictionary(true)
+          .withCsvInput(new Schema(structType))
+          .writtenBy("presto")
+          .build()
+
+      val array1 = Array[String]("row1",
+        null,
+        null,
+        null)
+      val array2 = Array[String]("row2", "local dictionary"
+                                         + "\001" + "2019-03-02"
+                                         + "\001" + longChar)
+      writer.write(array1)
+      writer.write(array2)
+      writer.close()
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+      case _: Throwable => None
+    }
+
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select * from files8 ")
+    assert(actualResult.size == 2)
+
+    for (i <- 0 to 1) {
+      val row = actualResult(i)("stringfield")
+      val result = actualResult(i)("structfield").asInstanceOf[java.util.Map[String, Any]]
+      if (row == "row1") {
+        assert(result.get("stringchildfield") == null)
+        assert(result.get("datefield") == null)
+        assert(result.get("longStringField") == null)
+      }
+      else if (row == "row2") {
+        assert(result.get("stringchildfield") == "local dictionary")
+        assert(result.get("datefield") == "2019-03-02")
+        assert(result.get("longstringfield") == longChar)
+      }
+    }
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+
+  }
+
 }

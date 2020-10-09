@@ -137,9 +137,9 @@ public class ComplexTypeStreamReader extends CarbonColumnVectorImpl
       }
       // prepare ROW block
       Block rowBlock = RowBlock
-          .fromFieldBlocks(childBlocks.get(0).getPositionCount(), Optional.empty(),
+          .fromFieldBlocks(offsetVector.size(), Optional.empty(),
               childBlocks.toArray(new Block[0]));
-      for (int position = 0; position < childBlocks.get(0).getPositionCount(); position++) {
+      for (int position = 0; position < offsetVector.size(); position++) {
         type.writeObject(builder, rowBlock.getObject(position, Block.class));
       }
       for (CarbonColumnVector child : getChildrenVector()) {

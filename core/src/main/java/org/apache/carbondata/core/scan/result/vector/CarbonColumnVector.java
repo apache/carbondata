@@ -132,4 +132,18 @@ public interface CarbonColumnVector {
   default CarbonColumnVector getColumnVector() {
     return null;
   }
+
+  // Added default implementation for interface,
+  // to avoid implementing presto required functions for spark or core module.
+  default void setPositionCount(int positionCount) {
+    throw new UnsupportedOperationException(
+        "Method can only be called using instance of SliceStreamReader");
+  }
+
+  // Added default implementation for interface,
+  // to avoid implementing presto required functions for spark or core module.
+  default void setIsLocalDictEnabledForComplextype(boolean value) {
+    throw new UnsupportedOperationException(
+        "Method can only be called using instance of SliceStreamReader");
+  }
 }
