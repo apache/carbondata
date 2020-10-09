@@ -650,9 +650,13 @@ object CommonLoadUtils {
     val metastoreSchema =
       if (optionsOriginal.contains(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS)) {
       StructType(catalogTable.schema.fields.map{f =>
-        val column = table.getColumnByName(f.name)
         val isPartitionColumn = catalogTable.partitionColumnNames.contains(f.name)
-        val updatedDataType = if (!isPartitionColumn && column.getDataType ==
+        val column = if (isPartitionColumn) {
+          table.getPartitionColumn(f.name)
+        } else {
+          table.getColumnByName(f.name)
+        }
+        val updatedDataType = if (column.getDataType ==
                                   org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
           IntegerType
         } else {
@@ -668,9 +672,13 @@ object CommonLoadUtils {
       })
     } else {
       StructType(catalogTable.schema.fields.map{f =>
-        val column = table.getColumnByName(f.name)
         val isPartitionColumn = catalogTable.partitionColumnNames.contains(f.name)
-        val updatedDataType = if (!isPartitionColumn && column.getDataType ==
+        val column = if (isPartitionColumn) {
+          table.getPartitionColumn(f.name)
+        } else {
+          table.getColumnByName(f.name)
+        }
+        val updatedDataType = if (column.getDataType ==
                                   org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
           IntegerType
         } else {
