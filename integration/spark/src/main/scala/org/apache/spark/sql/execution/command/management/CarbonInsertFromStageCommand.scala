@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.management
 import java.io.{DataInputStream, File, InputStreamReader, IOException}
 import java.util
 import java.util.Collections
-import java.util.concurrent.{Callable, Executors, ExecutorService}
+import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
@@ -164,6 +164,7 @@ case class CarbonInsertFromStageCommand(
     } catch {
       case ex: Throwable =>
         LOGGER.error(s"failed to insert ${table.getDatabaseName}.${table.getTableName}", ex)
+        shutdownExecutorService(executorService)
         throw ex
     } finally {
       lock.unlock()
@@ -190,6 +191,8 @@ case class CarbonInsertFromStageCommand(
       case ex: Throwable =>
         LOGGER.error(s"failed to insert ${table.getDatabaseName}.${table.getTableName}", ex)
         throw ex
+    } finally {
+      shutdownExecutorService(executorService)
     }
     Seq.empty
   }
@@ -227,6 +230,7 @@ case class CarbonInsertFromStageCommand(
       throw new RuntimeException(s"Failed to lock table status for " +
         s"${table.getDatabaseName}.${table.getTableName}")
     }
+    var executorService: ExecutorService = null
     try {
       val segments = SegmentStatusManager.readTableStatusFile(
         CarbonTablePath.getTableStatusFilePath(table.getTablePath)
@@ -243,7 +247,7 @@ case class CarbonInsertFromStageCommand(
           LOGGER.info(s"Segment $segmentId is in SUCCESS state, about to delete " +
             s"${stageFileNames.length} stage files")
           val numThreads = Math.min(Math.max(stageFileNames.length, 1), 10)
-          val executorService = Executors.newFixedThreadPool(numThreads)
+          executorService = Executors.newFixedThreadPool(numThreads)
           stageFileNames.map { fileName =>
             executorService.submit(new Runnable {
               override def run(): Unit = {
@@ -269,6 +273,7 @@ case class CarbonInsertFromStageCommand(
       if (lock != null) {
         lock.unlock()
       }
+      shutdownExecutorService(executorService)
     }
     LOGGER.info(s"Finish recovery, delete snapshot file: $snapshotFilePath")
     FileFactory.getCarbonFile(snapshotFilePath).delete()
@@ -758,6 +763,12 @@ case class CarbonInsertFromStageCommand(
     } else {
       throw new IOException(
         s"Not able to acquire the lock for table status file for $tableIdentifier")
+    }
+  }
+
+  private def shutdownExecutorService(executorService: ExecutorService): Unit = {
+    if (executorService != null && !executorService.isShutdown) {
+      executorService.shutdownNow()
     }
   }
 

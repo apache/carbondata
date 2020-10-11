@@ -244,6 +244,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
       val msg = intercept[Exception] {
         future.get()
       }
+      pool.shutdownNow()
       assert(msg.getMessage.contains("is not a streaming table"))
     } finally {
       if (server != null) {
