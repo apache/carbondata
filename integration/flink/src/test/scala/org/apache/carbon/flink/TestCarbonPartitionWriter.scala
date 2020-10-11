@@ -18,7 +18,7 @@
 package org.apache.carbon.flink
 
 import java.text.SimpleDateFormat
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, TimeUnit}
 import java.util.{Base64, Properties}
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
@@ -202,6 +202,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
         }).get()
       }
       checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
+      executorService.shutdownNow()
     }
   }
 

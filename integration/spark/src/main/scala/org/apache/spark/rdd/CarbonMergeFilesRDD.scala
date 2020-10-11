@@ -17,7 +17,7 @@
 
 package org.apache.spark.rdd
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, ExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -158,20 +158,26 @@ object CarbonMergeFilesRDD {
       // remove all tmp folder of index files
       val startDelete = System.currentTimeMillis()
       val numThreads = Math.min(Math.max(partitionInfo.size(), 1), 10)
-      val executorService = Executors.newFixedThreadPool(numThreads)
-      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-      partitionInfo
-        .asScala
-        .map { partitionPath =>
-          executorService.submit(new Runnable {
-            override def run(): Unit = {
-              ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
-              FileFactory.deleteAllCarbonFilesOfDir(
-                FileFactory.getCarbonFile(partitionPath + "/" + tempFolderPath))
-            }
-          })
+      val executorService: ExecutorService = Executors.newFixedThreadPool(numThreads)
+      try {
+        val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+        partitionInfo
+          .asScala
+          .map { partitionPath =>
+            executorService.submit(new Runnable {
+              override def run(): Unit = {
+                ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+                FileFactory.deleteAllCarbonFilesOfDir(
+                  FileFactory.getCarbonFile(partitionPath + "/" + tempFolderPath))
+              }
+            })
+          }
+          .map(_.get())
+      } finally {
+        if (executorService != null && !executorService.isShutdown) {
+          executorService.shutdownNow()
         }
-        .map(_.get())
+      }
       LOGGER.info("Time taken to remove partition files for all partitions: " +
                   (System.currentTimeMillis() - startDelete))
     } else if (carbonTable.isHivePartitionTable) {

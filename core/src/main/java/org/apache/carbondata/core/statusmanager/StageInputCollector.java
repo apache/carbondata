@@ -66,7 +66,13 @@ public class StageInputCollector {
     if (stageInputFiles.size() > 0) {
       int numThreads = Math.min(Math.max(stageInputFiles.size(), 1), 10);
       ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-      return createInputSplits(executorService, stageInputFiles);
+      try {
+        return createInputSplits(executorService, stageInputFiles);
+      } finally {
+        if (executorService != null && !executorService.isShutdown()) {
+          executorService.shutdownNow();
+        }
+      }
     } else {
       return new ArrayList<>(0);
     }
