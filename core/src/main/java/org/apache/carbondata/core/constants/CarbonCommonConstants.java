@@ -1336,7 +1336,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String ENABLE_VECTOR_READER = "carbon.enable.vector.reader";
 
-  public static final String ENABLE_VECTOR_READER_DEFAULT = "false";
+  public static final String ENABLE_VECTOR_READER_DEFAULT = "true";
 
   /**
    * In cloud object store scenario, overwriting table status file is not an atomic

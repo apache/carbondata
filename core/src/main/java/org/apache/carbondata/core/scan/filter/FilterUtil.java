@@ -191,7 +191,9 @@ public final class FilterUtil {
           RowLevelFilterResolverImpl rowLevelFilterResolver =
               (RowLevelFilterResolverImpl) filterExpressionResolverTree;
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
-              rowLevelFilterResolver, segmentProperties, minMaxCacheColumns, isStreamDataFile)) {
+              rowLevelFilterResolver.getDimColEvaluatorInfoList(),
+              rowLevelFilterResolver.getMsrColEvalutorInfoList(), segmentProperties,
+              minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           } else {
             if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
@@ -293,10 +295,14 @@ public final class FilterUtil {
               minMaxCacheColumns, true, isStreamDataFile);
     } else {
       columnResolvedFilterInfo = dimColEvaluatorInfoList.get(0);
-      if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
-        replaceCurrentNodeWithTrueFilter =
-            checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
-                minMaxCacheColumns, false, isStreamDataFile);
+      if (columnResolvedFilterInfo.getDimension() == null) {
+        replaceCurrentNodeWithTrueFilter = true;
+      } else {
+        if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+          replaceCurrentNodeWithTrueFilter =
+              checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
+                  minMaxCacheColumns, false, isStreamDataFile);
+        }
       }
     }
     return replaceCurrentNodeWithTrueFilter;
@@ -324,14 +330,11 @@ public final class FilterUtil {
               minMaxCacheColumns, true, isStreamDataFile);
     } else {
       columnResolvedFilterInfo = filterExpressionResolverTree.getDimColResolvedFilterInfo();
-      if (columnResolvedFilterInfo.getDimension() == null) {
-        replaceCurrentNodeWithTrueFilter = true;
-      } else {
-        if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
-          replaceCurrentNodeWithTrueFilter =
-              checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
-                  minMaxCacheColumns, false, isStreamDataFile);
-        }
+
+      if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+        replaceCurrentNodeWithTrueFilter =
+            checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
+                minMaxCacheColumns, false, isStreamDataFile);
       }
     }
     return replaceCurrentNodeWithTrueFilter;
