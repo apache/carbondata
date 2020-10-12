@@ -2523,11 +2523,6 @@ public final class CarbonCommonConstants {
   public static final String INDEX_STATUS = "index_status";
 
   /**
-   * property which defines the insert stage flow
-   */
-  public static final String IS_INSERT_STAGE = "is_insert_stage";
-
-  /**
    * index server temp folder aging period
    */
   @CarbonProperty

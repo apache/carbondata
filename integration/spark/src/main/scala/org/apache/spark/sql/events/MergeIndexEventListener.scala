@@ -43,11 +43,6 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
       case preStatusUpdateEvent: LoadTablePreStatusUpdateEvent =>
-        // skip merge index in case of insert stage flow
-        if (null != operationContext.getProperty(CarbonCommonConstants.IS_INSERT_STAGE) &&
-          operationContext.getProperty(CarbonCommonConstants.IS_INSERT_STAGE).equals("true")) {
-          return
-        }
         LOGGER.info("Load post status event-listener called for merge index")
         val loadModel = preStatusUpdateEvent.getCarbonLoadModel
         val carbonTable = loadModel.getCarbonDataLoadSchema.getCarbonTable

@@ -545,14 +545,12 @@ public class MVProvider {
         FileFactory.createDirectoryAndSetPermission(this.systemDirectory,
             new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
       }
-      if (!FileFactory.isFileExist(this.schemaIndexFilePath)) {
-        FileFactory.createNewFile(
-            this.schemaIndexFilePath,
-            new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
+      CarbonFile schemaIndexFile = FileFactory.getCarbonFile(this.schemaIndexFilePath);
+      if (schemaIndexFile.exists()) {
+        schemaIndexFile.delete();
       }
-      long lastModifiedTime = System.currentTimeMillis();
-      FileFactory.getCarbonFile(this.schemaIndexFilePath).setLastModifiedTime(lastModifiedTime);
-      this.lastModifiedTime = lastModifiedTime;
+      schemaIndexFile.createNewFile(new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
+      this.lastModifiedTime = schemaIndexFile.getLastModifiedTime();
     }
 
   }
