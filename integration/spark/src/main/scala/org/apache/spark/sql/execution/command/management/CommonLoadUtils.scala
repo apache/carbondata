@@ -461,13 +461,10 @@ object CommonLoadUtils {
       val isPartitionColumn = catalogTable.partitionColumnNames.contains(attr.name)
       // Update attribute datatypes in case of dictionary columns, in case of dictionary columns
       // datatype is always int
-      val column = if (isPartitionColumn) {
-        table.getPartitionColumn(attr.name)
-      } else {
-        table.getColumnByName(attr.name)
-      }
-      val updatedDataType = if (column.getDataType ==
-                                org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
+      val column = table.getColumnByName(attr.name)
+      val updatedDataType = if (isPartitionColumn) {
+        attr.dataType
+      } else if (column.getDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
         IntegerType
       } else {
         if (isNoRearrangeFlow) {
@@ -651,13 +648,11 @@ object CommonLoadUtils {
       if (optionsOriginal.contains(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS)) {
       StructType(catalogTable.schema.fields.map{f =>
         val isPartitionColumn = catalogTable.partitionColumnNames.contains(f.name)
-        val column = if (isPartitionColumn) {
-          table.getPartitionColumn(f.name)
-        } else {
-          table.getColumnByName(f.name)
-        }
-        val updatedDataType = if (column.getDataType ==
-                                  org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
+        val column = table.getColumnByName(f.name)
+        val updatedDataType = if (isPartitionColumn) {
+          f.dataType
+        } else if (column.getDataType ==
+                   org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
           IntegerType
         } else {
           f.dataType match {
@@ -673,15 +668,13 @@ object CommonLoadUtils {
     } else {
       StructType(catalogTable.schema.fields.map{f =>
         val isPartitionColumn = catalogTable.partitionColumnNames.contains(f.name)
-        val column = if (isPartitionColumn) {
-          table.getPartitionColumn(f.name)
-        } else {
-          table.getColumnByName(f.name)
-        }
-        val updatedDataType = if (column.getDataType ==
-                                  org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
-          IntegerType
-        } else {
+        val column = table.getColumnByName(f.name);
+          val updatedDataType = if (isPartitionColumn) {
+            f.dataType
+          } else if (column.getDataType ==
+                     org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
+            IntegerType
+          } else {
           f.dataType match {
             case TimestampType | DateType =>
               LongType

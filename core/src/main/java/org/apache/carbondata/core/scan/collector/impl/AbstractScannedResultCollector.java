@@ -171,9 +171,15 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     String newBlockId = blockId.replaceAll("#" , "/");
     for (ProjectionColumn partitionColumn : projectionPartitionColumns) {
       int partitionIndex = newBlockId.indexOf(partitionColumn.getColumnName() + "=");
-      row[partitionColumn.getOrdinal()] = DataTypeUtil.getDataBasedOnDataType(newBlockId
-          .substring(partitionIndex + partitionColumn.getColumnName().length() + 1,
-              newBlockId.indexOf("/", partitionIndex)), partitionColumn.getDataType());
+      String partitionName = newBlockId
+              .substring(partitionIndex + partitionColumn.getColumnName().length() + 1,
+                      newBlockId.indexOf("/", partitionIndex));
+      if (partitionName.equalsIgnoreCase("__HIVE_DEFAULT_PARTITION__")) {
+        row[partitionColumn.getOrdinal()] = null;
+      } else {
+        row[partitionColumn.getOrdinal()] = DataTypeUtil
+                .getDataBasedOnDataType(partitionName, partitionColumn.getDataType());
+      }
     }
   }
 
