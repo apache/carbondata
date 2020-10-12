@@ -75,6 +75,7 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
       checkAnswer(sql(s"select count(intField) from $tableName where intField >= 900"),
         Seq(Row(100)))
       checkIfStageFilesAreDeleted(tablePath)
+      assert(getMergeIndexFileCount(tableName, "0") == 1)
     }
   }
 
@@ -444,5 +445,19 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
         parse(rows(index - 1).getString(2)).getTime
       assert(nowtime <= lasttime)
     }
+  }
+
+  private def getMergeIndexFileCount(tableName: String, segment: String): Int = {
+    val table = CarbonEnv.getCarbonTable(None, tableName)(sqlContext.sparkSession)
+    var path = CarbonTablePath
+      .getSegmentPath(table.getAbsoluteTableIdentifier.getTablePath, segment)
+    if (table.isHivePartitionTable) {
+      path = table.getAbsoluteTableIdentifier.getTablePath
+    }
+    val mergeIndexFiles = FileFactory.getCarbonFile(path).listFiles(true, new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean =
+        file.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)
+    })
+    mergeIndexFiles.size()
   }
 }

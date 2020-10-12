@@ -333,8 +333,6 @@ case class CarbonInsertFromStageCommand(
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 
       // 4) write segment file and update the segment entry to SUCCESS
-      val segmentFileName = SegmentFileStore.writeSegmentFile(
-        table, loadModel.getSegmentId, loadModel.getFactTimeStamp.toString)
       // create operationContext to fire load events
       val operationContext: OperationContext = new OperationContext
       val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(
@@ -350,12 +348,14 @@ case class CarbonInsertFromStageCommand(
         operationContext = operationContext)
       // in case of insert stage files, added the below property to avoid merge index and
       // fire event to load data to secondary index
-      operationContext.setProperty(CarbonCommonConstants.IS_INSERT_STAGE, "true")
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
         new LoadTablePreStatusUpdateEvent(
           table.getCarbonTableIdentifier,
           loadModel)
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
+
+      val segmentFileName = SegmentFileStore.writeSegmentFile(
+        table, loadModel.getSegmentId, loadModel.getFactTimeStamp.toString)
 
       val status = SegmentFileStore.updateTableStatusFile(
         table, loadModel.getSegmentId, segmentFileName,
@@ -538,14 +538,13 @@ case class CarbonInsertFromStageCommand(
             val stageLoadingFile =
               FileFactory.getCarbonFile(stagePath +
                 File.separator + files._1.getName + CarbonTablePath.LOADING_FILE_SUFFIX);
-            // Try to create loading files
-            // make isFailed to be true if createNewFile return false.
-            // the reason can be file exists or exceptions.
-            var isFailed = !stageLoadingFile.createNewFile()
-            // if file exists, modify the lastmodifiedtime of the file.
-            if (isFailed) {
-              // make isFailed to be true if setLastModifiedTime return false.
-              isFailed = !stageLoadingFile.setLastModifiedTime(System.currentTimeMillis());
+            // Try to recreate loading files if the loading file exists
+            // or create loading files directly if the loading file doesn't exist
+            // set isFailed to be false when (delete and) createfile success
+            val isFailed = if (stageLoadingFile.exists()) {
+              !(stageLoadingFile.delete() && stageLoadingFile.createNewFile())
+            } else {
+              !stageLoadingFile.createNewFile()
             }
             (files._1, files._2, isFailed)
           } catch {
