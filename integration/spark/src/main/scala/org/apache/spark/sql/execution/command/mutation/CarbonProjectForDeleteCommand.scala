@@ -169,8 +169,19 @@ private[sql] case class CarbonProjectForDeleteCommand(
       if (lockStatus) {
         CarbonLockUtil.fileUnlock(metadataLock, LockUsage.METADATA_LOCK)
       }
-      updateLock.unlock()
-      compactionLock.unlock()
+
+      if (updateLock.unlock()) {
+        LOGGER.info(s"updateLock unlocked successfully after delete operation $tableName")
+      } else {
+        LOGGER.error(s"Unable to unlock updateLock for table $tableName after delete operation");
+      }
+
+      if (compactionLock.unlock()) {
+        LOGGER.info(s"compactionLock unlocked successfully after delete operation $tableName")
+      } else {
+        LOGGER.error(s"Unable to unlock compactionLock for " +
+          s"table $tableName after delete operation");
+      }
     }
   }
 
