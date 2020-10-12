@@ -361,7 +361,7 @@ public class SecondaryIndexQueryResultProcessor {
    * This method will return complex array primitive data
    */
   private Object getData(Object[] data, int index, DataType dataType) {
-    if (data.length == 0) {
+    if (data == null || data.length == 0) {
       return new byte[0];
     } else if (data[0] == null) {
       return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;

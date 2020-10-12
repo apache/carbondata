@@ -642,7 +642,7 @@ public class AvroCarbonWriterTest {
     Assert.assertTrue(row.length == 3);
     if (sum % 2 != 0) {
       Assert.assertEquals(row[0], "Alyssa");
-      Assert.assertNull(((Object[]) row[1])[0]);
+      Assert.assertNull(row[1]);
     } else {
       Assert.assertEquals(row[0], "Ben");
       Assert.assertEquals(((Object[]) row[1])[0], "red");

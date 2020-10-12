@@ -352,7 +352,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata
          |LOCATION '$writerPath' """.stripMargin)
-    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(null))))
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(null)))
   }
 
   test("test union type with only type null") {
@@ -503,7 +503,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata
          |LOCATION '$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"),
-      Seq(Row(Row(mutable.WrappedArray.make(Array(null)), 12))))
+      Seq(Row(Row(null, 12))))
   }
 
   test("test Struct of Union") {
@@ -1281,7 +1281,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata
          |LOCATION '$writerPath' """.stripMargin)
-    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(Row(null, null), Row("ab")))))
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(null, Row("ab")))))
   }
 
   test("test union with multiple Enum type") {

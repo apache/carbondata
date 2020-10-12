@@ -27,7 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class StructQueryTypeTest {
   private static StructQueryType structQueryType;
@@ -47,7 +47,7 @@ public class StructQueryTypeTest {
     structQueryType.addChildren(arrayQueryType);
     List children = new ArrayList();
     children.add(arrayQueryType);
-    assertNotNull(structQueryType.getDataBasedOnDataType(surrogateData));
+    assertNull(structQueryType.getDataBasedOnDataType(surrogateData));
   }
 
   @Test public void testGetColsCount() {

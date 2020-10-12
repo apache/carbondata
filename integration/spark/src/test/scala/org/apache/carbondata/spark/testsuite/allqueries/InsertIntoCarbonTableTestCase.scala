@@ -69,6 +69,80 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("insert from orc-select columns with complex columns having null values and sort scope as global sort") {
+    sql("drop table if exists TORCSource")
+    sql("drop table if exists TCarbon")
+    sql("create table TORCSource(name string,col1 array<String>,col2 map<String,String>,col3 struct<school:string, age:int>,fee int) STORED AS orc")
+    sql("insert into TORCSource values('karan',null,null,null,2)")
+    sql("create table TCarbon(name string,col1 array<String>,col2 map<String,String>,col3 struct<school:string, age:int>,fee int) STORED AS carbondata TBLPROPERTIES ('SORT_COLUMNS'='name','TABLE_BLOCKSIZE'='128','TABLE_BLOCKLET_SIZE'='128','SORT_SCOPE'='global_SORT')")
+    sql("insert overwrite table TCarbon select name,col1,col2,col3,fee from TORCSource")
+    checkAnswer(sql("select * from TORCSource"), sql("select * from TCarbon"))
+    sql("drop table if exists TORCSource")
+    sql("drop table if exists TCarbon")
+  }
+
+  test("insert from orc-select columns with complex columns having null values and sort scope as local sort") {
+    sql("drop table if exists TORCSource")
+    sql("drop table if exists TCarbon")
+    sql("create table TORCSource(name string,col1 array<String>,col2 map<String,String>,col3 struct<school:string, age:int>,fee int) STORED AS orc")
+    sql("insert into TORCSource values('karan',null,null,null,2)")
+    sql("create table TCarbon(name string,col1 array<String>,col2 map<String,String>,col3 struct<school:string, age:int>,fee int) STORED AS carbondata TBLPROPERTIES ('SORT_COLUMNS'='name','TABLE_BLOCKSIZE'='128','TABLE_BLOCKLET_SIZE'='128','SORT_SCOPE'='local_SORT')")
+    sql("insert overwrite table TCarbon select name,col1,col2,col3,fee from TORCSource")
+    checkAnswer(sql("select * from TORCSource"), sql("select * from TCarbon"))
+    sql("drop table if exists TORCSource")
+    sql("drop table if exists TCarbon")
+  }
+
+  test("insert from orc-select columns with complex columns having null values and sort scope as global sort and bad record handling enabled") {
+    val initialPropertyValue = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
+    sql("drop table if exists TORCSource")
+    sql("drop table if exists TCarbon")
+    sql("create table TORCSource(name string,col1 array<String>,col2 map<String,String>,col3 struct<school:string, age:int>,fee int) STORED AS orc")
+    sql("insert into TORCSource values('karan',null,null,null,2)")
+    sql("create table TCarbon(name string,col1 array<String>,col2 map<String,String>,col3 struct<school:string, age:int>,fee int) STORED AS carbondata TBLPROPERTIES ('SORT_COLUMNS'='name','TABLE_BLOCKSIZE'='128','TABLE_BLOCKLET_SIZE'='128','SORT_SCOPE'='global_SORT')")
+    sql("insert overwrite table TCarbon select name,col1,col2,col3,fee from TORCSource")
+    checkAnswer(sql("select * from TORCSource"), sql("select * from TCarbon"))
+    sql("drop table if exists TORCSource")
+    sql("drop table if exists TCarbon")
+    if (initialPropertyValue == null) {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+          CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
+    } else {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+          initialPropertyValue)
+    }
+  }
+
+  test("insert from orc-select columns with complex columns having null values and sort scope as local sort and bad record handling enabled") {
+    val initialPropertyValue = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
+    sql("drop table if exists TORCSource")
+    sql("drop table if exists TCarbon")
+    sql("create table TORCSource(name string,col1 array<String>,col2 map<String,String>,col3 struct<school:string, age:int>,fee int) STORED AS orc")
+    sql("insert into TORCSource values('karan',null,null,null,2)")
+    sql("create table TCarbon(name string,col1 array<String>,col2 map<String,String>,col3 struct<school:string, age:int>,fee int) STORED AS carbondata TBLPROPERTIES ('SORT_COLUMNS'='name','TABLE_BLOCKSIZE'='128','TABLE_BLOCKLET_SIZE'='128','SORT_SCOPE'='local_SORT')")
+    sql("insert overwrite table TCarbon select name,col1,col2,col3,fee from TORCSource")
+    checkAnswer(sql("select * from TORCSource"), sql("select * from TCarbon"))
+    sql("drop table if exists TORCSource")
+    sql("drop table if exists TCarbon")
+    if (initialPropertyValue == null) {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+          CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
+    } else {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+          initialPropertyValue)
+    }
+  }
+
   test("insert from carbon-select * columns") {
      sql("drop table if exists TCarbonSource")
      sql("drop table if exists TCarbon")

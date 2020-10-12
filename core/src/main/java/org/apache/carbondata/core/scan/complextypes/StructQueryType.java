@@ -120,6 +120,16 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     for (int i = 0; i < childLength; i++) {
       fields[i] =  children.get(i).getDataBasedOnDataType(dataBuffer);
     }
+    boolean isAllNull = true;
+    for (Object field : fields) {
+      if (field != null) {
+        isAllNull = false;
+        break;
+      }
+    }
+    if (isAllNull) {
+      return null;
+    }
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
   }
 
