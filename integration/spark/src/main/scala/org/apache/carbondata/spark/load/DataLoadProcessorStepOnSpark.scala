@@ -228,7 +228,7 @@ object DataLoadProcessorStepOnSpark {
     if (keepActualData) {
       conf.getDataFields.foreach(_.setUseActualData(keepActualData))
     }
-    val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
+    val rowConverter = new RowConverterImpl(conf.getInputFields, conf, badRecordLogger)
     rowConverter.initialize()
 
     TaskContext.get().addTaskCompletionListener { context =>

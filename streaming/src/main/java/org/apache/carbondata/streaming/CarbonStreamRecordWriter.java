@@ -165,7 +165,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     rowParser = new RowParserImpl(dataFields, configuration);
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     converter =
-        new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger, true);
+        new RowConverterImpl(configuration.getInputFields(), configuration, badRecordLogger, true);
     converter.initialize();
 
     // initialize data writer and compressor

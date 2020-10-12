@@ -653,7 +653,9 @@ object CarbonOutputWriter {
         updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
         model.getCarbonDataLoadSchema.getCarbonTable)
       val partitionString = formattedPartitions.map { p =>
-        ExternalCatalogUtils.escapePathName(p._1) + "=" + ExternalCatalogUtils.escapePathName(p._2)
+        val escaped = ExternalCatalogUtils.escapePathName(p._2)
+        ExternalCatalogUtils.unescapePathName(escaped)
+        ExternalCatalogUtils.escapePathName(p._1) + "=" + escaped
       }.mkString(CarbonCommonConstants.FILE_SEPARATOR)
       model.getCarbonDataLoadSchema.getCarbonTable.getTablePath +
       CarbonCommonConstants.FILE_SEPARATOR + partitionString

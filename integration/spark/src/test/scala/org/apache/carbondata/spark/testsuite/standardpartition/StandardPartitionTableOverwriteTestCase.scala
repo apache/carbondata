@@ -61,45 +61,23 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql(s"""insert into staticpartitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
     sql(s"""insert into staticpartitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
     sql(s"""insert overwrite table staticpartitiondateinsert PARTITION(projectenddate='2016-06-29',doj='2010-12-29 00:00:00') select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary from originTable where projectenddate=cast('2016-06-29' as Date)""")
-    sql("select * from staticpartitiondateinsert where projectenddate=cast('29-06-2016' as Date)")
-      .show()
+    sql("select * from staticpartitiondateinsert where projectenddate=cast('2016-06-29' as Date)").show()
   }
 
   test("overwriting partition table for date partition column on insert query") {
+    sql("drop table partitiondateinsert")
     sql(
       """
-        | CREATE TABLE partitiondateinsert (empno int, empname String, designation String,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int,
-        |  projectjoindate Timestamp,attendance int,
-        |  deptname String,projectcode int,
-        |  utilization int,salary int)
+        | CREATE TABLE partitiondateinsert (empno int)
         | PARTITIONED BY (projectenddate Date,doj Timestamp)
         | STORED AS carbondata
       """.stripMargin)
-    sql(
-      """
-        | CREATE TABLE partitiondateinserthive (empno int, empname String, designation String,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int,
-        |  projectjoindate Timestamp,attendance int,
-        |  deptname String,projectcode int,
-        |  utilization int,salary int)
-        | PARTITIONED BY (projectenddate Date,doj Timestamp)
-      """.stripMargin)
     sql(s"""set hive.exec.dynamic.partition.mode=nonstrict""")
-    sql(s"""insert into partitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
-    sql(s"""insert into partitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
-    sql(s"""insert into partitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
-    sql(s"""insert into partitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
-    sql(s"""insert overwrite table partitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable where projectenddate=cast('2016-06-29' as Date)""")
+    sql("select empno, projectenddate,doj from originTable limit 1").show()
+//    sql("insert into partitiondateinsert select '1', '2019-02-16', '2019-02-16'")
+    sql(s"""insert into partitiondateinsert select empno, projectenddate,doj from originTable limit 1""")
 
-    sql(s"""insert into partitiondateinserthive select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
-    sql(s"""insert into partitiondateinserthive select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
-    sql(s"""insert into partitiondateinserthive select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
-    sql(s"""insert into partitiondateinserthive select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
-    sql(s"""insert overwrite table partitiondateinserthive select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable where projectenddate=cast('2016-06-29' as Date)""")
-
-    checkAnswer(sql("select * from partitiondateinsert"),
-      sql("select * from partitiondateinserthive"))
+    sql("select * from partitiondateinsert").show()
   }
 
   test("dynamic and static partition table with load syntax") {
@@ -307,7 +285,7 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
 
   def dropTable = {
     sql("drop table if exists originTable")
-    sql("drop table if exists partitiondateinsert")
+//    sql("drop table if exists partitiondateinsert")
     sql("drop table if exists staticpartitiondateinsert")
     sql("drop table if exists loadstaticpartitiondynamic")
     sql("drop table if exists insertstaticpartitiondynamic")

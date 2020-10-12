@@ -19,9 +19,12 @@ package org.apache.carbondata.core.scan.collector.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -34,6 +37,7 @@ import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
@@ -174,13 +178,63 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       String partitionName = newBlockId
               .substring(partitionIndex + partitionColumn.getColumnName().length() + 1,
                       newBlockId.indexOf("/", partitionIndex));
+      if (partitionName.contains("%")) {
+        partitionName = unescapePathName(partitionName);
+      }
       if (partitionName.equalsIgnoreCase("__HIVE_DEFAULT_PARTITION__")) {
         row[partitionColumn.getOrdinal()] = null;
       } else {
-        row[partitionColumn.getOrdinal()] = DataTypeUtil
-                .getDataBasedOnDataType(partitionName, partitionColumn.getDataType());
+        String newDate = "";
+        try {
+          //TODO: Fix this date and time conversion code
+          if (partitionColumn.getDataType().equals(DataTypes.DATE)) {
+            SimpleDateFormat ss = new SimpleDateFormat("yyyy-MM-dd");
+            java.util.Date date = ss.parse(partitionName);
+            row[partitionColumn.getOrdinal()] = new DateDirectDictionaryGenerator(
+                CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+                    CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)).generateKey(date.getTime());
+          } else if (partitionColumn.getDataType().equals(DataTypes.TIMESTAMP)) {
+            SimpleDateFormat ss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            java.util.Date date = ss.parse(partitionName);
+            row[partitionColumn.getOrdinal()] = date.getTime();
+          } else {
+            row[partitionColumn.getOrdinal()] = DataTypeUtil
+                .getDataBasedOnDataType(newDate, partitionColumn.getDataType());
+          }
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+
       }
     }
+  }
+
+  private String unescapePathName(String path) {
+    StringBuilder sb = new StringBuilder();
+    int i = 0;
+
+    while (i < path.length()) {
+      char c = path.charAt(i);
+      if (c == '%' && i + 2 < path.length()) {
+        int code;
+        try {
+          code = Integer.parseInt(path.substring(i + 1, i + 3), 16);
+        } catch (Exception e) {
+          code = -1;
+        }
+        if (code >= 0) {
+          sb.append((char) code);
+          i += 3;
+        } else {
+          sb.append(c);
+          i += 1;
+        }
+      } else {
+        sb.append(c);
+        i += 1;
+      }
+    }
+    return sb.toString();
   }
 
   @Override
