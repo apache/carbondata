@@ -118,6 +118,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
     //    var dataFrame: DataFrame = null
     var dataSet: DataFrame = null
     val isPersistEnabled = CarbonProperties.getInstance.isPersistUpdateDataset
+    var hasException = false
+    var fileTimestamp = ""
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
@@ -218,14 +220,14 @@ private[sql] case class CarbonProjectForUpdateCommand(
         LOGGER.error(
           "Update operation passed. Exception in Horizontal Compaction. Please check logs." + e)
         // In case of failure , clean all related delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
-
+        fileTimestamp = e.compactionTimeStamp.toString
+        hasException = true
       case e: Exception =>
         LOGGER.error("Exception in update operation", e)
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, currentTime + "")
-
+        fileTimestamp = currentTime + ""
+        hasException = true
         // *****end clean up.
         if (null != e.getMessage) {
           sys.error("Update operation failed. " + e.getMessage)
@@ -235,13 +237,37 @@ private[sql] case class CarbonProjectForUpdateCommand(
         }
         sys.error("Update operation failed. please check logs.")
     } finally {
-      if (null != dataSet && isPersistEnabled) {
-        dataSet.unpersist()
+      if (updateLock.unlock()) {
+        LOGGER.info(s"updateLock unlocked successfully after update $tableName")
+      } else {
+        LOGGER.error(s"Unable to unlock updateLock for table $tableName after table update");
       }
-      updateLock.unlock()
-      compactionLock.unlock()
+
+      if (compactionLock.unlock()) {
+        LOGGER.info(s"compactionLock unlocked successfully after update $tableName")
+      } else {
+        LOGGER.error(s"Unable to unlock compactionLock for " +
+          s"table $tableName after update");
+      }
+
       if (lockStatus) {
         CarbonLockUtil.fileUnlock(metadataLock, LockUsage.METADATA_LOCK)
+      }
+
+      if (null != dataSet && isPersistEnabled) {
+        try {
+          dataSet.unpersist()
+        } catch {
+          case e: Exception =>
+            LOGGER.error(s"Exception in update $tableName" + e.getMessage, e)
+        }
+      }
+
+      // In case of failure, clean all related delete delta files.
+      if (hasException) {
+        // When the table has too many segemnts, it will take a long time.
+        // So moving it to the end and it is outside of locking.
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, fileTimestamp)
       }
     }
     Seq(Row(updatedRowCount))
