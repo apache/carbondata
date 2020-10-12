@@ -20,7 +20,6 @@ package org.apache.carbondata.spark.testsuite.dataload
 import java.io.{File, FileWriter}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
@@ -50,7 +49,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_globalsort(id INT, name STRING, city STRING, age INT)
-        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
+        | STORED AS carbondata
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
       """.stripMargin)
   }
 
@@ -449,11 +449,10 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
          | STORED AS carbondata
          | TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='stringField')
        """.stripMargin)
-    sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_localsort_difftypes
-         | OPTIONS('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
-       """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_localsort_difftypes " +
+        "OPTIONS('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField," +
+        "timestampField,decimalField,dateField,charField,floatField')")
 
     sql("DROP TABLE IF EXISTS carbon_globalsort_difftypes")
     sql(
@@ -474,11 +473,9 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
          | 'SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'stringField')
        """.stripMargin)
     sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_globalsort_difftypes
-         | OPTIONS(
-         | 'FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
-       """.stripMargin)
+      s"LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_globalsort_difftypes " +
+      "OPTIONS('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField," +
+      "timestampField,decimalField,dateField,charField,floatField')".stripMargin)
 
     checkAnswer(sql("SELECT * FROM carbon_globalsort_difftypes ORDER BY shortField"),
       sql("SELECT * FROM carbon_localsort_difftypes ORDER BY shortField"))
@@ -488,9 +485,13 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   test("test global sort with null values") {
     sql("drop table if exists source")
     sql("drop table if exists sink")
-    sql("create table source(a string, b int, c int, d int, e int, f int, dec decimal(3,2), arr array<string>, str struct<a:string>, map map<string, string>) stored as carbondata TBLPROPERTIES('bad_record_action'='force')")
+    sql("create table source(a string, b int, c int, d int, e int, f int, dec decimal(3,2)," +
+      " arr array<string>, str struct<a:string>, map map<string, string>)" +
+      " stored as carbondata TBLPROPERTIES('bad_record_action'='force')")
     sql("insert into source select 'k','k', 'k','k','k', 'k',null,null,null,map('null','null')")
-    sql("create table sink (a string, b string, c int, d bigint, e double, f char(5),  dec decimal(3,2), arr array<string>, str struct<a:string>, map map<string, string>) stored as carbondata TBLPROPERTIES('sort_scope'='global_sort', 'sort_columns'='b,c,d,f')")
+    sql("create table sink (a string, b string, c int, d bigint, e double, f char(5)," +
+      "  dec decimal(3,2), arr array<string>, str struct<a:string>, map map<string, string>)" +
+      " stored as carbondata TBLPROPERTIES('sort_scope'='global_sort', 'sort_columns'='b,c,d,f')")
     sql("insert into sink select * from source")
     checkAnswer(sql("select * from sink"),
       Row("k",
@@ -500,8 +501,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         null,
         null,
         null,
-        mutable.WrappedArray.make(Array(null)),
-        Row(null),
+        null,
+        null,
         Map("null" -> "null")))
   }
 

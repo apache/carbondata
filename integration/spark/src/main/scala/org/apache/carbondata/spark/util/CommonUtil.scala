@@ -1009,6 +1009,10 @@ object CommonUtil {
 
   private def convertSparkComplexTypeToCarbonObject(data: AnyRef,
       objectDataType: DataType): AnyRef = {
+    if (data == null && (objectDataType.isInstanceOf[ArrayType]
+      || objectDataType.isInstanceOf[MapType] || objectDataType.isInstanceOf[StructType])) {
+      return null
+    }
     objectDataType match {
       case _: ArrayType =>
         val arrayDataType = objectDataType.asInstanceOf[ArrayType]
@@ -1086,5 +1090,4 @@ object CommonUtil {
       }
     }
   }
-
 }
