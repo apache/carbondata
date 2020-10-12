@@ -1010,7 +1010,6 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     }
 
     sql("clean files for table target").collect()
-    assert(getDeleteDeltaFileCount("target", "12.2") == 1)
     checkAnswer(sql("select count(*) from target"), Seq(Row(70)))
 
     CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "false")
