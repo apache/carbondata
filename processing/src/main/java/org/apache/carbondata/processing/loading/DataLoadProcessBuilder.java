@@ -253,7 +253,7 @@ public final class DataLoadProcessBuilder {
       dataFields = updateDataFieldsBasedOnSortColumns(dataFields);
     }
     for (CarbonColumn partitionColumn : carbonTable.getPartitionColumns()) {
-      partitionColumns.add(new DataField(partitionColumn));
+      partitionColumns.add(new DataField(partitionColumn, true));
     }
     configuration.setPartitionFields(partitionColumns);
     configuration.setDataFields(dataFields.toArray(new DataField[0]));

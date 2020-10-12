@@ -178,7 +178,7 @@ object DataLoadProcessorStepOnSpark {
     val isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(conf)
     val badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(conf)
     if (keepActualData) {
-      conf.getDataFields.foreach(_.setUseActualData(keepActualData))
+      conf.getInputFields.foreach(_.setUseActualData(keepActualData))
     }
     val rowConverter = new RowConverterImpl(conf.getInputFields, conf, badRecordLogger)
     rowConverter.initialize()

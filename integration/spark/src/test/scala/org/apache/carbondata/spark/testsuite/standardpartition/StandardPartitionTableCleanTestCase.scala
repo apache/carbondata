@@ -114,7 +114,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
       validateDataFiles("default_partitionmany", "1", 8, 8)
       checkExistence(sql(s"""SHOW PARTITIONS partitionmany"""), false, "deptname=Learning", "projectcode=928479")
       checkAnswer(
-        sql(s"""select count (*) from partitionmany where deptname='Learning'"""),
+        sql(s"""select count(*) from partitionmany where deptname='Learning'"""),
         Seq(Row(0)))
     }
 

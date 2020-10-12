@@ -520,6 +520,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     IndexJob indexJob = IndexUtil.getIndexJob(job.getConfiguration());
     List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     // First prune using default index on driver side.
+    if (partitionsToPrune != null && partitionsToPrune.size() == 0 && carbonTable
+        .isHivePartitionTable()) {
+      return new ArrayList<>();
+    }
     TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(carbonTable);
     List<ExtendedBlocklet> prunedBlocklets;
     // This is to log the event, so user will know what is happening by seeing logs.

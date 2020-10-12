@@ -80,7 +80,9 @@ public class FieldEncoderFactory {
       spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
     }
     // Converters are only needed for dimensions and measures it return null.
-    if (dataField.getColumn().isDimension()) {
+    if (dataField.isPartitionField()) {
+      return new PartitionFieldConverterImpl(dataField, index);
+    } else if (dataField.getColumn().isDimension()) {
       if (spatialProperty != null && dataField.getColumn().getColName()
           .equalsIgnoreCase(spatialProperty.trim())) {
         return new SpatialIndexFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord,
