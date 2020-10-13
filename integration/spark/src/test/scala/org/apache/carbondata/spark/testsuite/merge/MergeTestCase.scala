@@ -767,6 +767,17 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from target"), Seq(Row(3)))
     checkAnswer(sql("select * from target order by key"),
       Seq(Row("c", "200"), Row("d", "3"), Row("e", "100")))
+
+    // insert overwrite a partition. make sure the merge executed before still works.
+    sql(
+      """insert overwrite table target
+        | partition (value=3)
+        | select * from target where value = 100""".stripMargin)
+    checkAnswer(sql("select * from target order by key"),
+      Seq(Row("c", "200"), Row("e", "100"), Row("e", "3")))
+    sql("""alter table target drop partition (value=3)""")
+    checkAnswer(sql("select * from target order by key"),
+      Seq(Row("c", "200"), Row("e", "100")))
   }
 
   test("check the cdc ") {

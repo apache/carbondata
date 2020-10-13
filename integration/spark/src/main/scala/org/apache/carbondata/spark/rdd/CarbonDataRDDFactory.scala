@@ -532,6 +532,7 @@ object CarbonDataRDDFactory {
             carbonTable,
             updateModel.get.updatedTimeStamp + "",
             true,
+            true,
             new util.ArrayList[Segment](0),
             new util.ArrayList[Segment](segmentFiles), "")) {
             LOGGER.error("Data update failed due to failure in table status update.")
@@ -1051,6 +1052,7 @@ object CarbonDataRDDFactory {
             l.getSegmentFile)).toSet.asJava,
         carbonTable,
         carbonLoadModel.getFactTimeStamp.toString,
+        true,
         true,
         updateModel.get.deletedSegments.asJava)
     }

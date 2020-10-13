@@ -85,6 +85,66 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table iud.zerorows""")
   }
 
+  test("update and insert overwrite partition") {
+    sql("""drop table if exists iud.updateinpartition""")
+    sql(
+      """CREATE TABLE iud.updateinpartition (id STRING, sales INT)
+        | PARTITIONED BY (dtm STRING)
+        | STORED AS carbondata""".stripMargin)
+    sql(
+      s"""load data local
+         | inpath '$resourcesPath/IUD/updateinpartition.csv'
+         | into table updateinpartition""".stripMargin)
+    sql(
+      """update iud.updateinpartition u
+        | set (u.sales) = (u.sales + 1) where id='001'""".stripMargin)
+    sql(
+      """update iud.updateinpartition u
+        | set (u.sales) = (u.sales + 2) where id='011'""".stripMargin)
+
+    // delete data from a partition, make sure the update executed before still works.
+    sql("""delete from updateinpartition where dtm=20200908 and id='012'""".stripMargin)
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='001'""".stripMargin),
+      Seq(Row(1))
+    )
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='011'""".stripMargin),
+      Seq(Row(2))
+    )
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='012'""".stripMargin),
+      Seq()
+    )
+
+    // insert overwrite a partition. make sure the update executed before still works.
+    sql(
+      """insert overwrite table iud.updateinpartition
+        | partition (dtm=20200908)
+        | select * from iud.updateinpartition where dtm = 20200907""".stripMargin)
+    checkAnswer(
+      sql(
+        """select sales from iud.updateinpartition
+          | where dtm=20200907 and id='001'""".stripMargin), Seq(Row(1))
+    )
+    checkAnswer(
+      sql(
+        """select sales from iud.updateinpartition
+          | where dtm=20200908 and id='001'""".stripMargin), Seq(Row(1))
+    )
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='011'""".stripMargin),
+      Seq()
+    )
+
+    // drop a partition. make sure the update executed before still works.
+    sql("""alter table iud.updateinpartition drop partition (dtm=20200908)""")
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='001'""".stripMargin),
+      Seq(Row(1))
+    )
+  }
+
   test("test update operation with multiple loads and clean files operation") {
     sql("""drop table if exists iud.zerorows""").collect()
     sql("""create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")

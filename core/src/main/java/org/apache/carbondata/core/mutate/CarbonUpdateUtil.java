@@ -238,9 +238,10 @@ public class CarbonUpdateUtil {
    */
   public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
-      List<Segment> segmentsToBeDeleted) {
+      boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted) {
     return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
-        isTimestampUpdateRequired, segmentsToBeDeleted, new ArrayList<Segment>(), "");
+        isTimestampUpdateRequired, isUpdateStatusFileUpdateRequired,
+        segmentsToBeDeleted, new ArrayList<Segment>(), "");
   }
 
   /**
@@ -254,7 +255,8 @@ public class CarbonUpdateUtil {
    */
   public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
-      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated, String uuid) {
+      boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted,
+      List<Segment> segmentFilesTobeUpdated, String uuid) {
 
     boolean status = false;
     String metaDataFilepath = table.getMetadataPath();
@@ -276,14 +278,13 @@ public class CarbonUpdateUtil {
                 SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
+          if (isUpdateStatusFileUpdateRequired &&
+              loadMetadata.getLoadName().equalsIgnoreCase("0")) {
+            loadMetadata.setUpdateStatusFileName(
+                CarbonUpdateUtil.getUpdateStatusFileName(updatedTimeStamp));
+          }
 
           if (isTimestampUpdateRequired) {
-            // we are storing the link between the 2 status files in the segment 0 only.
-            if (loadMetadata.getLoadName().equalsIgnoreCase("0")) {
-              loadMetadata.setUpdateStatusFileName(
-                      CarbonUpdateUtil.getUpdateStatusFileName(updatedTimeStamp));
-            }
-
             // if the segments is in the list of marked for delete then update the status.
             if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName()))) {
               loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
@@ -653,6 +654,7 @@ public class CarbonUpdateUtil {
           new HashSet<Segment>(segmentFilesToBeUpdated),
           table,
           UUID,
+          false,
           false,
           new ArrayList<Segment>(),
           segmentFilesToBeUpdatedLatest, "");

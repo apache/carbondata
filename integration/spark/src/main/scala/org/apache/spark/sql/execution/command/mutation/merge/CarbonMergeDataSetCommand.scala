@@ -217,6 +217,7 @@ case class CarbonMergeDataSetCommand(
             carbonTable,
             trxMgr.getLatestTrx.toString,
             true,
+            true,
             tuple._2.asJava)
         }
       }

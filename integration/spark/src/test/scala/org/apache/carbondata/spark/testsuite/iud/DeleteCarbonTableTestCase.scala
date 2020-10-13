@@ -360,6 +360,55 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists decimal_table")
   }
 
+  test("delete and insert overwrite partition") {
+    sql("""drop table if exists deleteinpartition""")
+    sql(
+      """CREATE TABLE deleteinpartition (id STRING, sales STRING)
+        | PARTITIONED BY (dtm STRING)
+        | STORED AS carbondata""".stripMargin)
+    sql(
+      s"""load data local inpath '$resourcesPath/IUD/updateinpartition.csv'
+         | into table deleteinpartition""".stripMargin)
+    sql("""delete from deleteinpartition where dtm=20200907 and id='001'""")
+    sql("""delete from deleteinpartition where dtm=20200907 and id='002'""")
+    checkAnswer(
+      sql("""select count(1), dtm from deleteinpartition group by dtm"""),
+      Seq(Row(8, "20200907"), Row(10, "20200908"))
+    )
+
+    // insert overwrite an partition which is exist.
+    // make sure the delete executed before still works.
+    sql(
+      """insert overwrite table deleteinpartition
+        | partition (dtm=20200908)
+        | select * from deleteinpartition
+        | where dtm = 20200907""".stripMargin)
+    checkAnswer(
+      sql("""select count(1), dtm from deleteinpartition group by dtm"""),
+      Seq(Row(8, "20200907"), Row(8, "20200908"))
+    )
+
+    // insert overwrite an partition which is not exist.
+    // make sure the delete executed before still works.
+    sql(
+      """insert overwrite table deleteinpartition
+        | partition (dtm=20200909)
+        | select * from deleteinpartition
+        | where dtm = 20200907""".stripMargin)
+    checkAnswer(
+      sql("""select count(1), dtm from deleteinpartition group by dtm"""),
+      Seq(Row(8, "20200907"), Row(8, "20200908"), Row(8, "20200909"))
+    )
+
+    // drop a partition. make sure the delete executed before still works.
+    sql("""alter table deleteinpartition drop partition (dtm=20200908)""")
+    checkAnswer(
+      sql("""select count(1), dtm from deleteinpartition group by dtm"""),
+      Seq(Row(8, "20200907"), Row(8, "20200909"))
+    )
+    sql("""drop table deleteinpartition""")
+  }
+
   test("[CARBONDATA-3491] Return updated/deleted rows count when execute update/delete sql") {
     sql("drop table if exists test_return_row_count")
 
