@@ -314,7 +314,8 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("Operation not allowed on non-carbon table"))
+        assert(e.getMessage.contains("Operation not allowed because either table " +
+          "createindextemptable doesn't exist or not a carbon table."))
     }
   }
 
@@ -337,7 +338,8 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("Operation not allowed on non-carbon table"))
+        assert(e.getMessage.contains("Operation not allowed because either table " +
+          "createindextemptable1 doesn't exist or not a carbon table."))
     }
     sql("insert into temptablecheckDB.createindextemptable1 select 1,'string','string',3")
     sql("insert into temptablecheckDB.createindextemptable1 select 1,'string','string',3")
@@ -448,6 +450,14 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     intercept[RuntimeException] {
       sql("""create index streamin_index on table stream_si(c3) AS 'carbondata'""").show()
     }
+  }
+
+  test("test SI creation on table which doesn't exist") {
+    val exception = intercept[RuntimeException] {
+      sql("""create index indextable on table unknown(c) AS 'carbondata'""").show()
+    }
+    assert(exception.getMessage.contains("Operation not allowed because either table " +
+    "unknown doesn't exist or not a carbon table."))
   }
 
   object CarbonMetastore {
