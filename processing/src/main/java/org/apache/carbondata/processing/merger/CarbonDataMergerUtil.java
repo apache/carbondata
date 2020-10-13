@@ -1039,22 +1039,10 @@ public final class CarbonDataMergerUtil {
     if (CompactionType.IUD_DELETE_DELTA == compactionTypeIUD) {
       int numberDeleteDeltaFilesThreshold =
           CarbonProperties.getInstance().getNoDeleteDeltaFilesThresholdForIUDCompaction();
-      List<Segment> deleteSegments = new ArrayList<>();
       for (Segment seg : segments) {
-        if (checkDeleteDeltaFilesInSeg(seg, segmentUpdateStatusManager,
-            numberDeleteDeltaFilesThreshold)) {
-          deleteSegments.add(seg);
-        }
-      }
-      if (deleteSegments.size() > 0) {
-        // This Code Block Append the Segname along with the Blocks selected for Merge instead of
-        // only taking the segment name. This will help to parallelize better for each block
-        // in case of Delete Horizontal Compaction.
-        for (Segment segName : deleteSegments) {
-          List<String> tempSegments = getDeleteDeltaFilesInSeg(segName, segmentUpdateStatusManager,
-              numberDeleteDeltaFilesThreshold);
-          validSegments.addAll(tempSegments);
-        }
+        List<String> segmentNoAndBlocks = checkDeleteDeltaFilesInSeg(seg,
+            segmentUpdateStatusManager, numberDeleteDeltaFilesThreshold);
+        validSegments.addAll(segmentNoAndBlocks);
       }
     } else if (CompactionType.IUD_UPDDEL_DELTA == compactionTypeIUD) {
       int numberUpdateDeltaFilesThreshold =
@@ -1138,73 +1126,43 @@ public final class CarbonDataMergerUtil {
   }
 
   /**
-   * Check is the segment passed qualifies for IUD delete delta compaction or not i.e.
-   * if the number of delete delta files present in the segment is more than
-   * numberDeltaFilesThreshold.
+   * Check whether the segment passed qualifies for IUD delete delta compaction or not,
+   * i.e., if the number of delete delta files present in the segment is more than
+   * numberDeltaFilesThreshold, this segment will be selected.
    *
-   * @param seg
-   * @param segmentUpdateStatusManager
-   * @param numberDeltaFilesThreshold
-   * @return
+   * @param seg segment to be qualified
+   * @param segmentUpdateStatusManager segments & blocks details management
+   * @param numberDeltaFilesThreshold threshold of delete delta files
+   * @return block list of the segment
    */
-  private static boolean checkDeleteDeltaFilesInSeg(Segment seg,
+  private static List<String> checkDeleteDeltaFilesInSeg(Segment seg,
       SegmentUpdateStatusManager segmentUpdateStatusManager, int numberDeltaFilesThreshold) {
 
+    List<String> blockLists = new ArrayList<>();
     Set<String> uniqueBlocks = new HashSet<String>();
     List<String> blockNameList =
         segmentUpdateStatusManager.getBlockNameFromSegment(seg.getSegmentNo());
-
-    for (final String blockName : blockNameList) {
-
-      CarbonFile[] deleteDeltaFiles =
+    for (String blockName : blockNameList) {
+      List<String> deleteDeltaFiles =
           segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
-      if (null != deleteDeltaFiles) {
+      if (null != deleteDeltaFiles && deleteDeltaFiles.size() > numberDeltaFilesThreshold) {
         // The Delete Delta files may have Spill over blocks. Will consider multiple spill over
         // blocks as one. Currently DeleteDeltaFiles array contains Delete Delta Block name which
         // lies within Delete Delta Start TimeStamp and End TimeStamp. In order to eliminate
         // Spill Over Blocks will choose files with unique taskID.
-        for (CarbonFile blocks : deleteDeltaFiles) {
+        for (String deleteDeltaFile : deleteDeltaFiles) {
           // Get Task ID and the Timestamp from the Block name for e.g.
           // part-0-3-1481084721319.carbondata => "3-1481084721319"
-          String task = CarbonTablePath.DataFileUtil.getTaskNo(blocks.getName());
+          String task = CarbonTablePath.DataFileUtil.getTaskNo(deleteDeltaFile);
           String timestamp =
-              CarbonTablePath.DataFileUtil.getTimeStampFromDeleteDeltaFile(blocks.getName());
-          String taskAndTimeStamp = task + "-" + timestamp;
+              CarbonTablePath.DataFileUtil.getTimeStampFromDeleteDeltaFile(deleteDeltaFile);
+          String taskAndTimeStamp = task + CarbonCommonConstants.HYPHEN + timestamp;
           uniqueBlocks.add(taskAndTimeStamp);
+          if (uniqueBlocks.size() > numberDeltaFilesThreshold) {
+            blockLists.add(seg.getSegmentNo() + CarbonCommonConstants.FILE_SEPARATOR + blockName);
+            break;
+          }
         }
-
-        if (uniqueBlocks.size() > numberDeltaFilesThreshold) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Check is the segment passed qualifies for IUD delete delta compaction or not i.e.
-   * if the number of delete delta files present in the segment is more than
-   * numberDeltaFilesThreshold.
-   * @param seg
-   * @param segmentUpdateStatusManager
-   * @param numberDeltaFilesThreshold
-   * @return
-   */
-
-  private static List<String> getDeleteDeltaFilesInSeg(Segment seg,
-      SegmentUpdateStatusManager segmentUpdateStatusManager, int numberDeltaFilesThreshold) {
-
-    List<String> blockLists = new ArrayList<>();
-    List<String> blockNameList =
-        segmentUpdateStatusManager.getBlockNameFromSegment(seg.getSegmentNo());
-
-    for (final String blockName : blockNameList) {
-
-      CarbonFile[] deleteDeltaFiles =
-          segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
-
-      if (null != deleteDeltaFiles && (deleteDeltaFiles.length > numberDeltaFilesThreshold)) {
-        blockLists.add(seg.getSegmentNo() + "/" + blockName);
       }
     }
     return blockLists;
@@ -1246,20 +1204,16 @@ public final class CarbonDataMergerUtil {
     // set the update status.
     segmentUpdateStatusManager.setUpdateStatusDetails(segmentUpdateDetails);
 
-    CarbonFile[] deleteDeltaFiles =
+    List<String> deleteFilePathList =
         segmentUpdateStatusManager.getDeleteDeltaFilesList(new Segment(seg), blockName);
 
     String destFileName =
         blockName + "-" + timestamp.toString() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;
-    List<String> deleteFilePathList = new ArrayList<>();
-    if (null != deleteDeltaFiles && deleteDeltaFiles.length > 0 && null != deleteDeltaFiles[0]
-        .getParentFile()) {
-      String fullBlockFilePath = deleteDeltaFiles[0].getParentFile().getCanonicalPath()
-          + CarbonCommonConstants.FILE_SEPARATOR + destFileName;
-
-      for (CarbonFile cFile : deleteDeltaFiles) {
-        deleteFilePathList.add(cFile.getCanonicalPath());
-      }
+    if (deleteFilePathList.size() > 0) {
+      String deleteDeltaFilePath = deleteFilePathList.get(0);
+      String fullBlockFilePath = deleteDeltaFilePath.substring(0,
+          deleteDeltaFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR)) +
+          CarbonCommonConstants.FILE_SEPARATOR + destFileName;
 
       CarbonDataMergerUtilResult blockDetails = new CarbonDataMergerUtilResult();
       blockDetails.setBlockName(blockName);

@@ -432,6 +432,100 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
   }
 
+  test("test IUD Horizontal Compaction after updating without compaction") {
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE, "false")
+    sql("""drop database if exists iud4 cascade""")
+    sql("""create database iud4""")
+    sql("""use iud4""")
+    sql("""create table dest4 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest4""")
+    val carbonTable = CarbonEnv.getCarbonTable(Some("iud4"), "dest4")(sqlContext.sparkSession)
+    val identifier = carbonTable.getAbsoluteTableIdentifier()
+    val dataFilesDir = CarbonTablePath.getSegmentPath(identifier.getTablePath, "0")
+    val carbonFile = FileFactory.getCarbonFile(dataFilesDir)
+
+    // update different row in same file three times
+    sql("""update dest4 set (c1) = ('update_1') where c2 = 1""").collect()
+    sql("""update dest4 set (c1) = ('update_2') where c2 = 2""").collect()
+    sql("""update dest4 set (c1) = ('update_3') where c2 = 3""").collect()
+
+    // update without compaction three times, there should be three '.deletedelta' files
+    var deleteDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    assert(deleteDeltaFiles.length == 3)
+
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE, "true")
+
+    // update with compaction
+    sql("""update dest4 set (c1) = ('update_4') where c2 = 4""").collect()
+    sql("""update dest4 set (c1) = ('update_5') where c2 = 5""").collect()
+    sql("""update dest4 set (c1) = ('update_6') where c2 = 6""").collect()
+
+    checkAnswer(
+      sql("select c1 from dest4 order by c2"),
+      Seq(Row("update_1"),
+        Row("update_2"),
+        Row("update_3"),
+        Row("update_4"),
+        Row("update_5"),
+        Row("update_6"),
+        Row("g"),
+        Row("h"),
+        Row("i"),
+        Row("j"))
+    )
+    sql("""drop table dest4""")
+  }
+
+  test("test IUD Horizontal Compaction when CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION >= 3") {
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION, "3")
+    sql("""drop database if exists iud4 cascade""")
+    sql("""create database iud4""")
+    sql("""use iud4""")
+    sql("""create table dest4 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest4""")
+    val carbonTable = CarbonEnv.getCarbonTable(Some("iud4"), "dest4")(sqlContext.sparkSession)
+    val identifier = carbonTable.getAbsoluteTableIdentifier()
+    val dataFilesDir = CarbonTablePath.getSegmentPath(identifier.getTablePath, "0")
+    val carbonFile = FileFactory.getCarbonFile(dataFilesDir)
+
+    sql("""update dest4 set (c1) = ('update_1') where c2 = 1""").collect()
+    sql("""update dest4 set (c1) = ('update_2') where c2 = 2""").collect()
+    sql("""update dest4 set (c1) = ('update_3') where c2 = 3""").collect()
+
+    // at first three update, '.deletedelta' files count is less than or equal to threshold
+    // so there is no horizontal compaction
+    var deleteDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    assert(deleteDeltaFiles.length == 3)
+
+    sql("""update dest4 set (c1) = ('update_4') where c2 = 4""").collect()
+
+    // there is horizontal compaction at forth update
+    // three '.deletedelta' files for previous update operations
+    // one '.deletedelta' file for update operation this time
+    // one '.deletedelta' file for horizontal compaction
+    // so there must be five '.deletedelta' files
+    deleteDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    assert(deleteDeltaFiles.length == 5)
+
+    checkAnswer(
+      sql("select c1 from dest4 order by c2"),
+      Seq(Row("update_1"),
+        Row("update_2"),
+        Row("update_3"),
+        Row("update_4"),
+        Row("e"),
+        Row("f"),
+        Row("g"),
+        Row("h"),
+        Row("i"),
+        Row("j"))
+    )
+    sql("""drop table dest4""")
+  }
+
   override def afterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
