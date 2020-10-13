@@ -28,6 +28,7 @@ import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1025,17 +1026,19 @@ public class SegmentFileStore {
   }
 
   /**
-   * Clean up invalid data after drop partition in all segments of table
+   * Clean up invalid data after drop partition in partial segments of table
    *
-   * @param table
+   * @param table the table need to cleaned stale data
+   * @param details the segments need to cleaned stale data
+   * @param partitionSpecs the partitions need to cleaned stale data
    * @param forceDelete Whether it should be deleted force or check the time for an hour creation
    *                    to delete data.
    * @throws IOException
    */
-  public static void cleanSegments(CarbonTable table, List<PartitionSpec> partitionSpecs,
+  public static void cleanSegments(CarbonTable table,
+      LoadMetadataDetails[] details,
+      List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
-
-    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
     // scan through each segment.
     for (LoadMetadataDetails segment : details) {
       // if this segment is valid then only we will go for deletion of related
@@ -1095,6 +1098,41 @@ public class SegmentFileStore {
         }
       }
     }
+  }
+
+  /**
+   * Clean up invalid data after drop partition in all segments of table
+   *
+   * @param table the table need to clean stale data
+   * @param partitionSpecs the partitionSpecs need to clean
+   * @param forceDelete Whether it should be deleted force or check the time for an hour creation
+   *                    to delete data.
+   * @throws IOException
+   */
+  public static void cleanSegments(CarbonTable table, List<PartitionSpec> partitionSpecs,
+      boolean forceDelete) throws IOException {
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
+    cleanSegments(table, details, partitionSpecs, forceDelete);
+  }
+
+  /**
+   * Clean up invalid data after drop partition in partial segments of table
+   *
+   * @param table the table need to clean stale data
+   * @param segments the segments need to clean stale data
+   * @param forceDelete Whether it should be deleted force or check the time for an hour creation
+   *                    to delete data.
+   * @throws IOException
+   */
+  public static void cleanSegments(CarbonTable table,
+      Set<String> segments,
+      List<PartitionSpec> partitionSpecs,
+      boolean forceDelete) throws IOException {
+    LoadMetadataDetails[] details = Arrays
+        .stream(SegmentStatusManager.readLoadMetadata(table.getMetadataPath()))
+        .filter(detail -> segments.contains(detail.getLoadName()))
+        .toArray(LoadMetadataDetails[]::new);
+    cleanSegments(table, details, partitionSpecs, forceDelete);
   }
 
   /**

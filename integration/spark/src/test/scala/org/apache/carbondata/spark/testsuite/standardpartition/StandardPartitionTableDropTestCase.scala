@@ -159,6 +159,38 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
 
   }
 
+  test("dropping static partition after inserting overwrite partition") {
+    sql("""drop table if exists droppartition""")
+    sql(
+      """CREATE TABLE droppartition (id STRING, sales STRING)
+        | PARTITIONED BY (dtm STRING)
+        | STORED AS carbondata""".stripMargin)
+    sql(
+      s"""load data local inpath '$resourcesPath/IUD/updateinpartition.csv'
+         | into table droppartition""".stripMargin)
+    // insert overwrite an existing partition
+    sql(
+      """insert overwrite table droppartition
+        | partition (dtm=20200908)
+        | select * from droppartition
+        | where dtm = 20200907""".stripMargin)
+    // insert overwrite an non-existing partition
+    sql(
+      """insert overwrite table droppartition
+        | partition (dtm=20200909)
+        | select * from droppartition
+        | where dtm = 20200907""".stripMargin)
+
+    // make sure drop one partition won't effect other partitions
+    sql("""alter table droppartition drop partition (dtm=20200909)""")
+    checkAnswer(
+      sql(s"""select count(*),dtm from droppartition group by dtm"""),
+      Seq(Row(10, "20200907"), Row(10, "20200908")))
+    sql("""alter table droppartition drop partition (dtm=20200907)""")
+    checkAnswer(
+      sql(s"""select count(*),dtm from droppartition group by dtm"""),
+      Seq(Row(10, "20200908")))
+  }
 
   test("dropping all partition on table and do compaction") {
     sql(
@@ -229,6 +261,7 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
     sql("drop table if exists staticpartition")
     sql("drop table if exists partitionallcompaction")
     sql("drop table if exists partitionone1")
+    sql("drop table if exists droppartition")
   }
   // scalastyle:on lineLength
 }
