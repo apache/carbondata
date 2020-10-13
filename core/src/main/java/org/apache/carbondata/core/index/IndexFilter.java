@@ -154,7 +154,7 @@ public class IndexFilter implements Serializable {
           exists = true;
         }
       }
-      if (table.getPartitionInfo() != null) {
+      if (table.getPartitionInfo() != null && !exists) {
         exists = table.getPartitionInfo().getColumnSchemaList().stream()
             .anyMatch(x -> x.getColumnName().equalsIgnoreCase(colExpression));
       }

@@ -294,10 +294,10 @@ public final class FilterUtil {
           checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
               minMaxCacheColumns, true, isStreamDataFile);
     } else {
-      columnResolvedFilterInfo = dimColEvaluatorInfoList.get(0);
-      if (columnResolvedFilterInfo.getDimension() == null) {
+      if (dimColEvaluatorInfoList.isEmpty()) {
         replaceCurrentNodeWithTrueFilter = true;
       } else {
+        columnResolvedFilterInfo = dimColEvaluatorInfoList.get(0);
         if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
           replaceCurrentNodeWithTrueFilter =
               checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,

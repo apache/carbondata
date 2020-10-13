@@ -455,6 +455,7 @@ public class RestructureUtil {
       QueryModel queryModel, SegmentProperties segmentProperties) {
     List<ProjectionDimension> projectionDimensions = queryModel.getProjectionDimensions();
     List<ProjectionMeasure> projectionMeasures = queryModel.getProjectionMeasures();
+    blockExecutionInfo.setProjectionPartitionColumns(queryModel.getPartitionProjectionColumns());
     if (queryModel.getTable().hasColumnDrift()) {
       List<CarbonMeasure> tableBlockMeasures = segmentProperties.getMeasures();
       List<ProjectionMeasure> updatedProjectionMeasures =

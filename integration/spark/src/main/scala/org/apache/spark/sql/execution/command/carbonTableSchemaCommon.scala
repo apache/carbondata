@@ -645,6 +645,22 @@ class TableNewProcessor(cm: TableModel) {
     var index = 0
     var measureCount = 0
 
+    if (cm.sortKeyDims.isDefined) {
+      cm.sortKeyDims.get.foreach {
+        sortCol =>
+          cm.partitionInfo match {
+            case Some(partitionInfo) =>
+              if (partitionInfo.getColumnSchemaList
+                .asScala
+                .map(_.getColumnName)
+                .contains(sortCol)) {
+                throw new UnsupportedOperationException(
+                  "Partition columns cannot configured as sort columns")
+              }
+          }
+      }
+    }
+
     // Sort columns should be at the begin of all columns
     cm.sortKeyDims.get.foreach { keyDim =>
       val field = cm.dimCols.find(keyDim equals _.column).get

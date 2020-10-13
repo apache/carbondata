@@ -362,13 +362,12 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE partition_table (stringField string, intField int, shortField short, stringField1 string)
          | STORED AS carbondata
          | PARTITIONED BY (hour_ string, date_ string, sec_ string)
-         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"drop index if exists si_on_multi_part on partition_table")
     sql(s"create index si_on_multi_part on partition_table(stringField1) as 'carbondata'")
     sql("insert into partition_table select 'abc', 1,123,'abc1',2,'mon','ten'")
     checkAnswer(sql(s"select count(*) from si_on_multi_part"), Seq(Row(1)))
-    val dataFrame = sql(s"select stringField,date_,sec_ from partition_table where stringField1='abc1'")
+    val dataFrame = sql(s"select stringField, date_, sec_ from partition_table where stringField1='abc1'")
     checkAnswer(dataFrame, Seq(Row("abc","mon","ten")))
     if (!isFilterPushedDownToSI(dataFrame.queryExecution.sparkPlan)) {
       assert(false)

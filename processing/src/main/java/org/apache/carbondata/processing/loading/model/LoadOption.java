@@ -249,10 +249,13 @@ public class LoadOption {
     if (staticPartitionCols.size() > 0) {
       List<String> updatedColumns = new ArrayList<>();
       for (int i = 0; i < csvColumns.length; i++) {
-        if (!staticPartitionCols.contains(csvColumns[i])) {
+        if (staticPartitionCols.contains(csvColumns[i])) {
+          updatedColumns.add(csvColumns[i] + "1");
+        } else {
           updatedColumns.add(csvColumns[i]);
         }
       }
+      updatedColumns.addAll(staticPartitionCols);
       return updatedColumns.toArray(new String[updatedColumns.size()]);
     } else {
       return csvColumns;

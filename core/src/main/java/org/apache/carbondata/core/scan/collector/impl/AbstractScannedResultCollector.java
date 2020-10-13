@@ -184,22 +184,21 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       if (partitionName.equalsIgnoreCase("__HIVE_DEFAULT_PARTITION__")) {
         row[partitionColumn.getOrdinal()] = null;
       } else {
-        String newDate = "";
         try {
-          //TODO: Fix this date and time conversion code
           if (partitionColumn.getDataType().equals(DataTypes.DATE)) {
             SimpleDateFormat ss = new SimpleDateFormat("yyyy-MM-dd");
             java.util.Date date = ss.parse(partitionName);
             row[partitionColumn.getOrdinal()] = new DateDirectDictionaryGenerator(
                 CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-                    CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)).generateKey(date.getTime());
+                    CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+                .generateKey(date.getTime()) - DateDirectDictionaryGenerator.cutOffDate;
           } else if (partitionColumn.getDataType().equals(DataTypes.TIMESTAMP)) {
             SimpleDateFormat ss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             java.util.Date date = ss.parse(partitionName);
-            row[partitionColumn.getOrdinal()] = date.getTime();
+            row[partitionColumn.getOrdinal()] = date.getTime() * 1000L;
           } else {
             row[partitionColumn.getOrdinal()] = DataTypeUtil
-                .getDataBasedOnDataType(newDate, partitionColumn.getDataType());
+                .getDataBasedOnDataType(partitionName, partitionColumn.getDataType());
           }
         } catch (Exception e) {
           throw new RuntimeException(e);
