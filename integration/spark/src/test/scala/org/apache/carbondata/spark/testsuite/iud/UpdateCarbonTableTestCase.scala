@@ -16,9 +16,11 @@
  */
 package org.apache.carbondata.spark.testsuite.iud
 
-import java.io.File
+import java.io.{File, IOException}
 
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SaveMode}
+import mockit.{Mock, MockUp}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SaveMode, SparkSession}
+import org.apache.spark.sql.execution.command.mutation.{HorizontalCompaction, HorizontalCompactionException}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -26,6 +28,8 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -81,8 +85,68 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val carbonTable = CarbonEnv.getCarbonTable(Some("iud"), "zerorows")(sqlContext.sparkSession)
     val segmentFileLocation = FileFactory.getCarbonFile(CarbonTablePath.getSegmentFilesLocation(
       carbonTable.getTablePath))
-    assert(segmentFileLocation.listFiles().length == 1)
+    assert(segmentFileLocation.listFiles().length == 3)
     sql("""drop table iud.zerorows""")
+  }
+
+  test("update and insert overwrite partition") {
+    sql("""drop table if exists iud.updateinpartition""")
+    sql(
+      """CREATE TABLE iud.updateinpartition (id STRING, sales INT)
+        | PARTITIONED BY (dtm STRING)
+        | STORED AS carbondata""".stripMargin)
+    sql(
+      s"""load data local
+         | inpath '$resourcesPath/IUD/updateinpartition.csv'
+         | into table updateinpartition""".stripMargin)
+    sql(
+      """update iud.updateinpartition u
+        | set (u.sales) = (u.sales + 1) where id='001'""".stripMargin)
+    sql(
+      """update iud.updateinpartition u
+        | set (u.sales) = (u.sales + 2) where id='011'""".stripMargin)
+
+    // delete data from a partition, make sure the update executed before still works.
+    sql("""delete from updateinpartition where dtm=20200908 and id='012'""".stripMargin)
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='001'""".stripMargin),
+      Seq(Row(1))
+    )
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='011'""".stripMargin),
+      Seq(Row(2))
+    )
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='012'""".stripMargin),
+      Seq()
+    )
+
+    // insert overwrite a partition. make sure the update executed before still works.
+    sql(
+      """insert overwrite table iud.updateinpartition
+        | partition (dtm=20200908)
+        | select * from iud.updateinpartition where dtm = 20200907""".stripMargin)
+    checkAnswer(
+      sql(
+        """select sales from iud.updateinpartition
+          | where dtm=20200907 and id='001'""".stripMargin), Seq(Row(1))
+    )
+    checkAnswer(
+      sql(
+        """select sales from iud.updateinpartition
+          | where dtm=20200908 and id='001'""".stripMargin), Seq(Row(1))
+    )
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='011'""".stripMargin),
+      Seq()
+    )
+
+    // drop a partition. make sure the update executed before still works.
+    sql("""alter table iud.updateinpartition drop partition (dtm=20200908)""")
+    checkAnswer(
+      sql("""select sales from iud.updateinpartition where id='001'""".stripMargin),
+      Seq(Row(1))
+    )
   }
 
   test("test update operation with multiple loads and clean files operation") {
@@ -187,6 +251,29 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud.dest22""")
     sql("""create table iud.dest22 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest22""")
+    checkAnswer(
+      sql("""select c2 from iud.dest22 where c1='a'"""),
+      Seq(Row(1))
+    )
+    sql("""update dest22 d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").collect()
+    checkAnswer(
+      sql("""select c2 from iud.dest22 where c1='a'"""),
+      Seq(Row(2))
+    )
+    sql("""drop table if exists iud.dest22""")
+  }
+
+  test("update carbon table with stale data") {
+    sql("""drop table if exists iud.dest22""")
+    sql("""create table iud.dest22 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest22""")
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("iud", "dest22")
+    val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
+    FileFactory.getCarbonFile(tableStatusFile).delete()
+
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest22""")
+
     checkAnswer(
       sql("""select c2 from iud.dest22 where c1='a'"""),
       Seq(Row(1))
@@ -575,11 +662,11 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       """update iud.show_segment d set (d.c3, d.c5 ) =
         | (select s.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1
         | """.stripMargin).collect()
-    val after_update = sql("""show segments for table iud.show_segment""")
-    checkAnswer(
-      after_update,
-      before_update
-    )
+    val after_update = sql("""show segments for table iud.show_segment""").collect()
+    (0 to 7).map(index => {
+      assert(after_update(1).get(index).equals(before_update(0).get(index)))
+    })
+
     sql("""drop table if exists iud.show_segment""").collect()
   }
 
@@ -1089,6 +1176,42 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance()
         .removeProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT)
     }
+  }
+
+  test("test update atomicity when horizontal compaction fails") {
+    sql("drop table if exists iud.zerorows")
+    sql("create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows")
+    mockForTestUpdateAtomicity(new IOException("Mock IOException"))
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from iud.zerorows"""),
+      Seq(Row("a", 1, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
+        Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
+    )
+
+    mockForTestUpdateAtomicity(new HorizontalCompactionException(
+      "Mock HorizontalCompactionException", System.currentTimeMillis()))
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from iud.zerorows"""),
+      Seq(Row("a", 2, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
+        Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
+    )
+  }
+
+  def mockForTestUpdateAtomicity(exception: Exception) {
+    var mock = new MockUp[HorizontalCompaction.type]() {
+      @Mock
+      def tryHorizontalCompaction(sparkSession: SparkSession, carbonTable: CarbonTable): Unit = {
+        throw exception
+      }
+    }
+    try {
+      sql("update iud.zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'").collect()
+    } catch {
+      case ex: Exception =>
+    }
+    mock.tearDown()
+
   }
 
   override def afterAll {

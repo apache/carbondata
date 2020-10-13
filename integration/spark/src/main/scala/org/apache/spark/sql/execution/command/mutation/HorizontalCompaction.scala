@@ -48,14 +48,12 @@ object HorizontalCompaction {
    */
   def tryHorizontalCompaction(
       sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      isUpdateOperation: Boolean): Unit = {
+      carbonTable: CarbonTable): Unit = {
 
     if (!CarbonDataMergerUtil.isHorizontalCompactionEnabled) {
       return
     }
 
-    var compactionTypeIUD = CompactionType.IUD_UPDDEL_DELTA
     val absTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val updateTimeStamp = System.currentTimeMillis()
     // To make sure that update and delete timestamps are not same,
@@ -76,21 +74,8 @@ object HorizontalCompaction {
     val segmentUpdateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
       carbonTable)
 
-    if (isUpdateOperation) {
-
-      // This is only update operation, perform only update compaction.
-      compactionTypeIUD = CompactionType.IUD_UPDDEL_DELTA
-      performUpdateDeltaCompaction(sparkSession,
-        compactionTypeIUD,
-        carbonTable,
-        absTableIdentifier,
-        segmentUpdateStatusManager,
-        updateTimeStamp,
-        segLists)
-    }
-
     // After Update Compaction perform delete compaction
-    compactionTypeIUD = CompactionType.IUD_DELETE_DELTA
+    val compactionTypeIUD = CompactionType.IUD_DELETE_DELTA
     segLists = CarbonDataMergerUtil.getValidSegmentList(carbonTable)
     if (segLists == null || segLists.size() == 0) {
       return
@@ -111,56 +96,6 @@ object HorizontalCompaction {
     // now invalid, so clear the cache of invalid segment after horizontal compaction.
     IndexStoreManager.getInstance()
       .clearInvalidSegments(carbonTable, segLists.asScala.map(_.getSegmentNo).asJava)
-  }
-
-  /**
-   * Update Delta Horizontal Compaction.
-   */
-  private def performUpdateDeltaCompaction(sparkSession: SparkSession,
-      compactionTypeIUD: CompactionType,
-      carbonTable: CarbonTable,
-      absTableIdentifier: AbsoluteTableIdentifier,
-      segmentUpdateStatusManager: SegmentUpdateStatusManager,
-      factTimeStamp: Long,
-      segLists: util.List[Segment]): Unit = {
-    val db = carbonTable.getDatabaseName
-    val table = carbonTable.getTableName
-    // get the valid segments qualified for update compaction.
-    val validSegList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
-      absTableIdentifier,
-      segmentUpdateStatusManager,
-      compactionTypeIUD)
-    if (LOG.isDebugEnabled) {
-      LOG.debug(s"The segment list for Horizontal Update Compaction is $validSegList")
-    }
-
-    if (validSegList.size() == 0) {
-      return
-    }
-
-    LOG.info(s"Horizontal Update Compaction operation started for [$db.$table].")
-
-    try {
-      // Update Compaction.
-      val alterTableModel = AlterTableModel(Option(carbonTable.getDatabaseName),
-        carbonTable.getTableName,
-        Some(segmentUpdateStatusManager),
-        CompactionType.IUD_UPDDEL_DELTA.toString,
-        Some(factTimeStamp))
-
-      CarbonAlterTableCompactionCommand(alterTableModel).run(sparkSession)
-    }
-    catch {
-      case e: Exception =>
-        val msg = if (null != e.getMessage) {
-          e.getMessage
-        } else {
-          "Please check logs for more info"
-        }
-        throw new HorizontalCompactionException(
-          s"Horizontal Update Compaction Failed for [${ db }.${ table }]. " + msg, factTimeStamp)
-    }
-    LOG.info(s"Horizontal Update Compaction operation completed for [${ db }.${ table }].")
   }
 
   /**

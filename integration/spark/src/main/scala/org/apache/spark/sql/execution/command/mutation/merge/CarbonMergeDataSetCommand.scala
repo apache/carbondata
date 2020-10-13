@@ -205,23 +205,8 @@ case class CarbonMergeDataSetCommand(
         LOGGER.error("writing of update status file failed")
         throw new CarbonMergeDataSetException("writing of update status file failed")
       }
-      if (carbonTable.isHivePartitionTable) {
-        // If load count is 0 and if merge action contains delete operation, update
-        // tableUpdateStatus file name in loadMeta entry
-        if (count == 0 && hasDelAction && !tuple._1.isEmpty) {
-          val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
-            .getTableStatusFilePath(carbonTable.getTablePath))
-          CarbonUpdateUtil.updateTableMetadataStatus(loadMetaDataDetails.map(loadMetadataDetail =>
-            new Segment(loadMetadataDetail.getMergedLoadName,
-              loadMetadataDetail.getSegmentFile)).toSet.asJava,
-            carbonTable,
-            trxMgr.getLatestTrx.toString,
-            true,
-            tuple._2.asJava)
-        }
-      }
       Some(UpdateTableModel(isUpdate = true, trxMgr.getLatestTrx,
-        executorErrors, tuple._2, loadAsNewSegment = true))
+        executorErrors, tuple._2, Option.empty))
     } else {
       None
     }
@@ -238,6 +223,18 @@ case class CarbonMergeDataSetCommand(
       new OperationContext,
       updateTableModel
     ).run(sparkSession)
+
+    if (hasDelAction && count == 0) {
+      val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
+        .getTableStatusFilePath(carbonTable.getTablePath))
+      CarbonUpdateUtil.updateTableMetadataStatus(loadMetaDataDetails.map(loadMetadataDetail =>
+        new Segment(loadMetadataDetail.getMergedLoadName,
+          loadMetadataDetail.getSegmentFile)).toSet.asJava,
+        carbonTable,
+        trxMgr.getLatestTrx.toString,
+        true,
+        true, new util.ArrayList[Segment]())
+    }
     LOGGER.info(s"Total inserted rows: ${stats.insertedRows.sum}")
     LOGGER.info(s"Total updated rows: ${stats.updatedRows.sum}")
     LOGGER.info(s"Total deleted rows: ${stats.deletedRows.sum}")
@@ -249,7 +246,7 @@ case class CarbonMergeDataSetCommand(
       trxMgr, mutationAction, mergeMatches)
     // Do IUD Compaction.
     HorizontalCompaction.tryHorizontalCompaction(
-      sparkSession, carbonTable, isUpdateOperation = false)
+      sparkSession, carbonTable)
     Seq.empty
   }
 

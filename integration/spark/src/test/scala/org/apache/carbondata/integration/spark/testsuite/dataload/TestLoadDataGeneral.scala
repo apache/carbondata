@@ -190,7 +190,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     sql(s"update longerthan32kchar set(longerthan32kchar.dim2)=('$longChar') " +
       "where longerthan32kchar.mes1=1").collect()
     checkAnswer(sql("select * from longerthan32kchar"), Seq(Row("itsok", "hello", 2)))
-    redirectCsvPath = BadRecordUtil.getRedirectCsvPath("default", "longerthan32kchar", "0", "1")
+    redirectCsvPath = BadRecordUtil.getRedirectCsvPath("default", "longerthan32kchar", "2", "0")
     redirectedFileLineList = FileUtils.readLines(redirectCsvPath)
     iterator = redirectedFileLineList.iterator()
     while (iterator.hasNext) {
@@ -327,7 +327,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     sql("drop table if exists load32000bytes")
   }
 
-  test("test if stale folders are deleting on data load") {
+  test("test data load with stale folders") {
     sql("drop table if exists stale")
     sql("create table stale(a string) STORED AS carbondata")
     sql("insert into stale values('k')")
@@ -336,7 +336,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     FileFactory.getCarbonFile(tableStatusFile).delete()
     sql("insert into stale values('k')")
     // if table lose tablestatus file, the system should keep all data.
-    checkAnswer(sql("select * from stale"), Seq(Row("k"), Row("k")))
+    checkAnswer(sql("select * from stale"), Seq(Row("k")))
   }
 
   test("test data loading with directly writing fact data to hdfs") {

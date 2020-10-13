@@ -809,19 +809,6 @@ public final class CarbonCommonConstants {
   public static final int NUMBER_OF_SEGMENT_COMPACTED_PERTIME_UPPER_LIMIT = 10000;
 
   /**
-   * Number of Update Delta files which is the Threshold for IUD compaction.
-   * Only accepted Range is 0 - 10000. Outside this range system will pick default value.
-   */
-  @CarbonProperty
-  public static final String UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION =
-      "carbon.horizontal.update.compaction.threshold";
-
-  /**
-   * Default count of segments which act as a threshold for IUD compaction merge.
-   */
-  public static final String DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION = "1";
-
-  /**
    * Number of Delete Delta files which is the Threshold for IUD compaction.
    * Only accepted Range is 0 - 10000. Outside this range system will pick default value.
    */
@@ -1774,11 +1761,6 @@ public final class CarbonCommonConstants {
    * DELETE_DELTA_FILE_EXT
    */
   public static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
-
-  /**
-   * UPDATE_DELTA_FILE_EXT
-   */
-  public static final String UPDATE_DELTA_FILE_EXT = FACT_FILE_EXT;
 
   /**
    * MERGERD_EXTENSION

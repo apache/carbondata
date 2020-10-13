@@ -232,43 +232,19 @@ public class SegmentFileStore {
     return segmentId + "_" + UUID;
   }
 
-  /**
-   * Write segment file to the metadata folder of the table
-   *
-   * @param carbonTable CarbonTable
-   * @param segmentId segment id
-   * @param UUID      a UUID string used to construct the segment file name
-   * @param segmentMetaDataInfo list of block level min and max values for segment
-   * @return segment file name
-   */
-  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String uuid,
       SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segmentMetaDataInfo);
+    return writeSegmentFile(carbonTable, segmentId, uuid, null, segmentMetaDataInfo);
   }
 
-  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID)
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String uuid)
       throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, null);
+    return writeSegmentFile(carbonTable, segmentId, uuid, null, null);
   }
 
-  /**
-   * Write segment file to the metadata folder of the table
-   *
-   * @param carbonTable CarbonTable
-   * @param segmentId segment id
-   * @param UUID      a UUID string used to construct the segment file name
-   * @param segPath segment path
-   * @param segmentMetaDataInfo segment metadata info
-   * @return segment file name
-   */
-  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      String segPath, SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, segmentMetaDataInfo);
-  }
-
-  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String uuid,
       String segPath) throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, null);
+    return writeSegmentFile(carbonTable, segmentId, uuid, segPath, null);
   }
 
   /**
@@ -393,13 +369,12 @@ public class SegmentFileStore {
    *
    * @param carbonTable
    * @param segmentId
-   * @param UUID
-   * @param currentLoadTimeStamp
+   * @param uuid
    * @return
    * @throws IOException
    */
-  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      final String currentLoadTimeStamp, String absSegPath, SegmentMetaDataInfo segmentMetaDataInfo)
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String uuid,
+        String absSegPath, SegmentMetaDataInfo segmentMetaDataInfo)
       throws IOException {
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
@@ -411,13 +386,13 @@ public class SegmentFileStore {
     CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
-        if (null != currentLoadTimeStamp) {
-          return file.getName().contains(currentLoadTimeStamp) && (
+        if (null != uuid) {
+          return file.getName().contains(uuid) && (
               file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
                   .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
         }
-        return (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
-            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
+        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT);
       }
     });
     if (indexFiles != null && indexFiles.length > 0) {
@@ -450,7 +425,7 @@ public class SegmentFileStore {
       if (!carbonFile.exists()) {
         carbonFile.mkdirs();
       }
-      String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
+      String segmentFileName = genSegmentFileName(segmentId, uuid) + CarbonTablePath.SEGMENT_EXT;
       // write segment info to new file.
       writeSegmentFile(segmentFile, segmentFileFolder + File.separator + segmentFileName);
 
@@ -1019,7 +994,8 @@ public class SegmentFileStore {
       Set<Segment> segmentSet = new HashSet<>(
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
               .getValidAndInvalidSegments(carbonTable.isMV()).getValidSegments());
-      CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
+      CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId,
+          true, false,
           Segment.toSegmentList(toBeDeleteSegments, null),
           Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
     }

@@ -28,7 +28,6 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{ArrayType, LongType}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AlterTableUtil
-import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -38,10 +37,12 @@ import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.processing.util.CarbonLoaderUtil
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.view.MVManagerInSpark
 
 private[sql] case class CarbonProjectForUpdateCommand(
@@ -118,8 +119,10 @@ private[sql] case class CarbonProjectForUpdateCommand(
     //    var dataFrame: DataFrame = null
     var dataSet: DataFrame = null
     val isPersistEnabled = CarbonProperties.getInstance.isPersistUpdateDataset
-    var hasException = false
+    var hasHorizontalCompactionException = false
+    var hasUpdateException = false
     var fileTimestamp = ""
+    var updateTableModel: UpdateTableModel = null
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
@@ -158,8 +161,6 @@ private[sql] case class CarbonProjectForUpdateCommand(
                 "for the update key")
             }
           }
-          // handle the clean up of IUD.
-          CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
           // do delete operation.
           val (segmentsToBeDeleted, updatedRowCountTemp) = DeleteExecution.deleteDeltaExecution(
@@ -176,15 +177,16 @@ private[sql] case class CarbonProjectForUpdateCommand(
           }
 
           updatedRowCount = updatedRowCountTemp
+          updateTableModel =
+            UpdateTableModel(true, currentTime, executionErrors, segmentsToBeDeleted, Option.empty)
           // do update operation.
           performUpdate(dataSet,
             databaseNameOp,
             tableName,
             plan,
             sparkSession,
-            currentTime,
-            executionErrors,
-            segmentsToBeDeleted)
+            updateTableModel,
+            executionErrors)
 
           // pre-priming for update command
           DeleteExecution.reloadDistributedSegmentCache(carbonTable,
@@ -202,7 +204,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
 
       // Do IUD Compaction.
       HorizontalCompaction.tryHorizontalCompaction(
-        sparkSession, carbonTable, isUpdateOperation = true)
+        sparkSession, carbonTable)
 
       // Truncate materialized views on the current table.
       val viewManager = MVManagerInSpark.get(sparkSession)
@@ -221,14 +223,11 @@ private[sql] case class CarbonProjectForUpdateCommand(
           "Update operation passed. Exception in Horizontal Compaction. Please check logs." + e)
         // In case of failure , clean all related delta files
         fileTimestamp = e.compactionTimeStamp.toString
-        hasException = true
+        hasHorizontalCompactionException = true
       case e: Exception =>
         LOGGER.error("Exception in update operation", e)
-        // ****** start clean up.
-        // In case of failure , clean all related delete delta files
         fileTimestamp = currentTime + ""
-        hasException = true
-        // *****end clean up.
+        hasUpdateException = true
         if (null != e.getMessage) {
           sys.error("Update operation failed. " + e.getMessage)
         }
@@ -237,6 +236,14 @@ private[sql] case class CarbonProjectForUpdateCommand(
         }
         sys.error("Update operation failed. please check logs.")
     } finally {
+      // In case of failure, clean new inserted segment,
+      // change the status of new segment to 'mark for delete' from 'success'
+      if (hasUpdateException && null != updateTableModel
+        && updateTableModel.insertedSegment.isDefined) {
+        CarbonLoaderUtil.updateTableStatusInCaseOfFailure(updateTableModel.insertedSegment.get,
+          carbonTable, SegmentStatus.SUCCESS)
+      }
+
       if (updateLock.unlock()) {
         LOGGER.info(s"updateLock unlocked successfully after update $tableName")
       } else {
@@ -264,7 +271,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
 
       // In case of failure, clean all related delete delta files.
-      if (hasException) {
+      if (hasHorizontalCompactionException || hasUpdateException) {
+        // In case of failure , clean all related delete delta files
         // When the table has too many segemnts, it will take a long time.
         // So moving it to the end and it is outside of locking.
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, fileTimestamp)
@@ -279,9 +287,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
       tableName: String,
       plan: LogicalPlan,
       sparkSession: SparkSession,
-      currentTime: Long,
-      executorErrors: ExecutionErrors,
-      deletedSegments: Seq[Segment]): Unit = {
+      updateTableModel: UpdateTableModel,
+      executorErrors: ExecutionErrors): Unit = {
 
     def isDestinationRelation(relation: CarbonDatasourceHadoopRelation): Boolean = {
       val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
@@ -340,16 +347,17 @@ private[sql] case class CarbonProjectForUpdateCommand(
       case _ => sys.error("")
     }
 
-    val updateTableModel = UpdateTableModel(true, currentTime, executorErrors, deletedSegments)
-
     val header = getHeader(carbonRelation, plan)
+    val fields = dataFrame.schema.fields
+    val otherFields = CarbonScalaUtil.getAllFieldsWithoutTupleIdField(fields)
+    val dataFrameWithOutTupleId = dataFrame.select(otherFields: _*)
 
     CarbonInsertIntoWithDf(
       databaseNameOp = Some(carbonRelation.identifier.getCarbonTableIdentifier.getDatabaseName),
       tableName = carbonRelation.identifier.getCarbonTableIdentifier.getTableName,
       options = Map(("fileheader" -> header)),
       isOverwriteTable = false,
-      dataFrame = dataFrame,
+      dataFrame = dataFrameWithOutTupleId,
       updateModel = Some(updateTableModel)).process(sparkSession)
 
     executorErrors.errorMsg = updateTableModel.executorErrors.errorMsg

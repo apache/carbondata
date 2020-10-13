@@ -215,22 +215,6 @@ case class CarbonAlterTableCompactionCommand(
     val compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
     val compactionSize = CarbonDataMergerUtil.getCompactionSize(compactionType, carbonLoadModel)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
-      if (alterTableModel.segmentUpdateStatusManager.isDefined) {
-        carbonLoadModel.setSegmentUpdateStatusManager(
-          alterTableModel.segmentUpdateStatusManager.get)
-        carbonLoadModel.setLoadMetadataDetails(
-          alterTableModel.segmentUpdateStatusManager.get.getLoadMetadataDetails.toList.asJava)
-      } else {
-        // segmentUpdateStatusManager will not be defined in case of IUD/horizontal compaction on
-        // materialized views. In that case, create new segmentUpdateStatusManager object
-        // using carbonTable
-        val segmentUpdateStatusManager = new SegmentUpdateStatusManager(carbonTable)
-        carbonLoadModel.setSegmentUpdateStatusManager(segmentUpdateStatusManager)
-        carbonLoadModel.setLoadMetadataDetails(
-          segmentUpdateStatusManager.getLoadMetadataDetails.toList.asJava)
-      }
-    }
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       carbonLoadModel.readAndSetLoadMetadataDetails()
@@ -320,19 +304,17 @@ case class CarbonAlterTableCompactionCommand(
       try {
         // COMPACTION_LOCK and UPDATE_LOCK are already locked when start to execute update sql,
         // so it don't need to require locks again when compactionType is IUD_UPDDEL_DELTA.
-        if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
-          if (!updateLock.lockWithRetries()) {
-            throw new ConcurrentOperationException(carbonTable, "update", "compaction")
-          }
-          if (!lock.lockWithRetries()) {
-            LOGGER.error(s"Not able to acquire the compaction lock for table " +
-                         s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-            CarbonException.analysisException(
-              "Table is already locked for compaction. Please try after some time.")
-          } else {
-            LOGGER.info("Acquired the compaction lock for table " +
-                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-          }
+        if (!updateLock.lockWithRetries()) {
+          throw new ConcurrentOperationException(carbonTable, "update", "compaction")
+        }
+        if (!lock.lockWithRetries()) {
+          LOGGER.error(s"Not able to acquire the compaction lock for table " +
+            s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+          CarbonException.analysisException(
+            "Table is already locked for compaction. Please try after some time.")
+        } else {
+          LOGGER.info("Acquired the compaction lock for table " +
+            s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         }
         CarbonDataRDDFactory.startCompactionThreads(
           sqlContext,
@@ -346,14 +328,10 @@ case class CarbonAlterTableCompactionCommand(
       } catch {
         case e: Exception =>
           LOGGER.error(s"Exception in start compaction thread.", e)
-          if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
-            lock.unlock()
-          }
+          lock.unlock()
           throw e
       } finally {
-        if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
-          updateLock.unlock()
-        }
+        updateLock.unlock()
         MVManagerInSpark.disableMVOnTable(sqlContext.sparkSession, carbonTable)
       }
     }

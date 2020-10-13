@@ -205,9 +205,9 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
           operationContext = operationContext)
 
       // add the start entry for the new load in the table status file
-      if ((updateModel.isEmpty || updateModel.isDefined && updateModel.get.loadAsNewSegment)
+      if ((updateModel.isEmpty || updateModel.isDefined)
           && !table.isHivePartitionTable) {
-        if (updateModel.isDefined ) {
+        if (updateModel.isDefined) {
           carbonLoadModel.setFactTimeStamp(updateModel.get.updatedTimeStamp)
         }
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
@@ -449,13 +449,7 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
 
   def insertData(loadParams: CarbonLoadParams): (Seq[Row], LoadMetadataDetails) = {
     var rows = Seq.empty[Row]
-    val loadDataFrame = if (updateModel.isDefined && !updateModel.get.loadAsNewSegment) {
-      // TODO: handle the update flow for new insert into flow without converter step
-      throw new UnsupportedOperationException(
-        "Update flow is not supported without no converter step yet.")
-    } else {
-      Some(dataFrame)
-    }
+    val loadDataFrame = Some(dataFrame)
     val table = loadParams.carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var loadResult : LoadMetadataDetails = null
     if (table.isHivePartitionTable) {

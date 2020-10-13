@@ -103,7 +103,7 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
     sql("update carbon set(a)=(10) where a=1").collect()
     checkAnswer(sql("select count(*) from carbon where a=10"), Seq(Row(3)))
     showCache = sql("show metacache on table carbon").collect()
-    assert(showCache(0).get(2).toString.equalsIgnoreCase("6/8 index files cached"))
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/6 index files cached"))
     drop
   }
 

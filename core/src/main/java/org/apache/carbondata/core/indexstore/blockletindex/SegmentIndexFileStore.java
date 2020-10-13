@@ -98,11 +98,12 @@ public class SegmentIndexFileStore {
   /**
    * Read all index files and keep the cache in it.
    *
-   * @param segmentPath
+   * @param segmentPath the getAbsolutePath of segment folder
+   * @param uuid the loadstarttime of segment
    * @throws IOException
    */
-  public void readAllIIndexOfSegment(String segmentPath) throws IOException {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath, configuration);
+  public void readAllIIndexOfSegment(String segmentPath, String uuid) throws IOException {
+    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath, configuration, uuid);
     for (CarbonFile carbonIndexFile : carbonIndexFiles) {
       if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         readMergeFile(carbonIndexFile.getCanonicalPath());
@@ -110,6 +111,16 @@ public class SegmentIndexFileStore {
         readIndexFile(carbonIndexFile);
       }
     }
+  }
+
+  /**
+   * Read all index files and keep the cache in it.
+   *
+   * @param segmentPath
+   * @throws IOException
+   */
+  public void readAllIIndexOfSegment(String segmentPath) throws IOException {
+    readAllIIndexOfSegment(segmentPath, null);
   }
 
   /**
@@ -167,9 +178,9 @@ public class SegmentIndexFileStore {
    * @param segmentPath
    * @throws IOException
    */
-  public void readAllIndexAndFillBlockletInfo(String segmentPath) throws IOException {
+  public void readAllIndexAndFillBlockletInfo(String segmentPath, String uuid) throws IOException {
     CarbonFile[] carbonIndexFiles =
-        getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
+        getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration(), uuid);
     for (CarbonFile carbonIndexFile : carbonIndexFiles) {
       if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         readMergeFile(carbonIndexFile.getCanonicalPath());
@@ -363,8 +374,19 @@ public class SegmentIndexFileStore {
    * @param segmentPath
    * @return
    */
-  public static CarbonFile[] getCarbonIndexFiles(String segmentPath, Configuration configuration) {
+  public static CarbonFile[] getCarbonIndexFiles(String segmentPath,
+      Configuration configuration, String uuid) {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath, configuration);
+    if (null != uuid) {
+      return carbonFile.listFiles(new CarbonFileFilter() {
+        @Override
+        public boolean accept(CarbonFile file) {
+          return file.getName().contains(uuid)
+              && (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+              .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) && file.getSize() > 0;
+        }
+      });
+    }
     return carbonFile.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
@@ -372,6 +394,16 @@ public class SegmentIndexFileStore {
             .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) && file.getSize() > 0);
       }
     });
+  }
+
+  /**
+   * List all the index files of the segment.
+   *
+   * @param segmentPath
+   * @return
+   */
+  public static CarbonFile[] getCarbonIndexFiles(String segmentPath, Configuration configuration) {
+    return getCarbonIndexFiles(segmentPath, configuration, null);
   }
 
   /**

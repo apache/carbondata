@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -86,28 +85,14 @@ public class SegmentMetaDataInfoStats {
   public synchronized void setBlockMetaDataInfo(String tableName, String segmentId,
       BlockColumnMetaDataInfo currentBlockColumnMetaInfo) {
     // check if tableName is present in tableSegmentMetaDataInfoMap
-    if (!this.tableSegmentMetaDataInfoMap.isEmpty() && null != this.tableSegmentMetaDataInfoMap
-        .get(tableName) && null != this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId)) {
-      // get previous blockColumn metadata information
-      BlockColumnMetaDataInfo previousBlockColumnMetaInfo =
-          this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId);
-      // compare and get updated min and max values
-      byte[][] updatedMin = BlockIndex.compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMin(),
-          currentBlockColumnMetaInfo.getMin(), true);
-      byte[][] updatedMax = BlockIndex.compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMax(),
-          currentBlockColumnMetaInfo.getMax(), false);
-      // update the segment
-      this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId)
-          .setMinMax(updatedMin, updatedMax);
-    } else {
-      Map<String, BlockColumnMetaDataInfo> segmentMinMaxMap = new HashMap<>();
-      if (null != this.tableSegmentMetaDataInfoMap.get(tableName)
-          && !this.tableSegmentMetaDataInfoMap.get(tableName).isEmpty()) {
-        segmentMinMaxMap = this.tableSegmentMetaDataInfoMap.get(tableName);
-      }
-      segmentMinMaxMap.put(segmentId, currentBlockColumnMetaInfo);
-      this.tableSegmentMetaDataInfoMap.put(tableName, segmentMinMaxMap);
+    Map<String, BlockColumnMetaDataInfo> segmentMinMaxMap = new HashMap<>();
+    if (!this.tableSegmentMetaDataInfoMap.isEmpty()
+        && null != this.tableSegmentMetaDataInfoMap.get(tableName)
+        && !this.tableSegmentMetaDataInfoMap.get(tableName).isEmpty()) {
+      segmentMinMaxMap = this.tableSegmentMetaDataInfoMap.get(tableName);
     }
+    segmentMinMaxMap.put(segmentId, currentBlockColumnMetaInfo);
+    this.tableSegmentMetaDataInfoMap.put(tableName, segmentMinMaxMap);
   }
 
   /**

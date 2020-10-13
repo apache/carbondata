@@ -137,36 +137,11 @@ class CarbonMergerRDD[K, V](
 
         Collections.sort(tableBlockInfoList)
 
-        // During UPDATE DELTA COMPACTION case all the blocks received in compute belongs to
-        // one segment, so max cardinality will be calculated from first block of segment
-        if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.compactionType) {
-          var dataFileFooter: DataFileFooter = null
-          try {
-            // As the tableBlockInfoList is sorted take the ColCardinality from the last
-            // Block of the sorted list as it will have the last updated cardinality.
-            // Blocks are sorted by order of the update using TableBlockInfo.compare method so
-            // the last block after the sort will be the latest one.
-            dataFileFooter = CarbonUtil
-              .readMetadataFile(tableBlockInfoList.get(tableBlockInfoList.size() - 1))
-          } catch {
-            case e: IOException =>
-              logError("Exception in preparing the data file footer for compaction " + e.getMessage)
-              throw e
-          }
-          // target load name will be same as source load name in case of update data compaction
-          carbonMergerMapping.mergedLoadName = tableBlockInfoList.get(0).getSegmentId
-          carbonMergerMapping.maxSegmentColumnSchemaList = dataFileFooter.getColumnInTable.asScala
-            .toList
-        }
-        mergeNumber = if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.compactionType) {
-          tableBlockInfoList.get(0).getSegment.toString
-        } else {
-          mergedLoadName.substring(
-            mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
-              CarbonCommonConstants.LOAD_FOLDER.length(),
-            mergedLoadName.length()
-          )
-        }
+        mergeNumber = mergedLoadName.substring(
+          mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
+            CarbonCommonConstants.LOAD_FOLDER.length(),
+          mergedLoadName.length()
+        )
         carbonLoadModel.setSegmentId(mergeNumber)
 
         if(carbonTable.isHivePartitionTable) {
