@@ -147,6 +147,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     var locks = List.empty[ICarbonLock]
     val uniqueId = System.currentTimeMillis().toString
+    val tobeCleanSegs = new util.HashSet[String]
     try {
       locks = AlterTableUtil.validateTableAndAcquireLock(
         table.getDatabaseName,
@@ -181,9 +182,11 @@ case class CarbonAlterTableDropHivePartitionCommand(
       OperationListenerBus.getInstance().fireEvent(postStatusEvent, operationContext)
 
       IndexStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
+      tobeCleanSegs.addAll(tobeUpdatedSegs)
+      tobeCleanSegs.addAll(tobeDeletedSegs)
     } finally {
       AlterTableUtil.releaseLocks(locks)
-      SegmentFileStore.cleanSegments(table, null, true)
+      SegmentFileStore.cleanSegments(table, tobeCleanSegs, null, true)
     }
     Seq.empty[Row]
   }
