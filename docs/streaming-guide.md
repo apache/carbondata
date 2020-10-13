@@ -34,7 +34,7 @@
     - [CREATE STREAM](#create-stream)
     - [DROP STREAM](#drop-stream)
     - [SHOW STREAMS](#show-streams)
-    - [CLOSE STREAM](#close-stream)
+    - [CLOSE STREAM](#alter-table-close-stream)
 
 ## Quick example
 Download and unzip spark-2.4.5-bin-hadoop2.7.tgz, and export $SPARK_HOME

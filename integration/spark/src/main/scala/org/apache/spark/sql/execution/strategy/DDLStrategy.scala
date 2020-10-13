@@ -204,7 +204,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           ExecutedCommandExec(CarbonCreateSecondaryIndexCommand(
             indexModel, tableProperties, ifNotExists, isDeferredRefresh, isCreateSIndex)) :: Nil
         } else {
-          sys.error("Operation not allowed on non-carbon table")
+          sys.error(s"Operation not allowed because either table " +
+            s"${indexModel.tableName} doesn't exist or not a carbon table.")
         }
       case showIndex@ShowIndexesCommand(_, _) =>
         try {

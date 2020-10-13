@@ -62,13 +62,16 @@ create table source_index(id BIGINT, latitude long, longitude long) stored by 'c
 'SPATIAL_INDEX.mygeohash.maxLatitude'='20.225281',
 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000');
 ```
-Note: `mygeohash` in the above example represent the index name.
+Note: 
+   * `mygeohash` in the above example represent the index name.
+   * Columns present in spatial_index table properties cannot be altered
+    i.e., sourcecolumns: `longitude, latitude` and index column: `mygeohash` in the above example.
 
 #### List of spatial index table properties
 
 |Name|Description|
 |-----------------------------------|-----------------------------------------------------------------------------------------|
-| SPATIAL_INDEX | Used to configure Spatial Index name. This name is appended to `SPATIAL_INDEX` in the subsequent sub-property configurations. `xxx` in the below sub-properties refer to index name.|
+| SPATIAL_INDEX | Used to configure Spatial Index name. This name is appended to `SPATIAL_INDEX` in the subsequent sub-property configurations. `xxx` in the below sub-properties refer to index name. Generated spatial index column is not allowed in any properties except in `SORT_COLUMNS` table property.|
 | SPATIAL_INDEX.xxx.type | Type of algorithm for processing spatial data. Currently, supports only 'geohash'.|
 | SPATIAL_INDEX.xxx.sourcecolumns | longitude and latitude column names as in the table. These columns are used to generate index value for each row.|
 | SPATIAL_INDEX.xxx.gridSize | Grid size of raster data in metres. Currently, spatial index supports raster data.|
