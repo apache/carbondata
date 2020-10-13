@@ -304,7 +304,7 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
       "timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 " +
       "decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 " +
       "double,INTEGER_COLUMN1 int) PARTITIONED BY(DOJ timestamp) STORED AS carbondata TBLPROPERTIES" +
-      "('SORT_COLUMNS'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1," +
+      "('SORT_COLUMNS'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,BIGINT_COLUMN1," +
       "BIGINT_COLUMN2,INTEGER_COLUMN1')")
 
     sql(s"LOAD DATA INPATH '${ resourcesPath + "/data_with_all_types.csv" }' into table" +
@@ -315,7 +315,7 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
     checkAnswer(sql("select CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,INTEGER_COLUMN1 from uniqdata"), sql("select CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,INTEGER_COLUMN1 from uniqdata_Compare"))
 
     // negative data compaction test
-    sql("create table negativeTable (intColumn int,stringColumn string) PARTITIONED BY(shortColumn short) STORED AS carbondata TBLPROPERTIES('SORT_COLUMNS'='intColumn,shortColumn')")
+    sql("create table negativeTable (intColumn int,stringColumn string) PARTITIONED BY(shortColumn short) STORED AS carbondata TBLPROPERTIES('SORT_COLUMNS'='intColumn')")
     sql(s"load data inpath '${resourcesPath + "/dataWithNegativeValues.csv"}' into table negativeTable options('FILEHEADER'='intColumn,stringColumn,shortColumn')")
     checkAnswer(sql("select intColumn,stringColumn,shortColumn from negativeTable"), sql("select intColumn,stringColumn,shortColumn from negativeTable_Compare"))
     sql("drop table if exists uniqdata")

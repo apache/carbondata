@@ -71,7 +71,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override
   public void initialize() throws IOException {
     super.initialize();
-    rowParser = new RowParserImpl(getOutput(), configuration);
+    rowParser = new RowParserImpl(configuration.getInputFields(), configuration);
     executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
         "InputProcessorPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
             .getTableName(), true));

@@ -657,6 +657,7 @@ class TableNewProcessor(cm: TableModel) {
                 throw new UnsupportedOperationException(
                   "Partition columns cannot configured as sort columns")
               }
+            case None =>
           }
       }
     }
