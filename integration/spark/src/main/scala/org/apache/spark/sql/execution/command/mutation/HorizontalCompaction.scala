@@ -130,6 +130,9 @@ object HorizontalCompaction {
       absTableIdentifier,
       segmentUpdateStatusManager,
       compactionTypeIUD)
+    if (LOG.isDebugEnabled) {
+      LOG.debug(s"The segment list for Horizontal Update Compaction is $validSegList")
+    }
 
     if (validSegList.size() == 0) {
       return
@@ -177,6 +180,9 @@ object HorizontalCompaction {
       absTableIdentifier,
       segmentUpdateStatusManager,
       compactionTypeIUD)
+    if (LOG.isDebugEnabled) {
+      LOG.debug(s"The segment list for Horizontal Update Compaction is $deletedBlocksList")
+    }
 
     if (deletedBlocksList.size() == 0) {
       return

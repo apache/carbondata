@@ -415,44 +415,39 @@ public class SegmentUpdateStatusManager {
   }
 
   /**
-   * Return all delta file for a block.
-   * @param segmentId
-   * @param blockName
-   * @return
+   * Get all delete delta files of the block of specified segment.
+   * Actually, delete delta file name is generated from each SegmentUpdateDetails.
+   *
+   * @param segment the segment which is to find block and its delete delta files
+   * @param blockName the specified block of the segment
+   * @return delete delta file list of the block
    */
-  public CarbonFile[] getDeleteDeltaFilesList(final Segment segmentId, final String blockName) {
+  public List<String> getDeleteDeltaFilesList(final Segment segment, final String blockName) {
+    List<String> deleteDeltaFileList = new ArrayList<>();
     String segmentPath = CarbonTablePath.getSegmentPath(
-        identifier.getTablePath(), segmentId.getSegmentNo());
-    CarbonFile segDir =
-        FileFactory.getCarbonFile(segmentPath);
+        identifier.getTablePath(), segment.getSegmentNo());
+
     for (SegmentUpdateDetails block : updateDetails) {
       if ((block.getBlockName().equalsIgnoreCase(blockName)) &&
-          (block.getSegmentName().equalsIgnoreCase(segmentId.getSegmentNo()))
-          && !CarbonUpdateUtil.isBlockInvalid((block.getSegmentStatus()))) {
-        final long deltaStartTimestamp =
-            getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
-        final long deltaEndTimeStamp =
-            getEndTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
-
-        return segDir.listFiles(new CarbonFileFilter() {
-
-          @Override
-          public boolean accept(CarbonFile pathName) {
-            String fileName = pathName.getName();
-            if (pathName.getSize() > 0
-                && fileName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)) {
-              String blkName = fileName.substring(0, fileName.lastIndexOf("-"));
-              long timestamp =
-                  Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName));
-              return blockName.equals(blkName) && timestamp <= deltaEndTimeStamp
-                  && timestamp >= deltaStartTimestamp;
-            }
-            return false;
-          }
-        });
+          (block.getSegmentName().equalsIgnoreCase(segment.getSegmentNo())) &&
+          !CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
+        Set<String> deltaFileTimestamps = block.getDeltaFileStamps();
+        if (deltaFileTimestamps != null && deltaFileTimestamps.size() > 0) {
+          deltaFileTimestamps.forEach(timestamp -> deleteDeltaFileList.add(
+              CarbonUpdateUtil.getDeleteDeltaFilePath(segmentPath, blockName, timestamp)));
+        } else {
+          // when the deltaFileTimestamps is null, then there is only one delta file
+          // and the SegmentUpdateDetails will have same start and end timestamp,
+          // just take one to form the delete delta file name
+          final long deltaEndTimeStamp =
+              getEndTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
+          deleteDeltaFileList.add(CarbonUpdateUtil.getDeleteDeltaFilePath(
+              segmentPath, blockName, String.valueOf(deltaEndTimeStamp)));
+        }
+        return deleteDeltaFileList;
       }
     }
-    return null;
+    return deleteDeltaFileList;
   }
 
   /**
