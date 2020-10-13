@@ -1019,7 +1019,8 @@ public class SegmentFileStore {
       Set<Segment> segmentSet = new HashSet<>(
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
               .getValidAndInvalidSegments(carbonTable.isMV()).getValidSegments());
-      CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
+      CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId,
+          true, false,
           Segment.toSegmentList(toBeDeleteSegments, null),
           Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
     }

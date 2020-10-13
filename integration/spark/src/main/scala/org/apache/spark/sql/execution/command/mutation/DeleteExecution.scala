@@ -405,6 +405,7 @@ object DeleteExecution {
             carbonTable,
             timestamp,
             !isUpdateOperation,
+            !isUpdateOperation,
             listOfSegmentToBeMarkedDeleted)
     ) {
       LOGGER.info(s"Delete data operation is successful for " +
