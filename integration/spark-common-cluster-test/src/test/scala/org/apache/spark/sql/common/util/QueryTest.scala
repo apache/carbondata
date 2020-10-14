@@ -21,21 +21,21 @@ import java.io.{ObjectInputStream, ObjectOutputStream}
 import java.sql.{Connection, DriverManager, ResultSet}
 import java.util.{Locale, Properties}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
-import io.prestosql.jdbc.{PrestoConnection, PrestoStatement}
+import io.prestosql.jdbc.PrestoStatement
+import org.apache.commons.lang.StringUtils
+import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.execution.command.LoadDataCommand
 import org.apache.spark.sql.test.{ResourceRegisterAndCopier, TestQueryExecutor}
-import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, Row, SQLContext}
 import org.scalatest.Suite
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.commons.lang.StringUtils
 
 
 class QueryTest extends PlanTest with Suite {
@@ -93,10 +93,9 @@ class QueryTest extends PlanTest with Suite {
       val rows = objinp.readObject().asInstanceOf[Array[Row]]
       objinp.close()
       QueryTest.checkAnswer(sql(carbon), rows) match {
-        case Some(errorMessage) => {
+        case Some(errorMessage) =>
           FileFactory.deleteFile(path)
           writeAndCheckAnswer(carbon, hive, path)
-        }
         case None =>
       }
     } else {
@@ -112,7 +111,9 @@ class QueryTest extends PlanTest with Suite {
     checkAnswer(sql(carbon), rows)
   }
 
-  protected def checkAnswer(carbon: String, expectedAnswer: Seq[Row], uniqueIdentifier:String): Unit = {
+  protected def checkAnswer(carbon: String,
+      expectedAnswer: Seq[Row],
+      uniqueIdentifier: String): Unit = {
     checkAnswer(sql(carbon), expectedAnswer)
   }
 
@@ -131,7 +132,7 @@ class QueryTest extends PlanTest with Suite {
     frame
   }
 
-  protected def dropTable(tableName: String): Unit ={
+  protected def dropTable(tableName: String): Unit = {
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
@@ -147,7 +148,7 @@ class QueryTest extends PlanTest with Suite {
 object QueryTest {
 
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]): String = {
-    checkAnswer(df, expectedAnswer.toSeq) match {
+    checkAnswer(df, expectedAnswer.asScala) match {
       case Some(errorMessage) => errorMessage
       case None => null
     }
@@ -261,7 +262,7 @@ object QueryTest {
       val JDBC_DRIVER = "io.prestosql.jdbc.PrestoDriver"
       var DB_URL : String = null
       if (StringUtils.isEmpty(dbName)) {
-        DB_URL = "jdbc:presto://"+ url + "/carbondata/default"
+        DB_URL = "jdbc:presto://" + url + "/carbondata/default"
       } else {
         DB_URL = "jdbc:presto://" + url + "/carbondata/" + dbName
       }

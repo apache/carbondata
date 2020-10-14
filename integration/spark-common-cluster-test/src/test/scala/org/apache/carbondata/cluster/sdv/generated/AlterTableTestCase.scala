@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -23,22 +22,19 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util._
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 /**
  * Test Class for AlterTableTestCase to verify all scenerios
  */
-
 class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
-         
-
-  //Check alter table using with alter command in lower case
+  // scalastyle:off lineLength
+  // Check alter table using with alter command in lower case
   test("RenameTable_001_01", Include) {
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
@@ -48,8 +44,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test2""").collect
   }
 
-
-  //Check alter table using with alter command in upper & lower case
+  // Check alter table using with alter command in upper & lower case
   test("RenameTable_001_02", Include) {
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
@@ -60,8 +55,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test2""").collect
   }
 
-
-  //Check alter table using with alter command in upper case
+  // Check alter table using with alter command in upper case
   test("RenameTable_001_03", Include) {
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
@@ -71,8 +65,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test2""").collect
   }
 
-
-  //Check alter table where target table speficifed with database name
+  // Check alter table where target table speficifed with database name
   test("RenameTable_001_04", Include) {
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
@@ -82,8 +75,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-
-  //Check alter table run multiple times, revert back the name to original
+  // Check alter table run multiple times, revert back the name to original
   test("RenameTable_001_06", Include) {
     sql(s"""drop table if exists test2""").collect
     sql(s"""drop table if exists test1""").collect
@@ -98,8 +90,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check data load after table rename
+  // Check data load after table rename
   test("RenameTable_001_07_1", Include) {
     sql(s"""drop table if exists test2""").collect
     sql(s"""drop table if exists test1""").collect
@@ -112,8 +103,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-
-  //Check data load after table rename
+  // Check data load after table rename
   test("RenameTable_001_07_2", Include) {
 
     checkAnswer(s"""select name from test2 where name = 'yy'""",
@@ -121,8 +111,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test2""").collect
   }
 
-
-  //Check alter table when the altered name is already present in the database
+  // Check alter table when the altered name is already present in the database
   test("RenameTable_001_08", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -135,8 +124,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test2""").collect
   }
 
-
-  //Check alter table when the altered name is given multiple times
+  // Check alter table when the altered name is given multiple times
   test("RenameTable_001_09", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -146,8 +134,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check delete column for dimension column
+  // Check delete column for dimension column
   test("DeleteCol_001_01", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, id int) STORED AS carbondata  """).collect
@@ -158,8 +145,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check delete column for measure column
+  // Check delete column for measure column
   test("DeleteCol_001_02", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -170,8 +156,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check delete column for measure and dimension column
+  // Check delete column for measure and dimension column
   test("DeleteCol_001_03", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
@@ -182,8 +167,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check delete column for multiple column
+  // Check delete column for multiple column
   test("DeleteCol_001_04", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata """).collect
@@ -194,8 +178,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check delete column for all columns
+  // Check delete column for all columns
   test("DeleteCol_001_05", Include) {
     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
     sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
@@ -203,8 +186,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check delete column for include dictionary column
+  // Check delete column for include dictionary column
   test("DeleteCol_001_06", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, id int) STORED AS carbondata """).collect
@@ -215,8 +197,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check delete column for timestamp column
+  // Check delete column for timestamp column
   test("DeleteCol_001_08", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
@@ -227,8 +208,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check the drop of added column will remove the column from table
+  // Check the drop of added column will remove the column from table
   test("DeleteCol_001_09_1", Include) {
      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
@@ -239,8 +219,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check the drop of added column will remove the column from table
+  // Check the drop of added column will remove the column from table
   test("DeleteCol_001_09_2", Include) {
     intercept[Exception] {
      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
@@ -253,8 +232,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Drop a column and add it again with a default value
+  // Drop a column and add it again with a default value
   test("DeleteCol_001_10", Include) {
      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
@@ -265,8 +243,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Drop a column and add it again with a default value
+  // Drop a column and add it again with a default value
   test("DeleteCol_001_11", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
@@ -279,20 +256,18 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check add column for multiple column adds
+  // Check add column for multiple column adds
   test("AddColumn_001_01", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (upd_time timestamp, country string)""").collect
     checkAnswer(s"""select upd_time, country from test1""",
-      Seq(Row(null,null)), "AlterTableTestCase_AddColumn_001_01")
+      Seq(Row(null, null)), "AlterTableTestCase_AddColumn_001_01")
      sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check add column for dimension column and add table property to set default value
+  // Check add column for dimension column and add table property to set default value
   test("AddColumn_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -304,8 +279,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test1""").collect
   }
 
-
-  //Check add column to add a measure column
+  // Check add column to add a measure column
   test("AddColumn_001_03", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -317,7 +291,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check add column to add a measure column added with dictionary include
+  // Check add column to add a measure column added with dictionary include
   test("AddColumn_001_04", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -330,7 +304,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check add column to add a measure column initialized with default value
+  // Check add column to add a measure column initialized with default value
   ignore("AddColumn_001_05", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -343,7 +317,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check add column to add a measure column initialized with default value which does not suite the data type
+  // Check add column to add a measure column initialized with default value which does not suite the data type
   test("AddColumn_001_06", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -355,7 +329,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check add column to add a measure column initialized with default value on a empty table
+  // Check add column to add a measure column initialized with default value on a empty table
   test("AddColumn_001_07", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -367,19 +341,19 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check add column to add a dim and measure column
+  // Check add column to add a dim and measure column
   test("AddColumn_001_08", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (id1 int, country string) """).collect
     checkAnswer(s"""select id1, country from test1""",
-      Seq(Row(null,null)), "AlterTableTestCase_AddColumn_001_08")
+      Seq(Row(null, null)), "AlterTableTestCase_AddColumn_001_08")
      sql(s"""drop table if exists test1""").collect
   }
 
 
-  //Check add column for measure and make it dictionary column
+  // Check add column for measure and make it dictionary column
   test("AddColumn_001_09", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""create table test1 (name string) STORED AS carbondata""").collect
@@ -391,19 +365,19 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check add column to add columns and exclude the dim col from dictionary
+  // Check add column to add columns and exclude the dim col from dictionary
   test("AddColumn_001_10", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx'""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (upd_time timestamp, country string) """).collect
     checkAnswer(s"""select country, upd_time from test1""",
-      Seq(Row(null,null)), "AlterTableTestCase_AddColumn_001_10")
+      Seq(Row(null, null)), "AlterTableTestCase_AddColumn_001_10")
      sql(s"""drop table if exists test1""").collect
   }
 
 
-  //Check add column to add a timestamp column
+  // Check add column to add a timestamp column
   test("AddColumn_001_11", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -415,7 +389,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check add column with option default value is given for an existing column
+  // Check add column with option default value is given for an existing column
   test("AddColumn_001_14", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
@@ -427,7 +401,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check alter column for small decimal to big decimal
+  // Check alter column for small decimal to big decimal
   test("AlterData_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
@@ -440,7 +414,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check drop table after table rename using new name
+  // Check drop table after table rename using new name
   test("DropTable_001_01", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
@@ -450,7 +424,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check drop table after table rename using old name
+  // Check drop table after table rename using old name
   test("DropTable_001_02", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
@@ -463,7 +437,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check drop table after table rename using new name, after table load
+  // Check drop table after table rename using new name, after table load
   test("DropTable_001_03", Include) {
      sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1.2""").collect
@@ -474,7 +448,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check drop table after alter table name, using new name when table is empty
+  // Check drop table after alter table name, using new name when table is empty
   test("DropTable_001_04", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
@@ -484,7 +458,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check drop table when table is altered by adding columns
+  // Check drop table when table is altered by adding columns
   test("DropTable_001_05", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""create table test1 (name string, id int) STORED AS carbondata  """).collect
@@ -496,7 +470,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check schema changes and carbon dictionary additions for alter table when new column added
+  // Check schema changes and carbon dictionary additions for alter table when new column added
   test("StorageFi_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (country string, name string) STORED AS carbondata """).collect
@@ -506,43 +480,43 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check dictionary cache is loaded with new added column when query is run
+  // Check dictionary cache is loaded with new added column when query is run
   ignore("Dictionary_001_01", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id decimal(3,2),country string) STORED AS carbondata """).collect
    sql(s"""insert into test1 select 'xx',1.22,'china'""").collect
    sql(s"""alter table test1 add columns (price decimal(10,4)) tblproperties('DEFAULT.VALUE.price'='11.111')""").collect
     checkAnswer(s"""select * from test1""",
-      Seq(Row("xx",1.22,"china",11.1110)), "AlterTableTestCase_Dictionary_001_01")
+      Seq(Row("xx", 1.22, "china", 11.1110)), "AlterTableTestCase_Dictionary_001_01")
      sql(s"""drop table if exists test1""").collect
   }
 
 
-  //Check if dropped column is removed from driver side LRU cache
+  // Check if dropped column is removed from driver side LRU cache
   test("Dictionary_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id decimal(3,2),country string) STORED AS carbondata """).collect
    sql(s"""insert into test1 select 'xx',1.22,'china'""").collect
    sql(s"""alter table test1 drop columns (country)""").collect
     checkAnswer(s"""select * from test1""",
-      Seq(Row("xx",1.22)), "AlterTableTestCase_Dictionary_001_02")
+      Seq(Row("xx", 1.22)), "AlterTableTestCase_Dictionary_001_02")
      sql(s"""drop table if exists test1""").collect
   }
 
 
-  //Check if dropped column is removed from driver side LRU cache at driver side
+  // Check if dropped column is removed from driver side LRU cache at driver side
   test("Dictionary_001_03", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id decimal(3,2),country string) STORED AS carbondata """).collect
    sql(s"""insert into test1 select 'xx',1.22,'china'""").collect
    sql(s"""alter table test1 drop columns(country)""").collect
     checkAnswer(s"""select * from test1""",
-      Seq(Row("xx",1.22)), "AlterTableTestCase_Dictionary_001_03")
+      Seq(Row("xx", 1.22)), "AlterTableTestCase_Dictionary_001_03")
      sql(s"""drop table if exists test1""").collect
   }
 
 
-  //Check table load works fine after alter table name
+  // Check table load works fine after alter table name
   test("Dataload_001_01", Include) {
      sql(s"""drop table if exists t_carbn01t""").collect
    sql(s"""drop table if exists t_carbn01""").collect
@@ -554,7 +528,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check table load into old table after alter table name
+  // Check table load into old table after alter table name
   test("Dataload_001_02", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -567,7 +541,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check table load works fine after alter table name
+  // Check table load works fine after alter table name
   test("Dataload_001_03", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -578,7 +552,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check table load works fine after alter table name
+  // Check table load works fine after alter table name
   test("Dataload_001_04", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -591,7 +565,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check table load works fine after alter table name
+  // Check table load works fine after alter table name
   test("Dataload_001_05", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -604,7 +578,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check if alter table(add column) is supported when data load is happening
+  // Check if alter table(add column) is supported when data load is happening
   test("Concurrent_alter_001_01", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -615,7 +589,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check if alter table(delete column) is supported when data load is happening
+  // Check if alter table(delete column) is supported when data load is happening
   test("Concurrent_alter_001_02", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -625,7 +599,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check if alter table(change column) is supported when data load is happening
+  // Check if alter table(change column) is supported when data load is happening
   test("Concurrent_alter_001_03", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -635,7 +609,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check if alter table(rename) is supported when data load is happening
+  // Check if alter table(rename) is supported when data load is happening
   test("Concurrent_alter_001_04", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -645,7 +619,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check table insert works fine after alter table to add a column
+  // Check table insert works fine after alter table to add a column
   test("Insertint_001_03", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
     sql(s"""drop table if exists default.t_carbn02""").collect
@@ -661,7 +635,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check table insert works fine after alter table to add a column
+  // Check table insert works fine after alter table to add a column
   test("Insertint_001_04", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
     sql(s"""drop table if exists default.t_carbn02""").collect
@@ -677,7 +651,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //check table insert works fine after alter table to drop columns
+  // Check table insert works fine after alter table to drop columns
   test("Insertint_001_05", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test2 (country string, name string, state_id int,id int) STORED AS carbondata """).collect
@@ -692,7 +666,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check show segments on old table After altering the Table name.
+  // Check show segments on old table After altering the Table name.
   test("Showsegme_001_01", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (country string, id int) STORED AS carbondata""").collect
@@ -703,7 +677,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction on old table after altering the table name
+  // Check vertical compaction on old table after altering the table name
   test("Compaction_001_01", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
@@ -717,7 +691,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction on new table when all segments are created before alter table name.
+  // Check vertical compaction on new table when all segments are created before alter table name.
   test("Compaction_001_02", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
@@ -733,7 +707,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction on new table when some of the segments are created after altering the table name
+  // Check vertical compaction on new table when some of the segments are created after altering the table name
   test("Compaction_001_03", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
@@ -749,7 +723,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction on new table after altering the table name multiple times and and segments created after alter
+  // Check vertical compaction on new table after altering the table name multiple times and and segments created after alter
   test("Compaction_001_04", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
@@ -767,7 +741,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction(major) on new table name when part of the segments are created before altering the table name
+  // Check vertical compaction(major) on new table name when part of the segments are created before altering the table name
   test("Compaction_001_05", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
@@ -783,7 +757,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction when all segments are created before drop column, check dropped column is not used in the compation
+  // Check vertical compaction when all segments are created before drop column, check dropped column is not used in the compation
   test("Compaction_001_06", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
@@ -800,7 +774,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction when some of the segments are created before drop column, check dropped column is not used in the compation
+  // Check vertical compaction when some of the segments are created before drop column, check dropped column is not used in the compation
   test("Compaction_001_07", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
@@ -817,7 +791,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction for multiple drop column, check dropped column is not used in the compation
+  // Check vertical compaction for multiple drop column, check dropped column is not used in the compation
   test("Compaction_001_08", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
@@ -835,7 +809,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction on altered table for column add, when all segments crreated before table alter. Ensure added column in the compacted segment
+  // Check vertical compaction on altered table for column add, when all segments crreated before table alter. Ensure added column in the compacted segment
   test("Compaction_001_09", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
@@ -851,7 +825,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction on altered table for column add, when some of the segments crreated before table alter. Ensure added column in the compacted segment
+  // Check vertical compaction on altered table for column add, when some of the segments crreated before table alter. Ensure added column in the compacted segment
   test("Compaction_001_10", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1(name string) STORED AS carbondata""").collect
@@ -866,7 +840,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction on multiple altered table for column add, when some of the segments crreated after table alter. Ensure added column in the compacted segment
+  // Check vertical compaction on multiple altered table for column add, when some of the segments crreated after table alter. Ensure added column in the compacted segment
   test("Compaction_001_11", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1(name string) STORED AS carbondata""").collect
@@ -883,7 +857,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check vertical compaction on altered table for change column datatype, when some of the segments crreated after table alter. Ensure added column in the compacted segment
+  // Check vertical compaction on altered table for change column datatype, when some of the segments crreated after table alter. Ensure added column in the compacted segment
   test("Compaction_001_12", Include) {
     sql(s"""drop table if exists default.test1""").collect
      sql(s"""create table test1(name string, id int) STORED AS carbondata""").collect
@@ -893,7 +867,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""insert into test1 select 'xx2',2999999999""").collect
    sql(s"""alter table test1 compact 'minor'""").collect
     checkAnswer(s"""select id from test1""",
-      Seq(Row(1),Row(2), Row(2999999999L)), "AlterTableTestCase_Compaction_001_12")
+      Seq(Row(1), Row(2), Row(2999999999L)), "AlterTableTestCase_Compaction_001_12")
      sql(s"""drop table if exists test1""").collect
   }
 
@@ -906,7 +880,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check bad record locaion isnot changed when table name is altered
+  // Check bad record locaion isnot changed when table name is altered
   test("BadRecords_001_01", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -917,7 +891,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check bad record locaion isnot changed when table name is altered
+  // Check bad record locaion isnot changed when table name is altered
   test("BadRecords_001_02", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
@@ -927,7 +901,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check for bad record handling while latering the table if added column is set with default value which is a bad record
+  // Check for bad record handling while latering the table if added column is set with default value which is a bad record
   test("BadRecords_001_03", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -935,12 +909,12 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""insert into test1 select 'xx',12""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (id2 int) TBLPROPERTIES('include_dictionary'='id2','DEFAULT.VALUE.id2'='China')""").collect
     checkAnswer(s"""select * from test1 where id = 1""",
-      Seq(Row("xx",1,null)), "AlterTableTestCase_BadRecords_001_03")
+      Seq(Row("xx", 1, null)), "AlterTableTestCase_BadRecords_001_03")
      sql(s"""drop table if exists test1""").collect
   }
 
 
-  //Check delete segment is not allowed on old table name when table name is altered
+  // Check delete segment is not allowed on old table name when table name is altered
   test("DeleteSeg_001_01", Include) {
     intercept[Exception] {
       sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -953,7 +927,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check delete segment is allowed on new table name when table name is altered
+  // Check delete segment is allowed on new table name when table name is altered
   test("DeleteSeg_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
@@ -962,12 +936,12 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""alter table test1 rename to test2""").collect
    sql(s"""delete from table test2 where segment.id in (0)""").collect
     checkAnswer(s"""Select * from test2""",
-      Seq(Row("xx",12)), "AlterTableTestCase_DeleteSeg_001_02")
+      Seq(Row("xx", 12)), "AlterTableTestCase_DeleteSeg_001_02")
      sql(s"""drop table if exists test2""").collect
   }
 
 
-  //Check alter the table name,alter the table name again with first name and fire Select query
+  // Check alter the table name,alter the table name again with first name and fire Select query
   test("AlterTable-001-AltersameTablename-001-TC001", Include) {
      sql(s"""drop table  if exists uniqdata""").collect
    sql(s"""drop table  if exists uniqdata1""").collect
@@ -982,7 +956,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check select query after alter the int to Bigint and decimal Lower Precision to higher precision
+  // Check select query after alter the int to Bigint and decimal Lower Precision to higher precision
   test("AlterTable-007-selectquery-001-TC002", Include) {
      sql(s"""CREATE TABLE uniqdata1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata """).collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -993,7 +967,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check select query after alter from lower to higher precision
+  // Check select query after alter from lower to higher precision
   test("AlterTable-008-selectquery-001-TC003", Include) {
      sql(s"""CREATE TABLE uniqdata1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata """).collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -1004,7 +978,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Check add column on Decimal,Timestamp,int,string,Bigint
+  // Check add column on Decimal,Timestamp,int,string,Bigint
   test("AlterTable-002-001-TC-004", Include) {
      sql(s"""drop table if exists uniqdata59""").collect
    sql(s"""CREATE TABLE uniqdata59 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata """).collect
@@ -1020,7 +994,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
         sql("alter table alter_hive add columns(add string)")
       }
       assert(exception.getMessage.contains("Unsupported alter operation on hive table"))
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql("alter table alter_hive add columns(add string)")
       sql("alter table alter_hive add columns (var map<string, string>)")
       sql("insert into alter_hive select 'abc','banglore',map('age','10','birth','2020')")
@@ -1034,7 +1008,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Alter table add column for hive partitioned table for spark version above 2.1") {
     sql("drop table if exists alter_hive")
     sql("create table alter_hive(name string) stored as rcfile partitioned by (dt string)")
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql("alter table alter_hive add columns(add string)")
       sql("alter table alter_hive add columns (var map<string, string>)")
       sql("alter table alter_hive add columns (loves array<string>)")
@@ -1054,7 +1028,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Alter table add complex column for hive table for spark version above 2.1") {
     sql("drop table if exists alter_hive")
     sql("create table alter_hive(name string) stored as rcfile")
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql("alter table alter_hive add columns (add1 string comment 'comment1')")
       sql("alter table alter_hive add columns (add2 decimal)")
       sql("alter table alter_hive add columns (add3 decimal(20,2))")
@@ -1117,7 +1091,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
-    //Reverting to old
+    // Reverting to old
     prop.addProperty("carbon.horizontal.compaction.enable", p1)
     prop.addProperty("carbon.horizontal.update.compaction.threshold", p2)
     prop.addProperty("carbon.horizontal.delete.compaction.threshold", p3)
@@ -1127,4 +1101,5 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test2")
     sql("drop table if exists test1")
   }
+  // scalastyle:on lineLength
 }

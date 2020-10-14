@@ -28,6 +28,7 @@ import org.apache.carbondata.spark.testsuite.localdictionary.LoadTableWithLocalD
  * Suite class for all tests.
  */
 class SDVSuites extends Suites with BeforeAndAfterAll {
+  // scalastyle:off println
 
   val suites = new AlterTableTestCase ::
                new BadRecordTestCase ::
@@ -127,7 +128,6 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
 class SDVSuites4 extends Suites with BeforeAndAfterAll {
 
   val suites = new AlterTableTestCase ::
-               new BucketingTestCase ::
                new CreateTableAsSelectTestCase ::
                new InvertedindexTestCase ::
                new OffheapQuery1TestCase ::
@@ -193,4 +193,5 @@ class SDVSuites6 extends Suites with BeforeAndAfterAll {
     TestQueryExecutor.INSTANCE.stop()
     println("---------------- Stopped spark -----------------")
   }
+  // scalastyle:on println
 }
