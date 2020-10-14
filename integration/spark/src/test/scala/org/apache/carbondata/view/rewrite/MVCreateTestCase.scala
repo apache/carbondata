@@ -1356,6 +1356,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists limit_fail")
     sql("drop table IF EXISTS mv_like")
     sql("drop table IF EXISTS maintable")
+    sql("drop table if exists sum_agg_decimal")
   }
 
   test("test create materialized view with add segment") {
@@ -1471,6 +1472,15 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     }.getMessage.contains("Column name cannot be dropped because it exists in mv materialized view: mv1")
     sql("drop table if exists t1")
     sql("drop table if exists t2")
+  }
+
+  test("test sum aggregations on decimal columns") {
+    sql("drop table if exists sum_agg_decimal")
+    sql("create table sum_agg_decimal(salary1 decimal(7,2),salary2 decimal(7,2),salary3 decimal(7,2),salary4 decimal(7,2),empname string) stored as carbondata")
+    sql("drop materialized view if exists decimal_mv")
+    sql("create materialized view decimal_mv as select empname, sum(salary1 - salary2) from sum_agg_decimal group by empname")
+    val df = sql("select empname, sum( salary1 - salary2) from sum_agg_decimal group by empname")
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "decimal_mv"))
   }
 
   def copy(oldLoc: String, newLoc: String): Unit = {
