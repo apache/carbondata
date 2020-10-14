@@ -83,23 +83,19 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       sql(s"select * from $normalTable where id = 1 and city='city_1'"))
     checkAnswer(
       sql(s"select * from $bloomSampleTable where id = 999 and city='city_999'",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where id = 999 and city='city_999'"))
     checkAnswer(
       sql(s"select * from $bloomSampleTable where city = 'city_1' and id = 0",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_1' and id = 0"))
     checkAnswer(
       sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n999'",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n999'"))
     checkAnswer(
       sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n1'",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n1'"))
 
     /**
@@ -120,28 +116,23 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     // query with two index_columns
     checkAnswer(
       sql(s"select * from $bloomSampleTable where id in (1) and city in ('city_1')",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where id in (1) and city in ('city_1')"))
     checkAnswer(
       sql(s"select * from $bloomSampleTable where id in (999) and city in ('city_999')",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where id in (999) and city in ('city_999')"))
     checkAnswer(
       sql(s"select * from $bloomSampleTable where city in ('city_1') and id in (0)",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_1') and id in (0)"))
     checkAnswer(
       sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n999')",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999') and name in ('n999')"))
     checkAnswer(
       sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n1')",
-        indexName,
-        shouldHit),
+        indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999') and name in ('n1')"))
 
     checkAnswer(
@@ -172,11 +163,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     // load two segments
     (1 to 2).foreach { i =>
@@ -192,11 +180,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          """.stripMargin)
     }
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -317,11 +302,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.DISABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -334,19 +316,13 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.DISABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     // once we rebuild, it should be enabled
     sql(s"REFRESH INDEX $indexName ON $bloomSampleTable")
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON $bloomSampleTable"), true, indexName)
@@ -363,11 +339,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomSampleTable
          | OPTIONS('header'='false')
          """.stripMargin)
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.DISABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     checkQuery(indexName, shouldHit = false)
 

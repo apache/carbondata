@@ -165,8 +165,7 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
 
     } finally {
       sql(s"set carbon.si.lookup.partialstring=${
-        CarbonCommonConstants
-          .ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT
+        CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT
       }")
     }
   }
@@ -199,8 +198,7 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
 
     } finally {
       sql(s"set carbon.si.lookup.partialstring=${
-        CarbonCommonConstants
-          .ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT
+        CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT
       }")
     }
   }

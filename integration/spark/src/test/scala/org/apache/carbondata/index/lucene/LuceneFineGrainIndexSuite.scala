@@ -196,12 +196,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
     var carbonTable = CarbonEnv.getCarbonTable(Some("lucene"), "index_test1")(sqlContext
       .sparkSession)
-    val indexes = carbonTable.getIndexMetadata
-      .getIndexesMap
-      .get(IndexType.LUCENE.getIndexProviderName)
-      .asScala
-      .filter(p => p._2
-        .get(CarbonCommonConstants.INDEX_STATUS)
+    val indexes = carbonTable.getIndexMetadata.getIndexesMap
+      .get(IndexType.LUCENE.getIndexProviderName).asScala
+      .filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS)
         .equalsIgnoreCase(IndexStatus.ENABLED.name()))
     assert(indexes.exists(p => p._1.equals("dm12") &&
                                p._2.get(CarbonCommonConstants.INDEX_STATUS) ==
@@ -893,11 +890,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql("show indexes on table index_test_table").collect()
     checkExistence(sql("show indexes on table index_test_table"),
-      true,
-      "dm",
-      "dm1",
-      "lucene",
-      "bloomfilter")
+      true, "dm", "dm1", "lucene", "bloomfilter")
     sql("drop table if exists index_test_table")
   }
 

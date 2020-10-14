@@ -46,20 +46,16 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
 
   private def createTablesAndLoadData = {
     drop
+    // scalastyle:off lineLength
     sql("create table carbon(a int, b string, c double,d int,e timestamp) stored as carbondata")
-    sql("insert into carbon values" +
-        "(1,'ab',23.4,5,'2017-09-01 00:00:00'),(2,'aa',23.6,8,'2017-09-02 00:00:00')")
-    sql("insert into carbon values" +
-        "(3,'ab',23.4,5,'2017-09-01 00:00:00'),(4,'aa',23.6,8,'2017-09-02 00:00:00')")
-    sql("insert into carbon values" +
-        "(5,'ab',23.4,5,'2017-09-01 00:00:00'),(6,'aa',23.6,8,'2017-09-02 00:00:00')")
+    sql("insert into carbon values(1,'ab',23.4,5,'2017-09-01 00:00:00'),(2,'aa',23.6,8,'2017-09-02 00:00:00')")
+    sql("insert into carbon values(3,'ab',23.4,5,'2017-09-01 00:00:00'),(4,'aa',23.6,8,'2017-09-02 00:00:00')")
+    sql("insert into carbon values(5,'ab',23.4,5,'2017-09-01 00:00:00'),(6,'aa',23.6,8,'2017-09-02 00:00:00')")
     sql("create table parquet(a int, b string, c double,d int,e timestamp) using parquet")
-    sql("insert into parquet values" +
-        "(1,'ab',23.4,5,'2017-09-01 00:00:00'),(2,'aa',23.6,8,'2017-09-02 00:00:00')")
-    sql("insert into parquet values" +
-        "(3,'ab',23.4,5,'2017-09-01 00:00:00'),(4,'aa',23.6,8,'2017-09-02 00:00:00')")
-    sql("insert into parquet values" +
-        "(5,'ab',23.4,5,'2017-09-01 00:00:00'),(6,'aa',23.6,8,'2017-09-02 00:00:00')")
+    sql("insert into parquet values(1,'ab',23.4,5,'2017-09-01 00:00:00'),(2,'aa',23.6,8,'2017-09-02 00:00:00')")
+    sql("insert into parquet values(3,'ab',23.4,5,'2017-09-01 00:00:00'),(4,'aa',23.6,8,'2017-09-02 00:00:00')")
+    sql("insert into parquet values(5,'ab',23.4,5,'2017-09-01 00:00:00'),(6,'aa',23.6,8,'2017-09-02 00:00:00')")
+    // scalastyle:on lineLength
   }
 
   test("test if matched segment is only loaded to cache after drop column") {

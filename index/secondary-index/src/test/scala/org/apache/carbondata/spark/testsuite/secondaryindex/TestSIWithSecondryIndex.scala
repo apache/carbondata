@@ -142,8 +142,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
       Seq(Row("1", "india"), Row("2", "china")))
     // check for valid sort_scope
     checkExistence(sql("describe formatted partition_carbon_table_index"),
-      true,
-      "Sort Scope global_sort")
+      true, "Sort Scope global_sort")
     sql("drop index partition_carbon_table_index on partition_carbon_table")
     // create SI after the inserting the data
     sql("create index partition_carbon_table_index on table partition_carbon_table(" +
@@ -312,14 +311,12 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
         "OPTIONS('DELIMITER'=',','BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')")
     val count1 = sql("select * from uniqdata where workgroupcategoryname = 'developer'").count()
     val df1 = sql("select * from uniqdata where workgroupcategoryname = 'developer'")
-      .queryExecution
-      .sparkPlan
+      .queryExecution.sparkPlan
     sql(s"""ALTER TABLE default.index1 SET
            |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     val count2 = sql("select * from uniqdata where workgroupcategoryname = 'developer'").count()
     val df2 = sql("select * from uniqdata where workgroupcategoryname = 'developer'")
-      .queryExecution
-      .sparkPlan
+      .queryExecution.sparkPlan
     sql(s"""set carbon.si.repair.limit = 1""")
     assert(count1 == count2)
     assert(isFilterPushedDownToSI(df1))

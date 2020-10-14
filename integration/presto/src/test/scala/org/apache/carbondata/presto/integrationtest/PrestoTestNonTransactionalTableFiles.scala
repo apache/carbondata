@@ -428,34 +428,14 @@ class PrestoTestNonTransactionalTableFiles
           .enableLocalDictionary(false)
           .withCsvInput(new Schema(structType)).writtenBy("presto").build()
 
-      val array1 = Array[String]("row1",
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null)
+      val array1 = Array[String]("row1", null, null, null, null, null, null, null, null, null,
+        null, null, null, null)
 
-      val array2 = Array[String]("row2", "5"
-                                           + "\001" + "5"
-                                           + "\001" + "5"
-                                           + "\001" + "5"
-                                           + "\001" + "5.512"
-                                           + "\001" + "5.512"
-                                           + "\001" + binaryValue
-                                           + "\001" + "2019-03-02"
-                                           + "\001" + "2019-02-12 03:03:34"
-                                           + "\001" + "true"
-                                           + "\001" + longChar
-                                           + "\001" + "-2.2"
-                                           + "\001" + "stringName")
+      val array2 = Array[String]("row2", "5" + "\001" + "5" + "\001" + "5" + "\001" + "5" +
+                                         "\001" + "5.512" + "\001" + "5.512" + "\001" +
+                                         binaryValue + "\001" + "2019-03-02" + "\001" +
+                                         "2019-02-12 03:03:34" + "\001" + "true" + "\001" +
+                                         longChar + "\001" + "-2.2" + "\001" + "stringName")
       writer.write(array1)
       writer.write(array2)
       writer.close()
@@ -596,35 +576,13 @@ class PrestoTestNonTransactionalTableFiles
       val writer =
         builder.outputPath(writerPathComplex).withLoadOptions(options)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).enableLocalDictionary(false)
-          .withCsvInput(new Schema(Array[Field](structType1,
-            structType2,
-            structType3,
-            structType4,
-            structType5,
-            structType6,
-            structType7,
-            structType8,
-            structType9,
-            structType10,
-            structType11,
-            structType12,
-            structType13,
-            structType14))).writtenBy("presto").build()
+          .withCsvInput(new Schema(Array[Field](
+            structType1, structType2, structType3, structType4, structType5, structType6,
+            structType7, structType8, structType9, structType10, structType11, structType12,
+            structType13, structType14))).writtenBy("presto").build()
 
-      var array = Array[String](null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        "row1")
+      var array = Array[String](null, null, null, null, null, null, null, null, null, null,
+        null, null, null, "row1")
       writer.write(array)
       array = Array[String]("3" + "\001" + "5" + "\001" + "4",
         "4" + "\001" + "5" + "\001" + "6",

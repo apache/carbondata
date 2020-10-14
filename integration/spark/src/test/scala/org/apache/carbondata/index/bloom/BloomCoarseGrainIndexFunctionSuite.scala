@@ -76,11 +76,8 @@ class BloomCoarseGrainIndexFunctionSuite
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -93,11 +90,8 @@ class BloomCoarseGrainIndexFunctionSuite
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -130,11 +124,8 @@ class BloomCoarseGrainIndexFunctionSuite
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -147,11 +138,8 @@ class BloomCoarseGrainIndexFunctionSuite
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -183,11 +171,8 @@ class BloomCoarseGrainIndexFunctionSuite
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -200,11 +185,8 @@ class BloomCoarseGrainIndexFunctionSuite
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable,
-      indexName,
-      IndexStatus.ENABLED.name(),
-      sqlContext.sparkSession,
-      IndexType.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(),
+      sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect()
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -845,12 +827,9 @@ class BloomCoarseGrainIndexFunctionSuite
     import scala.collection.JavaConverters._
     (0 to 1).foreach { segId =>
       val indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath,
-        segId.toString,
-        indexName)
-      assert(FileUtils
-        .listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true)
-        .asScala
-        .nonEmpty)
+        segId.toString, indexName)
+      assert(FileUtils.listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true)
+        .asScala.nonEmpty)
     }
     // delete and clean the first segment, the corresponding index files should be cleaned too
     sql(s"DELETE FROM TABLE $bloomSampleTable WHERE SEGMENT.ID IN (0)")
@@ -859,10 +838,8 @@ class BloomCoarseGrainIndexFunctionSuite
     assert(!FileUtils.getFile(indexPath).exists(),
       "index file of this segment has been deleted, should not exist")
     indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, "1", indexName)
-    assert(FileUtils
-      .listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true)
-      .asScala
-      .nonEmpty)
+    assert(FileUtils.listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true)
+      .asScala.nonEmpty)
   }
 
   // two blocklets in one block are hit by bloom index while block cache level hit this block

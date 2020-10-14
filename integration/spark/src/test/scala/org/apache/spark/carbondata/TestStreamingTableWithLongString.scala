@@ -48,7 +48,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
   private val dataFilePath = s"$resourcesPath/streamSample_with_long_string.csv"
   private val csvDataDir = integrationPath + "/spark/target/csvdata_longstr"
   private val longStrValue = "abc" * 12000
-
+  // scalastyle:off lineLength
   override def beforeAll {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -109,16 +109,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
     )
 
     val row = sql("select * from streaming_longstr.stream_table_longstr_file order by id").head()
-    val exceptedRow = Row(10,
-      "name_10",
-      "city_10",
-      100000.0,
-      BigDecimal.valueOf(0.01),
-      80.01,
-      Date.valueOf("1990-01-01"),
-      Timestamp.valueOf("2010-01-01 10:01:01.0"),
-      Timestamp.valueOf("2010-01-01 10:01:01.0"),
-      "10" + longStrValue)
+    val exceptedRow = Row(10, "name_10", "city_10", 100000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), "10" + longStrValue)
     assertResult(exceptedRow)(row)
     new File(csvDataDir).delete()
   }
@@ -149,62 +140,17 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id = 1"),
-      Seq(Row(1,
-        "name_1",
-        "city_1",
-        10000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("1" + longStrValue))))
+      Seq(Row(1, "name_1", "city_1", 10000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id > 49 and id < 100000002"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue))))
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id between 50 and 100000001"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue))))
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
 
     sql("show segments for table streaming_longstr.stream_table_longstr").collect()
     sql("alter table streaming_longstr.stream_table_longstr finish streaming")
@@ -225,62 +171,17 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id = 1"),
-      Seq(Row(1,
-        "name_1",
-        "city_1",
-        10000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("1" + longStrValue))))
+      Seq(Row(1, "name_1", "city_1", 10000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id > 49 and id < 100000002"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue))))
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id between 50 and 100000001"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue))))
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
 
     sql("alter table streaming_longstr.stream_table_longstr compact 'major'")
     sql("show segments for table streaming_longstr.stream_table_longstr").collect()
@@ -299,62 +200,17 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id = 1"),
-      Seq(Row(1,
-        "name_1",
-        "city_1",
-        10000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("1" + longStrValue))))
+      Seq(Row(1, "name_1", "city_1", 10000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id > 49 and id < 100000002"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue))))
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
 
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr where id between 50 and 100000001"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue))))
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue))))
   }
 
   test("[CARBONDATA-3497] Support to write long string for streaming table: " +
@@ -387,69 +243,17 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
     // filter
     checkAnswer(
       sql("select * from streaming_longstr.stream_table_longstr_complex where id = 1"),
-      Seq(Row(1,
-        "name_1",
-        "city_1",
-        10000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("1" + longStrValue),
-        Row(wrap(Array("school_1", "school_11")), 1))))
+      Seq(Row(1, "name_1", "city_1", 10000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue), Row(wrap(Array("school_1", "school_11")), 1))))
 
     checkAnswer(
-      sql("select * from streaming_longstr.stream_table_longstr_complex " +
-          "where id > 49 and id < 100000002"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue),
-        Row(wrap(Array("school_50", "school_5050")), 50)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue),
-          Row(wrap(Array("school_1", "school_11")), 20))))
+      sql("select * from streaming_longstr.stream_table_longstr_complex where id > 49 and id < 100000002"),
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue), Row(wrap(Array("school_50", "school_5050")), 50)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue), Row(wrap(Array("school_1", "school_11")), 20))))
 
     checkAnswer(
-      sql("select * from streaming_longstr.stream_table_longstr_complex " +
-          "where id between 50 and 100000001"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue),
-        Row(wrap(Array("school_50", "school_5050")), 50)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue),
-          Row(wrap(Array("school_1", "school_11")), 20))))
+      sql("select * from streaming_longstr.stream_table_longstr_complex where id between 50 and 100000001"),
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue), Row(wrap(Array("school_50", "school_5050")), 50)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue), Row(wrap(Array("school_1", "school_11")), 20))))
   }
 
   test("[CARBONDATA-3497] Support to write long string for streaming table: StreamSQL") {
@@ -525,16 +329,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
     checkAnswer(sql("select count(*) from sink"), Seq(Row(10)))
 
     val row = sql("select * from sink order by id").head()
-    val exceptedRow = Row(11,
-      "name_11",
-      "city_11",
-      110000.0,
-      BigDecimal.valueOf(0.01),
-      80.01,
-      Date.valueOf("1990-01-01"),
-      Timestamp.valueOf("2010-01-01 10:01:01.0"),
-      Timestamp.valueOf("2010-01-01 10:01:01.0"),
-      ("11" + longStrValue))
+    val exceptedRow = Row(11, "name_11", "city_11", 110000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("11" + longStrValue))
     assertResult(exceptedRow)(row)
 
     sql("SHOW STREAMS").collect()
@@ -721,18 +516,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
             id.toString() + ("abc" * 12000),
             "school_" + id + "\002school_" + id + id + "\001" + id)
         }
-      spark.createDataFrame(csvRDD)
-        .toDF("id",
-          "name",
-          "city",
-          "salary",
-          "tax",
-          "percent",
-          "birthday",
-          "register",
-          "updated",
-          "longstr",
-          "file")
+      spark.createDataFrame(csvRDD).toDF("id", "name", "city", "salary", "tax", "percent", "birthday", "register", "updated", "longstr", "file")
     }
 
     csvDataDF.write
@@ -872,4 +656,5 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
     } while (retry)
     serverSocket
   }
+  // scalastyle:on lineLength
 }

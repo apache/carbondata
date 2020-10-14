@@ -77,8 +77,7 @@ class TestAlterTableColumnRenameWithIndex extends QueryTest with BeforeAndAfterA
       .count()
     assert(query1 == query2)
     val df = sql("select test,testsi from si_rename where testsi = 'pqr' or test = 'def'")
-      .queryExecution
-      .sparkPlan
+      .queryExecution.sparkPlan
     if (!isFilterPushedDownToSI(df)) {
       assert(false)
     } else {

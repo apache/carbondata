@@ -65,7 +65,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
         s"""
            LOAD DATA LOCAL INPATH '$filePath' into table exclude_include_t3
            """)
-      sql("LOAD DATA LOCAL INPATH '$resourcesPath/emptyDimensionDataHive.csv' " +
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptyDimensionDataHive.csv' " +
           "into table exclude_include_hive_t3")
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)

@@ -56,12 +56,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       environment.setRestartStrategy(RestartStrategies.noRestart)
 
       val dataCount = 1000
-      val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath,
-        writerProperties,
-        carbonProperties,
-        environment,
-        source)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
+        getTestSource(dataCount))
 
       sql(s"INSERT INTO $tableName STAGE")
 

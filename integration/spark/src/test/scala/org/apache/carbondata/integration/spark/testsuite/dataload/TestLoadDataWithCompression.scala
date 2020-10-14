@@ -48,6 +48,7 @@ case class Rcd(booleanField: Boolean, shortField: Short, intField: Int, bigintFi
  * It is used for test case of specifying customized compressor.
  */
 class CustomizeCompressor extends Compressor {
+  // scalastyle:off lineLength
   override def getName: String =
     "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
 
@@ -247,7 +248,6 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   }
 
   private def loadData(): Unit = {
-    // scalastyle:off lineLength
     sql(
       s"""
          | INSERT INTO TABLE $tableName VALUES
@@ -264,7 +264,6 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
          |  (true,${Short.MinValue + 2},${Int.MaxValue - 2},${Long.MinValue + 2},${Double.MaxValue - 2},'string3','2015/7/26 12:01:06',${Double.MinValue + 2},'2015/7/26','ccc',${Float.MinValue + 2},'dict3','sort3','local_dict3','longstring3'),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
-    // scalastyle:on lineLength
   }
 
   test("test data loading with different compressors and offheap") {
@@ -416,21 +415,10 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     sqlContext.sparkContext.parallelize(1 to lineNum)
       .map { p =>
         calendar.add(Calendar.HOUR, p)
-        Rcd(Random.nextBoolean(),
-          (Random.nextInt() % Short.MaxValue).toShort,
-          Random.nextInt(),
-          Random.nextLong(),
-          Random.nextDouble(),
-          Random.nextString(6),
-          tsFormat.format(calendar.getTime),
-          0.01 * p,
-          dateFormat.format(calendar.getTime),
-          s"$p",
-          Random.nextFloat(),
-          s"stringDict$p",
-          s"stringSort$p",
-          s"stringLocalDict$p",
-          RandomStringUtils.randomAlphabetic(33000))
+        Rcd(Random.nextBoolean(), (Random.nextInt() % Short.MaxValue).toShort, Random.nextInt(), Random.nextLong(),
+          Random.nextDouble(), Random.nextString(6), tsFormat.format(calendar.getTime), 0.01 * p,
+          dateFormat.format(calendar.getTime), s"$p", Random.nextFloat(), s"stringDict$p",
+          s"stringSort$p", s"stringLocalDict$p", RandomStringUtils.randomAlphabetic(33000))
       }
       .toDF()
       .cache()
@@ -571,9 +559,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     var exception = intercept[RuntimeException] {
       loadData()
     }
-    // scalastyle:off lineLength
     assertResult("For not carbondata native supported compressor, the result of method getName() should be the full class name. Expected 'org.apache.carbondata.core.datastore.compression.ZstdCompressor', found 'zstd'")(exception.getMessage)
-    // scalastyle:on lineLength
     // cannot register compressor with reflection error
     compressorName = "some.unknow.fakecompressor"
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, compressorName)
@@ -621,21 +607,10 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     sqlContext.sparkContext.parallelize(1 to lineNum)
       .map { p =>
         calendar.add(Calendar.HOUR, p)
-        Rcd(Random.nextBoolean(),
-          (Random.nextInt() % Short.MaxValue / 2).toShort,
-          Random.nextInt(),
-          Random.nextLong(),
-          Random.nextDouble(),
-          RandomStringUtils.randomAlphabetic(6),
-          tsFormat.format(calendar.getTime),
-          0.01 * p,
-          dateFormat.format(calendar.getTime),
-          s"$p",
-          Random.nextFloat(),
-          s"stringDict$p",
-          s"stringSort$p",
-          s"stringLocalDict$p",
-          RandomStringUtils.randomAlphabetic(3))
+        Rcd(Random.nextBoolean(), (Random.nextInt() % Short.MaxValue / 2).toShort, Random.nextInt(), Random.nextLong(),
+          Random.nextDouble(), RandomStringUtils.randomAlphabetic(6), tsFormat.format(calendar.getTime), 0.01 * p,
+          dateFormat.format(calendar.getTime), s"$p", Random.nextFloat(), s"stringDict$p",
+          s"stringSort$p", s"stringLocalDict$p", RandomStringUtils.randomAlphabetic(3))
       }
       .toDF()
       .write
@@ -720,4 +695,5 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
       case _: Exception =>
     }
   }
+  // scalastyle:on lineLength
 }

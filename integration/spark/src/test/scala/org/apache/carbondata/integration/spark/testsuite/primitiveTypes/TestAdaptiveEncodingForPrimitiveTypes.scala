@@ -34,18 +34,6 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
   private val vectorReader = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER)
 
-  private val unsafeColumnPage = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE)
-
-  private val unsafeQueryExecution = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION)
-
-  private val unsafeSort = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
-
-  private val compactionThreshold = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD)
-
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, "2,2")
 
@@ -273,13 +261,7 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
         s"into table negativeTable options('FILEHEADER'='intColumn,stringColumn,shortColumn')")
     checkAnswer(sql("select * from negativeTable"), sql("select * from negativeTable_Compare"))
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-        CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-        CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
-        CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
+    restoreDefaultProperty
     sql("drop table if exists uniqdata")
     sql("drop table if exists negativeTable")
   }
@@ -312,13 +294,7 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
         s"into table negativeTable options('FILEHEADER'='intColumn,stringColumn,shortColumn')")
     checkAnswer(sql("select * from negativeTable"), sql("select * from negativeTable_Compare"))
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-        CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-        CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
-        CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
+    restoreDefaultProperty
     sql("drop table if exists uniqdata")
     sql("drop table if exists negativeTable")
   }
@@ -465,13 +441,8 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
   }
 
   override def afterAll: Unit = {
+    restoreDefaultProperty
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-        CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-        CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
-        CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
         CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
     dropTables
@@ -486,5 +457,15 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
     sql("drop table if exists negativeTable_Compare")
     sql("drop table if exists negativeTable_Compaction")
     sql("drop table if exists complexTable")
+  }
+
+  private def restoreDefaultProperty: Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
+        CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
+        CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
+        CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
   }
 }

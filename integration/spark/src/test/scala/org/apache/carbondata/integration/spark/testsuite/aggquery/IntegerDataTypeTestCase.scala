@@ -146,54 +146,13 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     )
 
     val ff = BigInt(2147484000L)
+    // scalastyle:off lineLength
     checkAnswer(
-      sql("select begin_time,begin_time1,begin_time2,begin_time3,begin_time4,begin_time5," +
-          "begin_time6,begin_time7,begin_time8,begin_time9,begin_time10,begin_time11," +
-          "begin_time12,begin_time13,begin_time14,begin_time15,begin_time16,begin_time17," +
-          "begin_time18,begin_time19,begin_time20 from all_encoding_table"),
-      Seq(Row(1497376581,
-        10000,
-        8388600,
-        125,
-        1497376581,
-        8386600,
-        10000,
-        100,
-        125,
-        1497376581,
-        1497423738,
-        2139095000,
-        1497376581,
-        1497423738,
-        32000,
-        123.4,
-        11.1,
-        3200.1,
-        214744460.2,
-        1497376581,
-        1497376581),
-        Row(1497408581,
-          32000,
-          45000,
-          25,
-          10000,
-          55000,
-          32000,
-          75,
-          35,
-          1497423838,
-          1497423838,
-          ff,
-          1497423838,
-          1497423838,
-          31900,
-          838860.7,
-          12.3,
-          127.1,
-          214748360.2,
-          1497408581,
-          1497408581))
+      sql("select begin_time,begin_time1,begin_time2,begin_time3,begin_time4,begin_time5,begin_time6,begin_time7,begin_time8,begin_time9,begin_time10,begin_time11,begin_time12,begin_time13,begin_time14,begin_time15,begin_time16,begin_time17,begin_time18,begin_time19,begin_time20 from all_encoding_table"),
+      Seq(Row(1497376581, 10000, 8388600, 125, 1497376581, 8386600, 10000, 100, 125, 1497376581, 1497423738, 2139095000, 1497376581, 1497423738, 32000, 123.4, 11.1, 3200.1, 214744460.2, 1497376581, 1497376581),
+        Row(1497408581, 32000, 45000, 25, 10000, 55000, 32000, 75, 35, 1497423838, 1497423838, ff, 1497423838, 1497423838, 31900, 838860.7, 12.3, 127.1, 214748360.2, 1497408581, 1497408581))
     )
+    // scalastyle:on lineLength
 
     sql(
       """

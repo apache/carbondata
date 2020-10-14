@@ -41,7 +41,7 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
   private val spark = sqlContext.sparkSession
   private val dataFilePath = s"$resourcesPath/streamSample_with_long_string.csv"
   private val longStrValue = "abc" * 12000
-
+  // scalastyle:off lineLength
   override def beforeAll {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -98,97 +98,25 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
     // filter
     checkAnswer(
       sql("select * from streaming_table_filter.stream_filter where id = 1"),
-      Seq(Row(1,
-        "name_1",
-        "city_1",
-        10000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("1" + longStrValue),
-        Row(wrap(Array("school_1", "school_11")), 1))))
+      Seq(Row(1, "name_1", "city_1", 10000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue), Row(wrap(Array("school_1", "school_11")), 1))))
 
     checkAnswer(
       sql("select * from streaming_table_filter.stream_filter where id > 49 and id < 100000002"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue),
-        Row(wrap(Array("school_50", "school_5050")), 50)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue),
-          Row(wrap(Array("school_1", "school_11")), 20))))
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue), Row(wrap(Array("school_50", "school_5050")), 50)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue), Row(wrap(Array("school_1", "school_11")), 20))))
 
     checkAnswer(
       sql("select * from streaming_table_filter.stream_filter where id between 50 and 100000001"),
-      Seq(Row(50,
-        "name_50",
-        "city_50",
-        500000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("50" + longStrValue),
-        Row(wrap(Array("school_50", "school_5050")), 50)),
-        Row(100000001,
-          "batch_1",
-          "city_1",
-          0.1,
-          BigDecimal.valueOf(0.01),
-          80.01,
-          Date.valueOf("1990-01-01"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          Timestamp.valueOf("2010-01-01 10:01:01.0"),
-          ("1" + longStrValue),
-          Row(wrap(Array("school_1", "school_11")), 20))))
+      Seq(Row(50, "name_50", "city_50", 500000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("50" + longStrValue), Row(wrap(Array("school_50", "school_5050")), 50)),
+        Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("1" + longStrValue), Row(wrap(Array("school_1", "school_11")), 20))))
 
     checkAnswer(
-      sql("select * from streaming_table_filter.stream_filter " +
-          "where salary = 490000.0 and percent = 80.01"),
-      Seq(Row(49,
-        "name_49",
-        "city_49",
-        490000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("49" + longStrValue),
-        Row(wrap(Array("school_49", "school_4949")), 49))))
+      sql("select * from streaming_table_filter.stream_filter where salary = 490000.0 and percent = 80.01"),
+      Seq(Row(49, "name_49", "city_49", 490000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("49" + longStrValue), Row(wrap(Array("school_49", "school_4949")), 49))))
 
     checkAnswer(
-      sql("select * from streaming_table_filter.stream_filter " +
-          "where id > 20 and salary = 300000.0 and file.age > 25"),
-      Seq(Row(30,
-        "name_30",
-        "city_30",
-        300000.0,
-        BigDecimal.valueOf(0.01),
-        80.01,
-        Date.valueOf("1990-01-01"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        Timestamp.valueOf("2010-01-01 10:01:01.0"),
-        ("30" + longStrValue),
-        Row(wrap(Array("school_30", "school_3030")), 30))))
+      sql("select * from streaming_table_filter.stream_filter where id > 20 and salary = 300000.0 and file.age > 25"),
+      Seq(Row(30, "name_30", "city_30", 300000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), ("30" + longStrValue), Row(wrap(Array("school_30", "school_3030")), 30))))
   }
 
   def createWriteSocketThread(
@@ -390,4 +318,5 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
     } while (retry)
     serverSocket
   }
+  // scalastyle:on lineLength
 }

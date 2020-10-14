@@ -265,17 +265,13 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
         "TABLE carbontable OPTIONS('DELIMITER'=',', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', " +
         "'BAD_RECORDS_ACTION'='FORCE')")
     val withoutIndex =
-      sql("select empno from carbontable " +
-          "where empname = 'ayushi' or empname = 'krithin' or empname = 'madhan'")
-        .collect().toSeq
-    sql(
-      "create index empnameindex on table carbontable (" +
+      sql("select empno from carbontable where empname = 'ayushi' or " +
+          "empname = 'krithin' or empname = 'madhan'").collect().toSeq
+    sql("create index empnameindex on table carbontable (" +
       "workgroupcategoryname,empname) AS 'carbondata'")
 
-    checkAnswer(sql(
-      "select empno from carbontable " +
-      "where empname = 'ayushi' or empname = 'krithin' or empname = 'madhan'"),
-      withoutIndex)
+    checkAnswer(sql("select empno from carbontable where empname = 'ayushi' or " +
+                    "empname = 'krithin' or empname = 'madhan'"), withoutIndex)
     sql("drop index if exists empnameindex on carbontable")
     sql("drop table if exists carbontable")
   }

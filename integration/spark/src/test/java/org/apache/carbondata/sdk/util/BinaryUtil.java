@@ -17,9 +17,7 @@
 
 package org.apache.carbondata.sdk.util;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
