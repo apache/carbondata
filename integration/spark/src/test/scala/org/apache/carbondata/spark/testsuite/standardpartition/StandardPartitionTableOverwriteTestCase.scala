@@ -321,6 +321,37 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql("drop table if exists partitionLoadTable")
     sql("drop table if exists noLoadTable")
     sql("drop table if exists partitiondateinserthive")
+    sql("drop table if exists staticpartitiondateinsert1")
+    sql("drop table if exists staticpartitiondateinsert2")
+  }
+
+
+  test("testing123")
+  {
+    sql("drop table if exists staticpartitiondateinsert1")
+    sql(
+      """
+        | CREATE TABLE staticpartitiondateinsert1 (a int)
+        | PARTITIONED BY (projectenddate timestamp)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql("insert into staticpartitiondateinsert1 select 1, '2016-06-30 00:00:00'")
+    sql("select * from staticpartitiondateinsert1").show()
+
+  }
+
+  test("testing1234")
+  {
+    sql("drop table if exists staticpartitiondateinsert2")
+    sql(
+      """
+        | CREATE TABLE staticpartitiondateinsert2 (a int)
+        | PARTITIONED BY (projectenddate date)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql("insert into staticpartitiondateinsert2 select 1, '2016-06-30'")
+    sql("select * from staticpartitiondateinsert2").show()
+
   }
 
 }

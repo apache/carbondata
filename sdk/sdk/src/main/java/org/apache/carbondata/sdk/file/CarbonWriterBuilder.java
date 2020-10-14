@@ -841,6 +841,9 @@ public class CarbonWriterBuilder {
         carbonTable.getCreateOrderColumn().stream().map(
             CarbonColumn::getColumnSchema
         ).collect(Collectors.toList());
+    columnSchemas.addAll(carbonTable.getPartitionColumns().stream().map(
+            CarbonColumn::getColumnSchema
+    ).collect(Collectors.toList()));
     schema = new Schema(columnSchemas);
     return this;
   }

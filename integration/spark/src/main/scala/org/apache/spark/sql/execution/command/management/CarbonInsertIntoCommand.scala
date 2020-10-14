@@ -39,7 +39,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -313,19 +313,19 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
           // partition keyword is present in insert and
           // select query partition projections may not be same as create order.
           // So, bring to create table order
-          val dynamicPartition = partition.filterNot(entry => entry._2.isDefined)
+          val dynamicPartition = partition.filter(entry => entry._2.isDefined)
           var index = 0
           val map = mutable.Map[String, Int]()
           for (part <- dynamicPartition) {
             map(part._1) = index
             index = index + 1
           }
-          var tempList = oldProjectionList.take(oldProjectionList.size - dynamicPartition.size)
+          var tempList = oldProjectionList.take(oldProjectionList.size)
           val partitionList = oldProjectionList.takeRight(dynamicPartition.size)
-          val partitionSchema = table.getPartitionInfo.getColumnSchemaList.asScala
-          for (partitionCol <- partitionSchema) {
-            if (map.contains(partitionCol.getColumnName)) {
-              tempList = tempList :+ partitionList(map(partitionCol.getColumnName))
+          val partitionSchema = table.getPartitionColumns.asScala
+          for (carbonColumn <- partitionSchema) {
+            if (map.contains(carbonColumn.getColName)) {
+              tempList = tempList :+ partitionList(map(carbonColumn.getColName))
             }
           }
           oldProjectionList = tempList

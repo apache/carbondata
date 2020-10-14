@@ -42,9 +42,13 @@ object SparkTypeConverter {
 
     // find the column and add it to fields array
     columns.foreach { column =>
-      val col = allColumns.find(_.getColumnName.equalsIgnoreCase(column)).getOrElse(
-        throw new IllegalArgumentException(column + " does not exist")
-      )
+      val col = if (table.getPartitionColumn(column) != null) {
+        table.getPartitionColumn(column).getColumnSchema
+      } else {
+        allColumns.find(_.getColumnName.equalsIgnoreCase(column)).getOrElse(
+          throw new IllegalArgumentException(column + " does not exist")
+        )
+      }
       fields.add(StructField(col.getColumnName, convertCarbonToSparkDataType(col, table)))
     }
     StructType(fields)
