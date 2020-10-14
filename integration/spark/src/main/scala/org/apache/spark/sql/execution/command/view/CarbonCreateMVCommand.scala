@@ -327,11 +327,9 @@ case class CarbonCreateMVCommand(
     schema.getProperties.put(MVProperty.REFRESH_MODE, viewRefreshMode)
     schema.getProperties.put(MVProperty.REFRESH_TRIGGER_MODE, viewRefreshTriggerMode)
     if (null != granularity && null != timeSeriesColumn) {
-      schema.setQuery(queryString)
       schema.setTimeSeries(true)
-    } else {
-      schema.setQuery(modularPlan.asCompactSQL)
     }
+    schema.setQuery(queryString)
     try {
       viewManager.createSchema(schema.getIdentifier.getDatabaseName, schema)
     } catch {
