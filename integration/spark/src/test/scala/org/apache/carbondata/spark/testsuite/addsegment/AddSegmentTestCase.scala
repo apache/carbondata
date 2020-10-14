@@ -781,6 +781,48 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop table $tableName")
   }
 
+  test("Test add segment by carbon written by sdk having nanoseconds timestamp") {
+    val tableName = "add_segment_test"
+    sql(s"drop table if exists $tableName")
+    sql(
+      s"""
+         | CREATE TABLE $tableName (empno int, empname string, designation String, doj Timestamp,
+         | workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+         | projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+         | utilization int,salary int)
+         | STORED AS carbondata
+         |""".stripMargin)
+
+    val externalSegmentPath = storeLocation + "/" + "external_segment"
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+
+    // write into external segment folder
+    val schemaFilePath = s"$storeLocation/$tableName/Metadata/schema"
+    val writer = CarbonWriter.builder
+      .outputPath(externalSegmentPath)
+      .withSchemaFile(schemaFilePath)
+      .uniqueIdentifier(System.nanoTime())
+      .writtenBy("AddSegmentTestCase")
+      .withCsvInput()
+      .build()
+    val source = Source.fromFile(s"$resourcesPath/data.csv")
+    var count = 0
+    for (line <- source.getLines()) {
+      if (count != 0) {
+        writer.write(line.split(","))
+      }
+      count = count + 1
+    }
+    writer.close()
+
+    sql(s"alter table $tableName add segment " +
+        s"options('path'='$externalSegmentPath', 'format'='carbon')").collect()
+    sql(s"delete from $tableName where empno = 12").collect()
+    checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(9)))
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+    sql(s"drop table $tableName")
+  }
+
   /**
    * use sdk to read the specified path using specified schema file
    * and compare result with select * from tableName
