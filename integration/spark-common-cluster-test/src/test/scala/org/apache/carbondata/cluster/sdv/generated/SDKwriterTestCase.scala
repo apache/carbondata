@@ -21,9 +21,6 @@ package org.apache.carbondata.cluster.sdv.generated
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, InputStream}
 import java.util
 
-import org.apache.spark.sql.{AnalysisException, Row}
-import org.apache.spark.sql.common.util.QueryTest
-import org.scalatest.BeforeAndAfterEach
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -31,26 +28,26 @@ import org.apache.avro
 import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, Encoder}
-import org.apache.commons.lang.CharEncoding
 import org.apache.commons.lang3.RandomStringUtils
-import org.apache.hadoop.conf.Configuration
+import org.apache.spark.sql.{AnalysisException, Row}
+import org.apache.spark.sql.common.util.QueryTest
 import org.junit.Assert
+import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.sdk.file.{AvroCarbonWriter, CarbonWriter, Schema}
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
 /**
  * Test Class for SDKwriterTestcase to verify all scenarios
  */
-
 class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
   var writerPath =
     s"${ resourcesPath }" + "/SparkCarbonFileFormat/WriterOutput1/"
-
+  // scalastyle:off lineLength
   override def beforeEach: Unit = {
     sql("DROP TABLE IF EXISTS sdkTable1")
     sql("DROP TABLE IF EXISTS sdkTable2")
@@ -65,7 +62,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     cleanTestData()
   }
 
-  def cleanTestData() = {
+  def cleanTestData(): Boolean = {
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
   }
 
@@ -124,7 +121,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
         i += 1
       }
       if (options != null) {
-        //Keep one valid record. else carbon data file will not generate
+        // Keep one valid record. else carbon data file will not generate
         writer.write(Array[String]("abc" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
       }
       writer.close()
@@ -343,7 +340,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable")
 
     val exception = intercept[Exception] {
-      //data source file format
+      // data source file format
       sql(
         s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
            |'$writerPath' """.stripMargin)
@@ -404,7 +401,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test create external table and test bad record") {
-    //1. Action = FORCE
+    // 1. Action = FORCE
     buildTestDataWithBadRecordForce(writerPath)
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
@@ -420,7 +417,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE sdkTable")
     cleanTestData()
 
-    //2. Action = REDIRECT
+    // 2. Action = REDIRECT
     buildTestDataWithBadRecordRedirect(writerPath)
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
@@ -434,7 +431,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE sdkTable")
     cleanTestData()
 
-    //3. Action = IGNORE
+    // 3. Action = IGNORE
     buildTestDataWithBadRecordIgnore(writerPath)
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
@@ -534,10 +531,9 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
       writer.close()
     }
     catch {
-      case e: Exception => {
+      case e: Exception =>
         e.printStackTrace()
         Assert.fail(e.getMessage)
-      }
     }
   }
 
@@ -550,38 +546,38 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     val mySchema =
       """ {
-        |	"name": "address",
-        |	"type": "record",
-        |	"fields": [
-        |		{
-        |			"name": "name",
-        |			"type": "string"
-        |		},
-        |		{
-        |			"name": "age",
-        |			"type": "int"
-        |		},
-        |		{
-        |			"name": "doorNum",
-        |			"type": {
-        |				"type": "array",
-        |				"items": {
-        |					"type": "record",
-        |					"name": "my_address",
-        |					"fields": [
-        |						{
-        |							"name": "street",
-        |							"type": "string"
-        |						},
-        |						{
-        |							"name": "city",
-        |							"type": "string"
-        |						}
-        |					]
-        |				}
-        |			}
-        |		}
-        |	]
+        | "name": "address",
+        | "type": "record",
+        | "fields": [
+        |  {
+        |   "name": "name",
+        |   "type": "string"
+        |  },
+        |  {
+        |   "name": "age",
+        |   "type": "int"
+        |  },
+        |  {
+        |   "name": "doorNum",
+        |   "type": {
+        |    "type": "array",
+        |    "items": {
+        |     "type": "record",
+        |     "name": "my_address",
+        |     "fields": [
+        |      {
+        |       "name": "street",
+        |       "type": "string"
+        |      },
+        |      {
+        |       "name": "city",
+        |       "type": "string"
+        |      }
+        |     ]
+        |    }
+        |   }
+        |  }
+        | ]
         |} """.stripMargin
     val json =
       """ {"name":"bob","age":10,"doorNum" :
@@ -601,62 +597,62 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     val mySchema =
       """ {
-        |	"name": "address",
-        |	"type": "record",
-        |	"fields": [
-        |		{
-        |			"name": "name",
-        |			"type": "string"
-        |		},
-        |		{
-        |			"name": "age",
-        |			"type": "int"
-        |		},
-        |		{
-        |			"name": "address",
-        |			"type": {
-        |				"type": "record",
-        |				"name": "my_address",
-        |				"fields": [
-        |					{
-        |						"name": "street",
-        |						"type": "string"
-        |					},
-        |					{
-        |						"name": "city",
-        |						"type": "string"
-        |					},
-        |					{
-        |						"name": "doorNum",
-        |						"type": {
-        |							"type": "array",
-        |							"items": {
-        |								"name": "EachdoorNums",
-        |								"type": "int",
-        |								"default": -1
-        |							}
-        |						}
-        |					}
-        |				]
-        |			}
-        |		}
-        |	]
+        | "name": "address",
+        | "type": "record",
+        | "fields": [
+        |  {
+        |   "name": "name",
+        |   "type": "string"
+        |  },
+        |  {
+        |   "name": "age",
+        |   "type": "int"
+        |  },
+        |  {
+        |   "name": "address",
+        |   "type": {
+        |    "type": "record",
+        |    "name": "my_address",
+        |    "fields": [
+        |     {
+        |      "name": "street",
+        |      "type": "string"
+        |     },
+        |     {
+        |      "name": "city",
+        |      "type": "string"
+        |     },
+        |     {
+        |      "name": "doorNum",
+        |      "type": {
+        |       "type": "array",
+        |       "items": {
+        |        "name": "EachdoorNums",
+        |        "type": "int",
+        |        "default": -1
+        |       }
+        |      }
+        |     }
+        |    ]
+        |   }
+        |  }
+        | ]
         |} """.stripMargin
 
     val json =
       """ {
-        |	"name": "bob",
-        |	"age": 10,
-        |	"address": {
-        |		"street": "abc",
-        |		"city": "bang",
-        |		"doorNum": [
-        |			1,
-        |			2,
-        |			3,
-        |			4
-        |		]
-        |	}
+        | "name": "bob",
+        | "age": 10,
+        | "address": {
+        |  "street": "abc",
+        |  "city": "bang",
+        |  "doorNum": [
+        |   1,
+        |   2,
+        |   3,
+        |   4
+        |  ]
+        | }
         |} """.stripMargin
     WriteFilesWithAvroWriter(rows, mySchema, json)
   }
@@ -820,4 +816,5 @@ object avroUtil{
       writer.close()
     }
   }
+  // scalastyle:on lineLength
 }

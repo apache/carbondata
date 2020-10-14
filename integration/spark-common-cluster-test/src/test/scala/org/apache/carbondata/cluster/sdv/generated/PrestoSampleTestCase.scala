@@ -41,7 +41,9 @@ class PrestoSampleTestCase extends QueryTest with BeforeAndAfterAll {
       // supports only running through cluster
       val actualResult: List[Map[String, Any]] = QueryTest.PrestoQueryTest
               .executeQuery("select * from sample_table")
-     println("ans---------" + actualResult(0).toString())
+      // scalastyle:off println
+      println("ans---------" + actualResult(0).toString())
+      // scalastyle:on println
       val expectedResult: List[Map[String, Any]] = List(Map(
         "name" -> "ajantha"))
       assert(actualResult.toString() equals expectedResult.toString())

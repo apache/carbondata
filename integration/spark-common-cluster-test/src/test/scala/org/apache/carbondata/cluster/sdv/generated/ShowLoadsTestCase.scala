@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -27,9 +26,9 @@ import org.scalatest.BeforeAndAfterAll
  */
 
 class ShowLoadsTestCase extends QueryTest with BeforeAndAfterAll {
-         
 
- //Verify failure/success/Partial status in show segments.
+ // scalastyle:off lineLength
+ // Verify failure/success/Partial status in show segments.
  test("DataLoadManagement001_197", Include) {
     sql(
       s"""drop TABLE if exists ShowSegment_196""".stripMargin).collect
@@ -55,7 +54,7 @@ class ShowLoadsTestCase extends QueryTest with BeforeAndAfterAll {
  }
 
 
- //Verify show segment commands with database name.
+ // Verify show segment commands with database name.
  test("DataLoadManagement001_196", Include) {
     sql(s"""drop TABLE if exists Database_ShowSegment_196""").collect
   sql(s"""CREATE TABLE Database_ShowSegment_196 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10),Double_COLUMN1 double,DECIMAL_COLUMN2 decimal(36,10), Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('table_blocksize'='1')""").collect
@@ -69,7 +68,7 @@ class ShowLoadsTestCase extends QueryTest with BeforeAndAfterAll {
  }
 
 
- //Show Segments failing if table name not in same case
+ // Show Segments failing if table name not in same case
  test("DataLoadManagement001_830", Include) {
     sql(s"""drop TABLE if exists Case_ShowSegment_196""").collect
   sql(s"""CREATE TABLE Case_ShowSegment_196 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10),Double_COLUMN1 double,DECIMAL_COLUMN2 decimal(36,10), Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('table_blocksize'='1')""").collect
@@ -80,5 +79,5 @@ class ShowLoadsTestCase extends QueryTest with BeforeAndAfterAll {
    assert(col.equals(Seq()))
     sql(s"""drop table Case_ShowSegment_196""").collect
  }
-
+ // scalastyle:on lineLength
 }

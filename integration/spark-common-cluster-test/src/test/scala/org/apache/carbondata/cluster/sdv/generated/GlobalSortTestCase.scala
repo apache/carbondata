@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -22,11 +21,10 @@ import org.apache.spark.sql.common.util._
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 /**
-  * Test Class for globalsort1TestCase to verify all scenerios
-  */
-
+ * Test Class for globalsort1TestCase to verify all scenerios
+ */
 class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach{
-
+  // scalastyle:off lineLength
   override def beforeAll {
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""drop table if exists uniqdataquery1""").collect
@@ -37,7 +35,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
     sql(s"""drop table if exists uniqdataquery1""").collect
   }
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-01
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-01
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-01", Include) {
     sql(s"""drop table if exists uniqdata11""".stripMargin).collect
     sql(
@@ -62,7 +60,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-02
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-02
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-02", Include) {
     sql(
       s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,
@@ -86,7 +84,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-03
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-03
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-03", Include) {
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
 
@@ -98,7 +96,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-04
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-04
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-04", Include) {
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
 
@@ -109,7 +107,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-05
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-05
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-05", Include) {
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
 
@@ -120,7 +118,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-06
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-06
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-06", Include) {
     sql(s"""CREATE TABLE uniqdata17 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
 
@@ -131,7 +129,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-07
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-07
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-07", Include) {
     sql(s"""CREATE TABLE uniqdata19b (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
 
@@ -142,7 +140,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-08
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-08
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-08", Include) {
     sql(s"""CREATE TABLE uniqdata19c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
 
@@ -153,7 +151,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-09
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-09
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-09", Include) {
     sql(s"""CREATE TABLE uniqdata19d (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
 
@@ -164,7 +162,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-10
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-10
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-10", Include) {
     sql(s"""CREATE TABLE uniqdata19e (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata19e OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='FALSE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -174,7 +172,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-11
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-11
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-11", Include) {
     sql(s"""CREATE TABLE uniqdata19f (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata19f OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""".stripMargin).collect
@@ -184,7 +182,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-14
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-14
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-14", Include) {
     sql(
       s"""CREATE TABLE uniqdata20c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT','NO_INVERTED_INDEX'='CUST_NAME')""").collect
@@ -195,7 +193,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-15
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-15
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-15", Include) {
     sql(s"""drop table if exists t3""").collect
     sql(s"""CREATE TABLE t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -207,7 +205,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-16
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-16
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-16", Include) {
     sql(s"""drop table if exists t3""").collect
     sql(s"""CREATE TABLE t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -218,7 +216,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-19
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-19
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-19", Include) {
     sql(s"""drop table if exists uniqdata20b""").collect
     sql(s"""drop table if exists uniqdata20c""").collect
@@ -233,7 +231,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-20
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-20
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-20", Include) {
     sql(s"""drop table if exists uniqdata_h""").collect
     sql(s"""drop table if exists uniqdata_c""").collect
@@ -248,7 +246,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-21
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-21
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-21", Include) {
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
 
@@ -258,7 +256,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
     sql(s"""drop table if exists uniqdata11""").collect
   }
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-22
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-22
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-22", Include) {
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
 
@@ -270,7 +268,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-23
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-23
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-23", Include) {
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
 
@@ -283,7 +281,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-24
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-24
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-24", Include) {
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -296,7 +294,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-25
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-25
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-25", Include) {
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -309,7 +307,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-26
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-26
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-26", Include) {
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -322,7 +320,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-27
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-27
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-27", Include) {
     sql(s"""drop table if exists uniqdata17""").collect
     sql(s"""CREATE TABLE uniqdata17 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -335,7 +333,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-28
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-28
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-28", Include) {
     sql(s"""drop table if exists uniqdata19b""").collect
     sql(s"""CREATE TABLE uniqdata19b (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -348,7 +346,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-29
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-29
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-29", Include) {
     sql(s"""drop table if exists uniqdata19c""").collect
     sql(s"""CREATE TABLE uniqdata19c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -361,7 +359,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-30
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-30
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-30", Include) {
     sql(s"""drop table if exists uniqdata19d""").collect
     sql(s"""CREATE TABLE uniqdata19d (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -374,7 +372,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-31
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-31
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-31", Include) {
     sql(s"""drop table if exists uniqdata19e""").collect
     sql(s"""CREATE TABLE uniqdata19e (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -386,7 +384,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-32
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-32
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-32", Include) {
     sql(s"""drop table if exists uniqdata19f""").collect
     sql(s"""CREATE TABLE uniqdata19f (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -398,7 +396,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-36
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-36
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-36", Include) {
     sql(s"""drop TABLE if exists uniqdata_c""").collect
     sql(s"""CREATE TABLE uniqdata_c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -411,7 +409,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-38
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-38
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-38", Include) {
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
 
@@ -423,7 +421,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-39
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-39
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-39", Include) {
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdataquery1 OPTIONS('DELIMITER'=',','QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -434,7 +432,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-40
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-40
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-40", Include) {
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdataquery1 OPTIONS('DELIMITER'=',','QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -445,7 +443,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-41
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-41
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-41", Include) {
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdataquery1 OPTIONS('DELIMITER'=',','QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -456,7 +454,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-42
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-42
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-42", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -470,7 +468,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-43
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-43
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-43", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -482,7 +480,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-44
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-44
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-44", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -494,7 +492,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-45
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-45
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-45", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""drop table if exists uniqdataquery11""").collect
@@ -511,7 +509,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-46
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-46
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-46", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""drop table if exists uniqdataquery11""").collect
@@ -527,7 +525,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-47
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-47
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-47", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""drop table if exists uniqdataquery11""").collect
@@ -543,7 +541,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-48
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-48
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-48", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""drop table if exists uniqdataquery11""").collect
@@ -559,7 +557,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-49
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-49
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-49", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -571,7 +569,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-50
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-50
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-50", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -583,7 +581,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-51
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-51
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-51", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -595,7 +593,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-52
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-52
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-52", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""").collect
@@ -607,7 +605,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
   }
 
 
-  //Carbon-Loading-Optimizations-Global-Sort-01-01-54
+  // Carbon-Loading-Optimizations-Global-Sort-01-01-54
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-54", Include) {
     sql(s"""drop table if exists uniqdataquery1""").collect
     sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata tblproperties('sort_columns'='')""").collect
@@ -627,4 +625,5 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAnd
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""drop table if exists uniqdataquery1""").collect
   }
+  // scalastyle:on lineLength
 }

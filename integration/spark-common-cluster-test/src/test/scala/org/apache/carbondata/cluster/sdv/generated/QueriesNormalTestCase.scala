@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -26,8 +25,8 @@ import org.scalatest.BeforeAndAfterAll
  */
 
 class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
-
-  //OSCON_Query_CreateTable
+  // scalastyle:off lineLength
+  // OSCON_Query_CreateTable
   test("OSCON_Query_CreateTable", Include) {
     sql(s"""drop table if exists oscon_carbon""").collect
 
@@ -36,7 +35,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_DataLoad
+  // OSCON_Query_DataLoad
   test("OSCON_Query_DataLoad", Include) {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/oscon/oscon.csv' INTO table oscon_carbon OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','FILEHEADER'='CUST_ID,CUST_COUNTRY,CUST_STATE,CUST_CITY,ACTIVE_AREA_ID,ACTIVE_COUNTRY,ACTIVE_PROVINCE,ACTIVE_CITY,ACTIVE_DISTRICT,LATEST_AREAID,LATEST_COUNTRY,LATEST_PROVINCE,LATEST_CITY,LATEST_DISTRICT,WH_COUNTRY,WH_STATE,WH_CITY,WH_COUNTY,CUST_JOB_TITLE,CUST_BUY_POTENTIAL,PROD_UNQ_MDL_ID,PROD_BRAND_NAME,PRODUCT_NAME,PRODUCT_MODEL,PROD_MODEL_ID,PROD_STD_CST,REG_UNIT_PRICE,TOTAL_PRD_COST,TOTAL_PRD_DISC,PROD_OFF_PRICE,TOTAL_TX_AMT,PROD_UNITS,PROD_WEIGHT,UNIT_PRICE_DSCNT_PCT,DSCNT_AMT,OL_SALES_PRICE,PROD_COLOR,ITM_ID,ITM_NAME,PRMTION_ID,PRMTION_NAME,SHP_MODE_ID,SHP_MODE,DELIVERY_COUNTRY,DELIVERY_STATE,DELIVERY_CITY,DELIVERY_DISTRICT,TRACKING_NO,ACTIVE_EMUI_VERSION,WH_NAME,STR_ORDER_NO,STR_ORDER_DATE,OL_ORDER_NO,OL_ORDER_DATE,OL_SITE,CUST_NICK_NAME,CUST_FIRST_NAME,CUST_LAST_NAME,CUST_PRFRD_FLG,CUST_BIRTH_DY,CUST_BIRTH_MM,CUST_BIRTH_YR,CUST_BIRTH_COUNTRY,CUST_LOGIN,CUST_EMAIL_ADDR,CUST_LAST_RVW_DATE,CUST_SEX,CUST_ADDRESS_ID,CUST_STREET_NO,CUST_STREET_NAME,CUST_AGE,CUST_SUITE_NO,CUST_ZIP,CUST_COUNTY,PRODUCT_ID,PROD_UNQ_DEVICE_ADDR,PROD_UQ_UUID,PROD_SHELL_COLOR,DEVICE_NAME,PROD_SHORT_DESC,PROD_LONG_DESC,PROD_THUMB,PROD_IMAGE,PROD_UPDATE_DATE,PROD_BAR_CODE,PROD_LIVE,PROD_LOC,PROD_RAM,PROD_ROM,PROD_CPU_CLOCK,PROD_SERIES,ITM_REC_START_DATE,ITM_REC_END_DATE,ITM_BRAND_ID,ITM_BRAND,ITM_CLASS_ID,ITM_CLASS,ITM_CATEGORY_ID,ITM_CATEGORY,ITM_MANUFACT_ID,ITM_MANUFACT,ITM_FORMULATION,ITM_COLOR,ITM_CONTAINER,ITM_MANAGER_ID,PRM_START_DATE,PRM_END_DATE,PRM_CHANNEL_DMAIL,PRM_CHANNEL_EMAIL,PRM_CHANNEL_CAT,PRM_CHANNEL_TV,PRM_CHANNEL_RADIO,PRM_CHANNEL_PRESS,PRM_CHANNEL_EVENT,PRM_CHANNEL_DEMO,PRM_CHANNEL_DETAILS,PRM_PURPOSE,PRM_DSCNT_ACTIVE,SHP_CODE,SHP_CARRIER,SHP_CONTRACT,CHECK_DATE,CHECK_YR,CHECK_MM,CHECK_DY,CHECK_HOUR,BOM,INSIDE_NAME,PACKING_DATE,PACKING_YR,PACKING_MM,PACKING_DY,PACKING_HOUR,DELIVERY_PROVINCE,PACKING_LIST_NO,ACTIVE_CHECK_TIME,ACTIVE_CHECK_YR,ACTIVE_CHECK_MM,ACTIVE_CHECK_DY,ACTIVE_CHECK_HOUR,ACTIVE_NETWORK,ACTIVE_FIRMWARE_VER,ACTIVE_OS_VERSION,LATEST_CHECK_TIME,LATEST_CHECK_YR,LATEST_CHECK_MM,LATEST_CHECK_DY,LATEST_CHECK_HOUR,LATEST_FIRMWARE_VER,LATEST_EMUI_VERSION,LATEST_OS_VERSION,LATEST_NETWORK,WH_ID,WH_STREET_NO,WH_STREET_NAME,WH_STREET_TYPE,WH_SUITE_NO,WH_ZIP,OL_SITE_DESC,OL_RET_ORDER_NO,OL_RET_DATE,CUST_DEP_COUNT,CUST_VEHICLE_COUNT,CUST_ADDRESS_CNT,CUST_CRNT_CDEMO_CNT,CUST_CRNT_HDEMO_CNT,CUST_CRNT_ADDR_DM,CUST_FIRST_SHIPTO_CNT,CUST_FIRST_SALES_CNT,CUST_GMT_OFFSET,CUST_DEMO_CNT,CUST_INCOME,PROD_UNLIMITED,EXTENDED_AMT,FREIGHT_CHRG,WAITING_PERIOD,DELIVERY_PERIOD,ITM_CRNT_PRICE,ITM_UNITS,ITM_WSLE_CST,ITM_SIZE,PRM_CST,PRM_RESPONSE_TARGET,PRM_ITM_DM,SHP_MODE_CNT,WH_GMT_OFFSET,WH_SQ_FT,STR_ORD_QTY,STR_WSLE_CST,STR_LIST_PRICE,STR_SALES_PRICE,STR_EXT_DSCNT_AMT,STR_EXT_SALES_PRICE,STR_EXT_WSLE_CST,STR_EXT_LIST_PRICE,STR_EXT_TX,STR_COUPON_AMT,STR_NET_PAID,STR_NET_PAID_INC_TX,STR_NET_PRFT,STR_SOLD_YR_CNT,STR_SOLD_MM_CNT,STR_SOLD_ITM_CNT,STR_TOTAL_CUST_CNT,STR_AREA_CNT,STR_DEMO_CNT,STR_OFFER_CNT,STR_PRM_CNT,STR_TICKET_CNT,STR_NET_PRFT_DM_A,STR_NET_PRFT_DM_B,STR_NET_PRFT_DM_C,STR_NET_PRFT_DM_D,STR_NET_PRFT_DM_E,STR_RET_STR_ID,STR_RET_REASON_CNT,STR_RET_TICKET_NO,STR_RTRN_QTY,STR_RTRN_AMT,STR_RTRN_TX,STR_RTRN_AMT_INC_TX,STR_RET_FEE,STR_RTRN_SHIP_CST,STR_RFNDD_CSH,STR_REVERSED_CHRG,STR_STR_CREDIT,STR_RET_NET_LOSS,STR_RTRNED_YR_CNT,STR_RTRN_MM_CNT,STR_RET_ITM_CNT,STR_RET_CUST_CNT,STR_RET_AREA_CNT,STR_RET_OFFER_CNT,STR_RET_PRM_CNT,STR_RET_NET_LOSS_DM_A,STR_RET_NET_LOSS_DM_B,STR_RET_NET_LOSS_DM_C,STR_RET_NET_LOSS_DM_D,OL_ORD_QTY,OL_WSLE_CST,OL_LIST_PRICE,OL_EXT_DSCNT_AMT,OL_EXT_SALES_PRICE,OL_EXT_WSLE_CST,OL_EXT_LIST_PRICE,OL_EXT_TX,OL_COUPON_AMT,OL_EXT_SHIP_CST,OL_NET_PAID,OL_NET_PAID_INC_TX,OL_NET_PAID_INC_SHIP,OL_NET_PAID_INC_SHIP_TX,OL_NET_PRFT,OL_SOLD_YR_CNT,OL_SOLD_MM_CNT,OL_SHIP_DATE_CNT,OL_ITM_CNT,OL_BILL_CUST_CNT,OL_BILL_AREA_CNT,OL_BILL_DEMO_CNT,OL_BILL_OFFER_CNT,OL_SHIP_CUST_CNT,OL_SHIP_AREA_CNT,OL_SHIP_DEMO_CNT,OL_SHIP_OFFER_CNT,OL_WEB_PAGE_CNT,OL_WEB_SITE_CNT,OL_SHIP_MODE_CNT,OL_WH_CNT,OL_PRM_CNT,OL_NET_PRFT_DM_A,OL_NET_PRFT_DM_B,OL_NET_PRFT_DM_C,OL_NET_PRFT_DM_D,OL_RET_RTRN_QTY,OL_RTRN_AMT,OL_RTRN_TX,OL_RTRN_AMT_INC_TX,OL_RET_FEE,OL_RTRN_SHIP_CST,OL_RFNDD_CSH,OL_REVERSED_CHRG,OL_ACCOUNT_CREDIT,OL_RTRNED_YR_CNT,OL_RTRNED_MM_CNT,OL_RTRITM_CNT,OL_RFNDD_CUST_CNT,OL_RFNDD_AREA_CNT,OL_RFNDD_DEMO_CNT,OL_RFNDD_OFFER_CNT,OL_RTRNING_CUST_CNT,OL_RTRNING_AREA_CNT,OL_RTRNING_DEMO_CNT,OL_RTRNING_OFFER_CNT,OL_RTRWEB_PAGE_CNT,OL_REASON_CNT,OL_NET_LOSS,OL_NET_LOSS_DM_A,OL_NET_LOSS_DM_B,OL_NET_LOSS_DM_C')""").collect
@@ -44,7 +43,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_CreateTableVIP
+  // OSCON_Query_CreateTableVIP
   test("OSCON_Query_CreateTableVIP", Include) {
     sql(s"""drop table if exists oscon_carbon_vip""").collect
 
@@ -53,7 +52,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_DataLoadVIP
+  // OSCON_Query_DataLoadVIP
   test("OSCON_Query_DataLoadVIP", Include) {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/oscon/oscon.csv' INTO table oscon_carbon_vip OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','FILEHEADER'='CUST_ID,CUST_COUNTRY,CUST_STATE,CUST_CITY,ACTIVE_AREA_ID,ACTIVE_COUNTRY,ACTIVE_PROVINCE,ACTIVE_CITY,ACTIVE_DISTRICT,LATEST_AREAID,LATEST_COUNTRY,LATEST_PROVINCE,LATEST_CITY,LATEST_DISTRICT,WH_COUNTRY,WH_STATE,WH_CITY,WH_COUNTY,CUST_JOB_TITLE,CUST_BUY_POTENTIAL,PROD_UNQ_MDL_ID,PROD_BRAND_NAME,PRODUCT_NAME,PRODUCT_MODEL,PROD_MODEL_ID,PROD_STD_CST,REG_UNIT_PRICE,TOTAL_PRD_COST,TOTAL_PRD_DISC,PROD_OFF_PRICE,TOTAL_TX_AMT,PROD_UNITS,PROD_WEIGHT,UNIT_PRICE_DSCNT_PCT,DSCNT_AMT,OL_SALES_PRICE,PROD_COLOR,ITM_ID,ITM_NAME,PRMTION_ID,PRMTION_NAME,SHP_MODE_ID,SHP_MODE,DELIVERY_COUNTRY,DELIVERY_STATE,DELIVERY_CITY,DELIVERY_DISTRICT,TRACKING_NO,ACTIVE_EMUI_VERSION,WH_NAME,STR_ORDER_NO,STR_ORDER_DATE,OL_ORDER_NO,OL_ORDER_DATE,OL_SITE,CUST_NICK_NAME,CUST_FIRST_NAME,CUST_LAST_NAME,CUST_PRFRD_FLG,CUST_BIRTH_DY,CUST_BIRTH_MM,CUST_BIRTH_YR,CUST_BIRTH_COUNTRY,CUST_LOGIN,CUST_EMAIL_ADDR,CUST_LAST_RVW_DATE,CUST_SEX,CUST_ADDRESS_ID,CUST_STREET_NO,CUST_STREET_NAME,CUST_AGE,CUST_SUITE_NO,CUST_ZIP,CUST_COUNTY,PRODUCT_ID,PROD_UNQ_DEVICE_ADDR,PROD_UQ_UUID,PROD_SHELL_COLOR,DEVICE_NAME,PROD_SHORT_DESC,PROD_LONG_DESC,PROD_THUMB,PROD_IMAGE,PROD_UPDATE_DATE,PROD_BAR_CODE,PROD_LIVE,PROD_LOC,PROD_RAM,PROD_ROM,PROD_CPU_CLOCK,PROD_SERIES,ITM_REC_START_DATE,ITM_REC_END_DATE,ITM_BRAND_ID,ITM_BRAND,ITM_CLASS_ID,ITM_CLASS,ITM_CATEGORY_ID,ITM_CATEGORY,ITM_MANUFACT_ID,ITM_MANUFACT,ITM_FORMULATION,ITM_COLOR,ITM_CONTAINER,ITM_MANAGER_ID,PRM_START_DATE,PRM_END_DATE,PRM_CHANNEL_DMAIL,PRM_CHANNEL_EMAIL,PRM_CHANNEL_CAT,PRM_CHANNEL_TV,PRM_CHANNEL_RADIO,PRM_CHANNEL_PRESS,PRM_CHANNEL_EVENT,PRM_CHANNEL_DEMO,PRM_CHANNEL_DETAILS,PRM_PURPOSE,PRM_DSCNT_ACTIVE,SHP_CODE,SHP_CARRIER,SHP_CONTRACT,CHECK_DATE,CHECK_YR,CHECK_MM,CHECK_DY,CHECK_HOUR,BOM,INSIDE_NAME,PACKING_DATE,PACKING_YR,PACKING_MM,PACKING_DY,PACKING_HOUR,DELIVERY_PROVINCE,PACKING_LIST_NO,ACTIVE_CHECK_TIME,ACTIVE_CHECK_YR,ACTIVE_CHECK_MM,ACTIVE_CHECK_DY,ACTIVE_CHECK_HOUR,ACTIVE_NETWORK,ACTIVE_FIRMWARE_VER,ACTIVE_OS_VERSION,LATEST_CHECK_TIME,LATEST_CHECK_YR,LATEST_CHECK_MM,LATEST_CHECK_DY,LATEST_CHECK_HOUR,LATEST_FIRMWARE_VER,LATEST_EMUI_VERSION,LATEST_OS_VERSION,LATEST_NETWORK,WH_ID,WH_STREET_NO,WH_STREET_NAME,WH_STREET_TYPE,WH_SUITE_NO,WH_ZIP,OL_SITE_DESC,OL_RET_ORDER_NO,OL_RET_DATE,CUST_DEP_COUNT,CUST_VEHICLE_COUNT,CUST_ADDRESS_CNT,CUST_CRNT_CDEMO_CNT,CUST_CRNT_HDEMO_CNT,CUST_CRNT_ADDR_DM,CUST_FIRST_SHIPTO_CNT,CUST_FIRST_SALES_CNT,CUST_GMT_OFFSET,CUST_DEMO_CNT,CUST_INCOME,PROD_UNLIMITED,EXTENDED_AMT,FREIGHT_CHRG,WAITING_PERIOD,DELIVERY_PERIOD,ITM_CRNT_PRICE,ITM_UNITS,ITM_WSLE_CST,ITM_SIZE,PRM_CST,PRM_RESPONSE_TARGET,PRM_ITM_DM,SHP_MODE_CNT,WH_GMT_OFFSET,WH_SQ_FT,STR_ORD_QTY,STR_WSLE_CST,STR_LIST_PRICE,STR_SALES_PRICE,STR_EXT_DSCNT_AMT,STR_EXT_SALES_PRICE,STR_EXT_WSLE_CST,STR_EXT_LIST_PRICE,STR_EXT_TX,STR_COUPON_AMT,STR_NET_PAID,STR_NET_PAID_INC_TX,STR_NET_PRFT,STR_SOLD_YR_CNT,STR_SOLD_MM_CNT,STR_SOLD_ITM_CNT,STR_TOTAL_CUST_CNT,STR_AREA_CNT,STR_DEMO_CNT,STR_OFFER_CNT,STR_PRM_CNT,STR_TICKET_CNT,STR_NET_PRFT_DM_A,STR_NET_PRFT_DM_B,STR_NET_PRFT_DM_C,STR_NET_PRFT_DM_D,STR_NET_PRFT_DM_E,STR_RET_STR_ID,STR_RET_REASON_CNT,STR_RET_TICKET_NO,STR_RTRN_QTY,STR_RTRN_AMT,STR_RTRN_TX,STR_RTRN_AMT_INC_TX,STR_RET_FEE,STR_RTRN_SHIP_CST,STR_RFNDD_CSH,STR_REVERSED_CHRG,STR_STR_CREDIT,STR_RET_NET_LOSS,STR_RTRNED_YR_CNT,STR_RTRN_MM_CNT,STR_RET_ITM_CNT,STR_RET_CUST_CNT,STR_RET_AREA_CNT,STR_RET_OFFER_CNT,STR_RET_PRM_CNT,STR_RET_NET_LOSS_DM_A,STR_RET_NET_LOSS_DM_B,STR_RET_NET_LOSS_DM_C,STR_RET_NET_LOSS_DM_D,OL_ORD_QTY,OL_WSLE_CST,OL_LIST_PRICE,OL_EXT_DSCNT_AMT,OL_EXT_SALES_PRICE,OL_EXT_WSLE_CST,OL_EXT_LIST_PRICE,OL_EXT_TX,OL_COUPON_AMT,OL_EXT_SHIP_CST,OL_NET_PAID,OL_NET_PAID_INC_TX,OL_NET_PAID_INC_SHIP,OL_NET_PAID_INC_SHIP_TX,OL_NET_PRFT,OL_SOLD_YR_CNT,OL_SOLD_MM_CNT,OL_SHIP_DATE_CNT,OL_ITM_CNT,OL_BILL_CUST_CNT,OL_BILL_AREA_CNT,OL_BILL_DEMO_CNT,OL_BILL_OFFER_CNT,OL_SHIP_CUST_CNT,OL_SHIP_AREA_CNT,OL_SHIP_DEMO_CNT,OL_SHIP_OFFER_CNT,OL_WEB_PAGE_CNT,OL_WEB_SITE_CNT,OL_SHIP_MODE_CNT,OL_WH_CNT,OL_PRM_CNT,OL_NET_PRFT_DM_A,OL_NET_PRFT_DM_B,OL_NET_PRFT_DM_C,OL_NET_PRFT_DM_D,OL_RET_RTRN_QTY,OL_RTRN_AMT,OL_RTRN_TX,OL_RTRN_AMT_INC_TX,OL_RET_FEE,OL_RTRN_SHIP_CST,OL_RFNDD_CSH,OL_REVERSED_CHRG,OL_ACCOUNT_CREDIT,OL_RTRNED_YR_CNT,OL_RTRNED_MM_CNT,OL_RTRITM_CNT,OL_RFNDD_CUST_CNT,OL_RFNDD_AREA_CNT,OL_RFNDD_DEMO_CNT,OL_RFNDD_OFFER_CNT,OL_RTRNING_CUST_CNT,OL_RTRNING_AREA_CNT,OL_RTRNING_DEMO_CNT,OL_RTRNING_OFFER_CNT,OL_RTRWEB_PAGE_CNT,OL_REASON_CNT,OL_NET_LOSS,OL_NET_LOSS_DM_A,OL_NET_LOSS_DM_B,OL_NET_LOSS_DM_C')""").collect
@@ -61,7 +60,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC001
+  // OSCON_Query_TC001
   test("OSCON_Query_TC001", Include) {
 
     sql(s"""select count(*) from  oscon_carbon""").collect
@@ -69,7 +68,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC002
+  // OSCON_Query_TC002
   test("OSCON_Query_TC002", Include) {
 
     sql(s"""select PRODUCT_NAME,count(distinct CUST_ID), sum(PROD_UNITS) from  oscon_carbon where CUST_JOB_TITLE ="Marketing Manager" and CUST_COUNTRY ="Australia" and CUST_INCOME >50000 and PROD_BRAND_NAME="Acer" group by PRODUCT_NAME""").collect
@@ -77,7 +76,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC003
+  // OSCON_Query_TC003
   test("OSCON_Query_TC003", Include) {
 
     sql(s"""select CUST_SEX,PROD_COLOR, count(distinct CUST_ID) from  oscon_carbon where CUST_JOB_TITLE ="Marketing Manager" and CUST_COUNTRY ="Australia" and CUST_INCOME >50000 and PRODUCT_NAME = "Acer Liquid Zest" group by CUST_SEX, PROD_COLOR""").collect
@@ -85,7 +84,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC004
+  // OSCON_Query_TC004
   test("OSCON_Query_TC004", Include) {
 
     sql(s"""select CUST_SEX,PROD_COLOR, count(distinct CUST_ID) from  oscon_carbon where  CUST_INCOME >50000 and  TOTAL_TX_AMT < 1500 group by CUST_SEX, PROD_COLOR""").collect
@@ -93,7 +92,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC005
+  // OSCON_Query_TC005
   test("OSCON_Query_TC005", Include) {
 
     sql(s"""select count(distinct CUST_ID), case when (CUST_AGE < 30) then '<30' when (CUST_AGE between 30 and 60) then '30-60' else '60+' END  from  oscon_carbon where PROD_COLOR="GOLD" and PRODUCT_NAME = "Acer Liquid Zest" group by CUST_AGE""").collect
@@ -101,7 +100,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC006
+  // OSCON_Query_TC006
   test("OSCON_Query_TC006", Include) {
 
     sql(s"""select o1.PROD_BRAND_NAME,o1.PRODUCT_NAME,o1.PROD_COLOR,count(o1.CUST_ID) from (select CUST_ID,PROD_BRAND_NAME,PRODUCT_NAME,PROD_COLOR from  oscon_carbon_vip) o1 join (select CUST_ID,PROD_BRAND_NAME,PRODUCT_NAME,PROD_COLOR from  oscon_carbon) o2 on o1.CUST_ID=o2.CUST_ID group by o1.PROD_BRAND_NAME,o1.PRODUCT_NAME,o1.PROD_COLOR""").collect
@@ -109,7 +108,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC007
+  // OSCON_Query_TC007
   test("OSCON_Query_TC007", Include) {
 
     sql(s"""select o1.PROD_BRAND_NAME,o1.PRODUCT_NAME,o1.PROD_COLOR,count(o1.CUST_ID)  from (select CUST_ID,PROD_BRAND_NAME,PRODUCT_NAME,PROD_COLOR from  oscon_carbon_vip) o1 join (select CUST_ID,PROD_BRAND_NAME,PRODUCT_NAME,PROD_COLOR  from  oscon_carbon) o2 on o1.CUST_ID=o2.CUST_ID group by o1.PROD_BRAND_NAME,o1.PRODUCT_NAME,o1.PROD_COLOR order by o1.PROD_BRAND_NAME desc limit 100""").collect
@@ -117,7 +116,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC008
+  // OSCON_Query_TC008
   test("OSCON_Query_TC008", Include) {
 
     sql(s"""select * from  oscon_carbon where CUST_CITY="Basildon" and CUST_PRFRD_FLG="Y" and CUST_LAST_RVW_DATE between "2015-11-30 00:00:00" and "2015-12-03 00:00:00"""").collect
@@ -125,7 +124,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC009
+  // OSCON_Query_TC009
   test("OSCON_Query_TC009", Include) {
 
     sql(s"""select CUST_NICK_NAME,CUST_FIRST_NAME,CUST_LAST_NAME,CUST_PRFRD_FLG,CUST_BIRTH_DY,CUST_BIRTH_MM,CUST_BIRTH_YR,CUST_BIRTH_COUNTRY,CUST_LOGIN,CUST_EMAIL_ADDR,CUST_LAST_RVW_DATE,CUST_SEX,CUST_ADDRESS_ID,CUST_STREET_NO,CUST_STREET_NAME,CUST_AGE,CUST_SUITE_NO,CUST_ZIP,CUST_COUNTY,CUST_DEP_COUNT,CUST_VEHICLE_COUNT,CUST_ADDRESS_CNT,CUST_CRNT_CDEMO_CNT,CUST_CRNT_HDEMO_CNT,CUST_CRNT_ADDR_DM,CUST_FIRST_SHIPTO_CNT,CUST_FIRST_SALES_CNT,CUST_GMT_OFFSET,CUST_DEMO_CNT,CUST_INCOME,PRODUCT_ID,PROD_UNQ_DEVICE_ADDR,PROD_UQ_UUID,PROD_SHELL_COLOR,DEVICE_NAME,PROD_SHORT_DESC,PROD_LONG_DESC,PROD_THUMB,PROD_IMAGE from  oscon_carbon where CUST_CITY="Basildon" and CUST_PRFRD_FLG="Y" and CUST_LAST_RVW_DATE between "2015-11-30 00:00:00" and "2015-12-03 00:00:00"""").collect
@@ -133,7 +132,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC010
+  // OSCON_Query_TC010
   test("OSCON_Query_TC010", Include) {
 
     sql(s"""select * from  oscon_carbon where CUST_ID = "Cust00000000" and CUST_CITY="Basildon" and CUST_LAST_RVW_DATE between "2015-11-30 00:00:00" and "2015-12-03 00:00:00"""").collect
@@ -141,7 +140,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC011
+  // OSCON_Query_TC011
   test("OSCON_Query_TC011", Include) {
 
     sql(s"""select * from  oscon_carbon where PROD_COLOR ="GOLD" and ACTIVE_EMUI_VERSION  like"%73" limit 5000""").collect
@@ -149,7 +148,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC012
+  // OSCON_Query_TC012
   test("OSCON_Query_TC012", Include) {
 
     sql(s"""select PROD_BRAND_NAME,count(CUST_ID) from  oscon_carbon group by PROD_BRAND_NAME""").collect
@@ -157,7 +156,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC013
+  // OSCON_Query_TC013
   test("OSCON_Query_TC013", Include) {
 
     sql(s"""select PROD_BRAND_NAME, SUM(STR_ORD_QTY) from  oscon_carbon group by PROD_BRAND_NAME""").collect
@@ -165,7 +164,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC014
+  // OSCON_Query_TC014
   test("OSCON_Query_TC014", Include) {
 
     sql(s"""select CUST_CITY, AVG(WAITING_PERIOD) from  oscon_carbon group by CUST_CITY""").collect
@@ -173,7 +172,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC015
+  // OSCON_Query_TC015
   test("OSCON_Query_TC015", Include) {
 
     sql(s"""select PROD_COLOR, SUM(STR_ORD_QTY) from  oscon_carbon where CUST_COUNTRY ='Australia' and CUST_CITY = 'Echuca' and PRODUCT_NAME = 'Acer Liquid Zest' group by PROD_COLOR""").collect
@@ -181,7 +180,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC016
+  // OSCON_Query_TC016
   test("OSCON_Query_TC016", Include) {
 
     sql(s"""select PRODUCT_NAME, SUM(STR_ORD_QTY) from  oscon_carbon where CUST_COUNTRY ='Australia' and CUST_CITY = 'Echuca' group by PRODUCT_NAME""").collect
@@ -189,7 +188,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC017
+  // OSCON_Query_TC017
   test("OSCON_Query_TC017", Include) {
 
     sql(s"""select PROD_COLOR, SUM(STR_ORD_QTY) from  oscon_carbon where CUST_COUNTRY ='Australia' and CUST_CITY = 'Echuca' and PRODUCT_NAME = 'Acer Liquid Zest' and CUST_INCOME >50000 group by PROD_COLOR""").collect
@@ -197,7 +196,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC018
+  // OSCON_Query_TC018
   test("OSCON_Query_TC018", Include) {
 
     sql(s"""select PROD_COLOR, SUM(STR_ORD_QTY) from  oscon_carbon where CUST_INCOME >50000 group by PROD_COLOR""").collect
@@ -205,7 +204,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC019
+  // OSCON_Query_TC019
   test("OSCON_Query_TC019", Include) {
 
     sql(s"""select * from  oscon_carbon where CUST_CITY='Echuca' and CUST_PRFRD_FLG='N' and CUST_LAST_RVW_DATE between "2015-01-30 00:00:00" and "2015-12-31 00:00:00"""").collect
@@ -213,7 +212,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC020
+  // OSCON_Query_TC020
   test("OSCON_Query_TC020", Include) {
 
     sql(s"""select SUM(STR_ORD_QTY) , CUST_AGE, case when (CUST_AGE < 30) then '<30' when (CUST_AGE between 30 and 60) then '30-60' else '60+' END  from  oscon_carbon where PROD_COLOR='GOLD' and PRODUCT_NAME = 'Acer Liquid Zest' group by CUST_AGE""").collect
@@ -221,7 +220,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC021
+  // OSCON_Query_TC021
   test("OSCON_Query_TC021", Include) {
 
     sql(s"""select count(distinct CUST_ID), CUST_AGE,case when (CUST_AGE < 30) then '<30' when (CUST_AGE between 30 and 60) then '30-60' else '60+' END  from  oscon_carbon where PROD_COLOR='GOLD' and PRODUCT_NAME = 'Acer Liquid Zest' group by CUST_AGE""").collect
@@ -229,7 +228,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC022
+  // OSCON_Query_TC022
   test("OSCON_Query_TC022", Include) {
 
     sql(s"""SELECT *  from oscon_carbon where CUST_PRFRD_FLG="Y" and PROD_BRAND_NAME = "Acer" and PROD_COLOR = "BLACK" and CUST_LAST_RVW_DATE = "2015-12-01 00:00:00" and CUST_COUNTRY = "United Kingdom" and product_name = "Acer Liquid X2" """).collect
@@ -237,7 +236,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC023
+  // OSCON_Query_TC023
   test("OSCON_Query_TC023", Include) {
 
     sql(s"""SELECT CUST_NICK_NAME,CUST_FIRST_NAME,CUST_LAST_NAME,CUST_PRFRD_FLG,CUST_BIRTH_DY,CUST_BIRTH_MM,CUST_BIRTH_YR,CUST_BIRTH_COUNTRY,CUST_LOGIN,CUST_EMAIL_ADDR,CUST_LAST_RVW_DATE,CUST_SEX,CUST_ADDRESS_ID,CUST_STREET_NO,CUST_STREET_NAME,CUST_AGE,CUST_SUITE_NO,CUST_ZIP,CUST_COUNTY,CUST_DEP_COUNT,CUST_VEHICLE_COUNT,CUST_ADDRESS_CNT,CUST_CRNT_CDEMO_CNT,CUST_CRNT_HDEMO_CNT,CUST_CRNT_ADDR_DM,CUST_FIRST_SHIPTO_CNT,CUST_FIRST_SALES_CNT,CUST_GMT_OFFSET,CUST_DEMO_CNT,CUST_INCOME,PRODUCT_ID,PROD_UNQ_DEVICE_ADDR,PROD_UQ_UUID,PROD_SHELL_COLOR,DEVICE_NAME,PROD_SHORT_DESC,PROD_LONG_DESC,PROD_THUMB,PROD_IMAGE  from oscon_carbon where CUST_PRFRD_FLG="Y" and PROD_BRAND_NAME = "Acer" and PROD_COLOR = "BLACK" and CUST_LAST_RVW_DATE = "2015-12-01 00:00:00" and CUST_COUNTRY = "United Kingdom" and product_name = "Acer Liquid X2" """).collect
@@ -245,7 +244,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC024
+  // OSCON_Query_TC024
   test("OSCON_Query_TC024", Include) {
 
     sql(s"""select CUST_NICK_NAME,CUST_FIRST_NAME,CUST_LAST_NAME,CUST_PRFRD_FLG,CUST_BIRTH_DY,CUST_BIRTH_MM,CUST_BIRTH_YR,CUST_BIRTH_COUNTRY,CUST_LOGIN,CUST_EMAIL_ADDR,CUST_LAST_RVW_DATE,CUST_SEX,CUST_ADDRESS_ID,CUST_STREET_NO,CUST_STREET_NAME,CUST_AGE,CUST_SUITE_NO,CUST_ZIP,CUST_COUNTY,CUST_DEP_COUNT,CUST_VEHICLE_COUNT,CUST_ADDRESS_CNT,CUST_CRNT_CDEMO_CNT,CUST_CRNT_HDEMO_CNT,CUST_CRNT_ADDR_DM,CUST_FIRST_SHIPTO_CNT,CUST_FIRST_SALES_CNT,CUST_GMT_OFFSET,CUST_DEMO_CNT,CUST_INCOME,PRODUCT_ID,PROD_UNQ_DEVICE_ADDR,PROD_UQ_UUID,PROD_SHELL_COLOR,DEVICE_NAME,PROD_SHORT_DESC,PROD_LONG_DESC,PROD_THUMB,PROD_IMAGE from oscon_carbon where CUST_LAST_RVW_DATE = "2015-12-01 00:00:00" and CUST_COUNTRY = "United Kingdom" and product_name = "Acer Liquid X2" """).collect
@@ -253,7 +252,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC025
+  // OSCON_Query_TC025
   test("OSCON_Query_TC025", Include) {
 
     sql(s"""select CUST_NICK_NAME,CUST_FIRST_NAME,CUST_LAST_NAME,CUST_PRFRD_FLG,CUST_BIRTH_DY,CUST_BIRTH_MM,CUST_BIRTH_YR,CUST_BIRTH_COUNTRY,CUST_LOGIN,CUST_EMAIL_ADDR,CUST_LAST_RVW_DATE,CUST_SEX,CUST_ADDRESS_ID,CUST_STREET_NO,CUST_STREET_NAME,CUST_AGE,CUST_SUITE_NO,CUST_ZIP,CUST_COUNTY,CUST_DEP_COUNT,CUST_VEHICLE_COUNT,CUST_ADDRESS_CNT,CUST_CRNT_CDEMO_CNT,CUST_CRNT_HDEMO_CNT,CUST_CRNT_ADDR_DM,CUST_FIRST_SHIPTO_CNT,CUST_FIRST_SALES_CNT,CUST_GMT_OFFSET,CUST_DEMO_CNT,CUST_INCOME,PRODUCT_ID,PROD_UNQ_DEVICE_ADDR,PROD_UQ_UUID,PROD_SHELL_COLOR,DEVICE_NAME,PROD_SHORT_DESC,PROD_LONG_DESC,PROD_THUMB,PROD_IMAGE  from oscon_carbon where DELIVERY_COUNTRY="United Kingdom" and DELIVERY_STATE ="England"  and DELIVERY_CITY = "Basildon" and WH_NAME="Argentina Warehouse"  and OL_SITE="www.amazon.in" """).collect
@@ -261,7 +260,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //OSCON_Query_TC026
+  // OSCON_Query_TC026
   test("OSCON_Query_TC026", Include) {
 
     sql(s"""select CUST_NICK_NAME,CUST_FIRST_NAME,CUST_LAST_NAME,CUST_PRFRD_FLG,CUST_BIRTH_DY,CUST_BIRTH_MM,CUST_BIRTH_YR,CUST_BIRTH_COUNTRY,CUST_LOGIN,CUST_EMAIL_ADDR,CUST_LAST_RVW_DATE,CUST_SEX,CUST_ADDRESS_ID,CUST_STREET_NO,CUST_STREET_NAME,CUST_AGE,CUST_SUITE_NO,CUST_ZIP,CUST_COUNTY,CUST_DEP_COUNT,CUST_VEHICLE_COUNT,CUST_ADDRESS_CNT,CUST_CRNT_CDEMO_CNT,CUST_CRNT_HDEMO_CNT,CUST_CRNT_ADDR_DM,CUST_FIRST_SHIPTO_CNT,CUST_FIRST_SALES_CNT,CUST_GMT_OFFSET,CUST_DEMO_CNT,CUST_INCOME,PRODUCT_ID,PROD_UNQ_DEVICE_ADDR,PROD_UQ_UUID,PROD_SHELL_COLOR,DEVICE_NAME,PROD_SHORT_DESC,PROD_LONG_DESC,PROD_THUMB,PROD_IMAGE  from oscon_carbon where  CUST_ID = "Cust00000000" """).collect
@@ -269,7 +268,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample_CreateCube_TC_001
+  // Sample_CreateCube_TC_001
   test("Sample_CreateCube_TC_001", Include) {
     sql(s"""drop table if exists traffic_2g_3g_4g""").collect
 
@@ -280,7 +279,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_CreateCube_1
+  // Sample1_CreateCube_1
   test("Sample1_CreateCube_1", Include) {
     sql(s"""drop table if exists cmb""").collect
     sql(s"""drop table if exists cmb_hive""").collect
@@ -292,7 +291,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_1
+  // Sample1_Query_1
   test("Sample1_Query_1", Include) {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/cmb/data.csv'  INTO table cmb OPTIONS ('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Cust_UID,year,month,companyAddress,companyNumber,company,occupation,certicardValidTime,race,CerticardCity,birthday,VIPLevel,ageRange,familyaddress,familyadNumber,dimension16,SubsidaryBank,AccountCreationTime,dimension19,dimension20,DemandDeposits,TimeDeposits,financial,TreasuryBonds,fund,incomeOneyear,outcomeOneyear,insurance,Goldaccount,dollarDeposits,euroDeposits,euroDeposits1,euroDeposits2,yenDeposits,wonDeposits,rupeeDeposits,HongKongDeposits,numberoftransactions,measure19,measure20,measure21,measure22,measure23,measure24,measure25,measure26,measure27,measure28,measure29,measure30,measure31,measure32,measure33,measure34,measure35,measure36,measure37,measure38,measure39,measure40,measure41,measure42,measure43,measure44,measure45,measure46,measure47,measure48,measure49,measure50,measure51,measure52,measure53')""").collect
@@ -303,7 +302,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_2
+  // Sample1_Query_2
   test("Sample1_Query_2", Include) {
 
     checkAnswer(s"""select count(*) from cmb""",
@@ -312,7 +311,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_3
+  // Sample1_Query_3
   test("Sample1_Query_3", Include) {
 
     checkAnswer(s"""select COUNT(DISTINCT Cust_UID) from cmb""",
@@ -321,7 +320,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_4
+  // Sample1_Query_4
   test("Sample1_Query_4", Include) {
 
     checkAnswer(s"""SELECT `year`, `month`, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE `year` = "2015" GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""",
@@ -330,7 +329,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_5
+  // Sample1_Query_5
   test("Sample1_Query_5", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, occupation, VIPLevel, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE ( ( occupation = "Administrative Support") AND ( SubsidaryBank = "ABN AMRO")) AND ( SubsidaryBank = "ABN AMRO") GROUP BY SubsidaryBank, occupation, VIPLevel ORDER BY SubsidaryBank ASC, occupation ASC, VIPLevel ASC""",
@@ -339,7 +338,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_6
+  // Sample1_Query_6
   test("Sample1_Query_6", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
@@ -348,7 +347,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_7
+  // Sample1_Query_7
   test("Sample1_Query_7", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank IN ("ABN AMRO","Bank Sepah") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
@@ -357,7 +356,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_8
+  // Sample1_Query_8
   test("Sample1_Query_8", Include) {
 
     checkAnswer(s"""SELECT company, CerticardCity, VIPLevel, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE ( company IN ("Agricultural Bank of China","COSCO1")) AND ( CerticardCity IN ("Beijing1","Huangyan1","Yakeshi1","Korla1")) GROUP BY company, CerticardCity, VIPLevel ORDER BY company ASC, CerticardCity ASC, VIPLevel ASC""",
@@ -366,7 +365,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_9
+  // Sample1_Query_9
   test("Sample1_Query_9", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, ageRange, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE ( ageRange IN ("(1-3)","(100-105)")) AND ( SubsidaryBank IN ("ABN AMRO","Busan Bank","Huaxia Bank")) GROUP BY SubsidaryBank, ageRange ORDER BY SubsidaryBank ASC, ageRange ASC""",
@@ -375,7 +374,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_10
+  // Sample1_Query_10
   // TODO Need to handle the decimal mismatch
   ignore("Sample1_Query_10", Include) {
 
@@ -385,7 +384,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_11
+  // Sample1_Query_11
   test("Sample1_Query_11", Include) {
 
     checkAnswer(s"""SELECT `year`, `month`, SUM(DemandDeposits) AS Sum_DemandDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank = "CMB Financial Leasing Ltd") AND ( Cust_UID = "CMB0000000000000000000000") GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""",
@@ -394,7 +393,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_12
+  // Sample1_Query_12
   // TODO Need to handle the decimal mismatch
   ignore("Sample1_Query_12", Include) {
 
@@ -404,7 +403,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_13
+  // Sample1_Query_13
   test("Sample1_Query_13", Include) {
 
     checkAnswer(s"""SELECT Cust_UID, `month`, `year`, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb) SUB_QRY WHERE Cust_UID IN ("CMB0000000000000000000119","CMB0000000000000000000308") and month="1" GROUP BY Cust_UID, `month`, `year` ORDER BY Cust_UID ASC, `month` ASC, `year` ASC""",
@@ -413,7 +412,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_14
+  // Sample1_Query_14
   test("Sample1_Query_14", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank = "Daegu Bank" GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
@@ -422,7 +421,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_15
+  // Sample1_Query_15
   test("Sample1_Query_15", Include) {
 
     checkAnswer(s"""SELECT COUNT(Cust_UID) AS Count_Cust_UID, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Minsheng Bank - First private bank in China")) AND ( dollarDeposits > 0)""",
@@ -431,7 +430,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_16
+  // Sample1_Query_16
   test("Sample1_Query_16", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank") and month="1" GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
@@ -440,7 +439,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_17
+  // Sample1_Query_17
   test("Sample1_Query_17", Include) {
 
     checkAnswer(s"""SELECT COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank = "ABC") AND ( numberoftransactions > 90.0)""",
@@ -449,7 +448,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_18
+  // Sample1_Query_18
   test("Sample1_Query_18", Include) {
 
     checkAnswer(s"""SELECT VIPLevel, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb) SUB_QRY GROUP BY VIPLevel ORDER BY VIPLevel ASC""",
@@ -458,7 +457,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_19
+  // Sample1_Query_19
   test("Sample1_Query_19", Include) {
 
     checkAnswer(s"""SELECT CerticardCity, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb) SUB_QRY GROUP BY CerticardCity ORDER BY CerticardCity ASC""",
@@ -467,7 +466,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_20
+  // Sample1_Query_20
   test("Sample1_Query_20", Include) {
 
     checkAnswer(s"""SELECT VIPLevel, SUM(yenDeposits) AS Sum_yenDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb) SUB_QRY GROUP BY VIPLevel ORDER BY VIPLevel ASC""",
@@ -476,7 +475,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_21
+  // Sample1_Query_21
   test("Sample1_Query_21", Include) {
 
     checkAnswer(s"""SELECT CerticardCity, SUM(yenDeposits) AS Sum_yenDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb) SUB_QRY GROUP BY CerticardCity ORDER BY CerticardCity ASC""",
@@ -485,7 +484,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Sample1_Query_22
+  // Sample1_Query_22
   test("Sample1_Query_22", Include) {
 
     checkAnswer(s"""SELECT `year`, `month`, COUNT(Cust_UID) AS Count_Cust_UID, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb) SUB_QRY WHERE ( `month` = "1") AND ( numberoftransactions > 90.0) GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""",
@@ -503,4 +502,5 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   sql("drop table if exists cmb")
   sql("drop table if exists cmb_hive")
   }
+  // scalastyle:on lineLength
 }

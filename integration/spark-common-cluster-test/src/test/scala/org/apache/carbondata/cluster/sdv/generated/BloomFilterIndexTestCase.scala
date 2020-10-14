@@ -25,7 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override protected def beforeAll(): Unit = {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
       "yyyy-MM-dd")
@@ -336,4 +336,5 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(s"DROP TABLE IF EXISTS $tableName1")
     sql(s"DROP TABLE IF EXISTS $tableName2")
   }
+  // scalastyle:on lineLength
 }

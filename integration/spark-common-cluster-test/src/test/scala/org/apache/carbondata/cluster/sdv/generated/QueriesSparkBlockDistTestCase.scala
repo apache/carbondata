@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -26,9 +25,9 @@ import org.scalatest.BeforeAndAfterAll
  */
 
 class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
-         
 
-  //BlockDist_PTS001_TC002123
+  // scalastyle:off lineLength
+  // BlockDist_PTS001_TC002123
   test("BlockDist_PTS001_TC002123", Include) {
     sql("drop table if exists flow_carbon_256b")
     sql("drop table if exists flow_carbon_256b_hive")
@@ -42,7 +41,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS001_TC001
+  // BlockDist_PTS001_TC001
   test("BlockDist_PTS001_TC001", Include) {
 
     checkAnswer(s"""select * from flow_carbon_256b where txn_dte>='20140101' and txn_dte <= '20140601' and txn_bk ='00000000121' order by  txn_dte limit 1000""",
@@ -51,7 +50,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS001_TC002
+  // BlockDist_PTS001_TC002
   test("BlockDist_PTS001_TC002", Include) {
 
     checkAnswer(s"""select * from flow_carbon_256b where own_br ='00000000515' and txn_dte>='20140101' and txn_dte <= '20150101' order by own_br limit 1000""",
@@ -60,7 +59,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS001_TC003
+  // BlockDist_PTS001_TC003
   test("BlockDist_PTS001_TC003", Include) {
 
     checkAnswer(s"""select * from flow_carbon_256b where opt_prd_cde ='2889' and txn_dte>='20140101' and txn_dte <= '20160101' order by opt_prd_cde limit 1000""",
@@ -69,7 +68,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS002_TC001
+  // BlockDist_PTS002_TC001
   test("BlockDist_PTS002_TC001", Include) {
 
     checkAnswer(s"""select  *  from flow_carbon_256b where  cus_ac like '%22262135060488208%' and (txn_dte>='20150101' and txn_dte<='20160101') and  txn_bk IN ('00000000215', '00000000025','00000000086') OR own_bk IN ('00000000001','01511999999','00000000180') order by cus_ac  limit 1000""",
@@ -78,7 +77,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS003_TC001
+  // BlockDist_PTS003_TC001
   test("BlockDist_PTS003_TC001", Include) {
 
     checkAnswer(s"""select own_br, count(opt_prd_cde)  from flow_carbon_256b group by own_br limit 1000""",
@@ -87,7 +86,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS003_TC002
+  // BlockDist_PTS003_TC002
   test("BlockDist_PTS003_TC002", Include) {
 
     checkAnswer(s"""select  own_br, count(distinct opt_prd_cde)  from flow_carbon_256b where own_br like '6%' group by own_br limit 1000""",
@@ -96,7 +95,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS003_TC003
+  // BlockDist_PTS003_TC003
   test("BlockDist_PTS003_TC003", Include) {
 
     checkAnswer(s"""select  own_br, count(distinct opt_prd_cde)  from flow_carbon_256b group by own_br limit 1000""",
@@ -105,7 +104,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS003_TC004
+  // BlockDist_PTS003_TC004
   test("BlockDist_PTS003_TC004", Include) {
 
     checkAnswer(s"""select own_br, count(1) as cn from flow_carbon_256b group by own_br having cn>1""",
@@ -114,7 +113,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS004_TC001
+  // BlockDist_PTS004_TC001
   test("BlockDist_PTS004_TC001", Include) {
 
     checkAnswer(s"""select  *  from flow_carbon_256b where  cus_ac  like '622262135067246539%'  and (txn_dte>='20150101' and txn_dte<='20160101') and txn_bk IN ('00000000000', '00000000001','00000000002') OR own_bk IN ('00000000424','00000001383','00000001942','00000001262') limit 1000""",
@@ -123,7 +122,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS004_TC002
+  // BlockDist_PTS004_TC002
   test("BlockDist_PTS004_TC002", Include) {
 
     checkAnswer(s"""select own_br, sum(txn_cnt) as cn from flow_carbon_256b group by own_br having cn>1 limit 1000""",
@@ -132,7 +131,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS004_TC003
+  // BlockDist_PTS004_TC003
   test("BlockDist_PTS004_TC003", Include) {
 
     checkAnswer(s"""select  * from flow_carbon_256b where cus_ac = '6222621350672465397' and txn_bk IN ('00000000000', '00000000001','00000000002') OR own_bk IN ('00000000124','00000000175','00000000034','00000000231','00000000167','00000000182','00000000206') or opp_bk='1491999999107' and  (txn_dte>='20140101' and txn_dte<='20140630')  limit 1000""",
@@ -141,7 +140,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS005_TC001
+  // BlockDist_PTS005_TC001
   test("BlockDist_PTS005_TC001", Include) {
 
     checkAnswer(s"""select  vch_seq, sum(amt)  from flow_carbon_256b group by vch_seq limit 1000""",
@@ -150,7 +149,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS005_TC003
+  // BlockDist_PTS005_TC003
   test("BlockDist_PTS005_TC003", Include) {
 
     checkAnswer(s"""select  vch_seq, count(distinct cus_ac) * sum(amt) AS Total from flow_carbon_256b group by vch_seq limit 1000""",
@@ -159,7 +158,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS006_TC001
+  // BlockDist_PTS006_TC001
   test("BlockDist_PTS006_TC001", Include) {
 
     checkAnswer(s"""select  vch_seq, COALESCE(txn_cnt, jrn_par) Value from flow_carbon_256b group by vch_seq,txn_cnt,jrn_par limit 1000""",
@@ -168,7 +167,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS007_TC001
+  // BlockDist_PTS007_TC001
   test("BlockDist_PTS007_TC001", Include) {
 
     checkAnswer(s"""select * from flow_carbon_256b  where cus_no = '62226009239386397' and dt>='20140301' and dt<='20140330' order by amt desc limit 1000""",
@@ -177,7 +176,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS007_TC002
+  // BlockDist_PTS007_TC002
   test("BlockDist_PTS007_TC002", Include) {
 
     checkAnswer(s"""select cus_ac from flow_carbon_256b where jrn_par is not null order by cus_ac limit 1000""",
@@ -186,7 +185,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS007_TC003
+  // BlockDist_PTS007_TC003
   test("BlockDist_PTS007_TC003", Include) {
 
     checkAnswer(s"""select cus_ac from flow_carbon_256b where jrn_par is  null order by cus_ac limit 1000""",
@@ -195,7 +194,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS008_TC001
+  // BlockDist_PTS008_TC001
   test("BlockDist_PTS008_TC001", Include) {
 
     checkAnswer(s"""select txn_bk, MAX(distinct cus_ac) from flow_carbon_256b group by txn_bk, cus_ac""",
@@ -204,7 +203,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS008_TC002
+  // BlockDist_PTS008_TC002
   test("BlockDist_PTS008_TC002", Include) {
 
     checkAnswer(s"""select txn_bk, count(distinct cus_ac) from flow_carbon_256b group by txn_bk, cus_ac""",
@@ -213,7 +212,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS008_TC003
+  // BlockDist_PTS008_TC003
   test("BlockDist_PTS008_TC003", Include) {
 
     checkAnswer(s"""select distinct(txn_bk) AS TXN_BK, avg(cus_ac) from flow_carbon_256b group by txn_bk,cus_ac""",
@@ -222,7 +221,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS008_TC004
+  // BlockDist_PTS008_TC004
   test("BlockDist_PTS008_TC004", Include) {
 
     checkAnswer(s"""select txn_bk, LAST(cus_ac) from flow_carbon_256b group by txn_bk,cus_ac""",
@@ -231,7 +230,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS008_TC005
+  // BlockDist_PTS008_TC005
   test("BlockDist_PTS008_TC005", Include) {
 
     checkAnswer(s"""select txn_bk, FIRST(cus_ac) from flow_carbon_256b group by txn_bk,cus_ac""",
@@ -240,7 +239,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS009_TC001
+  // BlockDist_PTS009_TC001
   test("BlockDist_PTS009_TC001", Include) {
 
     checkAnswer(s"""select txn_bk, percentile_approx(cast(txn_cnt as double) ,0.2) from flow_carbon_256b group by txn_bk,cus_ac""",
@@ -249,7 +248,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS009_TC002
+  // BlockDist_PTS009_TC002
   test("BlockDist_PTS009_TC002", Include) {
 
     checkAnswer(s"""select txn_bk, collect_set(cus_ac) from flow_carbon_256b group by txn_bk,cus_ac""",
@@ -258,7 +257,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS009_TC003
+  // BlockDist_PTS009_TC003
   test("BlockDist_PTS009_TC003", Include) {
 
     checkAnswer(s"""select txn_bk, variance(cus_ac) from flow_carbon_256b group by txn_bk,cus_ac limit 1000""",
@@ -267,7 +266,7 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //BlockDist_PTS010_TC001
+  // BlockDist_PTS010_TC001
   test("BlockDist_PTS010_TC001", Include) {
 
     checkAnswer(s"""select txn_bk, (txn_cnt + jrn_par) AS Result from flow_carbon_256b group by txn_bk,txn_cnt,jrn_par limit 1000""",
@@ -278,4 +277,5 @@ class QueriesSparkBlockDistTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists flow_carbon_256b")
     sql("drop table if exists flow_carbon_256b_hive")
   }
+  // scalastyle:on lineLength
 }

@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
-
+  // scalastyle:off lineLength
   override protected def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS LOCAL1")
   }
@@ -2085,4 +2085,5 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
   override protected def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS LOCAL1")
   }
+  // scalastyle:on lineLength
 }

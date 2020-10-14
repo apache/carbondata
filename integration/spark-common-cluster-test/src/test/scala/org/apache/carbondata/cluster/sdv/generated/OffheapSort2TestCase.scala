@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -29,9 +28,9 @@ import org.apache.carbondata.core.util.CarbonProperties
  */
 
 class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
-         
 
-  //To load data after setting offheap memory in carbon property file
+  // scalastyle:off lineLength
+  // To load data after setting offheap memory in carbon property file
   test("OffHeapSort_002-TC_015", Include) {
     sql(s"""CREATE TABLE uniqdata211 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata211 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -42,7 +41,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load 1 lac data load after setting offheap memory in carbon property file
+  // To load 1 lac data load after setting offheap memory in carbon property file
   test("OffHeapSort_002-TC_016", Include) {
     sql(s"""CREATE TABLE uniqdata212 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata212 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -55,7 +54,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with option file header in load
+  // To load data after setting offheap memory in carbon property file with option file header in load
   test("OffHeapSort_002-TC_017", Include) {
     sql(s"""CREATE TABLE uniqdata212a(CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata212a OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -68,7 +67,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file without folder path in load
+  // To load data after setting offheap memory in carbon property file without folder path in load
   test("OffHeapSort_002-TC_018", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists uniqdata213""").collect
@@ -82,7 +81,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file without table_name in load
+  // To load data after setting offheap memory in carbon property file without table_name in load
   test("OffHeapSort_002-TC_019", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists uniqdata214""").collect
@@ -96,7 +95,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with option QUOTECHAR'='"'
+  // To load data after setting offheap memory in carbon property file with option QUOTECHAR'='"'
   test("OffHeapSort_002-TC_020", Include) {
     sql(s"""CREATE TABLE uniqdata215 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata215 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -109,7 +108,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with OPTIONS('COMMENTCHAR'='#')
+  // To load data after setting offheap memory in carbon property file with OPTIONS('COMMENTCHAR'='#')
 
   test("OffHeapSort_002-TC_021", Include) {
     sql(s"""CREATE TABLE uniqdata216 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
@@ -123,7 +122,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with option 'MULTILINE'='true'
+  // To load data after setting offheap memory in carbon property file with option 'MULTILINE'='true'
   test("OffHeapSort_002-TC_022", Include) {
     sql(s"""CREATE TABLE uniqdata217 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata217 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -136,7 +135,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with OPTIONS('ESCAPECHAR'='\')
+  // To load data after setting offheap memory in carbon property file with OPTIONS('ESCAPECHAR'='\')
   test("OffHeapSort_002-TC_023", Include) {
     sql(s"""CREATE TABLE uniqdata218 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata218 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -149,7 +148,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='FORCE'
+  // To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='FORCE'
   test("OffHeapSort_002-TC_024", Include) {
     sql(s"""CREATE TABLE uniqdata219b (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata219b OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -162,7 +161,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='IGNORE'
+  // To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='IGNORE'
   test("OffHeapSort_002-TC_025", Include) {
     sql(s"""CREATE TABLE uniqdata219c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata219c OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -175,7 +174,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='REDIRECT'
+  // To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='REDIRECT'
   test("OffHeapSort_002-TC_026", Include) {
     sql(s"""CREATE TABLE uniqdata219d (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata219d OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -188,7 +187,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_LOGGER_ENABLE'='FALSE'
+  // To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_LOGGER_ENABLE'='FALSE'
   test("OffHeapSort_002-TC_027", Include) {
     sql(s"""CREATE TABLE uniqdata219e (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata219e OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='FALSE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -201,7 +200,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_LOGGER_ENABLE'='TRUE'
+  // To load data after setting offheap memory in carbon property file with OPTIONS 'BAD_RECORDS_LOGGER_ENABLE'='TRUE'
   test("OffHeapSort_002-TC_028", Include) {
     sql(s"""CREATE TABLE uniqdata219f (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata219f OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -226,10 +225,10 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
-    //Reverting to old
+    // Reverting to old
     prop.addProperty("enable.unsafe.sort", p1)
     prop.addProperty("offheap.sort.chunk.size.inmb", p2)
     prop.addProperty("sort.inmemory.size.inmb", p3)
   }
-
+  // scalastyle:on lineLength
 }
