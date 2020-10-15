@@ -276,12 +276,6 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
           for (int i = 0; i < size; i += intSizeInBytes) {
             vector.putFloat(rowId++, (ByteUtil.toIntLittleEndian(pageData, i) / floatFactor));
           }
-        } else if (pageDataType == DataTypes.LONG) {
-          // complex primitive float type can enter here.
-          int size = pageSize * longSizeInBytes;
-          for (int i = 0; i < size; i += longSizeInBytes) {
-            vector.putFloat(rowId++, (float) (ByteUtil.toLongLittleEndian(pageData, i) / factor));
-          }
         } else {
           throw new RuntimeException("internal error: " + this.toString());
         }

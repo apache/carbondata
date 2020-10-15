@@ -256,7 +256,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   private int getDecimalCount(float value) {
-    return getDecimalCount((double) value);
+    return getDecimalCount(Double.parseDouble(Float.toString(value)));
   }
 
   @Override

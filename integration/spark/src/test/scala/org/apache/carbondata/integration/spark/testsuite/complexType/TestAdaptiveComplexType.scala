@@ -574,4 +574,13 @@ trait TestAdaptiveComplexType extends QueryTest with BeforeAndAfterAll {
       "5555555.9559, 1.2345678991234568E16, 3444.999")
   }
 
+  test("test adaptive encoding with float as complex primitive, Encoding FLOAT --> SHORT") {
+    sql("drop table if exists floatComplexPrimitive")
+    sql("create table floatComplexPrimitive (arrayField array<float>) using carbon ")
+    sql("insert into floatComplexPrimitive values (array(null, 5.121))")
+    checkAnswer(sql("select * from floatComplexPrimitive"),
+      Seq(Row(mutable.WrappedArray.make(Array(null, 5.121f)))))
+    sql("drop table if exists floatComplexPrimitive")
+  }
+
 }
