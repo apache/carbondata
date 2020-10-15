@@ -38,7 +38,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
-class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
+class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
 
   val tableName = "test_flink_partition"
   val dataTempPath = targetTestClass + "/data/temp/"
@@ -56,8 +56,9 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       environment.setRestartStrategy(RestartStrategies.noRestart)
 
       val dataCount = 1000
+      val source = getTestSource(dataCount)
       executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
-        getTestSource(dataCount))
+        source)
 
       sql(s"INSERT INTO $tableName STAGE")
 

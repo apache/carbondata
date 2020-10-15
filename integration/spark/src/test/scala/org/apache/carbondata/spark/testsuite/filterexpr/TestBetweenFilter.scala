@@ -35,7 +35,7 @@ class TestBetweenFilter extends QueryTest with BeforeAndAfterAll {
            (id String, name String, orders int)
            STORED AS carbondata
         """)
-    sql(" LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableBetween " +
+    sql(s" LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableBetween " +
         "OPTIONS('BAD_RECORDS_ACTION'='FORCE')")
   }
 
