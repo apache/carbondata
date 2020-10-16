@@ -37,7 +37,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.exception.InvalidConfigurationException
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
@@ -214,7 +214,7 @@ object CarbonParserUtil {
       isAlterFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
 
-    val partitionInfo: Option[PartitionInfo] = getPartitionInfo(partitionCols)
+    val partitionInfo: Option[PartitionInfo] = getPartitionInfo(partitionCols, fields)
     val partitionColumns = partitionInfo match {
       case Some(partitionInfo) => partitionInfo.getColumnSchemaList.asScala.map(_.getColumnName)
       case None => Seq()
@@ -494,7 +494,8 @@ object CarbonParserUtil {
   /**
    * @param partitionCols
    */
-  protected def getPartitionInfo(partitionCols: Seq[PartitionerField]): Option[PartitionInfo] = {
+  protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
+      fields: Seq[Field]): Option[PartitionInfo] = {
     if (partitionCols.isEmpty) {
       None
     } else {
@@ -503,6 +504,12 @@ object CarbonParserUtil {
         val columnSchema = new ColumnSchema
         columnSchema.setDataType(DataTypeConverterUtil.
           convertToCarbonType(partition_col.dataType.get))
+        if (DataTypes.isDecimal(columnSchema.getDataType)) {
+          val decimalFieldPrecesion = fields
+            .filter(field => partition_col.partitionColumn.contains(field.column)).toArray
+          columnSchema.setPrecision(decimalFieldPrecesion.head.precision);
+          columnSchema.setScale(decimalFieldPrecesion.head.scale);
+        }
         columnSchema.setColumnName(partition_col.partitionColumn)
         columnSchema.setColumnUniqueId(UUID.randomUUID().toString)
         columnSchema.setColumnReferenceId(columnSchema.getColumnUniqueId)
