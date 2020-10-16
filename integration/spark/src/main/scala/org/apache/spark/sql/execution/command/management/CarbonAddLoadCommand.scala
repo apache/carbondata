@@ -327,6 +327,15 @@ case class CarbonAddLoadCommand(
         System.nanoTime().toString) + CarbonTablePath.SEGMENT_EXT,
       segmentPath,
       new util.HashMap[String, String](options.asJava))
+    // This event will trigger merge index job, only trigger it if it is carbon file
+    if (isCarbonFormat) {
+      CarbonLoaderUtil.mergeIndexFilesInTempSegment(carbonTable,
+        model.getSegmentId,
+        segmentPath,
+        model.getFactTimeStamp.toString)
+      // clear Block index Cache
+      SegmentFileStore.clearBlockIndexCache(carbonTable, model.getSegmentId)
+    }
     val writeSegment =
       if (isCarbonFormat) {
         SegmentFileStore.writeSegmentFile(carbonTable, segment)
@@ -334,22 +343,6 @@ case class CarbonAddLoadCommand(
         SegmentFileStore.writeSegmentFileForOthers(
           carbonTable, segment, partitionSpecOp.orNull, partitionDataFiles.asJava)
       }
-
-    // This event will trigger merge index job, only trigger it if it is carbon file
-    if (isCarbonFormat) {
-      operationContext.setProperty(
-        carbonTable.getTableUniqueName + "_Segment",
-        model.getSegmentId)
-      // when this event is triggered, SI load listener will be called for all the SI tables under
-      // this main table, no need to load the SI tables for add load command, so add this property
-      // to check in SI load event listener to avoid loading to SI.
-      operationContext.setProperty("isAddLoad", "true")
-      val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
-        new LoadTablePreStatusUpdateEvent(
-          carbonTable.getCarbonTableIdentifier,
-          model)
-      OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
-    }
 
     val success = if (writeSegment) {
       SegmentFileStore.updateTableStatusFile(

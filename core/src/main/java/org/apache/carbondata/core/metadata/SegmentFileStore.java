@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -69,7 +70,6 @@ import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.TrashUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
@@ -97,15 +97,6 @@ public class SegmentFileStore {
   public SegmentFileStore(String tablePath, String segmentFileName) throws IOException {
     this.tablePath = tablePath;
     this.segmentFile = readSegment(tablePath, segmentFileName);
-  }
-
-  /**
-   * Write segment information to the segment folder with index file name and
-   * corresponding partitions.
-   */
-  public static void writeSegmentFile(String tablePath, final String taskNo, String location,
-      String timeStamp, List<String> partitionNames) throws IOException {
-    writeSegmentFile(tablePath, taskNo, location, timeStamp, partitionNames, false);
   }
 
   /**
@@ -163,23 +154,15 @@ public class SegmentFileStore {
    * corresponding partitions.
    */
   public static void writeSegmentFile(String tablePath, final String taskNo, String location,
-      String timeStamp, List<String> partitionNames, boolean isMergeIndexFlow) throws IOException {
+      String timeStamp, List<String> partitionNames) throws IOException {
     String tempFolderLoc = timeStamp + ".tmp";
     String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath) + "/" + tempFolderLoc;
     CarbonFile carbonFile = FileFactory.getCarbonFile(writePath);
     if (!carbonFile.exists()) {
       carbonFile.mkdirs();
     }
-    CarbonFile tempFolder;
-    if (isMergeIndexFlow) {
-      tempFolder = FileFactory.getCarbonFile(location);
-    } else {
-      tempFolder = FileFactory
-          .getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + tempFolderLoc);
-    }
-
-    if ((tempFolder.exists() && partitionNames.size() > 0) || (isMergeIndexFlow
-        && partitionNames.size() > 0)) {
+    CarbonFile tempFolder = FileFactory.getCarbonFile(location);
+    if (tempFolder.exists() && partitionNames.size() > 0) {
       CarbonFile[] carbonFiles = tempFolder.listFiles(new CarbonFileFilter() {
         @Override
         public boolean accept(CarbonFile file) {
@@ -199,23 +182,9 @@ public class SegmentFileStore {
         folderDetails.setRelative(isRelative);
         folderDetails.setPartitions(partitionNames);
         folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
-        for (CarbonFile file : carbonFiles) {
-          if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-            folderDetails.setMergeFileName(file.getName());
-          } else {
-            folderDetails.getFiles().add(file.getName());
-          }
-        }
+        setIndexFileNamesToFolderDetails(folderDetails, carbonFiles);
         segmentFile.addPath(location, folderDetails);
-        String path = null;
-        if (isMergeIndexFlow) {
-          // in case of merge index flow, tasks are launched per partition and all the tasks
-          // will be written to the same tmp folder, in that case taskNo is not unique.
-          // To generate a unique fileName UUID is used
-          path = writePath + "/" + CarbonUtil.generateUUID() + CarbonTablePath.SEGMENT_EXT;
-        } else {
-          path = writePath + "/" + taskNo + CarbonTablePath.SEGMENT_EXT;
-        }
+        String path = writePath + "/" + CarbonUtil.generateUUID() + CarbonTablePath.SEGMENT_EXT;
         // write segment info to new file.
         writeSegmentFile(segmentFile, path);
       }
@@ -283,13 +252,7 @@ public class SegmentFileStore {
       folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
       folderDetails.setRelative(false);
       segmentFile.addPath(segment.getSegmentPath(), folderDetails);
-      for (CarbonFile file : indexFiles) {
-        if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-          folderDetails.setMergeFileName(file.getName());
-        } else {
-          folderDetails.getFiles().add(file.getName());
-        }
-      }
+      setIndexFileNamesToFolderDetails(folderDetails, indexFiles);
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
@@ -302,6 +265,17 @@ public class SegmentFileStore {
       return true;
     }
     return false;
+  }
+
+  public static void setIndexFileNamesToFolderDetails(FolderDetails folderDetails,
+      CarbonFile[] indexFiles) {
+    for (CarbonFile file : indexFiles) {
+      if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        folderDetails.setMergeFileName(file.getName());
+      } else {
+        folderDetails.getFiles().add(file.getName());
+      }
+    }
   }
 
   public static boolean writeSegmentFileForOthers(
@@ -350,21 +324,6 @@ public class SegmentFileStore {
     return false;
   }
 
-  public static void mergeIndexAndWriteSegmentFile(CarbonTable carbonTable, String segmentId,
-      String UUID) {
-    String tablePath = carbonTable.getTablePath();
-    String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
-    try {
-      SegmentFileStore sfs = new SegmentFileStore(tablePath, segmentFileName);
-      List<CarbonFile> carbonIndexFiles = sfs.getIndexCarbonFiles();
-      new CarbonIndexFileMergeWriter(carbonTable)
-          .writeMergeIndexFileBasedOnSegmentFile(segmentId, null, sfs,
-              carbonIndexFiles.toArray(new CarbonFile[carbonIndexFiles.size()]), UUID, null);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   /**
    * Write segment file to the metadata folder of the table selecting only the current load files
    *
@@ -401,13 +360,7 @@ public class SegmentFileStore {
       FolderDetails folderDetails = new FolderDetails();
       folderDetails.setRelative(absSegPath == null);
       folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
-      for (CarbonFile file : indexFiles) {
-        if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-          folderDetails.setMergeFileName(file.getName());
-        } else {
-          folderDetails.getFiles().add(file.getName());
-        }
-      }
+      setIndexFileNamesToFolderDetails(folderDetails, indexFiles);
       String segmentRelativePath = "/";
       if (!supportFlatFolder) {
         if (absSegPath != null) {
@@ -438,6 +391,79 @@ public class SegmentFileStore {
       return segmentFileName;
     }
     return null;
+  }
+
+  /**
+   * Get old and invalid files which have already been merged to a mergeindex file.In segment folder
+   * we may have both .index files and .mergeindex files, as we are not deleting index files
+   * immediately for old tables, this method reads mergeindex file and adds mapped index files to a
+   * list and returns.If more than one mergeindex file is present, considers the latest one as valid
+   * Ex: We have 3 files in segment. Segment0/ 1.index , 1.mergeindex file, 1.carbondata.
+   * 1.index is merged to 1.mergeindex. Here it returns merged index file - 1.index.
+   */
+  public static Set<String> getInvalidAndMergedIndexFiles(List<String> indexFiles)
+      throws IOException {
+    SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
+    Set<String> mergedAndInvalidIndexFiles = new HashSet<>();
+    long lastModifiedTime = 0L;
+    String validIndexFile = null;
+    List<String> mergeIndexFileNames = new ArrayList<>();
+    boolean isIndexFilesPresent = false;
+    for (String indexFile : indexFiles) {
+      if (indexFile.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        isIndexFilesPresent = true;
+      }
+      if (indexFile.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        // In case there are more than 1 mergeindex files present, latest one is considered as valid
+        // Ex: In SI table, after small files index merge we will have more than 1 mergeindex files
+        long timeStamp =
+            Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(indexFile));
+        if (timeStamp > lastModifiedTime) {
+          lastModifiedTime = timeStamp;
+          validIndexFile = indexFile;
+        }
+        mergeIndexFileNames.add(indexFile);
+      }
+    }
+    // get the invalid mergeindex files by excluding the valid file.
+    if (mergeIndexFileNames.size() > 1 && validIndexFile != null) {
+      final String validIndexFileName = validIndexFile;
+      mergedAndInvalidIndexFiles.addAll(
+          mergeIndexFileNames.stream().filter(file -> !file.equalsIgnoreCase(validIndexFileName))
+              .collect(Collectors.toSet()));
+    }
+    if (isIndexFilesPresent && validIndexFile != null) {
+      indexFileStore.readMergeFile(validIndexFile);
+      Map<String, List<String>> carbonMergeFileToIndexFilesMap =
+          indexFileStore.getCarbonMergeFileToIndexFilesMap();
+      String segmentPath =
+          validIndexFile.substring(0, validIndexFile.lastIndexOf(File.separator) + 1);
+      mergedAndInvalidIndexFiles.addAll(carbonMergeFileToIndexFilesMap.get(validIndexFile).stream()
+          .map(file -> segmentPath + file).collect(Collectors.toSet()));
+    }
+    if (mergeIndexFileNames.size() == 0 && indexFiles.size() > 1) {
+      // if more than two index files present with different timestamps, then stale/invalid
+      // data is present.
+      Long validFile = indexFiles.stream()
+          .map(file -> Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(file)))
+          .max(Long::compareTo).get();
+      mergedAndInvalidIndexFiles.addAll(
+          indexFiles.stream().filter(file -> !file.contains(validFile.toString()))
+              .collect(Collectors.toSet()));
+    }
+    return mergedAndInvalidIndexFiles;
+  }
+
+  public static CarbonFile[] getValidCarbonIndexFiles(CarbonFile[] carbonFiles) throws IOException {
+    Set<String> mergedAndInvalidIndexFiles = getInvalidAndMergedIndexFiles(
+        Arrays.stream(carbonFiles).map(file -> file.getAbsolutePath())
+            .collect(Collectors.toList()));
+    if (!mergedAndInvalidIndexFiles.isEmpty()) {
+      return Arrays.stream(carbonFiles)
+          .filter(file -> !mergedAndInvalidIndexFiles.contains(file.getAbsolutePath()))
+          .toArray(CarbonFile[]::new);
+    }
+    return carbonFiles;
   }
 
   /**
@@ -661,6 +687,20 @@ public class SegmentFileStore {
         }
       });
       if (listFiles != null && listFiles.length > 0) {
+        Set<String> mergedAndInvalidIndexFiles = getInvalidAndMergedIndexFiles(
+            Arrays.stream(listFiles).map(file -> file.getAbsolutePath())
+                .collect(Collectors.toList()));
+        // Delete index files that are merged.
+        for (CarbonFile indexFile : listFiles) {
+          if (mergedAndInvalidIndexFiles.contains(indexFile.getAbsolutePath())) {
+            indexFile.delete();
+          }
+        }
+        if (!mergedAndInvalidIndexFiles.isEmpty()) {
+          listFiles = Arrays.stream(listFiles)
+              .filter(file -> !mergedAndInvalidIndexFiles.contains(file.getAbsolutePath()))
+              .toArray(CarbonFile[]::new);
+        }
         boolean isRelative = false;
         if (location.startsWith(tablePath)) {
           location = location.substring(tablePath.length());
@@ -671,13 +711,7 @@ public class SegmentFileStore {
         folderDetails.setRelative(isRelative);
         folderDetails.setPartitions(spec.getPartitions());
         folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
-        for (CarbonFile file : listFiles) {
-          if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-            folderDetails.setMergeFileName(file.getName());
-          } else {
-            folderDetails.getFiles().add(file.getName());
-          }
-        }
+        setIndexFileNamesToFolderDetails(folderDetails, listFiles);
         localSegmentFile.addPath(location, folderDetails);
         if (segmentFile == null) {
           segmentFile = localSegmentFile;
@@ -1341,13 +1375,13 @@ public class SegmentFileStore {
   public static Set<String> getIndexFilesListForSegment(Segment segment, String tablePath)
       throws IOException {
     Set<String> indexFiles;
-    if (segment.getSegmentFileName() == null) {
-      String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segment.getSegmentNo());
+    SegmentFileStore segmentFileStore =
+        new SegmentFileStore(tablePath, segment.getSegmentFileName());
+    String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segment.getSegmentNo());
+    if (segmentFileStore.getSegmentFile() == null) {
       indexFiles =
           new SegmentIndexFileStore().getMergeOrIndexFilesFromSegment(segmentPath).keySet();
     } else {
-      SegmentFileStore segmentFileStore =
-          new SegmentFileStore(tablePath, segment.getSegmentFileName());
       indexFiles = segmentFileStore.getIndexAndMergeFiles().keySet();
     }
     return indexFiles;

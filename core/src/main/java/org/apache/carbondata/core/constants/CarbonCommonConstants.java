@@ -372,18 +372,6 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
   /**
-   * It is the user defined property to specify whether to throw exception or not in case
-   * if the MERGE INDEX JOB is failed. Default value - TRUE
-   * TRUE - throws exception and fails the corresponding LOAD job
-   * FALSE - Logs the exception and continue with the LOAD
-   */
-  @CarbonProperty
-  public static final String CARBON_MERGE_INDEX_FAILURE_THROW_EXCEPTION =
-      "carbon.merge.index.failure.throw.exception";
-
-  public static final String CARBON_MERGE_INDEX_FAILURE_THROW_EXCEPTION_DEFAULT = "true";
-
-  /**
    * property to be used for specifying the max byte limit for string/varchar data type till
    * where storing min/max in data file will be considered
    */

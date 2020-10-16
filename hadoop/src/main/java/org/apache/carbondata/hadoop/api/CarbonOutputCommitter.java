@@ -156,11 +156,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     OperationContext operationContext = (OperationContext) getOperationContext();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String uuid = "";
-    SegmentFileStore.updateTableStatusFile(carbonTable, loadModel.getSegmentId(),
-        segmentFileName + CarbonTablePath.SEGMENT_EXT,
-        carbonTable.getCarbonTableIdentifier().getTableId(),
-        new SegmentFileStore(carbonTable.getTablePath(),
-            segmentFileName + CarbonTablePath.SEGMENT_EXT));
     newMetaEntry.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newMetaEntry, SegmentStatus.SUCCESS, loadModel.getFactTimeStamp(),

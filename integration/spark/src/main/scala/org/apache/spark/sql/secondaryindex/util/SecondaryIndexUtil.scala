@@ -28,7 +28,7 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.log4j.Logger
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.CarbonMergeFilesRDD
+import org.apache.spark.rdd.CarbonMergeFilesRDD.isPropertySet
 import org.apache.spark.sql.{CarbonEnv, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel}
@@ -45,17 +45,17 @@ import org.apache.carbondata.core.datastore.block.{TableBlockInfo, TaskBlockInfo
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
-import org.apache.carbondata.core.locks.CarbonLockUtil
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.datatype.{DataType, StructField, StructType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil
+import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableOutputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
@@ -63,7 +63,6 @@ import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 import org.apache.carbondata.spark.rdd.CarbonSparkPartition
@@ -217,8 +216,16 @@ object SecondaryIndexUtil {
       }
       if (finalMergeStatus) {
         if (null != mergeStatus && mergeStatus.length != 0) {
+          // Segment file is not yet written during SI load, then we can delete old index
+          // files immediately. If segment file is already present and SI refresh is triggered, then
+          // do not delete immediately to avoid failures during parallel queries.
           val validSegmentsToUse = validSegments.asScala
-            .filter(segment => mergeStatus.map(_._2).toSet.contains(segment.getSegmentNo))
+            .filter(segment => {
+              val sfs: SegmentFileStore = new SegmentFileStore(indexCarbonTable.getTablePath,
+                segment.getSegmentFileName)
+              mergeStatus.map(_._2).toSet.contains(segment.getSegmentNo) &&
+              sfs.getSegmentFile == null
+            })
           deleteOldIndexOrMergeIndexFiles(
             carbonLoadModel.getFactTimeStamp,
             validSegmentsToUse.toList.asJava,
@@ -231,73 +238,36 @@ object SecondaryIndexUtil {
           } else {
             siRebuildRDD.partitions.foreach { partition =>
               val carbonSparkPartition = partition.asInstanceOf[CarbonSparkPartition]
-              deleteOldCarbonDataFiles(carbonSparkPartition)
+              deleteOldCarbonDataFiles(carbonSparkPartition, validSegmentsToUse.toList)
             }
           }
+          val segmentToLoadStartTimeMap: scala.collection.mutable.Map[String, java.lang.Long] =
+            scala.collection.mutable.Map()
+          // merge index files and write segment file for merged segments
           mergedSegments.asScala.map { seg =>
+            val segmentPath = CarbonTablePath.getSegmentPath(tablePath, seg.getLoadName)
+            try {
+              new CarbonIndexFileMergeWriter(indexCarbonTable)
+                .writeMergeIndexFileBasedOnSegmentFolder(null, false, segmentPath,
+                  seg.getLoadName, carbonLoadModel.getFactTimeStamp.toString,
+                  true)
+            } catch {
+              case e: IOException =>
+                val message =
+                  "Failed to merge index files in path: " + segmentPath + ": " + e.getMessage()
+                LOGGER.error(message)
+                throw new RuntimeException(message, e)
+            }
             val file = SegmentFileStore.writeSegmentFile(
               indexCarbonTable,
               seg.getLoadName,
               carbonLoadModel.getFactTimeStamp.toString,
               null,
               null)
-            val segment = new Segment(seg.getLoadName, file)
-            SegmentFileStore.updateTableStatusFile(indexCarbonTable,
-              seg.getLoadName,
-              file,
-              indexCarbonTable.getCarbonTableIdentifier.getTableId,
-              new SegmentFileStore(tablePath, segment.getSegmentFileName))
-            segment
-          }
-
-          val statusLock =
-            new SegmentStatusManager(indexCarbonTable.getAbsoluteTableIdentifier).getTableStatusLock
-          try {
-            val retryCount = CarbonLockUtil.getLockProperty(CarbonCommonConstants
-              .NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-              CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT)
-            val maxTimeout = CarbonLockUtil.getLockProperty(CarbonCommonConstants
-              .MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-              CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT)
-            if (statusLock.lockWithRetries(retryCount, maxTimeout)) {
-              val endTime = System.currentTimeMillis()
-              val loadMetadataDetails = SegmentStatusManager
-                .readLoadMetadata(indexCarbonTable.getMetadataPath)
-              loadMetadataDetails.foreach(loadMetadataDetail => {
-                if (rebuiltSegments.contains(loadMetadataDetail.getLoadName)) {
-                  loadMetadataDetail.setLoadStartTime(carbonLoadModel.getFactTimeStamp)
-                  loadMetadataDetail.setLoadEndTime(endTime)
-                  CarbonLoaderUtil
-                    .addDataIndexSizeIntoMetaEntry(loadMetadataDetail,
-                      loadMetadataDetail.getLoadName,
-                      indexCarbonTable)
-                }
-              })
-              SegmentStatusManager
-                .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
-                  loadMetadataDetails)
-            } else {
-              throw new RuntimeException(
-                "Not able to acquire the lock for table status updation for table " + databaseName +
-                "." + indexCarbonTable.getTableName)
-            }
-          } finally {
-            if (statusLock != null) {
-              statusLock.unlock()
-            }
-          }
-          // clear the indexSchema cache for the merged segments, as the index files and
-          // data files are rewritten after compaction
-          if (mergedSegments.size > 0) {
-
-            // merge index files for merged segments
-            CarbonMergeFilesRDD.mergeIndexFiles(sc.sparkSession,
-              rebuiltSegments.toSeq,
-              segmentIdToLoadStartTimeMap,
-              indexCarbonTable.getTablePath,
-              indexCarbonTable, mergeIndexProperty = false
-            )
-
+            segmentToLoadStartTimeMap.put(seg.getLoadName,
+              carbonLoadModel.getFactTimeStamp)
+            // clear the indexSchema cache for the merged segments, as the index files and
+            // data files are rewritten after compaction
             if (CarbonProperties.getInstance()
               .isDistributedPruningEnabled(indexCarbonTable.getDatabaseName,
                 indexCarbonTable.getTableName)) {
@@ -310,7 +280,24 @@ object SecondaryIndexUtil {
                 case _: Exception =>
               }
             }
-
+            val segment = new Segment(seg.getLoadName, file)
+            segment
+          }
+          // Here can exclude updating table status for compaction type.
+          // For compaction call, we can directly update table status with Compacted/Success
+          // with logic present in CarbonTableCompactor.
+          if (compactionType == null) {
+            FileInternalUtil.updateTableStatus(
+              rebuiltSegments.toList,
+              carbonLoadModel.getDatabaseName,
+              indexCarbonTable.getTableName,
+              SegmentStatus.SUCCESS,
+              segmentToLoadStartTimeMap,
+              new java.util.HashMap[String, String],
+              indexCarbonTable,
+              sc.sparkSession,
+              carbonLoadModel.getFactTimeStamp,
+              rebuiltSegments)
             IndexStoreManager.getInstance
               .clearInvalidSegments(indexCarbonTable, rebuiltSegments.toList.asJava)
           }
@@ -358,11 +345,14 @@ object SecondaryIndexUtil {
    * datafile merge after loading a segment to SI table. It should be deleted after
    * data file merge operation, else, concurrency can cause file not found issues.
    */
-  private def deleteOldCarbonDataFiles(partition: CarbonSparkPartition): Unit = {
+  private def deleteOldCarbonDataFiles(partition: CarbonSparkPartition,
+      validSegmentsToUse: List[Segment]): Unit = {
     val splitList = partition.split.value.getAllSplits
     splitList.asScala.foreach { split =>
-      val carbonFile = FileFactory.getCarbonFile(split.getFilePath)
-      carbonFile.delete()
+      if (validSegmentsToUse.contains(split.getSegment)) {
+        val carbonFile = FileFactory.getCarbonFile(split.getFilePath)
+        carbonFile.delete()
+      }
     }
   }
   /**

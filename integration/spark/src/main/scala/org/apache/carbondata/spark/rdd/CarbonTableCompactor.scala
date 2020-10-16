@@ -341,7 +341,6 @@ class CarbonTableCompactor(
       }
 
       if (carbonTable.isHivePartitionTable) {
-        if (isMergeIndex) {
           val segmentTmpFileName = carbonLoadModel.getFactTimeStamp + CarbonTablePath.SEGMENT_EXT
           segmentFileName = mergedLoadNumber + CarbonCommonConstants.UNDERSCORE + segmentTmpFileName
           val segmentTmpFile = FileFactory.getCarbonFile(
@@ -351,25 +350,6 @@ class CarbonTableCompactor(
             throw new Exception(s"Rename segment file from ${segmentTmpFileName} " +
               s"to ${segmentFileName} failed.")
           }
-        } else {
-          val readPath =
-            CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
-              CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
-          // Merge all partition files into a single file.
-          segmentFileName =
-            mergedLoadNumber + CarbonCommonConstants.UNDERSCORE + carbonLoadModel.getFactTimeStamp
-          val mergedSegmetFile = SegmentFileStore
-            .mergeSegmentFiles(readPath,
-              segmentFileName,
-              CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath))
-          if (mergedSegmetFile != null) {
-            SegmentFileStore
-              .moveFromTempFolder(mergedSegmetFile,
-                carbonLoadModel.getFactTimeStamp + ".tmp",
-                carbonLoadModel.getTablePath)
-          }
-          segmentFileName = segmentFileName + CarbonTablePath.SEGMENT_EXT
-        }
       } else {
         // Get the segment files each updated segment in case of IUD compaction
         val segmentMetaDataInfo = CommonLoadUtils.getSegmentMetaDataInfoFromAccumulator(
@@ -408,7 +388,6 @@ class CarbonTableCompactor(
           MVManagerInSpark.get(sc.sparkSession))
 
       if (!statusFileUpdate) {
-        // no need to call merge index if table status update has failed
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         throw new Exception(s"Compaction failed to update metadata for table" +

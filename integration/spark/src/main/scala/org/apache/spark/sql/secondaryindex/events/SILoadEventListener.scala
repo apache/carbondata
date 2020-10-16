@@ -43,10 +43,6 @@ class SILoadEventListener extends OperationEventListener with Logging {
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
       case _: LoadTablePreStatusUpdateEvent =>
-        if (operationContext.getProperty("isAddLoad") != null &&
-            operationContext.getProperty("isAddLoad").toString.toBoolean) {
-          return
-        }
         LOGGER.info("Load pre status update event-listener called")
         val loadTablePreStatusUpdateEvent = event.asInstanceOf[LoadTablePreStatusUpdateEvent]
         val carbonLoadModel = loadTablePreStatusUpdateEvent.getCarbonLoadModel

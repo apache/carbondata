@@ -110,7 +110,6 @@ import org.apache.carbondata.format.IndexHeader;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
@@ -2457,17 +2456,18 @@ public final class CarbonUtil {
       case LOCAL:
       default:
         segmentPath = FileFactory.getUpdatedFilePath(segmentPath);
-        File file = new File(segmentPath);
-        File[] segmentFiles = file.listFiles();
-        if (null != segmentFiles) {
-          for (File dataAndIndexFile : segmentFiles) {
+        CarbonFile[] dataAndIndexFiles = FileFactory.getCarbonFile(segmentPath).listFiles();
+        if (null != dataAndIndexFiles) {
+          CarbonFile[] validIndexFiles =
+              SegmentFileStore.getValidCarbonIndexFiles(dataAndIndexFiles);
+          for (CarbonFile dataAndIndexFile : validIndexFiles) {
             if (dataAndIndexFile.getCanonicalPath()
                 .endsWith(CarbonTablePath.getCarbonIndexExtension()) || dataAndIndexFile
                 .getCanonicalPath().endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
-              carbonIndexSize += FileUtils.sizeOf(dataAndIndexFile);
+              carbonIndexSize += dataAndIndexFile.getSize();
             } else if (dataAndIndexFile.getCanonicalPath()
                 .endsWith(CarbonTablePath.getCarbonDataExtension())) {
-              carbonDataSize += FileUtils.sizeOf(dataAndIndexFile);
+              carbonDataSize += dataAndIndexFile.getSize();
             }
           }
         }

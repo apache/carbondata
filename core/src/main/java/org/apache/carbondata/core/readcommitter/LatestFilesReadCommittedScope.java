@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.readcommitter;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -31,6 +34,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
@@ -126,7 +130,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   }
 
   @Override
-  public Map<String, String> getCommittedIndexFile(Segment segment) {
+  public Map<String, String> getCommittedIndexFile(Segment segment) throws IOException {
     Map<String, String> indexFileStore = new HashMap<>();
     Map<String, List<String>> snapShot = readCommittedIndexFileSnapShot.getSegmentIndexFileMap();
     String segName;
@@ -135,15 +139,24 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     } else {
       segName = segment.getSegmentFileName();
     }
-    List<String> index = snapShot.get(segName);
-    if (null == index) {
-      index = new LinkedList<>();
+    List<String> indexFiles = snapShot.get(segName);
+    if (null == indexFiles) {
+      indexFiles = new LinkedList<>();
     }
-    for (String indexPath : index) {
-      if (indexPath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        indexFileStore.put(indexPath, indexPath.substring(indexPath.lastIndexOf('/') + 1));
+    Set<String> mergedIndexFiles =
+        SegmentFileStore.getInvalidAndMergedIndexFiles(indexFiles);
+    if (!mergedIndexFiles.isEmpty()) {
+      // do not include already merged indexFiles files details.
+      indexFiles = indexFiles.stream().filter(
+          file -> !mergedIndexFiles.contains(file))
+          .collect(Collectors.toList());
+    }
+    for (String indexFile : indexFiles) {
+      if (indexFile.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        indexFileStore
+            .put(indexFile, indexFile.substring(indexFile.lastIndexOf(File.separator) + 1));
       } else {
-        indexFileStore.put(indexPath, null);
+        indexFileStore.put(indexFile, null);
       }
     }
     return indexFileStore;

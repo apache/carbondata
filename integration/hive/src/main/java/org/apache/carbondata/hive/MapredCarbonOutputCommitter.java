@@ -23,8 +23,10 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 import org.apache.carbondata.hadoop.api.CarbonOutputCommitter;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hive.util.HiveCarbonUtil;
@@ -128,11 +130,13 @@ public class MapredCarbonOutputCommitter extends OutputCommitter {
       Configuration configuration = jobContext.getConfiguration();
       CarbonLoadModel carbonLoadModel = MapredCarbonOutputFormat.getLoadModel(configuration);
       ThreadLocalSessionInfo.unsetAll();
+      CarbonTable carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
+      String tablePath = carbonTable.getTablePath();
+      new CarbonIndexFileMergeWriter(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable())
+          .mergeCarbonIndexFilesOfSegment(carbonLoadModel.getSegmentId(), tablePath, false,
+              String.valueOf(carbonLoadModel.getFactTimeStamp()));
       SegmentFileStore.writeSegmentFile(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
           carbonLoadModel.getSegmentId(), String.valueOf(carbonLoadModel.getFactTimeStamp()));
-      SegmentFileStore
-          .mergeIndexAndWriteSegmentFile(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
-              carbonLoadModel.getSegmentId(), String.valueOf(carbonLoadModel.getFactTimeStamp()));
       CarbonTableOutputFormat.setLoadModel(configuration, carbonLoadModel);
       carbonOutputCommitter.commitJob(jobContext);
     } catch (Exception e) {

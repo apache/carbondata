@@ -17,7 +17,8 @@
 
 package org.apache.spark.rdd
 
-import java.util.concurrent.{Executors, ExecutorService, TimeUnit}
+import java.io.IOException
+import java.util.concurrent.{Executors, ExecutorService}
 
 import scala.collection.JavaConverters._
 
@@ -30,7 +31,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
@@ -87,7 +88,8 @@ object CarbonMergeFilesRDD {
         carbonTable.isHivePartitionTable,
         readFileFooterFromCarbonDataFile,
         partitionInfo,
-        tempFolderPath).collect()
+        tempFolderPath,
+        currPartitionSpec).collect()
     } else {
       try {
         if (isPropertySet(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
@@ -148,10 +150,7 @@ object CarbonMergeFilesRDD {
           val message = "Merge Index files request is failed " +
                         s"for table ${ carbonTable.getTableUniqueName }. " + ex.getMessage
           LOGGER.error(message)
-          if (isPropertySet(CarbonCommonConstants.CARBON_MERGE_INDEX_FAILURE_THROW_EXCEPTION,
-            CarbonCommonConstants.CARBON_MERGE_INDEX_FAILURE_THROW_EXCEPTION_DEFAULT)) {
-            throw new RuntimeException(message, ex)
-          }
+          throw new RuntimeException(message, ex)
       }
     }
     if (carbonTable.isHivePartitionTable && !StringUtils.isEmpty(tempFolderPath)) {
@@ -185,13 +184,24 @@ object CarbonMergeFilesRDD {
         val readPath: String = CarbonTablePath.getSegmentFilesLocation(tablePath) +
                                CarbonCommonConstants.FILE_SEPARATOR + segmentId + "_" +
                                segmentFileNameToSegmentIdMap.get(segmentId) + ".tmp"
+        val uuid = String.valueOf(System.currentTimeMillis)
+        val newSegmentFileName = SegmentFileStore.genSegmentFileName(segmentId, uuid)
         // Merge all partition files into a single file.
-        val segmentFileName: String = SegmentFileStore
-          .genSegmentFileName(segmentId, segmentFileNameToSegmentIdMap.get(segmentId))
-        SegmentFileStore
+        val segmentFile = SegmentFileStore
           .mergeSegmentFiles(readPath,
-            segmentFileName,
+            newSegmentFileName,
             CarbonTablePath.getSegmentFilesLocation(tablePath))
+        if (segmentFile != null) {
+          val sfs = new SegmentFileStore(tablePath, newSegmentFileName +
+            CarbonTablePath.SEGMENT_EXT)
+          // when compact segment_index, update table status with new segment file name
+          val status = SegmentFileStore.updateTableStatusFile(carbonTable, segmentId,
+            newSegmentFileName + CarbonTablePath.SEGMENT_EXT,
+            carbonTable.getCarbonTableIdentifier.getTableId, sfs)
+          if (!status) {
+            throw new IOException("Table status update with mergeIndex file has failed")
+          }
+        }
       })
     }
     mergeIndexSize
@@ -280,12 +290,13 @@ class CarbonMergeFilesRDD(
 
       var segmentFile: SegmentFileStore.SegmentFile = null
       var indexSize: String = ""
-      if (isHivePartitionedTable && partitionInfo.isEmpty) {
+      if (isHivePartitionedTable && readFileFooterFromCarbonDataFile) {
         CarbonLoaderUtil.mergeIndexFilesInPartitionedSegment(
           carbonTable,
           split.segmentId,
           segmentFileNameToSegmentIdMap.get(split.segmentId),
-          split.partitionPath)
+          split.partitionPath,
+          readFileFooterFromCarbonDataFile)
       } else if (isHivePartitionedTable && !partitionInfo.isEmpty) {
         val folderDetails = CarbonLoaderUtil
           .mergeIndexFilesInPartitionedTempSegment(carbonTable,

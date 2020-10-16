@@ -110,8 +110,8 @@ class CarbonDataFileMergeTestCaseOnSI
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
     sql("REFRESH INDEX nonindexmerge_index1 ON TABLE nonindexmerge").collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
-    assert(getDataFileCount("nonindexmerge_index1", "0") < 7)
-    assert(getDataFileCount("nonindexmerge_index1", "1") < 7)
+    assert(getDataFileCount("nonindexmerge_index1", "0") > 7)
+    assert(getDataFileCount("nonindexmerge_index1", "1") > 7)
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
   }
 
@@ -128,12 +128,12 @@ class CarbonDataFileMergeTestCaseOnSI
     sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(0)")
       .collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
-    assert(getDataFileCount("nonindexmerge_index2", "0") < 7)
+    assert(getDataFileCount("nonindexmerge_index2", "0") > 7)
     assert(getDataFileCount("nonindexmerge_index2", "1") == 20)
     sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(1)")
       .collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
-    assert(getDataFileCount("nonindexmerge_index2", "1") < 7)
+    assert(getDataFileCount("nonindexmerge_index2", "1") > 7)
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
   }
 
@@ -227,8 +227,8 @@ class CarbonDataFileMergeTestCaseOnSI
     val df1 = sql("""Select * from nonindexmerge where name='n16000'""")
       .queryExecution.sparkPlan
     assert(isFilterPushedDownToSI(df1))
-    assert(getDataFileCount("nonindexmerge_index1", "0") < 15)
-    assert(getDataFileCount("nonindexmerge_index1", "1") < 15)
+    assert(getDataFileCount("nonindexmerge_index1", "0") > 15)
+    assert(getDataFileCount("nonindexmerge_index1", "1") > 15)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants
         .CARBON_SI_SEGMENT_MERGE, "true")
   }
@@ -318,11 +318,10 @@ class CarbonDataFileMergeTestCaseOnSI
     val df1 = sql("""Select * from nonindexmerge where name='n16000'""")
         .queryExecution.sparkPlan
     assert(isFilterPushedDownToSI(df1))
-    assert(getDataFileCount("nonindexmerge_index1", "0") < 15)
-    assert(getDataFileCount("nonindexmerge_index1", "1") < 15)
-    checkAnswer(sql(" select count(*) from nonindexmerge_index1"), rows)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
-        .CARBON_SI_SEGMENT_MERGE, "true")
+    assert(getDataFileCount("nonindexmerge_index1", "0") > 15)
+    assert(getDataFileCount("nonindexmerge_index1", "1") > 15)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE,
+      CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE_DEFAULT)
   }
 
   private def getDataFileCount(tableName: String, segment: String): Int = {

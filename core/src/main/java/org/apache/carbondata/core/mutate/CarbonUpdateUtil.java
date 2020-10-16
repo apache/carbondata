@@ -290,6 +290,8 @@ public class CarbonUpdateUtil {
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
             SegmentStatusManager.readLoadMetadata(metaDataFilepath);
+        // to update table status only when required.
+        boolean isUpdateRequired = false;
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
           // we are storing the link between the 2 status files in the segment 0 only.
@@ -304,6 +306,7 @@ public class CarbonUpdateUtil {
             if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName()))) {
               loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
               loadMetadata.setModificationOrDeletionTimestamp(Long.parseLong(updatedTimeStamp));
+              isUpdateRequired = true;
             }
           }
           for (Segment segName : updatedSegmentsList) {
@@ -318,19 +321,23 @@ public class CarbonUpdateUtil {
                 }
                 // update end timestamp for each time.
                 loadMetadata.setUpdateDeltaEndTimestamp(updatedTimeStamp);
+                isUpdateRequired = true;
               }
               if (segmentFilesTobeUpdated
                   .contains(Segment.toSegment(loadMetadata.getLoadName(), null))) {
                 loadMetadata.setSegmentFile(loadMetadata.getLoadName() + "_" + updatedTimeStamp
                     + CarbonTablePath.SEGMENT_EXT);
+                isUpdateRequired = true;
               }
             }
           }
         }
 
         try {
-          SegmentStatusManager
-                  .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
+          if (isUpdateRequired || isUpdateStatusFileUpdateRequired) {
+            SegmentStatusManager
+                .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
+          }
         } catch (IOException e) {
           return false;
         }
@@ -508,7 +515,8 @@ public class CarbonUpdateUtil {
     int maxTime;
     try {
       maxTime = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
+          .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME,
+              Integer.toString(CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME)));
     } catch (NumberFormatException e) {
       maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
     }

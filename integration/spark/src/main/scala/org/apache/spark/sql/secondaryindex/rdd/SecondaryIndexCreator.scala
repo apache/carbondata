@@ -166,6 +166,7 @@ object SecondaryIndexCreator {
       }
       var successSISegments: List[String] = List()
       var failedSISegments: List[String] = List()
+      val carbonLoadModel: CarbonLoadModel = getCopyObject(secondaryIndexModel)
       val sort_scope = indexCarbonTable.getTableInfo.getFactTable.getTableProperties
         .get("sort_scope")
       if (sort_scope != null && sort_scope.equalsIgnoreCase("global_sort")) {
@@ -177,7 +178,6 @@ object SecondaryIndexCreator {
             .submit(new Callable[Array[(String, (LoadMetadataDetails, ExecutionErrors))]] {
               @throws(classOf[Exception])
               override def call(): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
-                val carbonLoadModel = getCopyObject(secondaryIndexModel)
                 // to load as a global sort SI segment,
                 // we need to query main table along with position reference projection
                 val projections = indexCarbonTable.getCreateOrderColumn
@@ -235,10 +235,6 @@ object SecondaryIndexCreator {
                     carbonLoadModel,
                     hadoopConf = configuration, segmentMetaDataAccumulator)
                 }
-                SegmentFileStore
-                  .writeSegmentFile(indexCarbonTable,
-                    eachSegment,
-                    String.valueOf(carbonLoadModel.getFactTimeStamp))
                 segmentToLoadStartTimeMap
                   .put(eachSegment, String.valueOf(carbonLoadModel.getFactTimeStamp))
                 result
@@ -290,7 +286,6 @@ object SecondaryIndexCreator {
                 .put("carbonConf", SparkSQLUtil.sessionState(sc.sparkSession).newHadoopConf())
               var eachSegmentSecondaryIndexCreationStatus: Array[(String, Boolean)] = Array.empty
               CarbonLoaderUtil.checkAndCreateCarbonDataLocation(segId, indexCarbonTable)
-              val carbonLoadModel = getCopyObject(secondaryIndexModel)
               carbonLoadModel
                 .setFactTimeStamp(secondaryIndexModel.segmentIdToLoadStartTimeMapping(eachSegment))
               carbonLoadModel.setTablePath(secondaryIndexModel.carbonTable.getTablePath)
@@ -299,10 +294,6 @@ object SecondaryIndexCreator {
                 carbonLoadModel,
                 secondaryIndexModel.secondaryIndex,
                 segId, execInstance, indexCarbonTable, forceAccessSegment).collect()
-              SegmentFileStore
-                .writeSegmentFile(indexCarbonTable,
-                  segId,
-                  String.valueOf(carbonLoadModel.getFactTimeStamp))
               segmentToLoadStartTimeMap.put(segId, carbonLoadModel.getFactTimeStamp.toString)
               if (secondaryIndexCreationStatus.length > 0) {
                 eachSegmentSecondaryIndexCreationStatus = secondaryIndexCreationStatus
@@ -347,16 +338,6 @@ object SecondaryIndexCreator {
       var tableStatusUpdateForFailure = false
 
       if (successSISegments.nonEmpty && !isCompactionCall) {
-        tableStatusUpdateForSuccess = FileInternalUtil.updateTableStatus(
-          successSISegments,
-          secondaryIndexModel.carbonLoadModel.getDatabaseName,
-          secondaryIndexModel.secondaryIndex.indexName,
-          segmentStatus,
-          secondaryIndexModel.segmentIdToLoadStartTimeMapping,
-          segmentToLoadStartTimeMap,
-          indexCarbonTable,
-          secondaryIndexModel.sqlContext.sparkSession)
-
         // merge index files for success segments in case of only load
         CarbonMergeFilesRDD.mergeIndexFiles(secondaryIndexModel.sqlContext.sparkSession,
           successSISegments,
@@ -382,18 +363,6 @@ object SecondaryIndexCreator {
             indexCarbonTable,
             loadMetadataDetails.toList.asJava, carbonLoadModelForMergeDataFiles)(sc)
 
-        tableStatusUpdateForSuccess = FileInternalUtil.updateTableStatus(
-          successSISegments,
-          secondaryIndexModel.carbonLoadModel.getDatabaseName,
-          secondaryIndexModel.secondaryIndex.indexName,
-          SegmentStatus.SUCCESS,
-          secondaryIndexModel.segmentIdToLoadStartTimeMapping,
-          segmentToLoadStartTimeMap,
-          indexCarbonTable,
-          secondaryIndexModel.sqlContext.sparkSession,
-          carbonLoadModelForMergeDataFiles.getFactTimeStamp,
-          rebuiltSegments)
-
         if (isInsertOverwrite) {
           val overriddenSegments = SegmentStatusManager
           .readLoadMetadata(indexCarbonTable.getMetadataPath)
@@ -409,6 +378,24 @@ object SecondaryIndexCreator {
               segmentToLoadStartTimeMap,
               indexTable,
               secondaryIndexModel.sqlContext.sparkSession)
+        }
+        if (rebuiltSegments.isEmpty) {
+          for (loadMetadata <- loadMetadataDetails) {
+            SegmentFileStore
+              .writeSegmentFile(indexCarbonTable, loadMetadata.getLoadName,
+                String.valueOf(loadMetadata.getLoadStartTime))
+          }
+          tableStatusUpdateForSuccess = FileInternalUtil.updateTableStatus(
+            successSISegments,
+            secondaryIndexModel.carbonLoadModel.getDatabaseName,
+            secondaryIndexModel.secondaryIndex.indexName,
+            SegmentStatus.SUCCESS,
+            secondaryIndexModel.segmentIdToLoadStartTimeMapping,
+            segmentToLoadStartTimeMap,
+            indexCarbonTable,
+            secondaryIndexModel.sqlContext.sparkSession,
+            carbonLoadModelForMergeDataFiles.getFactTimeStamp,
+            rebuiltSegments)
         }
       }
 

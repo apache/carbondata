@@ -26,7 +26,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -246,19 +246,22 @@ class CarbonIndexFileMergeTestCaseWithSI
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
   }
 
-  private def getIndexFileCount(tableName: String, segment: String): Int = {
+  private def getIndexFileCount(tableName: String,
+      segment: String,
+      extension: String = CarbonTablePath.INDEX_FILE_EXT): Int = {
     val table = CarbonMetadata.getInstance().getCarbonTable(tableName)
     val path = CarbonTablePath
       .getSegmentPath(table.getAbsoluteTableIdentifier.getTablePath, segment)
     val carbonFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(CarbonTablePath
-        .INDEX_FILE_EXT)
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
+        file.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)
+      }
     })
-    if (carbonFiles != null) {
-      carbonFiles.length
-    } else {
-      0
-    }
+    var validIndexFiles = SegmentFileStore.getValidCarbonIndexFiles(carbonFiles)
+    validIndexFiles = validIndexFiles.toStream
+      .filter(file => file.getName.endsWith(extension)).toArray
+    validIndexFiles.length
   }
 
   private def createFile(fileName: String, line: Int = 10000, start: Int = 0): Boolean = {

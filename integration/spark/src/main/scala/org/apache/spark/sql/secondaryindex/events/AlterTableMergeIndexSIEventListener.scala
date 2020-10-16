@@ -33,8 +33,10 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 
@@ -85,7 +87,21 @@ class AlterTableMergeIndexSIEventListener
                   .asScala
                 val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
                 validSegments.foreach { segment =>
-                  validSegmentIds += segment.getSegmentNo
+                  val segmentFile = segment.getSegmentFileName
+                  val sfs = new SegmentFileStore(indexCarbonTable.getTablePath, segmentFile)
+                  if (sfs.getSegmentFile != null) {
+                    val indexFiles = sfs.getIndexCarbonFiles
+                    val segmentPath = CarbonTablePath
+                      .getSegmentPath(indexCarbonTable.getTablePath, segment.getSegmentNo)
+                    if (indexFiles.size() == 0) {
+                      LOGGER.warn("No index files present in path: " + segmentPath + " to merge")
+                    } else {
+                      // call merge only if segments having index files
+                      validSegmentIds += segment.getSegmentNo
+                    }
+                  } else {
+                    validSegmentIds += segment.getSegmentNo
+                  }
                 }
                 // Just launch job to merge index for all index tables
                 CarbonMergeFilesRDD.mergeIndexFiles(
@@ -94,7 +110,8 @@ class AlterTableMergeIndexSIEventListener
                   SegmentStatusManager.mapSegmentToStartTime(carbonMainTable),
                   indexCarbonTable.getTablePath,
                   indexCarbonTable,
-                  mergeIndexProperty = true)
+                  mergeIndexProperty = true,
+                  readFileFooterFromCarbonDataFile = true)
               }
             }
           }

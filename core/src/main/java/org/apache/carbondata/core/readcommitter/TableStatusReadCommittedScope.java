@@ -18,11 +18,14 @@
 package org.apache.carbondata.core.readcommitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -79,13 +82,23 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   @Override
   public Map<String, String> getCommittedIndexFile(Segment segment) throws IOException {
     Map<String, String> indexFiles;
-    if (segment.getSegmentFileName() == null) {
+    SegmentFileStore fileStore = null;
+    if (segment.getSegmentFileName() != null) {
+      fileStore = new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
+    }
+    if (segment.getSegmentFileName() == null || fileStore.getSegmentFile() == null) {
       String path =
           CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
       indexFiles = new SegmentIndexFileStore().getMergeOrIndexFilesFromSegment(path);
+      List<String> indexFileList = new ArrayList<>(indexFiles.keySet());
+      Set<String> mergedIndexFiles = SegmentFileStore.getInvalidAndMergedIndexFiles(indexFileList);
+      for (String indexFile : indexFileList) {
+        if (mergedIndexFiles.contains(indexFile)) {
+          // do not include already merged index files details.
+          indexFiles.remove(indexFile);
+        }
+      }
     } else {
-      SegmentFileStore fileStore =
-          new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
       indexFiles = fileStore.getIndexAndMergeFiles();
       if (fileStore.getSegmentFile() != null) {
         segment.setSegmentMetaDataInfo(fileStore.getSegmentFile().getSegmentMetaDataInfo());
@@ -97,12 +110,12 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo) {
     SegmentRefreshInfo segmentRefreshInfo;
     long segmentFileTimeStamp = 0L;
-    if (null != segment.getLoadMetadataDetails()) {
-      segmentFileTimeStamp = segment.getLoadMetadataDetails().getLastModifiedTime();
-    } else if (null != segment.getSegmentFileName()) {
-      segmentFileTimeStamp = FileFactory.getCarbonFile(CarbonTablePath
-          .getSegmentFilePath(identifier.getTablePath(), segment.getSegmentFileName()))
-          .getLastModifiedTime();
+    String segmentFileName = segment.getSegmentFileName();
+    if (null != segmentFileName) {
+      // get timestamp value from segment file name.
+      segmentFileTimeStamp = Long.parseLong(segmentFileName
+          .substring(segmentFileName.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
+              segmentFileName.lastIndexOf(CarbonCommonConstants.POINT)));
     }
     if (updateVo != null) {
       segmentRefreshInfo =
