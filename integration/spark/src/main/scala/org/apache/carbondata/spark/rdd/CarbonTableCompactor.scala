@@ -352,6 +352,8 @@ class CarbonTableCompactor(
               s"to ${segmentFileName} failed.")
           }
         } else {
+          // By default carbon.merge.index.in.segment is true and this code will be used for
+          // developer debugging purpose.
           val readPath =
             CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
               CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
@@ -408,7 +410,6 @@ class CarbonTableCompactor(
           MVManagerInSpark.get(sc.sparkSession))
 
       if (!statusFileUpdate) {
-        // no need to call merge index if table status update has failed
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         throw new Exception(s"Compaction failed to update metadata for table" +

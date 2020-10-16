@@ -491,18 +491,7 @@ object CarbonDataRDDFactory {
         val segmentMetaDataInfo = CommonLoadUtils.getSegmentMetaDataInfoFromAccumulator(
           carbonLoadModel.getSegmentId,
           segmentMetaDataAccumulator)
-        val segmentFileName =
-          SegmentFileStore.writeSegmentFile(carbonTable, carbonLoadModel.getSegmentId,
-            String.valueOf(carbonLoadModel.getFactTimeStamp), segmentMetaDataInfo)
-        // clear segmentMetaDataAccumulator
         segmentMetaDataAccumulator.reset()
-
-        SegmentFileStore.updateTableStatusFile(
-          carbonTable,
-          carbonLoadModel.getSegmentId,
-          segmentFileName,
-          carbonTable.getCarbonTableIdentifier.getTableId,
-          new SegmentFileStore(carbonTable.getTablePath, segmentFileName))
 
         operationContext.setProperty(carbonTable.getTableUniqueName + "_Segment",
           carbonLoadModel.getSegmentId)
@@ -512,6 +501,9 @@ object CarbonDataRDDFactory {
             carbonLoadModel)
         OperationListenerBus.getInstance()
           .fireEvent(loadTablePreStatusUpdateEvent, operationContext)
+        val segmentFileName =
+          SegmentFileStore.writeSegmentFile(carbonTable, carbonLoadModel.getSegmentId,
+            String.valueOf(carbonLoadModel.getFactTimeStamp), segmentMetaDataInfo)
         val (done, writtenSegment) =
           updateTableStatus(
             sqlContext.sparkSession,

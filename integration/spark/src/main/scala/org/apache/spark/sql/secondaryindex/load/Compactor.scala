@@ -34,6 +34,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.ICarbonLock
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
@@ -100,13 +101,6 @@ object Compactor {
           return
         }
         allSegmentsLock ++= segmentLocks
-        CarbonInternalLoaderUtil.updateLoadMetadataWithMergeStatus(
-          indexCarbonTable,
-          loadsToMerge,
-          validSegments.head,
-          segmentToSegmentTimestampMap,
-          segmentIdToLoadStartTimeMapping(validSegments.head),
-          SegmentStatus.INSERT_IN_PROGRESS, 0L, List.empty.asJava)
 
         // merge index files
         CarbonMergeFilesRDD.mergeIndexFiles(sqlContext.sparkSession,
@@ -132,7 +126,14 @@ object Compactor {
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
           indexCarbonTable,
           loadMetadataDetails.toList.asJava, carbonLoadModelForMergeDataFiles)(sqlContext)
-
+        if (rebuiltSegments.isEmpty) {
+          for (eachSegment <- secondaryIndexModel.validSegments) {
+            SegmentFileStore
+              .writeSegmentFile(indexCarbonTable,
+                eachSegment,
+                String.valueOf(carbonLoadModel.getFactTimeStamp))
+          }
+        }
         CarbonInternalLoaderUtil.updateLoadMetadataWithMergeStatus(
           indexCarbonTable,
           loadsToMerge,

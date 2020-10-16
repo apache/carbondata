@@ -192,9 +192,11 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         // mergeIndex is true, the segment file not need to be written
         // and will be written during merging index
         if (partitionSpec != null && !isMergeIndex) {
-          SegmentFileStore.writeSegmentFile(loadModel.getTablePath(), loadModel.getTaskNo(),
-              partitionSpec.getLocation().toString(), loadModel.getFactTimeStamp() + "",
-              partitionSpec.getPartitions());
+          // By default carbon.merge.index.in.segment is true and this code will be used for
+          // developer debugging purpose.
+          SegmentFileStore.writeSegmentFileForPartitionTable(loadModel.getTablePath(),
+              loadModel.getTaskNo(), partitionSpec.getLocation().toString(),
+              loadModel.getFactTimeStamp() + "", partitionSpec.getPartitions());
         }
       } catch (CarbonDataWriterException | IOException e) {
         mergeStatus = false;

@@ -1148,10 +1148,11 @@ public final class CarbonLoaderUtil {
    * @return
    */
   public static String mergeIndexFilesInPartitionedSegment(CarbonTable table, String segmentId,
-      String uuid, String partitionPath) {
+      String uuid, String partitionPath, boolean isOldStoreIndexFilesPresent) {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
-        .mergeCarbonIndexFilesOfSegment(segmentId, uuid, tablePath, partitionPath);
+        .mergeCarbonIndexFilesOfSegment(segmentId, uuid, tablePath, partitionPath,
+            isOldStoreIndexFilesPresent);
   }
 
   public static SegmentFileStore.FolderDetails mergeIndexFilesInPartitionedTempSegment(
@@ -1161,6 +1162,23 @@ public final class CarbonLoaderUtil {
     return new CarbonIndexFileMergeWriter(table)
         .mergeCarbonIndexFilesOfSegment(segmentId, tablePath, partitionPath, partitionInfo, uuid,
             tempFolderPath, currPartitionSpec);
+  }
+
+  /**
+   * Merge index files of segment with external path.
+   */
+  public static String mergeIndexFilesInAddLoadSegment(CarbonTable table, String segmentId,
+      String segmentPath, String uuid) {
+    try {
+      return new CarbonIndexFileMergeWriter(table)
+          .writeMergeIndexFileBasedOnSegmentFolder(null, false, segmentPath, segmentId, uuid,
+              false);
+    } catch (IOException e) {
+      String message =
+          "Failed to merge index files in path: " + segmentPath + ". " + e.getMessage();
+      LOGGER.error(message);
+      throw new RuntimeException(message, e);
+    }
   }
 
   private static void deleteFiles(List<String> filesToBeDeleted) throws IOException {

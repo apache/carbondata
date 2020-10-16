@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
@@ -43,10 +44,14 @@ import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.LocalDictionaryChunk;
 
 public class CarbonTestUtil {
@@ -159,6 +164,41 @@ public class CarbonTestUtil {
       }
     }
     return isLocalDictionaryGenerated;
+  }
+
+  public static int getSegmentFileCount(String tableName) throws IOException {
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableName);
+    CarbonFile segmentsFolder = FileFactory
+        .getCarbonFile(CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath()));
+    assert (segmentsFolder.isFileExist());
+    return segmentsFolder.listFiles(true).size();
+  }
+
+  public static int getIndexFileCount(String tableName, String segment) throws IOException {
+    return getIndexFileCount(tableName, segment, null);
+  }
+
+  public static int getIndexFileCount(String tableName,
+      String segment, String extension) throws IOException {
+    if (extension == null) {
+      extension = CarbonTablePath.INDEX_FILE_EXT;
+    }
+    CarbonTable table = CarbonMetadata.getInstance().getCarbonTable(tableName);
+    String path = CarbonTablePath
+        .getSegmentPath(table.getAbsoluteTableIdentifier().getTablePath(), segment);
+    boolean recursive = false;
+    if (table.isHivePartitionTable()) {
+      path = table.getAbsoluteTableIdentifier().getTablePath();
+      recursive = true;
+    }
+    List<CarbonFile> carbonFiles = FileFactory.getCarbonFile(path).listFiles(recursive,
+        file -> file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
+    CarbonFile[] validIndexFiles = (CarbonFile[]) SegmentFileStore
+        .getValidCarbonIndexFiles(carbonFiles.toArray(new CarbonFile[carbonFiles.size()]));
+    String finalExtension = extension;
+    return Arrays.stream(validIndexFiles).filter(file -> file.getName().endsWith(finalExtension))
+        .toArray().length;
   }
 
   public static void copy(String oldLoc, String newLoc) throws IOException {

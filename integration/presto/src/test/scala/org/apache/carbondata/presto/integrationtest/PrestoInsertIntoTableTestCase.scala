@@ -33,7 +33,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTable
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.metadata.schema.table.TableSchema
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonTestUtil, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.presto.server.PrestoServer
 import org.apache.carbondata.presto.util.CarbonDataStoreCreator
@@ -161,9 +161,7 @@ class PrestoInsertIntoTableTestCase
         file.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)
       }
     }).length == 2)
-    val segmentsPath = CarbonTablePath.getSegmentFilesLocation(tablePath)
-    assert(FileFactory.getCarbonFile(segmentsPath).isFileExist &&
-           FileFactory.getCarbonFile(segmentsPath).listFiles(true).size() == 2)
+    assert(CarbonTestUtil.getSegmentFileCount("testdb_testtable") == 2)
     val metadataFolderPath = CarbonTablePath.getMetadataPath(tablePath)
     FileFactory.getCarbonFile(metadataFolderPath).listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = {

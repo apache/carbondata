@@ -30,7 +30,6 @@ import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandExceptio
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
@@ -44,7 +43,6 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -507,16 +505,16 @@ public final class IndexStoreManager {
         UpdateVO updateVO =
             SegmentUpdateStatusManager.getInvalidTimestampRange(segment.getLoadMetadataDetails());
         SegmentRefreshInfo segmentRefreshInfo;
+        String segmentFileName = segment.getSegmentFileName();
         if ((updateVO != null && updateVO.getLatestUpdateTimestamp() != null)
-            || segment.getSegmentFileName() != null) {
-          long segmentFileTimeStamp;
-          if (null != segment.getLoadMetadataDetails()) {
-            segmentFileTimeStamp = segment.getLoadMetadataDetails().getLastModifiedTime();
-          } else {
-            segmentFileTimeStamp = FileFactory.getCarbonFile(CarbonTablePath
-                .getSegmentFilePath(table.getTablePath(), segment.getSegmentFileName()))
-                .getLastModifiedTime();
-          }
+            || segmentFileName != null) {
+          // Do not use getLastModifiedTime API on segment file carbon file object as it will
+          // slow down operation in Object stores like S3. Now the segment file is always written
+          // for operations which was overwriting earlier, so this timestamp can be checked always
+          // to check whether to refresh the cache or not.
+          long segmentFileTimeStamp = Long.parseLong(segmentFileName
+              .substring(segmentFileName.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
+                  segmentFileName.lastIndexOf(CarbonCommonConstants.POINT)));
           segmentRefreshInfo =
               new SegmentRefreshInfo(updateVO.getLatestUpdateTimestamp(), 0, segmentFileTimeStamp);
         } else {

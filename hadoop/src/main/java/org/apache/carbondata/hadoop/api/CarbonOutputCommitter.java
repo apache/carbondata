@@ -156,11 +156,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     OperationContext operationContext = (OperationContext) getOperationContext();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String uuid = "";
-    SegmentFileStore.updateTableStatusFile(carbonTable, loadModel.getSegmentId(),
-        segmentFileName + CarbonTablePath.SEGMENT_EXT,
-        carbonTable.getCarbonTableIdentifier().getTableId(),
-        new SegmentFileStore(carbonTable.getTablePath(),
-            segmentFileName + CarbonTablePath.SEGMENT_EXT));
     newMetaEntry.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newMetaEntry, SegmentStatus.SUCCESS, loadModel.getFactTimeStamp(),
@@ -267,6 +262,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         .getProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
             CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
     if (!isMergeIndex) {
+      // By default carbon.merge.index.in.segment is true and this code will be used for
+      // developer debugging purpose.
       Map<String, Set<String>> indexFileNameMap = (Map<String, Set<String>>) ObjectSerializationUtil
           .convertStringToObject(context.getConfiguration().get("carbon.index.files.name"));
       List<String> partitionList =
