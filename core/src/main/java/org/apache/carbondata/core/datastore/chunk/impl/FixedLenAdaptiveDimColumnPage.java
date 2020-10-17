@@ -21,6 +21,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -166,7 +167,8 @@ public class FixedLenAdaptiveDimColumnPage implements DimensionColumnPage {
     CarbonColumnVector vector = columnVectorInfo.vector;
     if (presenceMeta.isNullBitset() && presenceMeta.getBitSet().isEmpty()) {
       for (int j = offset; j < len; j++) {
-        vector.putInt(vectorOffset++, getDataBasedOnActualRowId(filteredRowId[j]));
+        vector.putInt(vectorOffset++,
+            getDataBasedOnActualRowId(filteredRowId[j]) - DateDirectDictionaryGenerator.cutOffDate);
       }
     } else {
       for (int j = offset; j < len; j++) {
@@ -174,7 +176,8 @@ public class FixedLenAdaptiveDimColumnPage implements DimensionColumnPage {
         if (presenceMeta.getBitSet().get(filteredIndex)) {
           vector.putNull(vectorOffset++);
         } else {
-          vector.putInt(vectorOffset++, getDataBasedOnActualRowId(filteredIndex));
+          vector.putInt(vectorOffset++,
+              getDataBasedOnActualRowId(filteredIndex) - DateDirectDictionaryGenerator.cutOffDate);
         }
       }
     }

@@ -75,6 +75,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     switch (dimensionSpec.getColumnType()) {
       case DIRECT_DICTIONARY:
         encodingList.add(Encoding.DIRECT_DICTIONARY);
+        encodingList.add(Encoding.DICTIONARY);
         return new PrimitiveTypeColumnCodec(
             dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(), DataTypes.INT,
             encodingList).createEncoder(encoderParameter);
