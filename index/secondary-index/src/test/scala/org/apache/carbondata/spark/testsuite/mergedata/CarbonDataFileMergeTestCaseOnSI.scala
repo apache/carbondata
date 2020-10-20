@@ -63,9 +63,12 @@ class CarbonDataFileMergeTestCaseOnSI
     sql("use default")
     sql("drop database if exists dataFileMerge cascade")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
       .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE,
+        CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE_DEFAULT)
   }
 
   test("Verify correctness of data file merge") {

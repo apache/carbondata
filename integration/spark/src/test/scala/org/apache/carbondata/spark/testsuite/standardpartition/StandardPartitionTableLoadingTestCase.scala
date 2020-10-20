@@ -589,7 +589,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       checkAnswer(sql("SELECT COUNT(*) FROM new_par"), Seq(Row(4)))
     } finally {
       CarbonProperties.getInstance()
-        .removeProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT)
+        .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
     }
   }
 
@@ -707,7 +708,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
 
   override def afterAll: Unit = {
-    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
+    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct",
+      CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
