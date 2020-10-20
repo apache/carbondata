@@ -1755,6 +1755,11 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
     }
 
     override def afterAll: Unit = {
+        CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+              CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
+          .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+              CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
         sqlContext.sparkSession.conf.unset("hive.exec.dynamic.partition.mode")
         sql("DROP TABLE IF EXISTS binaryTable")
         sql("DROP TABLE IF EXISTS hiveTable")

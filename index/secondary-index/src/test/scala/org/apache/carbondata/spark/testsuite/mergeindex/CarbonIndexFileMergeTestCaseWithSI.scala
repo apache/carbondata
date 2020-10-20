@@ -59,7 +59,8 @@ class CarbonIndexFileMergeTestCaseWithSI
     sql("DROP INDEX IF EXISTS nonindexmerge_index4 on nonindexmerge")
     sql("DROP INDEX IF EXISTS indexmerge_index on indexmerge")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
       .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE,
