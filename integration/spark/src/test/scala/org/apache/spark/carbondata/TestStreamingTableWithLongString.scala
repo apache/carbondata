@@ -320,7 +320,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
       """.stripMargin).collect()
 
     Thread.sleep(200)
-    sql("select * from sink").show
+    sql("select * from sink").collect()
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append)
     Thread.sleep(7000)

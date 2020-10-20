@@ -62,7 +62,7 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "true")
       checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(1000)))
-      sql(s"select * from $tableName limit 10").show
+      sql(s"select * from $tableName limit 10").collect()
       checkAnswer(sql(s"select max(intField) from $tableName"), Seq(Row(999)))
       checkAnswer(sql(s"select count(intField) from $tableName where intField >= 900"),
         Seq(Row(100)))

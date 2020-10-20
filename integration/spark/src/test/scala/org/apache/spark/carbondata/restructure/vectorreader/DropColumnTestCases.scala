@@ -101,7 +101,7 @@ class DropColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintbl")
     sql("create table maintbl (a string, b string, c struct<si:int>) STORED AS carbondata")
     assert(intercept[ProcessMetaDataException] {
-      sql("alter table maintbl drop columns(b,c)").show
+      sql("alter table maintbl drop columns(b,c)").collect()
     }.getMessage.contains("Complex column cannot be dropped"))
     sql("drop table if exists maintbl")
   }

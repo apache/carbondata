@@ -263,7 +263,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table source stored as orc as select * from fact_table1")
     sql("explain extended select empname, avg(salary) from source group by empname").collect()
     sql("create materialized view mv2 as select empname, deptname, avg(salary) from source group by empname, deptname")
-    sql("select * from mv2_table").show
+    sql("select * from mv2_table").collect()
     val df = sql("select empname, avg(salary) from source group by empname")
     sql("explain extended select empname, avg(salary) from source group by empname").collect()
     assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv2"))

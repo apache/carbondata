@@ -143,7 +143,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     // delete operation
-    sql("""delete from carbontable where c3 = 'aa'""").show
+    sql("""delete from carbontable where c3 = 'aa'""").collect()
     checkAnswer(
       sql("""select c1,c2,c3,c5 from carbon1.carbontable"""),
       Seq(Row("b", 1, "bb", "bbb"))

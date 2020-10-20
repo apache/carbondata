@@ -434,7 +434,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
     assert(result(50).getInt(0) == 100000001)
     assert(result(50).getString(1) == "batch_1")
     assert(result(50).getStruct(9).getInt(1) == 20)
-    sql("select * from streaming1.stream_table_filter_complex where id = 1").show
+    sql("select * from streaming1.stream_table_filter_complex where id = 1").collect()
     // filter
     checkAnswer(
       sql("select * from stream_table_filter_complex where id = 1"),
@@ -692,9 +692,9 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       autoHandoff = false
     )
 
-    sql("SHOW SEGMENTS FOR TABLE streaming1.stream_table_filter_complex").show
+    sql("SHOW SEGMENTS FOR TABLE streaming1.stream_table_filter_complex").collect()
     sql("ALTER TABLE streaming1.stream_table_filter_complex COMPACT 'close_streaming'")
-    sql("SHOW SEGMENTS FOR TABLE streaming1.stream_table_filter_complex").show
+    sql("SHOW SEGMENTS FOR TABLE streaming1.stream_table_filter_complex").collect()
 
   }
 

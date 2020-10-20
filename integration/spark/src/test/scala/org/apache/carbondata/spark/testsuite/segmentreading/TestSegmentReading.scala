@@ -277,7 +277,7 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
         s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE carbon_table_show_seg
             | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
       sql(
-        s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE
+        s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE carbon_table_show_seg
             | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
       sql("alter table carbon_table_show_seg compact 'major'")
       sql(

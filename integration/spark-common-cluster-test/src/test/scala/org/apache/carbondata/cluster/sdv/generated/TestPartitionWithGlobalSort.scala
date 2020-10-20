@@ -109,7 +109,7 @@ class TestPartitionWithGlobalSort extends QueryTest with BeforeAndAfterAll {
     sql(s"""INSERT OVERWRITE TABLE partition_table PARTITION (stringfield = 'Hello') SELECT * FROM partition_table_load au WHERE au.intField = 25""")
     sql(s"""INSERT OVERWRITE TABLE partition_table PARTITION (stringfield = 'Hello') SELECT * FROM partition_table_load au WHERE au.intField = 25""")
     checkAnswer(sql(s"""select floatField,stringField from partition_table limit 1"""), Seq(Row(303.301, "Hello")))
-    sql(s"""select * from partition_table""").show(truncate = false)
+    sql(s"""select * from partition_table""").collect()
     sql(s"""drop table if exists PARTITION_TABLE""")
     sql(s"""drop table if exists PARTITION_TABLE_load""")
   }

@@ -204,7 +204,7 @@ class TestIndexModelForORFilterPushDown extends QueryTest with BeforeAndAfterAll
     val query = sql(
       "select count(*) from or_filter_pushDownValidation where designation='SE' OR empname='pramod' OR workgroupcategoryname='developer' OR deptno='14' and deptname='network'")
     val df = query.queryExecution.sparkPlan
-    query.show(false)
+    query.collect()
     if (!isFilterPushedDownToSI(df)) {
       assert(false)
     } else {
@@ -219,7 +219,7 @@ class TestIndexModelForORFilterPushDown extends QueryTest with BeforeAndAfterAll
     val query = sql(
       "select count(*) from default.or_filter_pushDownValidation where designation='SE' OR empname='pramod' OR workgroupcategoryname='developer' OR deptno='14' and deptname='network'")
     val df = query.queryExecution.sparkPlan
-    query.show(false)
+    query.collect()
     if (!isFilterPushedDownToSI(df)) {
       assert(false)
     } else {

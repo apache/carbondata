@@ -273,7 +273,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       sql("clean files for table retentionlock")
     }
 
-    sql("SHOW SEGMENTS FOR TABLE retentionlock").show
+    sql("SHOW SEGMENTS FOR TABLE retentionlock").collect()
     carbonTableStatusLock.unlock()
     carbonCleanFilesLock.unlock()
     carbonDeleteSegmentLock.unlock()

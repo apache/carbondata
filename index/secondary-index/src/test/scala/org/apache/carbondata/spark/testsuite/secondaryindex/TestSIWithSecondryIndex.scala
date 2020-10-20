@@ -45,8 +45,8 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("create table table_WithSIAndAlter(c1 string, c2 date,c3 timestamp) STORED AS carbondata")
     sql("insert into table_WithSIAndAlter select 'xx',current_date, current_timestamp")
     sql("alter table table_WithSIAndAlter add columns(date1 date, time timestamp)")
-    sql("update table_WithSIAndAlter set(date1) = (c2)").show
-    sql("update table_WithSIAndAlter set(time) = (c3)").show
+    sql("update table_WithSIAndAlter set(date1) = (c2)").collect()
+    sql("update table_WithSIAndAlter set(time) = (c3)").collect()
     sql("create index si_altercolumn on table table_WithSIAndAlter(date1,time) AS 'carbondata'")
   }
 
@@ -185,7 +185,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("insert into delete_records values('k','r')")
     sql("insert into delete_records values('k','r')")
     sql("insert into delete_records values('k','r')")
-    sql("delete from delete_records where a='k'").show()
+    sql("delete from delete_records where a='k'").collect()
     sql("alter table delete_records compact 'minor'")
     sql("create index index1 on table delete_records(b) AS 'carbondata'")
     checkAnswer(sql("select count(*) from index1"), Row(0))

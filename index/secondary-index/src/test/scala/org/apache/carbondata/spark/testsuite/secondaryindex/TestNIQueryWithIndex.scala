@@ -223,7 +223,7 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
     sql(
       "select designation from testOrderBy where deptname IN ('network', " +
       "'protocol','security') OR workgroupcategoryname IN ('developer','tester','manager') " +
-      "order by designation desc limit 1").show(false)
+      "order by designation desc limit 1").collect()
     sql("drop table if exists testOrderBy")
   }
 

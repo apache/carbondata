@@ -17,15 +17,21 @@
 
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import java.io.File
+import java.util.UUID
+
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.format.TableInfo
 
 /**
  * test cases for testing create index table
  */
 class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
+
+  var path: String = s"/tmp/parquet${UUID.randomUUID().toString}"
 
   override def beforeAll {
     sql("drop table if exists carbon")
@@ -303,9 +309,10 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("create index on temp table") {
+    emptyParquetFolder()
     sql(
       "CREATE temporary table createindextemptable(id int,name string,city string,age int) using " +
-      "parquet options(path='/tmp')")
+      s"parquet options(path='${path}')")
     sql("insert into createindextemptable values(1,'string','string',3)")
     sql("insert into createindextemptable values(1,'string','string',3)")
     sql("insert into createindextemptable values(1,'string','string',3)")
@@ -326,9 +333,10 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     sql("USE temptablecheckDB")
     sql("CREATE TABLE createindextemptable1(" +
         "id int, name string, city string, age int) STORED AS CARBONDATA ")
+    emptyParquetFolder()
     sql(
       "CREATE temporary table createindextemptable1(id int,name string,city string,age int) using" +
-      " parquet options(path='/tmp')")
+      s" parquet options(path='${path}')")
     sql("insert into createindextemptable1 values(1,'string','string',3)")
     sql("insert into createindextemptable1 values(1,'string','string',3)")
     sql("insert into createindextemptable1 values(1,'string','string',3)")
@@ -383,9 +391,10 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("drop index on temp table") {
+    emptyParquetFolder()
     sql(
       "CREATE temporary table dropindextemptable(id int,name string,city string,age int) using " +
-      "parquet options(path='/tmp')")
+      s"parquet options(path='${path}')")
     sql("insert into dropindextemptable values(1,'string','string',3)")
     sql("insert into dropindextemptable values(1,'string','string',3)")
     sql("insert into dropindextemptable values(1,'string','string',3)")
@@ -403,9 +412,10 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     sql("USE temptablecheckDB")
     sql("CREATE TABLE dropindextemptable1(" +
         "id int, name string, city string, age int) STORED AS CARBONDATA")
+    emptyParquetFolder()
     sql(
       "CREATE temporary table dropindextemptable1(id int,name string,city string,age int) using " +
-      "parquet options(path='/tmp')")
+      s"parquet options(path='${path}')")
     sql("insert into dropindextemptable1 values(1,'string','string',3)")
     sql("insert into dropindextemptable1 values(1,'string','string',3)")
     sql("insert into dropindextemptable1 values(1,'string','string',3)")
@@ -454,7 +464,7 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
 
   test("test blocking secondary Index on streaming table") {
     intercept[RuntimeException] {
-      sql("""create index streamin_index on table stream_si(c3) AS 'carbondata'""").show()
+      sql("""create index streamin_index on table stream_si(c3) AS 'carbondata'""").collect()
     }
   }
 
@@ -488,6 +498,12 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  def emptyParquetFolder(): Unit = {
+    val file = new File(path)
+    FileFactory.deleteAllFilesOfDir(file)
+    file.mkdir()
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists carbon")
     sql("drop table if exists carbontable")
@@ -500,6 +516,7 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
 
     sql("drop index if exists t_ind1 on test1")
     sql("drop table if exists test1")
+    FileFactory.deleteAllFilesOfDir(new File(path))
   }
 
 }

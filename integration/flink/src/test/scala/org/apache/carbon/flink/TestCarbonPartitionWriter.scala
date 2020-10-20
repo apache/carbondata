@@ -78,10 +78,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
       environment.enableCheckpointing(2000L)
       val dataCount = 1000
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath,
-        writerProperties,
-        carbonProperties,
-        environment,
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
         source)
 
       // 1. Test "SHOW SEGMENT ON $tableanme WITH STAGE"
@@ -194,10 +191,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
 
       val dataCount = 1000
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath,
-        writerProperties,
-        carbonProperties,
-        environment,
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
         source)
 
       Thread.sleep(5000)
@@ -256,10 +250,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
           Thread.sleep(5000L)
         }
       }
-      executeStreamingEnvironment(tablePath,
-        writerProperties,
-        carbonProperties,
-        environment,
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
         source)
 
       sql(s"INSERT INTO $tableName STAGE")
@@ -294,10 +285,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
 
       val dataCount = 10
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath,
-        writerProperties,
-        carbonProperties,
-        environment,
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
         source)
 
       sql(s"INSERT INTO $tableName STAGE")
@@ -336,10 +324,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
 
       val dataCount = 10
       val source = getTestSource(dataCount)
-      executeStreamingEnvironment(tablePath,
-        writerProperties,
-        carbonProperties,
-        environment,
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment,
         source)
 
       sql(s"INSERT INTO $tableName STAGE")

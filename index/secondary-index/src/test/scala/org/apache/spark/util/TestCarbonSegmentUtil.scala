@@ -113,7 +113,7 @@ class TestCarbonSegmentUtil extends QueryTest {
     sql(s"delete from table $tableName where SEGMENT.ID in (3)")
     sql(s"delete from table $tableName where SEGMENT.ID in (2)")
     sql(s"delete from table $tableName where SEGMENT.ID in (1)")
-    sql(s"show segments for table $tableName").show(false)
+    sql(s"show segments for table $tableName").collect()
     val expected = SecondaryIndexUtil
       .identifySegmentsToBeMerged(SparkTestQueryExecutor.spark,
         tableName,

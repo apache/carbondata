@@ -1497,7 +1497,7 @@ class DataLoadingIUDTestCase
    sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
    sql(s"""Update default.t_carbn01  set (item_code) = ('Banana')""").collect
    sql(s"""delete from table default.t_carbn01  where segment.id in (2) """).collect
-   sql(s"""select item_code, count(*)  from default.t_carbn01  group by item_code""").show
+   sql(s"""select item_code, count(*)  from default.t_carbn01  group by item_code""").collect()
     checkAnswer(s"""select item_code, count(*)  from default.t_carbn01  group by item_code""",
       Seq(Row("Banana", 20)), "DataLoadingIUDTestCase_IUD-01-01-02_007-01")
      sql(s"""drop table default.t_carbn01  """).collect
@@ -1522,7 +1522,7 @@ class DataLoadingIUDTestCase
   test("IUD-01-01-02_009-01", Include) {
      sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
-    sql(s"""select item_type_cd from default.t_carbn01""").show(100, false)
+    sql(s"""select item_type_cd from default.t_carbn01""").collect()
    sql(s"""Update default.t_carbn01  set (item_code) = ('Banana')""").collect
    sql(s"""delete from t_carbn01 where item_type_cd =2""").collect
    sql(s"""delete from t_carbn01 where item_type_cd =14""").collect
@@ -1849,11 +1849,11 @@ class DataLoadingIUDTestCase
     // Check for updating carbon table set column value to a value returned by space function
     test("IUD-01-01-01_040-24", Include) {
       sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
-      sql(s"""select active_status from default.t_carbn01b""").show
-    sql(s"""select active_status from default.t_carbn01""").show
+      sql(s"""select active_status from default.t_carbn01b""").collect()
+    sql(s"""select active_status from default.t_carbn01""").collect()
 
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
-    sql(s"""select active_status from default.t_carbn01""").show(100, false)
+    sql(s"""select active_status from default.t_carbn01""").collect()
    sql(s"""update default.t_carbn01  set (active_status)= (space(1)) """).collect
     checkAnswer(s"""select count(active_status) from default.t_carbn01  group by active_status """,
       Seq(Row(10)), "DataLoadingIUDTestCase_IUD-01-01-01_040-24")

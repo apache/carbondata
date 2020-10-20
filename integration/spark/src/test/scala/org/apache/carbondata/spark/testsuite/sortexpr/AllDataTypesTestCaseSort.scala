@@ -46,7 +46,7 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='true', 'long_string_columns'='id')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
@@ -54,14 +54,14 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='false', 'long_string_columns'='id')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='true')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
@@ -69,7 +69,7 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='false')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
@@ -79,14 +79,14 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='true')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
 
     sql("create table source (id string, score int) stored as carbondata " +
         "tblproperties ('local_dictionary_enable'='false')")
     sql("insert into source values ('aaa', 123)")
-    sql("select * from source").show
+    sql("select * from source").collect()
     checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
     sql("drop table source")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,

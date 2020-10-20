@@ -636,7 +636,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
       s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimalNested.csv' into table complex_t3
         """)
-    sql("LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimalNestedHive.csv' " +
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimalNestedHive.csv' " +
         "into table complex_hive_t3")
     checkAnswer(sql("select count(*) from complex_t3"), sql("select count(*) from complex_hive_t3"))
     checkAnswer(sql("select id from complex_t3 where salary = 15000"),

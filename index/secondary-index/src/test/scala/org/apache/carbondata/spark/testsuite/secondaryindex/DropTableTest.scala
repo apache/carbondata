@@ -27,11 +27,11 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
   test("test to drop parent table with all indexes") {
     sql("drop database if exists cd cascade")
     sql("create database cd")
-    sql("show tables in cd").show()
+    sql("show tables in cd").collect()
     sql("create table cd.t1 (a string, b string, c string) STORED AS carbondata")
     sql("create index i1 on table cd.t1(c) AS 'carbondata'")
     sql("create index i2 on table cd.t1(c,b) AS 'carbondata'")
-    sql("show tables in cd").show()
+    sql("show tables in cd").collect()
     sql("drop table cd.t1")
     assert(sql("show tables in cd").collect()
       .forall(row => row.getString(1) != "i2" && row != Row("cd", "i1", "false") &&
@@ -58,7 +58,7 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
     sql("create table cd.t1 (a string, b string, c string) STORED AS carbondata")
     sql("create index i1 on table cd.t1(c) AS 'carbondata'")
     sql("create index i2 on table cd.t1(c,b) AS 'carbondata'")
-    sql("show tables in cd").show()
+    sql("show tables in cd").collect()
     sql("drop index i1 on cd.t1")
     sql("drop index i2 on cd.t1")
     assert(sql("show tables in cd").collect()

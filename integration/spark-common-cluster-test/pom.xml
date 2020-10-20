@@ -152,7 +152,7 @@
         <!-- Note config is repeated in scalatest config -->
         <configuration>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-          <argLine>-Xmx6g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m</argLine>
+          <argLine>-Xmx6g -XX:ReservedCodeCacheSize=512m</argLine>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
             <spark.carbon.hive.schema.store>${carbon.hive.based.metastore}</spark.carbon.hive.schema.store>
@@ -170,7 +170,7 @@
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>CarbonTestSuite.txt</filereports>
-          <argLine> ${argLine} -ea -Xmx5g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+          <argLine> ${argLine} -ea -Xmx5g -XX:ReservedCodeCacheSize=512m
           </argLine>
           <stderr />
           <environmentVariables>

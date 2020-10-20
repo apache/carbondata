@@ -400,7 +400,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
       s" OPTIONS" +
       s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
       s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,a6')")
-    sql("SELECT a6 FROM carbon_measure_is_null WHERE a6 IS NULL").show
+    sql("SELECT a6 FROM carbon_measure_is_null WHERE a6 IS NULL").collect()
     checkAnswer(sql("SELECT * FROM carbon_measure_is_null"),
       sql("SELECT * FROM carbon_measure_is_null WHERE a6 IS NULL"))
     checkAnswer(sql("SELECT count(*) FROM carbon_measure_is_null WHERE a6 IS NOT NULL"), Row(0))

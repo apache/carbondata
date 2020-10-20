@@ -299,7 +299,7 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
       " 'abc'"),
       Seq(Row(4)))
 
-    sql("delete from uniqdata1 where CUST_NAME='CUST_NAME_00108'").show()
+    sql("delete from uniqdata1 where CUST_NAME='CUST_NAME_00108'").collect()
 
     checkAnswer(sql(
       "select count(*) from uniqdata1 where CUST_NAME='CUST_NAME_00108' and ACTIVE_EMUI_VERSION =" +
@@ -325,7 +325,7 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
       "select count(*) from uniqdata1 where CUST_ID='9000' and ACTIVE_EMUI_VERSION = 'abc'"),
       Seq(Row(4)))
     intercept[RuntimeException] {
-      sql("update uniqdata1 d set (d.CUST_ID) = ('8000')  where d.CUST_ID = '9000'").show()
+      sql("update uniqdata1 d set (d.CUST_ID) = ('8000')  where d.CUST_ID = '9000'").collect()
     }
   }
 

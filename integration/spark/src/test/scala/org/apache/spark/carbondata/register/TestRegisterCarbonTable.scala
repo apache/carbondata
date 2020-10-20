@@ -155,7 +155,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterEach {
       restoreData(dbLocation, "carbontable")
       sql("refresh table carbontable")
       // delete operation
-      sql("""delete from carbontable where c3 = 'aa'""").show
+      sql("""delete from carbontable where c3 = 'aa'""").collect()
       checkAnswer(
         sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
         Seq(Row("b", 1, "bb", "bbb"))

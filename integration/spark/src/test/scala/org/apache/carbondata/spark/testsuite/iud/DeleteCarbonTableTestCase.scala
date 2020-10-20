@@ -48,7 +48,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("delete data from carbon table with alias [where clause ]") {
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest d where d.c1 = 'a'""").show
+    sql("""delete from iud_db.dest d where d.c1 = 'a'""").collect()
     checkAnswer(
       sql("""select c2 from iud_db.dest"""),
       Seq(Row(2), Row(3), Row(4), Row(5))
@@ -58,7 +58,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest where c2 = 2""").show
+    sql("""delete from iud_db.dest where c2 = 2""").collect()
     checkAnswer(
       sql("""select c1 from iud_db.dest"""),
       Seq(Row("a"), Row("c"), Row("d"), Row("e"))
@@ -68,7 +68,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from dest where c1 IN ('d', 'e')""").show
+    sql("""delete from dest where c1 IN ('d', 'e')""").collect()
     checkAnswer(
       sql("""select c1 from dest"""),
       Seq(Row("a"), Row("b"), Row("c"))
@@ -79,7 +79,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest a""").show
+    sql("""delete from iud_db.dest a""").collect()
     checkAnswer(
       sql("""select c1 from iud_db.dest"""),
       Seq()
@@ -124,7 +124,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       """create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED AS
         |carbondata""".stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest d where d.c1 = 'a'""").show
+    sql("""delete from iud_db.dest d where d.c1 = 'a'""").collect()
     checkAnswer(
       sql("""select c2 from iud_db.dest"""),
       Seq(Row(2), Row(3), Row(4), Row(5))
@@ -137,7 +137,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       """create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED
         |AS carbondata""".stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from iud_db.dest where c2 = 2""").show
+    sql("""delete from iud_db.dest where c2 = 2""").collect()
     checkAnswer(
       sql("""select c1 from iud_db.dest"""),
       Seq(Row("a"), Row("c"), Row("d"), Row("e"))

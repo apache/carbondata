@@ -236,8 +236,8 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
     )
 
     checkAnswer(
-      sql("select count(*) from boolean_table where intField >='${trueNum - 5}' " +
-          "and doubleField <=${trueNum + 1} and booleanField=false"),
+      sql(s"select count(*) from boolean_table where intField >='${trueNum - 5}' " +
+          s"and doubleField <=${trueNum + 1} and booleanField=false"),
       Seq(Row(2))
     )
 

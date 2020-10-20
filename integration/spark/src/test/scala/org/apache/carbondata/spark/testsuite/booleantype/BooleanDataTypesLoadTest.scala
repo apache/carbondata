@@ -190,7 +190,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
 //        Row(true, 10), Row(true, 10), Row(true, 14),
 //        Row(false, 10), Row(false, 10), Row(false, 16), Row(false, 10))
 //    )
-    sql("select * from boolean_table where dateField < '2015-01-24'").show
+    sql("select * from boolean_table where dateField < '2015-01-24'").collect()
   }
 
   test("Loading table: support boolean and other data type, with file header") {

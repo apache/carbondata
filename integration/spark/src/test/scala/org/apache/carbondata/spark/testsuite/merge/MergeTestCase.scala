@@ -1075,7 +1075,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
 
       // find the latest value for each key
       val latestChangeForEachKey = readChangeData(sqlContext.sparkSession)
-        .selectExpr("id", "struct(mdt, value, change_type) as otherCols" )
+        .selectExpr("id", "struct(mdt, value, change_type) as otherCols")
         .groupBy("id")
         .agg(max("otherCols").as("latest"))
         .selectExpr("id", "latest.*")

@@ -51,14 +51,13 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
   private val spark = sqlContext.sparkSession
   private val dataFilePath = s"$resourcesPath/streamSample.csv"
 
-  def currentPath: String = {
-    new File(this.getClass.getResource("/").getPath + "../../")
-      .getCanonicalPath
-  }
+  val currentPath: String =
+    new File(this.getClass.getResource("/").getPath + "../../").getCanonicalPath
 
   val badRecordFilePath: File = new File(currentPath + "/target/test/badRecords")
 
   override def beforeAll {
+    defaultConfig()
     badRecordFilePath.delete()
     badRecordFilePath.mkdirs()
     CarbonProperties.getInstance().addProperty(
@@ -1423,7 +1422,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
       """.stripMargin).collect()
 
     Thread.sleep(200)
-    sql("select * from sink").show
+    sql("select * from sink").collect()
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append)
     Thread.sleep(7000)
@@ -1539,7 +1538,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
         |  WHERE id % 2 = 1
       """.stripMargin).collect()
     Thread.sleep(200)
-    sql("select * from sink").show
+    sql("select * from sink").collect()
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append)
     Thread.sleep(5000)
@@ -1818,7 +1817,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     spark.createDataset(Seq((1, "alice", "india"), (2, "bob", "france"), (3, "chris", "canada")))
       .write.mode("overwrite").csv(inputDir)
     sql(s"LOAD DATA INPATH '$inputDir' INTO TABLE dim OPTIONS('header'='false')")
-    sql("SELECT * FROM dim").show
+    sql("SELECT * FROM dim").collect()
 
     var rows = sql("SHOW STREAMS").collect()
     assertResult(0)(rows.length)
@@ -1876,7 +1875,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
       """.stripMargin).collect()
 
     Thread.sleep(2000)
-    sql("select * from sink").show
+    sql("select * from sink").collect()
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append, false)
     Thread.sleep(5000)
@@ -1884,7 +1883,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     // after 2 minibatch, there should be 10 row added (filter condition: id%2=1)
     checkAnswer(sql("select count(*) from sink"), Seq(Row(20)))
 
-    sql("select * from sink order by id").show
+    sql("select * from sink order by id").collect()
     val row = sql("select * from sink order by id, salary").head()
     val exceptedRow = Row(1, "alice", "india", 120000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))
     assertResult(exceptedRow)(row)

@@ -38,11 +38,11 @@ class CarbonExtensionSuite extends QueryTest with BeforeAndAfterAll {
   test("test parser injection") {
     assert(session.sessionState.sqlParser.isInstanceOf[CarbonExtensionSqlParser])
     (carbonCommands ++ sparkCommands) foreach (command =>
-      session.sql(command).show)
+      session.sql(command).collect())
   }
 
   test("test strategy injection") {
     assert(session.sessionState.planner.strategies.filter(_.isInstanceOf[DDLStrategy]).length == 1)
-    session.sql("create table if not exists table1 (column1 String) using carbondata ").show
+    session.sql("create table if not exists table1 (column1 String) using carbondata ").collect()
   }
 }

@@ -331,10 +331,10 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | 'SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_delete")
-    sql("DELETE FROM carbon_localsort_delete WHERE id = 1").show
+    sql("DELETE FROM carbon_localsort_delete WHERE id = 1").collect()
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
-    sql("DELETE FROM carbon_globalsort WHERE id = 1").show
+    sql("DELETE FROM carbon_globalsort WHERE id = 1").collect()
 
     assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
@@ -352,11 +352,11 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_update")
 
-    sql("UPDATE carbon_localsort_update SET (name) = ('bb') WHERE id = 2").show
+    sql("UPDATE carbon_localsort_update SET (name) = ('bb') WHERE id = 2").collect()
     sql("select * from carbon_localsort_update").collect()
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("select * from carbon_globalsort").collect()
-    sql("UPDATE carbon_globalsort SET (name) = ('bb') WHERE id = 2").show
+    sql("UPDATE carbon_globalsort SET (name) = ('bb') WHERE id = 2").collect()
     sql("select * from carbon_globalsort").collect()
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
     checkAnswer(sql("SELECT name FROM carbon_globalsort WHERE id = 2"), Seq(Row("bb")))

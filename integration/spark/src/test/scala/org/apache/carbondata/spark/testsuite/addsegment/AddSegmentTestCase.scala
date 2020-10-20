@@ -564,7 +564,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into parquet_table values (30, 'amy', 12), (40, 'bob', 13)")
     sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
     sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
-    sql("select * from parquet_table").show
+    sql("select * from parquet_table").collect()
     val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("parquet_table")).location
 
@@ -618,7 +618,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into parquet_table values (30, 'amy', 12), (40, 'bob', 13)")
     sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
     sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
-    sql("select * from parquet_table").show
+    sql("select * from parquet_table").collect()
     val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("parquet_table")).location
 
@@ -652,7 +652,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into parquet_table values (30, 'amy', 12), (40, 'bob', 13)")
     sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
     sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
-    sql("select * from parquet_table").show
+    sql("select * from parquet_table").collect()
     val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("parquet_table")).location
 
@@ -678,7 +678,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into parquet_table values (30, 'amy', 12), (40, 'bob', 13)")
     sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
     sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
-    sql("select * from parquet_table").show
+    sql("select * from parquet_table").collect()
     val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("parquet_table")).location
 
@@ -710,7 +710,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table carbon_table(" +
         "value int) partitioned by (name string, age int) stored as carbondata")
     sql("insert into parquet_table values (30), (40)")
-    sql("select * from parquet_table").show
+    sql("select * from parquet_table").collect()
     val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("parquet_table")).location
 

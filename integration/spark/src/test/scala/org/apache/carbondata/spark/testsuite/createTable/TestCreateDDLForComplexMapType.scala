@@ -60,6 +60,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     createCSVFile()
     sql("DROP TABLE IF EXISTS carbon")
+    sql("DROP TABLE IF EXISTS carbon1")
   }
 
   override def afterAll(): Unit = {

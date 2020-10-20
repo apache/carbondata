@@ -6812,20 +6812,20 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
         LOAD DATA inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' INTO table minortest OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
-      """.stripMargin).show()
+      """.stripMargin).collect()
 
     sql(
       s"""
         LOAD DATA inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' INTO table minortest OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
-      """.stripMargin).show()
+      """.stripMargin).collect()
     sql(
       s"""
         LOAD DATA inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' INTO table minortest OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
-      """.stripMargin).show()
+      """.stripMargin).collect()
     sql(
       s"""
         LOAD DATA inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' INTO table minortest OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
-      """.stripMargin).show()
+      """.stripMargin).collect()
 
     sql("""alter table minortest compact 'minor'""")
     sql("DROP TABLE IF EXISTS minortest")

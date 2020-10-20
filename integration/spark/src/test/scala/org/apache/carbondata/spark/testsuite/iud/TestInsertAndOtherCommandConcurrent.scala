@@ -142,7 +142,7 @@ class TestInsertAndOtherCommandConcurrent
   ignore("update should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("update orders set (o_country)=('newCountry') where o_country='china'").show
+      sql("update orders set (o_country)=('newCountry') where o_country='china'").collect()
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
@@ -153,7 +153,7 @@ class TestInsertAndOtherCommandConcurrent
   ignore("delete should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("delete from orders where o_country='china'").show
+      sql("delete from orders where o_country='china'").collect()
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
@@ -249,7 +249,7 @@ class TestInsertAndOtherCommandConcurrent
   ignore("update should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("update orders set (o_country)=('newCountry') where o_country='china'").show
+      sql("update orders set (o_country)=('newCountry') where o_country='china'").collect()
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
@@ -260,7 +260,7 @@ class TestInsertAndOtherCommandConcurrent
   ignore("delete should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("delete from orders where o_country='china'").show
+      sql("delete from orders where o_country='china'").collect()
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(

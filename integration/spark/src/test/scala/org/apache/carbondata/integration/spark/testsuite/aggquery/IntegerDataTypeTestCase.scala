@@ -35,7 +35,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS short_table")
     sql("CREATE TABLE integertypetableAgg (empno int, workgroupcategory string, " +
         "deptno int, projectcode int, attendance int) STORED AS carbondata")
-    sql("LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE integertypetableAgg " +
+    sql(s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE integertypetableAgg " +
         "OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')")
   }
 
