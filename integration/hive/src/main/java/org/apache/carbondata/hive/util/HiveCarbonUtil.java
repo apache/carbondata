@@ -127,6 +127,7 @@ public class HiveCarbonUtil {
           AbsoluteTableIdentifier.from(location, databaseName, tableName, "");
       if (FileFactory.getCarbonFile(schemaFilePath).exists()) {
         carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
+        carbonTable.setTransactionalTable(true);
       } else {
         String carbonDataFile = CarbonUtil.getFilePathExternalFilePath(location, configuration);
         if (carbonDataFile == null) {
@@ -137,7 +138,7 @@ public class HiveCarbonUtil {
           carbonTable = CarbonTable.buildFromTableInfo(
               SchemaReader.inferSchema(absoluteTableIdentifier, false, configuration));
         }
-        carbonTable.setTransactionalTable(true);
+        carbonTable.setTransactionalTable(false);
       }
     } catch (SQLException | IOException e) {
       throw new RuntimeException("Unable to fetch schema for the table: " + tableName, e);

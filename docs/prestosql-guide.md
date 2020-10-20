@@ -284,9 +284,20 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
     
 ### Generate CarbonData file
 
-Please refer to quick start: https://github.com/apache/carbondata/blob/master/docs/quick-start-guide.md.
-Load data statement in Spark can be used to create carbondata tables. And then you can easily find the created
+There are two ways to create the carbondata files to query from presto.
+1. Please refer to quick start: https://github.com/apache/carbondata/blob/master/docs/quick-start-guide.md.
+Load data statement in Spark can be used to create carbondata tables and then you can easily find the created
 carbondata files.
+2. Carbondata supports writing the transactional data to table using the insert command. The folder
+structure will be similar to what we have for spark. Table can be created from spark, then data can
+be inserted from presto and queried from presto. 
+
+Data can be inserted in two ways.
+1. ``` insert into target_carbon_table select values('a,b,c');```
+2. ```insert into target_carbon_table select * from source_table;```
+
+Note: Load Carbon properties are not yet supported. The insert will work with all the default
+configurations.
 
 ### Query carbondata in CLI of presto
 * Download presto cli client of version 316 : https://repo1.maven.org/maven2/io/prestosql/presto-cli/

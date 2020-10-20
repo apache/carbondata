@@ -79,7 +79,10 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     prestoServer.execute("drop table if exists testdb.testtable")
     prestoServer.execute("drop schema if exists testdb")
     prestoServer.execute("create schema testdb")
-    prestoServer.execute("create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4), dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='CARBON') ")
+    prestoServer.execute(
+      "create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype " +
+      "varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4)" +
+      ", dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='CARBON') ")
     CarbonDataStoreCreator
       .createCarbonStore(storePath,
         s"$rootPath/integration/presto/src/test/resources/alldatatype.csv")

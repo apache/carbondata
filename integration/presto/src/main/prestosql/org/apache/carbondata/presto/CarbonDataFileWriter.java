@@ -47,6 +47,7 @@ import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.hive.ql.io.IOConstants;
 import org.apache.hadoop.hive.ql.io.parquet.serde.ArrayWritableObjectInspector;
 import org.apache.hadoop.hive.serde2.SerDeException;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.io.Text;
@@ -55,10 +56,12 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.prestosql.plugin.hive.HiveErrorCode.HIVE_WRITER_CLOSE_ERROR;
 import static io.prestosql.plugin.hive.HiveErrorCode.HIVE_WRITER_DATA_ERROR;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.COMPRESSRESULT;
+import static org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory.getStandardStructObjectInspector;
 
 /**
  * This class implements HiveFileWriter and it creates the carbonFileWriter to write the page data
@@ -95,7 +98,10 @@ public class CarbonDataFileWriter implements HiveFileWriter {
     this.fieldCount = columnNames.size();
     this.serDe = new CarbonHiveSerDe();
     serDe.initialize(configuration, properties);
-    this.tableInspector = (ArrayWritableObjectInspector) serDe.getObjectInspector();
+    List<ObjectInspector> objectInspectors = fileColumnTypes.stream()
+        .map(HiveWriteUtils::getRowColumnInspector)
+        .collect(toList());
+    this.tableInspector = getStandardStructObjectInspector(columnNames, objectInspectors);
 
     this.structFields =
         ImmutableList.copyOf(inputColumnNames.stream().map(tableInspector::getStructFieldRef)
@@ -139,6 +145,7 @@ public class CarbonDataFileWriter implements HiveFileWriter {
 
   @Override
   public long getSystemMemoryUsage() {
+    // TODO: need to support this, Jira CARBONDATA-4038 is created
     return 0;
   }
 
@@ -178,11 +185,17 @@ public class CarbonDataFileWriter implements HiveFileWriter {
 
   @Override
   public void rollback() {
-    throw new UnsupportedOperationException("Operation Not Supported");
+    try {
+      recordWriter.close(true);
+    } catch (Exception e) {
+      LOG.error("Error while closing the record writer during rollback", e);
+      throw new PrestoException(HIVE_WRITER_CLOSE_ERROR, "Error rolling back write to Hive", e);
+    }
   }
 
   @Override
   public long getValidationCpuNanos() {
+    // TODO: need to support this, Jira CARBONDATA-4038 is created
     return 0;
   }
 }

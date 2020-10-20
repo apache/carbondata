@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
+import org.apache.carbondata.hive.CarbonHiveSerDe;
 import org.apache.carbondata.hive.MapredCarbonInputFormat;
 import org.apache.carbondata.hive.MapredCarbonOutputFormat;
 import org.apache.carbondata.presto.impl.CarbonTableConfig;
@@ -180,15 +181,16 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
   /**
    * Set the Carbon format enum to HiveStorageFormat, its a hack but for time being it is best
    * choice to avoid lot of code change.
-   *
-   * @throws Exception
    */
   private static void setCarbonEnum() throws Exception {
-    for (HiveStorageFormat format : HiveStorageFormat.values()) {
-      if (format.name().equals("CARBON")) {
-        return;
-      }
-    }
+    addHiveStorageFormatsForCarbondata("CARBON");
+    addHiveStorageFormatsForCarbondata("ORG.APACHE.CARBONDATA.FORMAT");
+    addHiveStorageFormatsForCarbondata("CARBONDATA");
+  }
+
+  private static void addHiveStorageFormatsForCarbondata(String storedAs)
+      throws InstantiationException, InvocationTargetException, NoSuchFieldException,
+      IllegalAccessException, NoSuchMethodException {
     Constructor<?>[] declaredConstructors = HiveStorageFormat.class.getDeclaredConstructors();
     declaredConstructors[0].setAccessible(true);
     Field constructorAccessorField = Constructor.class.getDeclaredField("constructorAccessor");
@@ -201,17 +203,8 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
       acquireConstructorAccessorMethod.setAccessible(true);
       ca = (ConstructorAccessor) acquireConstructorAccessorMethod.invoke(declaredConstructors[0]);
     }
-    addHiveStorageFormatsForCarbondata(ca, "CARBONDATA");
-    addHiveStorageFormatsForCarbondata(ca, "ORG.APACHE.CARBONDATA.FORMAT");
-    addHiveStorageFormatsForCarbondata(ca, "CARBON");
-    return;
-  }
-
-  private static void addHiveStorageFormatsForCarbondata(ConstructorAccessor ca, String storedAs)
-      throws InstantiationException, InvocationTargetException, NoSuchFieldException,
-      IllegalAccessException {
     Object instance = ca.newInstance(new Object[] { storedAs, HiveStorageFormat.values().length,
-        "org.apache.hadoop.hive.serde2.LazySimpleSerde", MapredCarbonInputFormat.class.getName(),
+        CarbonHiveSerDe.class.getName(), MapredCarbonInputFormat.class.getName(),
         MapredCarbonOutputFormat.class.getName(), new DataSize(256.0D, DataSize.Unit.MEGABYTE) });
     Field values = HiveStorageFormat.class.getDeclaredField("$VALUES");
     values.setAccessible(true);

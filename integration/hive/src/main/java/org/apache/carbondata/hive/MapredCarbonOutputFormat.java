@@ -102,9 +102,13 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
       SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmm");
       String jobTrackerId = formatter.format(new Date());
       taskAttemptID = new TaskAttemptID(jobTrackerId, 0, TaskType.MAP, 0, 0);
+      // update the app name here, as in this class by default it will written by Hive
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "presto");
+    } else {
+      carbonLoadModel.setTaskNo("" + taskAttemptID.getTaskID().getId());
     }
     TaskAttemptContextImpl context = new TaskAttemptContextImpl(jc, taskAttemptID);
-    carbonLoadModel.setTaskNo("" + taskAttemptID.getTaskID().getId());
     final boolean isHivePartitionedTable =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable();
     PartitionInfo partitionInfo =
