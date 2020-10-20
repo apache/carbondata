@@ -533,14 +533,11 @@ private class CarbonOutputWriter(path: String,
 
   // TODO Implement write support interface to support writing Row directly to record writer
   def writeCarbon(row: InternalRow): Unit = {
-    val numOfColumns = nonPartitionFieldTypes.length + partitionData.length
+    val numOfColumns = nonPartitionFieldTypes.length
     val data: Array[AnyRef] = CommonUtil.getObjectArrayFromInternalRowAndConvertComplexType(
       row,
       nonPartitionFieldTypes,
       numOfColumns)
-    if (partitionData.length > 0) {
-      System.arraycopy(partitionData, 0, data, nonPartitionFieldTypes.length, partitionData.length)
-    }
     writable.set(data)
     recordWriter.write(NullWritable.get(), writable)
   }
@@ -656,7 +653,9 @@ object CarbonOutputWriter {
         updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
         model.getCarbonDataLoadSchema.getCarbonTable)
       val partitionString = formattedPartitions.map { p =>
-        ExternalCatalogUtils.escapePathName(p._1) + "=" + ExternalCatalogUtils.escapePathName(p._2)
+        val escaped = ExternalCatalogUtils.escapePathName(p._2)
+        ExternalCatalogUtils.unescapePathName(escaped)
+        ExternalCatalogUtils.escapePathName(p._1) + "=" + escaped
       }.mkString(CarbonCommonConstants.FILE_SEPARATOR)
       model.getCarbonDataLoadSchema.getCarbonTable.getTablePath +
       CarbonCommonConstants.FILE_SEPARATOR + partitionString

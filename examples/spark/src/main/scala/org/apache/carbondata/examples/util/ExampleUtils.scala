@@ -93,6 +93,8 @@ object ExampleUtils {
       .config("spark.driver.host", "localhost")
       .config("spark.sql.crossJoin.enabled", "true")
       .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .config(CarbonCommonConstants.HIVE_CONNECTION_URL,
+        s"jdbc:derby:;databaseName=$rootPath/examples/spark/target/metastore_db;create=true")
       .enableHiveSupport()
       .getOrCreate()
     CarbonEnv.getInstance(spark)

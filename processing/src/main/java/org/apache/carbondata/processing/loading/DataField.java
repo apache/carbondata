@@ -31,6 +31,13 @@ public class DataField implements Serializable {
     this.column = column;
   }
 
+  public DataField(CarbonColumn column, boolean isPartitionField) {
+    this.column = column;
+    this.isPartitionField = isPartitionField;
+  }
+
+  private boolean isPartitionField;
+
   private CarbonColumn column;
 
   private String dateFormat;
@@ -65,6 +72,10 @@ public class DataField implements Serializable {
 
   public boolean isUseActualData() {
     return useActualData;
+  }
+
+  public boolean isPartitionField() {
+    return isPartitionField;
   }
 
   public void setUseActualData(boolean useActualData) {

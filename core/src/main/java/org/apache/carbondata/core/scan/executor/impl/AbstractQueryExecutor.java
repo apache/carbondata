@@ -440,11 +440,20 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     RestructureUtil.actualProjectionOfSegment(blockExecutionInfo, queryModel, segmentProperties);
     // below is to get only those dimension in query which is present in the
     // table block
+    int partitionColumnSize;
+    if (blockExecutionInfo.getProjectionPartitionColumns() == null) {
+      partitionColumnSize = 0;
+    } else {
+      partitionColumnSize = blockExecutionInfo.getProjectionPartitionColumns().size();
+    }
     List<ProjectionDimension> projectDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             blockExecutionInfo.getActualQueryDimensions(), segmentProperties.getDimensions(),
             segmentProperties.getComplexDimensions(),
-            blockExecutionInfo.getActualQueryMeasures().length,
+            // adding partition length to measure to ensure the array is created with appropriate
+            // size. measure count is not used anywhere else in the method so wont affect the
+            // functionality.
+            blockExecutionInfo.getActualQueryMeasures().length + partitionColumnSize,
             queryModel.getTable().getTableInfo().isTransactionalTable());
     boolean isStandardTable = CarbonUtil.isStandardCarbonTable(queryModel.getTable());
     String blockId = CarbonUtil
@@ -464,6 +473,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryModel.getTable().getTableInfo().isTransactionalTable());
     blockExecutionInfo.setProjectionMeasures(
         projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
+    blockExecutionInfo.setProjectionPartitionColumns(queryModel.getPartitionProjectionColumns());
     blockExecutionInfo.setDataBlock(blockIndex);
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());

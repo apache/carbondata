@@ -458,9 +458,14 @@ object CommonLoadUtils {
       catalogAttributes.find(_.name.equalsIgnoreCase(a.name)).get
     })
     attributes = attributes.map { attr =>
-      // Update attribute data types in case of dictionary columns, in case of dictionary columns
+      val isPartitionColumn = catalogTable.partitionColumnNames.contains(attr.name)
+      // Update attribute datatypes in case of dictionary columns, in case of dictionary columns
       // datatype is always int
-      val column = table.getColumnByName(attr.name)
+      val column = if (isPartitionColumn) {
+        table.getPartitionColumn(attr.name)
+      } else {
+        table.getColumnByName(attr.name)
+      }
       val updatedDataType = if (column.getDataType ==
                                 org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
         IntegerType
@@ -500,13 +505,6 @@ object CommonLoadUtils {
       }.filter(attr => lowerCasePartition.getOrElse(attr.name.toLowerCase, None).isEmpty)
     } else {
       catalogTable.schema.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get)
-    }
-    // Rearrange the partition column at the end of output list
-    if (catalogTable.partitionColumnNames.nonEmpty &&
-        (loadModel.getCarbonDataLoadSchema.getCarbonTable.isMV) && output.nonEmpty) {
-      val partitionOutPut =
-        catalogTable.partitionColumnNames.map(col => output.find(_.name.equalsIgnoreCase(col)).get)
-      output = output.filterNot(partitionOutPut.contains(_)) ++ partitionOutPut
     }
     val partitionsLen = updatedRdd.partitions.length
 
@@ -652,7 +650,12 @@ object CommonLoadUtils {
     val metastoreSchema =
       if (optionsOriginal.contains(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS)) {
       StructType(catalogTable.schema.fields.map{f =>
-        val column = table.getColumnByName(f.name)
+        val isPartitionColumn = catalogTable.partitionColumnNames.contains(f.name)
+        val column = if (isPartitionColumn) {
+          table.getPartitionColumn(f.name)
+        } else {
+          table.getColumnByName(f.name)
+        }
         val updatedDataType = if (column.getDataType ==
                                   org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
           IntegerType
@@ -669,7 +672,12 @@ object CommonLoadUtils {
       })
     } else {
       StructType(catalogTable.schema.fields.map{f =>
-        val column = table.getColumnByName(f.name)
+        val isPartitionColumn = catalogTable.partitionColumnNames.contains(f.name)
+        val column = if (isPartitionColumn) {
+          table.getPartitionColumn(f.name)
+        } else {
+          table.getColumnByName(f.name)
+        }
         val updatedDataType = if (column.getDataType ==
                                   org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
           IntegerType
@@ -695,9 +703,6 @@ object CommonLoadUtils {
     var partitionSchema =
       StructType(table.getPartitionInfo.getColumnSchemaList.asScala.map(field =>
         metastoreSchema.fields.find(_.name.equalsIgnoreCase(field.getColumnName))).map(_.get))
-    val dataSchema =
-      StructType(metastoreSchema
-        .filterNot(field => partitionSchema.contains(field)))
     if (partition.nonEmpty) {
       partitionSchema = StructType(partitionSchema.fields.map(_.copy(dataType = StringType)))
     }
@@ -730,7 +735,7 @@ object CommonLoadUtils {
     val hdfsRelation = HadoopFsRelation(
       location = catalog,
       partitionSchema = partitionSchema,
-      dataSchema = dataSchema,
+      dataSchema = metastoreSchema,
       bucketSpec = catalogTable.bucketSpec,
       fileFormat = new SparkCarbonTableFormat,
       options = options.toMap)(sparkSession = sparkSession)
@@ -871,6 +876,7 @@ object CommonLoadUtils {
       // get only the visible dimensions from table
       allCols ++= table.getVisibleDimensions.asScala.map(_.getColName)
       allCols ++= table.getVisibleMeasures.asScala.map(_.getColName)
+      allCols ++= table.getPartitionInfo.getColumnSchemaList.asScala.map(_.getColumnName)
       StructType(
         allCols.filterNot(_.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)).map(
           StructField(_, StringType))).toAttributes

@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.loading;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,8 @@ import org.apache.carbondata.core.util.DataLoadMetrics;
 public class CarbonDataLoadConfiguration {
 
   private DataField[] dataFields;
+
+  private List<DataField> partitionFields = new ArrayList<>();
 
   private AbsoluteTableIdentifier tableIdentifier;
 
@@ -142,6 +145,26 @@ public class CarbonDataLoadConfiguration {
       if (column.isMeasure()) {
         measureCount++;
       }
+    }
+  }
+
+  public void setPartitionFields(List<DataField> partitionFields) {
+    this.partitionFields = partitionFields;
+  }
+
+  public List<DataField> getPartitionFields() {
+    return partitionFields;
+  }
+
+  public DataField[] getInputFields() {
+    if (!partitionFields.isEmpty()) {
+      DataField[] inputFields =
+          Arrays.copyOf(dataFields, dataFields.length + partitionFields.size());
+      System.arraycopy(partitionFields.toArray(), 0, inputFields, dataFields.length,
+          partitionFields.size());
+      return inputFields;
+    } else {
+      return getDataFields();
     }
   }
 

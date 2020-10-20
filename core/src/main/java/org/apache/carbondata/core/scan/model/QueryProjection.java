@@ -19,8 +19,10 @@ package org.apache.carbondata.core.scan.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 
@@ -46,6 +48,8 @@ public class QueryProjection {
    */
   private List<ProjectionMeasure> measures =
       new ArrayList<ProjectionMeasure>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+
+  private List<ProjectionColumn> partitionColumns = new ArrayList<>();
   /**
    * Constructor created with database name and table name.
    *
@@ -66,6 +70,17 @@ public class QueryProjection {
     this.dimensions.add(queryDimension);
   }
 
+  public void addPartition(CarbonColumn dimension, int queryOrdinal) {
+    ProjectionColumn projectionColumn = new ProjectionColumn(dimension.getColName());
+    projectionColumn.setOrdinal(queryOrdinal);
+    projectionColumn.setDataType(dimension.getDataType());
+    this.partitionColumns.add(projectionColumn);
+  }
+
+  public List<ProjectionColumn> getPartitionColumns() {
+    return partitionColumns;
+  }
+
   /**
    * @return the measures
    */
@@ -79,4 +94,14 @@ public class QueryProjection {
     this.measures.add(queryMeasure);
   }
 
+  @Override
+  public String toString() {
+    List<String> allProjections =
+        dimensions.stream().map(ProjectionColumn::getColumnName).collect(Collectors.toList());
+    allProjections.addAll(
+        measures.stream().map(ProjectionColumn::getColumnName).collect(Collectors.toList()));
+    allProjections.addAll(partitionColumns.stream().map(ProjectionColumn::getColumnName)
+        .collect(Collectors.toList()));
+    return String.join(",", allProjections);
+  }
 }

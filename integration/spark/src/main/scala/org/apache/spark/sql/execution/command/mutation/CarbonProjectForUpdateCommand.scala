@@ -75,7 +75,11 @@ private[sql] case class CarbonProjectForUpdateCommand(
     // Do not allow spatial index and its source columns to be updated.
     AlterTableUtil.validateColumnsWithSpatialIndexProperties(carbonTable, columns)
     columns.foreach { col =>
-      val dataType = carbonTable.getColumnByName(col).getColumnSchema.getDataType
+      val dataType = if (carbonTable.getPartitionColumn(col) != null) {
+        carbonTable.getPartitionColumn(col).getColumnSchema.getDataType
+      } else {
+        carbonTable.getColumnByName(col).getColumnSchema.getDataType
+      }
       if (dataType.isComplexType) {
         throw new UnsupportedOperationException("Unsupported operation on Complex data type")
       }

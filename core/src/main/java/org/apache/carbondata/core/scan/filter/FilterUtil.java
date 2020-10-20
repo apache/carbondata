@@ -188,23 +188,29 @@ public final class FilterUtil {
           return new FalseFilterExecutor();
         case ROWLEVEL:
         default:
-          if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
-            FilterExecutor filterExecutor =
-                ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
-                    .getFilterExecutor(filterExpressionResolverTree, segmentProperties);
-            if (filterExecutor != null) {
-              return filterExecutor;
+          RowLevelFilterResolverImpl rowLevelFilterResolver =
+              (RowLevelFilterResolverImpl) filterExpressionResolverTree;
+          if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
+              rowLevelFilterResolver.getDimColEvaluatorInfoList(),
+              rowLevelFilterResolver.getMsrColEvalutorInfoList(), segmentProperties,
+              minMaxCacheColumns, isStreamDataFile)) {
+            return new TrueFilterExecutor();
+          } else {
+            if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
+              FilterExecutor filterExecutor =
+                  ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
+                      .getFilterExecutor(filterExpressionResolverTree, segmentProperties);
+              if (filterExecutor != null) {
+                return filterExecutor;
+              }
             }
+            return new RowLevelFilterExecutorImpl(
+                rowLevelFilterResolver.getDimColEvaluatorInfoList(),
+                rowLevelFilterResolver.getMsrColEvalutorInfoList(),
+                rowLevelFilterResolver.getFilterExpresion(),
+                rowLevelFilterResolver.getTableIdentifier(), segmentProperties,
+                complexDimensionInfoMap);
           }
-          return new RowLevelFilterExecutorImpl(
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
-                  .getDimColEvaluatorInfoList(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
-                  .getMsrColEvalutorInfoList(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-              segmentProperties, complexDimensionInfoMap);
-
       }
     }
     return new RowLevelFilterExecutorImpl(
@@ -288,11 +294,15 @@ public final class FilterUtil {
           checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
               minMaxCacheColumns, true, isStreamDataFile);
     } else {
-      columnResolvedFilterInfo = dimColEvaluatorInfoList.get(0);
-      if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
-        replaceCurrentNodeWithTrueFilter =
-            checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
-                minMaxCacheColumns, false, isStreamDataFile);
+      if (dimColEvaluatorInfoList.isEmpty()) {
+        replaceCurrentNodeWithTrueFilter = true;
+      } else {
+        columnResolvedFilterInfo = dimColEvaluatorInfoList.get(0);
+        if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+          replaceCurrentNodeWithTrueFilter =
+              checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
+                  minMaxCacheColumns, false, isStreamDataFile);
+        }
       }
     }
     return replaceCurrentNodeWithTrueFilter;
@@ -320,6 +330,7 @@ public final class FilterUtil {
               minMaxCacheColumns, true, isStreamDataFile);
     } else {
       columnResolvedFilterInfo = filterExpressionResolverTree.getDimColResolvedFilterInfo();
+
       if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         replaceCurrentNodeWithTrueFilter =
             checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,

@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.scan.model;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
+
 /**
  * Contains information for a column for projection
  */
@@ -26,6 +28,8 @@ public class ProjectionColumn {
    * name of the column
    */
   protected String columnName;
+
+  protected DataType dataType;
 
   /**
    * query order in which result of the query will be send
@@ -48,6 +52,14 @@ public class ProjectionColumn {
    */
   public int getOrdinal() {
     return projectionOrdinal;
+  }
+
+  public DataType getDataType() {
+    return dataType;
+  }
+
+  public void setDataType(DataType dataType) {
+    this.dataType = dataType;
   }
 
   /**

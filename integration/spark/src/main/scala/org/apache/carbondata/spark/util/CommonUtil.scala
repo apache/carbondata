@@ -492,8 +492,13 @@ object CommonUtil {
     CSVInputFormat.setSkipEmptyLine(configuration, carbonLoadModel.getSkipEmptyLine)
     CSVInputFormat.setEscapeCharacter(configuration, carbonLoadModel.getEscapeChar)
     CSVInputFormat.setMaxColumns(configuration, carbonLoadModel.getMaxColumns)
-    CSVInputFormat.setNumberOfColumns(configuration, carbonLoadModel.getCsvHeaderColumns.length
-      .toString)
+    val partitionInfo = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getPartitionInfo
+    CSVInputFormat.setNumberOfColumns(configuration, (
+      if (partitionInfo == null) {
+        0
+      } else {
+        partitionInfo.getColumnSchemaList.size()
+      }).toString)
     CSVInputFormat.setHeaderExtractionEnabled(configuration,
       carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty)
     CSVInputFormat.setQuoteCharacter(configuration, carbonLoadModel.getQuoteChar)

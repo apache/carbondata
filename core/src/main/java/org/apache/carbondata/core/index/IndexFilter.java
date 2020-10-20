@@ -154,6 +154,10 @@ public class IndexFilter implements Serializable {
           exists = true;
         }
       }
+      if (table.getPartitionInfo() != null && !exists) {
+        exists = table.getPartitionInfo().getColumnSchemaList().stream()
+            .anyMatch(x -> x.getColumnName().equalsIgnoreCase(colExpression));
+      }
       if (!exists) {
         throw new RuntimeException(
             "Column " + colExpression + " not found in table " + table.getTableUniqueName());
@@ -242,13 +246,13 @@ public class IndexFilter implements Serializable {
     if (properties != null) {
       processVO =
           new QueryModel.FilterProcessVO(properties.getDimensions(), properties.getMeasures(),
-              new ArrayList<CarbonDimension>());
+              new ArrayList<CarbonDimension>(), table.getPartitionColumns());
     } else {
       processVO =
           new QueryModel.FilterProcessVO(
               table.getVisibleDimensions(),
               table.getVisibleMeasures(),
-              table.getImplicitDimensions());
+              table.getImplicitDimensions(), table.getPartitionColumns());
     }
     QueryModel.processFilterExpression(processVO, expression, isFilterDimensions, isFilterMeasures,
         table);

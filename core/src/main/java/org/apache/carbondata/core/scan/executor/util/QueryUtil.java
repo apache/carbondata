@@ -351,10 +351,12 @@ public class QueryUtil {
   private static void addColumnDimensions(Expression expression,
       Set<CarbonDimension> filterDimensions, Set<CarbonMeasure> filterMeasure) {
     if (null != expression && expression instanceof ColumnExpression) {
-      if (((ColumnExpression) expression).isDimension()) {
-        filterDimensions.add(((ColumnExpression) expression).getDimension());
-      } else {
-        filterMeasure.add((CarbonMeasure) ((ColumnExpression) expression).getCarbonColumn());
+      if (!((ColumnExpression) expression).isPartition()) {
+        if (((ColumnExpression) expression).isDimension()) {
+          filterDimensions.add(((ColumnExpression) expression).getDimension());
+        } else {
+          filterMeasure.add((CarbonMeasure) ((ColumnExpression) expression).getCarbonColumn());
+        }
       }
     } else if (null != expression) {
       for (Expression child : expression.getChildren()) {

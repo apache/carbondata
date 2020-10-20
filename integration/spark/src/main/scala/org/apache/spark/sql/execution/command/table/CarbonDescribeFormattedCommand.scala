@@ -33,7 +33,7 @@ import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.PartitionInfo
+import org.apache.carbondata.core.metadata.schema.partition.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -216,7 +216,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     //////////////////////////////////////////////////////////////////////////////
     // Partition Information
     //////////////////////////////////////////////////////////////////////////////
-    val partitionInfo = carbonTable.getPartitionInfo()
+    val partitionInfo = carbonTable.getPartitionInfo
     if (partitionInfo != null) {
       results ++= Seq(
         ("", "", ""),

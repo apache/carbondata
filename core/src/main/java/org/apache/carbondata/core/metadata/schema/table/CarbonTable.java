@@ -45,10 +45,10 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
-import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
+import org.apache.carbondata.core.metadata.schema.partition.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -103,6 +103,8 @@ public class CarbonTable implements Serializable, Writable {
 
   // All measure columns including visible columns and implicit columns
   private List<CarbonMeasure> allMeasures;
+
+  private List<CarbonColumn> partitionColumns = new ArrayList<>();
 
   /**
    * list of column drift
@@ -364,6 +366,12 @@ public class CarbonTable implements Serializable, Writable {
             new CarbonMeasure(columnSchema, measureOrdinal++, columnSchema.getSchemaOrdinal()));
       }
     }
+    if (tableSchema.getPartitionInfo() != null) {
+      for (ColumnSchema columnSchema : tableSchema.getPartitionInfo().getColumnSchemaList()) {
+        CarbonColumn carbonColumn = new CarbonColumn(columnSchema, -1, -1);
+        partitionColumns.add(carbonColumn);
+      }
+    }
     fillVisibleDimensions();
     fillVisibleMeasures();
     addImplicitDimension(dimensionOrdinal, implicitDimensions);
@@ -586,6 +594,18 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
+   * Get particular measure
+   */
+  public CarbonColumn getPartitionColumn(String columnName) {
+    for (CarbonColumn partitionColumn : partitionColumns) {
+      if (partitionColumn.getColName().equalsIgnoreCase(columnName)) {
+        return partitionColumn;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Get particular dimension
    */
   public CarbonDimension getDimensionByName(String columnName) {
@@ -677,11 +697,6 @@ public class CarbonTable implements Serializable, Writable {
     return partition;
   }
 
-  public boolean isPartitionTable() {
-    return null != partition
-        && partition.getPartitionType() != PartitionType.NATIVE_HIVE;
-  }
-
   public boolean isHivePartitionTable() {
     PartitionInfo partitionInfo = partition;
     return null != partitionInfo && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE;
@@ -743,6 +758,13 @@ public class CarbonTable implements Serializable, Writable {
    */
   public List<CarbonDimension> getAllDimensions() {
     return allDimensions;
+  }
+
+  /**
+   * return all allDimensions in the table
+   */
+  public List<CarbonColumn> getPartitionColumns() {
+    return partitionColumns;
   }
 
   /**

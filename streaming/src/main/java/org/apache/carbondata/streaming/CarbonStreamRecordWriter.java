@@ -162,10 +162,10 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
   private void initializeAtFirstRow() throws IOException {
     // initialize parser and converter
-    rowParser = new RowParserImpl(dataFields, configuration);
+    rowParser = new RowParserImpl(configuration.getInputFields(), configuration);
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     converter =
-        new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger, true);
+        new RowConverterImpl(configuration.getInputFields(), configuration, badRecordLogger, true);
     converter.initialize();
 
     // initialize data writer and compressor

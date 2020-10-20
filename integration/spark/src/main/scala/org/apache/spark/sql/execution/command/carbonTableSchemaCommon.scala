@@ -37,6 +37,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, DatabaseLoc
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
+import org.apache.carbondata.core.metadata.schema.partition.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
@@ -644,6 +645,23 @@ class TableNewProcessor(cm: TableModel) {
     var index = 0
     var measureCount = 0
 
+    if (cm.sortKeyDims.isDefined) {
+      cm.sortKeyDims.get.foreach {
+        sortCol =>
+          cm.partitionInfo match {
+            case Some(partitionInfo) =>
+              if (partitionInfo.getColumnSchemaList
+                .asScala
+                .map(_.getColumnName)
+                .contains(sortCol)) {
+                throw new UnsupportedOperationException(
+                  "Partition columns cannot configured as sort columns")
+              }
+            case None =>
+          }
+      }
+    }
+
     // Sort columns should be at the begin of all columns
     cm.sortKeyDims.get.foreach { keyDim =>
       val field = cm.dimCols.find(keyDim equals _.column).get
@@ -693,8 +711,8 @@ class TableNewProcessor(cm: TableModel) {
     cm.msrCols.foreach { field =>
       // if aggregate function is defined in case of pre-aggregate and agg function is sum or avg
       // then it can be stored as measure
-      var isAggFunPresent = false
-      // getting the encoder from main table so whatever encoding is applied in main table
+      val isAggFunPresent = false
+      // getting the encoder from maintable so whatever encoding is applied in maintable
       // same encoder can be applied on aggregate table
       val encoders = new java.util.ArrayList[Encoding]()
 
@@ -797,16 +815,7 @@ class TableNewProcessor(cm: TableModel) {
         new BucketingInfo(bucketCols.asJava, cm.bucketFields.get.numberOfBuckets))
     }
     if (cm.partitionInfo.isDefined) {
-      val partitionInfo = cm.partitionInfo.get
-      val partitionColumnSchema = partitionInfo.getColumnSchemaList.asScala
-      val partitionCols = allColumns.filter { column =>
-        partitionColumnSchema.exists(_.getColumnName.equalsIgnoreCase(column.getColumnName))
-      }
-      val orderCols =
-        partitionColumnSchema.map(
-          f => partitionCols.find(_.getColumnName.equalsIgnoreCase(f.getColumnName)).get).asJava
-      partitionInfo.setColumnSchemaList(orderCols)
-      tableSchema.setPartitionInfo(partitionInfo)
+      tableSchema.setPartitionInfo(cm.partitionInfo.get)
     }
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)

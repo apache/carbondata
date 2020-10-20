@@ -377,7 +377,7 @@ object CarbonFilters {
   }
 
   def getStorageOrdinal(filter: Filter, carbonTable: CarbonTable): Int = {
-    val column = filter.references.map(carbonTable.getColumnByName)
+    val column = filter.references.map(carbonTable.getColumnByName).filter(_ != null)
     if (column.isEmpty) {
       -1
     } else {

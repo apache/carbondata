@@ -100,6 +100,7 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
       // fill dimension data
       fillDimensionData(scannedResult, collectedData, queryMeasures, availableBatchRowCount);
       fillMeasureData(scannedResult, collectedData);
+      fillPartitionData(scannedResult.getBlockletId(), collectedData.toArray());
       // increment the number of rows scanned in scanned result statistics
       incrementScannedResultRowCounter(scannedResult, availableBatchRowCount);
       // assign the left over rows to batch size if the number of rows fetched are lesser

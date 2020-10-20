@@ -66,6 +66,7 @@ public class RowIdBasedResultCollector extends DictionaryBasedResultCollector {
       }
       row[columnCount + 2] = scannedResult.getCurrentRowId();
       fillMeasureData(scannedResult, row);
+      fillPartitionData(scannedResult.getBlockletId(), row);
       listBasedResult.add(row);
       rowCounter++;
     }

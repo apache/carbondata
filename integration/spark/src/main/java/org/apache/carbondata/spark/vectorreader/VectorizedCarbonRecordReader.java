@@ -29,6 +29,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -55,8 +56,10 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSour
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnVectorUtils;
 import org.apache.spark.sql.types.DecimalType;
+import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.util.SparkUtil;
 
 /**
  * A specialized RecordReader that reads into InternalRows or ColumnarBatches directly using the
@@ -320,7 +323,25 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   }
 
   private void initBatch() {
-    initBatch(DEFAULT_MEMORY_MODE, new StructType(), InternalRow.empty());
+    String relativePath = this.queryModel.getTableBlockInfos().get(0).getFilePath()
+        .substring(queryModel.getTable().getTablePath().length() + 1);
+    StructType partitionColumns = new StructType();
+    List<String> partitionValues = new ArrayList<>();
+    for (CarbonColumn projectionColumn : queryModel.getTable().getPartitionColumns()) {
+      CarbonColumn partitionCarbonColumn =
+          queryModel.getTable().getPartitionColumn(projectionColumn.getColName());
+      org.apache.spark.sql.types.DataType sparkDataType = CarbonSparkDataSourceUtil
+          .convertCarbonToSparkDataType(partitionCarbonColumn.getDataType());
+      partitionColumns = partitionColumns.add(
+          new StructField(partitionCarbonColumn.getColName(), sparkDataType, true,
+              Metadata.empty()));
+      int partitionIndex = relativePath.indexOf(projectionColumn.getColName() + "=");
+      partitionValues.add(relativePath.substring(
+          relativePath.indexOf(projectionColumn.getColName() + "=") + projectionColumn.getColName()
+              .length() + 1, relativePath.indexOf("/", partitionIndex)));
+    }
+    initBatch(DEFAULT_MEMORY_MODE, partitionColumns,
+        SparkUtil.convertToInternalRow(partitionValues, partitionColumns));
   }
 
   private void resultBatch() {

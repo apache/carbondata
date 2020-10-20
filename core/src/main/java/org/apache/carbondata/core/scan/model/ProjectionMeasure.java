@@ -33,6 +33,7 @@ public class ProjectionMeasure extends ProjectionColumn {
 
   public ProjectionMeasure(CarbonMeasure measure) {
     super(measure.getColName());
+    this.dataType = measure.getDataType();
     this.measure = measure;
   }
 

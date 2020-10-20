@@ -216,11 +216,13 @@ public class CarbonLoadModelBuilder {
         if (StringUtils.isEmpty(fileHeader)) {
           List<CarbonColumn> columns = table.getCreateOrderColumn();
           List<String> columnNames = new ArrayList<>();
-          List<String> partitionColumns = new ArrayList<>();
+          List<CarbonColumn> partitionColumns = table.getPartitionColumns();
           for (int i = 0; i < columns.size(); i++) {
             columnNames.add(columns.get(i).getColName());
           }
-          columnNames.addAll(partitionColumns);
+          for (int i = 0; i < partitionColumns.size(); i++) {
+            columnNames.add(partitionColumns.get(i).getColName());
+          }
           fileHeader = Strings.mkString(columnNames.toArray(new String[columnNames.size()]), ",");
         }
       }
@@ -283,6 +285,10 @@ public class CarbonLoadModelBuilder {
           ignoreColumns.add(partition.getKey());
         }
       }
+      //      ignoreColumns.addAll(
+      //          carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getPartitionInfo()
+      //              .getColumnSchemaList().stream().map(ColumnSchema::getColumnName)
+      //              .collect(Collectors.toList()));
     }
 
     carbonLoadModel.setCsvHeaderColumns(

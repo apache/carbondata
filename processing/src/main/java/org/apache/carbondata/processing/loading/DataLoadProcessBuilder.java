@@ -34,7 +34,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
@@ -248,12 +247,15 @@ public final class DataLoadProcessBuilder {
     List<DataField> partitionColumns = new ArrayList<>();
     if (loadModel.isLoadWithoutConverterWithoutReArrangeStep()) {
       // To avoid, reArranging of the data for each row, re arrange the schema itself.
-      getReArrangedDataFields(loadModel, carbonTable, dimensions, measures, complexDataFields,
-          partitionColumns, dataFields);
+      getReArrangedDataFields(loadModel, dimensions, measures, complexDataFields, dataFields);
     } else {
       getDataFields(loadModel, dimensions, measures, complexDataFields, dataFields);
       dataFields = updateDataFieldsBasedOnSortColumns(dataFields);
     }
+    for (CarbonColumn partitionColumn : carbonTable.getPartitionColumns()) {
+      partitionColumns.add(new DataField(partitionColumn, true));
+    }
+    configuration.setPartitionFields(partitionColumns);
     configuration.setDataFields(dataFields.toArray(new DataField[0]));
     configuration.setBucketingInfo(carbonTable.getBucketingInfo());
     configuration.setBucketHashMethod(carbonTable.getBucketHashMethod());
@@ -315,17 +317,10 @@ public final class DataLoadProcessBuilder {
     }
   }
 
-  private static void getReArrangedDataFields(CarbonLoadModel loadModel, CarbonTable carbonTable,
+  private static void getReArrangedDataFields(CarbonLoadModel loadModel,
       List<CarbonDimension> dimensions, List<CarbonMeasure> measures,
-      List<DataField> complexDataFields, List<DataField> partitionColumns,
+      List<DataField> complexDataFields,
       List<DataField> dataFields) {
-    // re-arrange the data fields, as partition column data will be present in the end
-    List<ColumnSchema> partitionColumnSchemaList;
-    if (carbonTable.getPartitionInfo() != null) {
-      partitionColumnSchemaList = carbonTable.getPartitionInfo().getColumnSchemaList();
-    } else {
-      partitionColumnSchemaList = new ArrayList<>();
-    }
     // 1.1 compatibility, dimensions will not have sort columns in the beginning in 1.1.
     // Need to keep at the beginning now
     List<DataField> sortDataFields = new ArrayList<>();
@@ -342,12 +337,7 @@ public final class DataLoadProcessBuilder {
             childDimension.setTimestampFormat(loadModel.getTimestampFormat());
           }
         }
-        if (partitionColumnSchemaList.size() != 0 && partitionColumnSchemaList
-            .contains(column.getColumnSchema())) {
-          partitionColumns.add(dataField);
-        } else {
-          complexDataFields.add(dataField);
-        }
+        complexDataFields.add(dataField);
       } else {
         if (column.getDataType() == DataTypes.DATE) {
           dataField.setDateFormat(loadModel.getDateFormat());
@@ -356,15 +346,10 @@ public final class DataLoadProcessBuilder {
           dataField.setTimestampFormat(loadModel.getTimestampFormat());
           column.setTimestampFormat(loadModel.getTimestampFormat());
         }
-        if (partitionColumnSchemaList.size() != 0 && partitionColumnSchemaList
-            .contains(column.getColumnSchema())) {
-          partitionColumns.add(dataField);
+        if (dataField.getColumn().getColumnSchema().isSortColumn()) {
+          sortDataFields.add(dataField);
         } else {
-          if (dataField.getColumn().getColumnSchema().isSortColumn()) {
-            sortDataFields.add(dataField);
-          } else {
-            noSortDataFields.add(dataField);
-          }
+          noSortDataFields.add(dataField);
         }
       }
     }
@@ -378,29 +363,10 @@ public final class DataLoadProcessBuilder {
       dataFields.addAll(complexDataFields);
     }
     for (CarbonColumn column : measures) {
-      if (partitionColumnSchemaList.size() != 0 && partitionColumnSchemaList
-          .contains(column.getColumnSchema())) {
-        partitionColumns.add(new DataField(column));
-      } else {
-        // This dummy measure is added when no measure was present. We no need to load it.
-        if (!(column.getColName().equals("default_dummy_measure"))) {
-          dataFields.add(new DataField(column));
-        }
+      // This dummy measure is added when no measure was present. We no need to load it.
+      if (!(column.getColName().equals("default_dummy_measure"))) {
+        dataFields.add(new DataField(column));
       }
-    }
-    if (partitionColumns.size() != 0) {
-      // add partition columns at the end
-      // re-arrange the partition columns as per column schema
-      List<DataField> reArrangedPartitionColumns = new ArrayList<>();
-      for (ColumnSchema col : partitionColumnSchemaList) {
-        for (DataField field : partitionColumns) {
-          if (field.getColumn().getColumnSchema().equals(col)) {
-            reArrangedPartitionColumns.add(field);
-            break;
-          }
-        }
-      }
-      dataFields.addAll(reArrangedPartitionColumns);
     }
   }
 

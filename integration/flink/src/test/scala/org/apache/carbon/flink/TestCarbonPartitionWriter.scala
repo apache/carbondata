@@ -44,6 +44,20 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
   val tableName = "test_flink_partition"
   val dataTempPath = targetTestClass + "/data/temp/"
 
+  test("partition column should not configure as sort column") {
+    sql(s"DROP TABLE IF EXISTS $tableName")
+    intercept[UnsupportedOperationException] {
+      sql(
+        s"""
+           | CREATE TABLE $tableName (stringField string, intField int, shortField short,
+           | stringField1 string)
+           | STORED AS carbondata
+           | PARTITIONED BY (hour_ string)
+           | TBLPROPERTIES ('SORT_COLUMNS'='hour_, stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    }
+  }
+
   test("Writing flink data to local partition carbon table") {
     createPartitionTable
     try {
@@ -214,7 +228,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
          | structField struct<value1:string,value2:int,value3:int>, binaryField struct<value1:binary>)
          | STORED AS carbondata
          | PARTITIONED BY (hour_ string, date_ string)
-         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES ('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin
     ).collect()
     try {
@@ -359,7 +373,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
          | CREATE TABLE $tableName (stringField string, intField int, shortField short, stringField1 string)
          | STORED AS carbondata
          | PARTITIONED BY (hour_ string)
-         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES ('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
   }
 
