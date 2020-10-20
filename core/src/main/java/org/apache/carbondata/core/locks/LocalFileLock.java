@@ -81,7 +81,10 @@ public class LocalFileLock extends AbstractCarbonLock {
       if (!FileFactory.isFileExist(lockFilePath)) {
         FileFactory.createNewLockFile(lockFilePath);
       }
-
+      if (channel != null) {
+        CarbonUtil.closeStreams(channel);
+        channel = null;
+      }
       channel = FileChannel.open(Paths.get(lockFilePath), StandardOpenOption.WRITE,
           StandardOpenOption.APPEND);
       try {

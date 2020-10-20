@@ -137,6 +137,7 @@ class QueryTest extends PlanTest {
     CarbonProperties.getInstance()
       .addProperty("enable.unsafe.sort", "true")
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_AUDIT, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false")
       .removeProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
       .removeProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE)
     sqlContext.setConf("enable.unsafe.sort", "true")

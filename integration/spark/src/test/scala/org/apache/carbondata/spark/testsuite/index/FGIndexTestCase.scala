@@ -583,9 +583,9 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
 //    sql("DROP TABLE IF EXISTS normal_test")
 //    sql("DROP TABLE IF EXISTS index_test")
 //    sql("DROP TABLE IF EXISTS index_testFG")
-//    CarbonProperties.getInstance()
-//      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-//        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
   // scalastyle:on ???
 }

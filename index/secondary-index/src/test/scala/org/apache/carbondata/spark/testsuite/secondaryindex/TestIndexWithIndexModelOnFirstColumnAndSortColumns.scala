@@ -42,6 +42,7 @@ class TestIndexWithIndexModelOnFirstColumnAndSortColumns extends QueryTest with 
   }
 
   override def afterAll {
-    sql("drop table if exists orders")
+    sql("drop index if exists sc_indx1 on seccust")
+    sql("drop table if exists seccust")
   }
 }

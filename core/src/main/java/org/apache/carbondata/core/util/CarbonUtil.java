@@ -2409,10 +2409,12 @@ public final class CarbonUtil {
           LOGGER.error("Not able to acquire the lock for Table status update for table");
         }
       } finally {
-        if (carbonLock.unlock()) {
-          LOGGER.debug("Table unlocked successfully after table status update");
-        } else {
-          LOGGER.error("Unable to unlock Table lock for table during table status update");
+        if (updateSize) {
+          if (carbonLock.unlock()) {
+            LOGGER.debug("Table unlocked successfully after table status update");
+          } else {
+            LOGGER.error("Unable to unlock Table lock for table during table status update");
+          }
         }
       }
     }
