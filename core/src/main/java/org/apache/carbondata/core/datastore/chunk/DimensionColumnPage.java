@@ -17,8 +17,7 @@
 
 package org.apache.carbondata.core.datastore.chunk;
 
-import java.util.BitSet;
-
+import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -98,7 +97,7 @@ public interface DimensionColumnPage {
    * @param compareValue value to compare
    * @return compare result
    */
-  int compareTo(int rowId, byte[] compareValue);
+  int compareTo(int rowId, Object compareValue);
 
   /**
    * below method will be used to free the allocated memory
@@ -112,7 +111,10 @@ public interface DimensionColumnPage {
 
   /**
    * to get the null bit sets in case of adaptive encoded page
+   * method return presence meta which represents
+   * rowid for which values are null or not null
+   * @return
    */
-  BitSet getNullBits();
+  PresenceMeta getPresentMeta();
 
 }

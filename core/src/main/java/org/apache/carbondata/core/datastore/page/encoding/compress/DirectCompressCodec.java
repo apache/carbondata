@@ -66,8 +66,14 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
   boolean isComplexPrimitiveIntLengthEncoding = false;
 
+  boolean isDirectDictionary = false;
+
   public void setComplexPrimitiveIntLengthEncoding(boolean complexPrimitiveIntLengthEncoding) {
     isComplexPrimitiveIntLengthEncoding = complexPrimitiveIntLengthEncoding;
+  }
+
+  public void setIsDirectDictionary(boolean isDirectDictionary) {
+    this.isDirectDictionary = isDirectDictionary;
   }
 
   @Override
@@ -76,7 +82,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
   }
 
   @Override
-  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+  public ColumnPageEncoder createEncoder(Map<String, Object> parameter) {
     return new ColumnPageEncoder() {
 
       @Override
@@ -108,7 +114,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
     return new ColumnPageDecoder() {
 
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length) {
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isRLEEncoded,
+          int rlePageLength) {
         ColumnPage decodedPage;
         if (DataTypes.isDecimal(dataType)) {
           decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
@@ -122,7 +129,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
-          ReusableDataBuffer reusableDataBuffer) {
+          ReusableDataBuffer reusableDataBuffer, boolean isRLEEncoded, int rlePageLength) {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         int uncompressedLength;
@@ -159,7 +166,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
       }
 
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded) {
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded,
+          boolean isRLEEncoded, int rlePageLength) {
         return LazyColumnPage.newPage(ColumnPage
             .decompress(meta, input, offset, length, isLVEncoded,
                 isComplexPrimitiveIntLengthEncoding), converter);
@@ -416,8 +424,15 @@ public class DirectCompressCodec implements ColumnPageCodec {
         if (pageDataType == DataTypes.INT) {
           int size = pageSize * intSizeInBytes;
           if (vectorDataType == DataTypes.INT) {
-            for (int i = 0; i < size; i += intSizeInBytes) {
-              vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+            if (isDirectDictionary) {
+              for (int i = 0; i < size; i += intSizeInBytes) {
+                vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i)
+                    - DateDirectDictionaryGenerator.cutOffDate);
+              }
+            } else {
+              for (int i = 0; i < size; i += intSizeInBytes) {
+                vector.putInt(rowId++, ByteUtil.toIntLittleEndian(pageData, i));
+              }
             }
           } else if (vectorDataType == DataTypes.LONG) {
             for (int i = 0; i < size; i += intSizeInBytes) {

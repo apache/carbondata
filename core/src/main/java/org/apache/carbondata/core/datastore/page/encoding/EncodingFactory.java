@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -38,6 +39,7 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
@@ -59,14 +61,14 @@ public abstract class EncodingFactory {
    * Return new encoder for specified column
    */
   public abstract ColumnPageEncoder createEncoder(TableSpec.ColumnSpec columnSpec,
-      ColumnPage inputPage);
+      ColumnPage inputPage, Map<String, Object> encoderParameter);
 
   /**
    * Return new decoder based on encoder metadata read from file
    */
   public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas,
       String compressor) throws IOException {
-    return createDecoder(encodings, encoderMetas, compressor, false);
+    return createDecoder(encodings, encoderMetas, compressor, false, null);
   }
 
   /**
@@ -80,11 +82,13 @@ public abstract class EncodingFactory {
    * @throws IOException
    */
   public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas,
-      String compressor, boolean fullVectorFill) throws IOException {
+      String compressor, boolean fullVectorFill, CarbonDictionary dictionary) throws IOException {
     assert (encodings.size() >= 1);
     assert (encoderMetas.size() == 1);
     boolean isComplexPrimitiveIntLengthEncoding =
         encodings.contains(Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY);
+    boolean isDirectDictionary =
+        encodings.contains(Encoding.DIRECT_DICTIONARY);
     Encoding encoding = encodings.get(0);
     byte[] encoderMeta = encoderMetas.get(0).array();
     ByteArrayInputStream stream = new ByteArrayInputStream(encoderMeta);
@@ -95,6 +99,7 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       DirectCompressCodec directCompressCodec =
           new DirectCompressCodec(metadata.getStoreDataType());
+      directCompressCodec.setIsDirectDictionary(isDirectDictionary);
       directCompressCodec.setComplexPrimitiveIntLengthEncoding(isComplexPrimitiveIntLengthEncoding);
       return directCompressCodec.createDecoder(metadata);
     } else if (encoding == ADAPTIVE_INTEGRAL) {
@@ -103,14 +108,14 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveIntegralCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
-          stats, encodings.contains(Encoding.INVERTED_INDEX)).createDecoder(metadata);
+          stats, dictionary).createDecoder(metadata);
     } else if (encoding == ADAPTIVE_DELTA_INTEGRAL) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveDeltaIntegralCodec(metadata.getSchemaDataType(),
-          metadata.getStoreDataType(), stats, encodings.contains(Encoding.INVERTED_INDEX))
+          metadata.getStoreDataType(), stats, dictionary, isDirectDictionary)
           .createDecoder(metadata);
     } else if (encoding == ADAPTIVE_FLOATING) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
@@ -118,14 +123,14 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveFloatingCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
-          stats, encodings.contains(Encoding.INVERTED_INDEX)).createDecoder(metadata);
+          stats).createDecoder(metadata);
     } else if (encoding == ADAPTIVE_DELTA_FLOATING) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveDeltaFloatingCodec(metadata.getSchemaDataType(),
-          metadata.getStoreDataType(), stats, encodings.contains(Encoding.INVERTED_INDEX))
+          metadata.getStoreDataType(), stats)
           .createDecoder(metadata);
     } else if (encoding == RLE_INTEGRAL) {
       RLEEncoderMeta metadata = new RLEEncoderMeta();

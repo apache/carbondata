@@ -21,25 +21,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.ByteUtil;
 
-public abstract class BlockIndexerStorage<T> {
+public abstract class PageIndexGenerator<T> {
 
-  protected short[] rowIdPage;
+  short[] invertedIndex;
 
   protected short[] rowIdRlePage;
 
-  protected T dataPage;
-
   protected short[] dataRlePage;
 
+  private boolean alreadySorted;
+
   public short[] getRowIdPage() {
-    return rowIdPage;
+    return invertedIndex;
   }
 
   public int getRowIdPageLengthInBytes() {
-    if (rowIdPage != null) {
-      return rowIdPage.length * CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+    if (invertedIndex != null) {
+      return invertedIndex.length * CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
     } else {
       return 0;
     }
@@ -57,9 +56,9 @@ public abstract class BlockIndexerStorage<T> {
     }
   }
 
-  public T getDataPage() {
-    return dataPage;
-  }
+  public abstract T getDataPage();
+
+  public abstract int[] getLength();
 
   public short[] getDataRlePage() {
     return dataRlePage;
@@ -110,25 +109,28 @@ public abstract class BlockIndexerStorage<T> {
       list.add(rowIds[i - 1]);
     }
     if ((((list.size() + map.size()) * 100) / rowIds.length) > 70) {
-      this.rowIdPage = rowIds;
+      this.invertedIndex = rowIds;
       this.rowIdRlePage = new short[0];
     } else {
-      this.rowIdPage = convertToArray(list);
+      this.invertedIndex = convertToArray(list);
       this.rowIdRlePage = convertToArray(map);
+    }
+    if (invertedIndex.length == 2 && rowIdRlePage.length == 1) {
+      alreadySorted = true;
     }
   }
 
   /**
    * apply RLE(run-length encoding) on byte array data page
    */
-  protected byte[][] rleEncodeOnData(byte[][] dataPage) {
+  protected Object[] rleEncodeOnData(Object[] dataPage) {
     List<Short> map = new ArrayList<>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    List<byte[]> list = new ArrayList<>(dataPage.length / 2);
+    List<Object> list = new ArrayList<>(dataPage.length / 2);
     list.add(dataPage[0]);
     short counter = 1;
     short startIdx = 0;
     for (int i = 1; i < dataPage.length; i++) {
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataPage[i - 1], dataPage[i]) != 0) {
+      if (dataPage[i - 1] != dataPage[i]) {
         list.add(dataPage[i]);
         map.add(startIdx);
         map.add(counter);
@@ -159,11 +161,18 @@ public abstract class BlockIndexerStorage<T> {
     return shortArray;
   }
 
-  private byte[][] convertToDataPage(List<byte[]> list) {
-    byte[][] shortArray = new byte[list.size()][];
+  private Object[] convertToDataPage(List<Object> list) {
+    Object[] shortArray = new Object[list.size()];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i);
     }
     return shortArray;
+  }
+
+  /**
+   * @return the alreadySorted
+   */
+  public boolean isAlreadySorted() {
+    return alreadySorted;
   }
 }

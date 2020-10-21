@@ -17,8 +17,7 @@
 
 package org.apache.carbondata.core.datastore.chunk.impl;
 
-import java.util.BitSet;
-
+import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 
@@ -53,7 +52,7 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
   }
 
   @Override
-  public BitSet getNullBits() {
+  public PresenceMeta getPresentMeta() {
     return null;
   }
 
@@ -93,9 +92,9 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    * @return compare result
    */
   @Override
-  public int compareTo(int rowId, byte[] compareValue) {
+  public int compareTo(int rowId, Object compareValue) {
     // TODO Auto-generated method stub
-    return dataChunkStore.compareTo(rowId, compareValue);
+    return dataChunkStore.compareTo(rowId, (byte[])compareValue);
   }
 
   /**

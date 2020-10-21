@@ -33,6 +33,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.BinaryTypeDimColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.LocalDictAdaptiveDimColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -451,7 +453,9 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
           record[dimColumnEvaluatorInfo.getRowIndex()] = dateDictionaryGenerator
               .getValueFromSurrogate(ByteUtil.toInt(columnDataChunk.getChunkData(index), 0));
         } else if (columnDataChunk instanceof VariableLengthDimensionColumnPage
-            || columnDataChunk instanceof ColumnPageWrapper) {
+            || columnDataChunk instanceof ColumnPageWrapper
+            || columnDataChunk instanceof BinaryTypeDimColumnPage
+            || columnDataChunk instanceof LocalDictAdaptiveDimColumnPage) {
 
           byte[] memberBytes = columnDataChunk.getChunkData(index);
           if (null != memberBytes) {

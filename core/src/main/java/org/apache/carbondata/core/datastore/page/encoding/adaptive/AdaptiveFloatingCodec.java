@@ -41,7 +41,6 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -53,10 +52,11 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
   private double factor;
   private float floatFactor;
+  private ColumnPage encodedPage;
 
   public AdaptiveFloatingCodec(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, boolean isInvertedIndex) {
-    super(srcDataType, targetDataType, stats, isInvertedIndex);
+      SimpleStatsResult stats) {
+    super(srcDataType, targetDataType, stats);
     this.factor = Math.pow(10, stats.getDecimalCount());
     this.floatFactor = (float) factor;
   }
@@ -67,22 +67,22 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
   }
 
   @Override
-  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+  public ColumnPageEncoder createEncoder(Map<String, Object> parameter) {
     return new ColumnPageEncoder() {
-      ByteBuffer result = null;
       @Override
       protected ByteBuffer encodeData(ColumnPage input) throws IOException {
         if (encodedPage != null) {
           throw new IllegalStateException("already encoded");
         }
+        encodedPage = ColumnPage.newPage(
+            new ColumnPageEncoderMeta(input.getColumnPageEncoderMeta().getColumnSpec(),
+                targetDataType, input.getColumnPageEncoderMeta().getCompressorName()),
+            input.getPageSize());
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(input.getColumnCompressorName());
-        result = encodeAndCompressPage(input, converter, compressor);
-        ByteBuffer bytes = writeInvertedIndexIfRequired(result);
+        input.convertValue(converter);
+        ByteBuffer result = encodedPage.compress(compressor);
         encodedPage.freeMemory();
-        if (bytes.limit() != 0) {
-          return bytes;
-        }
         return result;
       }
 
@@ -90,9 +90,6 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       protected List<Encoding> getEncodingList() {
         List<Encoding> encodings = new ArrayList<Encoding>();
         encodings.add(Encoding.ADAPTIVE_FLOATING);
-        if (null != indexStorage && indexStorage.getRowIdPageLengthInBytes() > 0) {
-          encodings.add(Encoding.INVERTED_INDEX);
-        }
         return encodings;
       }
 
@@ -102,11 +99,6 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
             inputPage.getColumnCompressorName());
       }
 
-      @Override
-      protected void fillLegacyFields(DataChunk2 dataChunk) {
-        fillLegacyFieldsIfRequired(dataChunk, result);
-      }
-
     };
   }
 
@@ -114,7 +106,8 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length) {
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isRLEEncoded,
+          int rlePageLength) {
         ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false, false);
         return LazyColumnPage.newPage(page, converter);
       }
@@ -122,7 +115,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
-          ReusableDataBuffer reusableDataBuffer) {
+          ReusableDataBuffer reusableDataBuffer, boolean isRLEEncoded, int rlePageLength) {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         byte[] unCompressData;
@@ -138,8 +131,9 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       }
 
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded) {
-        return decode(input, offset, length);
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded,
+          boolean isRLEEncoded, int rlePageLength) {
+        return decode(input, offset, length, isRLEEncoded, rlePageLength);
       }
     };
   }

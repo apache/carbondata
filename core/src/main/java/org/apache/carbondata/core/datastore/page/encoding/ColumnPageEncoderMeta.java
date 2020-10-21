@@ -158,7 +158,8 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
         out.writeInt(-1);
         out.writeInt(-1);
       }
-    } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY) {
+    } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY
+        || dataType == DataTypes.STRING) {
       // for complex type, it will come here, ignoring stats for complex type
       // TODO: support stats for complex type
     } else {

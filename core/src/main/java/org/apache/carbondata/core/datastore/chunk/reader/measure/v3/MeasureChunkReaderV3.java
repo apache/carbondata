@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
+import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -228,6 +229,9 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
       return null;
     }
     decodedPage.setNullBits(nullBitSet);
+    PresenceMeta presenceMeta = new PresenceMeta(pageMetadata.presence.represents_presence,
+        QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
+    decodedPage.setPresenceMeta(presenceMeta);
     return decodedPage;
   }
 
@@ -242,15 +246,17 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
     String compressorName =
         CarbonMetadataUtil.getCompressorNameFromChunkMeta(pageMetadata.getChunk_meta());
-    ColumnPageDecoder codec =
-        encodingFactory.createDecoder(encodings, encoderMetas, compressorName, vectorInfo != null);
+    ColumnPageDecoder codec = encodingFactory
+        .createDecoder(encodings, encoderMetas, compressorName, vectorInfo != null, null);
     if (vectorInfo != null) {
       codec.decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
-          nullBitSet, false, pageMetadata.numberOfRowsInpage, reusableDataBuffer);
+          nullBitSet, false, pageMetadata.numberOfRowsInpage, reusableDataBuffer,
+          false, pageMetadata.rle_page_length);
       return null;
     } else {
       return codec
-          .decode(pageData.array(), offset, pageMetadata.data_page_length);
+          .decode(pageData.array(), offset, pageMetadata.data_page_length, false,
+              pageMetadata.rle_page_length);
     }
   }
 }

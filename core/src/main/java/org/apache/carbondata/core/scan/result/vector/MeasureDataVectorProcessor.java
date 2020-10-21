@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.result.vector;
 import java.math.BigDecimal;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.blocklet.PresenceMeta;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -42,8 +43,9 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putInt(vectorOffset, (int)dataChunk.getLong(i));
           vectorOffset++;
@@ -67,8 +69,9 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
           vector.putInt(vectorOffset, (int)dataChunk.getLong(currentRow));
@@ -99,8 +102,9 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putBoolean(vectorOffset, dataChunk.getBoolean(i));
           vectorOffset++;
@@ -124,8 +128,9 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
           vector.putBoolean(vectorOffset, dataChunk.getBoolean(currentRow));
@@ -153,8 +158,9 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putShort(vectorOffset, (short) dataChunk.getLong(i));
           vectorOffset++;
@@ -178,8 +184,9 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
           vector.putShort(vectorOffset, (short) dataChunk.getLong(currentRow));
@@ -207,8 +214,9 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putLong(vectorOffset, dataChunk.getLong(i));
           vectorOffset++;
@@ -232,8 +240,9 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
           vector.putLong(vectorOffset, dataChunk.getLong(currentRow));
@@ -263,19 +272,30 @@ public class MeasureDataVectorProcessor {
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
       int newMeasureScale = info.measure.getMeasure().getScale();
-      BitSet nullBitSet = dataChunk.getNullBits();
-      for (int i = offset; i < len; i++) {
-        if (nullBitSet.get(i)) {
-          vector.putNull(vectorOffset);
-        } else {
-          BigDecimal decimal =
-              dataChunk.getDecimal(i);
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
+        for (int i = offset; i < len; i++) {
+          BigDecimal decimal = dataChunk.getDecimal(i);
           if (decimal.scale() < newMeasureScale) {
             decimal = decimal.setScale(newMeasureScale);
           }
           vector.putDecimal(vectorOffset, decimal, precision);
+          vectorOffset++;
         }
-        vectorOffset++;
+      } else {
+        for (int i = offset; i < len; i++) {
+          if (nullBitSet.get(i)) {
+            vector.putNull(vectorOffset);
+          } else {
+            BigDecimal decimal = dataChunk.getDecimal(i);
+            if (decimal.scale() < newMeasureScale) {
+              decimal = decimal.setScale(newMeasureScale);
+            }
+            vector.putDecimal(vectorOffset, decimal, precision);
+          }
+          vectorOffset++;
+        }
       }
     }
 
@@ -287,19 +307,33 @@ public class MeasureDataVectorProcessor {
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
-      BitSet nullBitSet = dataChunk.getNullBits();
-      for (int i = offset; i < len; i++) {
-        int currentRow = filteredRowId[i];
-        if (nullBitSet.get(currentRow)) {
-          vector.putNull(vectorOffset);
-        } else {
+      int newMeasureScale = info.measure.getMeasure().getScale();
+      BitSet nullBitSet = dataChunk.getPresenceMeta().getBitSet();
+      boolean isNullBitset = dataChunk.getPresenceMeta().isNullBitset();
+      if (isNullBitset && nullBitSet.isEmpty()) {
+        for (int i = offset; i < len; i++) {
+          int currentRow = filteredRowId[i];
           BigDecimal decimal = dataChunk.getDecimal(currentRow);
-          if (info.measure.getMeasure().getScale() > decimal.scale()) {
-            decimal = decimal.setScale(info.measure.getMeasure().getScale());
+          if (decimal.scale() < newMeasureScale) {
+            decimal = decimal.setScale(newMeasureScale);
           }
           vector.putDecimal(vectorOffset, decimal, precision);
+          vectorOffset++;
         }
-        vectorOffset++;
+      } else {
+        for (int i = offset; i < len; i++) {
+          int currentRow = filteredRowId[i];
+          if (nullBitSet.get(currentRow)) {
+            vector.putNull(vectorOffset);
+          } else {
+            BigDecimal decimal = dataChunk.getDecimal(currentRow);
+            if (decimal.scale() < newMeasureScale) {
+              decimal = decimal.setScale((newMeasureScale));
+            }
+            vector.putDecimal(vectorOffset, decimal, precision);
+          }
+          vectorOffset++;
+        }
       }
     }
   }
@@ -312,15 +346,15 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      PresenceMeta presenceMeta = dataChunk.getPresenceMeta();
+      if (presenceMeta.isNullBitset() && presenceMeta.getBitSet().isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putFloat(vectorOffset, dataChunk.getFloat(i));
           vectorOffset++;
         }
       } else {
         for (int i = offset; i < len; i++) {
-          if (nullBitSet.get(i)) {
+          if (presenceMeta.getBitSet().get(i)) {
             vector.putNull(vectorOffset);
           } else {
             vector.putFloat(vectorOffset, dataChunk.getFloat(i));
@@ -337,8 +371,8 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      PresenceMeta presenceMeta = dataChunk.getPresenceMeta();
+      if (presenceMeta.isNullBitset() && presenceMeta.getBitSet().isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
           vector.putFloat(vectorOffset, dataChunk.getFloat(currentRow));
@@ -347,7 +381,7 @@ public class MeasureDataVectorProcessor {
       } else {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
-          if (nullBitSet.get(currentRow)) {
+          if (presenceMeta.getBitSet().get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
             vector.putFloat(vectorOffset, dataChunk.getFloat(currentRow));
@@ -366,15 +400,15 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      PresenceMeta presenceMeta = dataChunk.getPresenceMeta();
+      if (presenceMeta.isNullBitset() && presenceMeta.getBitSet().isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putByte(vectorOffset, dataChunk.getByte(i));
           vectorOffset++;
         }
       } else {
         for (int i = offset; i < len; i++) {
-          if (nullBitSet.get(i)) {
+          if (presenceMeta.getBitSet().get(i)) {
             vector.putNull(vectorOffset);
           } else {
             vector.putByte(vectorOffset, dataChunk.getByte(i));
@@ -391,8 +425,8 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      PresenceMeta presenceMeta = dataChunk.getPresenceMeta();
+      if (presenceMeta.isNullBitset() && presenceMeta.getBitSet().isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
           vector.putByte(vectorOffset, dataChunk.getByte(currentRow));
@@ -401,7 +435,7 @@ public class MeasureDataVectorProcessor {
       } else {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
-          if (nullBitSet.get(currentRow)) {
+          if (presenceMeta.getBitSet().get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
             vector.putByte(vectorOffset, dataChunk.getByte(currentRow));
@@ -420,15 +454,15 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      PresenceMeta presenceMeta = dataChunk.getPresenceMeta();
+      if (presenceMeta.isNullBitset() && presenceMeta.getBitSet().isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putDouble(vectorOffset, dataChunk.getDouble(i));
           vectorOffset++;
         }
       } else {
         for (int i = offset; i < len; i++) {
-          if (nullBitSet.get(i)) {
+          if (presenceMeta.getBitSet().get(i)) {
             vector.putNull(vectorOffset);
           } else {
             vector.putDouble(vectorOffset, dataChunk.getDouble(i));
@@ -445,8 +479,8 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullBits();
-      if (nullBitSet.isEmpty()) {
+      PresenceMeta presenceMeta = dataChunk.getPresenceMeta();
+      if (presenceMeta.isNullBitset() && presenceMeta.getBitSet().isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
           vector.putDouble(vectorOffset, dataChunk.getDouble(currentRow));
@@ -455,7 +489,7 @@ public class MeasureDataVectorProcessor {
       } else {
         for (int i = offset; i < len; i++) {
           int currentRow = filteredRowId[i];
-          if (nullBitSet.get(currentRow)) {
+          if (presenceMeta.getBitSet().get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
             vector.putDouble(vectorOffset, dataChunk.getDouble(currentRow));

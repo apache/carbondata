@@ -42,6 +42,11 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
   }
 
   @Override
+  public void updateNull(int rowId, Object nullValue) {
+
+  }
+
+  @Override
   public void update(byte value) {
 
   }

@@ -23,6 +23,8 @@ public interface ColumnPageStatsCollector {
 
   void updateNull(int rowId);
 
+  void updateNull(int rowId, Object nullValue);
+
   void update(byte value);
 
   void update(short value);

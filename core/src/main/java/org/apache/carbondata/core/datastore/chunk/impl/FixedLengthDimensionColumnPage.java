@@ -49,7 +49,7 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
         dataLength;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(columnValueSize, isExplicitSorted, numberOfRows, totalSize,
-            DimensionStoreType.FIXED_LENGTH, null, false, dataLength);
+            DimensionStoreType.FIXED_LENGTH, null, false, dataLength, null);
     dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
   }
 
@@ -72,7 +72,7 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
         dataLength;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(columnValueSize, isExplicitSorted, numberOfRows, totalSize,
-            DimensionStoreType.FIXED_LENGTH, null, vectorInfo != null, dataLength);
+            DimensionStoreType.FIXED_LENGTH, null, vectorInfo != null, dataLength, null);
     if (vectorInfo == null) {
       dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
     } else {

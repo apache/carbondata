@@ -17,44 +17,12 @@
 
 package org.apache.carbondata.core.datastore.columnar;
 
-/**
- * Below class will be used to for no inverted index
- * Support to encode on data
- */
-public class ByteArrayBlockIndexerStorageWithoutRowId extends BlockIndexerStorage<byte[][]> {
+public interface ColumnDataVo<T> extends Comparable {
 
-  public ByteArrayBlockIndexerStorageWithoutRowId(byte[][] dataPage, boolean rleOnData) {
-    if (rleOnData) {
-      this.dataPage = rleEncodeOnData(dataPage);
-    } else {
-      this.dataPage = dataPage;
-    }
-  }
+  T getData();
 
-  /**
-   * no use
-   *
-   * @return
-   */
-  public short[] getRowIdPage() {
-    return new short[0];
-  }
+  short getIndex();
 
-  public int getRowIdPageLengthInBytes() {
-    return 0;
-  }
-
-  /**
-   * no use
-   *
-   * @return
-   */
-  public short[] getRowIdRlePage() {
-    return new short[0];
-  }
-
-  public int getRowIdRlePageLengthInBytes() {
-    return 0;
-  }
+  int getLength();
 
 }

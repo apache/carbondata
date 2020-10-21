@@ -48,9 +48,17 @@ public class StringStatsCollector implements ColumnPageStatsCollector {
     return new StringStatsCollector();
   }
 
+  public StringStatsCollector() {
+  }
+
   @Override
   public void updateNull(int rowId) {
+    update(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
+  }
 
+  @Override
+  public void updateNull(int rowId, Object nullValue) {
+    update(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
   }
 
   @Override

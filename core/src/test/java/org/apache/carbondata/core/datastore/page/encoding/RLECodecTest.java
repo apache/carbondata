@@ -136,7 +136,7 @@ public class RLECodecTest {
         TableSpec.ColumnSpec.newInstance("test", DataTypes.BYTE, ColumnType.MEASURE),
         DataTypes.BYTE, expectedDecodedBytes.length, null, "snappy");
     ColumnPageDecoder decoder = codec.createDecoder(meta);
-    ColumnPage page = decoder.decode(inputBytes, 0, inputBytes.length);
+    ColumnPage page = decoder.decode(inputBytes, 0, inputBytes.length, false, 0);
     byte[] decoded = page.getBytePage();
     assertEquals(expectedDecodedBytes.length, decoded.length);
     for (int i = 0; i < decoded.length; i++) {

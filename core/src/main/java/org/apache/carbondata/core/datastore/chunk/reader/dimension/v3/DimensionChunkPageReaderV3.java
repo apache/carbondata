@@ -171,6 +171,6 @@ public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
         .readByteBuffer(filePath, offset, length);
 
     return decodeDimension(dimensionRawColumnChunk, rawData, pageMetadata, 0, null,
-        reusableDataBuffer);
+        reusableDataBuffer, pageNumber);
   }
 }

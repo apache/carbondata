@@ -373,7 +373,7 @@ public final class CarbonUtil {
   }
 
   public static int getFirstIndexUsingBinarySearch(DimensionColumnPage dimColumnDataChunk,
-      int low, int high, byte[] compareValue, boolean matchUpLimit) {
+      int low, int high, Object compareValue, boolean matchUpLimit) {
     int cmpResult = 0;
     while (high >= low) {
       int mid = (low + high) / 2;
@@ -411,7 +411,7 @@ public final class CarbonUtil {
    * @return the compareValue's range index in the dimColumnDataChunk
    */
   public static int[] getRangeIndexUsingBinarySearch(
-      DimensionColumnPage dimColumnDataChunk, int low, int high, byte[] compareValue) {
+      DimensionColumnPage dimColumnDataChunk, int low, int high, Object compareValue) {
 
     int[] rangeIndex = new int[2];
     int cmpResult = 0;
@@ -469,7 +469,7 @@ public final class CarbonUtil {
    * @param high
    * @return the compareValue's index in the filterValues
    */
-  public static int binarySearch(byte[][] filterValues, int low, int high,
+  public static int binarySearch(Object[] filterValues, int low, int high,
       DimensionColumnPage dimensionColumnPage, int rowId) {
     rangeCheck(low, high);
     while (low <= high) {
@@ -498,7 +498,7 @@ public final class CarbonUtil {
    * @return index value
    */
   public static int nextLesserValueToTarget(int currentIndex,
-      DimensionColumnPage dimColumnDataChunk, byte[] compareValue) {
+      DimensionColumnPage dimColumnDataChunk, Object compareValue) {
     while (currentIndex - 1 >= 0
         && dimColumnDataChunk.compareTo(currentIndex - 1, compareValue) >= 0) {
       --currentIndex;
@@ -518,7 +518,7 @@ public final class CarbonUtil {
    * @return index value
    */
   public static int nextGreaterValueToTarget(int currentIndex,
-      DimensionColumnPage dimColumnDataChunk, byte[] compareValue, int numberOfRows) {
+      DimensionColumnPage dimColumnDataChunk, Object compareValue, int numberOfRows) {
     while (currentIndex + 1 < numberOfRows
         && dimColumnDataChunk.compareTo(currentIndex + 1, compareValue) <= 0) {
       ++currentIndex;
@@ -2319,7 +2319,7 @@ public final class CarbonUtil {
    * @param chunkRowIndex
    * @return
    */
-  public static int isFilterPresent(byte[][] filterValues,
+  public static int isFilterPresent(Object[] filterValues,
       DimensionColumnPage dimensionColumnPage, int low, int high, int chunkRowIndex) {
     int compareResult = 0;
     int mid = 0;
@@ -3019,10 +3019,7 @@ public final class CarbonUtil {
         // check whether the column is local dictionary column or not
         if (columnSchema.isLocalDictColumn()) {
           columnLocalDictGenMap.put(columnSchema.getColumnName(),
-              new ColumnLocalDictionaryGenerator(localDictionaryThreshold,
-                  columnSchema.getDataType() == DataTypes.VARCHAR ?
-                      CarbonCommonConstants.INT_SIZE_IN_BYTE :
-                      CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+              new ColumnLocalDictionaryGenerator(localDictionaryThreshold));
         }
       }
     }
@@ -3191,7 +3188,7 @@ public final class CarbonUtil {
       default:
         // for primitive column
         ColumnPageEncoder columnPageEncoder =
-            DefaultEncodingFactory.getInstance().createEncoder(columnSpec, columnPage);
+            DefaultEncodingFactory.getInstance().createEncoder(columnSpec, columnPage, null);
         newEncodedColumnPage = columnPageEncoder.encode(columnPage);
     }
     return new FallbackEncodedColumnPage(newEncodedColumnPage, pageIndex);

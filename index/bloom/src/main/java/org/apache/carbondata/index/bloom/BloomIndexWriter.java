@@ -24,7 +24,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -61,10 +60,7 @@ public class BloomIndexWriter extends AbstractBloomIndexWriter {
   protected byte[] convertDictionaryValue(int indexColIdx, Object value) {
     // input value from onPageAdded in load process is byte[]
 
-    // for dict columns including dictionary and date columns decode value to get the surrogate key
-    int surrogateKey = CarbonUtil.getSurrogateInternal((byte[]) value, 0,
-        ByteUtil.dateBytesSize());
     // store the dictionary key in bloom
-    return CarbonUtil.getValueAsBytes(DataTypes.INT, surrogateKey);
+    return CarbonUtil.getValueAsBytes(DataTypes.INT, value);
   }
 }

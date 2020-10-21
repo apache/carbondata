@@ -425,4 +425,8 @@ public class LVByteBufferColumnPage extends ColumnPage {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
+
+  public boolean isLVByteBufferPage() {
+    return true;
+  }
 }
