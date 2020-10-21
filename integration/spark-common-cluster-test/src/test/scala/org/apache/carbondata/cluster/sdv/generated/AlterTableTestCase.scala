@@ -1074,7 +1074,6 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   val prop = CarbonProperties.getInstance()
   val p1 = prop.getProperty("carbon.horizontal.compaction.enable", CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT)
-  val p2 = prop.getProperty("carbon.horizontal.update.compaction.threshold", CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
   val p3 = prop.getProperty("carbon.horizontal.delete.compaction.threshold", CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
   val p4 = prop.getProperty("carbon.compaction.level.threshold", CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
   val p5 = prop.getProperty("carbon.enable.auto.load.merge", CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
@@ -1083,7 +1082,6 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll() {
     // Adding new properties
     prop.addProperty("carbon.horizontal.compaction.enable", "true")
-    prop.addProperty("carbon.horizontal.update.compaction.threshold", "1")
     prop.addProperty("carbon.horizontal.delete.compaction.threshold", "1")
     prop.addProperty("carbon.compaction.level.threshold", "2,1")
     prop.addProperty("carbon.enable.auto.load.merge", "false")
@@ -1093,7 +1091,6 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll: Unit = {
     // Reverting to old
     prop.addProperty("carbon.horizontal.compaction.enable", p1)
-    prop.addProperty("carbon.horizontal.update.compaction.threshold", p2)
     prop.addProperty("carbon.horizontal.delete.compaction.threshold", p3)
     prop.addProperty("carbon.compaction.level.threshold", p4)
     prop.addProperty("carbon.enable.auto.load.merge", p5)

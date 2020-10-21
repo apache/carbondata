@@ -100,13 +100,13 @@ public class CarbonIndexFileMergeWriter {
           indexFiles = indexCarbonFiles.toArray(new CarbonFile[indexCarbonFiles.size()]);
         }
       } else {
-        indexFiles =
-            SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
+        indexFiles = SegmentIndexFileStore
+            .getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration(), uuid);
       }
       if (isCarbonIndexFilePresent(indexFiles) || indexFileNamesTobeAdded != null) {
         if (sfs == null) {
           return writeMergeIndexFileBasedOnSegmentFolder(indexFileNamesTobeAdded,
-              readFileFooterFromCarbonDataFile, segmentPath, indexFiles, segmentId);
+              readFileFooterFromCarbonDataFile, segmentPath, indexFiles, segmentId, uuid);
         } else {
           return writeMergeIndexFileBasedOnSegmentFile(segmentId, indexFileNamesTobeAdded, sfs,
               indexFiles, uuid, partitionPath);
@@ -134,13 +134,14 @@ public class CarbonIndexFileMergeWriter {
       }
     }
     if (null != partitionPath && !partitionTempPath.isEmpty()) {
-      fileStore.readAllIIndexOfSegment(partitionTempPath);
+      fileStore.readAllIIndexOfSegment(partitionTempPath, uuid);
     }
     Map<String, Map<String, byte[]>> indexLocationMap =
         groupIndexesBySegment(fileStore.getCarbonIndexMapWithFullPath());
     SegmentFileStore.FolderDetails folderDetails = null;
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
-      String mergeIndexFile = writeMergeIndexFile(null, partitionPath, entry.getValue(), segmentId);
+      String mergeIndexFile =
+          writeMergeIndexFile(null, partitionPath, entry.getValue(), segmentId, uuid);
       folderDetails = new SegmentFileStore.FolderDetails();
       folderDetails.setMergeFileName(mergeIndexFile);
       folderDetails.setStatus("Success");
@@ -185,18 +186,18 @@ public class CarbonIndexFileMergeWriter {
 
   private String writeMergeIndexFileBasedOnSegmentFolder(List<String> indexFileNamesTobeAdded,
       boolean readFileFooterFromCarbonDataFile, String segmentPath, CarbonFile[] indexFiles,
-      String segmentId) throws IOException {
+      String segmentId, String uuid) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     if (readFileFooterFromCarbonDataFile) {
       // this case will be used in case of upgrade where old store will not have the blocklet
       // info in the index file and therefore blocklet info need to be read from the file footer
       // in the carbondata file
-      fileStore.readAllIndexAndFillBlockletInfo(segmentPath);
+      fileStore.readAllIndexAndFillBlockletInfo(segmentPath, uuid);
     } else {
-      fileStore.readAllIIndexOfSegment(segmentPath);
+      fileStore.readAllIIndexOfSegment(segmentPath, uuid);
     }
     Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
-    writeMergeIndexFile(indexFileNamesTobeAdded, segmentPath, indexMap, segmentId);
+    writeMergeIndexFile(indexFileNamesTobeAdded, segmentPath, indexMap, segmentId, uuid);
     for (CarbonFile indexFile : indexFiles) {
       indexFile.delete();
     }
@@ -223,8 +224,8 @@ public class CarbonIndexFileMergeWriter {
             .readLoadMetadata(CarbonTablePath.getMetadataPath(table.getTablePath())));
     List<String> mergeIndexFiles = new ArrayList<>();
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
-      String mergeIndexFile =
-          writeMergeIndexFile(indexFileNamesTobeAdded, entry.getKey(), entry.getValue(), segmentId);
+      String mergeIndexFile = writeMergeIndexFile(indexFileNamesTobeAdded,
+          entry.getKey(), entry.getValue(), segmentId, uuid);
       for (Map.Entry<String, SegmentFileStore.FolderDetails> segment : segmentFileStore
           .getLocationMap().entrySet()) {
         String location = segment.getKey();
@@ -296,7 +297,7 @@ public class CarbonIndexFileMergeWriter {
   }
 
   private String writeMergeIndexFile(List<String> indexFileNamesTobeAdded, String segmentPath,
-      Map<String, byte[]> indexMap, String segment_id) throws IOException {
+      Map<String, byte[]> indexMap, String segment_id, String uuid) throws IOException {
     MergedBlockIndexHeader indexHeader = new MergedBlockIndexHeader();
     MergedBlockIndex mergedBlockIndex = new MergedBlockIndex();
     List<String> fileNames = new ArrayList<>(indexMap.size());
@@ -310,7 +311,7 @@ public class CarbonIndexFileMergeWriter {
     }
     if (fileNames.size() > 0) {
       String mergeIndexName =
-          segment_id + '_' + System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT;
+          segment_id + '_' + uuid + CarbonTablePath.MERGE_INDEX_FILE_EXT;
       openThriftWriter(segmentPath + "/" + mergeIndexName);
       indexHeader.setFile_names(fileNames);
       mergedBlockIndex.setFileData(data);

@@ -412,7 +412,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
     // just update once, there is no horizontal compaction at this time
-    assert(updateDeltaFiles.length == 1)
+    assert(updateDeltaFiles.length == 0)
     assert(deletaDeltaFiles.length == 1)
 
     sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 5 or c2 = 8""").collect()
@@ -423,7 +423,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     // one '.carbonindex' file for update operation this time
     // one '.carbonindex' file for horizontal compaction
     // so there must be three '.carbonindex' files and three '.deletedelta' files
-    assert(updateDeltaFiles.length == 3)
+    assert(updateDeltaFiles.length == 0)
     assert(deletaDeltaFiles.length == 3)
 
     sql("""drop table dest10""")

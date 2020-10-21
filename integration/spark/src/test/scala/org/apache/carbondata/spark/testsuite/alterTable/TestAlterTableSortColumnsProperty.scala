@@ -739,15 +739,17 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
 
     val table = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
     val tablePath = table.getTablePath
-    (0 to 2).foreach { segmentId =>
+    (0 to 3).foreach { segmentId =>
       val segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId.toString)
       val args: Array[String] = Array("-cmd", "sort_columns", "-p", segmentPath)
       val out: ByteArrayOutputStream = new ByteArrayOutputStream
       val stream: PrintStream = new PrintStream(out)
       CarbonCli.run(args, stream)
       val output: String = new String(out.toByteArray)
-      if (segmentId == 2) {
+      if (segmentId == 3 || segmentId == 2) {
         assertResult(s"Input Folder: $segmentPath\nsorted by intfield,stringfield\n")(output)
+      } else if ( segmentId == 1) {
+        assertResult(s"Input Folder: $segmentPath\nsorted by charfield,timestampfield\n")(output)
       } else {
         assertResult(s"Input Folder: $segmentPath\nunsorted\n")(output)
       }

@@ -2618,8 +2618,8 @@ public final class CarbonUtil {
       // Storing the number of files written by each task.
       metrics.incrementCount();
       // Storing the files written by each task.
-      metrics.addToOutputFiles(targetPath + localFilePath
-          .substring(localFilePath.lastIndexOf(File.separator)) + ":" + targetSize);
+      metrics.addToOutputFiles(targetPath + CarbonCommonConstants.FILE_SEPARATOR + localFilePath
+          .substring(localFilePath.lastIndexOf(File.separator) + 1) + ":" + targetSize);
       metrics.addOutputBytes(targetSize);
     }
   }

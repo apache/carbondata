@@ -1231,8 +1231,22 @@ public final class CarbonLoaderUtil {
    * Update specified segment status for load to MarkedForDelete in case of failure
    */
   public static void updateTableStatusInCaseOfFailure(String loadName,
+      CarbonTable carbonTable, SegmentStatus status) throws IOException {
+    updateTableStatusInCaseOfFailure(loadName,
+        carbonTable.getAbsoluteTableIdentifier(),
+        carbonTable.getTableName(),
+        carbonTable.getDatabaseName(),
+        carbonTable.getTablePath(),
+        carbonTable.getMetadataPath(),
+        status);
+  }
+
+  /**
+   * Update specified segment status for load to MarkedForDelete in case of failure
+   */
+  public static void updateTableStatusInCaseOfFailure(String loadName,
       AbsoluteTableIdentifier absoluteTableIdentifier, String tableName, String databaseName,
-      String tablePath, String metaDataPath) throws IOException {
+      String tablePath, String metaDataPath, SegmentStatus status) throws IOException {
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
@@ -1243,10 +1257,11 @@ public final class CarbonLoaderUtil {
             SegmentStatusManager.readLoadMetadata(metaDataPath);
         boolean ifTableStatusUpdateRequired = false;
         for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
-          if (loadMetadataDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS && loadName
+          if (loadMetadataDetail.getSegmentStatus() == status && loadName
               .equalsIgnoreCase(loadMetadataDetail.getLoadName())) {
             loadMetadataDetail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
             ifTableStatusUpdateRequired = true;
+            break;
           }
         }
         if (ifTableStatusUpdateRequired) {

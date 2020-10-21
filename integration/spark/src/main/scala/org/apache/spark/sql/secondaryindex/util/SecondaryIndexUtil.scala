@@ -210,7 +210,6 @@ object SecondaryIndexUtil {
             val file = SegmentFileStore.writeSegmentFile(
               indexCarbonTable,
               seg.getLoadName,
-              segmentIdToLoadStartTimeMapping(seg.getLoadName).toString,
               carbonLoadModel.getFactTimeStamp.toString,
               null,
               null)

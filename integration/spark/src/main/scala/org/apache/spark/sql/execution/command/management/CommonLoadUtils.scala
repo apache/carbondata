@@ -900,32 +900,22 @@ object CommonLoadUtils {
     try {
       val query: LogicalPlan = if ((loadParams.dataFrame.isDefined) ||
                                    loadParams.scanResultRDD.isDefined) {
-        val (rdd, dfAttributes) =
-          if (loadParams.updateModel.isDefined && !loadParams.updateModel.get.loadAsNewSegment) {
+        val (rdd, dfAttributes) = {
             // Get the updated query plan in case of update scenario
-            val updatedFrame = Dataset.ofRows(
-              loadParams.sparkSession,
-              getLogicalQueryForUpdate(
-                loadParams.sparkSession,
-                catalogTable,
-                loadParams.dataFrame.get,
-                loadParams.carbonLoadModel))
-            (updatedFrame.rdd, updatedFrame.schema)
-        } else {
-          if (loadParams.finalPartition.nonEmpty) {
-            val headers = loadParams.carbonLoadModel
-              .getCsvHeaderColumns
-              .dropRight(loadParams.finalPartition.size)
-            val updatedHeader = headers ++ loadParams.finalPartition.keys.map(_.toLowerCase)
-            loadParams.carbonLoadModel.setCsvHeader(updatedHeader.mkString(","))
-            loadParams.carbonLoadModel
-              .setCsvHeaderColumns(loadParams.carbonLoadModel.getCsvHeader.split(","))
-          }
-          if (loadParams.dataFrame.isDefined) {
-            (loadParams.dataFrame.get.rdd, loadParams.dataFrame.get.schema)
-          } else {
-            (null, null)
-          }
+            if (loadParams.finalPartition.nonEmpty) {
+              val headers = loadParams.carbonLoadModel
+                .getCsvHeaderColumns
+                .dropRight(loadParams.finalPartition.size)
+              val updatedHeader = headers ++ loadParams.finalPartition.keys.map(_.toLowerCase)
+              loadParams.carbonLoadModel.setCsvHeader(updatedHeader.mkString(","))
+              loadParams.carbonLoadModel
+                .setCsvHeaderColumns(loadParams.carbonLoadModel.getCsvHeader.split(","))
+            }
+            if (loadParams.dataFrame.isDefined) {
+              (loadParams.dataFrame.get.rdd, loadParams.dataFrame.get.schema)
+            } else {
+              (null, null)
+            }
         }
         if (loadParams.dataFrame.isDefined) {
           val expectedColumns = {

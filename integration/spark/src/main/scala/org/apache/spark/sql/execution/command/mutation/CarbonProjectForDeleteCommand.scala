@@ -93,6 +93,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
         LockUsage.UPDATE_LOCK)
     var lockStatus = false
+    var hasException = false
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
@@ -107,9 +108,6 @@ private[sql] case class CarbonProjectForDeleteCommand(
         throw new Exception("Table is locked for deletion. Please try after some time")
       }
       val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
-
-      // handle the clean up of IUD.
-      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
       val (deletedSegments, deletedRowCount) = DeleteExecution.deleteDeltaExecution(
         databaseNameOp,
@@ -126,8 +124,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       }
 
       // call IUD Compaction.
-      HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
-        isUpdateOperation = false)
+      HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable)
 
       // Truncate materialized views on the current table.
       val viewManager = MVManagerInSpark.get(sparkSession)
@@ -150,13 +147,14 @@ private[sql] case class CarbonProjectForDeleteCommand(
         LOGGER.error("Delete operation passed. Exception in Horizontal Compaction." +
                      " Please check logs. " + e.getMessage)
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
+        hasException = true
         Seq(Row(0L))
 
       case e: Exception =>
         LOGGER.error("Exception in Delete data operation " + e.getMessage, e)
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
+        hasException = true
 
         // clean up. Null check is required as for executor error some times message is null
         if (null != e.getMessage) {
@@ -181,6 +179,10 @@ private[sql] case class CarbonProjectForDeleteCommand(
       } else {
         LOGGER.error(s"Unable to unlock compactionLock for " +
           s"table $tableName after delete operation");
+      }
+
+      if (hasException) {
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
       }
     }
   }

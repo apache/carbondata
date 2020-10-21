@@ -200,12 +200,7 @@ object MVRefresher {
           viewManager.setStatus(viewSchema.getIdentifier, MVStatus.DISABLED)
           LOGGER.error("Data Load failed for mv: ", exception)
           CarbonLoaderUtil.updateTableStatusInCaseOfFailure(
-            newLoadName,
-            viewTable.getAbsoluteTableIdentifier,
-            viewTable.getTableName,
-            viewTable.getDatabaseName,
-            viewTable.getTablePath,
-            viewTable.getMetadataPath)
+            newLoadName, viewTable, SegmentStatus.INSERT_IN_PROGRESS)
           throw exception
       } finally {
         unsetInputSegments(viewSchema)
