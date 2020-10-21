@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.sort.sortdata;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -102,6 +103,13 @@ public class SortParameters implements Serializable {
   // no dictionary columns data types not participating in sort
   // used while writing the row to sort temp file where nosort nodict columns are handled seperately
   private DataType[] noDictNoSortDataType;
+
+  // no dictionary columns in schema order participating in sort
+  // used while performing final sort of intermediate files
+  private DataType[] noDictSchemaDataType;
+
+  // Sort and Dictionary info of all the columns in schema order, used in final sort
+  private Map<Integer, List<Boolean>> sortColumnSchemaOrderMap;
 
   /**
    * To know how many columns are of high cardinality.
@@ -200,6 +208,8 @@ public class SortParameters implements Serializable {
     parameters.noDictActualPosition = noDictActualPosition;
     parameters.noDictSortColumnSchemaOrderMapping = noDictSortColumnSchemaOrderMapping;
     parameters.isInsertWithoutReArrangeFlow = isInsertWithoutReArrangeFlow;
+    parameters.noDictSchemaDataType = noDictSchemaDataType;
+    parameters.sortColumnSchemaOrderMap = sortColumnSchemaOrderMap;
     return parameters;
   }
 
@@ -519,7 +529,11 @@ public class SortParameters implements Serializable {
           .getColumnIdxBasedOnSchemaInRow(parameters.getCarbonTable()));
       parameters.setMeasureDataType(configuration.getMeasureDataType());
       parameters.setNoDictDataType(CarbonDataProcessorUtil
-          .getNoDictDataTypes(configuration.getTableSpec().getCarbonTable()));
+          .getNoDictSortDataTypes(configuration.getTableSpec().getCarbonTable()));
+      parameters.setSortColumnSchemaOrderMap(
+          CarbonDataProcessorUtil.getSortColSchemaOrderMapping(parameters.carbonTable));
+      parameters.setNoDictSchemaDataType(
+          CarbonDataProcessorUtil.getNoDictDataTypes(parameters.carbonTable));
       Map<String, DataType[]> noDictSortAndNoSortDataTypes = CarbonDataProcessorUtil
           .getNoDictSortAndNoSortDataTypes(configuration.getTableSpec().getCarbonTable());
       parameters.setNoDictSortDataType(noDictSortAndNoSortDataTypes.get("noDictSortDataTypes"));
@@ -606,13 +620,17 @@ public class SortParameters implements Serializable {
         .getMeasureDataType(parameters.getMeasureColCount(), parameters.getCarbonTable());
     parameters.setMeasureDataType(type);
     parameters.setNoDictDataType(CarbonDataProcessorUtil
-        .getNoDictDataTypes(carbonTable));
+        .getNoDictSortDataTypes(carbonTable));
     Map<String, DataType[]> noDictSortAndNoSortDataTypes = CarbonDataProcessorUtil
         .getNoDictSortAndNoSortDataTypes(parameters.getCarbonTable());
     parameters.setNoDictSortDataType(noDictSortAndNoSortDataTypes.get("noDictSortDataTypes"));
     parameters.setNoDictNoSortDataType(noDictSortAndNoSortDataTypes.get("noDictNoSortDataTypes"));
     parameters.setNoDictionarySortColumn(CarbonDataProcessorUtil
         .getNoDictSortColMapping(parameters.getCarbonTable()));
+    parameters.setSortColumnSchemaOrderMap(
+        CarbonDataProcessorUtil.getSortColSchemaOrderMapping(parameters.carbonTable));
+    parameters.setNoDictSchemaDataType(
+        CarbonDataProcessorUtil.getNoDictDataTypes(parameters.carbonTable));
     parameters.setNoDictSortColumnSchemaOrderMapping(CarbonDataProcessorUtil
         .getColumnIdxBasedOnSchemaInRow(parameters.getCarbonTable()));
     TableSpec tableSpec = new TableSpec(carbonTable, false);
@@ -685,5 +703,21 @@ public class SortParameters implements Serializable {
 
   public void setNoDictActualPosition(int[] noDictActualPosition) {
     this.noDictActualPosition = noDictActualPosition;
+  }
+
+  public DataType[] getNoDictSchemaDataType() {
+    return noDictSchemaDataType;
+  }
+
+  public void setNoDictSchemaDataType(DataType[] noDictSchemaDataType) {
+    this.noDictSchemaDataType = noDictSchemaDataType;
+  }
+
+  public void setSortColumnSchemaOrderMap(Map<Integer, List<Boolean>> sortColumnSchemaOrderMap) {
+    this.sortColumnSchemaOrderMap = sortColumnSchemaOrderMap;
+  }
+
+  public Map<Integer, List<Boolean>> getSortColumnSchemaOrderMap() {
+    return sortColumnSchemaOrderMap;
   }
 }

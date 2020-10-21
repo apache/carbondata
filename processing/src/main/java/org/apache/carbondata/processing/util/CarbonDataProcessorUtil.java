@@ -37,6 +37,7 @@ import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -363,17 +364,32 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * Get the no dictionary data types on the table
+   * Get the no dictionary sort data types on the table
    *
    * @param carbonTable
    * @return
    */
-  public static DataType[] getNoDictDataTypes(CarbonTable carbonTable) {
+  public static DataType[] getNoDictSortDataTypes(CarbonTable carbonTable) {
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<DataType> type = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
       if (dimensions.get(i).isSortColumn() && dimensions.get(i).getDataType() != DataTypes.DATE) {
         type.add(dimensions.get(i).getDataType());
+      }
+    }
+    return type.toArray(new DataType[type.size()]);
+  }
+
+  /**
+   * Get all the no dictionary data types on the table
+   */
+  public static DataType[] getNoDictDataTypes(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
+    List<DataType> type = new ArrayList<>();
+    for (CarbonDimension dimension : dimensions) {
+      if (!dimension.hasEncoding(Encoding.DICTIONARY)
+          && dimension.getDataType() != DataTypes.DATE) {
+        type.add(dimension.getDataType());
       }
     }
     return type.toArray(new DataType[type.size()]);
@@ -422,6 +438,38 @@ public final class CarbonDataProcessorUtil {
       noDicSortColMapping[i] = mapping[i];
     }
     return noDicSortColMapping;
+  }
+
+  /**
+   * Get the sort/no_sort column map based on schema order.
+   * This will be used in the final sort step to find the index of sort column, to compare the
+   * intermediate row data based on schema.
+   */
+  public static Map<Integer, List<Boolean>> getSortColSchemaOrderMapping(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
+    Map<Integer, List<Boolean>> sortColSchemaOrderMap = new HashMap<>();
+    for (CarbonDimension dimension : dimensions) {
+      List<Boolean> sortDictOrNoDictMap = new ArrayList<>();
+      // check if the dimension is sort column or not and add to first index of sortDictOrNoDictMap
+      // check if the dimension is dict column or not and add to second index of sortDictOrNoDictMap
+      if (dimension.isSortColumn()) {
+        sortDictOrNoDictMap.add(true);
+        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
+          sortDictOrNoDictMap.add(true);
+        } else {
+          sortDictOrNoDictMap.add(false);
+        }
+      } else {
+        sortDictOrNoDictMap.add(false);
+        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
+          sortDictOrNoDictMap.add(true);
+        } else {
+          sortDictOrNoDictMap.add(false);
+        }
+      }
+      sortColSchemaOrderMap.put(dimension.getOrdinal(), sortDictOrNoDictMap);
+    }
+    return sortColSchemaOrderMap;
   }
 
   /**

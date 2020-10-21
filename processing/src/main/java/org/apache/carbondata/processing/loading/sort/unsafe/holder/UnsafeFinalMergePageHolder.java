@@ -62,7 +62,9 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     this.noDictDataType = rowPages[0].getTableFieldStat().getNoDictDataType();
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator = new FileMergeSortComparator(tableFieldStat.getIsSortColNoDictFlags(),
-        tableFieldStat.getNoDictDataType(), tableFieldStat.getNoDictSortColumnSchemaOrderMapping());
+        tableFieldStat.getNoDictSchemaDataType(),
+        tableFieldStat.getNoDictSortColumnSchemaOrderMapping(),
+        tableFieldStat.getSortColSchemaOrderMap());
   }
 
   public boolean hasNext() {
