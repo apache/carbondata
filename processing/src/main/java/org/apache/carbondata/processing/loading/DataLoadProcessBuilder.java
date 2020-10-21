@@ -246,19 +246,22 @@ public final class DataLoadProcessBuilder {
     List<DataField> dataFields = new ArrayList<>();
     List<DataField> complexDataFields = new ArrayList<>();
     List<DataField> partitionColumns = new ArrayList<>();
+    configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     if (loadModel.isLoadWithoutConverterWithoutReArrangeStep()) {
       // To avoid, reArranging of the data for each row, re arrange the schema itself.
       getReArrangedDataFields(loadModel, carbonTable, dimensions, measures, complexDataFields,
           partitionColumns, dataFields);
     } else {
       getDataFields(loadModel, dimensions, measures, complexDataFields, dataFields);
-      dataFields = updateDataFieldsBasedOnSortColumns(dataFields);
+      if (!(!configuration.isSortTable() || SortScopeOptions.getSortScope(loadModel.getSortScope())
+          .equals(SortScopeOptions.SortScope.NO_SORT))) {
+        dataFields = updateDataFieldsBasedOnSortColumns(dataFields);
+      }
     }
     configuration.setDataFields(dataFields.toArray(new DataField[0]));
     configuration.setBucketingInfo(carbonTable.getBucketingInfo());
     configuration.setBucketHashMethod(carbonTable.getBucketHashMethod());
     configuration.setPreFetch(loadModel.isPreFetch());
-    configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
     configuration.setDataWritePath(loadModel.getDataWritePath());
     setSortColumnInfo(carbonTable, loadModel, configuration);

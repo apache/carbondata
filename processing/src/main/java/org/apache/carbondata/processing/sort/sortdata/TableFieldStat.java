@@ -80,6 +80,10 @@ public class TableFieldStat implements Serializable {
    */
   private int[] noDictSortColumnSchemaOrderMapping;
 
+  private DataType[] noDictSchemaDataType;
+
+  private boolean[] isSortColSchemaOrderMapping;
+
   public TableFieldStat(SortParameters sortParameters) {
     int noDictDimCnt = sortParameters.getNoDictionaryCount();
     int dictDimCnt = sortParameters.getDimColCount() - noDictDimCnt;
@@ -100,6 +104,8 @@ public class TableFieldStat implements Serializable {
     this.noDictDataType = sortParameters.getNoDictDataType();
     this.noDictSortDataType = sortParameters.getNoDictSortDataType();
     this.noDictNoSortDataType = sortParameters.getNoDictNoSortDataType();
+    this.noDictSchemaDataType = sortParameters.getNoDictSchemaDataType();
+    this.isSortColSchemaOrderMapping = sortParameters.getSortColumnSchemaOrderMapping();
     for (boolean flag : isVarcharDimFlags) {
       if (flag) {
         varcharDimCnt++;
@@ -352,4 +358,11 @@ public class TableFieldStat implements Serializable {
     return otherCols;
   }
 
+  public boolean[] getIsSortColSchemaOrderMapping() {
+    return isSortColSchemaOrderMapping;
+  }
+
+  public DataType[] getNoDictSchemaDataType() {
+    return noDictSchemaDataType;
+  }
 }

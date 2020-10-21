@@ -152,13 +152,13 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     Arrays.sort(convertedSortColumnRanges,
         new RawRowComparator(sortColumnRangeInfo.getSortColumnIndex(),
             sortColumnRangeInfo.getIsSortColumnNoDict(), CarbonDataProcessorUtil
-            .getNoDictDataTypes(configuration.getTableSpec().getCarbonTable())));
+            .getNoDictSortDataTypes(configuration.getTableSpec().getCarbonTable())));
 
     // range partitioner to dispatch rows by sort columns
     this.partitioner = new RangePartitionerImpl(convertedSortColumnRanges,
         new RawRowComparator(sortColumnRangeInfo.getSortColumnIndex(),
             sortColumnRangeInfo.getIsSortColumnNoDict(), CarbonDataProcessorUtil
-            .getNoDictDataTypes(configuration.getTableSpec().getCarbonTable())));
+            .getNoDictSortDataTypes(configuration.getTableSpec().getCarbonTable())));
   }
 
   // only convert sort column fields

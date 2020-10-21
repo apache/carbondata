@@ -29,23 +29,26 @@ public class FileMergeSortComparator implements Comparator<IntermediateSortTempR
 
   private boolean[] isSortColumnNoDictionary;
 
-  private DataType[] noDicSortDataTypes;
+  private DataType[] noDictDataTypes;
 
   /**
    * Index of the no dict Sort columns in the carbonRow for final merge step of sorting.
    */
   private int[] noDictPrimitiveIndex;
 
+  private boolean[] sortColumnSchemaOrderMapping;
+
   /**
    * Comparator for IntermediateSortTempRow for compatibility cases where column added in old
    * version and it is sort column
    * @param isSortColumnNoDictionary isSortColumnNoDictionary
    */
-  public FileMergeSortComparator(boolean[] isSortColumnNoDictionary, DataType[] noDicSortDataTypes,
-      int[] columnIdBasedOnSchemaInRow) {
+  public FileMergeSortComparator(boolean[] isSortColumnNoDictionary, DataType[] noDictDataTypes,
+      int[] columnIdBasedOnSchemaInRow, boolean[] sortColumnSchemaOrderMapping) {
     this.isSortColumnNoDictionary = isSortColumnNoDictionary;
-    this.noDicSortDataTypes = noDicSortDataTypes;
+    this.noDictDataTypes = noDictDataTypes;
     this.noDictPrimitiveIndex = columnIdBasedOnSchemaInRow;
+    this.sortColumnSchemaOrderMapping = sortColumnSchemaOrderMapping;
   }
 
   @Override
@@ -55,40 +58,43 @@ public class FileMergeSortComparator implements Comparator<IntermediateSortTempR
     int nonDictIndex = 0;
     int noDicTypeIdx = 0;
     int schemaRowIdx = 0;
+    int sortIndex = 0;
 
-    for (boolean isNoDictionary : isSortColumnNoDictionary) {
+    for (boolean isSortColumn : sortColumnSchemaOrderMapping) {
+      if (isSortColumn) {
+        if (isSortColumnNoDictionary[sortIndex++]) {
+          if (DataTypeUtil.isPrimitiveColumn(noDictDataTypes[noDicTypeIdx])) {
+            // use data types based comparator for the no dictionary measure columns
+            SerializableComparator comparator =
+                org.apache.carbondata.core.util.comparator.Comparator
+                    .getComparator(noDictDataTypes[noDicTypeIdx]);
+            int difference = comparator
+                .compare(rowA.getNoDictSortDims()[noDictPrimitiveIndex[schemaRowIdx]],
+                    rowB.getNoDictSortDims()[noDictPrimitiveIndex[schemaRowIdx]]);
+            schemaRowIdx++;
+            if (difference != 0) {
+              return difference;
+            }
+          } else {
+            byte[] byteArr1 = (byte[]) rowA.getNoDictSortDims()[nonDictIndex];
+            byte[] byteArr2 = (byte[]) rowB.getNoDictSortDims()[nonDictIndex];
 
-      if (isNoDictionary) {
-        if (DataTypeUtil.isPrimitiveColumn(noDicSortDataTypes[noDicTypeIdx])) {
-          // use data types based comparator for the no dictionary measure columns
-          SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
-              .getComparator(noDicSortDataTypes[noDicTypeIdx]);
-          int difference = comparator
-              .compare(rowA.getNoDictSortDims()[noDictPrimitiveIndex[schemaRowIdx]],
-                  rowB.getNoDictSortDims()[noDictPrimitiveIndex[schemaRowIdx]]);
-          schemaRowIdx++;
-          if (difference != 0) {
-            return difference;
+            int difference = ByteUtil.UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
+            if (difference != 0) {
+              return difference;
+            }
           }
+          nonDictIndex++;
+          noDicTypeIdx++;
         } else {
-          byte[] byteArr1 = (byte[]) rowA.getNoDictSortDims()[nonDictIndex];
-          byte[] byteArr2 = (byte[]) rowB.getNoDictSortDims()[nonDictIndex];
+          int dimFieldA = rowA.getDictSortDims()[dictIndex];
+          int dimFieldB = rowB.getDictSortDims()[dictIndex];
+          dictIndex++;
 
-          int difference = ByteUtil.UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
-          if (difference != 0) {
-            return difference;
+          diff = dimFieldA - dimFieldB;
+          if (diff != 0) {
+            return diff;
           }
-        }
-        nonDictIndex++;
-        noDicTypeIdx++;
-      } else {
-        int dimFieldA = rowA.getDictSortDims()[dictIndex];
-        int dimFieldB = rowB.getDictSortDims()[dictIndex];
-        dictIndex++;
-
-        diff = dimFieldA - dimFieldB;
-        if (diff != 0) {
-          return diff;
         }
       }
     }

@@ -37,6 +37,7 @@ import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -363,17 +364,33 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * Get the no dictionary data types on the table
+   * Get the no dictionary sort data types on the table
    *
    * @param carbonTable
    * @return
    */
-  public static DataType[] getNoDictDataTypes(CarbonTable carbonTable) {
+  public static DataType[] getNoDictSortDataTypes(CarbonTable carbonTable) {
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<DataType> type = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
       if (dimensions.get(i).isSortColumn() && dimensions.get(i).getDataType() != DataTypes.DATE) {
         type.add(dimensions.get(i).getDataType());
+      }
+    }
+    return type.toArray(new DataType[type.size()]);
+  }
+
+  /**
+   * Get the no dictionary data types on the table
+   *
+   */
+  public static DataType[] getNoDictDataTypes(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
+    List<DataType> type = new ArrayList<>();
+    for (CarbonDimension dimension : dimensions) {
+      if ((dimension.isSortColumn() || !dimension.hasEncoding(Encoding.DICTIONARY))
+          && dimension.getDataType() != DataTypes.DATE) {
+        type.add(dimension.getDataType());
       }
     }
     return type.toArray(new DataType[type.size()]);
@@ -425,6 +442,27 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
+   * Get the no dictionary sort column mapping of the table
+   */
+  public static boolean[] getSortColSchemaOrderMapping(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
+    List<Boolean> sortColSchemaOrderMap = new ArrayList<>();
+    for (CarbonDimension dimension : dimensions) {
+      if (dimension.isSortColumn()) {
+        sortColSchemaOrderMap.add(true);
+      } else {
+        sortColSchemaOrderMap.add(false);
+      }
+    }
+    Boolean[] mapping = sortColSchemaOrderMap.toArray(new Boolean[0]);
+    boolean[] sortColSchemaOrderMapping = new boolean[mapping.length];
+    for (int i = 0; i < mapping.length; i++) {
+      sortColSchemaOrderMapping[i] = mapping[i];
+    }
+    return sortColSchemaOrderMapping;
+  }
+
+  /**
    * get mapping based on data fields order
    *
    * @param dataFields
@@ -456,23 +494,23 @@ public final class CarbonDataProcessorUtil {
    * initial sorting, carbonrow will be in order where added sort column is at the beginning, But
    * before final merger of sort, the data should be in schema order
    * (org.apache.carbondata.processing.sort.SchemaBasedRowUpdater updates the carbonRow in schema
-   * order), so This method helps to find the index of no dictionary sort column in the carbonrow
+   * order), so This method helps to find the index of no dictionary column in the carbonrow
    * data.
    */
   public static int[] getColumnIdxBasedOnSchemaInRow(CarbonTable carbonTable) {
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
-    List<Integer> noDicSortColMap = new ArrayList<>();
+    List<Integer> primitiveSortColMap = new ArrayList<>();
     int counter = 0;
     for (CarbonDimension dimension : dimensions) {
       if (dimension.getDataType() == DataTypes.DATE) {
         continue;
       }
-      if (dimension.isSortColumn() && DataTypeUtil.isPrimitiveColumn(dimension.getDataType())) {
-        noDicSortColMap.add(counter);
+      if (DataTypeUtil.isPrimitiveColumn(dimension.getDataType())) {
+        primitiveSortColMap.add(counter);
       }
       counter++;
     }
-    Integer[] mapping = noDicSortColMap.toArray(new Integer[0]);
+    Integer[] mapping = primitiveSortColMap.toArray(new Integer[0]);
     int[] columnIdxBasedOnSchemaInRow = new int[mapping.length];
     for (int i = 0; i < mapping.length; i++) {
       columnIdxBasedOnSchemaInRow[i] = mapping[i];
