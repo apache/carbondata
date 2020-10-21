@@ -375,7 +375,9 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
 
   test("test table creation with special char and other commands") {
     sql("drop table if exists special_char")
-    sql("create table special_char(`i#d` string, `nam(e` string,`ci)&#@!ty` string,`a\be` int, `ag!e` float, `na^me1` Decimal(8,4), ```a``bc``!!d``` int) stored as carbondata" +
+    sql("create table special_char(`i#d` string, `nam(e` string,`ci)&#@!ty` string," +
+        "`a\be` int, `ag!e` float, `na^me1` Decimal(8,4), ```a``bc``!!d``` int)" +
+        " stored as carbondata" +
         " tblproperties('INVERTED_INDEX'='`a`bc`!!d`', 'SORT_COLUMNS'='`a`bc`!!d`')")
     sql("insert into special_char values('1','joey','hud', 2, 2.2, 2.3456, 5)")
     checkAnswer(sql("select * from special_char"), Seq(Row("1", "joey", "hud", 2, 2.2, 2.3456, 5)))

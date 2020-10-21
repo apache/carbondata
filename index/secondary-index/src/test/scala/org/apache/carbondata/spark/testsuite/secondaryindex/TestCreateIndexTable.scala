@@ -34,19 +34,12 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
   var path: String = s"/tmp/parquet${UUID.randomUUID().toString}"
 
   override def beforeAll {
-    sql("drop table if exists carbon")
+    dropIndexAndTable()
     sql("CREATE table carbon (empno string, empname String, " +
         "designation String, doj Timestamp, workgroupcategory string, " +
         "workgroupcategoryname String, deptno int, deptname String, projectcode int, " +
         "projectjoindate Timestamp, projectenddate Timestamp, attendance int, " +
         "utilization int,salary int) STORED AS carbondata")
-    sql("drop table if exists createindextemptable")
-    sql("drop table if exists createindextemptable1")
-    sql("drop table if exists dropindextemptable")
-    sql("drop table if exists dropindextemptable1")
-    sql(s"DROP DATABASE if  exists temptablecheckDB cascade")
-    sql("drop table if exists stream_si")
-    sql("drop table if exists part_si")
     sql("CREATE TABLE stream_si(c1 string,c2 int,c3 string,c5 string) " +
         "STORED AS carbondata TBLPROPERTIES ('streaming' = 'true')")
     sql("CREATE TABLE part_si(c1 string,c2 int,c3 string,c5 string) PARTITIONED BY (c6 string)" +
@@ -505,18 +498,24 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
-    sql("drop table if exists carbon")
-    sql("drop table if exists carbontable")
-    sql("drop table if exists createindextemptable")
-    sql("drop table if exists createindextemptable1")
-    sql("drop table if exists dropindextemptable")
-    sql("drop table if exists dropindextemptable1")
-    sql("drop index if exists empnameindex on createindextemptable1")
-    sql(s"DROP DATABASE if  exists temptablecheckDB cascade")
-
-    sql("drop index if exists t_ind1 on test1")
-    sql("drop table if exists test1")
+    dropIndexAndTable()
     FileFactory.deleteAllFilesOfDir(new File(path))
   }
 
+  private def dropIndexAndTable(): Unit = {
+    sql("drop index if exists index_case_insensitive on carbon")
+    sql("drop table if exists carbon")
+    sql("drop table if exists carbontable")
+    sql("drop table if exists createindextemptable")
+    sql("drop index if exists empnameindex on temptablecheckDB.createindextemptable1")
+    sql("drop table if exists temptablecheckDB.createindextemptable1")
+    sql("drop table if exists dropindextemptable")
+    sql("drop table if exists temptablecheckDB.dropindextemptable1")
+    sql("drop index if exists si_drop_i1 on carbon_si_same_name_test")
+    sql("drop table if exists carbon_si_same_name_test")
+    sql(s"DROP DATABASE if exists temptablecheckDB cascade")
+
+    sql("drop index if exists t_ind1 on test1")
+    sql("drop table if exists test1")
+  }
 }

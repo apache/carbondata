@@ -54,7 +54,9 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
   }
 
   private def dropTables(): Unit = {
+    sql("drop index if exists maintable_si on maintable")
     sql("drop table if exists maintable")
+    sql("drop index if exists maintable1_si on maintable1")
     sql("drop table if exists maintable1")
   }
 
