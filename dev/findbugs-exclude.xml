@@ -28,6 +28,10 @@
     <Source name="~.*Test\.java" />
   </Match>
 
+  <Match>
+    <Class name="org.apache.carbondata.processing.util.CarbonDataProcessorUtil"/>
+  </Match>
+
   <!-- This method creates stream but the caller methods are responsible for closing the stream -->
   <Match>
     <Class name="org.apache.carbondata.core.datastore.impl.FileFactory"/>
