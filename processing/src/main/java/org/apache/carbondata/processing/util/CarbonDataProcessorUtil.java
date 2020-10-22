@@ -112,37 +112,51 @@ public final class CarbonDataProcessorUtil {
    */
   private static boolean mkdirWithRetry(Path path) {
     boolean exists = false;
-
     try {
       Files.createDirectories(path);
       exists = true;
-    } catch (Exception e) {
+    } catch (IOException e) {
       LOGGER.error("Error occurs while creating dir:" + path.toString() + ", " + e.getMessage());
-      try {
-        LOGGER.error("check df -Thi /tmp################################");
-        Process p = Runtime.getRuntime().exec("df -Thi /tmp");
-        BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String inputLine;
-        while ((inputLine = in.readLine()) != null) {
-          LOGGER.error(inputLine);
-        }
-        in.close();
-        LOGGER.error("check df -h /tmp################################");
-        Process p2 = Runtime.getRuntime().exec("df -h /tmp");
-        BufferedReader in2 = new BufferedReader(new InputStreamReader(p2.getInputStream()));
-        String inputLine2;
-        while ((inputLine2 = in2.readLine()) != null) {
-          LOGGER.error(inputLine2);
-        }
-        in2.close();
-      } catch (IOException ioException) {
-        LOGGER.error("Failed to check df", ioException);
-      }
+      runLinuxCommand("df -Thi /tmp");
+      runLinuxCommand("df -h /tmp");
+      retryAfterUmountTmp(path);
       // has exception, need check whether path already exists or not
       exists = Files.exists(path);
     }
 
     return exists;
+  }
+
+  private static void retryAfterUmountTmp(Path path) {
+    if (!path.startsWith("/tmp/")) {
+      return;
+    }
+    runLinuxCommand("umount /tmp");
+    try {
+      // try again
+      Files.createDirectories(path);
+      throw new RuntimeException("retry successfully!!!");
+    } catch (IOException e2) {
+      LOGGER.error(
+          "Error occurs while creating dir again:" + path.toString() + ", " + e2.getMessage());
+    }
+  }
+
+  private static void runLinuxCommand(String command) {
+    try {
+      LOGGER.error("-----------------------------------------");
+      LOGGER.error("linux command $>" + command);
+      Process p = Runtime.getRuntime().exec(command);
+      BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+      String inputLine;
+      while ((inputLine = in.readLine()) != null) {
+        LOGGER.error(inputLine);
+      }
+      in.close();
+      LOGGER.error("-----------------------------------------");
+    } catch (IOException ioException) {
+      LOGGER.error("Failed to check: " + command, ioException);
+    }
   }
 
   /**
