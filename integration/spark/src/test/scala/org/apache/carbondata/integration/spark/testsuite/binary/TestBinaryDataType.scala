@@ -946,6 +946,9 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
     }
 
     test("compaction for binary") {
+        val isAutoLoadMerge = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+              CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
         CarbonProperties.getInstance()
                 .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
                 .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
@@ -1039,7 +1042,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         CarbonProperties.getInstance()
                 .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-                    CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+                    isAutoLoadMerge)
     }
 
     test("alter table for binary") {
