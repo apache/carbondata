@@ -19,6 +19,9 @@ package org.apache.carbondata.processing.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -88,11 +91,11 @@ public final class CarbonDataProcessorUtil {
    */
   public static void createLocations(String[] locations) {
     for (String loc : locations) {
-      File dir = new File(loc);
-      if (dir.exists()) {
+      Path path = Paths.get(loc);
+      if (Files.exists(path)) {
         LOGGER.warn("dir already exists, skip dir creation: " + loc);
       } else {
-        if (!dir.mkdirs() && !dir.exists()) {
+        if (!mkdirWithRetry(path)) {
           // concurrent scenario mkdir may fail, so checking dir
           LOGGER.error("Error occurs while creating dir: " + loc);
         } else {
@@ -100,6 +103,29 @@ public final class CarbonDataProcessorUtil {
         }
       }
     }
+  }
+
+  /**
+   * mkdir with retry 3 times
+   */
+  private static boolean mkdirWithRetry(Path path) {
+    boolean exists = false;
+    int count = 0;
+    do {
+      count++;
+      try {
+        Files.createDirectories(path);
+        exists = true;
+        if (count >= 2) {
+          LOGGER.error("Successfully creating dir after retry:" + path.toString());
+        }
+      } catch (Exception e) {
+        LOGGER.error("Error occurs while creating dir:" + path.toString() + ", " + e.getMessage());
+        // has exception, need check whether path already exists or not
+        exists = Files.exists(path);
+      }
+    } while (!exists && count <= 2);
+    return exists;
   }
 
   /**
