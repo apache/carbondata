@@ -17,8 +17,10 @@
 
 package org.apache.carbondata.processing.util;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -110,21 +112,36 @@ public final class CarbonDataProcessorUtil {
    */
   private static boolean mkdirWithRetry(Path path) {
     boolean exists = false;
-    int count = 0;
-    do {
-      count++;
+
+    try {
+      Files.createDirectories(path);
+      exists = true;
+    } catch (Exception e) {
+      LOGGER.error("Error occurs while creating dir:" + path.toString() + ", " + e.getMessage());
       try {
-        Files.createDirectories(path);
-        exists = true;
-        if (count >= 2) {
-          LOGGER.error("Successfully creating dir after retry:" + path.toString());
+        LOGGER.error("check df -Thi /tmp################################");
+        Process p = Runtime.getRuntime().exec("df -Thi /tmp");
+        BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+          LOGGER.error(inputLine);
         }
-      } catch (Exception e) {
-        LOGGER.error("Error occurs while creating dir:" + path.toString() + ", " + e.getMessage());
-        // has exception, need check whether path already exists or not
-        exists = Files.exists(path);
+        in.close();
+        LOGGER.error("check df -h /tmp################################");
+        Process p2 = Runtime.getRuntime().exec("df -h /tmp");
+        BufferedReader in2 = new BufferedReader(new InputStreamReader(p2.getInputStream()));
+        String inputLine2;
+        while ((inputLine2 = in2.readLine()) != null) {
+          LOGGER.error(inputLine2);
+        }
+        in2.close();
+      } catch (IOException ioException) {
+        LOGGER.error("Failed to check df", ioException);
       }
-    } while (!exists && count <= 2);
+      // has exception, need check whether path already exists or not
+      exists = Files.exists(path);
+    }
+
     return exists;
   }
 
