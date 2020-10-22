@@ -52,6 +52,9 @@ class BooleanDataTypesParameterTest
   }
 
   override def afterAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
     sql("drop table if exists boolean_one_column")
     sql("drop table if exists boolean_table")
   }

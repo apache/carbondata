@@ -589,7 +589,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       checkAnswer(sql("SELECT COUNT(*) FROM new_par"), Seq(Row(4)))
     } finally {
       CarbonProperties.getInstance()
-        .removeProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT)
+        .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
     }
   }
 
