@@ -242,12 +242,12 @@ public class SegmentFileStore {
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
       SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segmentMetaDataInfo);
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segmentMetaDataInfo, false);
   }
 
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID)
       throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, null);
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, null, false);
   }
 
   /**
@@ -258,16 +258,19 @@ public class SegmentFileStore {
    * @param UUID      a UUID string used to construct the segment file name
    * @param segPath segment path
    * @param segmentMetaDataInfo segment metadata info
+   * @param isUpdateFlow to identify segment is getting updated or written newly.
    * @return segment file name
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      String segPath, SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, segmentMetaDataInfo);
+      String segPath, SegmentMetaDataInfo segmentMetaDataInfo, boolean isUpdateFlow)
+      throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, segmentMetaDataInfo,
+        isUpdateFlow);
   }
 
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
       String segPath) throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, null);
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, null, false);
   }
 
   /**
@@ -394,12 +397,23 @@ public class SegmentFileStore {
    * @param segmentId
    * @param UUID
    * @param currentLoadTimeStamp
+   * @param isUpdateFlow
    * @return
    * @throws IOException
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      final String currentLoadTimeStamp, String absSegPath, SegmentMetaDataInfo segmentMetaDataInfo)
+      String currentLoadTimeStamp, String absSegPath, SegmentMetaDataInfo segmentMetaDataInfo,
+      boolean isUpdateFlow)
       throws IOException {
+    if (!isUpdateFlow && currentLoadTimeStamp == null) {
+      // for load or compation flow a segment file for main table,
+      // instead of considering all the files in a segment folder,
+      // consider the files matching current load time.
+      // In case of compaction, If the cleanup of partial load has failed,
+      // compaction retry will use the same segment id
+      // and it should not consider files from failed load for new segment file writing.
+      currentLoadTimeStamp = UUID;
+    }
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
     String segmentPath = absSegPath;
@@ -407,11 +421,12 @@ public class SegmentFileStore {
       segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     }
     CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
+    String finalCurrentLoadTimeStamp = currentLoadTimeStamp;
     CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
-        if (null != currentLoadTimeStamp) {
-          return file.getName().contains(currentLoadTimeStamp) && (
+        if (null != finalCurrentLoadTimeStamp) {
+          return file.getName().contains(finalCurrentLoadTimeStamp) && (
               file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
                   .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
         }

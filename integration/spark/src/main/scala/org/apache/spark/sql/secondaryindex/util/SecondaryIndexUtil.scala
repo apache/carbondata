@@ -207,13 +207,13 @@ object SecondaryIndexUtil {
             validSegmentsToUse.toList.asJava,
             indexCarbonTable)
           mergedSegments.asScala.map { seg =>
-            val file = SegmentFileStore.writeSegmentFile(
-              indexCarbonTable,
+            val file = SegmentFileStore.writeSegmentFile(indexCarbonTable,
               seg.getLoadName,
               segmentIdToLoadStartTimeMapping(seg.getLoadName).toString,
               carbonLoadModel.getFactTimeStamp.toString,
               null,
-              null)
+              null,
+              false)
             val segment = new Segment(seg.getLoadName, file)
             SegmentFileStore.updateTableStatusFile(indexCarbonTable,
               seg.getLoadName,

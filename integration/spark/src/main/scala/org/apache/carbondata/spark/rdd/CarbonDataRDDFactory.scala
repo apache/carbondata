@@ -744,12 +744,12 @@ object CarbonDataRDDFactory {
         var segmentFiles: Seq[CarbonFile] = Seq.empty[CarbonFile]
 
         val segmentMetaDataInfo = segmentMetaDataInfoMap.get(segment.getSegmentNo)
-        val segmentFileName = SegmentFileStore.writeSegmentFile(
-          carbonTable,
+        val segmentFileName = SegmentFileStore.writeSegmentFile(carbonTable,
           segment.getSegmentNo,
           String.valueOf(System.currentTimeMillis()),
           load.getPath,
-          segmentMetaDataInfo)
+          segmentMetaDataInfo,
+          true)
 
         if (segmentFile != null) segmentFiles ++= FileFactory.getCarbonFile(
           SegmentFileStore.getSegmentFilePath(carbonTable.getTablePath, segmentFile)) :: Nil

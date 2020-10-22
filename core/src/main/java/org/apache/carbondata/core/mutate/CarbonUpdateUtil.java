@@ -631,7 +631,7 @@ public class CarbonUpdateUtil {
       String updatedSegmentFile = SegmentFileStore
           .writeSegmentFile(table, segment.getSegmentNo(), UUID,
               CarbonTablePath.getSegmentPath(table.getTablePath(), segment.getSegmentNo()),
-              segment.getSegmentMetaDataInfo());
+              segment.getSegmentMetaDataInfo(), true);
       segmentFilesNotToDelete.add(updatedSegmentFile);
       segmentFilesToBeUpdatedLatest.add(new Segment(segment.getSegmentNo(), updatedSegmentFile));
     }
