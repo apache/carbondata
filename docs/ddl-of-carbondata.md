@@ -915,8 +915,6 @@ Users can specify which columns to include and exclude for local dictionary gene
 
 ## PARTITION
 
-### STANDARD PARTITION
-
   The partition is similar as spark and hive partition, user can use any column to build partition:
 
 #### Create Partition Table
@@ -985,7 +983,6 @@ Users can specify which columns to include and exclude for local dictionary gene
   WHERE au.country = 'US';
   ```
 
-
 ### Show Partitions
 
   The following command is executed to get the partition information of the table
@@ -998,12 +995,6 @@ Users can specify which columns to include and exclude for local dictionary gene
 
   ```
   ALTER TABLE [db_name].table_name ADD PARTITION('new_partition')
-  ```
-
-### Split a partition
-
-  ```
-  ALTER TABLE [db_name].table_name SPLIT PARTITION(partition_id) INTO('new_partition1', 'new_partition2'...)
   ```
 
 ### Drop a partition
