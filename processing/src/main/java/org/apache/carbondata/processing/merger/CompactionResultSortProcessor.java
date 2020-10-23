@@ -480,7 +480,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     boolean[] noDictionarySortColumnMapping = CarbonDataProcessorUtil
         .getNoDictSortColMapping(carbonTable);
     sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
-    sortParameters.setSortColumnSchemaOrderMapping(
+    sortParameters.setSortColumnSchemaOrderMap(
         CarbonDataProcessorUtil.getSortColSchemaOrderMapping(carbonTable));
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);

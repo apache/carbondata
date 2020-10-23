@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.sort.sortdata;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -103,9 +104,12 @@ public class SortParameters implements Serializable {
   // used while writing the row to sort temp file where nosort nodict columns are handled seperately
   private DataType[] noDictNoSortDataType;
 
+  // no dictionary columns in schema order participating in sort
+  // used while performing final sort of intermediate files
   private DataType[] noDictSchemaDataType;
 
-  private boolean[] sortColumnSchemaOrderMapping;
+  // Sort and Dictionary info of all the columns in schema order, used in final sort
+  private Map<Integer, List<Boolean>> sortColumnSchemaOrderMap;
 
   /**
    * To know how many columns are of high cardinality.
@@ -205,7 +209,7 @@ public class SortParameters implements Serializable {
     parameters.noDictSortColumnSchemaOrderMapping = noDictSortColumnSchemaOrderMapping;
     parameters.isInsertWithoutReArrangeFlow = isInsertWithoutReArrangeFlow;
     parameters.noDictSchemaDataType = noDictSchemaDataType;
-    parameters.sortColumnSchemaOrderMapping = sortColumnSchemaOrderMapping;
+    parameters.sortColumnSchemaOrderMap = sortColumnSchemaOrderMap;
     return parameters;
   }
 
@@ -526,7 +530,7 @@ public class SortParameters implements Serializable {
       parameters.setMeasureDataType(configuration.getMeasureDataType());
       parameters.setNoDictDataType(CarbonDataProcessorUtil
           .getNoDictSortDataTypes(configuration.getTableSpec().getCarbonTable()));
-      parameters.setSortColumnSchemaOrderMapping(
+      parameters.setSortColumnSchemaOrderMap(
           CarbonDataProcessorUtil.getSortColSchemaOrderMapping(parameters.carbonTable));
       parameters.setNoDictSchemaDataType(
           CarbonDataProcessorUtil.getNoDictDataTypes(parameters.carbonTable));
@@ -623,7 +627,7 @@ public class SortParameters implements Serializable {
     parameters.setNoDictNoSortDataType(noDictSortAndNoSortDataTypes.get("noDictNoSortDataTypes"));
     parameters.setNoDictionarySortColumn(CarbonDataProcessorUtil
         .getNoDictSortColMapping(parameters.getCarbonTable()));
-    parameters.setSortColumnSchemaOrderMapping(
+    parameters.setSortColumnSchemaOrderMap(
         CarbonDataProcessorUtil.getSortColSchemaOrderMapping(parameters.carbonTable));
     parameters.setNoDictSchemaDataType(
         CarbonDataProcessorUtil.getNoDictDataTypes(parameters.carbonTable));
@@ -709,11 +713,11 @@ public class SortParameters implements Serializable {
     this.noDictSchemaDataType = noDictSchemaDataType;
   }
 
-  public void setSortColumnSchemaOrderMapping(boolean[] sortColumnSchemaOrderMapping) {
-    this.sortColumnSchemaOrderMapping = sortColumnSchemaOrderMapping;
+  public void setSortColumnSchemaOrderMap(Map<Integer, List<Boolean>> sortColumnSchemaOrderMap) {
+    this.sortColumnSchemaOrderMap = sortColumnSchemaOrderMap;
   }
 
-  public boolean[] getSortColumnSchemaOrderMapping() {
-    return sortColumnSchemaOrderMapping;
+  public Map<Integer, List<Boolean>> getSortColumnSchemaOrderMap() {
+    return sortColumnSchemaOrderMap;
   }
 }

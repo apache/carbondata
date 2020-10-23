@@ -51,7 +51,7 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
         new FileMergeSortComparator(rowPage.getTableFieldStat().getIsSortColNoDictFlags(),
             rowPage.getTableFieldStat().getNoDictSchemaDataType(),
             rowPage.getTableFieldStat().getNoDictSortColumnSchemaOrderMapping(),
-            rowPage.getTableFieldStat().getIsSortColSchemaOrderMapping());
+            rowPage.getTableFieldStat().getSortColSchemaOrderMap());
     this.rowPage.setReadConvertedNoSortField();
   }
 

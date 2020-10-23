@@ -18,6 +18,8 @@
 package org.apache.carbondata.processing.sort.sortdata;
 
 import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -29,6 +31,9 @@ public class FileMergeSortComparator implements Comparator<IntermediateSortTempR
 
   private boolean[] isSortColumnNoDictionary;
 
+  /**
+   * Datatype of all the no-dictionary columns in the table in schema order
+   */
   private DataType[] noDictDataTypes;
 
   /**
@@ -36,7 +41,10 @@ public class FileMergeSortComparator implements Comparator<IntermediateSortTempR
    */
   private int[] noDictPrimitiveIndex;
 
-  private boolean[] sortColumnSchemaOrderMapping;
+  /**
+   * Sort and Dictionary info of all the columns in schema order
+   */
+  private final Map<Integer, List<Boolean>> sortColumnSchemaOrderMap;
 
   /**
    * Comparator for IntermediateSortTempRow for compatibility cases where column added in old
@@ -44,13 +52,25 @@ public class FileMergeSortComparator implements Comparator<IntermediateSortTempR
    * @param isSortColumnNoDictionary isSortColumnNoDictionary
    */
   public FileMergeSortComparator(boolean[] isSortColumnNoDictionary, DataType[] noDictDataTypes,
-      int[] columnIdBasedOnSchemaInRow, boolean[] sortColumnSchemaOrderMapping) {
+      int[] columnIdBasedOnSchemaInRow, Map<Integer, List<Boolean>> sortColumnSchemaOrderMap) {
     this.isSortColumnNoDictionary = isSortColumnNoDictionary;
     this.noDictDataTypes = noDictDataTypes;
     this.noDictPrimitiveIndex = columnIdBasedOnSchemaInRow;
-    this.sortColumnSchemaOrderMapping = sortColumnSchemaOrderMapping;
+    this.sortColumnSchemaOrderMap = sortColumnSchemaOrderMap;
   }
 
+  /**
+   * In the final merging, intermediate sortTemp row will have all the data in schema order.
+   * IntermediateSortTempRow#getNoDictSortDims() can return the following data:
+   * 1. only no-Dictionary sort column data
+   * 2. no-Dictionary sort and no-Dictionary no-sort column data
+   * IntermediateSortTempRow#getDictSortDims() can return the following data:
+   * 1. only Dictionary sort column data
+   * 2. dictionary sort and dictionary no-sort column data
+   * On this temp data row, we have to identify the sort column data and only compare those.
+   * From the sortColumnSchemaOrderMap, get the sort column and dict info. If the column
+   * is sort column, then perform the comparison, else increment the respective index.
+   */
   @Override
   public int compare(IntermediateSortTempRow rowA, IntermediateSortTempRow rowB) {
     int diff = 0;
@@ -60,7 +80,9 @@ public class FileMergeSortComparator implements Comparator<IntermediateSortTempR
     int schemaRowIdx = 0;
     int sortIndex = 0;
 
-    for (boolean isSortColumn : sortColumnSchemaOrderMapping) {
+    for (Map.Entry<Integer, List<Boolean>> schemaEntry : sortColumnSchemaOrderMap.entrySet()) {
+      boolean isSortColumn = schemaEntry.getValue().get(0);
+      boolean isDictColumn = schemaEntry.getValue().get(1);
       if (isSortColumn) {
         if (isSortColumnNoDictionary[sortIndex++]) {
           if (DataTypeUtil.isPrimitiveColumn(noDictDataTypes[noDicTypeIdx])) {
@@ -84,18 +106,21 @@ public class FileMergeSortComparator implements Comparator<IntermediateSortTempR
               return difference;
             }
           }
-          nonDictIndex++;
-          noDicTypeIdx++;
         } else {
           int dimFieldA = rowA.getDictSortDims()[dictIndex];
           int dimFieldB = rowB.getDictSortDims()[dictIndex];
-          dictIndex++;
 
           diff = dimFieldA - dimFieldB;
           if (diff != 0) {
             return diff;
           }
         }
+      }
+      if (isDictColumn) {
+        dictIndex++;
+      } else {
+        nonDictIndex++;
+        noDicTypeIdx++;
       }
     }
     return diff;

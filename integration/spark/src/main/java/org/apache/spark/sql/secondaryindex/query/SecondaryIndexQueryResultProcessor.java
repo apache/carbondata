@@ -528,7 +528,7 @@ public class SecondaryIndexQueryResultProcessor {
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     sortParameters.setNoDictionarySortColumn(
         CarbonDataProcessorUtil.getNoDictSortColMapping(indexTable));
-    sortParameters.setSortColumnSchemaOrderMapping(
+    sortParameters.setSortColumnSchemaOrderMap(
         CarbonDataProcessorUtil.getSortColSchemaOrderMapping(indexTable));
     finalMerger = new SingleThreadFinalSortFilesMerger(sortTempFileLocation,
         indexTable.getTableName(), sortParameters);

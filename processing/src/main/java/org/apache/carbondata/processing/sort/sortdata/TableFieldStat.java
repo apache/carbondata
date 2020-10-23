@@ -20,6 +20,7 @@ package org.apache.carbondata.processing.sort.sortdata;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -82,7 +83,7 @@ public class TableFieldStat implements Serializable {
 
   private DataType[] noDictSchemaDataType;
 
-  private boolean[] isSortColSchemaOrderMapping;
+  private Map<Integer, List<Boolean>> sortColSchemaOrderMap;
 
   public TableFieldStat(SortParameters sortParameters) {
     int noDictDimCnt = sortParameters.getNoDictionaryCount();
@@ -105,7 +106,7 @@ public class TableFieldStat implements Serializable {
     this.noDictSortDataType = sortParameters.getNoDictSortDataType();
     this.noDictNoSortDataType = sortParameters.getNoDictNoSortDataType();
     this.noDictSchemaDataType = sortParameters.getNoDictSchemaDataType();
-    this.isSortColSchemaOrderMapping = sortParameters.getSortColumnSchemaOrderMapping();
+    this.sortColSchemaOrderMap = sortParameters.getSortColumnSchemaOrderMap();
     for (boolean flag : isVarcharDimFlags) {
       if (flag) {
         varcharDimCnt++;
@@ -358,8 +359,8 @@ public class TableFieldStat implements Serializable {
     return otherCols;
   }
 
-  public boolean[] getIsSortColSchemaOrderMapping() {
-    return isSortColSchemaOrderMapping;
+  public Map<Integer, List<Boolean>> getSortColSchemaOrderMap() {
+    return sortColSchemaOrderMap;
   }
 
   public DataType[] getNoDictSchemaDataType() {

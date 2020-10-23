@@ -123,7 +123,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       this.comparator = new FileMergeSortComparator(tableFieldStat.getIsSortColNoDictFlags(),
           tableFieldStat.getNoDictSchemaDataType(),
           tableFieldStat.getNoDictSortColumnSchemaOrderMapping(),
-          tableFieldStat.getIsSortColSchemaOrderMapping());
+          tableFieldStat.getSortColSchemaOrderMap());
     }
     initialize();
   }
