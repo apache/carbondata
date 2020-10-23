@@ -257,7 +257,7 @@ public class HiveCarbonUtil {
         .fromWrapperToExternalTableInfo(tableInfo, tableInfo.getDatabaseName(),
             tableInfo.getFactTable().getTableName()));
     thriftWriter.close();
-    FileFactory.getCarbonFile(schemaFilePath).setLastModifiedTime(System.currentTimeMillis());
+    FileFactory.changeLastModifiedTimeToCurrentTime(schemaFilePath);
   }
 
   public static HiveMetaHook getMetaHook() {

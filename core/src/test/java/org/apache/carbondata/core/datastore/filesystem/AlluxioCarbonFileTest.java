@@ -43,6 +43,8 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -83,6 +85,67 @@ public class AlluxioCarbonFileTest {
     @AfterClass
     static public void cleanUp() {
         file.delete();
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateNewTable() throws IOException {
+        new MockUp<Path>() {
+            @Mock
+            public FileSystem getFileSystem(Configuration conf) throws IOException {
+                return new DistributedFileSystem();
+            }
+
+        };
+        new MockUp<DistributedFileSystem>() {
+            @Mock
+            public boolean exists(Path f) throws IOException {
+                return true;
+            }
+
+            @Mock
+            public FSDataOutputStream create(Path f, FsPermission permission, boolean overwrite,
+                int bufferSize, short replication, long blockSize, Progressable progress)
+                throws IOException {
+                throw new IOException();
+            }
+
+            @Mock
+            public Configuration getConf() {
+                return new Configuration();
+            }
+
+            @Mock
+            public short getDefaultReplication(Path path) {
+                return 1;
+            }
+
+            @Mock
+            public long getDefaultBlockSize(Path f) {
+                return 1;
+            }
+        };
+        new MockUp<FileFactory>(){
+            @Mock
+            public FileFactory.FileType getFileType(String path){
+                return FileFactory.FileType.ALLUXIO;
+            }
+        };
+        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        assertFalse(alluxioCarbonFile
+            .createNewFile(false, null));
+        assertTrue(alluxioCarbonFile
+            .createNewFile(true, null));
+    }
+
+    @Test
+    public void  testSetModifiedTimeOnAlluxioFile() throws IOException{
+        new MockUp<FileFactory>(){
+            @Mock
+            public FileFactory.FileType getFileType(String path){
+                return FileFactory.FileType.ALLUXIO;
+            }
+        };
+        assertTrue(FileFactory.changeLastModifiedTimeToCurrentTime(fileStatus.getPath().toString())>0);
     }
 
     @Test

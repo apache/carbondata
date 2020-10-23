@@ -293,6 +293,32 @@ public final class FileFactory {
     return getCarbonFile(filePath).createNewFile(permission);
   }
 
+  public static boolean createNewFile(String filePath, Boolean overwrite,
+      final FsPermission permission) throws IOException {
+    return getCarbonFile(filePath).createNewFile(overwrite, permission);
+  }
+
+  public static long changeLastModifiedTimeToCurrentTime(String filePath) throws IOException {
+    switch (getFileType(filePath)) {
+      case S3:
+      case ALLUXIO:
+        if (getCarbonFile(filePath).getSize() > 0) {
+          throw new IOException("Unsupported setLastModifiedTime operation on NonEmpty File");
+        }
+        createNewFile(filePath, true, null);
+        return getCarbonFile(filePath).getLastModifiedTime();
+      case HDFS:
+      case LOCAL:
+      case CUSTOM:
+      case VIEWFS:
+      case HDFS_LOCAL:
+      default:
+        long currentModifiedTime = System.currentTimeMillis();
+        FileFactory.getCarbonFile(filePath).setLastModifiedTime(currentModifiedTime);
+        return currentModifiedTime;
+    }
+  }
+
   public static boolean deleteFile(String filePath) throws IOException {
     return getCarbonFile(filePath).deleteFile();
   }
