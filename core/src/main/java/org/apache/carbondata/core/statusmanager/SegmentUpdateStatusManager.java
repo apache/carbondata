@@ -526,6 +526,80 @@ public class SegmentUpdateStatusManager {
 
   /**
    * Returns all update delta files of specified Segment.
+   * @param loadMetadataDetail
+   * @param validUpdateFiles
+   * @param filExtensions
+   * @param excludeOriginalFact
+   * @param allFilesOfSegment
+   * @param isAbortedFile
+   * @return
+   */
+
+  public CarbonFile[] getUpdateDeltaFilesList(LoadMetadataDetails loadMetadataDetail,
+       final boolean validUpdateFiles, final List<String> filExtensions,
+       final boolean excludeOriginalFact, CarbonFile[] allFilesOfSegment,
+       boolean isAbortedFile) {
+    String endTimeStamp = "";
+    String startTimeStamp = "";
+    long factTimeStamp = 0;
+
+    // if the segment is found then take the start and end time stamp.
+    startTimeStamp = loadMetadataDetail.getUpdateDeltaStartTimestamp();
+    endTimeStamp = loadMetadataDetail.getUpdateDeltaEndTimestamp();
+    factTimeStamp = loadMetadataDetail.getLoadStartTime();
+
+    // if start timestamp is empty then no update delta is found. so return empty list.
+    if (startTimeStamp.isEmpty()) {
+      return new CarbonFile[0];
+    }
+
+    final Long endTimeStampFinal = CarbonUpdateUtil.getTimeStampAsLong(endTimeStamp);
+    final Long startTimeStampFinal = CarbonUpdateUtil.getTimeStampAsLong(startTimeStamp);
+    final long factTimeStampFinal = factTimeStamp;
+
+    List<CarbonFile> listOfCarbonFiles =
+            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    // else scan the segment for the delta files with the respective timestamp.
+
+    for (CarbonFile eachFile : allFilesOfSegment) {
+
+      String fileName = eachFile.getName();
+      if (filExtensions.contains(fileName.substring(fileName.lastIndexOf(".")))) {
+        long timestamp =
+                Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName));
+
+        if (excludeOriginalFact) {
+          if (factTimeStampFinal == timestamp) {
+            continue;
+          }
+        }
+
+        if (validUpdateFiles) {
+          if (timestamp <= endTimeStampFinal
+                  && timestamp >= startTimeStampFinal) {
+            listOfCarbonFiles.add(eachFile);
+          }
+        } else {
+          // invalid cases.
+          if (isAbortedFile) {
+            if (timestamp > endTimeStampFinal) {
+              listOfCarbonFiles.add(eachFile);
+            }
+          } else if (timestamp < startTimeStampFinal
+                  || timestamp > endTimeStampFinal) {
+            listOfCarbonFiles.add(eachFile);
+          }
+        }
+      }
+    }
+
+    return listOfCarbonFiles.toArray(new CarbonFile[listOfCarbonFiles.size()]);
+
+  }
+
+  /**
+   * Returns all update delta files of specified Segment.
    *
    * @param segmentId
    * @param validUpdateFiles
