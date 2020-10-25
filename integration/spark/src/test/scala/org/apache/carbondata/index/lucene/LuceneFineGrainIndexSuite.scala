@@ -103,7 +103,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     assertResult("Only String column is supported, column 'id' is INT type. ")(exception.getMessage)
   }
 
-  test("test lucene fine grain index") {
+  ignore("test lucene fine grain index") {
     sql("drop index if exists dm on table index_test")
     sql(
       s"""
@@ -120,7 +120,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   // for CARBONDATA-2820, we will first block deferred refresh for lucene
-  test("test block rebuild for lucene") {
+  ignore("test block rebuild for lucene") {
     val deferredRebuildException = intercept[MalformedIndexCommandException] {
       sql(
         s"""

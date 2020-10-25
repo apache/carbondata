@@ -433,7 +433,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
     thriftWriter.close()
     val modifiedTime = System.currentTimeMillis()
     FileFactory.getCarbonFile(schemaFilePath).setLastModifiedTime(modifiedTime)
-    updateSchemasUpdatedTime(identifier.getCarbonTableIdentifier.getTableId, modifiedTime)
     identifier.getTablePath
   }
 
