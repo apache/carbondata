@@ -100,9 +100,11 @@ object DeleteExecution {
       isUpdateOperation: Boolean,
       executorErrors: ExecutionErrors,
       tupleId: Option[Int] = None):
-  (Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]], BlockMappingVO) = {
+  (Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long, String))]],
+    BlockMappingVO) = {
 
-    var res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]] = null
+    var res: Array[List[(SegmentStatus,
+      (SegmentUpdateDetails, ExecutionErrors, Long, String))]] = null
     val database = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -150,7 +152,7 @@ object DeleteExecution {
     // if no loads are present then no need to do anything.
     if (keyRdd.partitions.length == 0) {
       return (Array.empty[List[(SegmentStatus,
-        (SegmentUpdateDetails, ExecutionErrors, Long))]], null)
+        (SegmentUpdateDetails, ExecutionErrors, Long, String))]], null)
     }
     val blockMappingVO =
       carbonInputFormat.getBlockRowCount(
@@ -177,9 +179,10 @@ object DeleteExecution {
     val blockDetails = blockMappingVO.getBlockToSegmentMapping
     res = rdd.mapPartitionsWithIndex(
       (index: Int, records: Iterator[((String), (RowCountDetailsVO, Iterable[Row]))]) =>
-        Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]] {
+        Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long, String))]] {
           ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
-          var result = List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]()
+          var result = List[(SegmentStatus,
+            (SegmentUpdateDetails, ExecutionErrors, Long, String))]()
           while (records.hasNext) {
             val ((key), (rowCountDetailsVO, groupedRows)) = records.next
             result = result ++
@@ -203,7 +206,7 @@ object DeleteExecution {
         rowCountDetailsVO: RowCountDetailsVO,
         isStandardTable: Boolean,
         load: LoadMetadataDetails, carbonTable: CarbonTable
-    ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] = {
+    ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long, String))] = {
 
       val result = new DeleteDeltaResultImpl()
       var deleteStatus = SegmentStatus.LOAD_FAILURE
@@ -218,10 +221,11 @@ object DeleteExecution {
       blockName = CarbonUpdateUtil.getBlockName(CarbonTablePath.addDataPartPrefix(blockName))
       val deleteDeltaBlockDetails: DeleteDeltaBlockDetails = new DeleteDeltaBlockDetails(blockName)
       val resultIter =
-        new Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] {
+        new Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long, String))] {
         val segmentUpdateDetails = new SegmentUpdateDetails()
         var TID = ""
         var countOfRows = 0
+        var segmentDir = ""
         try {
           while (iter.hasNext) {
             val oneRow = iter.next
@@ -318,6 +322,8 @@ object DeleteExecution {
             carbonDeleteWriter.write(deleteDeltaBlockDetails)
           }
 
+
+          segmentDir = blockPath
           deleteStatus = SegmentStatus.SUCCESS
         } catch {
           case e : MultipleMatchingException =>
@@ -342,9 +348,11 @@ object DeleteExecution {
           }
         }
 
-        override def next(): (SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long)) = {
+        override def next(): (SegmentStatus,
+          (SegmentUpdateDetails, ExecutionErrors, Long, String)) = {
           finished = true
-          result.getKey(deleteStatus, (segmentUpdateDetails, executorErrors, countOfRows.toLong))
+          result.getKey(deleteStatus,
+            (segmentUpdateDetails, executorErrors, countOfRows.toLong, segmentDir))
         }
       }
       resultIter
@@ -356,13 +364,14 @@ object DeleteExecution {
   // all or none : update status file, only if complete delete operation is successful.
   def checkAndUpdateStatusFiles(
       executorErrors: ExecutionErrors,
-      res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]],
+      res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long, String))]],
       carbonTable: CarbonTable,
       timestamp: String,
       blockMappingVO: BlockMappingVO,
       isUpdateOperation: Boolean): Seq[Segment] = {
     val blockUpdateDetailsList = new util.ArrayList[SegmentUpdateDetails]()
     val segmentDetails = new util.HashSet[Segment]()
+    var allSuccess = true
     res.foreach(resultOfSeg => resultOfSeg.foreach(
       resultOfBlock => {
         if (resultOfBlock._1 == SegmentStatus.SUCCESS) {
@@ -375,7 +384,7 @@ object DeleteExecution {
           }
         } else {
           // In case of failure , clean all related delete delta files
-          CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
+          CarbonUpdateUtil.cleanStaleSegmentFiles(timestamp, resultOfBlock._2._4)
           val errorMsg =
             "Delete data operation is failed due to failure in creating delete delta file for " +
             "segment : " + resultOfBlock._2._1.getSegmentName + " block : " +
@@ -388,9 +397,14 @@ object DeleteExecution {
             executorErrors.errorMsg = errorMsg
           }
           LOGGER.error(errorMsg)
-          return Seq.empty[Segment]
+
+          allSuccess = false
         }
       }))
+
+    if(!allSuccess) {
+      return Seq.empty[Segment]
+    }
 
     val listOfSegmentToBeMarkedDeleted = CarbonUpdateUtil
       .getListOfSegmentsToMarkDeleted(blockMappingVO.getSegmentNumberOfBlockMapping)
@@ -423,12 +437,13 @@ object DeleteExecution {
 
   // all or none : update status file, only if complete delete operation is successful.
   def processSegments(executorErrors: ExecutionErrors,
-      res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]],
+      res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long, String))]],
       carbonTable: CarbonTable,
       timestamp: String,
       blockMappingVO: BlockMappingVO): (util.List[SegmentUpdateDetails], Seq[Segment]) = {
     val blockUpdateDetailsList = new util.ArrayList[SegmentUpdateDetails]()
     val segmentDetails = new util.HashSet[Segment]()
+    var allSuccess = true
     res.foreach(resultOfSeg => resultOfSeg.foreach(
       resultOfBlock => {
         if (resultOfBlock._1 == SegmentStatus.SUCCESS) {
@@ -441,7 +456,7 @@ object DeleteExecution {
           }
         } else {
           // In case of failure , clean all related delete delta files
-          CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
+          CarbonUpdateUtil.cleanStaleSegmentFiles(timestamp, resultOfBlock._2._4)
           val errorMsg =
             "Delete data operation is failed due to failure in creating delete delta file for " +
             "segment : " + resultOfBlock._2._1.getSegmentName + " block : " +
@@ -454,9 +469,13 @@ object DeleteExecution {
             executorErrors.errorMsg = errorMsg
           }
           LOGGER.error(errorMsg)
-          return (blockUpdateDetailsList, Seq.empty[Segment])
+          allSuccess = false
         }
       }))
+
+    if(!allSuccess) {
+      return (blockUpdateDetailsList, Seq.empty[Segment])
+    }
 
     val listOfSegmentToBeMarkedDeleted = CarbonUpdateUtil
       .getListOfSegmentsToMarkDeleted(blockMappingVO.getSegmentNumberOfBlockMapping)

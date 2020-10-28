@@ -369,22 +369,35 @@ public class CarbonUpdateUtil {
     }
     for (CarbonFile eachDir : file.listFiles()) {
       // for each dir check if the file with the delta timestamp is present or not.
-      CarbonFile[] toBeDeleted = eachDir.listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile file) {
-          String fileName = file.getName();
-          return (fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_DELTA_FILE_EXT)
-                  || fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
-                  || fileName.endsWith(timeStamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT));
-        }
-      });
-      // deleting the files of a segment.
-      try {
-        CarbonUtil.deleteFoldersAndFilesSilent(toBeDeleted);
-      } catch (IOException | InterruptedException e) {
-        LOGGER.error("Exception in deleting the delta files." + e);
-      }
+      deleteFolderFiles(eachDir, timeStamp);
     }
+  }
+
+  private static void deleteFolderFiles(CarbonFile fileDir, final String timeStamp) {
+    CarbonFile[] toBeDeleted = fileDir.listFiles(new CarbonFileFilter() {
+      @Override
+      public boolean accept(CarbonFile file) {
+        String fileName = file.getName();
+        return (fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_DELTA_FILE_EXT)
+                || fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+                || fileName.endsWith(timeStamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT));
+      }
+    });
+    // deleting the files of a segment.
+    try {
+      CarbonUtil.deleteFoldersAndFilesSilent(toBeDeleted);
+    } catch (IOException | InterruptedException e) {
+      LOGGER.error("Exception in deleting the delta files." + e);
+    }
+  }
+
+  public static void cleanStaleSegmentFiles(final String timeStamp, final String segmentDir) {
+    CarbonFile file = FileFactory.getCarbonFile(segmentDir);
+    if (!file.exists()) {
+      return;
+    }
+
+    deleteFolderFiles(file, timeStamp);
   }
 
   /**

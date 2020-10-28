@@ -76,14 +76,15 @@ class updateResultImpl
 }
 
 trait DeleteDelateResult[K, V] extends Serializable {
-  def getKey(key: SegmentStatus, value: (SegmentUpdateDetails, ExecutionErrors, Long)): (K, V)
+  def getKey(key: SegmentStatus,
+             value: (SegmentUpdateDetails, ExecutionErrors, Long, String)): (K, V)
 }
 
 class DeleteDeltaResultImpl
-  extends DeleteDelateResult[SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long)] {
+  extends DeleteDelateResult[SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long, String)] {
   override def getKey(key: SegmentStatus,
-      value: (SegmentUpdateDetails, ExecutionErrors, Long)): (SegmentStatus, (SegmentUpdateDetails,
-    ExecutionErrors, Long)) = {
+      value: (SegmentUpdateDetails, ExecutionErrors, Long, String)):
+  (SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long, String)) = {
     (key, value)
   }
 }
