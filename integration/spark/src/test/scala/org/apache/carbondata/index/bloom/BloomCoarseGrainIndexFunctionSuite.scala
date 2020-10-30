@@ -660,6 +660,28 @@ class BloomCoarseGrainIndexFunctionSuite
       sql(s"SELECT * FROM $normalTable WHERE salary='1040'"))
   }
 
+  test("test drop index when more than one bloom index exists") {
+    sql(s"CREATE TABLE $bloomSampleTable " +
+      "(id int,name string,salary int)STORED as carbondata TBLPROPERTIES('SORT_COLUMNS'='id')")
+    sql(s"CREATE index index1 ON TABLE $bloomSampleTable(id) as 'bloomfilter' " +
+      "PROPERTIES ( 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001', 'BLOOM_COMPRESS'='true')")
+    sql(s"CREATE index index2 ON TABLE $bloomSampleTable (name) as 'bloomfilter' " +
+      "PROPERTIES ('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001', 'BLOOM_COMPRESS'='true')")
+    sql(s"insert into $bloomSampleTable values(1,'nihal',20)")
+    checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, "index1", "index2")
+    sql(s"drop index index1 on $bloomSampleTable")
+    checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, "index2")
+    sql(s"drop index index2 on $bloomSampleTable")
+    val carbonTable = CarbonEnv.getCarbonTable(
+      Option("default"), bloomSampleTable)(sqlContext.sparkSession)
+    val isIndexExists = carbonTable.getTableInfo
+      .getFactTable
+      .getTableProperties
+      .get("indexexists")
+    assertResult("false")(isIndexExists)
+    assert(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").collect().isEmpty)
+  }
+
   test("test rebuild bloom index: index column is float, dictionary") {
     val floatCsvPath = s"$resourcesPath/datasamplefordate.csv"
     CarbonProperties.getInstance()
