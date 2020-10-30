@@ -183,17 +183,20 @@ private[sql] case class DropIndexCommand(
           parentCarbonTable)
         parentCarbonTable = getRefreshedParentTable(sparkSession, dbName)
         val indexMetadata = parentCarbonTable.getIndexMetadata
+        var hasCgFgIndexes = false
         if (null != indexMetadata && null != indexMetadata.getIndexesMap) {
-          val hasCgFgIndexes =
-            !(indexMetadata.getIndexesMap.size() == 1 &&
-              indexMetadata.getIndexesMap.containsKey(IndexType.SI.getIndexProviderName))
-          if (hasCgFgIndexes) {
-            CarbonIndexUtil
-              .addOrModifyTableProperty(parentCarbonTable,
-                Map("indexExists" -> "false"), needLock = false)(sparkSession)
+          // check if any CG or FG index exists. If not exists,
+          // then set indexExists as false to return empty index list for next query.
+          hasCgFgIndexes =
+            indexMetadata.getIndexesMap.containsKey(IndexType.BLOOMFILTER.getIndexProviderName) ||
+              indexMetadata.getIndexesMap.containsKey(IndexType.LUCENE.getIndexProviderName)
+        }
+        if (!hasCgFgIndexes) {
+          CarbonIndexUtil
+            .addOrModifyTableProperty(parentCarbonTable,
+              Map("indexExists" -> "false"), needLock = false)(sparkSession)
 
-            CarbonHiveIndexMetadataUtil.refreshTable(dbName, parentTableName, sparkSession)
-          }
+          CarbonHiveIndexMetadataUtil.refreshTable(dbName, parentTableName, sparkSession)
         }
       }
     } finally {
