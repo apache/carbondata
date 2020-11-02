@@ -63,6 +63,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
     val newPath = storeLocation + "/" + "addsegtest"
+    val newPathWithLineSeparator = storeLocation + "/" + "addsegtest/"
     copy(path, newPath)
     sql("delete from table addsegment1 where segment.id in (1)")
     sql("clean files for table addsegment1")
@@ -72,6 +73,11 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
       .collect()
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
     checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(20)))
+
+    sql(s"alter table addsegment1 add segment options('path'='$newPathWithLineSeparator', " +
+        s"'format'='carbon')")
+      .collect()
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 

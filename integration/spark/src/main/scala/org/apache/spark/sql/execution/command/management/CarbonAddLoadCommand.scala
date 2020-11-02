@@ -34,6 +34,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
@@ -89,8 +90,13 @@ case class CarbonAddLoadCommand(
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "add segment")
     }
 
-    val inputPath = options.getOrElse(
+    var givenPath = options.getOrElse(
       "path", throw new UnsupportedOperationException("PATH is mandatory"))
+    // remove file separator if already present
+    if (givenPath.charAt(givenPath.length - 1) == CarbonCommonConstants.FILE_SEPARATOR) {
+      givenPath = givenPath.substring(0, givenPath.length - 1)
+    }
+    val inputPath = givenPath
 
     // If a path is already added then we should block the adding of the same path again.
     val allSegments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
