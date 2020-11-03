@@ -618,6 +618,21 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
   }
 
+  test("test partition cache on multiple columns") {
+    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "false")
+    sql("drop table if exists partition_cache")
+    sql("create table partition_cache(a string) partitioned by(b int, c String) stored as carbondata")
+    sql("insert into partition_cache select 'k',1,'nihal'")
+    checkAnswer(sql("select count(*) from partition_cache where b = 1"), Seq(Row(1)))
+    sql("select * from partition_cache where b = 1").collect()
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "partition_cache")
+    val partitionSpecs: util.List[CatalogTablePartition] = PartitionCacheManager.getIfPresent(
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+    assert(partitionSpecs.size == 1)
+    assert(partitionSpecs.get(0).spec.size == 2)
+    CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
+  }
+
   test("test partition caching after load") {
     CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "false")
     sql("drop table if exists partition_cache")
