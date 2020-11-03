@@ -79,9 +79,10 @@ object PartitionCacheManager extends Cache[PartitionCacheKey,
           segmentFilePath.getAbsolutePath), segmentFileModifiedTime))
       }
     }.toMap
+    val invalidSegmentMap = validInvalidSegments.getInvalidSegments.asScala
+      .map(seg => (seg.getSegmentNo, seg)).toMap
     // remove all invalid segment entries from cache
-    val finalCache = cacheablePartitionSpecs --
-                     validInvalidSegments.getInvalidSegments.asScala.map(_.getSegmentNo)
+    val finalCache = cacheablePartitionSpecs -- invalidSegmentMap.keySet
     val cacheObject = CacheablePartitionSpec(finalCache)
     if (finalCache.nonEmpty) {
       // remove the existing cache as new cache values may be added.
@@ -92,6 +93,8 @@ object PartitionCacheManager extends Cache[PartitionCacheKey,
         cacheObject,
         cacheObject.getMemorySize,
         identifier.expirationTime)
+    } else if (invalidSegmentMap != null && invalidSegmentMap.nonEmpty) {
+      CACHE.remove(identifier.tableId)
     }
     finalCache.values.flatMap(_._1).toList.asJava
   }
@@ -112,14 +115,18 @@ object PartitionCacheManager extends Cache[PartitionCacheKey,
 
   private def readPartition(identifier: PartitionCacheKey, segmentFilePath: String) = {
     val segmentFile = SegmentFileStore.readSegmentFile(segmentFilePath)
+    val partitionPath = new mutable.StringBuilder()
+    var partitionSpec: Map[String, String] = Map()
     segmentFile.getLocationMap.values().asScala
-      .flatMap(_.getPartitions.asScala).toSet.map { uniquePartition: String =>
+      .flatMap(_.getPartitions.asScala).toSet.foreach { uniquePartition: String =>
+      partitionPath.append(CarbonCommonConstants.FILE_SEPARATOR).append(uniquePartition)
       val partitionSplit = uniquePartition.split("=")
-      val storageFormat = CatalogStorageFormat(
-        Some(new URI(identifier.tablePath + "/" + uniquePartition)),
-        None, None, None, compressed = false, Map())
-      CatalogTablePartition(Map(partitionSplit(0) -> partitionSplit(1)), storageFormat)
-    }.toSeq
+      partitionSpec = partitionSpec. +(partitionSplit(0) -> partitionSplit(1))
+    }
+    Seq(CatalogTablePartition(partitionSpec,
+      CatalogStorageFormat(
+        Some(new URI(identifier.tablePath + partitionPath)),
+        None, None, None, compressed = false, Map())))
   }
 
   override def put(key: PartitionCacheKey,
