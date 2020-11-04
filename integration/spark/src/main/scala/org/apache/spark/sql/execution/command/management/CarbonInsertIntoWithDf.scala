@@ -154,9 +154,6 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
 
       LOGGER.info("Sort Scope : " + carbonLoadModel.getSortScope)
       val (rows, loadResult) = insertData(loadParams)
-      if (updateModel.isDefined) {
-        updateModel.get.insertedSegment = Some(carbonLoadModel.getSegmentId)
-      }
       val info = CommonLoadUtils.makeAuditInfo(loadResult)
       CommonLoadUtils.firePostLoadEvents(sparkSession,
         carbonLoadModel,

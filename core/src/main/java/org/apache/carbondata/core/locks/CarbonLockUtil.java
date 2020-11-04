@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.core.locks;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -134,7 +137,6 @@ public class CarbonLockUtil {
     }
     CarbonFile[] files = FileFactory.getCarbonFile(lockFilesDir)
         .listFiles(new CarbonFileFilter() {
-
             @Override
             public boolean accept(CarbonFile pathName) {
               if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
@@ -148,5 +150,29 @@ public class CarbonLockUtil {
     for (CarbonFile file : files) {
       file.delete();
     }
+  }
+
+  public static List<ICarbonLock> acquireLocks(CarbonTable carbonTable,
+      List<String> locksToBeAcquired) {
+    List<ICarbonLock> acquiredLocks = new ArrayList<>();
+    try {
+      locksToBeAcquired.forEach(lock ->
+          acquiredLocks.add(CarbonLockUtil
+              .getLockObject(carbonTable.getAbsoluteTableIdentifier(), lock))
+      );
+    } catch (Exception e) {
+      releaseLocks(acquiredLocks);
+    }
+    return acquiredLocks;
+  }
+
+  public static void releaseLocks(List<ICarbonLock> locks) {
+    locks.forEach(carbonLock -> {
+      if (carbonLock.unlock()) {
+        LOGGER.info("Alter table lock released successfully");
+      } else {
+        LOGGER.error("Unable to release lock");
+      }
+    });
   }
 }

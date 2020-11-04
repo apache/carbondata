@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -991,13 +992,13 @@ public class SegmentFileStore {
       List<String> toBeUpdatedSegments, List<String> toBeDeleteSegments,
       String uuid) throws IOException {
     if (toBeDeleteSegments.size() > 0 || toBeUpdatedSegments.size() > 0) {
-      Set<Segment> segmentSet = new HashSet<>(
+      Set<String> segmentSet = new HashSet<>(
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-              .getValidAndInvalidSegments(carbonTable.isMV()).getValidSegments());
+              .getValidAndInvalidSegments(carbonTable.isMV()).getValidSegments())
+              .stream().map(segment -> segment.getSegmentNo()).collect(Collectors.toSet());
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId,
           true, false,
-          Segment.toSegmentList(toBeDeleteSegments, null),
-          Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
+              new HashSet<>(toBeDeleteSegments), new HashSet<>(toBeUpdatedSegments), uuid, null);
     }
   }
 

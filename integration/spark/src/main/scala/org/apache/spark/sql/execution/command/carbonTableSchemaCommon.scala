@@ -121,7 +121,8 @@ case class UpdateTableModel(
     updatedTimeStamp: Long,
     var executorErrors: ExecutionErrors,
     deletedSegments: Seq[Segment],
-    var insertedSegment: Option[String])
+    var addedLoadDetail: Option[LoadMetadataDetails],
+    var carbonLoadModel: Option[CarbonLoadModel])
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,

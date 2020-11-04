@@ -40,28 +40,26 @@ abstract class MutationAction(sparkSession: SparkSession, carbonTable: CarbonTab
    */
   def handleAction(dataRDD: RDD[Row],
       executorErrors: ExecutionErrors,
-      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], Seq[Segment])
+      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], util.HashSet[String])
 
   protected def handle(sparkSession: SparkSession,
       carbonTable: CarbonTable,
       factTimestamp: Long,
       dataRDD: RDD[Row],
       executorErrors: ExecutionErrors,
-      condition: (Int) => Boolean): (util.List[SegmentUpdateDetails], Seq[Segment]) = {
+      condition: (Int) => Boolean): (util.List[SegmentUpdateDetails], util.HashSet[String]) = {
     val update = dataRDD.filter { row =>
       val status = row.get(1)
       status != null && condition(status.asInstanceOf[Int])
     }
-    val tuple1 = DeleteExecution.deleteDeltaExecutionInternal(Some(carbonTable.getDatabaseName),
-      carbonTable.getTableName,
+    val tuple1 = DeleteExecution.deleteDeltaExecutionInternal(carbonTable,
       sparkSession, update,
       factTimestamp.toString,
       true, executorErrors, Some(0))
     MutationActionFactory.checkErrors(executorErrors)
-    val tupleProcessed1 = DeleteExecution.processSegments(executorErrors, tuple1._1, carbonTable,
-      factTimestamp.toString, tuple1._2)
+    val tupleProcessed1 = DeleteExecution.processSegments(executorErrors, tuple1._1, tuple1._2)
     MutationActionFactory.checkErrors(executorErrors)
-    tupleProcessed1
+    (tupleProcessed1._1, tupleProcessed1._2)
   }
 
 }
@@ -74,7 +72,7 @@ case class HandleUpdateAction(sparkSession: SparkSession, carbonTable: CarbonTab
 
   override def handleAction(dataRDD: RDD[Row],
       executorErrors: ExecutionErrors,
-      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], Seq[Segment]) = {
+      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], util.HashSet[String]) = {
     handle(sparkSession, carbonTable, trxMgr.getNextTransaction(this),
       dataRDD, executorErrors, (status) => (status == 101) || (status == 102))
   }
@@ -88,7 +86,7 @@ case class HandleDeleteAction(sparkSession: SparkSession, carbonTable: CarbonTab
 
   override def handleAction(dataRDD: RDD[Row],
       executorErrors: ExecutionErrors,
-      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], Seq[Segment]) = {
+      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], util.HashSet[String]) = {
     handle(sparkSession, carbonTable, trxMgr.getNextTransaction(this),
       dataRDD, executorErrors, (status) => (status == 100) || (status == 102))
   }
@@ -104,17 +102,17 @@ case class MultipleMutationAction(sparkSession: SparkSession,
 
   override def handleAction(dataRDD: RDD[Row],
       executorErrors: ExecutionErrors,
-      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], Seq[Segment]) = {
-    var (updates: util.List[SegmentUpdateDetails], segs: Seq[Segment]) =
-      (new util.ArrayList[SegmentUpdateDetails], Seq.empty[Segment])
+      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], util.HashSet[String]) = {
+    var (updates: util.List[SegmentUpdateDetails], segs: util.HashSet[String]) =
+      (new util.ArrayList[SegmentUpdateDetails], new util.HashSet[String])
     mutations.foreach { m =>
       val (l, r) = m.handleAction(dataRDD, executorErrors, trxMgr)
       l.asScala.foreach { entry =>
         CarbonUpdateUtil.mergeSegmentUpdate(false, updates, entry)
       }
-      segs ++= r
+      segs.addAll(r)
     }
-    (updates, segs.distinct)
+    (updates, segs)
   }
 }
 
@@ -126,7 +124,7 @@ case class HandleUpdateAndDeleteAction(sparkSession: SparkSession, carbonTable: 
 
   override def handleAction(dataRDD: RDD[Row],
       executorErrors: ExecutionErrors,
-      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], Seq[Segment]) = {
+      trxMgr: TranxManager): (util.List[SegmentUpdateDetails], util.HashSet[String]) = {
     handle(sparkSession, carbonTable, trxMgr.getNextTransaction(this),
       dataRDD, executorErrors, (status) => (status == 100) || (status == 101) || (status == 102))
   }

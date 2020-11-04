@@ -227,7 +227,6 @@ case class CarbonAddLoadCommand(
     model.setDatabaseName(carbonTable.getDatabaseName)
     model.setTableName(carbonTable.getTableName)
     val operationContext = new OperationContext
-    operationContext.setProperty("isLoadOrCompaction", false)
     val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(sparkSession,
       model,
       "",

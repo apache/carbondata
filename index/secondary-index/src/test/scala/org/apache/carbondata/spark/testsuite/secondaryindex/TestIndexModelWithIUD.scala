@@ -94,6 +94,8 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
     try {
       sql("""delete from source d where d.c2 in (1,2,3,4)""").collect()
       assert(false)
+      sql("""select c5 from source""").show()
+      sql("""select c5 from index_source1""").show()
     }
     catch {
       case ex: Exception => assert(true)

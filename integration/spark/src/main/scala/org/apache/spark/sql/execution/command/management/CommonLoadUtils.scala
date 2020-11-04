@@ -32,7 +32,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Ascending, AttributeReference, SortOrder}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{LocalRelation, LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.UpdateTableModel
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FindDataSourceTable, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
@@ -862,6 +862,8 @@ object CommonLoadUtils {
     val table = loadParams.carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val catalogTable: CatalogTable = loadParams.logicalPartitionRelation.catalogTable.get
     CarbonUtils.threadSet("partition.operationcontext", loadParams.operationContext)
+    var newMetaEntry: Array[Row] = Array.empty
+    var opt: mutable.Map[String, String] = mutable.Map.empty
     val attributes = if (loadParams.scanResultRDD.isDefined) {
       // take the already re-arranged attributes
       catalogTable.schema.toAttributes
@@ -1021,7 +1023,7 @@ object CommonLoadUtils {
       } else if (loadParams.carbonLoadModel.getFactTimeStamp == 0L) {
         loadParams.carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
       }
-      val opt = collection.mutable.Map() ++ loadParams.optionsOriginal
+      opt = collection.mutable.Map() ++ loadParams.optionsOriginal
       if (loadParams.scanResultRDD.isDefined) {
         opt += ((DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS, "true"))
       }
@@ -1047,7 +1049,18 @@ object CommonLoadUtils {
           overwrite = false,
           ifPartitionNotExists = false)
       SparkUtil.setNullExecutionId(loadParams.sparkSession)
-      Dataset.ofRows(loadParams.sparkSession, convertedPlan).collect()
+      val ds = Dataset.ofRows(loadParams.sparkSession, convertedPlan)
+      ds.collect()
+
+      if (!loadParams.updateModel.isEmpty && loadParams.updateModel.isDefined
+          && table.isHivePartitionTable
+          && !ds.logicalPlan.asInstanceOf[LocalRelation].data(0).anyNull) {
+        loadParams.updateModel.get.addedLoadDetail =
+          Some(ObjectSerializationUtil.convertStringToObject(
+            ds.logicalPlan.asInstanceOf[LocalRelation].data(0).getString(0))
+            .asInstanceOf[LoadMetadataDetails])
+        loadParams.updateModel.get.carbonLoadModel = Some(loadParams.carbonLoadModel)
+      }
     } catch {
       case ex: Throwable =>
         val (executorMessage, errorMessage) = CarbonScalaUtil.retrieveAndLogErrorMsg(ex, LOGGER)
@@ -1088,23 +1101,25 @@ object CommonLoadUtils {
           List(loadParams.carbonLoadModel.getSegmentId))
       }
     }
-    try {
-      val compactedSegments = new util.ArrayList[String]()
-      // Trigger auto compaction
-      CarbonDataRDDFactory.handleSegmentMerging(
-        loadParams.sparkSession.sqlContext,
-        loadParams.carbonLoadModel
-          .getCopyWithPartition(loadParams.carbonLoadModel.getCsvHeader,
-            loadParams.carbonLoadModel.getCsvDelimiter),
-        table,
-        compactedSegments,
-        loadParams.operationContext)
-      loadParams.carbonLoadModel.setMergedSegmentIds(compactedSegments)
-    } catch {
-      case e: Exception =>
-        LOGGER.error(
-          "Auto-Compaction has failed. Ignoring this exception because the " +
-          "load is passed.", e)
+    if (!loadParams.updateModel.isDefined) {
+      try {
+        val compactedSegments = new util.ArrayList[String]()
+        // Trigger auto compaction
+        CarbonDataRDDFactory.handleSegmentMerging(
+          loadParams.sparkSession.sqlContext,
+          loadParams.carbonLoadModel
+            .getCopyWithPartition(loadParams.carbonLoadModel.getCsvHeader,
+              loadParams.carbonLoadModel.getCsvDelimiter),
+          table,
+          compactedSegments,
+          loadParams.operationContext)
+        loadParams.carbonLoadModel.setMergedSegmentIds(compactedSegments)
+      } catch {
+        case e: Exception =>
+          LOGGER.error(
+            "Auto-Compaction has failed. Ignoring this exception because the " +
+              "load is passed.", e)
+      }
     }
     val specs =
       SegmentFileStore.getPartitionSpecs(loadParams.carbonLoadModel.getSegmentId,

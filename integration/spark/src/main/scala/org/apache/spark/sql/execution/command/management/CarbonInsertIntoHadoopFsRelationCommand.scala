@@ -26,12 +26,13 @@ import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogTable, CatalogTablePartition}
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{CarbonSQLHadoopMapReduceCommitProtocol, FileFormat, FileFormatWriter, FileIndex, PartitioningUtils, SparkCarbonTableFormat}
 import org.apache.spark.sql.internal.SQLConf.PartitionOverwriteMode
+import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.util.SchemaUtils
 
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -56,7 +57,7 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
     partitionColumns: Seq[Attribute],
     bucketSpec: Option[BucketSpec],
     fileFormat: FileFormat,
-    options: Map[String, String],
+    var options: Map[String, String],
     query: LogicalPlan,
     mode: SaveMode,
     catalogTable: Option[CatalogTable],
@@ -64,6 +65,12 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
     outputColumnNames: Seq[String])
   extends DataWritingCommand {
   import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils.escapePathName
+
+  override def output: Seq[Attribute] = {
+    Seq(
+      AttributeReference("newMetaEntry", StringType, nullable = true)()
+    )
+  }
 
   override def run(sparkSession: SparkSession, child: SparkPlan): Seq[Row] = {
     // Most formats don't do well with duplicate columns, so lets not allow that
@@ -209,7 +216,8 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
       logInfo("Skipping insertion into a relation that already exists.")
     }
 
-    Seq.empty[Row]
+    val newMetaEntry = committer.newMetaEntry
+    Seq(Row(newMetaEntry))
   }
 
   /**

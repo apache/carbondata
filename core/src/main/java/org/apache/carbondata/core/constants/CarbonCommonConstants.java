@@ -2560,4 +2560,9 @@ public final class CarbonCommonConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_MAP_ORDER_PUSHDOWN = "carbon.mapOrderPushDown";
 
+
+  /**
+   * this variable is to coalesce partitions of inserting data during update
+   */
+  public static final double CARBON_UPDATE_ROW_COUNT_FOR_COALESCE = 32000;
 }

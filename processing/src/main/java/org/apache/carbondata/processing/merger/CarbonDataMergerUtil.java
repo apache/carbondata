@@ -851,15 +851,13 @@ public final class CarbonDataMergerUtil {
    * @param compactionTypeIUD
    * @return
    */
-  public static List<String> getSegListIUDCompactionQualified(List<Segment> segments,
+  public static List<String> getSegListIUDCompactionQualified(Set<String> segments,
       AbsoluteTableIdentifier absoluteTableIdentifier,
       SegmentUpdateStatusManager segmentUpdateStatusManager, CompactionType compactionTypeIUD) {
-
     List<String> validSegments = new ArrayList<>();
-
     int numberDeleteDeltaFilesThreshold =
         CarbonProperties.getInstance().getNoDeleteDeltaFilesThresholdForIUDCompaction();
-    for (Segment seg : segments) {
+    for (String seg : segments) {
       List<String> segmentNoAndBlocks = checkDeleteDeltaFilesInSeg(seg,
           segmentUpdateStatusManager, numberDeleteDeltaFilesThreshold);
       validSegments.addAll(segmentNoAndBlocks);
@@ -877,13 +875,13 @@ public final class CarbonDataMergerUtil {
    * @param numberDeltaFilesThreshold threshold of delete delta files
    * @return block list of the segment
    */
-  private static List<String> checkDeleteDeltaFilesInSeg(Segment seg,
+  private static List<String> checkDeleteDeltaFilesInSeg(String seg,
       SegmentUpdateStatusManager segmentUpdateStatusManager, int numberDeltaFilesThreshold) {
 
     List<String> blockLists = new ArrayList<>();
     Set<String> uniqueBlocks = new HashSet<String>();
     List<String> blockNameList =
-        segmentUpdateStatusManager.getBlockNameFromSegment(seg.getSegmentNo());
+        segmentUpdateStatusManager.getBlockNameFromSegment(seg);
     for (String blockName : blockNameList) {
       List<String> deleteDeltaFiles =
           segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
@@ -901,7 +899,7 @@ public final class CarbonDataMergerUtil {
           String taskAndTimeStamp = task + CarbonCommonConstants.HYPHEN + timestamp;
           uniqueBlocks.add(taskAndTimeStamp);
           if (uniqueBlocks.size() > numberDeltaFilesThreshold) {
-            blockLists.add(seg.getSegmentNo() + CarbonCommonConstants.FILE_SEPARATOR + blockName);
+            blockLists.add(seg + CarbonCommonConstants.FILE_SEPARATOR + blockName);
             break;
           }
         }
@@ -947,7 +945,7 @@ public final class CarbonDataMergerUtil {
     segmentUpdateStatusManager.setUpdateStatusDetails(segmentUpdateDetails);
 
     List<String> deleteFilePathList =
-        segmentUpdateStatusManager.getDeleteDeltaFilesList(new Segment(seg), blockName);
+        segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
 
     String destFileName =
         blockName + "-" + timestamp.toString() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;

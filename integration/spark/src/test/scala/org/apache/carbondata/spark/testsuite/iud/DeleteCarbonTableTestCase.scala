@@ -16,9 +16,10 @@
  */
 package org.apache.carbondata.spark.testsuite.iud
 
-import java.io.File
+import java.io.{File, IOException}
 
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
+import org.apache.spark.sql.execution.command.mutation.HorizontalCompactionException
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.SparkTestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
@@ -31,6 +32,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+
 
 class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
@@ -464,6 +466,46 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(s"select * from ${ tableName } where a = '10'"), Seq(Row("10", "10", "2017")))
 
     sql(s"drop table if exists ${ tableName }").collect()
+  }
+
+  test("test atomicity of delete") {
+    sql("drop table if exists iud_db.zerorows")
+    sql("create table iud_db.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.zerorows")
+
+    val sqlText = "delete from iud_db.zerorows d where d.c1 = 'a'"
+
+    val expectedWhenDeleteFailed = Seq(Row("a", 1, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
+      Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
+
+    // 1) Write DeleteDelta Failure
+    IUDCommonMockUtil.mockWriteDeleteDeltaFailure(new IOException("Mock IOException"), sqlText)
+    verifyResultInTestOfAtomicity(expectedWhenDeleteFailed)
+
+    // 3) Write UpdateTableStatus Failure
+    IUDCommonMockUtil.mockWriteUpdateTableStatusFailure(sqlText)
+    verifyResultInTestOfAtomicity(expectedWhenDeleteFailed)
+
+    // 4) Write TableStatus Failure
+    IUDCommonMockUtil.mockWriteTableStatusFailure(sqlText)
+    verifyResultInTestOfAtomicity(expectedWhenDeleteFailed)
+
+    val expectedWhenDeleteSuccess = Seq(Row("b", 2, "bb", "bbb"), Row("c", 3, "cc", "ccc"),
+      Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
+
+    // 5) Mock Horizontal Compaction Failure
+    IUDCommonMockUtil.mockHorizontalCompactionFailure(new HorizontalCompactionException(
+      "Mock HorizontalCompactionException", System.currentTimeMillis()), sqlText)
+    verifyResultInTestOfAtomicity(expectedWhenDeleteSuccess)
+
+    // 8) Mock Refresh MV Failure
+    sql(s"""INSERT INTO iud_db.zerorows select "a", 1, "aa", "aaa"""")
+    IUDCommonMockUtil.mockMVRefreshFailure(new IOException("Mock IOException"), sqlText)
+    verifyResultInTestOfAtomicity(expectedWhenDeleteSuccess)
+  }
+
+  def verifyResultInTestOfAtomicity(expected: Seq[Row]): Unit = {
+    checkAnswer(sql("""select c1,c2,c3,c5 from iud_db.zerorows"""), expected)
   }
 
   override def afterAll {
