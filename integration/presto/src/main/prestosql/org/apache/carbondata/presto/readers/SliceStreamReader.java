@@ -141,8 +141,10 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   @Override
   public void putAllByteArray(byte[] data, int offset, int length) {
+    super.putAllByteArray(data, offset, length);
     int[] lengths = getLengths();
     int[] offsets = getOffsets();
+    if (lengths == null) return;
     for (int i = 0; i < lengths.length; i++) {
       if (offsets[i] != 0) {
         putByteArray(i, offsets[i], lengths[i], data);
