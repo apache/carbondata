@@ -135,7 +135,6 @@ public class CarbonUpdateUtil {
                                               String timestamp) {
     return blockPath + CarbonCommonConstants.FILE_SEPARATOR + blockName
         + CarbonCommonConstants.HYPHEN + timestamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;
-
   }
 
   /**
@@ -146,6 +145,10 @@ public class CarbonUpdateUtil {
    */
   public static boolean updateSegmentStatus(List<SegmentUpdateDetails> updateDetailsList,
       CarbonTable table, String updateStatusFileIdentifier, boolean isCompaction) {
+    if (updateDetailsList.isEmpty()) {
+      return true;
+    }
+
     boolean status = false;
     SegmentUpdateStatusManager segmentUpdateStatusManager = new SegmentUpdateStatusManager(table);
     ICarbonLock updateLock = segmentUpdateStatusManager.getTableUpdateStatusLock();
@@ -236,12 +239,13 @@ public class CarbonUpdateUtil {
    * @param segmentsToBeDeleted
    * @return
    */
-  public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+  public static boolean updateTableMetadataStatus(Set<String> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
-      boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted) {
+      boolean isUpdateStatusFileUpdateRequired, Set<String> segmentsToBeDeleted,
+      Set<String> segmentsToBeUpdated, String uuid) throws IOException {
     return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
         isTimestampUpdateRequired, isUpdateStatusFileUpdateRequired,
-        segmentsToBeDeleted, new ArrayList<Segment>(), "");
+        segmentsToBeDeleted, segmentsToBeUpdated, uuid, null);
   }
 
   /**
@@ -253,10 +257,11 @@ public class CarbonUpdateUtil {
    * @param segmentsToBeDeleted
    * @return
    */
-  public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+  public static boolean updateTableMetadataStatus(Set<String> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
-      boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted,
-      List<Segment> segmentFilesTobeUpdated, String uuid) {
+      boolean isUpdateStatusFileUpdateRequired, Set<String> segmentsToBeDeleted,
+      Set<String> segmentFilesTobeUpdated, String uuid,
+      LoadMetadataDetails newLoadEntry) throws IOException {
 
     boolean status = false;
     String metaDataFilepath = table.getMetadataPath();
@@ -286,13 +291,13 @@ public class CarbonUpdateUtil {
 
           if (isTimestampUpdateRequired) {
             // if the segments is in the list of marked for delete then update the status.
-            if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName()))) {
+            if (segmentsToBeDeleted.contains(loadMetadata.getLoadName())) {
               loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
               loadMetadata.setModificationOrDeletionTimestamp(Long.parseLong(updatedTimeStamp));
             }
           }
-          for (Segment segName : updatedSegmentsList) {
-            if (loadMetadata.getLoadName().equalsIgnoreCase(segName.getSegmentNo())) {
+          for (String segName : updatedSegmentsList) {
+            if (loadMetadata.getLoadName().equalsIgnoreCase(segName)) {
               // if this call is coming from the delete delta flow then the time stamp
               // String will come empty then no need to write into table status file.
               if (isTimestampUpdateRequired) {
@@ -304,13 +309,33 @@ public class CarbonUpdateUtil {
                 // update end timestamp for each time.
                 loadMetadata.setUpdateDeltaEndTimestamp(updatedTimeStamp);
               }
-              if (segmentFilesTobeUpdated
-                  .contains(Segment.toSegment(loadMetadata.getLoadName(), null))) {
+              if (segmentFilesTobeUpdated.contains(loadMetadata.getLoadName())) {
                 loadMetadata.setSegmentFile(loadMetadata.getLoadName() + "_" + updatedTimeStamp
                     + CarbonTablePath.SEGMENT_EXT);
               }
             }
           }
+        }
+
+        if (newLoadEntry != null) {
+          // existing entry needs to be overwritten as the entry will exist with some
+          // intermediate status
+          int indexToOverwriteNewMetaEntry = 0;
+          boolean found = false;
+          for (LoadMetadataDetails entry : listOfLoadFolderDetailsArray) {
+            if (entry.getLoadName().equals(newLoadEntry.getLoadName())
+                    && entry.getLoadStartTime() == newLoadEntry.getLoadStartTime()) {
+              newLoadEntry.setExtraInfo(entry.getExtraInfo());
+              found = true;
+              break;
+            }
+            indexToOverwriteNewMetaEntry++;
+          }
+          if (!found) {
+            LOGGER.error("Entry not found to update " + newLoadEntry + " From list");
+            throw new IOException("Entry not found to update in the table status file");
+          }
+          listOfLoadFolderDetailsArray[indexToOverwriteNewMetaEntry] = newLoadEntry;
         }
 
         try {
@@ -537,7 +562,7 @@ public class CarbonUpdateUtil {
    * @param segmentBlockCount
    */
   public static void decrementDeletedBlockCount(SegmentUpdateDetails details,
-                                                Map<String, Long> segmentBlockCount) {
+      Map<String, Long> segmentBlockCount) {
 
     String segId = details.getSegmentName();
 
@@ -550,16 +575,13 @@ public class CarbonUpdateUtil {
    * @param segmentBlockCount
    * @return
    */
-  public static List<Segment> getListOfSegmentsToMarkDeleted(Map<String, Long> segmentBlockCount) {
-    List<Segment> segmentsToBeDeleted =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
+  public static Set<String> getListOfSegmentsToMarkDeleted(Map<String, Long> segmentBlockCount) {
+    Set<String> segmentsToBeDeleted =
+        new HashSet<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (Map.Entry<String, Long> eachSeg : segmentBlockCount.entrySet()) {
-
       if (eachSeg.getValue() == 0) {
-        segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), ""));
+        segmentsToBeDeleted.add(eachSeg.getKey());
       }
-
     }
     return segmentsToBeDeleted;
   }

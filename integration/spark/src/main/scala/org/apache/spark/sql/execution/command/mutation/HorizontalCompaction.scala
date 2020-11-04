@@ -23,12 +23,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.execution.command.AlterTableModel
-import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
@@ -48,9 +45,22 @@ object HorizontalCompaction {
    */
   def tryHorizontalCompaction(
       sparkSession: SparkSession,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      updatedSegmentList: Set[String]): Unit = {
 
     if (!CarbonDataMergerUtil.isHorizontalCompactionEnabled) {
+      return
+    }
+
+    var segsList = CarbonDataMergerUtil.getValidSegmentList(carbonTable)
+      .asScala.map(_.getSegmentNo).toList
+
+    if (null != updatedSegmentList) {
+      segsList = segsList
+        .filter(segmentNo => updatedSegmentList.contains(segmentNo))
+    }
+
+    if (segsList == null || segsList.size == 0) {
       return
     }
 
@@ -60,12 +70,6 @@ object HorizontalCompaction {
     // required to commit to status metadata and cleanup
     val deleteTimeStamp = updateTimeStamp + 1
 
-    // get the valid segments
-    var segLists = CarbonDataMergerUtil.getValidSegmentList(carbonTable)
-
-    if (segLists == null || segLists.size() == 0) {
-      return
-    }
 
     // Should avoid reading Table Status file from Disk every time. Better to load it
     // in-memory at the starting and pass it along the routines. The constructor of
@@ -76,10 +80,6 @@ object HorizontalCompaction {
 
     // After Update Compaction perform delete compaction
     val compactionTypeIUD = CompactionType.IUD_DELETE_DELTA
-    segLists = CarbonDataMergerUtil.getValidSegmentList(carbonTable)
-    if (segLists == null || segLists.size() == 0) {
-      return
-    }
 
     // Delete Compaction
     performDeleteDeltaCompaction(sparkSession,
@@ -88,14 +88,7 @@ object HorizontalCompaction {
       absTableIdentifier,
       segmentUpdateStatusManager,
       deleteTimeStamp,
-      segLists)
-
-    // If there are already index and data files are present for old update operation, then the
-    // cache will be loaded for those files during current update, but once after horizontal
-    // compaction is finished, new compacted files are generated, so the segments inside cache are
-    // now invalid, so clear the cache of invalid segment after horizontal compaction.
-    IndexStoreManager.getInstance()
-      .clearInvalidSegments(carbonTable, segLists.asScala.map(_.getSegmentNo).asJava)
+      segsList.asJava)
   }
 
   /**
@@ -107,11 +100,11 @@ object HorizontalCompaction {
       absTableIdentifier: AbsoluteTableIdentifier,
       segmentUpdateStatusManager: SegmentUpdateStatusManager,
       factTimeStamp: Long,
-      segLists: util.List[Segment]): Unit = {
+      updatedSegsList: util.List[String]): Unit = {
 
     val db = carbonTable.getDatabaseName
     val table = carbonTable.getTableName
-    val deletedBlocksList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
+    val deletedBlocksList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(updatedSegsList,
       absTableIdentifier,
       segmentUpdateStatusManager,
       compactionTypeIUD)

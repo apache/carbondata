@@ -19,8 +19,10 @@ package org.apache.carbondata.spark.testsuite.iud
 import java.io.{File, IOException}
 
 import mockit.{Mock, MockUp}
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SaveMode, SparkSession}
-import org.apache.spark.sql.execution.command.mutation.{HorizontalCompaction, HorizontalCompactionException}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Dataset, Row, SaveMode, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.command.{ExecutionErrors, UpdateTableModel}
+import org.apache.spark.sql.execution.command.mutation.{CarbonProjectForUpdateCommand, HorizontalCompaction, HorizontalCompactionException}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -28,10 +30,18 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails}
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.view.{MVManager, MVSchema}
+import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
+import org.apache.carbondata.events.OperationContext
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 
 class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
@@ -95,8 +105,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       """CREATE TABLE iud.updateinpartition (id STRING, sales INT)
         | PARTITIONED BY (dtm STRING)
         | STORED AS carbondata""".stripMargin)
-    sql(
-      s"""load data local
+    sql(s"""load data local
          | inpath '$resourcesPath/IUD/updateinpartition.csv'
          | into table updateinpartition""".stripMargin)
     sql(
@@ -670,24 +679,16 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud.show_segment""").collect()
   }
 
-  test("Failure of update operation due to bad record with proper error message") {
-    try {
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
-      val errorMessage = intercept[Exception] {
-        sql("drop table if exists update_with_bad_record")
-        sql("create table update_with_bad_record(item int, name String) STORED AS carbondata")
-        sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/bad_record.csv' into table " +
-            s"update_with_bad_record")
-        sql("update update_with_bad_record set (item)=(3.45)").collect()
-        sql("drop table if exists update_with_bad_record")
-      }
-      assert(errorMessage.getMessage
-        .contains("Update operation failed"))
-    } finally {
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
-    }
+  test("update operation with bad record") {
+    sql("drop table if exists update_with_bad_record")
+    sql("create table update_with_bad_record(item int, name String) STORED AS carbondata")
+    sql("insert into update_with_bad_record values (1, 'a')")
+    sql("insert into update_with_bad_record values (2, 'b')")
+    sql("update update_with_bad_record set (item)=(null) where name = 'a'").collect()
+    var df = sql("select * from update_with_bad_record").collect()
+    checkAnswer(sql("select * from update_with_bad_record order by name"),
+      Seq(Row(null, "a"), Row(2, "b")))
+    sql("drop table if exists update_with_bad_record")
   }
 
   test("More records after update operation ") {
@@ -999,7 +1000,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     assert(intercept[MalformedCarbonCommandException] {
       sql("update test_dm_index set(a) = ('aaa') where a = 'ccc'")
-    }.getMessage.contains("update operation is not supported for index"))
+    }.getMessage.contains("update/delete operation is not supported for index"))
 
     sql("drop table if exists test_dm_index")
   }
@@ -1178,40 +1179,90 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test update atomicity when horizontal compaction fails") {
+  test("test atomicity of update") {
     sql("drop table if exists iud.zerorows")
     sql("create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows")
-    mockForTestUpdateAtomicity(new IOException("Mock IOException"))
-    checkAnswer(
-      sql("""select c1,c2,c3,c5 from iud.zerorows"""),
-      Seq(Row("a", 1, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
-        Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
-    )
 
-    mockForTestUpdateAtomicity(new HorizontalCompactionException(
-      "Mock HorizontalCompactionException", System.currentTimeMillis()))
+    val sqlText = "update iud.zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'"
+    val expected = Seq(Row("a", 1, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
+      Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
+
+    // 1) Write DeleteDelta Failure
+    IUDCommonMockUtil.mockWriteDeleteDeltaFailure(new IOException("Mock IOException"), sqlText)
+    verifyResultInTestOfAtomicity(expected)
+
+    // 2) Insert Data Failure
+    IUDCommonMockUtil.mockInsertDataFailure(new IOException("Mock IOException"), sqlText)
+    verifyResultInTestOfAtomicity(expected)
+
+    // 3) Write UpdateTableStatus Failure
+    IUDCommonMockUtil.mockWriteUpdateTableStatusFailure(sqlText)
+    verifyResultInTestOfAtomicity(expected)
+
+    // 4) Write TableStatus Failure
+    IUDCommonMockUtil.mockWriteTableStatusFailure(sqlText)
+    verifyResultInTestOfAtomicity(expected)
+
+    // 5) Mock Horizontal Compaction Failure
+    IUDCommonMockUtil.mockHorizontalCompactionFailure(new HorizontalCompactionException(
+      "Mock HorizontalCompactionException", System.currentTimeMillis()), sqlText)
     checkAnswer(
       sql("""select c1,c2,c3,c5 from iud.zerorows"""),
       Seq(Row("a", 2, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
         Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
     )
+
+    // 6) Mock Minor Compaction Failure
+    IUDCommonMockUtil.mockMinorCompactionFailure(new IOException("Mock IOException"), sqlText)
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from iud.zerorows"""),
+      Seq(Row("a", 3, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
+        Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
+    )
+
+    // 8) Mock Refresh MV Failure
+    IUDCommonMockUtil.mockMVRefreshFailure(new IOException("Mock IOException"), sqlText)
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from iud.zerorows"""),
+      Seq(Row("a", 4, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
+        Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
+    )
   }
 
-  def mockForTestUpdateAtomicity(exception: Exception) {
-    var mock = new MockUp[HorizontalCompaction.type]() {
-      @Mock
-      def tryHorizontalCompaction(sparkSession: SparkSession, carbonTable: CarbonTable): Unit = {
-        throw exception
-      }
-    }
-    try {
-      sql("update iud.zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'").collect()
-    } catch {
-      case ex: Exception =>
-    }
-    mock.tearDown()
+  def verifyResultInTestOfAtomicity(expected: Seq[Row]): Unit = {
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from iud.zerorows"""),
+      Seq(Row("a", 1, "aa", "aaa"), Row("b", 2, "bb", "bbb"),
+        Row("c", 3, "cc", "ccc"), Row("d", 4, "dd", "ddd"), Row("e", 5, "ee", "eee"))
+    )
+  }
 
+  test("test rowsToBeUpdated is empty") {
+    sql("drop table if exists iud.zerorows")
+    sql("create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows")
+    sql("update iud.zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'f'").collect()
+    assert(sql("""show segments for table iud.zerorows""").collect().length == 1)
+  }
+
+  test("test auto compaction after update") {
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "true")
+    sql("drop table if exists iud.zerorows")
+    sql("create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows")
+    sql("update iud.zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'").collect()
+    sql("update iud.zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'").collect()
+    sql("update iud.zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'c'").collect()
+    sql("update iud.zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'd'").collect()
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE iud.zerorows"), true, "0 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE iud.zerorows"), true, "1 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE iud.zerorows"), true, "2 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE iud.zerorows"), true, "3 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE iud.zerorows"), true, "4 Success")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE iud.zerorows"), true, "0.1 Success")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "false")
   }
 
   override def afterAll {

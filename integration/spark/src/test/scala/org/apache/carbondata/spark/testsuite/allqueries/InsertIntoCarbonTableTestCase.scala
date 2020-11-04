@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.allqueries
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -509,8 +510,8 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val dt2Seg1 = dt2Metas(0)
     val dt2Seg2 = dt2Metas(1)
 
-    assert(dt1Seg1.getUpdateDeltaEndTimestamp == dt2Seg1.getUpdateDeltaEndTimestamp)
-    assert(dt1Seg1.getUpdateDeltaEndTimestamp != dt2Seg2.getUpdateDeltaEndTimestamp)
+    assert(StringUtils.isEmpty(dt1Seg1.getUpdateDeltaEndTimestamp))
+    assert(StringUtils.isEmpty(dt2Seg2.getUpdateDeltaEndTimestamp))
     sql(s"drop table if exists $tableName")
   }
 
