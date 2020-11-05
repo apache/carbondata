@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.execution.command.mutation.merge
 
 import java.sql.{Date, Timestamp}
@@ -28,7 +29,7 @@ import org.apache.spark.sql.catalyst.util.DateTimeUtils
  */
 case class MergeProjection(
     @transient tableCols: Seq[String],
-    @transient statusCol : String,
+    @transient statusCol: String,
     @transient ds: Dataset[Row],
     @transient rltn: CarbonDatasourceHadoopRelation,
     @transient sparkSession: SparkSession,
@@ -58,8 +59,8 @@ case class MergeProjection(
   private def generateProjection: (Projection, Array[Expression]) = {
     val existingDsOutput = rltn.carbonRelation.schema.toAttributes
     val colsMap = mergeAction match {
-      case UpdateAction(updateMap) => updateMap
-      case InsertAction(insertMap) => insertMap
+      case UpdateAction(updateMap, isStar: Boolean) => updateMap
+      case InsertAction(insertMap, isStar: Boolean) => insertMap
       case _ => null
     }
     if (colsMap != null) {
@@ -81,9 +82,9 @@ case class MergeProjection(
       if (output.contains(null)) {
         throw new CarbonMergeDataSetException(s"Not all columns are mapped")
       }
-      (new InterpretedMutableProjection(output++Seq(
+      (new InterpretedMutableProjection(output ++ Seq(
         ds.queryExecution.analyzed.resolveQuoted(statusCol,
-        sparkSession.sessionState.analyzer.resolver).get),
+          sparkSession.sessionState.analyzer.resolver).get),
         ds.queryExecution.analyzed.output), expectOutput)
     } else {
       (null, null)
