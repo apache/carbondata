@@ -37,6 +37,7 @@ class CarbonExtensionSqlParser(
 ) extends SparkSqlParser(conf) {
 
   val parser = new CarbonExtensionSpark2SqlParser
+  val antlrParser = new CarbonAntlrParser(this)
 
   override def parsePlan(sqlText: String): LogicalPlan = {
     parser.synchronized {
@@ -44,28 +45,34 @@ class CarbonExtensionSqlParser(
     }
     CarbonUtils.updateSessionInfoToCurrentThread(sparkSession)
     try {
-      val plan = parser.parse(sqlText)
-      plan
+      parser.parse(sqlText)
     } catch {
       case ce: MalformedCarbonCommandException =>
         throw ce
-      case ex: Throwable =>
+      case _: Throwable =>
         try {
-          val parsedPlan = initialParser.parsePlan(sqlText)
-          CarbonScalaUtil.cleanParserThreadLocals
-          parsedPlan
+          antlrParser.parse(sqlText)
         } catch {
-          case mce: MalformedCarbonCommandException =>
-            throw mce
-          case e: Throwable =>
-            e.printStackTrace(System.err)
-            CarbonScalaUtil.cleanParserThreadLocals
-            CarbonException.analysisException(
-              s"""== Parser1: ${parser.getClass.getName} ==
-                 |${ex.getMessage}
-                 |== Parser2: ${initialParser.getClass.getName} ==
-                 |${e.getMessage}
+          case ce: MalformedCarbonCommandException =>
+            throw ce
+          case ex: Throwable =>
+            try {
+              val parsedPlan = initialParser.parsePlan(sqlText)
+              CarbonScalaUtil.cleanParserThreadLocals
+              parsedPlan
+            } catch {
+              case mce: MalformedCarbonCommandException =>
+                throw mce
+              case e: Throwable =>
+                e.printStackTrace(System.err)
+                CarbonScalaUtil.cleanParserThreadLocals
+                CarbonException.analysisException(
+                  s"""== Parser1: ${ parser.getClass.getName } ==
+                     |${ ex.getMessage }
+                     |== Parser2: ${ initialParser.getClass.getName } ==
+                     |${ e.getMessage }
                """.stripMargin.trim)
+            }
         }
     }
   }

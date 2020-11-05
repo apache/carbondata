@@ -21,11 +21,11 @@
   </Match>
 
   <Match>
-    <Source name="~.*\.scala" />
+    <Source name="~.*\.scala"/>
   </Match>
 
   <Match>
-    <Source name="~.*Test\.java" />
+    <Source name="~.*Test\.java"/>
   </Match>
 
   <!-- This method creates stream but the caller methods are responsible for closing the stream -->
@@ -95,7 +95,7 @@
   <Match>
     <Class name="org.apache.carbondata.core.scan.aggregator.impl.BitSet"/>
     <Or>
-    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+      <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
     </Or>
   </Match>
   <Match>
@@ -126,6 +126,18 @@
     <Class name="org.apache.carbondata.events.OperationContext"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
-  <Match> <Class name="~org.apache.spark.sql.secondaryindex.jobs.BlockletIndexInputFormat"/> <Field name="indexExprWrapper"/> <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/> </Match>
-  <Match> <Class name="~org.apache.spark.sql.secondaryindex.jobs.BlockletIndexInputFormat"/> <Field name="validSegments"/> <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/> </Match>
+  <Match>
+    <Class name="~org.apache.spark.sql.secondaryindex.jobs.BlockletIndexInputFormat"/>
+    <Field name="indexExprWrapper"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+  </Match>
+  <Match>
+    <Class name="~org.apache.spark.sql.secondaryindex.jobs.BlockletIndexInputFormat"/>
+    <Field name="validSegments"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+  </Match>
+
+  <Match>
+    <Package name="~carbonSql.codeGen"/>
+  </Match>
 </FindBugsFilter>

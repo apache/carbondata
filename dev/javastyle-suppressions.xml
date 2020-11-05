@@ -32,4 +32,5 @@
               files="org/apache/carbondata/processing/newflow/sort/unsafe/sort/TimSort.java"/>
     <suppress checks=".*"
               files="org/apache/carbondata/core/memory/HeapMemoryAllocator"/>
+    <suppress checks=".*" files="carbonSql.codeGen"/>
 </suppressions>
