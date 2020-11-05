@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.execution.command.mutation.merge
 
 import scala.collection.mutable.ArrayBuffer
@@ -71,9 +72,11 @@ case class WhenNotMatchedAndExistsOnlyOnTarget(expression: Option[Column] = None
   override def getExp: Option[Column] = expression
 }
 
-case class UpdateAction(updateMap: Map[Column, Column]) extends MergeAction
+case class UpdateAction(var updateMap: Map[Column, Column], isStar: Boolean = false)
+  extends MergeAction
 
-case class InsertAction(insertMap: Map[Column, Column]) extends MergeAction
+case class InsertAction(var insertMap: Map[Column, Column], isStar: Boolean = false)
+  extends MergeAction
 
 /**
  * It inserts the history data into history table

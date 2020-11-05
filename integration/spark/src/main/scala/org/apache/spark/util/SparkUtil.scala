@@ -17,15 +17,31 @@
 
 package org.apache.spark.util
 
+import scala.collection.JavaConverters.{mapAsScalaMapConverter, _}
+
 import org.apache.spark.{SPARK_VERSION, TaskContext}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Column, SparkSession}
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
-import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
+import org.apache.spark.sql.execution.command.mutation.merge.MergeAction
+import org.apache.spark.sql.types._
 
 /*
  * this object use to handle file splits
  */
 object SparkUtil {
+
+  def convertMap(map: java.util.Map[Column, Column]): Map[Column, Column] = {
+    map.asScala.toMap
+  }
+
+  def convertExpressionList(list: java.util.List[Expression]): List[Expression] = {
+    list.asScala.toList
+  }
+
+  def convertMergeActionList(list: java.util.List[MergeAction]): List[MergeAction] = {
+    list.asScala.toList
+  }
 
   def setTaskContext(context: TaskContext): Unit = {
     val localThreadContext = TaskContext.get()
@@ -68,7 +84,7 @@ object SparkUtil {
     }
   }
 
-  def isPrimitiveType(datatype : DataType): Boolean = {
+  def isPrimitiveType(datatype: DataType): Boolean = {
     datatype match {
       case StringType => true
       case ByteType => true
