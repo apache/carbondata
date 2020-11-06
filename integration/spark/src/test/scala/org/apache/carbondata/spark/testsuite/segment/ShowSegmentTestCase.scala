@@ -22,13 +22,25 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for SHOW SEGMENTS command
  */
 class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
+
+  override def beforeAll {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+  }
+
+  override def afterAll {
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
+  }
 
   test("test show segment by query, success case") {
     sql("drop table if exists source")
@@ -173,7 +185,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     var historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
     assert(detail.length == 10)
     assert(historyDetail.length == 0)
-    sql(s"clean files for table ${tableName}")
+    sql(s"clean files for table ${tableName} options('force'='true')")
     assert(sql(s"show segments on ${tableName}").collect().length == 2)
     assert(sql(s"show segments on ${tableName} limit 1").collect().length == 1)
     detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
@@ -193,13 +205,19 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assert(sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
              .collect()
              .length == 10)
+    sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
+      .show()
     assert(sql(s"show history segments on ${ tableName } as select * from ${ tableName }_segments")
              .collect()
              .length == 10)
-    sql(s"clean files for table ${tableName}")
+    sql(s"show history segments on ${tableName} as select * from ${tableName}_segments").show()
+    sql(s"clean files for table ${tableName} options('force'='true')")
     assert(sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
              .collect()
              .length == 2)
+    sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
+      .show()
+    sql(s"show history segments on ${tableName} as select * from ${tableName}_segments").show()
     sql(s"show history segments on ${tableName} as select * from ${tableName}_segments").collect()
     var segmentsHistoryList = sql(s"show history segments on ${ tableName } " +
                                   s"as select * from ${ tableName }_segments")

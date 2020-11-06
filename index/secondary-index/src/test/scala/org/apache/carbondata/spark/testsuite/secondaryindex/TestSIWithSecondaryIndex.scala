@@ -283,6 +283,12 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
       indexTable.getMetadataPath + CarbonCommonConstants.FILE_SEPARATOR +
       CarbonTablePath.TABLE_STATUS_FILE,
       loadMetadataDetailsList)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql(s"CLEAN FILES FOR TABLE ud_index1  OPTIONS('stale_inprogress'='true','force'='true')")
+        .show()
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
 
     sql(s"""ALTER TABLE default.ud_index1 SET
            |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)

@@ -29,7 +29,8 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   // scalastyle:off lineLength
   override def beforeAll {
     dropTable
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql(
@@ -102,7 +103,7 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath)
              .listFiles()
              .count(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) == 5)
-    sql("clean files for table t1")
+    sql("clean files for table t1 options('force'='true')")
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath)
              .listFiles()
              .count(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) == 4)
@@ -111,7 +112,7 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath)
              .listFiles()
              .count(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) == 5)
-    sql("clean files for table t1")
+    sql("clean files for table t1 options('force'='true')")
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath)
              .listFiles()
              .count(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) == 1)
@@ -137,7 +138,7 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 4)
     sql("Alter table flatfolder_delete compact 'minor'")
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 4)
-    sql("clean files for table flatfolder_delete")
+    sql("clean files for table flatfolder_delete options('force'='true')")
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 1)
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 0)
     sql("drop table if exists flatfolder_delete")
@@ -166,7 +167,7 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("Alter table flatfolder_delete compact 'minor'")
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
              .filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 8)
-    sql("clean files for table flatfolder_delete")
+    sql("clean files for table flatfolder_delete options('force'='true')")
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
              .filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 1)
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
@@ -175,6 +176,8 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

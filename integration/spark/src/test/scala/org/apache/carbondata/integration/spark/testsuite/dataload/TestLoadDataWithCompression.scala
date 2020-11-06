@@ -380,7 +380,11 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(4 * 8)))
     assert(sql(s"SHOW SEGMENTS FOR TABLE $tableName").count() == 8)
     sql(s"ALTER TABLE $tableName COMPACT 'major'")
-    sql(s"CLEAN FILES FOR TABLE $tableName")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql(s"CLEAN FILES FOR TABLE $tableName options('force'='true')")
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     // after compaction and clean, there should be on segment
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(4 * 8)))
     assert(sql(s"SHOW SEGMENTS FOR TABLE $tableName").count() == 1)

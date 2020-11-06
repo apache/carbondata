@@ -34,5 +34,6 @@ case class CleanFilesPreEvent(carbonTable: CarbonTable, sparkSession: SparkSessi
  * @param carbonTable
  * @param sparkSession
  */
-case class CleanFilesPostEvent(carbonTable: CarbonTable, sparkSession: SparkSession)
+case class CleanFilesPostEvent(carbonTable: CarbonTable, cleanStaleInProgress: Boolean,
+    ifForceDelete: Boolean, sparkSession: SparkSession)
   extends Event with CleanFilesEventInfo

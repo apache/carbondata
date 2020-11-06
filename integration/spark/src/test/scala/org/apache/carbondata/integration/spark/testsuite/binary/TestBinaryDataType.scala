@@ -1001,7 +1001,11 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         assert(SegmentSequenceIds.length == 8)
 
         // clean files
-        segments = sql("CLEAN FILES FOR TABLE  carbontable")
+        CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+        segments = sql("CLEAN FILES FOR TABLE  carbontable options('force'='true')")
+        CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
         segments = sql("SHOW SEGMENTS FOR TABLE carbontable")
         SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
         assert(SegmentSequenceIds.contains("0.2"))

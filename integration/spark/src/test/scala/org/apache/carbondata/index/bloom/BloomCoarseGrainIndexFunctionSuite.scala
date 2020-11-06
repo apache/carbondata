@@ -855,7 +855,11 @@ class BloomCoarseGrainIndexFunctionSuite
     }
     // delete and clean the first segment, the corresponding index files should be cleaned too
     sql(s"DELETE FROM TABLE $bloomSampleTable WHERE SEGMENT.ID IN (0)")
-    sql(s"CLEAN FILES FOR TABLE $bloomSampleTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql(s"CLEAN FILES FOR TABLE $bloomSampleTable options('force'='true')")
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     var indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, "0", indexName)
     assert(!FileUtils.getFile(indexPath).exists(),
       "index file of this segment has been deleted, should not exist")

@@ -47,6 +47,8 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
   }
 
   test("test global sort column as partition column") {
@@ -942,7 +944,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     assert(sql("select * from comp_dt2").collect().length == 4)
     sql("Alter table comp_dt2 compact 'minor'")
     assert(sql("select * from comp_dt2").collect().length == 4)
-    sql("clean files for table comp_dt2")
+    sql("clean files for table comp_dt2 options('force'='true')")
     assert(sql("select * from comp_dt2").collect().length == 4)
     sql("insert into comp_dt2 select 5,'E','2003-01-01',3")
     sql("insert into comp_dt2 select 6,'F','2003-01-01',3")
@@ -950,7 +952,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("insert into comp_dt2 select 8,'H','2004-01-01',''")
     assert(sql("select * from comp_dt2").collect().length == 8)
     sql("Alter table comp_dt2 compact 'minor'")
-    sql("clean files for table comp_dt2")
+    sql("clean files for table comp_dt2 options('force'='true')")
     assert(sql("select * from comp_dt2").collect().length == 8)
     assert(sql("select * from comp_dt2").collect().length == 8)
     sql("insert into comp_dt2 select 9,'H','2001-01-01',1")
@@ -961,7 +963,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("Alter table comp_dt2 compact 'minor'")
     assert(sql("show segments for table comp_dt2").collect().length == 8)
     assert(sql("select * from comp_dt2").collect().length == 12)
-    sql("clean files for table comp_dt2")
+    sql("clean files for table comp_dt2 options('force'='true')")
     assert(sql("select * from comp_dt2").collect().length == 12)
     sql("insert into comp_dt2 select 13,'L','2004-01-01', 6")
     assert(sql("select * from comp_dt2").collect().length == 13)
@@ -969,7 +971,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     assert(sql("select * from comp_dt2").collect().length == 13)
     assert(sql("show segments for table comp_dt2").collect().length == 3)
     assert(sql("select * from comp_dt2").collect().length == 13)
-    sql("clean files for table comp_dt2")
+    sql("clean files for table comp_dt2 options('force'='true')")
     assert(sql("show segments for table comp_dt2").collect().length == 1)
     assert(sql("select * from comp_dt2").collect().length == 13)
   }
@@ -1070,6 +1072,8 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   }
 
   override def afterAll: Unit = {
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

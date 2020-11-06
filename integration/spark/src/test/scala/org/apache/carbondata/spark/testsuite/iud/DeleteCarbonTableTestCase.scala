@@ -43,6 +43,8 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
         |AS carbondata""".stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source2.csv' INTO table iud_db.source2""")
     sql("use iud_db")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
   }
 
   test("delete data from carbon table with alias [where clause ]") {
@@ -201,9 +203,9 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into select_after_clean select 3,'uhj'")
     sql("insert into select_after_clean select 4,'frg'")
     sql("alter table select_after_clean compact 'minor'")
-    sql("clean files for table select_after_clean")
+    sql("clean files for table select_after_clean options('force'='true')")
     sql("delete from select_after_clean where name='def'")
-    sql("clean files for table select_after_clean")
+    sql("clean files for table select_after_clean options('force'='true')")
     assertResult(false)(new File(
       CarbonTablePath.getSegmentPath(s"$storeLocation/iud_db.db/select_after_clean", "0")).exists())
     checkAnswer(sql("""select * from select_after_clean"""),
@@ -469,5 +471,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud_db cascade")
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
   }
 }
