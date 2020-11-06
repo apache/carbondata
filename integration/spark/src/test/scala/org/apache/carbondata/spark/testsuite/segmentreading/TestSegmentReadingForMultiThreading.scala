@@ -27,6 +27,8 @@ import org.apache.spark.sql.{CarbonUtils, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Testcase for set segment in multhread env
@@ -52,6 +54,8 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data1.csv' INTO TABLE carbon_table_MulTI_THread " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
   }
 
   test("test multithreading for segment reading") {
@@ -91,5 +95,7 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
   override def afterAll: Unit = {
     sql("DROP TABLE IF EXISTS carbon_table_MulTI_THread")
     CarbonUtils.threadUnset("carbon.input.segments.default.carbon_table_MulTI_THread")
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
   }
 }

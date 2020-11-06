@@ -24,6 +24,7 @@ Clean files command is used to remove the Compacted, Marked For Delete ,In Progr
    ```
    CLEAN FILES FOR TABLE TABLE_NAME
    ```
+The above clean files command will clean Marked For Delete and Compacted segments depending on ```max.query.execution.time``` (default 1 hr) and ``` carbon.trash.retention.days``` (default 7 days). It will also delete the timestamp subdirectories from the trash folder after expiration day(default 7 day, can be configured)
 
 
 ### TRASH FOLDER
@@ -37,10 +38,24 @@ Clean files command is used to remove the Compacted, Marked For Delete ,In Progr
    ``` 
   Once the timestamp subdirectory is expired as per the configured expiration day value, that subdirectory is deleted from the trash folder in the subsequent clean files command.
 
-### FORCE DELETE TRASH
-The force option with clean files command deletes all the files and folders from the trash folder.
+### FORCE OPTION
+The force option with clean files command deletes all the files and folders from the trash folder and delete the Marked for Delete and Compacted segments immediately. Since Clean Files operation with force option will delete data that can never be recovered, the force option by default is disabled. Clean files with force option is only allowed when the carbon property ```carbon.clean.file.force.allowed``` is set to true. The default value of this property is false.
+                                                                                                                                                                       
+
 
   ```
   CLEAN FILES FOR TABLE TABLE_NAME options('force'='true')
   ```
-Since Clean Files operation with force option will delete data that can never be recovered, the force option by default is disabled. Clean files with force option is only allowed when the carbon property ```carbon.clean.file.force.allowed``` is set to true. The default value of this property is false.
+
+### STALE_INPROGRESS OPTION
+The stale_inprogress option deletes the stale Insert In Progress segments after the expiration of the property    ```carbon.trash.retention.days``` 
+
+  ```
+  CLEAN FILES FOR TABLE TABLE_NAME options('stale_inprogress'='true')
+  ```
+
+The stale_inprogress option with force option will delete Marked for delete, Compacted and stale Insert In progress immediately. It will also empty  the trash folder immediately.
+
+  ```
+  CLEAN FILES FOR TABLE TABLE_NAME options('stale_inprogress'='true', 'force'='true')
+  ```

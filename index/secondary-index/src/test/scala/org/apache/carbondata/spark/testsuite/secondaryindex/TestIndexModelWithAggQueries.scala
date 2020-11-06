@@ -21,7 +21,9 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * test cases with secondary index and agg queries
@@ -161,7 +163,11 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
       case Some(row) => assert(row.get(1).toString.contains("Marked for Delete"))
       case None => assert(false)
     }
-    sql("clean files for table clean")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql("clean files for table clean options('force'='true')")
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     val mainTable = CarbonEnv.getCarbonTable(Some("default"), "clean")(sqlContext.sparkSession)
     val indexTable = CarbonEnv.getCarbonTable(Some("default"), "clean_index")(
       sqlContext.sparkSession)

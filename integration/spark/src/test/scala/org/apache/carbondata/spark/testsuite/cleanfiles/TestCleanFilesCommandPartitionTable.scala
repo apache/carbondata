@@ -45,7 +45,11 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     assert(!FileFactory.isFileExist(trashFolderPath))
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
     assert(segmentNumber1 == 4)
-    sql(s"CLEAN FILES FOR TABLE cleantest").show
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('stale_inprogress'='true','force'='true')").show
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     val segmentNumber2 = sql(s"""show segments for table cleantest""").count()
     assert(0 == segmentNumber2)
     assert(!FileFactory.isFileExist(trashFolderPath))
@@ -67,7 +71,11 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     assert(!FileFactory.isFileExist(trashFolderPath))
     sql(s"""Delete from table cleantest where segment.id in(4)""")
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
-    sql(s"CLEAN FILES FOR TABLE cleantest").show
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     val segmentNumber2 = sql(s"""show segments for table cleantest""").count()
     assert(segmentNumber1 == segmentNumber2 + 5)
     assert(!FileFactory.isFileExist(trashFolderPath))
@@ -80,13 +88,13 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
 
   test("test trash folder with 2 segments with same segment number") {
     createParitionTable()
-    sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"hello","abc"""")
-
+    loadData()
     val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
       .getTablePath
     val trashFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.TRASH_DIR
     assert(!FileFactory.isFileExist(trashFolderPath))
-    deleteTableStatusFile(path)
+    removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
+        sqlContext.sparkSession), "3")
 
     assert(!FileFactory.isFileExist(trashFolderPath))
     sql(s"CLEAN FILES FOR TABLE cleantest").show()
@@ -95,7 +103,8 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     assert(list == 2)
 
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"hello","abc"""")
-    deleteTableStatusFile(path)
+    removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
+        sqlContext.sparkSession), "3")
 
     sql(s"CLEAN FILES FOR TABLE cleantest").show()
     count = 0
@@ -124,20 +133,17 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
       .getTablePath
     val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
-    // All 4  segments are made as stale segments, they should be moved to the trash folder
-    deleteTableStatusFile(path)
+    removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
+      sqlContext.sparkSession), "1")
+    removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
+      sqlContext.sparkSession), "2")
 
     sql(s"CLEAN FILES FOR TABLE CLEANTEST").show()
     checkAnswer(sql(s"""select count(*) from cleantest"""),
-      Seq(Row(0)))
+      Seq(Row(2)))
 
     val timeStamp = getTimestampFolderName(trashFolderPath)
     // test recovery from partition table
-    val segment0Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_0"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment0Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
 
     val segment1Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
       "/Segment_1"
@@ -148,12 +154,6 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     val segment2Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
       "/Segment_2"
     sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment2Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    val segment3Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_3"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment3Path'")
     sql("INSERT INTO cleantest select * from c1").show()
     sql("drop table c1")
 
@@ -179,19 +179,15 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
       .getTablePath
     val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
-    // All 4  segments are made as stale segments, they should be moved to the trash folder
-    // createStaleSegments(path)
-    deleteTableStatusFile(path)
+    removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
+      sqlContext.sparkSession), "1")
+    removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
+      sqlContext.sparkSession), "2")
 
     sql(s"CLEAN FILES FOR TABLE CLEANTEST").show()
 
     val timeStamp = getTimestampFolderName(trashFolderPath)
     // test recovery from partition table
-    val segment0Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_0"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment0Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
 
     val segment1Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
       "/Segment_1"
@@ -225,47 +221,38 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
 
     val mainTablePath = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext
       .sparkSession).getTablePath
-    deleteTableStatusFile(mainTablePath)
+    removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
+        sqlContext.sparkSession), "1")
+    removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
+        sqlContext.sparkSession), "2")
     val mainTableTrashFolderPath = mainTablePath + CarbonCommonConstants.FILE_SEPARATOR +
       CarbonTablePath.TRASH_DIR
 
     assert(!FileFactory.isFileExist(mainTableTrashFolderPath))
 
     sql(s"CLEAN FILES FOR TABLE CLEANTEST").show()
-    checkAnswer(sql(s"""select count(*) from cleantest"""), Seq(Row(0)))
+    checkAnswer(sql(s"""select count(*) from cleantest"""), Seq(Row(2)))
     checkAnswer(sql(s"""select count(*) from si_cleantest"""), Seq(Row(4)))
 
     assert(FileFactory.isFileExist(mainTableTrashFolderPath))
 
     count = 0
     var listMainTable = getFileCountInTrashFolder(mainTableTrashFolderPath)
-    assert(listMainTable == 8)
+    assert(listMainTable == 4)
 
     // recovering data from trash folder
     val timeStamp = getTimestampFolderName(mainTableTrashFolderPath)
 
-    val segment0Path = mainTableTrashFolderPath + CarbonCommonConstants.FILE_SEPARATOR +
-      timeStamp + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + '0'
     val segment1Path = mainTableTrashFolderPath + CarbonCommonConstants.FILE_SEPARATOR +
       timeStamp + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + '1'
     val segment2Path = mainTableTrashFolderPath + CarbonCommonConstants.FILE_SEPARATOR +
       timeStamp + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + '2'
-    val segment3Path = mainTableTrashFolderPath + CarbonCommonConstants.FILE_SEPARATOR +
-      timeStamp + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + '3'
-
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment0Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
 
     sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment1Path'")
     sql("INSERT INTO cleantest select * from c1").show()
     sql("drop table c1")
 
     sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment2Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment3Path'")
     sql("INSERT INTO cleantest select * from c1").show()
     sql("drop table c1")
 
@@ -329,12 +316,6 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     timeStampList.get(0).getName
   }
 
-  def deleteTableStatusFile(carbonTablePath: String) : Unit = {
-    val f1 = new File(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "Metadata" +
-      CarbonCommonConstants.FILE_SEPARATOR + "tablestatus")  // Original File
-    f1.delete()
-  }
-
   def createParitionTable() : Unit = {
     sql("""DROP TABLE IF EXISTS CLEANTEST""")
     sql(
@@ -350,4 +331,5 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"johnny","adc"""")
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"Reddit","adc"""")
   }
+
 }

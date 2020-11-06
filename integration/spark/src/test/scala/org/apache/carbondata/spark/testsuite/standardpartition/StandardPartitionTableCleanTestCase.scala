@@ -33,7 +33,8 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
 
   override def beforeAll {
     dropTable
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
@@ -195,12 +196,14 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     sql(s"delete from table partitionalldeleteseg where segment.id in (1)").collect()
     checkExistence(sql(s"show segments for table partitionalldeleteseg"), true, "Marked for Delete")
     checkAnswer(sql(s"Select count(*) from partitionalldeleteseg"), Seq(Row(30)))
-    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg").collect()
+    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg options('force'='true')").collect()
     assert(sql(s"show segments for table partitionalldeleteseg").count == 3)
   }
 
 
   override def afterAll: Unit = {
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

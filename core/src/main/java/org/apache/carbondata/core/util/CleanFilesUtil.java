@@ -158,6 +158,9 @@ public class CleanFilesUtil {
     }
     LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(carbonTable
         .getMetadataPath());
+    if (details == null || details.length == 0) {
+      return;
+    }
     Set<String> loadNameSet = Arrays.stream(details).map(LoadMetadataDetails::getLoadName)
         .collect(Collectors.toSet());
     List<String> staleSegments = segmentFiles.stream().filter(segmentFile -> !loadNameSet.contains(

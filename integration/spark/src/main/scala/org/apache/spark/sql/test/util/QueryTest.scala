@@ -29,7 +29,10 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 
 
@@ -168,6 +171,13 @@ class QueryTest extends PlanTest {
       CarbonEnv.getInstance(sqlContext.sparkSession).carbonSessionInfo.getSessionParams.getAll
     LOGGER.error("------CarbonEnv sessionParam--------------------------")
     LOGGER.error(sessionParams.asScala.map(x => x._1 + "=" + x._2).mkString(", "))
+  }
+
+  def removeSegmentEntryFromTableStatusFile(carbonTable: CarbonTable, segmentNo: String) : Unit = {
+    val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+      .filter(as => as.getLoadName != segmentNo)
+    SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
+      carbonTable.getTablePath), details)
   }
 
   def printTable(table: String, database: String = "default"): Unit = {

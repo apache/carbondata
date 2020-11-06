@@ -30,7 +30,8 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     defaultConfig()
 
     dropTable
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql(
@@ -166,7 +167,7 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     for (i <- 0 until 4) {
       sql(s"""insert into staticpartitioncompaction PARTITION(deptname='software') select empno,doj,workgroupcategoryname,deptno,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
     }
-    sql("CLEAN FILES FOR TABLE staticpartitioncompaction").collect()
+    sql("CLEAN FILES FOR TABLE staticpartitioncompaction options('force'='true')").collect()
     val segments = sql("SHOW SEGMENTS FOR TABLE staticpartitioncompaction")
     val segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(segmentSequenceIds.size==1)
@@ -209,6 +210,8 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
   }
 
   override def afterAll: Unit = {
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

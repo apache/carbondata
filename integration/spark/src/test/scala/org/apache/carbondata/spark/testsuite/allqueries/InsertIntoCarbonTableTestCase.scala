@@ -452,7 +452,11 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into show_insert select 'abc',1")
     sql("insert overwrite table show_insert select * from show_insert")
     assert(sql("show segments for table show_insert").collect().length == 4)
-    sql("clean files for table show_insert")
+     CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql("clean files for table show_insert options('force'='true')")
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     assert(sql("show segments for table show_insert").collect().length == 1)
   }
 

@@ -58,8 +58,12 @@ case class CarbonCleanFilesCommand(
   var carbonTable: CarbonTable = _
   var cleanFileCommands: List[CarbonCleanFilesCommand] = List.empty
   val optionsMap = options.getOrElse(List.empty[(String, String)]).toMap
-  // forceClean will empty trash
+  // forceClean will clean the MFD and Compacted segments immediately and also empty the trash
+  // folder
   val forceClean = optionsMap.getOrElse("force", "false").toBoolean
+  // stale_inprogress will clean the In Progress segments based on retention time and it will
+  // clean immediately when force is true
+  val staleInprogress = optionsMap.getOrElse("stale_inprogress", "false").toBoolean
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
@@ -117,9 +121,9 @@ case class CarbonCleanFilesCommand(
         CleanFilesUtil.cleanStaleSegments(carbonTable)
       }
       if (forceTableClean) {
-        deleteAllData(sparkSession, databaseNameOp, tableName.get)
+        deleteAllData(sparkSession, databaseNameOp, tableName.get, forceClean, staleInprogress)
       } else {
-        cleanGarbageData(sparkSession, databaseNameOp, tableName.get)
+        cleanGarbageData(sparkSession, databaseNameOp, tableName.get, forceClean, staleInprogress)
       }
     } else {
       cleanGarbageDataInAllTables(sparkSession)
@@ -128,13 +132,14 @@ case class CarbonCleanFilesCommand(
       cleanFileCommands.foreach(_.processData(sparkSession))
     }
     val cleanFilesPostEvent: CleanFilesPostEvent =
-      CleanFilesPostEvent(carbonTable, sparkSession)
+      CleanFilesPostEvent(carbonTable, staleInprogress, forceClean, sparkSession)
     OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent, operationContext)
     Seq.empty
   }
 
   private def deleteAllData(sparkSession: SparkSession,
-      databaseNameOp: Option[String], tableName: String): Unit = {
+      databaseNameOp: Option[String], tableName: String, isForceDelete: Boolean,
+      cleanStaleInprogress: Boolean): Unit = {
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
@@ -143,11 +148,14 @@ case class CarbonCleanFilesCommand(
       tableName = tableName,
       tablePath = tablePath,
       carbonTable = null, // in case of delete all data carbonTable is not required.
-      forceTableClean = forceTableClean)
+      forceTableClean = forceTableClean,
+      isForceDelete = isForceDelete,
+      cleanStaleInprogress = cleanStaleInprogress)
   }
 
   private def cleanGarbageData(sparkSession: SparkSession,
-      databaseNameOp: Option[String], tableName: String): Unit = {
+      databaseNameOp: Option[String], tableName: String, isForceDelete: Boolean,
+      cleanStaleInprogress: Boolean): Unit = {
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
@@ -161,6 +169,8 @@ case class CarbonCleanFilesCommand(
       tablePath = carbonTable.getTablePath,
       carbonTable = carbonTable,
       forceTableClean = forceTableClean,
+      isForceDelete = isForceDelete,
+      cleanStaleInprogress = cleanStaleInprogress,
       currentTablePartitions = partitions,
       truncateTable = truncateTable)
   }

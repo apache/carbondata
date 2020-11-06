@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.api
 
-import java.io.{DataInputStream, File, FileNotFoundException, InputStreamReader}
+import java.io.{DataInputStream, FileNotFoundException, InputStreamReader}
 import java.time.{Duration, Instant}
 import java.util
 import java.util.{Collections, Comparator}
@@ -41,6 +41,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFile
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager, StageInput}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -304,9 +305,19 @@ object CarbonStore {
       tablePath: String,
       carbonTable: CarbonTable,
       forceTableClean: Boolean,
+      isForceDelete: Boolean,
+      cleanStaleInprogress: Boolean,
       currentTablePartitions: Option[Seq[PartitionSpec]] = None,
       truncateTable: Boolean = false): Unit = {
-  var carbonCleanFilesLock: ICarbonLock = null
+    // CleanFiles API is also exposed to the user, if they call this API with isForceDelete = true,
+    // need to throw exception if CARBON_CLEAN_FILES_FORCE_ALLOWED is false
+    if (isForceDelete && !CarbonProperties.getInstance().isCleanFilesForceAllowed) {
+      LOGGER.error("Clean Files with Force option deletes the physical data and it cannot be" +
+          " recovered. It is disabled by default, to enable clean files with force option," +
+          " set " + CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED + " to true")
+      throw new RuntimeException("Clean files with force operation not permitted by default")
+    }
+    var carbonCleanFilesLock: ICarbonLock = null
     val absoluteTableIdentifier = if (forceTableClean) {
       AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableName)
     } else {
@@ -328,8 +339,8 @@ object CarbonStore {
         if (truncateTable) {
           SegmentStatusManager.truncateTable(carbonTable)
         }
-        SegmentStatusManager.deleteLoadsAndUpdateMetadata(
-          carbonTable, true, currentTablePartitions.map(_.asJava).orNull)
+        SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable,
+          isForceDelete, currentTablePartitions.map(_.asJava).orNull, cleanStaleInprogress, true)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
         currentTablePartitions match {
           case Some(partitions) =>

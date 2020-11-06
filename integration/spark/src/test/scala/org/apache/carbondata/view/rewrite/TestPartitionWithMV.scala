@@ -23,6 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -35,6 +36,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
 
   override def beforeAll(): Unit = {
     defaultConfig()
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     sql("drop database if exists partition_mv cascade")
     sql("create database partition_mv")
     sql("use partition_mv")
@@ -54,6 +57,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
   override def afterAll(): Unit = {
     sql("drop database if exists partition_mv cascade")
     sql("use default")
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
   }
 
   override def beforeEach(): Unit = {
@@ -259,7 +264,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into droppartition values('k',2,2014,1,1)")
     sql("insert into droppartition values('k',2,2015,2,3)")
     sql("alter table droppartition drop partition(year=2015,month=2,day=3)")
-    sql("clean files for table droppartition")
+    sql("clean files for table droppartition options('force'='true')")
     val table = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
     val mvTable = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
     val mvtablePath = mvTable.getTablePath
