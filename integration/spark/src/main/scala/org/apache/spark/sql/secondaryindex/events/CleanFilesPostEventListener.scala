@@ -24,17 +24,15 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.{CarbonUtil, CleanFilesUtil, TrashUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{CleanFilesPostEvent, Event, OperationContext, OperationEventListener}
 
@@ -53,13 +51,22 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
         val carbonTable = cleanFilesPostEvent.carbonTable
         val indexTables = CarbonIndexUtil
           .getIndexCarbonTables(carbonTable, cleanFilesPostEvent.sparkSession)
+        val forceCleanTrash = cleanFilesPostEvent.cleanCompactedAndMFD
+        val inProgressSegmentsClean = cleanFilesPostEvent.cleanStaleInProgress
         indexTables.foreach { indexTable =>
+          if (forceCleanTrash) {
+            TrashUtil.emptyTrash(indexTable.getTablePath)
+          } else {
+            TrashUtil.cleanExpiredDataFromTrash(indexTable.getTablePath)
+          }
+          CleanFilesUtil
+            .cleanStaleSegmentsNonPartitionTable(indexTable)
           val partitions: Option[Seq[PartitionSpec]] = CarbonFilters.getPartitions(
             Seq.empty[Expression],
             cleanFilesPostEvent.sparkSession,
             indexTable)
           SegmentStatusManager.deleteLoadsAndUpdateMetadata(
-            indexTable, true, partitions.map(_.asJava).orNull)
+            indexTable, partitions.map(_.asJava).orNull, inProgressSegmentsClean, forceCleanTrash)
           CarbonUpdateUtil.cleanUpDeltaFiles(indexTable, true)
           cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
         }

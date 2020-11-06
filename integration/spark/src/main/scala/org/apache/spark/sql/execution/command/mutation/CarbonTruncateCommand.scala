@@ -48,6 +48,7 @@ case class CarbonTruncateCommand(child: TruncateTableCommand) extends DataComman
     CarbonCleanFilesCommand(
       databaseNameOp = Option(dbName),
       tableName = Option(tableName),
+      Option(List.empty),
       truncateTable = true
     ).run(sparkSession)
   }

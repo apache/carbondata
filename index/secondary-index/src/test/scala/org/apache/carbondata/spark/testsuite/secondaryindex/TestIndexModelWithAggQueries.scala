@@ -161,7 +161,7 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
       case Some(row) => assert(row.get(1).toString.contains("Marked for Delete"))
       case None => assert(false)
     }
-    sql("clean files for table clean")
+    sql("clean files for table clean options('force'='true')")
     val mainTable = CarbonEnv.getCarbonTable(Some("default"), "clean")(sqlContext.sparkSession)
     val indexTable = CarbonEnv.getCarbonTable(Some("default"), "clean_index")(
       sqlContext.sparkSession)

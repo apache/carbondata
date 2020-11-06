@@ -40,7 +40,7 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     sql("INSERT INTO maintable SELECT 1,'string1', 'string2'")
     val preDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     sql("DELETE FROM TABLE INDEXTABLE1 WHERE SEGMENT.ID IN(0,1)")
-    sql("CLEAN FILES FOR TABLE INDEXTABLE1")
+    sql("CLEAN FILES FOR TABLE INDEXTABLE1 options('force'='true')")
     sql(s"""ALTER TABLE default.indextable1 SET
            |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     val df1 = sql("select * from maintable where c = 'string2'").queryExecution.sparkPlan
@@ -68,7 +68,7 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
 
     val preDeleteSegments = sql("SHOW SEGMENTS FOR TABLE test.INDEXTABLE1").count()
     sql("DELETE FROM TABLE test.INDEXTABLE1 WHERE SEGMENT.ID IN(0,1,2)")
-    sql("CLEAN FILES FOR TABLE test.INDEXTABLE1")
+    sql("CLEAN FILES FOR TABLE test.INDEXTABLE1 options('force'='true')")
     sql(s"""ALTER TABLE test.indextable1 SET
            |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     val df1 = sql("select * from test.maintable where c = 'string2'").queryExecution.sparkPlan
@@ -95,7 +95,7 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
 
     val preDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     sql("DELETE FROM TABLE INDEXTABLE1 WHERE SEGMENT.ID IN(0,1,2)")
-    sql("CLEAN FILES FOR TABLE INDEXTABLE1")
+    sql("CLEAN FILES FOR TABLE INDEXTABLE1 options('force'='true')")
     val postDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     assert(preDeleteSegments!=postDeleteSegments)
     sql(s"""ALTER TABLE default.indextable1 SET
@@ -126,7 +126,7 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
 
     val preDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     sql("DELETE FROM TABLE INDEXTABLE1 WHERE SEGMENT.ID IN(1,2,3)")
-    sql("CLEAN FILES FOR TABLE INDEXTABLE1")
+    sql("CLEAN FILES FOR TABLE INDEXTABLE1 options('force'='true')")
     val postDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     assert(preDeleteSegments!=postDeleteSegments)
     sql(s"""ALTER TABLE default.indextable1 SET
@@ -150,9 +150,9 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     sql("INSERT INTO maintable SELECT 1,'string1', 'string2', 'string3'")
     val preDeleteSegments = sql("SHOW SEGMENTS FOR TABLE MAINTABLE").count()
     sql("DELETE FROM TABLE INDEXTABLE1 WHERE SEGMENT.ID IN(0)")
-    sql("CLEAN FILES FOR TABLE INDEXTABLE1")
+    sql("CLEAN FILES FOR TABLE INDEXTABLE1 options('force'='true')")
     sql("DELETE FROM TABLE INDEXTABLE2 WHERE SEGMENT.ID IN(0,1)")
-    sql("CLEAN FILES FOR TABLE INDEXTABLE2")
+    sql("CLEAN FILES FOR TABLE INDEXTABLE2 options('force'='true')")
     val postDeleteSegmentsIndexOne = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     val postDeleteSegmentsIndexTwo = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE2").count()
     assert(preDeleteSegments!=postDeleteSegmentsIndexOne)
@@ -174,9 +174,9 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     sql("INSERT INTO maintable SELECT 1,'string1', 'string2', 'string3'")
     val preDeleteSegments = sql("SHOW SEGMENTS FOR TABLE MAINTABLE").count()
     sql("DELETE FROM TABLE INDEXTABLE1 WHERE SEGMENT.ID IN(0)")
-    sql("CLEAN FILES FOR TABLE INDEXTABLE1")
+    sql("CLEAN FILES FOR TABLE INDEXTABLE1 options('force'='true')")
     sql("DELETE FROM TABLE INDEXTABLE2 WHERE SEGMENT.ID IN(1)")
-    sql("CLEAN FILES FOR TABLE INDEXTABLE2")
+    sql("CLEAN FILES FOR TABLE INDEXTABLE2 options('force'='true')")
     val postDeleteSegmentsIndexOne = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     val postDeleteSegmentsIndexTwo = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE2").count()
     assert(preDeleteSegments != postDeleteSegmentsIndexOne)
@@ -204,9 +204,9 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
 
     val preDeleteSegmentsTableOne = sql("SHOW SEGMENTS FOR TABLE test.MAINTABLE1").count()
     sql("DELETE FROM TABLE test.INDEXTABLE1 WHERE SEGMENT.ID IN(0)")
-    sql("CLEAN FILES FOR TABLE test.INDEXTABLE1")
+    sql("CLEAN FILES FOR TABLE test.INDEXTABLE1 options('force'='true')")
     sql("DELETE FROM TABLE test.INDEXTABLE2 WHERE SEGMENT.ID IN(0,1)")
-    sql("CLEAN FILES FOR TABLE test.INDEXTABLE2")
+    sql("CLEAN FILES FOR TABLE test.INDEXTABLE2 options('force'='true')")
     val postDeleteSegmentsIndexOne = sql("SHOW SEGMENTS FOR TABLE test.INDEXTABLE1").count()
     val postDeleteSegmentsIndexTwo = sql("SHOW SEGMENTS FOR TABLE test.INDEXTABLE2").count()
 
@@ -219,9 +219,9 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
 
     val preDeleteSegmentsTableTwo = sql("SHOW SEGMENTS FOR TABLE test.MAINTABLE2").count()
     sql("DELETE FROM TABLE test.INDEXTABLE3 WHERE SEGMENT.ID IN(1)")
-    sql("CLEAN FILES FOR TABLE test.INDEXTABLE3")
+    sql("CLEAN FILES FOR TABLE test.INDEXTABLE3 options('force'='true')")
     sql("DELETE FROM TABLE test.INDEXTABLE4 WHERE SEGMENT.ID IN(0,1)")
-    sql("CLEAN FILES FOR TABLE test.INDEXTABLE4")
+    sql("CLEAN FILES FOR TABLE test.INDEXTABLE4 options('force'='true')")
     val postDeleteSegmentsIndexThree = sql("SHOW SEGMENTS FOR TABLE test.INDEXTABLE3").count()
     val postDeleteSegmentsIndexFour = sql("SHOW SEGMENTS FOR TABLE test.INDEXTABLE4").count()
 

@@ -68,19 +68,22 @@ public final class DeleteLoadFolders {
 
   public static void physicalFactAndMeasureMetadataDeletion(CarbonTable carbonTable,
       LoadMetadataDetails[] newAddedLoadHistoryList,
-      boolean isForceDelete,
+      boolean cleanCompactedAndMFD,
+      boolean cleanStaleInProgress,
       List<PartitionSpec> specs) {
     LoadMetadataDetails[] currentDetails =
         SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
     physicalFactAndMeasureMetadataDeletion(carbonTable,
         currentDetails,
-        isForceDelete,
+        cleanCompactedAndMFD,
+        cleanStaleInProgress,
         specs,
         currentDetails);
     if (newAddedLoadHistoryList != null && newAddedLoadHistoryList.length > 0) {
       physicalFactAndMeasureMetadataDeletion(carbonTable,
           newAddedLoadHistoryList,
-          isForceDelete,
+          cleanCompactedAndMFD,
+          cleanStaleInProgress,
           specs,
           currentDetails);
     }
@@ -90,13 +93,13 @@ public final class DeleteLoadFolders {
    * Delete the invalid data physically from table.
    * @param carbonTable table
    * @param loadDetails Load details which need clean up
-   * @param isForceDelete is Force delete requested by user
+   * @param cleanCompactedAndMFD Force delete Compacted and MFD segments
    * @param specs Partition specs
    * @param currLoadDetails Current table status load details which are required for update manager.
    */
   private static void physicalFactAndMeasureMetadataDeletion(CarbonTable carbonTable,
-      LoadMetadataDetails[] loadDetails, boolean isForceDelete, List<PartitionSpec> specs,
-      LoadMetadataDetails[] currLoadDetails) {
+      LoadMetadataDetails[] loadDetails, boolean cleanCompactedAndMFD, boolean
+      cleanStaleInProgress, List<PartitionSpec> specs, LoadMetadataDetails[] currLoadDetails) {
     List<TableIndex> indexes = new ArrayList<>();
     try {
       for (TableIndex index : IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)) {
@@ -113,7 +116,7 @@ public final class DeleteLoadFolders {
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(carbonTable, currLoadDetails);
     for (final LoadMetadataDetails oneLoad : loadDetails) {
-      if (checkIfLoadCanBeDeletedPhysically(oneLoad, isForceDelete)) {
+      if (checkIfLoadCanBeDeletedPhysically(oneLoad, cleanCompactedAndMFD, cleanStaleInProgress)) {
         try {
           if (oneLoad.getSegmentFile() != null) {
             SegmentFileStore.deleteSegment(carbonTable.getAbsoluteTableIdentifier().getTablePath(),
@@ -173,40 +176,61 @@ public final class DeleteLoadFolders {
   }
 
   private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
-      boolean isForceDelete) {
-    if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus() ||
-        SegmentStatus.COMPACTED == oneLoad.getSegmentStatus() ||
-        SegmentStatus.INSERT_IN_PROGRESS == oneLoad.getSegmentStatus() ||
-        SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneLoad.getSegmentStatus())
-        && oneLoad.getVisibility().equalsIgnoreCase("true")) {
-      if (isForceDelete) {
-        return true;
-      }
-      long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
-
-      return CarbonUpdateUtil.isMaxQueryTimeoutExceeded(deletionTime);
-
+      boolean cleanStaleInProgress, boolean cleanCompactedAndMFD) {
+    if (oneLoad.getVisibility().equalsIgnoreCase("true")) {
+      return checkLoadDeletionLogic(oneLoad, cleanCompactedAndMFD, cleanStaleInProgress);
     }
-
     return false;
   }
 
   private static boolean checkIfLoadCanBeDeletedPhysically(LoadMetadataDetails oneLoad,
-      boolean isForceDelete) {
+      boolean cleanCompactedAndMFD, boolean cleanStaleInProgress) {
     // Check if the segment is added externally and path is set then do not delete it
-    if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus()
-        || SegmentStatus.COMPACTED == oneLoad.getSegmentStatus()) && (oneLoad.getPath() == null
-        || oneLoad.getPath().equalsIgnoreCase("NA"))) {
-      if (isForceDelete) {
-        return true;
-      }
-      long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
-
-      return CarbonUpdateUtil.isMaxQueryTimeoutExceeded(deletionTime);
-
+    if (oneLoad.getPath() == null || oneLoad.getPath().equalsIgnoreCase("NA")) {
+      return checkLoadDeletionLogic(oneLoad, cleanCompactedAndMFD, cleanStaleInProgress);
     }
-
     return false;
+  }
+
+  private static Boolean checkLoadDeletionLogic(LoadMetadataDetails oneLoad,
+      boolean cleanCompactedAndMFD, boolean cleanStaleInProgress) {
+    /*
+     * if cleanStaleInProgress == false and  cleanCompactedAndMFD == false, clean MFD and Compacted
+     *  segments after query timeout(1 hr)
+     * if cleanStaleInProgress == false and  cleanCompactedAndMFD == true, clean MFD and Compacted
+     *  segments immediately
+     * if cleanStaleInProgress == true and  cleanCompactedAndMFD == false, clean Stale Inprogress
+     *  segments after 7 days(taking carbon.trash.retention.time value)
+     * if cleanStaleInProgress == true and  cleanCompactedAndMFD == true, clean MFD, Compacted and
+     *  stale inprogress segments immediately.
+     */
+    if (!cleanCompactedAndMFD && !cleanStaleInProgress) {
+      if (SegmentStatus.COMPACTED == oneLoad.getSegmentStatus() || SegmentStatus
+          .MARKED_FOR_DELETE == oneLoad.getSegmentStatus()) {
+        long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
+        return CarbonUpdateUtil.isMaxQueryTimeoutExceeded(deletionTime);
+      }
+      return false;
+    } else if (cleanCompactedAndMFD && !cleanStaleInProgress) {
+      return SegmentStatus.COMPACTED == oneLoad.getSegmentStatus() || SegmentStatus
+        .MARKED_FOR_DELETE == oneLoad.getSegmentStatus();
+    } else if (!cleanCompactedAndMFD) {
+      if (SegmentStatus.INSERT_IN_PROGRESS == oneLoad.getSegmentStatus() || SegmentStatus
+          .INSERT_OVERWRITE_IN_PROGRESS == oneLoad.getSegmentStatus()) {
+        long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
+        // in case there is no deletion or modification timestamp in the case of insert in
+        // progress segments, take the load start time as deleteTime
+        if (deletionTime == 0) {
+          deletionTime = oneLoad.getLoadStartTime();
+        }
+        return CarbonUpdateUtil.isMaxQueryTimeoutExceededForInProgressSegments(deletionTime);
+      }
+      return false;
+    } else {
+      return SegmentStatus.INSERT_IN_PROGRESS == oneLoad.getSegmentStatus() || SegmentStatus
+        .INSERT_OVERWRITE_IN_PROGRESS == oneLoad.getSegmentStatus() || SegmentStatus.COMPACTED ==
+        oneLoad.getSegmentStatus() || SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus();
+    }
   }
 
   private static LoadMetadataDetails getCurrentLoadStatusOfSegment(String segmentId,
@@ -221,12 +245,12 @@ public final class DeleteLoadFolders {
   }
 
   public static boolean deleteLoadFoldersFromFileSystem(
-      AbsoluteTableIdentifier absoluteTableIdentifier, boolean isForceDelete,
-      LoadMetadataDetails[] details, String metadataPath) {
+      AbsoluteTableIdentifier absoluteTableIdentifier, boolean cleanStaleInProgress,
+      boolean cleanCompactedAndMFD, LoadMetadataDetails[] details, String metadataPath) {
     boolean isDeleted = false;
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneLoad : details) {
-        if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
+        if (checkIfLoadCanBeDeleted(oneLoad, cleanStaleInProgress, cleanCompactedAndMFD)) {
           ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
               CarbonTablePath.addSegmentPrefix(oneLoad.getLoadName()) + LockUsage.LOCK);
           try {
@@ -237,7 +261,7 @@ public final class DeleteLoadFolders {
                 LoadMetadataDetails currentDetails =
                     getCurrentLoadStatusOfSegment(oneLoad.getLoadName(), metadataPath);
                 if (currentDetails != null && checkIfLoadCanBeDeleted(currentDetails,
-                    isForceDelete)) {
+                    cleanStaleInProgress, cleanCompactedAndMFD)) {
                   oneLoad.setVisibility("false");
                   isDeleted = true;
                   LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());

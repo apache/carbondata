@@ -59,7 +59,7 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
              .equals(SegmentStatus.MARKED_FOR_DELETE.getMessage))
 
     // execute clean files
-    sql("clean files for table dest")
+    sql("clean files for table dest options('force'='true')")
 
     sql("show segments for table index_dest2").collect()
     val exception_index_dest1 = intercept[IndexOutOfBoundsException] {

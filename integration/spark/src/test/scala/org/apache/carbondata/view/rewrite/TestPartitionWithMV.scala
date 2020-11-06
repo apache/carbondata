@@ -259,7 +259,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert into droppartition values('k',2,2014,1,1)")
     sql("insert into droppartition values('k',2,2015,2,3)")
     sql("alter table droppartition drop partition(year=2015,month=2,day=3)")
-    sql("clean files for table droppartition")
+    sql("clean files for table droppartition options('force'='true')")
     val table = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
     val mvTable = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
     val mvtablePath = mvTable.getTablePath

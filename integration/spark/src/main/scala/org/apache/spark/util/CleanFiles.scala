@@ -39,7 +39,8 @@ object CleanFiles {
    *                        drop table from hive metastore so should be very careful to use it.
    */
   def cleanFiles(spark: SparkSession, dbName: String, tableName: String,
-     forceTableClean: Boolean = false): Unit = {
+     forceTableClean: Boolean = false, cleanCompactedAndMFD: Boolean = false,
+                 cleanStaleInProgress: Boolean = false ): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(spark)
     val carbonTable = if (!forceTableClean) {
@@ -52,6 +53,8 @@ object CleanFiles {
       tableName = tableName,
       tablePath = tablePath,
       carbonTable = carbonTable,
+      cleanCompactedAndMFD,
+      cleanStaleInProgress,
       forceTableClean = forceTableClean)
   }
 
@@ -65,10 +68,14 @@ object CleanFiles {
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     var forceTableClean = false
-    if (args.length > 2) {
+    var cleanInprogress = false
+    var cleanCompactedAndMFD = false
+    if (args.length > 4) {
       forceTableClean = args(2).toBoolean
+      cleanCompactedAndMFD = args(3).toBoolean
+      cleanInprogress = args(4).toBoolean
     }
     val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
-    cleanFiles(spark, dbName, tableName, forceTableClean)
+    cleanFiles(spark, dbName, tableName, forceTableClean, cleanCompactedAndMFD, cleanInprogress)
   }
 }

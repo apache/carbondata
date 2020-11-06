@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.api
 
-import java.io.{DataInputStream, File, FileNotFoundException, InputStreamReader}
+import java.io.{DataInputStream, FileNotFoundException, InputStreamReader}
 import java.time.{Duration, Instant}
 import java.util
 import java.util.{Collections, Comparator}
@@ -303,6 +303,8 @@ object CarbonStore {
       tableName: String,
       tablePath: String,
       carbonTable: CarbonTable,
+      cleanMFDAndCompacted: Boolean,
+      cleanStaleInprogress: Boolean,
       forceTableClean: Boolean,
       currentTablePartitions: Option[Seq[PartitionSpec]] = None,
       truncateTable: Boolean = false): Unit = {
@@ -328,8 +330,8 @@ object CarbonStore {
         if (truncateTable) {
           SegmentStatusManager.truncateTable(carbonTable)
         }
-        SegmentStatusManager.deleteLoadsAndUpdateMetadata(
-          carbonTable, true, currentTablePartitions.map(_.asJava).orNull)
+        SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable,
+          currentTablePartitions.map(_.asJava).orNull, cleanStaleInprogress, cleanMFDAndCompacted)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
         currentTablePartitions match {
           case Some(partitions) =>

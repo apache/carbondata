@@ -195,7 +195,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     sql(s"delete from table partitionalldeleteseg where segment.id in (1)").collect()
     checkExistence(sql(s"show segments for table partitionalldeleteseg"), true, "Marked for Delete")
     checkAnswer(sql(s"Select count(*) from partitionalldeleteseg"), Seq(Row(30)))
-    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg").collect()
+    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg options('force'='true')").collect()
     assert(sql(s"show segments for table partitionalldeleteseg").count == 3)
   }
 

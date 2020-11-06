@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -2084,6 +2085,28 @@ public final class CarbonProperties {
       return Integer.MAX_VALUE;
     }
     return Math.abs(Integer.parseInt(thresholdValue));
+  }
+
+  /**
+   * The below method returns the microseconds after which the trash folder will expire
+   */
+  public long getTrashFolderExpirationTime() {
+    String configuredValue = getProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
+        CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT);
+    Integer result = 0;
+    try {
+      result = Integer.parseInt(configuredValue);
+      if (result < 0) {
+        LOGGER.warn("Value of carbon.trash.expiration.days is negative, taking default value");
+        result = Integer.parseInt(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.error("Invalid value configured for "
+          + CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS + ", considering the default value");
+      result = Integer.parseInt(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT);
+    }
+    Long microSecondsInADay = TimeUnit.DAYS.toMillis(1);
+    return result * microSecondsInADay;
   }
 
   public static boolean isFilterReorderingEnabled() {

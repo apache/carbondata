@@ -677,6 +677,20 @@ public class CarbonUpdateUtil {
   }
 
   /**
+   * This will tell whether the max query timeout has been expired or not for inProgressSegments
+   * @param fileTimestamp
+   * @return
+   */
+  public static boolean isMaxQueryTimeoutExceededForInProgressSegments(long fileTimestamp) {
+    // record current time.
+    long currentTime = CarbonUpdateUtil.readCurrentTime();
+    // using the value of the Trash Folder Expiration Time
+    long maxTime = CarbonProperties.getInstance().getTrashFolderExpirationTime();
+    long difference = currentTime - fileTimestamp;
+    return difference > maxTime;
+  }
+
+  /**
    *
    * @param invalidFile
    * @param forceDelete

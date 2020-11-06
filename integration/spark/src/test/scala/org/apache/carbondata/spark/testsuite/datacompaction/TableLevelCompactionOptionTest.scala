@@ -116,7 +116,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     }
 
     sql("ALTER TABLE carbon_table COMPACT 'MAJOR'")
-    sql("CLEAN FILES FOR TABLE carbon_table")
+    sql("CLEAN FILES FOR TABLE carbon_table options('force'='true')")
 
     val segments = sql("SHOW SEGMENTS FOR TABLE carbon_table")
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
@@ -181,7 +181,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     for (i <- 0 until 8) {
       sql(s"LOAD DATA LOCAL INPATH '$sampleFilePath' INTO TABLE carbon_table")
     }
-    sql("CLEAN FILES FOR TABLE carbon_table")
+    sql("CLEAN FILES FOR TABLE carbon_table options('force'='true')")
     var segments = sql("SHOW SEGMENTS FOR TABLE carbon_table")
     var segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(segmentSequenceIds.size == 1)
@@ -251,7 +251,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     for (i <- 0 until 6) {
       sql(s"LOAD DATA LOCAL INPATH '$sampleFilePath' INTO TABLE carbon_table")
     }
-    sql("CLEAN FILES FOR TABLE carbon_table")
+    sql("CLEAN FILES FOR TABLE carbon_table options('force'='true')")
     var segments = sql("SHOW SEGMENTS FOR TABLE carbon_table")
     var segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(segmentSequenceIds.contains("0.1"))
@@ -271,7 +271,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     for (i <- 0 until 2) {
       sql(s"LOAD DATA LOCAL INPATH '$sampleFilePath' INTO TABLE carbon_table")
     }
-    sql("CLEAN FILES FOR TABLE carbon_table")
+    sql("CLEAN FILES FOR TABLE carbon_table options('force'='true')")
     segments = sql("SHOW SEGMENTS FOR TABLE carbon_table")
     segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(segmentSequenceIds.contains("0.2"))

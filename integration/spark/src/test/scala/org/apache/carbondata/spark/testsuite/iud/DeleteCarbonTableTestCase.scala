@@ -201,9 +201,9 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into select_after_clean select 3,'uhj'")
     sql("insert into select_after_clean select 4,'frg'")
     sql("alter table select_after_clean compact 'minor'")
-    sql("clean files for table select_after_clean")
+    sql("clean files for table select_after_clean options('force'='true')")
     sql("delete from select_after_clean where name='def'")
-    sql("clean files for table select_after_clean")
+    sql("clean files for table select_after_clean options('force'='true')")
     assertResult(false)(new File(
       CarbonTablePath.getSegmentPath(s"$storeLocation/iud_db.db/select_after_clean", "0")).exists())
     checkAnswer(sql("""select * from select_after_clean"""),
