@@ -45,8 +45,10 @@ public class CarbonTablePath {
   private static final String PARTITION_PREFIX = "Part";
   private static final String DATA_PART_PREFIX = "part-";
   public static final String BATCH_PREFIX = "_batchno";
+  public static final String TRASH_DIR = ".Trash";
   private static final String LOCK_DIR = "LockFiles";
 
+  public static final String SEGMENTS_METADATA_DIR = "segments";
   public static final String TABLE_STATUS_FILE = "tablestatus";
   public static final String TABLE_STATUS_HISTORY_FILE = "tablestatus.history";
   public static final String CARBON_DATA_EXT = ".carbondata";
@@ -728,15 +730,16 @@ public class CarbonTablePath {
    * Get the segment file locations of table
    */
   public static String getSegmentFilesLocation(String tablePath) {
-    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments";
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
+        SEGMENTS_METADATA_DIR;
   }
 
   /**
    * Get the segment file path of table
    */
   public static String getSegmentFilePath(String tablePath, String segmentFileName) {
-    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments"
-        + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName;
+    return getSegmentFilesLocation(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
+        segmentFileName;
   }
 
   /**
@@ -791,5 +794,9 @@ public class CarbonTablePath {
     } else {
       return dataFilePath;
     }
+  }
+
+  public static String getTrashFolderPath(String carbonTablePath) {
+    return carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + TRASH_DIR;
   }
 }

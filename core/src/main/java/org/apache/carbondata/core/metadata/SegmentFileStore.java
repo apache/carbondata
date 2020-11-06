@@ -772,7 +772,7 @@ public class SegmentFileStore {
    * @param ignoreStatus
    * @throws IOException
    */
-  private List<String> readIndexFiles(SegmentStatus status, boolean ignoreStatus,
+  public List<String> readIndexFiles(SegmentStatus status, boolean ignoreStatus,
       Configuration configuration) throws IOException {
     if (indexFilesMap != null) {
       return new ArrayList<>();
@@ -1194,7 +1194,7 @@ public class SegmentFileStore {
    * till year partition folder if there are no other folder or files present under each folder till
    * year partition
    */
-  private static void deleteEmptyPartitionFolders(CarbonFile path) {
+  public static void deleteEmptyPartitionFolders(CarbonFile path) {
     if (path != null && path.listFiles().length == 0) {
       FileFactory.deleteAllCarbonFilesOfDir(path);
       Path parentsLocation = new Path(path.getAbsolutePath()).getParent();

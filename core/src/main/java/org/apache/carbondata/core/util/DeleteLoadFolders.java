@@ -183,9 +183,8 @@ public final class DeleteLoadFolders {
         return true;
       }
       long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
-
-      return CarbonUpdateUtil.isMaxQueryTimeoutExceeded(deletionTime);
-
+      return TrashUtil.isTrashRetentionTimeoutExceeded(deletionTime) && CarbonUpdateUtil
+          .isMaxQueryTimeoutExceeded(deletionTime);
     }
 
     return false;
@@ -202,7 +201,8 @@ public final class DeleteLoadFolders {
       }
       long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
 
-      return CarbonUpdateUtil.isMaxQueryTimeoutExceeded(deletionTime);
+      return TrashUtil.isTrashRetentionTimeoutExceeded(deletionTime) && CarbonUpdateUtil
+          .isMaxQueryTimeoutExceeded(deletionTime);
 
     }
 

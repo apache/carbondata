@@ -27,6 +27,7 @@ CarbonData DML statements are documented here,which includes:
 * [UPDATE AND DELETE](#update-and-delete)
 * [COMPACTION](#compaction)
 * [SEGMENT MANAGEMENT](./segment-management-on-carbondata.md)
+* [CLEAN FILES](clean-files.md)
 
 
 ## LOAD DATA

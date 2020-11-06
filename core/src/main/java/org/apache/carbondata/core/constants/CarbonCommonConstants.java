@@ -1415,6 +1415,34 @@ public final class CarbonCommonConstants {
   public static final String BITSET_PIPE_LINE_DEFAULT = "true";
 
   /**
+   * this is the user defined time(in days), timestamp subfolders in trash directory will take
+   * this value as retention time. They are deleted after this time.
+   */
+  @CarbonProperty
+  public static final String CARBON_TRASH_RETENTION_DAYS = "carbon.trash.retention.days";
+
+  /**
+   * Default retention time of a subdirectory in trash folder is 7 days.
+   */
+  public static final int CARBON_TRASH_RETENTION_DAYS_DEFAULT = 7;
+
+  /**
+   * Maximum allowed retention time of a subdirectory in trash folder is 365 days.
+   */
+  public static final int CARBON_TRASH_RETENTION_DAYS_MAXIMUM = 365;
+
+  /**
+   * User defined property to check if clean files operation with force option is allowed.
+   */
+  @CarbonProperty
+  public static final String CARBON_CLEAN_FILES_FORCE_ALLOWED = "carbon.clean.file.force.allowed";
+
+  /**
+   * By default clean files operation with force option is not allowed.
+   */
+  public static final String CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT = "false";
+
+  /**
    * minimum required registered resource for starting block distribution
    */
   @CarbonProperty

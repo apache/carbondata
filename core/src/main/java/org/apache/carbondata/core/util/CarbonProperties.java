@@ -207,6 +207,9 @@ public final class CarbonProperties {
       case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE:
         validateDMSchemaStorageProvider();
         break;
+      case CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS:
+        validateTrashFolderRetentionTime();
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
@@ -275,6 +278,7 @@ public final class CarbonProperties {
     validateDetailQueryBatchSize();
     validateIndexServerSerializationThreshold();
     validateAndGetLocalDictionarySizeThresholdInMB();
+    validateTrashFolderRetentionTime();
   }
 
   /**
@@ -2084,6 +2088,44 @@ public final class CarbonProperties {
       return Integer.MAX_VALUE;
     }
     return Math.abs(Integer.parseInt(thresholdValue));
+  }
+
+  /**
+   * The below method sets the time(in days) for which timestamp folder retention in trash
+   * folder will take place
+   */
+  private void validateTrashFolderRetentionTime() {
+    String propertyValue = carbonProperties.getProperty(CarbonCommonConstants
+        .CARBON_TRASH_RETENTION_DAYS, Integer.toString(CarbonCommonConstants
+        .CARBON_TRASH_RETENTION_DAYS_DEFAULT));
+    try {
+      int configuredValue = Integer.parseInt(propertyValue);
+      if (configuredValue < 0 || configuredValue > CarbonCommonConstants
+          .CARBON_TRASH_RETENTION_DAYS_MAXIMUM) {
+        LOGGER.warn("Value of " + CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS + " is" +
+            " invalid, taking default value instead");
+        carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS, Integer
+            .toString(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT));
+      } else {
+        carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
+            propertyValue);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.error("Invalid value configured for " + CarbonCommonConstants
+          .CARBON_TRASH_RETENTION_DAYS + ", considering the default value");
+      carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS, Integer
+          .toString(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT));
+    }
+  }
+
+  /**
+   * Check if the user has allowed the use of clean files command with force option.
+   */
+  public boolean isCleanFilesForceAllowed() {
+    String configuredValue =
+        getProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+        CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT);
+    return Boolean.parseBoolean(configuredValue);
   }
 
   public static boolean isFilterReorderingEnabled() {
