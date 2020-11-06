@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -2084,6 +2085,49 @@ public final class CarbonProperties {
       return Integer.MAX_VALUE;
     }
     return Math.abs(Integer.parseInt(thresholdValue));
+  }
+
+  /**
+   * The below method returns the time(in milliseconds) for which timestamp folder retention in
+   * trash folder will take place.
+   */
+  public long getTrashFolderRetentionTime() {
+    long milliSecondsInADay = TimeUnit.DAYS.toMillis(1);
+    return (long)validateTrashFolderRetentionTime() * milliSecondsInADay;
+  }
+
+  /**
+   * The below method returns the time(in days) for which timestamp folder retention in trash
+   * folder will take place
+   */
+  private int validateTrashFolderRetentionTime() {
+    String propertyValue = getProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS, Integer
+        .toString(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT));
+    int configuredValue = 0;
+    try {
+      configuredValue = Integer.parseInt(propertyValue);
+      if (configuredValue < 0 || configuredValue > CarbonCommonConstants
+          .CARBON_TRASH_RETENTION_DAYS_MAXIMUM) {
+        LOGGER.warn("Value of " + CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS + " is" +
+            " invalid, taking default value instead");
+        configuredValue = CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT;
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.error("Invalid value configured for " + CarbonCommonConstants
+          .CARBON_TRASH_RETENTION_DAYS + ", considering the default value");
+      configuredValue = CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT;
+    }
+    return configuredValue;
+  }
+
+  /**
+   * Check if the user has allowed the use of clean files command with force option.
+   */
+  public boolean isCleanFilesForceAllowed() {
+    String configuredValue =
+        getProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+        CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT);
+    return Boolean.parseBoolean(configuredValue);
   }
 
   public static boolean isFilterReorderingEnabled() {

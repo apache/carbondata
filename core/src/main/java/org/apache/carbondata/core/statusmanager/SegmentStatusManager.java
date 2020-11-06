@@ -1040,16 +1040,17 @@ public class SegmentStatusManager {
   }
 
   private static ReturnTuple isUpdateRequired(boolean isForceDeletion, CarbonTable carbonTable,
-      AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] details) {
+      AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] details,
+      boolean isCleanFilesOperation) {
     // Delete marked loads
     boolean isUpdateRequired = DeleteLoadFolders
         .deleteLoadFoldersFromFileSystem(absoluteTableIdentifier, isForceDeletion, details,
-            carbonTable.getMetadataPath());
+            carbonTable.getMetadataPath(), isCleanFilesOperation);
     return new ReturnTuple(details, isUpdateRequired);
   }
 
   public static void deleteLoadsAndUpdateMetadata(CarbonTable carbonTable, boolean isForceDeletion,
-      List<PartitionSpec> partitionSpecs) throws IOException {
+      List<PartitionSpec> partitionSpecs, boolean isCleanFilesOperation) throws IOException {
     LoadMetadataDetails[] metadataDetails =
         SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
     // delete the expired segment lock files
@@ -1059,7 +1060,8 @@ public class SegmentStatusManager {
       boolean updateCompletionStatus = false;
       LoadMetadataDetails[] newAddedLoadHistoryList = null;
       ReturnTuple tuple =
-          isUpdateRequired(isForceDeletion, carbonTable, identifier, metadataDetails);
+          isUpdateRequired(isForceDeletion, carbonTable, identifier, metadataDetails,
+              isCleanFilesOperation);
       if (tuple.isUpdateRequired) {
         ICarbonLock carbonTableStatusLock =
             CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
@@ -1079,7 +1081,8 @@ public class SegmentStatusManager {
             LoadMetadataDetails[] details =
                 SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
             ReturnTuple tuple2 =
-                isUpdateRequired(isForceDeletion, carbonTable, identifier, details);
+                isUpdateRequired(isForceDeletion, carbonTable, identifier, details,
+                    isCleanFilesOperation);
             if (!tuple2.isUpdateRequired) {
               return;
             }
@@ -1136,7 +1139,7 @@ public class SegmentStatusManager {
           if (updateCompletionStatus) {
             DeleteLoadFolders
                 .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
-                    isForceDeletion, partitionSpecs);
+                    isForceDeletion, partitionSpecs, isCleanFilesOperation);
           }
         }
       }

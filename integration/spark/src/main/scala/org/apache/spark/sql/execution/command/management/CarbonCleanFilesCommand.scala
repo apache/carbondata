@@ -29,10 +29,10 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.ConcurrentOperationException
-import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.{CarbonProperties, CleanFilesUtil, TrashUtil}
 import org.apache.carbondata.events._
 import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.view.MVManagerInSpark
@@ -48,13 +48,18 @@ import org.apache.carbondata.view.MVManagerInSpark
 case class CarbonCleanFilesCommand(
     databaseNameOp: Option[String],
     tableName: Option[String],
+    options: Option[List[(String, String)]],
     forceTableClean: Boolean = false,
     isInternalCleanCall: Boolean = false,
     truncateTable: Boolean = false)
   extends AtomicRunnableCommand {
 
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   var carbonTable: CarbonTable = _
   var cleanFileCommands: List[CarbonCleanFilesCommand] = List.empty
+  val optionsMap = options.getOrElse(List.empty[(String, String)]).toMap
+  // forceClean will empty trash
+  val forceClean = optionsMap.getOrElse("force", "false").toBoolean
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
@@ -71,6 +76,7 @@ case class CarbonCleanFilesCommand(
           CarbonCleanFilesCommand(
             Some(relationIdentifier.getDatabaseName),
             Some(relationIdentifier.getTableName),
+            options,
             isInternalCleanCall = true)
       }.toList
       commands.foreach(_.processMetadata(sparkSession))
@@ -91,6 +97,25 @@ case class CarbonCleanFilesCommand(
     OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent, operationContext)
     if (tableName.isDefined) {
       Checker.validateTableExists(databaseNameOp, tableName.get, sparkSession)
+      if (forceClean) {
+        // empty the trash folder
+        if (CarbonProperties.getInstance().isCleanFilesForceAllowed) {
+          TrashUtil.emptyTrash(carbonTable.getTablePath)
+        } else {
+          LOGGER.error("Clean Files with Force option deletes the physical data and it cannot be" +
+              " recovered. It is disabled by default, to enable clean files with force option," +
+              " set " + CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED + " to true")
+            throw new RuntimeException("Clean files with force operation not permitted by default")
+        }
+      } else {
+        // clear trash based on timestamp
+        TrashUtil.deleteExpiredDataFromTrash(carbonTable.getTablePath)
+      }
+      if (carbonTable.isHivePartitionTable) {
+        CleanFilesUtil.cleanStaleSegmentsForPartitionTable(carbonTable)
+      } else {
+        CleanFilesUtil.cleanStaleSegments(carbonTable)
+      }
       if (forceTableClean) {
         deleteAllData(sparkSession, databaseNameOp, tableName.get)
       } else {

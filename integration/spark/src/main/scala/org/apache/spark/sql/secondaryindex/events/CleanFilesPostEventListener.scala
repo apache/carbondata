@@ -59,7 +59,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
             cleanFilesPostEvent.sparkSession,
             indexTable)
           SegmentStatusManager.deleteLoadsAndUpdateMetadata(
-            indexTable, true, partitions.map(_.asJava).orNull)
+            indexTable, true, partitions.map(_.asJava).orNull, true)
           CarbonUpdateUtil.cleanUpDeltaFiles(indexTable, true)
           cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
         }
