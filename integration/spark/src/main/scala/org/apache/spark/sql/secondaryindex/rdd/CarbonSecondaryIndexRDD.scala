@@ -185,6 +185,7 @@ class CarbonSecondaryIndexRDD[K, V](
   }
 
   override def internalGetPartitions: Array[Partition] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val startTime = System.currentTimeMillis()
     val absoluteTableIdentifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
       carbonStoreLocation, databaseName, factTableName, tableId)
@@ -255,7 +256,7 @@ class CarbonSecondaryIndexRDD[K, V](
 
       val nodeTaskBlocksMap = new java.util.HashMap[String, java.util.List[NodeInfo]]()
       val nodes = DistributionUtil.getNodeList(sparkContext)
-      logInfo("no.of.nodes where data present=" + nodeBlockMap.size())
+      LOGGER.info("no.of.nodes where data present=" + nodeBlockMap.size())
       defaultParallelism = sparkContext.defaultParallelism
 
       // Create Spark Partition for each task and assign blocks
@@ -278,34 +279,29 @@ class CarbonSecondaryIndexRDD[K, V](
           }
         }
       }
-
-      // print the node info along with task and number of blocks for the task.
-      nodeTaskBlocksMap.asScala.foreach((entry: (String, util.List[NodeInfo])) => {
-        logInfo(s"for the node ${ entry._1 }")
-        for (elem <- entry._2.asScala) {
-          logInfo("Task ID is " + elem.TaskId + "no. of blocks is " + elem.noOfBlocks)
-        }
-      })
-
+      if (LOGGER.isDebugEnabled) {
+        // print the node info along with task and number of blocks for the task.
+        nodeTaskBlocksMap.asScala.foreach((entry: (String, util.List[NodeInfo])) => {
+          LOGGER.debug(s"for the node ${ entry._1 }")
+          for (elem <- entry._2.asScala) {
+            LOGGER.debug("Task ID is " + elem.TaskId + "no. of blocks is " + elem.noOfBlocks)
+          }
+        })
+      }
       val noOfNodes = nodes.length
       val noOfTasks = result.size
-      logInfo(s"Identified  no.of.Blocks: $noOfBlocks," +
-              s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: " +
-              s"$noOfTasks")
-      logInfo("Time taken to identify Blocks to scan : " + (System.currentTimeMillis() - startTime))
-      for (j <- 0 until result.size) {
-        val multiBlockSplit = result.get(j).asInstanceOf[CarbonSparkPartition].split.value
-        val splitList = multiBlockSplit.getAllSplits
-        val tableBlocks: util.List[TableBlockInfo] = CarbonInputSplit.createBlocks(splitList)
-        val tableBlocksSize: Int = tableBlocks.size
-        if (tableBlocksSize > 0) {
-          // read the footer and get column cardinality which will be same for all tasks in a
-          // segment
-          val dataFileFooter: DataFileFooter = SecondaryIndexUtil
-            .readFileFooter(tableBlocks.get(tableBlocks.size() - 1))
+      LOGGER.info(s"Identified  no.of.Blocks: $noOfBlocks," +
+                  s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: " +
+                  s"$noOfTasks")
+      LOGGER.info(
+        "Time taken to identify Blocks to scan : " + (System.currentTimeMillis() - startTime))
+      if (LOGGER.isDebugEnabled) {
+        for (j <- 0 until result.size) {
+          val multiBlockSplit = result.get(j).asInstanceOf[CarbonSparkPartition].split.value
+          val splitList = multiBlockSplit.getAllSplits
+          LOGGER.debug(s"Node: ${ multiBlockSplit.getLocations.mkString(",") }, No.Of Blocks: " +
+                       s"${ CarbonInputSplit.createBlocks(splitList).size }")
         }
-        logInfo(s"Node: ${ multiBlockSplit.getLocations.mkString(",") }, No.Of Blocks: " +
-                s"${ CarbonInputSplit.createBlocks(splitList).size }")
       }
       result.toArray(new Array[Partition](result.size))
     } else {
