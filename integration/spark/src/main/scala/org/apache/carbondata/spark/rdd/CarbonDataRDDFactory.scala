@@ -612,6 +612,10 @@ object CarbonDataRDDFactory {
     }
   }
 
+  def mockForConcurrentUpdateTest(): Unit = {}
+
+  def mockForConcurrentDeleteTest(): Unit = {}
+
   /**
    * clear indexSchema files for segment
    */

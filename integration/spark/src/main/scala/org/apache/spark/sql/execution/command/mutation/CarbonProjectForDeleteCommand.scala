@@ -28,7 +28,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
@@ -39,7 +39,7 @@ import org.apache.carbondata.view.MVManagerInSpark
  * IUD update delete and compaction framework.
  *
  */
-private[sql] case class CarbonProjectForDeleteCommand(
+case class CarbonProjectForDeleteCommand(
     plan: LogicalPlan,
     databaseNameOp: Option[String],
     tableName: String,
@@ -65,8 +65,8 @@ private[sql] case class CarbonProjectForDeleteCommand(
         s"Unsupported delete operation on table containing mixed format segments")
     }
 
-    if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
-      throw new ConcurrentOperationException(carbonTable, "loading", "data delete")
+    if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "data delete")
     }
 
     if (!carbonTable.canAllow(carbonTable, TableOperation.DELETE)) {
@@ -89,19 +89,14 @@ private[sql] case class CarbonProjectForDeleteCommand(
     val compactionLock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
         LockUsage.COMPACTION_LOCK)
-    val updateLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
-        LockUsage.UPDATE_LOCK)
     var lockStatus = false
     var hasException = false
+    var segmentLocks: Option[Seq[ICarbonLock]] = None
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
         if (!compactionLock.lockWithRetries()) {
           throw new ConcurrentOperationException(carbonTable, "compaction", "delete")
-        }
-        if (!updateLock.lockWithRetries()) {
-          throw new ConcurrentOperationException(carbonTable, "update/delete", "delete")
         }
         LOGGER.info("Successfully able to get the table metadata file lock")
       } else {
@@ -109,7 +104,8 @@ private[sql] case class CarbonProjectForDeleteCommand(
       }
       val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
 
-      val (deletedSegments, deletedRowCount) = DeleteExecution.deleteDeltaExecution(
+      val (deletedSegments, deletedRowCount, acquiredSegmentLocks) =
+        DeleteExecution.deleteDeltaExecution(
         databaseNameOp,
         tableName,
         sparkSession,
@@ -118,9 +114,23 @@ private[sql] case class CarbonProjectForDeleteCommand(
         isUpdateOperation = false,
         executorErrors)
 
+      segmentLocks = acquiredSegmentLocks
+
+      compactionLock.unlock()
+      metadataLock.unlock()
+      mockForConcurrentInsertTest()
+      mockForConcurrentUpdateTest()
+      mockForConcurrentDeleteTest()
+      metadataLock.lockWithRetries()
+      compactionLock.lockWithRetries()
+
       // Check for any failures occurred during delete delta execution
       if (executorErrors.failureCauses != FailureCauses.NONE) {
-        throw new Exception(executorErrors.errorMsg)
+        if (executorErrors.failureCauses == FailureCauses.CONCURRENT_OPERATION_CONFLICT) {
+          throw new ConcurrentOperationException(executorErrors.errorMsg, "please try later.")
+        } else {
+          throw new Exception(executorErrors.errorMsg)
+        }
       }
 
       // call IUD Compaction.
@@ -143,6 +153,9 @@ private[sql] case class CarbonProjectForDeleteCommand(
       OperationListenerBus.getInstance.fireEvent(deleteFromTablePostEvent, operationContext)
       Seq(Row(deletedRowCount))
     } catch {
+      case e: ConcurrentOperationException =>
+        hasException = true
+        throw e
       case e: HorizontalCompactionException =>
         LOGGER.error("Delete operation passed. Exception in Horizontal Compaction." +
                      " Please check logs. " + e.getMessage)
@@ -168,12 +181,6 @@ private[sql] case class CarbonProjectForDeleteCommand(
         CarbonLockUtil.fileUnlock(metadataLock, LockUsage.METADATA_LOCK)
       }
 
-      if (updateLock.unlock()) {
-        LOGGER.info(s"updateLock unlocked successfully after delete operation $tableName")
-      } else {
-        LOGGER.error(s"Unable to unlock updateLock for table $tableName after delete operation");
-      }
-
       if (compactionLock.unlock()) {
         LOGGER.info(s"compactionLock unlocked successfully after delete operation $tableName")
       } else {
@@ -184,8 +191,17 @@ private[sql] case class CarbonProjectForDeleteCommand(
       if (hasException) {
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
       }
+      if (segmentLocks.nonEmpty) {
+        segmentLocks.get.foreach(
+          segmentLock => segmentLock.unlock()
+        )
+      }
     }
   }
+
+  def mockForConcurrentInsertTest(): Unit = {}
+  def mockForConcurrentUpdateTest(): Unit = {}
+  def mockForConcurrentDeleteTest(): Unit = {}
 
   override protected def opName: String = "DELETE DATA"
 }

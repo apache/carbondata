@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -216,6 +217,20 @@ public class SegmentStatusManager {
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
         listOfInvalidSegments, listOfStreamSegments, listOfInProgressSegments);
+  }
+
+  /**
+   * This method reads the load metadata file and filter
+   *
+   * @param metadataFolderPath
+   * @return
+   */
+  public static LoadMetadataDetails[] readLoadMetadataBefore(
+          String metadataFolderPath, long timestamp) {
+    LoadMetadataDetails[] loadMetadataDetails = readLoadMetadata(metadataFolderPath);
+    return Arrays.stream(loadMetadataDetails).filter(
+            loadMetadataDetail -> loadMetadataDetail.getLoadEndTime() < timestamp
+    ).collect(Collectors.toList()).toArray(new LoadMetadataDetails[0]);
   }
 
   /**

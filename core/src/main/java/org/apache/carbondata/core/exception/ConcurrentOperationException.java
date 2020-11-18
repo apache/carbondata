@@ -28,6 +28,10 @@ public class ConcurrentOperationException extends MalformedCarbonCommandExceptio
         " operation is not allowed");
   }
 
+  public ConcurrentOperationException(String errorMessage, String extraMessage) {
+    super(errorMessage + extraMessage);
+  }
+
   public ConcurrentOperationException(CarbonTable table, String command1, String command2) {
     this(table.getDatabaseName(), table.getTableName(), command1, command2);
   }

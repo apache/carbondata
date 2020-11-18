@@ -35,7 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.index.Segment
-import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
@@ -45,7 +45,7 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.view.MVManagerInSpark
 
-private[sql] case class CarbonProjectForUpdateCommand(
+case class CarbonProjectForUpdateCommand(
     plan: LogicalPlan,
     databaseNameOp: Option[String],
     tableName: String,
@@ -85,8 +85,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
-      throw new ConcurrentOperationException(carbonTable, "loading", "data update")
+    if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "data update")
     }
 
     if (!carbonTable.canAllow(carbonTable, TableOperation.UPDATE)) {
@@ -111,8 +111,6 @@ private[sql] case class CarbonProjectForUpdateCommand(
         LockUsage.METADATA_LOCK)
     val compactionLock = CarbonLockFactory.getCarbonLockObj(carbonTable
       .getAbsoluteTableIdentifier, LockUsage.COMPACTION_LOCK)
-    val updateLock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
-      LockUsage.UPDATE_LOCK)
     var lockStatus = false
     // get the current time stamp which should be same for delete and update.
     val currentTime = CarbonUpdateUtil.readCurrentTime
@@ -123,83 +121,94 @@ private[sql] case class CarbonProjectForUpdateCommand(
     var hasUpdateException = false
     var fileTimestamp = ""
     var updateTableModel: UpdateTableModel = null
+    var segmentLocks: Option[Seq[ICarbonLock]] = None
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
         logInfo("Successfully able to get the table metadata file lock")
-      }
-      else {
+      } else {
         throw new Exception("Table is locked for update. Please try after some time")
       }
 
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      if (updateLock.lockWithRetries()) {
-        if (compactionLock.lockWithRetries()) {
-          // Get RDD.
-          dataSet = if (isPersistEnabled) {
-            Dataset.ofRows(sparkSession, plan).persist(StorageLevel.fromString(
-              CarbonProperties.getInstance.getUpdateDatasetStorageLevel()))
-          }
-          else {
-            Dataset.ofRows(sparkSession, plan)
-          }
-          if (CarbonProperties.isUniqueValueCheckEnabled) {
-            // If more than one value present for the update key, should fail the update
-            val ds = dataSet.select(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)
-              .groupBy(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)
-              .count()
-              .select("count")
-              .filter(col("count") > lit(1))
-              .limit(1)
-              .collect()
-            // tupleId represents the source rows that are going to get replaced.
-            // If same tupleId appeared more than once means key has more than one value to replace.
-            // which is undefined behavior.
-            if (ds.length > 0 && ds(0).getLong(0) > 1) {
-              throw new UnsupportedOperationException(
-                " update cannot be supported for 1 to N mapping, as more than one value present " +
+      if (compactionLock.lockWithRetries()) {
+        // Get RDD.
+        dataSet = if (isPersistEnabled) {
+          Dataset.ofRows(sparkSession, plan).persist(StorageLevel.fromString(
+            CarbonProperties.getInstance.getUpdateDatasetStorageLevel()))
+        }
+        else {
+          Dataset.ofRows(sparkSession, plan)
+        }
+        if (CarbonProperties.isUniqueValueCheckEnabled) {
+          // If more than one value present for the update key, should fail the update
+          val ds = dataSet.select(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)
+            .groupBy(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)
+            .count()
+            .select("count")
+            .filter(col("count") > lit(1))
+            .limit(1)
+            .collect()
+          // tupleId represents the source rows that are going to get replaced.
+          // If same tupleId appeared more than once means key has more than one value to replace.
+          // which is undefined behavior.
+          if (ds.length > 0 && ds(0).getLong(0) > 1) {
+            throw new UnsupportedOperationException(
+              " update cannot be supported for 1 to N mapping, as more than one value present " +
                 "for the update key")
-            }
           }
+        }
 
-          // do delete operation.
-          val (segmentsToBeDeleted, updatedRowCountTemp) = DeleteExecution.deleteDeltaExecution(
-            databaseNameOp,
-            tableName,
-            sparkSession,
-            dataSet.rdd,
-            currentTime + "",
-            isUpdateOperation = true,
-            executionErrors)
+        // do delete operation.
+        val (segmentsToBeDeleted, updatedRowCountTemp, acquiredSegmentLocks) =
+          DeleteExecution.deleteDeltaExecution(
+          databaseNameOp,
+          tableName,
+          sparkSession,
+          dataSet.rdd,
+          currentTime + "",
+          isUpdateOperation = true,
+          executionErrors)
 
-          if (executionErrors.failureCauses != FailureCauses.NONE) {
+        segmentLocks = acquiredSegmentLocks
+
+        compactionLock.unlock()
+        metadataLock.unlock()
+        mockForConcurrentInsertTest()
+        mockForConcurrentUpdateTest()
+        mockForConcurrentDeleteTest()
+        metadataLock.lockWithRetries()
+        compactionLock.lockWithRetries()
+
+        if (executionErrors.failureCauses != FailureCauses.NONE) {
+          if (executionErrors.failureCauses == FailureCauses.CONCURRENT_OPERATION_CONFLICT) {
+            throw new ConcurrentOperationException(executionErrors.errorMsg, "please try later.")
+          } else {
             throw new Exception(executionErrors.errorMsg)
           }
-
-          updatedRowCount = updatedRowCountTemp
-          updateTableModel =
-            UpdateTableModel(true, currentTime, executionErrors, segmentsToBeDeleted, Option.empty)
-          // do update operation.
-          performUpdate(dataSet,
-            databaseNameOp,
-            tableName,
-            plan,
-            sparkSession,
-            updateTableModel,
-            executionErrors)
-
-          // pre-priming for update command
-          DeleteExecution.reloadDistributedSegmentCache(carbonTable,
-            segmentsToBeDeleted, operationContext)(sparkSession)
-
-        } else {
-          throw new ConcurrentOperationException(carbonTable, "compaction", "update")
         }
+
+        updatedRowCount = updatedRowCountTemp
+        updateTableModel =
+          UpdateTableModel(true, currentTime, executionErrors, segmentsToBeDeleted, Option.empty)
+        // do update operation.
+        performUpdate(dataSet,
+          databaseNameOp,
+          tableName,
+          plan,
+          sparkSession,
+          updateTableModel,
+          executionErrors)
+
+        // pre-priming for update command
+        DeleteExecution.reloadDistributedSegmentCache(carbonTable,
+          segmentsToBeDeleted, operationContext)(sparkSession)
+
       } else {
-        throw new ConcurrentOperationException(carbonTable, "update/delete", "update")
+        throw new ConcurrentOperationException(carbonTable, "compaction", "update")
       }
       if (executionErrors.failureCauses != FailureCauses.NONE) {
-        throw new Exception(executionErrors.errorMsg)
+        throw new ConcurrentOperationException(executionErrors.errorMsg, "please try later.")
       }
 
       // Do IUD Compaction.
@@ -218,6 +227,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
         UpdateTablePostEvent(sparkSession, carbonTable)
       OperationListenerBus.getInstance.fireEvent(updateTablePostEvent, operationContext)
     } catch {
+      case e: ConcurrentOperationException =>
+        hasUpdateException = true
+        throw e
       case e: HorizontalCompactionException =>
         LOGGER.error(
           "Update operation passed. Exception in Horizontal Compaction. Please check logs." + e)
@@ -244,12 +256,6 @@ private[sql] case class CarbonProjectForUpdateCommand(
           carbonTable, SegmentStatus.SUCCESS)
       }
 
-      if (updateLock.unlock()) {
-        LOGGER.info(s"updateLock unlocked successfully after update $tableName")
-      } else {
-        LOGGER.error(s"Unable to unlock updateLock for table $tableName after table update");
-      }
-
       if (compactionLock.unlock()) {
         LOGGER.info(s"compactionLock unlocked successfully after update $tableName")
       } else {
@@ -273,13 +279,23 @@ private[sql] case class CarbonProjectForUpdateCommand(
       // In case of failure, clean all related delete delta files.
       if (hasHorizontalCompactionException || hasUpdateException) {
         // In case of failure , clean all related delete delta files
-        // When the table has too many segemnts, it will take a long time.
+        // When the table has too many segments, it will take a long time.
         // So moving it to the end and it is outside of locking.
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, fileTimestamp)
+      }
+
+      if (segmentLocks.nonEmpty) {
+        segmentLocks.get.foreach(
+          segmentLock => segmentLock.unlock()
+        )
       }
     }
     Seq(Row(updatedRowCount))
   }
+
+  def mockForConcurrentInsertTest(): Unit = {}
+  def mockForConcurrentUpdateTest(): Unit = {}
+  def mockForConcurrentDeleteTest(): Unit = {}
 
   private def performUpdate(
       dataFrame: Dataset[Row],
