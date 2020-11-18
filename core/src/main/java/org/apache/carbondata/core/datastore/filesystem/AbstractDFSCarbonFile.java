@@ -107,6 +107,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public String getAbsolutePath() {
     try {
+      if (fileStatus != null) {
+        return fileStatus.getPath().toString();
+      }
       return fileSystem.getFileStatus(path).getPath().toString();
     } catch (IOException e) {
       throw new CarbonFileException("Unable to get file status: ", e);
@@ -155,6 +158,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public long getSize() {
     try {
+      if (fileStatus != null) {
+        return fileStatus.getLen();
+      }
       return fileSystem.getFileStatus(path).getLen();
     } catch (IOException e) {
       throw new CarbonFileException("Unable to get file status for " + path.toString(), e);
@@ -541,7 +547,10 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public String[] getLocations() throws IOException {
     BlockLocation[] blkLocations;
-    FileStatus fileStatus = fileSystem.getFileStatus(path);
+    FileStatus fileStatus = this.fileStatus;
+    if (fileStatus == null) {
+      fileStatus = fileSystem.getFileStatus(path);
+    }
     if (fileStatus instanceof LocatedFileStatus) {
       blkLocations = ((LocatedFileStatus) fileStatus).getBlockLocations();
     } else {
