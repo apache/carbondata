@@ -95,7 +95,9 @@ public class SpatialIndexFieldConverterImpl extends MeasureFieldConverterImpl {
   @Override
   public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
-    row.update(generateIndexValue(row), index);
+    if (row.getData()[index] == null) {
+      row.update(generateIndexValue(row), index);
+    }
     super.convert(row, logHolder);
   }
 }

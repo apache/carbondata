@@ -38,6 +38,7 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.util.CustomIndex;
+import org.apache.carbondata.geo.GeoHashUtils;
 import org.apache.carbondata.geo.scan.filter.executor.PolygonFilterExecutorImpl;
 
 /**
@@ -47,9 +48,9 @@ import org.apache.carbondata.geo.scan.filter.executor.PolygonFilterExecutorImpl;
  */
 @InterfaceAudience.Internal
 public class PolygonExpression extends UnknownExpression implements ConditionalExpression {
-  private String polygon;
-  private CustomIndex<List<Long[]>> instance;
-  private List<Long[]> ranges = new ArrayList<Long[]>();
+  public String polygon;
+  public CustomIndex<List<Long[]>> instance;
+  public List<Long[]> ranges = new ArrayList<Long[]>();
   private ColumnExpression column;
   private static final ExpressionResult trueExpRes =
       new ExpressionResult(DataTypes.BOOLEAN, true);
@@ -62,23 +63,13 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
     this.column = new ColumnExpression(columnName, DataTypes.LONG);
   }
 
-  private void validate(List<Long[]> ranges) {
-    // Validate the ranges
-    for (Long[] range : ranges) {
-      if (range.length != 2) {
-        throw new RuntimeException("Query processor must return list of ranges with each range "
-            + "containing minimum and maximum values");
-      }
-    }
-  }
-
   /**
    * This method calls the query processor and gets the list of ranges of IDs.
    */
-  private void processExpression() {
+  public void processExpression() {
     try {
       ranges = instance.query(polygon);
-      validate(ranges);
+      GeoHashUtils.validateRangeList(ranges);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -88,31 +79,9 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
     return ranges;
   }
 
-  private boolean rangeBinarySearch(List<Long[]> ranges, long searchForNumber) {
-    Long[] range;
-    int low = 0, mid, high = ranges.size() - 1;
-    while (low <= high) {
-      mid = low + ((high - low) / 2);
-      range = ranges.get(mid);
-      if (searchForNumber >= range[0]) {
-        if (searchForNumber <= range[1]) {
-          // Return true if the number is between min and max values of the range
-          return true;
-        } else {
-          // Number is bigger than this range's min and max. Search on the right side of the range
-          low = mid + 1;
-        }
-      } else {
-        // Number is smaller than this range's min and max. Search on the left side of the range
-        high = mid - 1;
-      }
-    }
-    return false;
-  }
-
   @Override
   public ExpressionResult evaluate(RowIntf value) {
-    if (rangeBinarySearch(ranges, (Long) value.getVal(0))) {
+    if (GeoHashUtils.rangeBinarySearch(ranges, (Long) value.getVal(0))) {
       return trueExpRes;
     }
     return falseExpRes;

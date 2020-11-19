@@ -42,8 +42,11 @@ import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.geo.{GeoUtils, InPolygon}
+import org.apache.carbondata.geo.{GeoUtils, InPolygon, InPolygonList, InPolygonRangeList, InPolylineList}
 import org.apache.carbondata.geo.scan.expression.{PolygonExpression => CarbonPolygonExpression}
+import org.apache.carbondata.geo.scan.expression.{PolygonListExpression => CarbonPolygonListExpression}
+import org.apache.carbondata.geo.scan.expression.{PolylineListExpression => CarbonPolylineListExpression}
+import org.apache.carbondata.geo.scan.expression.{PolygonRangeListExpression => CarbonPolygonRangeListExpression}
 import org.apache.carbondata.index.{TextMatch, TextMatchLimit}
 
 /**
@@ -141,6 +144,16 @@ object CarbonFilters {
         case InPolygon(queryString) =>
           val (columnName, instance) = GeoUtils.getGeoHashHandler(tableProperties)
           Some(new CarbonPolygonExpression(queryString, columnName, instance))
+        case InPolygonList(polygonListString, opType) =>
+          val (columnName, instance) = GeoUtils.getGeoHashHandler(tableProperties)
+          Some(new CarbonPolygonListExpression(polygonListString, opType, columnName, instance))
+        case InPolylineList(polylineListString, buffer) =>
+          val (columnName, instance) = GeoUtils.getGeoHashHandler(tableProperties)
+          Some(new CarbonPolylineListExpression(polylineListString, buffer.toFloat,
+              columnName, instance))
+        case InPolygonRangeList(rangeListString, opType) =>
+          val (columnName, instance) = GeoUtils.getGeoHashHandler(tableProperties)
+          Some(new CarbonPolygonRangeListExpression(rangeListString, opType, columnName, instance))
         case _ => None
       }
     }

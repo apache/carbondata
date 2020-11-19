@@ -60,6 +60,14 @@ public abstract class CustomIndex<ReturnType> implements Serializable {
   public abstract ReturnType query(String query) throws Exception;
 
   /**
+   * Query processor for custom index.
+   * @param queryPointList query point list for GeoHashIndex
+   * @return Returns list of ranges to be fetched
+   * @throws Exception
+   */
+  public abstract ReturnType query(List<double[]> queryPointList) throws Exception;
+
+  /**
    * Deserializes and returns the custom index instance
    * @param serializedInstance
    * @return

@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.geo
 
+import scala.collection.mutable
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -200,10 +202,6 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
          | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
          | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
          | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
-         | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
-         | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
-         | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
-         | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
          | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
        """.stripMargin)
     val descTable = sql(s"describe formatted $table1").collect
@@ -235,8 +233,8 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   test("test geo table filter by geo spatial index column") {
     createTable()
     loadData()
-    checkAnswer(sql(s"select *from $table1 where mygeohash = '2196036'"),
-      Seq(Row(2196036, 1575428400000L, 116337069, 39951887)))
+    checkAnswer(sql(s"select *from $table1 where mygeohash = '855282156308'"),
+      Seq(Row(855282156308L, 1575428400000L, 116337069, 39951887)))
   }
 
   test("test polygon query") {
@@ -276,17 +274,14 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
          | 'SPATIAL_INDEX.spatial.sourcecolumns'='longitude, latitude',
          | 'SPATIAL_INDEX.spatial.originLatitude'='39.832277',
          | 'SPATIAL_INDEX.spatial.gridSize'='60',
-         | 'SPATIAL_INDEX.spatial.minLongitude'='115.811865',
-         | 'SPATIAL_INDEX.spatial.maxLongitude'='116.782233',
-         | 'SPATIAL_INDEX.spatial.minLatitude'='39.832277',
-         | 'SPATIAL_INDEX.spatial.maxLatitude'='40.225281',
          | 'SPATIAL_INDEX.spatial.conversionRatio'='1000000')
        """.stripMargin)
     loadData(sourceTable)
     createTable(targetTable)
+    // INSERT INTO will keep SPATIAL_INDEX column from sourceTable instead of generating internally
     sql(s"insert into  $targetTable select * from $sourceTable")
-    checkAnswer(sql(s"select *from $targetTable where mygeohash = '2196036'"),
-      Seq(Row(2196036, 1575428400000L, 116337069, 39951887)))
+    checkAnswer(sql(s"select *from $targetTable where mygeohash = '233137655761'"),
+      Seq(Row(233137655761L, 1575428400000L, 116337069, 39951887)))
   }
 
   test("test insert into non-geo table select from geo table") {
@@ -302,8 +297,8 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
         """)
     sql(s"insert into  $targetTable select * from $sourceTable")
     checkAnswer(
-      sql(s"select * from $targetTable where spatial='2196036'"),
-      Seq(Row(2196036, 1575428400000L, 116337069, 39951887)))
+      sql(s"select * from $targetTable where spatial='855282156308'"),
+      Seq(Row(855282156308L, 1575428400000L, 116337069, 39951887)))
   }
 
   test("test insert into table select from another table with target table sort scope as global") {
@@ -321,25 +316,25 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
 
   test("test block pruning for polygon query") {
     createTable()
-    sql(s"insert into $table1 select 0,1575428400000,116285807,40084087")
-    sql(s"insert into $table1 select 0,1575428400000,116372142,40129503")
-    sql(s"insert into $table1 select 0,1575428400000,116187332,39979316")
-    sql(s"insert into $table1 select 0,1575428400000,116337069,39951887")
-    sql(s"insert into $table1 select 0,1575428400000,116359102,40154684")
-    sql(s"insert into $table1 select 0,1575428400000,116736367,39970323")
-    sql(s"insert into $table1 select 0,1575428400000,116362699,39942444")
-    sql(s"insert into $table1 select 0,1575428400000,116325378,39963129")
-    sql(s"insert into $table1 select 0,1575428400000,116302895,39930753")
-    sql(s"insert into $table1 select 0,1575428400000,116288955,39999101")
+    sql(s"insert into $table1 select 855280799612,1575428400000,116285807,40084087")
+    sql(s"insert into $table1 select 855283635086,1575428400000,116372142,40129503")
+    sql(s"insert into $table1 select 855279346102,1575428400000,116187332,39979316")
+    sql(s"insert into $table1 select 855282156308,1575428400000,116337069,39951887")
+    sql(s"insert into $table1 select 855283640154,1575428400000,116359102,40154684")
+    sql(s"insert into $table1 select 855282440834,1575428400000,116736367,39970323")
+    sql(s"insert into $table1 select 855282072206,1575428400000,116362699,39942444")
+    sql(s"insert into $table1 select 855282157702,1575428400000,116325378,39963129")
+    sql(s"insert into $table1 select 855279270226,1575428400000,116302895,39930753")
+    sql(s"insert into $table1 select 855279368850,1575428400000,116288955,39999101")
     val df = sql(s"select * from $table1 where IN_POLYGON('116.321011 " +
                  s"40.123503, 116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')")
     assert(df.rdd.getNumPartitions == 6)
-    checkAnswer(df, Seq(Row(733215, 1575428400000L, 116187332, 39979316),
-      Row(2160019, 1575428400000L, 116362699, 39942444),
-      Row(2170151, 1575428400000L, 116288955, 39999101),
-      Row(2174509, 1575428400000L, 116325378, 39963129),
-      Row(2196036, 1575428400000L, 116337069, 39951887),
-      Row(2361256, 1575428400000L, 116285807, 40084087)))
+    checkAnswer(df, Seq(Row(855279346102L, 1575428400000L, 116187332, 39979316),
+      Row(855282072206L, 1575428400000L, 116362699, 39942444),
+      Row(855279368850L, 1575428400000L, 116288955, 39999101),
+      Row(855282157702L, 1575428400000L, 116325378, 39963129),
+      Row(855282156308L, 1575428400000L, 116337069, 39951887),
+      Row(855280799612L, 1575428400000L, 116285807, 40084087)))
   }
 
   test("test insert into on table partitioned by timevalue column") {
@@ -354,16 +349,12 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
          | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
          | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
          | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
-         | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
-         | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
-         | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
-         | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
          | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
        """.stripMargin)
     sql(s"insert into $table1 select 0, 116337069, 39951887, 1575428400000")
     checkAnswer(
-      sql(s"select * from $table1 where mygeohash = '2196036'"),
-      Seq(Row(2196036, 116337069, 39951887, 1575428400000L)))
+      sql(s"select * from $table1 where mygeohash = '0'"),
+      Seq(Row(0, 116337069, 39951887, 1575428400000L)))
   }
 
   test("test polygon query on table partitioned by timevalue column") {
@@ -377,10 +368,6 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
            | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
            | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
            | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
-           | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
-           | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
-           | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
-           | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
            | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
        """.stripMargin)
     loadData()
@@ -388,6 +375,443 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
       sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 40.123503, " +
           s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
       result)
+  }
+
+  test("test insert into geo table with customized spatial index and polygon query") {
+    createTable()
+    sql(s"insert into $table1 select 855279346102,1575428400000,116187332,39979316")
+    sql(s"insert into $table1 select 855282072206,1575428400000,116362699,39942444")
+    sql(s"insert into $table1 select 855279368850,1575428400000,116288955,39999101")
+    sql(s"insert into $table1 select 855282157702,1575428400000,116325378,39963129")
+    sql(s"insert into $table1 select 855280799612,1575428400000,116285807,40084087")
+    sql(s"insert into $table1 select 0, 1575428400000, 116337069, 39951887")
+    checkAnswer(
+      sql(s"select * from $table1 where longitude = '116337069'"),
+      Seq(Row(0, 1575428400000L, 116337069, 39951887)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 40.123503, " +
+        s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
+      Seq(Row(116187332, 39979316),
+        Row(116362699, 39942444),
+        Row(116288955, 39999101),
+        Row(116325378, 39963129),
+        Row(116285807, 40084087)))
+  }
+
+  test("test load data with customized correct spatial index to geo table and polygon query") {
+    createTable()
+    sql(s"""LOAD DATA local inpath '$resourcesPath/geodataWithCorrectSpatialIndex.csv'
+           |INTO TABLE $table1 OPTIONS ('DELIMITER'= ',')""".stripMargin)
+    checkAnswer(
+      sql(s"select * from $table1 where longitude = '116337069'"),
+      Seq(Row(855282156308L, 1575428400000L, 116337069, 39951887)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 40.123503, " +
+        s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
+      result)
+  }
+
+  test("test load data with customized error spatial index to geo table and polygon query") {
+    createTable()
+    sql(s"""LOAD DATA local inpath '$resourcesPath/geodataWithErrorSpatialIndex.csv'
+           |INTO TABLE $table1 OPTIONS ('DELIMITER'= ',')""".stripMargin)
+    checkAnswer(
+      sql(s"select * from $table1 where longitude = '116337069'"),
+      Seq(Row(0, 1575428400000L, 116337069, 39951887)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 40.123503, " +
+        s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
+      Seq())
+  }
+
+  test("test polygon list query: union of two polygons which are intersected") {
+    createTable()
+    loadData2()
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('" +
+        s"120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431')"),
+      Seq(Row(120177080, 30326882),
+        Row(120180685, 30326327),
+        Row(120184976, 30327105),
+        Row(120176365, 30320687),
+        Row(120179669, 30323688),
+        Row(120181001, 30320761),
+        Row(120187094, 30323540),
+        Row(120186192, 30320132),
+        Row(120181001, 30317316)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('" +
+        s"120.191603 30.328946,120.184179 30.327465,120.181819 30.321464," +
+        s"120.190359 30.315388,120.199242 30.324464,120.191603 30.328946')"),
+      Seq(Row(120184976, 30327105),
+        Row(120189311, 30327549),
+        Row(120187094, 30323540),
+        Row(120193574, 30323651),
+        Row(120186192, 30320132),
+        Row(120190055, 30317464),
+        Row(120196020, 30321651)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON_LIST(" +
+        s"'POLYGON ((120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431)), " +
+        s"POLYGON ((120.191603 30.328946,120.184179 30.327465,120.181819 30.321464," +
+        s"120.190359 30.315388,120.199242 30.324464,120.191603 30.328946))', " +
+        s"'OR')"),
+      Seq(Row(120177080, 30326882),
+        Row(120180685, 30326327),
+        Row(120184976, 30327105),
+        Row(120176365, 30320687),
+        Row(120179669, 30323688),
+        Row(120181001, 30320761),
+        Row(120187094, 30323540),
+        Row(120186192, 30320132),
+        Row(120181001, 30317316),
+        Row(120189311, 30327549),
+        Row(120193574, 30323651),
+        Row(120190055, 30317464),
+        Row(120196020, 30321651)))
+  }
+
+  test("test polygon list query: intersection of two polygons which are intersected") {
+    createTable()
+    loadData2()
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('" +
+        s"120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431')"),
+      Seq(Row(120177080, 30326882),
+        Row(120180685, 30326327),
+        Row(120184976, 30327105),
+        Row(120176365, 30320687),
+        Row(120179669, 30323688),
+        Row(120181001, 30320761),
+        Row(120187094, 30323540),
+        Row(120186192, 30320132),
+        Row(120181001, 30317316)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('" +
+        s"120.191603 30.328946,120.184179 30.327465,120.181819 30.321464," +
+        s"120.190359 30.315388,120.199242 30.324464,120.191603 30.328946')"),
+      Seq(Row(120184976, 30327105),
+        Row(120189311, 30327549),
+        Row(120187094, 30323540),
+        Row(120193574, 30323651),
+        Row(120186192, 30320132),
+        Row(120190055, 30317464),
+        Row(120196020, 30321651)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON_LIST(" +
+        s"'POLYGON ((120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431)), " +
+        s"POLYGON ((120.191603 30.328946,120.184179 30.327465,120.181819 30.321464," +
+        s"120.190359 30.315388,120.199242 30.324464,120.191603 30.328946))', " +
+        s"'AND')"),
+      Seq(Row(120184976, 30327105),
+        Row(120187094, 30323540),
+        Row(120186192, 30320132)))
+  }
+
+  test("test polygon list query: intersection of two polygons which are not intersected") {
+    createTable()
+    loadData2()
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('" +
+        s"120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431')"),
+      Seq(Row(120177080, 30326882),
+        Row(120180685, 30326327),
+        Row(120184976, 30327105),
+        Row(120176365, 30320687),
+        Row(120179669, 30323688),
+        Row(120181001, 30320761),
+        Row(120187094, 30323540),
+        Row(120186192, 30320132),
+        Row(120181001, 30317316)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('" +
+        s"120.164492 30.326279,120.160629 30.318870,120.172259 30.315351,120.164492 30.326279')"),
+      Seq(Row(120164563, 30322243),
+        Row(120168211, 30318057)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON_LIST(" +
+        s"'POLYGON ((120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431)), " +
+        s"POLYGON ((120.164492 30.326279,120.160629 30.318870,120.172259 30.315351," +
+        s"120.164492 30.326279))', " +
+        s"'AND')"),
+      Seq())
+  }
+
+  test("test polygon list query: intersection of two polygons when second polygon " +
+    "is completely in first polygon") {
+    createTable()
+    loadData2()
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('" +
+        s"120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431')"),
+      Seq(Row(120177080, 30326882),
+        Row(120180685, 30326327),
+        Row(120184976, 30327105),
+        Row(120176365, 30320687),
+        Row(120179669, 30323688),
+        Row(120181001, 30320761),
+        Row(120187094, 30323540),
+        Row(120186192, 30320132),
+        Row(120181001, 30317316)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('" +
+        s"120.179442 30.325205,120.177253 30.322242,120.180944 30.319426," +
+        s"120.186094 30.321834,120.179442 30.325205')"),
+      Seq(Row(120179669, 30323688),
+        Row(120181001, 30320761)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON_LIST(" +
+        s"'POLYGON ((120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431)), " +
+        s"POLYGON ((120.179442 30.325205,120.177253 30.322242,120.180944 30.319426," +
+        s"120.186094 30.321834,120.179442 30.325205))', " +
+        s"'AND')"),
+      Seq(Row(120179669, 30323688),
+        Row(120181001, 30320761)))
+  }
+
+  test("test one polyline query") {
+    createTable()
+    loadData2()
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
+        s"'LINESTRING (120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464, " +
+        s"120.190359 30.315388)', 65)"),
+      Seq(Row(120184976, 30327105),
+        Row(120197093, 30325985),
+        Row(120196020, 30321651),
+        Row(120198638, 30323540)))
+  }
+
+  test("test polyline list query, result is union of two polylines") {
+    createTable()
+    loadData2()
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
+        s"'LINESTRING (120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464)', 65)"),
+      Seq(Row(120184976, 30327105),
+        Row(120197093, 30325985)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
+        s"'LINESTRING (120.199242 30.324464, 120.190359 30.315388)', 65)"),
+      Seq(Row(120196020, 30321651),
+        Row(120198638, 30323540)))
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
+        s"'LINESTRING (120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464), " +
+        s"LINESTRING (120.199242 30.324464, 120.190359 30.315388)', 65)"),
+      Seq(Row(120184976, 30327105),
+        Row(120197093, 30325985),
+        Row(120196020, 30321651),
+        Row(120198638, 30323540)))
+  }
+
+  test("test one range list query which have no overlapping range") {
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368848 855279368850, 855280799610 855280799612)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855280799612L, 116285807, 40084087)))
+  }
+
+  test("test one range list query which have overlapping range") {
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368848 855279368850, 855279368849 855279368852)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101)))
+  }
+
+  test("test one range list query when one range contains another range") {
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368848 855279368856, 855279368849 855279368852)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101)))
+  }
+
+  test("test two range lists query: union of two range lists which are intersected") {
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368850 855279368852, 855280799610 855280799612, " +
+        s"855282156300 855282157400)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855280799612L, 116285807, 40084087),
+        Row(855282156308L, 116337069, 39951887)))
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368848 855279368850, 855280799613 855280799615, " +
+        s"855282156301 855282157800)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855282156308L, 116337069, 39951887),
+        Row(855282157702L, 116325378, 39963129)))
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368850 855279368852, 855280799610 855280799612, " +
+        s"855282156300 855282157400), " +
+        s"RANGELIST (855279368848 855279368850, 855280799613 855280799615, " +
+        s"855282156301 855282157800)', " +
+        s"'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855280799612L, 116285807, 40084087),
+        Row(855282156308L, 116337069, 39951887),
+        Row(855282157702L, 116325378, 39963129)))
+  }
+
+  test("test two range lists query: intersection of two range lists which are intersected") {
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368850 855279368852, 855280799610 855280799612, " +
+        s"855282156300 855282157400)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855280799612L, 116285807, 40084087),
+        Row(855282156308L, 116337069, 39951887)))
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368848 855279368850, 855280799613 855280799615, " +
+        s"855282156301 855282157800)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855282156308L, 116337069, 39951887),
+        Row(855282157702L, 116325378, 39963129)))
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368850 855279368852, 855280799610 855280799612, " +
+        s"855282156300 855282157400), " +
+        s"RANGELIST (855279368848 855279368850, 855280799613 855280799615, " +
+        s"855282156301 855282157800)', " +
+        s"'AND')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855282156308L, 116337069, 39951887)))
+  }
+
+  test("test two range lists query: intersection of two range lists which are not intersected") {
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368850 855279368852, 855280799610 855280799612, " +
+        s"855282156300 855282157400)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855280799612L, 116285807, 40084087),
+        Row(855282156308L, 116337069, 39951887)))
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368830 855279368840, 855280799613 855280799615, " +
+        s"855282157700 855282157800)', 'OR')"),
+      Seq(Row(855282157702L, 116325378, 39963129)))
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368850 855279368852, 855280799610 855280799612, " +
+        s"855282156300 855282157400), " +
+        s"RANGELIST (855279368830 855279368840, 855280799613 855280799615, " +
+        s"855282157700 855282157800)', " +
+        s"'AND')"),
+      Seq())
+  }
+
+  test("test two range lists query: intersection of two range lists when second range list " +
+      "is completely in first range list") {
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368850 855279368852, 855280799610 855280799612, " +
+        s"855282156300 855282157400)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855280799612L, 116285807, 40084087),
+        Row(855282156308L, 116337069, 39951887)))
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368848 855279368850, 855280799613 855280799615, " +
+        s"855282156301 855282157000)', 'OR')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855282156308L, 116337069, 39951887)))
+    checkAnswer(
+      sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+        s"'RANGELIST (855279368840 855279368852, 855280799610 855280799620, " +
+        s"855282156300 855282157400), " +
+        s"RANGELIST (855279368848 855279368850, 855280799613 855280799615, " +
+        s"855282156301 855282157000)', " +
+        s"'AND')"),
+      Seq(Row(855279368850L, 116288955, 39999101),
+        Row(855282156308L, 116337069, 39951887)))
+  }
+
+  test("test transforming GeoId to GridXY") {
+    checkAnswer(
+      sql(s"select GeoIdToGridXy(855279270226) as GridXY"),
+      Seq(Row(Seq(613089, 722908))))
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select longitude, latitude, mygeohash, GeoIdToGridXy(mygeohash) as GridXY " +
+        s"from $table1 where mygeohash = 855279270226"),
+      Seq(Row(116302895, 39930753, 855279270226L, Seq(613089, 722908))))
+  }
+
+  test("test transforming latitude and longitude to GeoId") {
+    checkAnswer(
+      sql(s"select LatLngToGeoId(39930753, 116302895, 39.832277, 50) as geoId"),
+      Seq(Row(855279270226L)))
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select longitude, latitude, mygeohash, " +
+        s"LatLngToGeoId(latitude, longitude, 39.832277, 50) as geoId " +
+        s"from $table1 where mygeohash = 855279270226"),
+      Seq(Row(116302895, 39930753, 855279270226L, 855279270226L)))
+  }
+
+  test("test transforming GeoId to latitude and longitude") {
+    checkAnswer(
+      sql(s"select GeoIdToLatLng(855279270226, 39.832277, 50) as LatitudeAndLongitude"),
+      Seq(Row(Seq(39.930529, 116.303093))))
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select longitude, latitude, mygeohash, " +
+        s"GeoIdToLatLng(mygeohash, 39.832277, 50) as LatitudeAndLongitude " +
+        s"from $table1 where mygeohash = 855279270226"),
+      Seq(Row(116302895, 39930753, 855279270226L, Seq(39.930529, 116.303093))))
+  }
+
+  test("test transforming to upper layer geoId") {
+    checkAnswer(
+      sql(s"select ToUpperLayerGeoId(855279270226) as upperLayerGeoId"),
+      Seq(Row(213819817556L)))
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select longitude, latitude, mygeohash, " +
+        s"ToUpperLayerGeoId(mygeohash) as upperLayerGeoId " +
+        s"from $table1 where mygeohash = 855279270226"),
+      Seq(Row(116302895, 39930753, 855279270226L, 213819817556L)))
+  }
+
+  test("test transforming polygon string to rangeList") {
+    checkAnswer(
+      sql(s"select ToRangeList('116.321011 40.123503, 116.320311 40.122503, " +
+        s"116.321111 40.121503, 116.321011 40.123503', 39.832277, 50) as rangeList"),
+      Seq(Row(mutable.WrappedArray.make(Array(
+        mutable.WrappedArray.make(Array(855280833998L, 855280833998L)),
+        mutable.WrappedArray.make(Array(855280834020L, 855280834020L)),
+        mutable.WrappedArray.make(Array(855280834022L, 855280834022L))))))
+    )
   }
 
   override def afterEach(): Unit = {
@@ -414,10 +838,6 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
            | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
            | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
            | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
-           | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
-           | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
-           | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
-           | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
            | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
        """.stripMargin)
   }
@@ -426,5 +846,9 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     sql(s"""LOAD DATA local inpath '$resourcesPath/geodata.csv' INTO TABLE $tableName OPTIONS
            |('DELIMITER'= ',')""".stripMargin)
   }
-}
 
+  def loadData2(tableName : String = table1): Unit = {
+    sql(s"""LOAD DATA local inpath '$resourcesPath/geodata2.csv' INTO TABLE $tableName OPTIONS
+           |('DELIMITER'= ',')""".stripMargin)
+  }
+}

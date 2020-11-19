@@ -38,7 +38,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetad
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.events._
-import org.apache.carbondata.geo.InPolygonUDF
+import org.apache.carbondata.geo.GeoUdfRegister
 import org.apache.carbondata.index.{TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
@@ -94,7 +94,12 @@ class CarbonEnv {
     // TODO: move it to proper place, it should be registered by indexSchema implementation
     sparkSession.udf.register("text_match", new TextMatchUDF)
     sparkSession.udf.register("text_match_with_limit", new TextMatchMaxDocUDF)
-    sparkSession.udf.register("in_polygon", new InPolygonUDF)
+
+    // register udf for spatial index filters of querying
+    GeoUdfRegister.registerQueryFilterUdf(sparkSession)
+
+    // register udf for spatial index utils
+    GeoUdfRegister.registerUtilUdf(sparkSession)
 
     // register udf for materialized view
     sparkSession.udf.register(MVFunctions.DUMMY_FUNCTION, () => "")

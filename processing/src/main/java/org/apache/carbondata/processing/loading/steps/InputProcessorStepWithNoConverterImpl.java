@@ -415,16 +415,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     private Object[] convertToNoDictionaryToBytesWithoutReArrange(Object[] data,
         DataField[] dataFields) {
       Object[] newData = new Object[dataFields.length];
-      Map<String, String> properties =
-          configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
-              .getTableProperties();
-      String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
       // now dictionary is removed, no need of no dictionary mapping
       for (int i = 0; i < dataFields.length; i++) {
-        if (spatialProperty != null && dataFields[i].getColumn().getColName()
-            .equalsIgnoreCase(spatialProperty.trim())) {
-          continue;
-        }
         if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
           // keep the no dictionary measure column as original data
           newData[i] = data[i];

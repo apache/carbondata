@@ -18,6 +18,7 @@
 package org.apache.carbondata.geo;
 
 import java.awt.geom.Point2D;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -81,10 +82,19 @@ class GeometryOperation {
   /**
    * Converting point objects to point objects in Geo
    * @param pointB Point2D Point object
+   * @param isMaxDepth Whether is the last division
+   * @param scale Set scale to point at last division
    * @return JTS Point object
    */
-  public static Point getPointByPoint2D(Point2D.Double pointB) {
-    Coordinate point = new Coordinate(pointB.x, pointB.y);
+  public static Point getPointByPoint2D(Point2D.Double pointB, boolean isMaxDepth, int scale) {
+    Coordinate point;
+    if (isMaxDepth) {
+      point = new Coordinate(
+          new BigDecimal(pointB.x).setScale(scale, BigDecimal.ROUND_HALF_UP).doubleValue(),
+          new BigDecimal(pointB.y).setScale(scale, BigDecimal.ROUND_HALF_UP).doubleValue());
+    } else {
+      point = new Coordinate(pointB.x, pointB.y);
+    }
     return geoFactory.createPoint(point);
   }
 
@@ -104,10 +114,13 @@ class GeometryOperation {
    * A and B do not intersect each other, A is a polygon, B is a point
    * @param polygonA polygon
    * @param pointB point
+   * @param isMaxDepth Whether is the last division
+   * @param scale Set scale to point at last division
    * @return true Point away from polygon，false Points are inseparable from polygons
    */
-  public static boolean disjoint(Geometry polygonA, Point2D.Double pointB) {
-    Point pointGeo = getPointByPoint2D(pointB);
+  public static boolean disjoint(Geometry polygonA, Point2D.Double pointB,
+      boolean isMaxDepth, int scale) {
+    Point pointGeo = getPointByPoint2D(pointB, isMaxDepth, scale);
     boolean result = polygonA.disjoint(pointGeo);
     return result;
   }
@@ -129,10 +142,13 @@ class GeometryOperation {
    * contains - A contains B Compare whether polygon a contains B
    * @param polygonA  polygon
    * @param pointB   point
+   * @param isMaxDepth Whether is the last division
+   * @param scale Set scale to point at last division
    * @return true Polygon a contains point B (B in a), false Polygon a does not contain point B
    */
-  public static boolean contains(Geometry polygonA, Point2D.Double pointB) {
-    Point pointGeo = getPointByPoint2D(pointB);
+  public static boolean contains(Geometry polygonA, Point2D.Double pointB,
+      boolean isMaxDepth, int scale) {
+    Point pointGeo = getPointByPoint2D(pointB, isMaxDepth, scale);
     boolean result = polygonA.contains(pointGeo);
     return result;
   }
@@ -153,10 +169,13 @@ class GeometryOperation {
    * intersect - A intersects B Represents the intersection of polygon A and point B
    * @param polygonA polygon
    * @param pointB point
+   * @param isMaxDepth Whether is the last division
+   * @param scale Set scale to point at last division
    * @return true Polygon a intersects point B,false Polygon a does not intersect point B
    */
-  public static boolean intersects(Geometry polygonA, Point2D.Double pointB) {
-    Point pointGeo = getPointByPoint2D(pointB);
+  public static boolean intersects(Geometry polygonA, Point2D.Double pointB,
+      boolean isMaxDepth, int scale) {
+    Point pointGeo = getPointByPoint2D(pointB, isMaxDepth, scale);
     boolean result = polygonA.intersects(pointGeo);
     return result;
   }
@@ -362,13 +381,17 @@ class GridData {
    * and finally the hash value of longitude and latitude data should be brought in
    */
   public long createHashID(long row, long column) {
-    long index = 0L;
-    for (int i = 0; i < maxDepth + 1; i++) {
-      long x = (row >> i) & 1;    // take position i
-      long y = (column >> i) & 1;
-      index = index | (x << (2 * i + 1)) | (y << 2 * i);
+    long geoID = 0L;
+    int bit = 0;
+    long sourceRow = row;
+    long sourceColumn = column;
+    while (sourceRow > 0 || sourceColumn > 0) {
+      geoID = geoID | ((sourceRow & 1) << (2 * bit + 1)) | ((sourceColumn & 1) << 2 * bit);
+      sourceRow >>= 1;
+      sourceColumn >>= 1;
+      bit++;
     }
-    return index;
+    return geoID;
   }
 
   /**
@@ -411,6 +434,8 @@ class QuadNode {
   private int currentDepth;
   // Maximum depth
   private int maxDepth;
+  // Scale of point at last division
+  private int scale;
   // Hashid range, 0 min, 1 Max
   private QuadNode northWest = null;
   private QuadNode northEast = null;
@@ -435,12 +460,14 @@ class QuadNode {
    * @param grid         raster data
    * @param currentDepth Current depth
    * @param maxDepth     Maximum depth
+   * @param scale        Scale of point at last division
    */
-  public QuadNode(QuadRect rect, GridData grid, int currentDepth, int maxDepth) {
+  public QuadNode(QuadRect rect, GridData grid, int currentDepth, int maxDepth, int scale) {
     this.rect = rect;
     this.grid = grid;
     this.currentDepth = currentDepth;
     this.maxDepth = maxDepth;
+    this.scale = scale;
   }
 
   /**
@@ -493,7 +520,7 @@ class QuadNode {
       // Intersecting indicates partial selection, or they may not be selected when they are
       // the last node
       Point2D.Double middlePoint = this.rect.getMiddlePoint();
-      if (!GeometryOperation.disjoint(queryPolygon, middlePoint)) {
+      if (!GeometryOperation.disjoint(queryPolygon, middlePoint, true, this.scale)) {
         // Select this area and fill in the data range
         this.grid.setStatus(GridData.STATUS_ALL);
       } else {
@@ -527,8 +554,8 @@ class QuadNode {
         if (!GeometryOperation.disjoint(queryRect, topLeft) && !GeometryOperation
                                                .disjoint(queryPolygon, topLeft)) {
           // If they are not separated, select the upper left half of the mesh
-          GridData grid = new GridData(this.grid.startRow, gridRowMiddle, gridColumnMiddle,
-              this.grid.endColumn, this.maxDepth);
+          GridData grid = new GridData(gridRowMiddle, this.grid.endRow, this.grid.startColumn,
+              gridColumnMiddle, this.maxDepth);
           insertIntoChildren(ChildEnum.TOPLEFT, grid, topLeft, queryPolygon);
         }
         if (!GeometryOperation.disjoint(queryRect, topRight) && !GeometryOperation
@@ -548,8 +575,8 @@ class QuadNode {
         if (!GeometryOperation.disjoint(queryRect, bottomRight) && !GeometryOperation
                                                   .disjoint(queryPolygon, bottomRight)) {
           // If not, select the lower right half of the mesh
-          GridData grid = new GridData(gridRowMiddle, this.grid.endRow, this.grid.startColumn,
-              gridColumnMiddle, this.maxDepth);
+          GridData grid = new GridData(this.grid.startRow, gridRowMiddle, gridColumnMiddle,
+              this.grid.endColumn, this.maxDepth);
           insertIntoChildren(ChildEnum.BOTTOMRIGHT, grid, bottomRight, queryPolygon);
         }
         // When processing four children, it is necessary to judge whether all four children
@@ -574,19 +601,19 @@ class QuadNode {
     QuadRect rect = new QuadRect(rectangle.get(0), rectangle.get(2));
     switch (childType) {
       case TOPLEFT:
-        this.northWest = new QuadNode(rect, grid, currentDepth + 1, maxDepth);
+        this.northWest = new QuadNode(rect, grid, currentDepth + 1, maxDepth, scale);
         this.northWest.insert(queryPolygon);
         break;
       case TOPRIGHT:
-        this.northEast = new QuadNode(rect, grid, currentDepth + 1, maxDepth);
+        this.northEast = new QuadNode(rect, grid, currentDepth + 1, maxDepth, scale);
         this.northEast.insert(queryPolygon);
         break;
       case BOTTOMLEFT:
-        this.southWest = new QuadNode(rect, grid, currentDepth + 1, maxDepth);
+        this.southWest = new QuadNode(rect, grid, currentDepth + 1, maxDepth, scale);
         this.southWest.insert(queryPolygon);
         break;
       case BOTTOMRIGHT:
-        this.southEast = new QuadNode(rect, grid, currentDepth + 1, maxDepth);
+        this.southEast = new QuadNode(rect, grid, currentDepth + 1, maxDepth, scale);
         this.southEast.insert(queryPolygon);
         break;
       default:
@@ -750,14 +777,15 @@ public class QuadTreeCls {
    * @param down Lower left point of coordinate
    * @param width Width of area
    * @param height Height of area
+   * @param scale Scale of point at last division
    */
-  public QuadTreeCls(double left, double down, double width, double height, int depth) {
+  public QuadTreeCls(double left, double down, double width, double height, int depth, int scale) {
     QuadRect rect = new QuadRect(left, down,  width,  height);
     // Maximum column length based on depth
     int maxColumn = (int) Math.pow(2, depth);
     // write row,column data to grid use it to build hash id
     GridData grid = new GridData(0, maxColumn, 0, maxColumn, depth);
-    root = new QuadNode(rect, grid, 1, depth);
+    root = new QuadNode(rect, grid, 1, depth, scale);
     LOGGER.info("build quad tree successfully, the max column is " + maxColumn);
   }
 

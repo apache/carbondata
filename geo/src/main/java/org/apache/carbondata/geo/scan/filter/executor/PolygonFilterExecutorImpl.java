@@ -75,6 +75,10 @@ public class PolygonFilterExecutorImpl extends RowLevelFilterExecutorImpl {
   private boolean isScanRequired(byte[] maxValue, byte[] minValue) {
     PolygonExpression polygon = (PolygonExpression) exp;
     List<Long[]> ranges = polygon.getRanges();
+    if (ranges.isEmpty()) {
+      // If the ranges is empty, no need to scan block or blocklet
+      return false;
+    }
     Long min =
         (Long) DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(minValue, DataTypes.LONG);
     Long max =
@@ -90,8 +94,10 @@ public class PolygonFilterExecutorImpl extends RowLevelFilterExecutorImpl {
     }
     // Got same index for both min and max values.
     Long[] oneRange = ranges.subList(startIndex, endIndex + 1).get(0);
-    if ((min >= oneRange[0] && min <= oneRange[1]) || (max >= oneRange[0] && max <= oneRange[1])) {
+    if ((min >= oneRange[0] && min <= oneRange[1]) || (max >= oneRange[0] && max <= oneRange[1]) ||
+        (oneRange[0] >= min && oneRange[0] <= max) || (oneRange[1] >= min && oneRange[1] <= max)) {
       // Either min or max is within the range
+      // either min or max of the range is within the min and max values
       return true;
     }
     // No range between min and max values. Scan can be avoided for this block or blocklet
@@ -101,7 +107,6 @@ public class PolygonFilterExecutorImpl extends RowLevelFilterExecutorImpl {
   @Override
   public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
       boolean[] isMinMaxSet) {
-    assert (exp instanceof PolygonExpression);
     int dimIndex = dimensionChunkIndex[0];
     BitSet bitSet = new BitSet(1);
     if (isMinMaxSet[dimIndex] && isScanRequired(blockMaxValue[dimIndex], blockMinValue[dimIndex])) {
