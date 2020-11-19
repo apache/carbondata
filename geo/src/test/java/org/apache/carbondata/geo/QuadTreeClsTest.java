@@ -17,12 +17,15 @@
 
 package org.apache.carbondata.geo;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * QuadTreeClsTest Tester.
@@ -36,7 +39,7 @@ public class QuadTreeClsTest {
 
     @Before
     public void before() throws Exception {
-        qtreee = new QuadTreeCls(0, 0, 16, 16, 4 );
+        qtreee = new QuadTreeCls(0, 0, 16, 16, 4, 6);
     }
 
     @After
@@ -284,9 +287,9 @@ public class QuadTreeClsTest {
     }
 
     /**
-     * Initial result 120->120  123->123  122->122  97->97  99->99  102->102  108->111  104->107  192->207  208->208  210->210  216->216  225->225  228->228  229->229  151->151  157->157  159->159  158->158
-     * Results after sorting 97->97  99->99  102->102  104->107  108->111  120->120  122->122  123->123  151->151  157->157  158->158  159->159  192->207  208->208  210->210  216->216  225->225  228->228  229->229
-     * Combined results 97->97  99->99  102->102  104->111  120->120  122->123  151->151  157->158  159->159  192->208  210->210  216->216  225->225  228->229
+     * Initial result 180->180  183->183  181->181  146->146  147->147  153->153  156->159  148->151  192->207  224->224  225->225  228->228  210->210  216->216  218->218  107->107  110->110  111->111  109->109
+     * Results after sorting 107->107  109->109  110->110  111->111  146->146  147->147  148->151  153->153  156->159  180->180  181->181  183->183  192->207  210->210  216->216  218->218  224->224  225->225  228->228
+     * Combined results 107->107  109->111  146->151  153->153  156->159  180->181  183->183  192->207  210->210  216->216  218->218  224->225  228->228
      * @throws Exception
      */
     @Test
@@ -300,22 +303,22 @@ public class QuadTreeClsTest {
         qtreee.insert(pointList);
         List<Long[]> data = qtreee.getNodesData();
 
-        // 97->97  99->99  102->102  104->111  120->120  122->123  151->151  157->159  192->208  210->210  216->216  225->225  228->229
+        // 107->107  109->111  146->151  153->153  156->159  180->181  183->183  192->207  210->210  216->216  218->218  224->225  228->228
 
-        Assume.assumeTrue(checkValidate(data, 0, 97, 97));
-        Assume.assumeTrue(checkValidate(data, 1, 99, 99));
-        Assume.assumeTrue(checkValidate(data, 2, 102, 102));
-        Assume.assumeTrue(checkValidate(data, 3, 104, 111));
-        Assume.assumeTrue(checkValidate(data, 4, 120, 120));
-        Assume.assumeTrue(checkValidate(data, 5, 122, 123));
+        Assume.assumeTrue(checkValidate(data, 0, 107, 107));
+        Assume.assumeTrue(checkValidate(data, 1, 109, 111));
+        Assume.assumeTrue(checkValidate(data, 2, 146, 151));
+        Assume.assumeTrue(checkValidate(data, 3, 153, 153));
+        Assume.assumeTrue(checkValidate(data, 4, 156, 159));
+        Assume.assumeTrue(checkValidate(data, 5, 180, 181));
 
-        Assume.assumeTrue(checkValidate(data, 6, 151, 151));
-        Assume.assumeTrue(checkValidate(data, 7, 157, 159));
-        Assume.assumeTrue(checkValidate(data, 8, 192, 208));
-        Assume.assumeTrue(checkValidate(data, 9, 210, 210));
-        Assume.assumeTrue(checkValidate(data, 10, 216, 216));
-        Assume.assumeTrue(checkValidate(data, 11, 225, 225));
-        Assume.assumeTrue(checkValidate(data, 12, 228, 229));
+        Assume.assumeTrue(checkValidate(data, 6, 183, 183));
+        Assume.assumeTrue(checkValidate(data, 7, 192, 207));
+        Assume.assumeTrue(checkValidate(data, 8, 210, 210));
+        Assume.assumeTrue(checkValidate(data, 9, 216, 216));
+        Assume.assumeTrue(checkValidate(data, 10, 218, 218));
+        Assume.assumeTrue(checkValidate(data, 11, 224, 225));
+        Assume.assumeTrue(checkValidate(data, 12, 228, 228));
     }
 
     private boolean checkValidate(List<Long[]> data, int index, int start, int end) {

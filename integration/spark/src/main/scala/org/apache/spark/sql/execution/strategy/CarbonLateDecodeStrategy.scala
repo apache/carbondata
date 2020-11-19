@@ -56,7 +56,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.geo.{InPolygon, InPolygonUDF}
+import org.apache.carbondata.geo.{InPolygon, InPolygonList, InPolygonListUDF, InPolygonRangeList, InPolygonRangeListUDF, InPolygonUDF, InPolylineList, InPolylineListUDF}
 import org.apache.carbondata.index.{TextMatch, TextMatchLimit, TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -427,7 +427,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // level filter at carbon and return the rows directly.
     if (candidatePredicates
       .exists(exp => exp.isInstanceOf[ScalaUDF] &&
-                     exp.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonUDF])) {
+        (exp.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonUDF] ||
+          exp.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonListUDF] ||
+          exp.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolylineListUDF] ||
+          exp.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonRangeListUDF]))) {
       vectorPushRowFilters = true
     }
 
@@ -824,6 +827,24 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           throw new MalformedCarbonCommandException("Expect one string in polygon")
         }
         Some(InPolygon(u.children.head.toString()))
+
+      case u: ScalaUDF if u.function.isInstanceOf[InPolygonListUDF] =>
+        if (u.children.size != 2) {
+          throw new MalformedCarbonCommandException("Expect two string in polygon list")
+        }
+        Some(InPolygonList(u.children.head.toString(), u.children.last.toString()))
+
+      case u: ScalaUDF if u.function.isInstanceOf[InPolylineListUDF] =>
+        if (u.children.size != 2) {
+          throw new MalformedCarbonCommandException("Expect two string in polyline list")
+        }
+        Some(InPolylineList(u.children.head.toString(), u.children.last.toString()))
+
+      case u: ScalaUDF if u.function.isInstanceOf[InPolygonRangeListUDF] =>
+        if (u.children.size != 2) {
+          throw new MalformedCarbonCommandException("Expect two string in polygon range list")
+        }
+        Some(InPolygonRangeList(u.children.head.toString(), u.children.last.toString()))
 
       case or@Or(left, right) =>
 

@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.loading.parser.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -81,7 +82,8 @@ public class RowParserImpl implements RowParser {
     int k = 0;
     for (int i = 0; i < fields.length; i++) {
       if (spatialProperty != null && fields[i].getColumn().getColName()
-          .equalsIgnoreCase(spatialProperty.trim())) {
+          .equalsIgnoreCase(spatialProperty.trim()) &&
+          !Arrays.asList(header).contains(spatialProperty.trim())) {
         // Spatial index columns are not present in the header. So set
         // the input mapping as -1 for the field and continue
         input[k] = fields[i];

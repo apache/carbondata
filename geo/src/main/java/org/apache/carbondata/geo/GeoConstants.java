@@ -26,4 +26,34 @@ public class GeoConstants {
 
   // GeoHash type Spatial Index
   public static final String GEOHASH = "geohash";
+
+  // Regular expression to parse input polygons for IN_POLYGON_LIST
+  public static final String POLYGON_REG_EXPRESSION = "(?<=POLYGON \\(\\()(.*?)(?=(\\)\\)))";
+
+  // Regular expression to parse input polylines for IN_POLYLINE_LIST
+  public static final String POLYLINE_REG_EXPRESSION = "LINESTRING \\(.*?\\)";
+
+  // Regular expression to parse input rangelists for IN_POLYGON_RANGE_LIST
+  public static final String RANGELIST_REG_EXPRESSION = "(?<=RANGELIST \\()(.*?)(?=\\))";
+
+  // delimiter of input points or ranges
+  public static final String DEFAULT_DELIMITER = ",";
+
+  // conversion factor of angle to radian
+  public static final double CONVERT_FACTOR = 180.0;
+
+  // Earth radius
+  public static final double EARTH_RADIUS = 6371004.0;
+
+  // used in Geo Hash calculation formula for improving calculation accuracy
+  public static final int CONVERSION_RATIO = 100000000;
+
+  // used for multiplying input longitude and latitude which are processed by * 10E6
+  public static final int CONVERSION_FACTOR_FOR_ACCURACY = 100;
+
+  // used in transforming UDF geoID2LngLat, set scale of BigDecimal
+  public static final int SCALE_OF_LONGITUDE_AND_LATITUDE = 6;
+
+  // Length in meters of 1 degree of latitude
+  public static final double CONVERSION_FACTOR_OF_METER_TO_DEGREE = 111320;
 }

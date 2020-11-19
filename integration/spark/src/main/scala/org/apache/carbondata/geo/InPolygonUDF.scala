@@ -17,9 +17,20 @@
 
 package org.apache.carbondata.geo
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.sources.Filter
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
+
+object GeoFilterUDFs {
+
+  def registerUDFs(sparkSession: SparkSession): Unit = {
+    sparkSession.udf.register("in_polygon", new InPolygonUDF)
+    sparkSession.udf.register("in_polygon_list", new InPolygonListUDF)
+    sparkSession.udf.register("in_polyline_list", new InPolylineListUDF)
+    sparkSession.udf.register("in_polygon_range_list", new InPolygonRangeListUDF)
+  }
+}
 
 @InterfaceAudience.Internal
 class InPolygonUDF extends (String => Boolean) with Serializable {
@@ -29,7 +40,42 @@ class InPolygonUDF extends (String => Boolean) with Serializable {
 }
 
 @InterfaceAudience.Internal
+class InPolygonListUDF extends ((String, String) => Boolean) with Serializable {
+  override def apply(v1: String, v2: String): Boolean = {
+    true // Carbon applies the filter. So, Spark do not have to apply filter.
+  }
+}
+
+@InterfaceAudience.Internal
+class InPolylineListUDF extends ((String, Float) => Boolean) with Serializable {
+  override def apply(v1: String, v2: Float): Boolean = {
+    true // Carbon applies the filter. So, Spark do not have to apply filter.
+  }
+}
+
+@InterfaceAudience.Internal
+class InPolygonRangeListUDF extends ((String, String) => Boolean) with Serializable {
+  override def apply(v1: String, v2: String): Boolean = {
+    true // Carbon applies the filter. So, Spark do not have to apply filter.
+  }
+}
+
+@InterfaceAudience.Internal
 case class InPolygon(queryString: String) extends Filter {
   override def references: Array[String] = Array()
 }
 
+@InterfaceAudience.Internal
+case class InPolygonList(polygonListString: String, opType: String) extends Filter {
+  override def references: Array[String] = Array()
+}
+
+@InterfaceAudience.Internal
+case class InPolylineList(polylineListString: String, buffer: String) extends Filter {
+  override def references: Array[String] = Array()
+}
+
+@InterfaceAudience.Internal
+case class InPolygonRangeList(rangeListString: String, opType: String) extends Filter {
+  override def references: Array[String] = Array()
+}
