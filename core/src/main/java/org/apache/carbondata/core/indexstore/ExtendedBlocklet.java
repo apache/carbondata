@@ -20,6 +20,7 @@ package org.apache.carbondata.core.indexstore;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -219,7 +220,12 @@ public class ExtendedBlocklet extends Blocklet {
     if (in.readBoolean()) {
       indexUniqueId = in.readUTF();
     }
-    setFilePath(tablePath + getPath());
+    String filePath = getPath();
+    if (filePath.startsWith(File.separator)) {
+      setFilePath(tablePath + filePath);
+    } else {
+      setFilePath(filePath);
+    }
     boolean isSplitPresent = in.readBoolean();
     if (isSplitPresent) {
       // getting the length of the data
