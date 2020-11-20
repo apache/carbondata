@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.index;
+package org.apache.carbondata.core.index
 
-import java.util.List;
+import java.util.List
 
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -39,6 +39,6 @@ public abstract class AbstractIndexJob implements IndexJob {
   @Override
   public List<ExtendedBlocklet> execute(IndexInputFormat indexInputFormat,
       Configuration configuration) {
-    return null;
+    return null
   }
 }
