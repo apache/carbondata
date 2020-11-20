@@ -18,6 +18,7 @@
 package org.apache.spark.sql.secondaryindex.events
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
@@ -27,9 +28,7 @@ import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.index.IndexType
-import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePreStatusUpdateEvent
 
@@ -79,13 +78,16 @@ class SILoadEventListener extends OperationEventListener with Logging {
                   .lookupRelation(Some(carbonLoadModel.getDatabaseName),
                     indexTableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
 
+                val isInsertOverwrite = operationContext.getProperties
+                  .containsKey("isOverwrite") && Try(operationContext
+                  .getProperty("isOverwrite").toString.toBoolean).getOrElse(false)
                 CarbonIndexUtil
                   .LoadToSITable(sparkSession,
                     carbonLoadModel,
                     indexTableName,
                     isLoadToFailedSISegments = false,
                     secondaryIndex,
-                    carbonTable, indexTable)
+                    carbonTable, indexTable, isInsertOverwrite)
             }
           } else {
             logInfo(s"No index tables found for table: ${carbonTable.getTableName}")

@@ -65,7 +65,9 @@ object SecondaryIndexCreator {
     indexTable: CarbonTable,
     forceAccessSegment: Boolean = false,
     isCompactionCall: Boolean,
-    isLoadToFailedSISegments: Boolean): (CarbonTable, ListBuffer[ICarbonLock], OperationContext) = {
+    isLoadToFailedSISegments: Boolean,
+    isInsertOverwrite: Boolean = false):
+  (CarbonTable, ListBuffer[ICarbonLock], OperationContext) = {
     var indexCarbonTable = indexTable
     val sc = secondaryIndexModel.sqlContext
     // get the thread pool size for secondary index creation
@@ -131,12 +133,16 @@ object SecondaryIndexCreator {
 
       LOGGER.info(s"${indexCarbonTable.getTableUniqueName}: SI loading is started " +
               s"for segments: $validSegmentList")
-
+      var segmentStatus = if (isInsertOverwrite) {
+        SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
+      } else {
+        SegmentStatus.INSERT_IN_PROGRESS
+      }
       FileInternalUtil
         .updateTableStatus(validSegmentList,
           secondaryIndexModel.carbonLoadModel.getDatabaseName,
           secondaryIndexModel.secondaryIndex.indexName,
-          SegmentStatus.INSERT_IN_PROGRESS,
+          segmentStatus,
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
           new java.util
           .HashMap[String,
@@ -356,7 +362,7 @@ object SecondaryIndexCreator {
           successSISegments,
           secondaryIndexModel.carbonLoadModel.getDatabaseName,
           secondaryIndexModel.secondaryIndex.indexName,
-          SegmentStatus.INSERT_IN_PROGRESS,
+          segmentStatus,
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
           segmentToLoadStartTimeMap,
           indexCarbonTable,
@@ -398,6 +404,23 @@ object SecondaryIndexCreator {
           secondaryIndexModel.sqlContext.sparkSession,
           carbonLoadModelForMergeDataFiles.getFactTimeStamp,
           rebuiltSegments)
+
+        if (isInsertOverwrite) {
+          val overriddenSegments = SegmentStatusManager
+          .readLoadMetadata(indexCarbonTable.getMetadataPath)
+            .filter(loadMetadata => !successSISegments.contains(loadMetadata.getLoadName))
+            .map(_.getLoadName).toList
+          FileInternalUtil
+            .updateTableStatus(
+              overriddenSegments,
+              secondaryIndexModel.carbonLoadModel.getDatabaseName,
+              secondaryIndexModel.secondaryIndex.indexName,
+              SegmentStatus.MARKED_FOR_DELETE,
+              secondaryIndexModel.segmentIdToLoadStartTimeMapping,
+              segmentToLoadStartTimeMap,
+              indexTable,
+              secondaryIndexModel.sqlContext.sparkSession)
+        }
       }
 
       if (!isCompactionCall) {
