@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
@@ -267,6 +267,7 @@ object CarbonIndexUtil {
     secondaryIndex: IndexModel,
     carbonTable: CarbonTable,
     indexTable: CarbonTable,
+    isInsertOverWrite: Boolean = false,
     failedLoadMetaDataDetils: java.util.List[LoadMetadataDetails] = null): Unit = {
 
     var segmentIdToLoadStartTimeMapping: scala.collection.mutable.Map[String, java.lang.Long] =
@@ -299,6 +300,13 @@ object CarbonIndexUtil {
         .Map((carbonLoadModel.getSegmentId, carbonLoadModel.getFactTimeStamp))
     }
     val header = indexTable.getCreateOrderColumn.asScala.map(_.getColName).toArray
+    if (isInsertOverWrite) {
+      val loadMetadataDetails = carbonLoadModel.getLoadMetadataDetails.asScala
+      loadMetadataDetails.foreach { loadMetadata =>
+        segmentIdToLoadStartTimeMapping.put(loadMetadata.getLoadName,
+          loadMetadata.getLoadStartTime)
+      }
+    }
     initializeSILoadModel(carbonLoadModel, header)
     val secondaryIndexModel = if (isLoadToFailedSISegments) {
       SecondaryIndexModel(
@@ -324,7 +332,7 @@ object CarbonIndexUtil {
         indexTable,
         forceAccessSegment = true,
         isCompactionCall = false,
-        isLoadToFailedSISegments)
+        isLoadToFailedSISegments, isInsertOverWrite)
   }
 
   /**
@@ -510,7 +518,7 @@ object CarbonIndexUtil {
               indexTableName,
               isLoadToFailedSISegments = true,
               indexModel,
-              carbonTable, indexTable, failedLoadMetadataDetails)
+              carbonTable, indexTable, false, failedLoadMetadataDetails)
 
           // get the current load metadata details of the index table
           // details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
