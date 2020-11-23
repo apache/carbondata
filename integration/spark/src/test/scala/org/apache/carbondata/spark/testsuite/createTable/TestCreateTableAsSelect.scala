@@ -27,7 +27,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * test functionality for create table as select command
@@ -209,6 +211,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
 
   test("test create table as select with " +
        "where clause in select from hive/orc table that does not return data") {
+    CarbonProperties.getInstance().addProperty("carbon.clean.file.force.allowed", "true")
     sql("DROP TABLE IF EXISTS ctas_select_where_orc")
     sql(
       """
@@ -216,8 +219,15 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata
         | AS SELECT * FROM orc_ctas_test
         | where key=300""".stripMargin)
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "ctas_select_where_orc")(sqlContext
+      .sparkSession)
+    val segmentPath = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(carbonTable
+      .getTablePath, "0"))
+    sql("clean files for table ctas_select_where_orc options('force' = 'true')")
+    assert(!segmentPath.exists())
     checkAnswer(sql("SELECT * FROM ctas_select_where_orc"),
       sql("SELECT * FROM orc_ctas_test where key=300"))
+    CarbonProperties.getInstance().addProperty("carbon.clean.file.force.allowed", "false")
   }
 
   test("test create table as select with " +

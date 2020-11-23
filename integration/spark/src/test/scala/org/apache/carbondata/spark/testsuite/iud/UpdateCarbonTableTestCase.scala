@@ -30,6 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -67,6 +68,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test update operation with 0 rows updation and clean files operation") {
+    CarbonProperties.getInstance().addProperty("carbon.clean.file.force.allowed", "true")
     sql("""drop table if exists iud.zerorows""").collect()
     sql("""create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows""")
@@ -81,11 +83,15 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
         Row("e", 5, "ee", "eee"))
     )
     sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'e'""").collect()
-    sql("clean files for table iud.zerorows")
+    sql("clean files for table iud.zerorows options('force'='true')")
     val carbonTable = CarbonEnv.getCarbonTable(Some("iud"), "zerorows")(sqlContext.sparkSession)
+    val segmentPath = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(carbonTable
+      .getTablePath, "2"))
+    assert(!segmentPath.exists())
     val segmentFileLocation = FileFactory.getCarbonFile(CarbonTablePath.getSegmentFilesLocation(
       carbonTable.getTablePath))
     assert(segmentFileLocation.listFiles().length == 3)
+    CarbonProperties.getInstance().addProperty("carbon.clean.file.force.allowed", "true")
     sql("""drop table iud.zerorows""")
   }
 

@@ -315,7 +315,8 @@ object CarbonDataRDDFactory {
     try {
       if (!carbonLoadModel.isCarbonTransactionalTable || segmentLock.lockWithRetries()) {
         if (updateModel.isDefined && dataFrame.get.rdd.isEmpty()) {
-          // if the rowToBeUpdated is empty, do nothing
+          // if the rowToBeUpdated is empty, mark created segment as marked for delete and return
+          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, "")
         } else {
           status = if (scanResultRdd.isDefined) {
             val colSchema = carbonLoadModel
