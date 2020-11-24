@@ -23,30 +23,22 @@ import java.util.Collections
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Partition, TaskContext}
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.CarbonMergerMapping
-import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, SortScopeOptions}
+import org.apache.carbondata.core.constants.SortScopeOptions
 import org.apache.carbondata.core.datastore.block.{SegmentProperties, TaskBlockInfo}
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
@@ -106,8 +98,8 @@ class CarbonSIRebuildRDD[K, V](
 
     // take the merge size as the block size
     val mergeSize =
-    getTableBlockSizeInMb(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable)(ss) * 1024 *
-     1024
+    SecondaryIndexUtil.getTableBlockSizeInMb(carbonLoadModel
+      .getCarbonDataLoadSchema.getCarbonTable)(ss) * 1024 * 1024
 
     val resultSplits: java.util.List[CarbonSparkPartition] = new java.util.ArrayList()
     splitsGroupedMySegment.foreach { entry =>
@@ -134,37 +126,6 @@ class CarbonSIRebuildRDD[K, V](
     logInfo("Time taken to identify Blocks and Tasks : " + (System.currentTimeMillis() - startTime))
     resultSplits.asScala.toArray
   }
-
-  /**
-   * Get the table block size from the index table, if not found in SI table, check main table
-   * If main table also not set with table block size then fall back to default block size set
-   *
-   */
-  def getTableBlockSizeInMb(indexTable: CarbonTable)(sparkSession: SparkSession): Long = {
-    var tableBlockSize: String = null
-    var tableProperties = indexTable.getTableInfo.getFactTable.getTableProperties
-    if (null != tableProperties) {
-      tableBlockSize = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE)
-    }
-    if (null == tableBlockSize) {
-      val metaStore = CarbonEnv.getInstance(sparkSession)
-        .carbonMetaStore
-      val mainTable = metaStore
-        .lookupRelation(Some(indexTable.getDatabaseName),
-          CarbonIndexUtil.getParentTableName(indexTable))(sparkSession)
-        .asInstanceOf[CarbonRelation]
-        .carbonTable
-      tableProperties = mainTable.getTableInfo.getFactTable.getTableProperties
-      if (null != tableProperties) {
-        tableBlockSize = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE)
-      }
-      if (null == tableBlockSize) {
-        tableBlockSize = CarbonCommonConstants.TABLE_BLOCK_SIZE_DEFAULT
-      }
-    }
-    tableBlockSize.toLong
-  }
-
 
   override def internalCompute(theSplit: Partition,
     context: TaskContext): Iterator[((K, V), String)] = {
