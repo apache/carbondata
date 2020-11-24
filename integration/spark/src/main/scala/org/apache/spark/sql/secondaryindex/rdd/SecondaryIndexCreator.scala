@@ -214,20 +214,6 @@ object SecondaryIndexCreator {
                   } else {
                     null
                   }
-
-                  def findCarbonScanRDD(rdd: RDD[_], currentSegmentFileName: String): Unit = {
-                    rdd match {
-                      case carbonScanRDD: CarbonScanRDD[_] =>
-                        carbonScanRDD.setValidateSegmentToAccess(false)
-                        if (currentSegmentFileName != null) {
-                          carbonScanRDD.setCurrentSegmentFileName(currentSegmentFileName)
-                        }
-                      case others =>
-                        others.dependencies
-                          .foreach { x => findCarbonScanRDD(x.rdd, currentSegmentFileName) }
-                    }
-                  }
-
                   findCarbonScanRDD(dataFrame.rdd, currentSegmentFileName)
                   // accumulator to collect segment metadata
                   val segmentMetaDataAccumulator = sc.sparkSession.sqlContext
@@ -495,6 +481,19 @@ object SecondaryIndexCreator {
           segmentLock.unlock()
         })
       }
+    }
+  }
+
+  def findCarbonScanRDD(rdd: RDD[_], currentSegmentFileName: String): Unit = {
+    rdd match {
+      case carbonScanRDD: CarbonScanRDD[_] =>
+        carbonScanRDD.setValidateSegmentToAccess(false)
+        if (currentSegmentFileName != null) {
+          carbonScanRDD.setCurrentSegmentFileName(currentSegmentFileName)
+        }
+      case others =>
+        others.dependencies
+          .foreach { x => findCarbonScanRDD(x.rdd, currentSegmentFileName) }
     }
   }
 

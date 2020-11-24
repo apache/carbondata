@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFi
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 class CarbonDataFileMergeTestCaseOnSI
   extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -232,6 +233,58 @@ class CarbonDataFileMergeTestCaseOnSI
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
         CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+  }
+
+  test("Verify data file merge in SI segments with sort scope as gloabl sort and" +
+    "CARBON_SI_SEGMENT_MERGE property is enabled") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
+    sql("DROP TABLE IF EXISTS nonindexmerge")
+    sql(
+      """
+        | CREATE TABLE nonindexmerge(id INT, name STRING, city STRING, age INT)
+        | STORED AS carbondata
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
+      s"'GLOBAL_SORT_PARTITIONS'='100')")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
+      s"'GLOBAL_SORT_PARTITIONS'='100')")
+    sql("CREATE INDEX nonindexmerge_index1 on table nonindexmerge (name) AS 'carbondata' " +
+        "properties('table_blocksize'='1', 'SORT_SCOPE'='GLOBAL_SORT')")
+   val df1 = sql("""Select * from nonindexmerge where name='n16000'""")
+     .queryExecution.sparkPlan
+    assert(isFilterPushedDownToSI(df1))
+    assert(getDataFileCount("nonindexmerge_index1", "0") < 15)
+    assert(getDataFileCount("nonindexmerge_index1", "1") < 15)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE,
+      CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE_DEFAULT)
+  }
+
+  test("Verify REFRESH INDEX command with sort scope as global sort") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
+    sql("DROP TABLE IF EXISTS nonindexmerge")
+    sql(
+      """
+        | CREATE TABLE nonindexmerge(id INT, name STRING, city STRING, age INT)
+        | STORED AS carbondata
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
+      s"'GLOBAL_SORT_PARTITIONS'='100')")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
+      s"'GLOBAL_SORT_PARTITIONS'='100')")
+    sql("CREATE INDEX nonindexmerge_index1 on table nonindexmerge (name) AS 'carbondata' " +
+      "properties('table_blocksize'='1', 'SORT_SCOPE'='GLOBAL_SORT')")
+    sql("REFRESH INDEX nonindexmerge_index1 ON TABLE nonindexmerge").collect()
+    val df1 = sql("""Select * from nonindexmerge where name='n16000'""")
+      .queryExecution.sparkPlan
+    assert(isFilterPushedDownToSI(df1))
+    assert(getDataFileCount("nonindexmerge_index1", "0") < 15)
+    assert(getDataFileCount("nonindexmerge_index1", "1") < 15)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE,
+      CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE_DEFAULT)
   }
 
   private def getDataFileCount(tableName: String, segment: String): Int = {
