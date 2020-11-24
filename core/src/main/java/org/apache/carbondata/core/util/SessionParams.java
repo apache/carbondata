@@ -171,6 +171,7 @@ public class SessionParams implements Serializable, Cloneable {
       case NUM_CORES_COMPACTING:
       case BLOCKLET_SIZE_IN_MB:
       case CARBON_MAJOR_COMPACTION_SIZE:
+      case CARBON_MINOR_COMPACTION_SIZE:
         isValid = CarbonUtil.validateValidIntType(value);
         if (!isValid) {
           throw new InvalidConfigurationException(

@@ -257,6 +257,7 @@ object CommonUtil {
    */
   def validateTableLevelCompactionProperties(tableProperties: Map[String, String]): Unit = {
     validateMajorCompactionSize(tableProperties)
+    validateMinorCompactionSize(tableProperties)
     validateAutoLoadMerge(tableProperties)
     validateCompactionLevelThreshold(tableProperties)
     validateCompactionPreserveSegmentsOrAllowedDays(tableProperties,
@@ -289,6 +290,29 @@ object CommonUtil {
           s"$majorCompactionSizeStr, only int value greater than 0 is supported.")
       }
       tableProperties.put(tblPropName, majorCompactionSizeStr)
+    }
+  }
+
+  def validateMinorCompactionSize(tableProperties: Map[String, String]): Unit = {
+    var minorCompactionSize: Integer = 0
+    val minorCompactionSizePropName = CarbonCommonConstants.TABLE_MINOR_COMPACTION_SIZE
+    if (tableProperties.contains(minorCompactionSizePropName)) {
+      val minorCompactionSizeStr: String =
+        parsePropertyValueStringInMB(tableProperties(minorCompactionSizePropName))
+      try {
+        minorCompactionSize = Integer.parseInt(minorCompactionSizeStr)
+      } catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid value $minorCompactionSizeStr" +
+            s" configured for $minorCompactionSizePropName. Please consider configuring value" +
+            s" greater than 0")
+      }
+      if (minorCompactionSize <= 0) {
+        throw new MalformedCarbonCommandException(s"Invalid value $minorCompactionSizeStr" +
+          s" configured for $minorCompactionSizePropName. Please consider configuring value" +
+          s" greater than 0")
+      }
+      tableProperties.put(minorCompactionSizePropName, minorCompactionSizeStr)
     }
   }
 

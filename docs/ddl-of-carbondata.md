@@ -285,9 +285,10 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Table Compaction Configuration
    
      These properties are table level compaction configurations, if not specified, system level configurations in carbon.properties will be used.
-     Following are 5 configurations:
+     Following are 6 configurations:
      
      * MAJOR_COMPACTION_SIZE: same meaning as carbon.major.compaction.size, size in MB.
+     * MINOR_COMPACTION_SIZE: same meaning as carbon.minor.compaction.size, size in MB.
      * AUTO_LOAD_MERGE: same meaning as carbon.enable.auto.load.merge.
      * COMPACTION_LEVEL_THRESHOLD: same meaning as carbon.compaction.level.threshold.
      * COMPACTION_PRESERVE_SEGMENTS: same meaning as carbon.numberof.preserve.segments.
@@ -295,6 +296,7 @@ CarbonData DDL statements are documented here,which includes:
 
      ```
      TBLPROPERTIES ('MAJOR_COMPACTION_SIZE'='2048',
+                    'MINOR_COMPACTION_SIZE'='4096',
                     'AUTO_LOAD_MERGE'='true',
                     'COMPACTION_LEVEL_THRESHOLD'='5,6',
                     'COMPACTION_PRESERVE_SEGMENTS'='10',

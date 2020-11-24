@@ -495,6 +495,8 @@ public final class CarbonCommonConstants {
   public static final String INVERTED_INDEX = "inverted_index";
   // table property name of major compaction size
   public static final String TABLE_MAJOR_COMPACTION_SIZE = "major_compaction_size";
+  // table property name of minor compaction size
+  public static final String TABLE_MINOR_COMPACTION_SIZE = "minor_compaction_size";
   // table property name of auto load merge
   public static final String TABLE_AUTO_LOAD_MERGE = "auto_load_merge";
   // table property name of compaction level threshold
@@ -735,6 +737,12 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_MAJOR_COMPACTION_SIZE = "carbon.major.compaction.size";
+
+  /**
+   * Size of Minor Compaction in MBs
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_MINOR_COMPACTION_SIZE = "carbon.minor.compaction.size";
 
   /**
    * By default size of major compaction in MBs.

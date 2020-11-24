@@ -311,10 +311,8 @@ public final class CarbonDataMergerUtil {
       listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
               listOfSegmentsLoadedInSameDateInterval, carbonLoadModel);
     } else {
-
-      listOfSegmentsToBeMerged =
-              identifySegmentsToBeMergedBasedOnSegCount(listOfSegmentsLoadedInSameDateInterval,
-                      tableLevelProperties);
+      listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSegCount(compactionSize,
+              listOfSegmentsLoadedInSameDateInterval, tableLevelProperties, carbonLoadModel);
     }
 
     return listOfSegmentsToBeMerged;
@@ -595,7 +593,8 @@ public final class CarbonDataMergerUtil {
   }
 
   /**
-   * Identify the segments to be merged based on the segment count
+   * Identify the segments to be merged based on the segment count, the segment whose data size
+   * exceed minor compaction size threshold will not be compacted.
    *
    * @param listOfSegmentsAfterPreserve the list of segments after
    *        preserve and before filtering by minor compaction level
@@ -603,7 +602,8 @@ public final class CarbonDataMergerUtil {
    * @return the list of segments to be merged after filtering by minor compaction level
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSegCount(
-          List<LoadMetadataDetails> listOfSegmentsAfterPreserve, Map<String, String> tblProps) {
+          long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
+          Map<String, String> tblProps, CarbonLoadModel carbonLoadModel) throws IOException {
 
     List<LoadMetadataDetails> mergedSegments =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -641,12 +641,29 @@ public final class CarbonDataMergerUtil {
 
     int unMergeCounter = 0;
     int mergeCounter = 0;
-
+    CarbonTable carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
     // check size of each segment , sum it up across partitions
     for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
-      // compaction should skip streaming segments
+      long sizeOfOneSegmentAcrossPartition;
+      if (segment.getSegmentFile() != null) {
+        // If LoadMetaDataDetail already has data size no need to calculate the data size from
+        // index files. If not there then read the index file and calculate size.
+        if (!StringUtils.isEmpty(segment.getDataSize())) {
+          sizeOfOneSegmentAcrossPartition = Long.parseLong(segment.getDataSize());
+        } else {
+          sizeOfOneSegmentAcrossPartition = CarbonUtil.getSizeOfSegment(carbonTable.getTablePath(),
+                  new Segment(segment.getLoadName(), segment.getSegmentFile()));
+        }
+      } else {
+        sizeOfOneSegmentAcrossPartition =
+                getSizeOfSegment(carbonTable.getTablePath(), segment.getLoadName());
+      }
+      // compaction should skip streaming segments and segments whose data size exceed minor
+      // compaction size threshold, but if compactionSize is -1 which means not consider the
+      // segment size.
       if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
-          segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
+          segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH || (compactionSize > 0 &&
+          sizeOfOneSegmentAcrossPartition / (1024 * 1024) >= compactionSize)) {
         continue;
       }
       String segName = segment.getLoadName();
@@ -767,16 +784,27 @@ public final class CarbonDataMergerUtil {
   public static long getCompactionSize(CompactionType compactionType,
                                        CarbonLoadModel carbonLoadModel) {
     long compactionSize = 0;
+    Map<String, String> tblProps = carbonLoadModel.getCarbonDataLoadSchema()
+            .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
     switch (compactionType) {
       case MAJOR:
-        // default value is system level option
-        compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
         // if table level option is identified, use it to overwrite system level option
-        Map<String, String> tblProps = carbonLoadModel.getCarbonDataLoadSchema()
-                .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
         if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
           compactionSize = Long.parseLong(
                   tblProps.get(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE));
+        } else {
+          // default value is system level option
+          compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
+        }
+        break;
+      case MINOR:
+        // if table level option is identified, use it to overwrite system level option
+        if (tblProps.containsKey(CarbonCommonConstants.TABLE_MINOR_COMPACTION_SIZE)) {
+          compactionSize = Long.parseLong(
+                  tblProps.get(CarbonCommonConstants.TABLE_MINOR_COMPACTION_SIZE));
+        } else {
+          // default value is system level option
+          compactionSize = CarbonProperties.getInstance().getMinorCompactionSize();
         }
         break;
       default: // this case can not come.
