@@ -16,8 +16,13 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
-import org.apache.spark.sql.DataFrame
+import java.sql.{Date, Timestamp}
+
+import scala.collection.mutable.WrappedArray
+
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.types.{ArrayType, BinaryType, BooleanType, DateType, Decimal, DecimalType, DoubleType, FloatType, IntegerType, LongType, MapType, ShortType, StringType, StructField, StructType, TimestampType, VarcharType}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -715,6 +720,57 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     insertData("hivetable")
     insertData("fileformatTable")
     checkResults()
+  }
+
+  test("test when dataframe save with complex datatype") {
+    dropTable("dataframe_complex_carbondata")
+    dropTable("dataframe_complex_parquet")
+
+    val structureData = Seq(
+      Row(
+        "id1", 1, Short.MinValue, 1L, 1.0f, 1.0d, BigDecimal(832.23),
+        "binary".getBytes,
+        true,
+        Timestamp.valueOf("2017-01-01 00:00:00.0"),
+        Date.valueOf("1990-01-01"),
+        WrappedArray.make(Array("1")), Map("1"-> "1"),
+        WrappedArray.make(Array(Map("1"-> "1"))),
+        Row("x")
+      )
+    )
+
+    import scala.collection.JavaConverters._
+    val schemas = Seq(
+        StructField("c1", StringType, nullable = false),
+        StructField("c2", IntegerType, nullable = false),
+        StructField("c3", ShortType, nullable = false),
+        StructField("c4", LongType, nullable = false),
+        StructField("c5", FloatType, nullable = false),
+        StructField("c6", DoubleType, nullable = false),
+        StructField("c7", DecimalType(18, 2), nullable = false),
+        StructField("c8", BinaryType, nullable = false),
+        StructField("c9", BooleanType, nullable = false),
+        StructField("c10", TimestampType, nullable = false),
+        StructField("c11", DateType, nullable = false),
+        StructField("c12", ArrayType(StringType), false),
+        StructField("c13", MapType(StringType, StringType), false),
+        StructField("c14", ArrayType(MapType(StringType, StringType)), false),
+        StructField("c15", StructType(List(StructField("c15_1", StringType, nullable = false)).asJava), false)
+      )
+
+    val df = sqlContext.sparkSession.createDataFrame(sqlContext.sparkContext.parallelize(structureData),
+      StructType(schemas))
+    df.write.option("dbName", "default")
+      .option("tableName", "dataframe_complex_carbondata")
+      .format("carbondata")
+      .mode("overwrite")
+      .save()
+
+    checkAnswer(
+      sql("select * from dataframe_complex_carbondata"),
+      structureData
+    )
+    dropTable("dataframe_complex_carbondata")
   }
 }
 // scalastyle:on lineLength
