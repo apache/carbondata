@@ -930,7 +930,9 @@ public class CarbonWriterBuilder {
 
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
-    timestamp = System.currentTimeMillis();
+    if (timestamp == 0) {
+      timestamp = System.currentTimeMillis();
+    }
     // validate long_string_column
     Set<String> longStringColumns = new HashSet<>();
     if (options != null && options.get(CarbonCommonConstants.LONG_STRING_COLUMNS) != null) {

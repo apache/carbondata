@@ -66,6 +66,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -368,7 +369,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       if (isIUDTable) {
         // In case IUD is not performed in this table avoid searching for
         // invalidated blocks.
-        if (CarbonUtil
+        String segmentId = getSegmentIdFromFilePath(inputSplit.getFilePath());
+        // SDK segments have segment id as null. If a segment has segmentId as null then no need
+        // to check updateValidation, because that segment is not created through update operation.
+        if (!segmentId.equalsIgnoreCase("null") && CarbonUtil
             .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getFilePath(),
                 invalidBlockVOForSegmentId, updateStatusManager)) {
           continue;
@@ -571,5 +575,19 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
   public void setReadCommittedScope(ReadCommittedScope readCommittedScope) {
     this.readCommittedScope = readCommittedScope;
+  }
+
+  public String getSegmentIdFromFilePath(String filePath) {
+    String tempFilePath = filePath.replace(
+        CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR);
+    int fileNameStartIndex = tempFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
+    String fileName = tempFilePath.substring(fileNameStartIndex);
+    if (fileName != null && !fileName.isEmpty()) {
+      String[] pathElements = fileName.split(CarbonCommonConstants.DASH);
+      if (ArrayUtils.isNotEmpty(pathElements)) {
+        return pathElements[pathElements.length - 2];
+      }
+    }
+    return CarbonCommonConstants.INVALID_SEGMENT_ID;
   }
 }
