@@ -191,6 +191,10 @@ private[sql] case class CarbonDescribeFormattedCommand(
           CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE,
               CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE)), ""),
+      (CarbonCommonConstants.TABLE_MINOR_COMPACTION_SIZE.toUpperCase,
+        tblProps.getOrElse(CarbonCommonConstants.TABLE_MINOR_COMPACTION_SIZE,
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_MINOR_COMPACTION_SIZE, "0")), ""),
       (CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE,
           CarbonProperties.getInstance()

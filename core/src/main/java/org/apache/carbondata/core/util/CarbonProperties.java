@@ -999,6 +999,34 @@ public final class CarbonProperties {
   }
 
   /**
+   * returns minor compaction size value from carbon properties or -1 if it is not valid or
+   * not configured
+   *
+   * @return compactionSize
+   */
+  public long getMinorCompactionSize() {
+    long compactionSize = -1;
+    // if not configured, just use default -1
+    if (null != getProperty(CarbonCommonConstants.CARBON_MINOR_COMPACTION_SIZE)) {
+      try {
+        compactionSize = Long.parseLong(getProperty(
+                CarbonCommonConstants.CARBON_MINOR_COMPACTION_SIZE));
+      } catch (NumberFormatException e) {
+        LOGGER.warn("Invalid value is configured for property "
+                + CarbonCommonConstants.CARBON_MINOR_COMPACTION_SIZE + ", considering the default"
+                + " value -1 and not considering segment Size during minor compaction.");
+      }
+      if (compactionSize <= 0) {
+        LOGGER.warn("Invalid value is configured for property "
+                + CarbonCommonConstants.CARBON_MINOR_COMPACTION_SIZE + ", considering the default"
+                + " value -1 and not considering segment Size during minor compaction.");
+        compactionSize = -1;
+      }
+    }
+    return compactionSize;
+  }
+
+  /**
    * returns the number of loads to be preserved.
    *
    * @return
