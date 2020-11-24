@@ -74,6 +74,9 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       case decimal: DecimalType => s"decimal(${decimal.precision}, ${decimal.scale})"
       case BooleanType => CarbonType.BOOLEAN.getName
       case BinaryType => CarbonType.BINARY.getName
+      case ArrayType(elementType, _) => sparkType.simpleString
+      case StructType(fields) => sparkType.simpleString
+      case MapType(keyType, valueType, _) => sparkType.simpleString
       case other => CarbonException.analysisException(s"unsupported type: $other")
     }
   }
