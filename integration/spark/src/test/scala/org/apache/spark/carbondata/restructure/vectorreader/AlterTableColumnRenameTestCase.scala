@@ -38,6 +38,16 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(null == carbonTable.getColumnByName("empname"))
   }
 
+  test("CARBONDATA-4053 test rename column, column name in table properties changed correctly") {
+    sql("create table simple_table(a string, aa1 string) stored as carbondata" +
+        " tblproperties(\"sort_columns\"=\"a,aa1\")")
+    sql("alter table simple_table change a a1 string")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "simple_table")
+    val sort_columns = carbonTable.getTableInfo.getFactTable.getTableProperties.get("sort_columns")
+    assert(sort_columns.equals("a1,aa1"))
+    sql("drop table simple_table")
+  }
+
   test("test only column rename operation with datatype change also") {
     dropTable()
     createTable()
@@ -137,7 +147,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   test("compaction after column rename and count") {
     dropTable()
     createNonPartitionTableAndLoad()
-    for(i <- 0 to 2) {
+    for (i <- 0 to 2) {
       loadToTable()
     }
     val df1 = sql("select empname,deptno from rename")
@@ -403,6 +413,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test_rename")
     sql("DROP TABLE IF EXISTS test_rename_compact")
     sql("DROP TABLE IF EXISTS test_alter")
+    sql("DROP TABLE IF EXISTS simple_table")
   }
 
   def testChangeColumnWithComment(tableName: String): Unit = {

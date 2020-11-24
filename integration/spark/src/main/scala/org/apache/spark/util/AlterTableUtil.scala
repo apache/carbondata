@@ -332,12 +332,24 @@ object AlterTableUtil {
       tableProperties: mutable.Map[String, String],
       oldColumnName: String,
       newColumnName: String): Unit = {
+    val columnNameProperties = Set("NO_INVERTED_INDEX",
+      "INVERTED_INDEX",
+      "INDEX_COLUMNS",
+      "COLUMN_META_CACHE",
+      "LOCAL_DICTIONARY_INCLUDE",
+      "LOCAL_DICTIONARY_EXCLUDE",
+      "RANGE_COLUMN",
+      "SORT_COLUMNS",
+      "LONG_STRING_COLUMNS",
+      "BUCKET_COLUMNS")
     tableProperties.foreach { tableProperty =>
-      if (tableProperty._2.contains(oldColumnName)) {
+      if (columnNameProperties.contains(tableProperty._1.toUpperCase)) {
         val tablePropertyKey = tableProperty._1
         val tablePropertyValue = tableProperty._2
-        tableProperties
-          .put(tablePropertyKey, tablePropertyValue.replace(oldColumnName, newColumnName))
+        val newTablePropertyValue = tablePropertyValue.split(",").map(
+          s => if (s.equalsIgnoreCase(oldColumnName)) newColumnName else s
+        ).mkString(",")
+        tableProperties.put(tablePropertyKey, newTablePropertyValue)
       }
     }
   }
