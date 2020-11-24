@@ -102,6 +102,10 @@ case class CarbonAlterTableCompactionCommand(
         throw new MalformedCarbonCommandException(
           "Unsupported alter operation on carbon table")
     }
+    if (table.isIndexTable) {
+      throw new MalformedCarbonCommandException(
+        "Unsupported alter operation on carbon table: Compaction not supported on SI table")
+    }
     if (compactionType == CompactionType.UPGRADE_SEGMENT) {
       val tableStatusLock = CarbonLockFactory
         .getCarbonLockObj(table.getAbsoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
