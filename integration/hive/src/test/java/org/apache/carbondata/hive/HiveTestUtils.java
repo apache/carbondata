@@ -46,6 +46,11 @@ public abstract class HiveTestUtils {
     try {
       File rootPath = new File(HiveTestUtils.class.getResource("/").getPath() + "../../../..");
       String targetLoc = rootPath.getAbsolutePath() + "/integration/hive/target/warehouse";
+      String metadatadbLoc = rootPath.getAbsolutePath() + "/integration/hive/target/metastore_db";
+      File file = new File(metadatadbLoc);
+      if (file.exists()) {
+        file.delete();
+      }
       hiveEmbeddedServer2 = new HiveEmbeddedServer2();
       hiveEmbeddedServer2.start(targetLoc);
       int port = hiveEmbeddedServer2.getFreePort();
