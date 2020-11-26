@@ -288,21 +288,17 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     val carbonDataFilename = new File(carbonTable.getTablePath + "/Fact/Part0/Segment_0/")
       .listFiles().filter(fn => fn.getName.endsWith(".carbondata"))
-    val blockId = CarbonUtil.getBlockId(carbonTable.getAbsoluteTableIdentifier,
+    val blockId = CarbonTablePath.getBlockId(carbonTable.getAbsoluteTableIdentifier,
       carbonDataFilename(0).getAbsolutePath,
-      "0",
-      carbonTable.isTransactionalTable,
-      CarbonUtil.isStandardCarbonTable(carbonTable))
+      "0", false)
 
-    assert(blockId.startsWith("Part0/Segment_0/part-0-0_batchno0-0-0-"))
+    assert(blockId.startsWith("0/part-0-0_batchno0-0-0-"))
     val carbonDataFilename_part = new File(carbonTable_part.getTablePath + "/c3=aa").listFiles()
       .filter(fn => fn.getName.endsWith(".carbondata"))
-    val blockId_part = CarbonUtil.getBlockId(carbonTable.getAbsoluteTableIdentifier,
+    val blockId_part = CarbonTablePath.getBlockId(carbonTable.getAbsoluteTableIdentifier,
       carbonDataFilename_part(0).getAbsolutePath,
-      "0",
-      carbonTable.isTransactionalTable,
-      CarbonUtil.isStandardCarbonTable(carbonTable))
-    assert(blockId_part.startsWith("Part0/Segment_0/part-0-100100000100001_batchno0-0-0-"))
+      "0", false)
+    assert(blockId_part.startsWith("0/part-0-100100000100001_batchno0-0-0-"))
     val tableBlockPath = CarbonUpdateUtil
       .getTableBlockPath(listOfTupleId(0),
         carbonTable.getTablePath,

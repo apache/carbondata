@@ -63,7 +63,6 @@ import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecu
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BlockletIndexUtil;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -797,8 +796,8 @@ public class BlockIndex extends CoarseGrainIndex
         // replaced with '#', to support multi level partitioning. For example, BlockId will be
         // look like `part1=1#part2=2/xxxxxxxxx`. During query also, blockId should be
         // replaced by '#' in place of '/', to match and prune data on SI table.
-        uniqueBlockPath = CarbonUtil
-            .getBlockId(carbonTable.getAbsoluteTableIdentifier(), filePath, "", true, false, true);
+        uniqueBlockPath = CarbonTablePath
+            .getBlockId(carbonTable.getAbsoluteTableIdentifier(), filePath, "", true);
       } else {
         uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
       }
