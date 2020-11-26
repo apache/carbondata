@@ -19,7 +19,6 @@ package org.apache.spark.sql.execution.command.management
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
@@ -28,7 +27,8 @@ import org.apache.spark.sql.types.StringType
 import org.apache.carbondata.api.CarbonStore.{getDataAndIndexSize, getLoadStartTime, getLoadTimeTaken, getPartitions, readSegments, readStages}
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, StageInput}
+import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, StageInput}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 
@@ -102,7 +102,7 @@ case class CarbonShowSegmentsCommand(
           partitionString,
           Strings.formatSize(dataSize.toFloat),
           Strings.formatSize(indexSize.toFloat),
-          segment.getFileFormat.toString)
+          CarbonUtil.getFileFormatOrElse(segment, FileFormat.COLUMNAR_V3))
       }.toSeq
   }
 }

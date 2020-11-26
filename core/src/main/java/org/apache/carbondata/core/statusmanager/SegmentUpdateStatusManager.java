@@ -40,7 +40,7 @@ import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
-import com.google.gson.Gson;
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -445,7 +445,6 @@ public class SegmentUpdateStatusManager {
    */
   public static SegmentUpdateDetails[] readLoadMetadata(String tableUpdateStatusIdentifier,
       String tablePath) {
-    Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
@@ -467,11 +466,8 @@ public class SegmentUpdateStatusManager {
         return new SegmentUpdateDetails[0];
       }
       dataInputStream = fileOperation.openForRead();
-      inStream = new InputStreamReader(dataInputStream,
-          CarbonCommonConstants.DEFAULT_CHARSET);
-      buffReader = new BufferedReader(inStream);
       listOfSegmentUpdateDetailsArray =
-          gsonObjectToRead.fromJson(buffReader, SegmentUpdateDetails[].class);
+          JSON.parseObject(dataInputStream, SegmentUpdateDetails[].class);
     } catch (IOException e) {
       return new SegmentUpdateDetails[0];
     } finally {
@@ -508,7 +504,6 @@ public class SegmentUpdateStatusManager {
         AtomicFileOperationFactory.getAtomicFileOperations(fileLocation);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
-    Gson gsonObjectToWrite = new Gson();
     // write the updated data into the metadata file.
 
     try {
@@ -516,7 +511,7 @@ public class SegmentUpdateStatusManager {
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           CarbonCommonConstants.DEFAULT_CHARSET));
 
-      String metadataInstance = gsonObjectToWrite.toJson(listOfSegmentUpdateDetailsArray);
+      String metadataInstance = JSON.toJSONString(listOfSegmentUpdateDetailsArray);
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
       LOG.error("Error message: " + ioe.getLocalizedMessage());
@@ -560,8 +555,8 @@ public class SegmentUpdateStatusManager {
     if (loadMetadataDetails != null) {
       range.setSegmentId(loadMetadataDetails.getLoadName());
       range.setFactTimestamp(loadMetadataDetails.getLoadStartTime());
-      if (!loadMetadataDetails.getUpdateDeltaStartTimestamp().isEmpty() && !loadMetadataDetails
-          .getUpdateDeltaEndTimestamp().isEmpty()) {
+      if (!StringUtils.isEmpty(loadMetadataDetails.getUpdateDeltaStartTimestamp()) &&
+          !StringUtils.isEmpty(loadMetadataDetails.getUpdateDeltaEndTimestamp())) {
         range.setUpdateDeltaStartTimestamp(CarbonUpdateUtil
             .getTimeStampAsLong(loadMetadataDetails.getUpdateDeltaStartTimestamp()));
         range.setLatestUpdateTimestamp(

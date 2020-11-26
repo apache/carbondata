@@ -32,6 +32,10 @@ public class FileFormat implements Serializable {
 
   private int ordinal;
 
+  public FileFormat() {
+    this.format = COLUMNAR_V3.toString();
+  }
+
   public FileFormat(String format) {
     this.format = format.toLowerCase();
   }

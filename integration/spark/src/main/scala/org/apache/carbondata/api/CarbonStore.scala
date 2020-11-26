@@ -41,6 +41,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFile
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager, StageInput}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -64,7 +65,7 @@ object CarbonStore {
     }
     if (!showHistory) {
       segmentsMetadataDetails = segmentsMetadataDetails
-        .filter(_.getVisibility.equalsIgnoreCase("true"))
+        .filter(detail => "true".equalsIgnoreCase(detail.getVisibility))
       segmentsMetadataDetails = segmentsMetadataDetails.sortWith { (l1, l2) =>
         java.lang.Double.parseDouble(l1.getLoadName) >
         java.lang.Double.parseDouble(l2.getLoadName)
@@ -260,7 +261,7 @@ object CarbonStore {
   def getDataAndIndexSize(
       tablePath: String,
       load: LoadMetadataDetails): (Long, Long) = {
-    val (dataSize, indexSize) = if (load.getFileFormat.equals(FileFormat.ROW_V1)) {
+    val (dataSize, indexSize) = if (FileFormat.ROW_V1.toString.equals(load.getFileFormat)) {
       // for streaming segment, we should get the actual size from the index file
       // since it is continuously inserting data
       val segmentDir = CarbonTablePath.getSegmentPath(tablePath, load.getLoadName)
@@ -276,7 +277,7 @@ object CarbonStore {
     } else {
       // If the added segment is other than carbon segment then we can only display the data
       // size and not index size, we can get the data size from table status file directly
-      if (!load.getFileFormat.isCarbonFormat) {
+      if (!CarbonUtil.isCarbonFormat(load)) {
         (if (load.getDataSize == null) -1L else load.getDataSize.toLong, -1L)
       } else {
         (if (load.getDataSize == null) -1L else load.getDataSize.toLong,

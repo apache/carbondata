@@ -25,6 +25,7 @@ import java.util.Date;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -62,65 +63,122 @@ public class LoadMetadataDetails implements Serializable {
   private static final SimpleDateFormat parser =
       new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
 
+  @JSONField(name = "ts")
   private String timestamp;
 
+  public SegmentStatus getLoadStatus() {
+    return loadStatus;
+  }
+
+  public void setLoadStatus(SegmentStatus loadStatus) {
+    this.loadStatus = loadStatus;
+  }
+
   // For backward compatibility, this member is required to read from JSON in the table_status file
+  @JSONField(name = "ss")
   private SegmentStatus loadStatus;
 
   // name of the segment
+  @JSONField(name = "ln")
   private String loadName;
 
+  @JSONField(name = "ds")
   private String dataSize;
 
+  @JSONField(name = "is")
   private String indexSize;
 
   // update delta end timestamp
+  @JSONField(name = "ue")
   private String updateDeltaEndTimestamp;
 
   // update delta start timestamp
+  @JSONField(name = "us")
   private String updateDeltaStartTimestamp;
 
   // this will represent the update status file name at that point of time.
+  @JSONField(name = "uf")
   private String updateStatusFileName;
 
   /**
    * Segment modification or deletion time stamp
    */
+  @JSONField(name = "md")
   private String modificationOrDeletionTimestamp;
 
+  @JSONField(name = "ls")
   private String loadStartTime;
 
+  @JSONField(name = "ml")
   private String mergedLoadName;
 
   /**
    * visibility is used to determine whether to the load is visible or not.
    * by default it is true
    */
-  private String visibility;
+  @JSONField(name = "v")
+  private String visibility = "true";
+
+  public String getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(String timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public void setModificationOrDeletionTimestamp(String modificationOrDeletionTimestamp) {
+    this.modificationOrDeletionTimestamp = modificationOrDeletionTimestamp;
+  }
+
+  public void setLoadStartTime(String loadStartTime) {
+    this.loadStartTime = loadStartTime;
+  }
+
+  public String getMajorCompacted() {
+    return majorCompacted;
+  }
 
   /**
    * To know if the segment is a major compacted segment or not.
    */
+  @JSONField(name = "mc")
   private String majorCompacted;
 
   /**
    * the file format of this segment, by default it is FileFormat.COLUMNAR_V3
    */
-  private String fileFormat;
+  @JSONField(name = "ff")
+  private String fileFormat = FileFormat.COLUMNAR_V3.toString();
+
+  public String getFileFormat() {
+    return fileFormat;
+  }
+
+  public void setFileFormat(String fileFormat) {
+    this.fileFormat = fileFormat;
+  }
+
+  public void setFileFormat(FileFormat fileFormat) {
+    this.fileFormat = fileFormat.toString();
+  }
 
   /**
    * Segment path if the segment is added externally.
    */
+  @JSONField(name = "p")
   private String path;
 
   /**
    * Segment file name where it has the information of partition information.
    */
+  @JSONField(name = "sf")
   private String segmentFile;
 
   /**
    * extraInfo will contain segment mapping Information for index table
    */
+  @JSONField(name = "ei")
   private String extraInfo;
 
   public String getDataSize() {
@@ -139,6 +197,7 @@ public class LoadMetadataDetails implements Serializable {
     this.indexSize = indexSize;
   }
 
+  @JSONField(serialize = false)
   public long getLoadEndTime() {
     if (timestamp == null) {
       return CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT;
@@ -150,6 +209,7 @@ public class LoadMetadataDetails implements Serializable {
     this.timestamp = Long.toString(timestamp);
   }
 
+  @JSONField(serialize = false)
   public SegmentStatus getSegmentStatus() {
     return loadStatus;
   }
@@ -233,8 +293,9 @@ public class LoadMetadataDetails implements Serializable {
    *
    * @return
    */
+  @JSONField(serialize = false)
   public long getLoadStartTimeAsLong() {
-    if (!loadStartTime.isEmpty()) {
+    if (StringUtils.isNotEmpty(loadStartTime)) {
       Long time = getTimeStamp(loadStartTime);
       if (null != time) {
         return time;
@@ -249,6 +310,7 @@ public class LoadMetadataDetails implements Serializable {
    * @param factTimeStamp
    * @return Long    TimeStamp value is milliseconds
    */
+  @JSONField(serialize = false)
   private long convertTimeStampToLong(String factTimeStamp) {
     try {
       return Long.parseLong(factTimeStamp);
@@ -285,6 +347,7 @@ public class LoadMetadataDetails implements Serializable {
    * @param loadStartTime
    * @return Long  TimeStamp value is nanoseconds
    */
+  @JSONField(serialize = false)
   public Long getTimeStamp(String loadStartTime) {
     try {
       return Long.parseLong(loadStartTime) * 1000L;
@@ -327,9 +390,6 @@ public class LoadMetadataDetails implements Serializable {
    * @return the visibility
    */
   public String getVisibility() {
-    if (visibility == null) {
-      return "true";
-    }
     return visibility;
   }
 
@@ -337,7 +397,15 @@ public class LoadMetadataDetails implements Serializable {
    * @param visibility the visibility to set
    */
   public void setVisibility(String visibility) {
+    if ("false".equalsIgnoreCase(visibility)) {
+      LOGGER.info("test");
+    }
     this.visibility = visibility;
+  }
+
+  @JSONField(serialize = false)
+  public boolean isVisibility() {
+    return !"false".equalsIgnoreCase(getVisibility());
   }
 
   /**
@@ -363,9 +431,6 @@ public class LoadMetadataDetails implements Serializable {
    * @return updateDeltaEndTimestamp
    */
   public String getUpdateDeltaEndTimestamp() {
-    if (updateDeltaEndTimestamp == null) {
-      return "";
-    }
     return updateDeltaEndTimestamp;
   }
 
@@ -384,9 +449,6 @@ public class LoadMetadataDetails implements Serializable {
    * @return updateDeltaStartTimestamp
    */
   public String getUpdateDeltaStartTimestamp() {
-    if (updateDeltaStartTimestamp == null) {
-      return "";
-    }
     return updateDeltaStartTimestamp;
   }
 
@@ -405,9 +467,6 @@ public class LoadMetadataDetails implements Serializable {
    * @return updateStatusFileName
    */
   public String getUpdateStatusFileName() {
-    if (updateStatusFileName == null) {
-      return "";
-    }
     return updateStatusFileName;
   }
 
@@ -418,17 +477,6 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setUpdateStatusFileName(String updateStatusFileName) {
     this.updateStatusFileName = updateStatusFileName;
-  }
-
-  public FileFormat getFileFormat() {
-    if (fileFormat == null) {
-      return FileFormat.COLUMNAR_V3;
-    }
-    return new FileFormat(fileFormat);
-  }
-
-  public void setFileFormat(FileFormat fileFormat) {
-    this.fileFormat = fileFormat.toString();
   }
 
   public String getSegmentFile() {
@@ -461,11 +509,6 @@ public class LoadMetadataDetails implements Serializable {
     this.path = path;
   }
 
-  public boolean isCarbonFormat() {
-    return getFileFormat().equals(FileFormat.COLUMNAR_V3)
-        || getFileFormat().equals(FileFormat.ROW_V1);
-  }
-
   /**
    * Before writing table status file, call this to make the metadata smaller.
    * It checks if fields are default value, then make it null so GSON does not write it
@@ -480,14 +523,9 @@ public class LoadMetadataDetails implements Serializable {
     if (StringUtils.isEmpty(updateStatusFileName)) {
       updateStatusFileName = null;
     }
-    if (StringUtils.isEmpty(visibility) || visibility.equals("true")) {
-      visibility = null;
-    }
-    if (StringUtils.isEmpty(fileFormat) || fileFormat.equals(FileFormat.COLUMNAR_V3.toString())) {
-      fileFormat = null;
-    }
   }
 
+  @JSONField(serialize = false)
   public long getLastModifiedTime() {
     if (!StringUtils.isEmpty(updateDeltaEndTimestamp)) {
       return convertTimeStampToLong(updateDeltaEndTimestamp);

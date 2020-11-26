@@ -35,6 +35,7 @@ import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.conf.Configuration;
@@ -353,7 +354,7 @@ public class Segment implements Serializable, Writable {
 
   public boolean isCarbonSegment() {
     if (loadMetadataDetails != null) {
-      return loadMetadataDetails.isCarbonFormat();
+      return CarbonUtil.isCarbonFormat(loadMetadataDetails);
     }
     return true;
   }

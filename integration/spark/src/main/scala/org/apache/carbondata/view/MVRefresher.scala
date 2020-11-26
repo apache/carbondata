@@ -84,7 +84,7 @@ object MVRefresher {
       for (loadMetadataDetail <- loadMetadataDetails) {
         if (((loadMetadataDetail.getSegmentStatus eq SegmentStatus.INSERT_IN_PROGRESS) ||
              (loadMetadataDetail.getSegmentStatus eq SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)) &&
-            loadMetadataDetail.getVisibility.equalsIgnoreCase("false")) {
+            "false".equalsIgnoreCase(loadMetadataDetail.getVisibility)) {
           loadMetadataDetail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
         }
         loadMetadataDetailList.add(loadMetadataDetail)

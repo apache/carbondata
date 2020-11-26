@@ -30,6 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 
 case class IndexModel(
@@ -160,7 +161,7 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extend
         .map(loadMetadataDetail => loadMetadataDetail.getLoadName)
       details.foreach(loadMetadataDetail => {
         if (!metadata.contains(loadMetadataDetail.getLoadName) &&
-            loadMetadataDetail.isCarbonFormat) {
+            CarbonUtil.isCarbonFormat(loadMetadataDetail)) {
           loadMetadataDetails.add(loadMetadataDetail)
         }
       })

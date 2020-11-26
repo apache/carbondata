@@ -98,10 +98,7 @@ import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
-import org.apache.carbondata.core.statusmanager.SegmentStatus;
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.statusmanager.*;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk3;
@@ -3440,5 +3437,18 @@ public final class CarbonUtil {
         }
       });
     }
+  }
+
+  public static boolean isCarbonFormat(LoadMetadataDetails details) {
+    return (StringUtils.isEmpty(details.getFileFormat()) ||
+            "COLUMNAR_V3".equalsIgnoreCase(details.getFileFormat()) ||
+            "ROW_V1".equalsIgnoreCase(details.getFileFormat()));
+  }
+
+  public static String getFileFormatOrElse(LoadMetadataDetails detail, FileFormat format) {
+    if (StringUtils.isEmpty(detail.getFileFormat())) {
+      return format.toString();
+    }
+    return detail.getFileFormat().toString();
   }
 }

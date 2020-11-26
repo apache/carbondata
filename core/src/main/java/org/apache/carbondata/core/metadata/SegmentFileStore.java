@@ -582,7 +582,8 @@ public class SegmentFileStore {
             detail.setSegmentFile(segmentFile);
             if (segmentStatus != null) {
               HashMap<String, Long> dataSizeAndIndexSize =
-                  CarbonUtil.getDataSizeAndIndexSize(segmentFileStore, detail.isCarbonFormat());
+                  CarbonUtil.getDataSizeAndIndexSize(segmentFileStore,
+                      CarbonUtil.isCarbonFormat(detail));
               detail.setDataSize(
                   dataSizeAndIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE)
                       .toString());
@@ -1372,7 +1373,7 @@ public class SegmentFileStore {
     /**
      * Segment option properties
      */
-    private Map<String, String> options;
+    private Map<String, String> options = new HashMap<>();
 
     /**
      * Segment metadata information such as column_id, min-max, alter properties
