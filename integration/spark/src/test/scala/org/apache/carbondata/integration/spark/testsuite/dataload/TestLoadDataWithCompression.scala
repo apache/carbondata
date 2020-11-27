@@ -602,6 +602,49 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     assertResult(compressorName)(tableColumnCompressor2)
   }
 
+  test("test data loading with different compresser snd SI") {
+    for (comp <- compressors) {
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, comp)
+      createTable(columnCompressor = comp)
+      sql(s"create index si_with_compresser on table $tableName(stringDictField) as " +
+        s"'carbondata' properties('carbon.column.compressor'='$comp')")
+      loadData()
+      checkAnswer(sql(s"SELECT count(*) FROM si_with_compresser"), Seq(Row(8)))
+      val carbonTable = CarbonEnv.getCarbonTable(
+        Option("default"), "si_with_compresser")(sqlContext.sparkSession)
+      val tableColumnCompressor = carbonTable.getTableInfo
+        .getFactTable
+        .getTableProperties
+        .get(CarbonCommonConstants.COMPRESSOR)
+      assertResult(comp)(tableColumnCompressor)
+      sql(s"drop index if exists si_with_compresser on $tableName")
+    }
+  }
+
+  test("test data loading with different compresser on MT and SI table with global sort") {
+    var index = 2;
+    for (comp <- compressors) {
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, comp)
+      createTable()
+      sql(s"create index si_with_compresser on table $tableName(stringDictField) as " +
+        s"'carbondata' properties('carbon.column.compressor'='${compressors(index)}', " +
+        s"'sort_scope'='global_sort', 'Global_sort_partitions'='3')")
+      loadData()
+      checkAnswer(sql(s"SELECT count(*) FROM si_with_compresser"), Seq(Row(8)))
+      val carbonTable = CarbonEnv.getCarbonTable(
+        Option("default"), "si_with_compresser")(sqlContext.sparkSession)
+      val tableColumnCompressor = carbonTable.getTableInfo
+        .getFactTable
+        .getTableProperties
+        .get(CarbonCommonConstants.COMPRESSOR)
+      assertResult(compressors(index))(tableColumnCompressor)
+      index = index-1
+      sql(s"drop index if exists si_with_compresser on $tableName")
+    }
+  }
+
   private def generateAllDataTypeFiles(lineNum: Int, csvDir: String,
       saveMode: SaveMode = SaveMode.Overwrite): Unit = {
     val tsFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")

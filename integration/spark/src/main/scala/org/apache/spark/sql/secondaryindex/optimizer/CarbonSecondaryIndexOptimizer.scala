@@ -515,6 +515,9 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case Not(EqualTo(left: AttributeReference, right: Literal)) => true
       case Not(Like(left: AttributeReference, right: Literal)) => true
       case Not(In(left: AttributeReference, right: Seq[Expression])) => true
+      case Not(Contains(left: AttributeReference, right: Literal)) => true
+      case Not(EndsWith(left: AttributeReference, right: Literal)) => true
+      case Not(StartsWith(left: AttributeReference, right: Literal)) => true
       case Like(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case EndsWith(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case Contains(left: AttributeReference, right: Literal) if (!pushDownRequired) => true

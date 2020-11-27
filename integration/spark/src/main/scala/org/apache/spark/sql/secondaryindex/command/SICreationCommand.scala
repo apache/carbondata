@@ -175,8 +175,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         } else {
           return Seq.empty
         }
-      } else if (((indexTableExistsInCarbon && !indexTableExistsInHive) ||
-                  (!indexTableExistsInCarbon && indexTableExistsInHive)) && isCreateSIndex) {
+      } else if (indexTableExistsInCarbon && !indexTableExistsInHive && isCreateSIndex) {
         LOGGER.error(
           s"Index with [$indexTableName] under database [$databaseName] is present in " +
           s"stale state.")
@@ -219,31 +218,20 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
                                  s" ${ spatialProperty.get.trim }")
         }
       }
+      // No. of index table cols are more than parent table key cols
+      if (indexModel.columnNames.size > dims.size) {
+        throw new ErrorMessage(s"Number of columns in Index table cannot be more than " +
+          "number of key columns in Source table")
+      }
       if (indexModel.columnNames.exists(x => !dimNames.contains(x))) {
         throw new ErrorMessage(
           s"one or more specified index cols either does not exist or not a key column or complex" +
           s" column in table $databaseName.$tableName")
       }
-      // Only Key cols are allowed while creating index table
-      val isInvalidColPresent = indexModel.columnNames.find(x => !dimNames.contains(x))
-      if (isInvalidColPresent.isDefined) {
-        throw new ErrorMessage(s"Invalid column name found : ${ isInvalidColPresent.get }")
-      }
-      if (indexModel.columnNames.exists(x => !dimNames.contains(x))) {
-        throw new ErrorMessage(
-          s"one or more specified index cols does not exist or not a key column or complex column" +
-          s" in table $databaseName.$tableName")
-      }
       // Check for duplicate column names while creating index table
       indexModel.columnNames.groupBy(col => col).foreach(f => if (f._2.size > 1) {
         throw new ErrorMessage(s"Duplicate column name found : ${ f._1 }")
       })
-
-      // No. of index table cols are more than parent table key cols
-      if (indexModel.columnNames.size > dims.size) {
-        throw new ErrorMessage(s"Number of columns in Index table cannot be more than " +
-                               "number of key columns in Source table")
-      }
 
       // Should not allow to create index on an index table
       val isIndexTable = carbonTable.isIndexTable
@@ -251,15 +239,17 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         throw new ErrorMessage(
           s"Table [$tableName] under database [$databaseName] is already an index table")
       }
-      // creation of index on long string columns are not supported
-      if (dims.filter(dimension => indexModel.columnNames
+
+      // creation of index on long string or binary columns are not supported
+      val errorMsg = "one or more index columns specified contains long string or binary column" +
+        s" in table $databaseName.$tableName. SI cannot be created on " +
+        s"long string or binary columns."
+      dims.filter(dimension => indexModel.columnNames
         .contains(dimension.getColName))
-        .map(_.getDataType)
-        .exists(dataType => dataType.equals(DataTypes.VARCHAR))) {
-        throw new ErrorMessage(
-          s"one or more index columns specified contains long string column" +
-          s" in table $databaseName.$tableName. SI cannot be created on long string columns.")
-      }
+        .map(_.getDataType).foreach(dataType =>
+        if (dataType.equals(DataTypes.VARCHAR) || dataType.equals(DataTypes.BINARY)) {
+          throw new ErrorMessage(errorMsg)
+        })
 
       // Check whether index table column order is same as another index table column order
       oldIndexInfo = carbonTable.getIndexInfo
@@ -410,6 +400,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       case ex@(_: IOException | _: ParseException) =>
         LOGGER.error(s"Index creation with Database name [$databaseName] " +
                      s"and Index name [$indexTableName] is failed")
+        throw ex
       case e: Exception =>
         LOGGER.error(s"Index creation with Database name [$databaseName] " +
                      s"and Index name [$indexTableName] is Successful, But the data load to index" +
@@ -597,13 +588,6 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
     CarbonLockUtil.fileUnlock(locks.head, LockUsage.METADATA_LOCK)
     CarbonLockUtil.fileUnlock(locks(1), LockUsage.COMPACTION_LOCK)
     CarbonLockUtil.fileUnlock(locks(2), LockUsage.DELETE_SEGMENT_LOCK)
-  }
-
-  private def checkAndPrepareDecimal(columnSchema: ColumnSchema): String = {
-    columnSchema.getDataType.getName.toLowerCase match {
-      case "decimal" => "decimal(" + columnSchema.getPrecision + "," + columnSchema.getScale + ")"
-      case others => others
-    }
   }
 
   def getColumnSchema(databaseName: String, dataType: DataType, colName: String,

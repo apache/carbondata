@@ -410,6 +410,25 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
           "dest9_parquet1  where c3 = 'abc'"))
   }
 
+  test("test update and delete operation on SI") {
+    sql("drop table if exists test")
+    sql(
+      "create table test (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table test""")
+    sql("create index index_test on table test (c3) AS 'carbondata'")
+    // delete on index table
+    var ex = intercept[RuntimeException] {
+      sql("delete from index_test d where d.c3='bb'").collect()
+    }
+    assert(ex.getMessage.contains("Delete is not permitted on Index Table"))
+    // update on index table
+    ex = intercept[RuntimeException] {
+      sql("update index_test set(c3) = ('zz')")
+    }
+    assert(ex.getMessage.contains("Update is not permitted on Index Table"))
+    sql("drop table if exists test")
+  }
+
 
   override def afterAll: Unit = {
     dropIndexAndTable()

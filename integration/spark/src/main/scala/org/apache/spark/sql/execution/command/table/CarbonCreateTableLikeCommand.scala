@@ -48,8 +48,8 @@ case class CarbonCreateTableLikeCommand(
     if (!srcTable.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (srcTable.isMV) {
-      throw new MalformedCarbonCommandException("Unsupported operation on child table or MV")
+    if (srcTable.isMV || srcTable.isIndexTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on SI table or MV.")
     }
 
     // copy schema of source table and update fields to target table

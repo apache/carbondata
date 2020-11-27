@@ -350,7 +350,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty
     sql("DROP table IF EXISTS carbonCahe")
   }
 
-  test("Test query with parallel index load") {
+  test("Test query with parallel index load with and without index") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL, "true")
     sql("CREATE table parallel_index_load (a STRING, b STRING, c INT) STORED AS carbondata")
@@ -359,5 +359,9 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty
     sql("insert into parallel_index_load select 'ee', 'ff', 3")
     sql("select a, b from parallel_index_load").collect()
     assert(sql("select a, b from parallel_index_load").count() == 3)
+    sql("drop index if exists parallel_index on parallel_index_load")
+    sql("CREATE INDEX parallel_index on parallel_index_load(b) AS 'carbondata'")
+    checkAnswer(sql("select b from parallel_index"), Seq(Row("bb"), Row("dd"), Row("ff")))
+    sql("drop index if exists parallel_index on parallel_index_load")
   }
 }

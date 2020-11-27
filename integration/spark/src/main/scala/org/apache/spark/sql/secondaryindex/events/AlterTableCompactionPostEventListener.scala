@@ -17,28 +17,15 @@
 
 package org.apache.spark.sql.secondaryindex.events
 
-import java.util
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable
-
 import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
-import org.apache.spark.rdd.CarbonMergeFilesRDD
-import org.apache.spark.sql.CarbonEnv
-import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.index.CarbonIndexUtil
-import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.secondaryindex.load.Compactor
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.Segment
-import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.events.{AlterTableCompactionPreStatusUpdateEvent, Event, OperationContext, OperationEventListener}
-import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
+import org.apache.carbondata.processing.merger.CompactionType
 
 class AlterTableCompactionPostEventListener extends OperationEventListener with Logging {
 
@@ -56,43 +43,8 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
         val sQLContext = alterTableCompactionPostEvent.sparkSession.sqlContext
         val compactionType: CompactionType = alterTableCompactionPostEvent.carbonMergerMapping
           .compactionType
-        if (compactionType.toString
+        if (!compactionType.toString
           .equalsIgnoreCase(CompactionType.SEGMENT_INDEX.toString)) {
-          val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-          val indexProviderMap = carbonMainTable.getIndexesMap
-          if (!indexProviderMap.isEmpty &&
-              null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
-            val iterator = indexProviderMap.get(IndexType.SI.getIndexProviderName)
-              .entrySet().iterator()
-            while (iterator.hasNext) {
-              val index = iterator.next()
-              val secondaryIndex = IndexModel(Some(carbonLoadModel.getDatabaseName),
-                carbonLoadModel.getTableName,
-                index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList,
-                index.getKey)
-              val metastore = CarbonEnv.getInstance(sQLContext.sparkSession)
-                .carbonMetaStore
-              val indexCarbonTable = metastore
-                .lookupRelation(Some(carbonLoadModel.getDatabaseName),
-                  secondaryIndex.indexName)(sQLContext
-                  .sparkSession).carbonTable
-
-              val validSegmentIds =
-                CarbonDataMergerUtil
-                  .getValidSegmentList(carbonMainTable)
-                  .asScala
-                  .map(_.getSegmentNo)
-              // Just launch job to merge index for all index tables
-              CarbonMergeFilesRDD.mergeIndexFiles(
-                sQLContext.sparkSession,
-                validSegmentIds,
-                SegmentStatusManager.mapSegmentToStartTime(carbonMainTable),
-                indexCarbonTable.getTablePath,
-                indexCarbonTable,
-                mergeIndexProperty = true)
-            }
-          }
-        } else {
           val loadsToMerge =
             alterTableCompactionPostEvent
               .carbonMergerMapping

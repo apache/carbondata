@@ -149,13 +149,14 @@ case class SIRebuildSegmentRunner(
       } else {
         LOGGER.error(s"Not able to acquire the compaction lock for table" +
                      s" ${indexTable.getDatabaseName}.${indexTable.getTableName}")
-        CarbonException.analysisException(
+        throw CarbonException.analysisException(
           "Table is already locked for compaction. Please try after some time.")
       }
     } catch {
       case ex: Exception =>
         LOGGER.error(s"SI segment compaction request failed for table " +
                      s"${indexTable.getDatabaseName}.${indexTable.getTableName}")
+        throw ex
       case ex: NoSuchTableException =>
         throw ex
     } finally {
