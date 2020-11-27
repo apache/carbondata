@@ -256,6 +256,100 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     sql("drop table if exists table1")
   }
 
+  test("test compaction on SI table") {
+    sql("drop table if exists table1")
+    sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+    sql("create index idx1 on table table1(c3) as 'carbondata'")
+    for (i <- 0 until 5) {
+      sql(s"insert into table1 values(${i + 1},'a$i','b$i')")
+    }
+    var ex = intercept[Exception] {
+      sql("ALTER TABLE idx1 COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (1,2,3)")
+    }
+    assert(ex.getMessage.contains("Unsupported alter operation on carbon table: Compaction is not supported on SI table"))
+    ex = intercept[Exception] {
+      sql("ALTER TABLE idx1 COMPACT 'minor'")
+    }
+    assert(ex.getMessage.contains("Unsupported alter operation on carbon table: Compaction is not supported on SI table"))
+    sql("drop table if exists table1")
+  }
+
+  test("test custom compaction on main table which have SI tables") {
+    sql("drop table if exists table1")
+    sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+    sql("create index idx1 on table table1(c3) as 'carbondata'")
+    for (i <- 0 until 5) {
+      sql(s"insert into table1 values(${i + 1},'a$i','b$i')")
+    }
+    sql("ALTER TABLE table1 COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (1,2,3)")
+
+    val segments = sql("SHOW SEGMENTS FOR TABLE idx1")
+    val segInfos = segments.collect().map { each =>
+      ((each.toSeq) (0).toString, (each.toSeq) (1).toString)
+    }
+    assert(segInfos.length == 6)
+    assert(segInfos.contains(("0", "Success")))
+    assert(segInfos.contains(("1", "Compacted")))
+    assert(segInfos.contains(("2", "Compacted")))
+    assert(segInfos.contains(("3", "Compacted")))
+    assert(segInfos.contains(("1.1", "Success")))
+    assert(segInfos.contains(("4", "Success")))
+    checkAnswer(sql("select * from table1 where c3='b2'"), Seq(Row(3, "a2", "b2")))
+    sql("drop table if exists table1")
+  }
+
+  test("test minor compaction on table with non-empty segment list" +
+    "and custom compaction with empty segment list") {
+    sql("drop table if exists table1")
+    sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+    sql("create index idx1 on table table1(c3) as 'carbondata'")
+    for (i <- 0 until 3) {
+      sql(s"insert into table1 values(${i + 1},'a$i','b$i')")
+    }
+    var ex = intercept[Exception] {
+      sql("ALTER TABLE table1 COMPACT 'minor' WHERE SEGMENT.ID IN (1,2)")
+    }
+    assert(ex.getMessage.contains("Custom segments not supported when doing MINOR compaction"))
+    ex = intercept[Exception] {
+      sql("ALTER TABLE table1 COMPACT 'custom'")
+    }
+    assert(ex.getMessage.contains("Segment ids should not be empty when doing CUSTOM compaction"))
+    sql("drop table if exists table1")
+  }
+
+  test("test custom compaction with global sort SI") {
+    sql("drop table if exists table1")
+    sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+    sql("create index idx1 on table table1(c3) as 'carbondata' " +
+      "properties('sort_scope'='global_sort', 'Global_sort_partitions'='1')")
+    for (i <- 0 until 3) {
+      sql(s"insert into table1 values(${i + 1},'a$i','b$i')")
+    }
+    sql("ALTER TABLE table1 COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (1,2)")
+
+    val segments = sql("SHOW SEGMENTS FOR TABLE idx1")
+    val segInfos = segments.collect().map { each =>
+      ((each.toSeq) (0).toString, (each.toSeq) (1).toString)
+    }
+    assert(segInfos.length == 4)
+    checkAnswer(sql("select * from table1 where c3='b2'"), Seq(Row(3, "a2", "b2")))
+    sql("drop table if exists table1")
+  }
+
+  test("test SI load data when exception occurred") {
+    sql("use default")
+    sql("drop table if exists table1")
+    sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+    sql("create index idx1 on table table1(c3) as 'carbondata' ")
+    val mock = TestSecondaryIndexUtils.mockLoadEventListner()
+    val ex = intercept[RuntimeException] {
+      sql(s"insert into table1 values(1,'a1','b1')")
+    }
+    assert(ex.getMessage.contains("An exception occurred while loading data to SI table"))
+    mock.tearDown()
+    sql("drop table if exists table1")
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists index_test")
     sql("drop table if exists seccust1")

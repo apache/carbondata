@@ -30,7 +30,7 @@ class TestCreateIndexForCleanAndDeleteSegment extends QueryTest with BeforeAndAf
     sql("drop table if exists clean_files_test")
   }
 
-  test("test secondary index for delete segment by id") {
+  test("test secondary index for delete segment by id and date") {
     sql("drop index if exists index_no_dictionary on delete_segment_by_id")
     sql("drop table if exists delete_segment_by_id")
 
@@ -52,6 +52,24 @@ class TestCreateIndexForCleanAndDeleteSegment extends QueryTest with BeforeAndAf
     checkAnswer(sql("select count(*) from delete_segment_by_id"),
       sql("select count(*) from index_no_dictionary"))
 
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE delete_segment_by_id " +
+      "OPTIONS('DELIMITER'=',','BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')")
+    val preDeleteSegmentsByDate = sql("SHOW SEGMENTS FOR TABLE delete_segment_by_id").count()
+    // delete segment by date
+    sql("delete from table delete_segment_by_id where " +
+      "SEGMENT.STARTTIME BEFORE '2025-06-01 12:05:06'")
+    sql("create materialized view mv1 as select empname, deptname, " +
+      "avg(salary) from  delete_segment_by_id group by empname, deptname")
+    sql("clean files for table delete_segment_by_id")
+    checkAnswer(sql("select count(*) from delete_segment_by_id"),
+      sql("select count(*) from index_no_dictionary"))
+    val postDeleteSegmentsByDate = sql("SHOW SEGMENTS FOR TABLE delete_segment_by_id").count()
+    assert(preDeleteSegmentsByDate == postDeleteSegmentsByDate)
+    val result = sql("show materialized views on table delete_segment_by_id").collectAsList()
+    assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("full"))
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("on_commit"))
+    sql("drop materialized view if exists mv1 ")
     sql("drop table if exists delete_segment_by_id")
   }
 

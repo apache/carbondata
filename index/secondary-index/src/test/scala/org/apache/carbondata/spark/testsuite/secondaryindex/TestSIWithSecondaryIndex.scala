@@ -16,12 +16,11 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import scala.collection.JavaConverters._
-
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -477,6 +476,111 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     checkAnswer(dataFrame, Seq(Row("k", "x", 2, 4)))
     TestSecondaryIndexUtils.isFilterPushedDownToSI(dataFrame.queryExecution.sparkPlan)
     sql("drop table if exists maintable")
+  }
+
+  test("test SI with change of sort column") {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c int) STORED AS carbondata " +
+      "TBLPROPERTIES('sort_scope'='global_sort','sort_columns'='b,a')")
+    sql("insert into maintable2 values('k','x',2)")
+    sql("create index m_indextable2 on table maintable2(b) AS 'carbondata'")
+    sql("ALTER TABLE maintable2 SET TBLPROPERTIES('sort_columns'='b')")
+    checkAnswer(sql("select * from maintable2 where b='x'"), Seq(Row("k", "x", 2)))
+    sql("ALTER TABLE m_indextable2 SET " +
+      "TBLPROPERTIES('sort_scope'='global_sort','sort_columns'='b')")
+    checkAnswer(sql("select * from maintable2 where b='x'"), Seq(Row("k", "x", 2)))
+    sql("drop table if exists maintable2")
+  }
+
+  test("test SI with change subset of sort column on which SI is created") {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c int) STORED AS carbondata " +
+      "TBLPROPERTIES('sort_scope'='global_sort','sort_columns'='b')")
+    sql("insert into maintable2 values('k','x',2)")
+    sql("create index m_indextable2 on table maintable2(b, a) AS 'carbondata'")
+    checkAnswer(sql("select * from maintable2 where b='x'"), Seq(Row("k", "x", 2)))
+    sql("ALTER TABLE m_indextable2 SET " +
+      "TBLPROPERTIES('sort_scope'='global_sort','sort_columns'='a')")
+    sql("insert into maintable2 values('k1','c',3)")
+    checkAnswer(sql("select * from maintable2 where b='x'"), Seq(Row("k", "x", 2)))
+    sql("drop table if exists maintable2")
+  }
+
+  test("test SI with MV on the same column") {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c int) STORED AS carbondata ")
+    sql("drop materialized view if exists view1")
+    sql(s"CREATE MATERIALIZED VIEW view1 AS SELECT b, c FROM maintable2")
+    sql("create index m_indextable on table maintable2(b) AS 'carbondata'")
+    sql("insert into maintable2 values('k','x',2)")
+    checkAnswer(sql("select * from maintable2 where b='x'"), Seq(Row("k", "x", 2)))
+    val result = sql("show materialized views on table maintable2").collectAsList()
+    assert(result.get(0).get(1).toString.equalsIgnoreCase("view1"))
+    sql("drop table if exists maintable2")
+  }
+
+  test("test SI with measure column when include in sort columns") {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c int) STORED AS carbondata " +
+      "TBLPROPERTIES('sort_scope'='global_sort','sort_columns'='c')")
+    sql("insert into maintable2 values('k','x',2)")
+    sql("create index m_indextable2 on table maintable2(c) AS 'carbondata'")
+    checkAnswer(sql("select c from m_indextable2"), Seq(Row(2)))
+    sql("drop table if exists maintable2")
+  }
+
+  test("test SI with lucene and bloom on the same column") {
+    createAndInsertDataIntoTable()
+    sql("create index m_indextable on table maintable2(b) AS 'carbondata'")
+    sql("create index m_bloomindex on table maintable2(b) AS 'bloomfilter'")
+    sql("create index m_luceneindex on table maintable2(b) AS 'lucene'")
+    checkAnswer(sql("select * from maintable2 where b='x'"), Seq(Row("k", "x", 2)))
+    checkExistence(sql("show indexes on table maintable2"),
+      true, "m_indextable", "m_bloomindex", "m_luceneindex")
+    sql("drop index m_luceneindex on maintable2")
+    sql("drop index m_bloomindex on maintable2")
+    sql("drop index m_indextable on maintable2")
+    sql("drop table if exists maintable2")
+  }
+
+  test("test SI with add column and filter on default value") {
+    createAndInsertDataIntoTable()
+    sql("alter table maintable2 add columns (stringfield string) " +
+      "TBLPROPERTIES('DEFAULT.VALUE.stringfield'='val')")
+    sql("insert into maintable2 values('ab','cd',3,'ef')")
+    sql("create index m_indextable on table maintable2(stringfield) AS 'carbondata'")
+    checkAnswer(sql("select stringfield from m_indextable"), Seq(Row("val"), Row("ef")))
+    sql("drop table if exists maintable2")
+  }
+
+  test ("test drop column on SI table") {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c string) STORED AS carbondata ")
+    sql("create index m_indextable on table maintable2(b,c) AS 'carbondata'")
+    val errorMessage = intercept[Exception] {
+      sql("alter table m_indextable drop columns(c)")
+    }
+    assert(errorMessage.getMessage.contains("alter table drop column " +
+      "is not supported for index table"))
+    sql("drop table if exists maintable2")
+  }
+
+  test("test SI when carbon data handler will through exception") {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c string) STORED AS carbondata ")
+    sql("insert into maintable2 values('ab','cd','ef')")
+    val mock = TestSecondaryIndexUtils.mockDataHandler()
+    val ex = intercept[Exception] {
+      sql("create index m_indextable on table maintable2(b,c) AS 'carbondata'")
+    }
+    mock.tearDown()
+    assert(ex.getMessage.contains("Problem loading data while creating secondary index:"))
+  }
+
+  def createAndInsertDataIntoTable(): Unit = {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c int) STORED AS carbondata ")
+    sql("insert into maintable2 values('k','x',2)")
   }
 
   override def afterAll {

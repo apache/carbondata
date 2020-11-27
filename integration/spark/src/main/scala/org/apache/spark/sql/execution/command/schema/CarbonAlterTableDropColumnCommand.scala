@@ -57,6 +57,10 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      if (carbonTable.isIndexTable) {
+        throw new MalformedCarbonCommandException(
+          "alter table drop column is not supported for index table")
+      }
       if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_DROP,
           alterTableDropColumnModel.columns.asJava)) {
         throw new MalformedCarbonCommandException(

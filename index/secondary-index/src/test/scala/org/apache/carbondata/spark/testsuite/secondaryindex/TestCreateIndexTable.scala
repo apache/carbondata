@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import java.io.File
+import java.io.{File, IOException}
 import java.util.UUID
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.format.TableInfo
 
@@ -94,16 +95,16 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
 
   test("test create index table with indextable col size > parent table key col size") {
     try {
-      sql("create index indexOnCarbon on table carbon (empno,empname,designation,doj," +
-          "workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate," +
-          "projectenddate,attendance,utilization,salary) AS 'carbondata'")
+      sql("drop table if exists parentTable")
+      sql("create table parentTable(a string, b String) STORED AS carbondata")
+      sql("create index indexOnCarbon on table parentTable (a,b,positionid) AS 'carbondata'")
       assert(false)
     } catch {
       case ex: Exception =>
-        assert(ex.getMessage.equalsIgnoreCase(
-          "Secondary Index is not supported for measure column : deptno"))
+        assert(ex.getMessage.equalsIgnoreCase("Number of columns in " +
+          "Index table cannot be more than number of key columns in Source table"))
     } finally {
-      sql("drop index if exists indexOnCarbon on carbon")
+      sql("drop index if exists indexOnCarbon on parentTable")
     }
   }
 
@@ -141,7 +142,8 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
       assert(false)
     } catch {
       case ex: Exception =>
-        assert(true)
+        assert(ex.getMessage.contains("one or more specified index cols either " +
+          "does not exist or not a key column or complex column in table default.carbon"))
     } finally {
       sql("drop index if exists index_with_invalid_column on carbon")
     }
@@ -379,8 +381,8 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     }
     assert(thrown.getMessage
       .contains(
-        "one or more index columns specified contains long string column in table default" +
-        ".si_table. SI cannot be created on long string columns."))
+        "one or more index columns specified contains long string or binary column in table" +
+          " default.si_table. SI cannot be created on long string or binary columns."))
   }
 
   test("drop index on temp table") {
@@ -444,10 +446,11 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     // create index
     sql(
       "create index si_drop_i1 on table carbon_si_same_name_test (designation) AS 'carbondata'")
-    intercept[Exception] {
+    val ex = intercept[Exception] {
       sql(
         "create index si_drop_i1 on table carbon_si_same_name_test (designation) AS 'carbondata'")
     }
+    assert(ex.getMessage.contains("Index [si_drop_i1] already exists under database [default]"))
     sql("DROP INDEX IF EXISTS si_drop_i1 on carbon_si_same_name_test")
     sql(
       "create index si_drop_i1 on table carbon_si_same_name_test (designation) AS 'carbondata'")
@@ -456,9 +459,12 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test blocking secondary Index on streaming table") {
-    intercept[RuntimeException] {
+    sql("use default")
+    val ex = intercept[RuntimeException] {
       sql("""create index streamin_index on table stream_si(c3) AS 'carbondata'""").collect()
     }
+    assert(ex.getMessage.contains("Parent Table  default.stream_si " +
+      "is Streaming Table and Secondary index on Streaming table is not supported"))
   }
 
   test("test SI creation on table which doesn't exist") {
@@ -467,6 +473,148 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     }
     assert(exception.getMessage.contains("Operation not allowed because either table " +
     "unknown doesn't exist or not a carbon table."))
+  }
+
+  test("test SI creation on binary data type") {
+    sql("use default")
+    sql("drop table if exists carbontable")
+    sql("CREATE table carbontable (empno int, empname String, " +
+      "designation String, binarycol binary) STORED AS CARBONDATA")
+    val exception = intercept[RuntimeException] {
+      sql("CREATE INDEX indextable on carbontable(binarycol) as 'carbondata'")
+    }
+    assert(exception.getMessage.contains("one or more index columns specified " +
+      "contains long string or binary column in table default.carbontable. " +
+      "SI cannot be created on long string or binary columns."))
+    sql("drop table if exists carbontable")
+  }
+
+  test("test table creation with like for index table") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c int) STORED AS carbondata ")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    sql("insert into maintable values('k','x',2)")
+    sql("drop table if exists targetTable")
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql("create table targetTable like indextable")
+    }
+    assert(exception.getMessage.contains("Unsupported operation on SI table or MV."))
+    sql("drop table if exists maintable")
+  }
+
+  test("test create index on partition column") {
+    sql("insert into part_si values('dsa',1,'def','asd','fgh')")
+    val exception = intercept[UnsupportedOperationException] {
+      sql("create index index_on_partitionTable on table part_si (c6) AS 'carbondata'")
+    }
+    assert(exception.getMessage.contains("Secondary Index cannot be " +
+      "created on a partition column."))
+  }
+
+  test("test create index on spatial index column") {
+    sql("drop table if exists maintable")
+    sql(s"""
+           | CREATE TABLE maintable(
+           | timevalue BIGINT,
+           | longitude LONG,
+           | latitude LONG) COMMENT "This is a GeoTable"
+           | STORED AS carbondata
+           | TBLPROPERTIES ('SPATIAL_INDEX'='mygeohash',
+           | 'SPATIAL_INDEX.mygeohash.type'='geohash',
+           | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
+           | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
+           | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
+           | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
+           | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
+           | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
+           | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
+           | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
+       """.stripMargin)
+    val exception = intercept[RuntimeException] {
+      sql("create index index_on_spatial_col on table maintable (mygeohash) AS 'carbondata'")
+    }
+    assert(exception.getMessage.contains("Secondary Index is not supported for Spatial " +
+      "index column: mygeohash"))
+    sql("drop table if exists maintable")
+  }
+
+  test("test create index table on already selected column") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c int) STORED AS carbondata ")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    val exception = intercept[RuntimeException] {
+      sql("create index indextable2 on table maintable(b) AS 'carbondata'")
+    }
+    assert(exception.getMessage.contains("Index Table with selected columns already exist"))
+    sql("drop table if exists maintable")
+  }
+
+  test("test SI creation when other data modification operation is in progress") {
+    sql("use default")
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c int) STORED AS carbondata ")
+    val mock = TestSecondaryIndexUtils.mockTableLock()
+    val ex = intercept[RuntimeException] {
+      sql("create index indextable on table maintable(b) AS 'carbondata'")
+    }
+    assert(ex.getMessage.contains("Not able to acquire lock. Another Data Modification operation " +
+      "is already in progress for either default.maintable or default or indextable."))
+    mock.tearDown()
+    sql("drop table if exists maintable")
+  }
+
+  test("test SI creation with deferred refresh") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c int) STORED AS carbondata ")
+    val ex = intercept[UnsupportedOperationException] {
+      sql("create index indextable on table maintable(b) AS 'carbondata' with deferred refresh")
+    }
+    assert(ex.getMessage.contains("DEFERRED REFRESH is not supported"))
+    sql("drop table if exists maintable")
+  }
+
+  test("test create index table when indexes are present in stale state") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c string) STORED AS carbondata ")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    val mock = TestSecondaryIndexUtils.mockGetSecondaryIndexFromCarbon()
+    val ex = intercept[RuntimeException] {
+      sql("create index indextable1 on table maintable(b, c) AS 'carbondata'")
+    }
+    mock.tearDown()
+    assert(ex.getMessage.contains("Index with [indextable1] under database [default] is present " +
+        "in stale state. Please use drop index if exists command to delete the index table"))
+    val mock2 = TestSecondaryIndexUtils.mockIsFileExists()
+    val exception = intercept[RuntimeException] {
+      sql("create index indextable1 on table maintable(b, c) AS 'carbondata'")
+    }
+    mock2.tearDown()
+    assert(exception.getMessage.contains("Index with [indextable1] under database [default] " +
+        "is present in stale state. Please use drop index " +
+        "if exists command to delete the index table"))
+    sql("drop table if exists maintable")
+  }
+
+  test("test index creation on index table") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c string) STORED AS carbondata ")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    val ex = intercept[RuntimeException] {
+      sql("create index indextable1 on table indextable(b) AS 'carbondata'")
+    }
+    assert(ex.getMessage.contains("Table [indextable] under database " +
+        "[default] is already an index table"))
+  }
+
+  test("test SI creation when create table will throw exception") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c string) STORED AS carbondata ")
+    val mock = TestSecondaryIndexUtils.mockCreateTable()
+    val ex = intercept[IOException] {
+      sql("create index indextable on table maintable(b) AS 'carbondata'")
+    }
+    mock.tearDown()
+    assert(ex.getMessage.contains("An exception occurred while creating index table."))
   }
 
   object CarbonMetastore {
@@ -517,5 +665,7 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
 
     sql("drop index if exists t_ind1 on test1")
     sql("drop table if exists test1")
+    sql("drop table if exists stream_si")
+    sql("drop table if exists part_si")
   }
 }

@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.testsuite.secondaryindex
 import java.io.{File, IOException}
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -80,6 +80,25 @@ class TestRegisterIndexCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("REGISTER INDEX TABLE index_on_c3 ON carbontable")
     assert(sql("show indexes on carbontable").collect().nonEmpty)
   }
+
+  test("test register index on unknown parent table AND index table") {
+    sql("use carbon")
+    sql("drop table if exists carbontable")
+    var exception = intercept[AnalysisException] {
+      sql("REGISTER INDEX TABLE index_on_c3 ON unknown")
+    }
+    assert(exception.getMessage().contains("Table [unknown] does " +
+      "not exists under database [carbon]"))
+    sql("create table carbontable (" +
+      "c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
+    exception = intercept[AnalysisException] {
+      sql("REGISTER INDEX TABLE unknown ON carbontable")
+    }
+    assert(exception.getMessage().contains("Secondary Index Table [unknown] does " +
+      "not exists under database [carbon]"))
+    sql("drop table if exists carbontable")
+  }
+
   override def afterAll {
     sql("drop database if exists carbon cascade")
     sql("use default")
