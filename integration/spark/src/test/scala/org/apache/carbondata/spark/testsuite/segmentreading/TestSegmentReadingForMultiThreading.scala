@@ -23,7 +23,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
-import org.apache.spark.sql.{CarbonUtils, Row}
+import org.apache.spark.sql.{CarbonThreadUtil, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -59,31 +59,31 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
   }
 
   test("test multithreading for segment reading") {
-    CarbonUtils.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "1,2,3")
+    CarbonThreadUtil.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "1,2,3")
     val df = sql("select count(empno) from carbon_table_MulTI_THread")
     checkAnswer(df, Seq(Row(30)))
 
     val four = Future {
-      CarbonUtils.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "1,3")
+      CarbonThreadUtil.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "1,3")
       val df = sql("select count(empno) from carbon_table_MulTI_THread")
       checkAnswer(df, Seq(Row(20)))
     }
 
     val three = Future {
-      CarbonUtils.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "0,1,2")
+      CarbonThreadUtil.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "0,1,2")
       val df = sql("select count(empno) from carbon_table_MulTI_THread")
       checkAnswer(df, Seq(Row(30)))
     }
 
 
     val one = Future {
-      CarbonUtils.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "0,2")
+      CarbonThreadUtil.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "0,2")
       val df = sql("select count(empno) from carbon_table_MulTI_THread")
       checkAnswer(df, Seq(Row(20)))
     }
 
     val two = Future {
-      CarbonUtils.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "1")
+      CarbonThreadUtil.threadSet("carbon.input.segments.default.carbon_table_MulTI_THread", "1")
       val df = sql("select count(empno) from carbon_table_MulTI_THread")
       checkAnswer(df, Seq(Row(10)))
     }
@@ -94,7 +94,7 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
 
   override def afterAll: Unit = {
     sql("DROP TABLE IF EXISTS carbon_table_MulTI_THread")
-    CarbonUtils.threadUnset("carbon.input.segments.default.carbon_table_MulTI_THread")
+    CarbonThreadUtil.threadUnset("carbon.input.segments.default.carbon_table_MulTI_THread")
     CarbonProperties.getInstance()
       .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
   }

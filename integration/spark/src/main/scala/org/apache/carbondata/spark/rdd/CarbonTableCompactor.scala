@@ -26,7 +26,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.apache.hadoop.mapreduce.InputSplit
-import org.apache.spark.sql.{CarbonUtils, SparkSession, SQLContext}
+import org.apache.spark.sql.{CarbonThreadUtil, SparkSession, SQLContext}
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -433,7 +433,7 @@ class CarbonTableCompactor(
       carbonMergerMapping.validSegments)
     var loadResult: Array[(String, Boolean)] = null
     try {
-      CarbonUtils
+      CarbonThreadUtil
         .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
           table.getDatabaseName + CarbonCommonConstants.POINT + table.getTableName,
           splits.asScala.map(s => s.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
@@ -458,7 +458,7 @@ class CarbonTableCompactor(
           (row._1, FailureCauses.NONE == row._2._2.failureCauses)
         }
     } finally {
-      CarbonUtils
+      CarbonThreadUtil
         .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
           table.getDatabaseName + "." +
           table.getTableName)

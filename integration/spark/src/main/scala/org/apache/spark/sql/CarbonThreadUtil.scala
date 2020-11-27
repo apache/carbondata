@@ -19,13 +19,11 @@ package org.apache.spark.sql
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 
 import org.apache.carbondata.core.util.{CarbonSessionInfo, ThreadLocalSessionInfo}
 
-object CarbonUtils {
+object CarbonThreadUtil {
 
   private[sql] val threadStatementId = new ThreadLocal[Long]
 
@@ -81,10 +79,4 @@ object CarbonUtils {
       .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
   }
 
-  def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDatasourceHadoopRelation] = {
-    plan collect {
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-    }
-  }
 }

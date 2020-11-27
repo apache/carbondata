@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 
 import com.google.gson.Gson
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonUtils, SparkSession}
+import org.apache.spark.sql.{CarbonThreadUtil, SparkSession}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.parser.MVQueryParser
 
@@ -372,7 +372,7 @@ object MVRefresher {
    */
   private def setInputSegments(tableUniqueName: String,
       mainTableSegmentList: java.util.List[String]): Unit = {
-    CarbonUtils
+    CarbonThreadUtil
       .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
                  tableUniqueName, mainTableSegmentList.asScala.mkString(","))
   }
@@ -380,7 +380,7 @@ object MVRefresher {
   private def unsetInputSegments(schema: MVSchema): Unit = {
     val relatedTableIdentifiers = schema.getRelatedTables
     for (relationIdentifier <- relatedTableIdentifiers.asScala) {
-      CarbonUtils
+      CarbonThreadUtil
         .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
                      relationIdentifier.getDatabaseName + "." +
                      relationIdentifier.getTableName)

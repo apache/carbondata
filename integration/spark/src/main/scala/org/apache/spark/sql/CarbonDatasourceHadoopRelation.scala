@@ -55,7 +55,7 @@ case class CarbonDatasourceHadoopRelation(
     FileFactory.getUpdatedFilePath(paths.head),
     CarbonEnv.getDatabaseName(caseInsensitiveMap.get("dbname"))(sparkSession),
     caseInsensitiveMap("tablename"))
-  CarbonUtils.updateSessionInfoToCurrentThread(sparkSession)
+  CarbonThreadUtil.updateSessionInfoToCurrentThread(sparkSession)
 
   @transient lazy val carbonRelation: CarbonRelation =
     CarbonEnv.getInstance(sparkSession).carbonMetaStore.
