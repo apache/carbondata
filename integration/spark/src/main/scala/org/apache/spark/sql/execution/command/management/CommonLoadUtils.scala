@@ -861,7 +861,7 @@ object CommonLoadUtils {
   def loadDataWithPartition(loadParams: CarbonLoadParams): Seq[Row] = {
     val table = loadParams.carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val catalogTable: CatalogTable = loadParams.logicalPartitionRelation.catalogTable.get
-    CarbonUtils.threadSet("partition.operationcontext", loadParams.operationContext)
+    CarbonThreadUtil.threadSet("partition.operationcontext", loadParams.operationContext)
     val attributes = if (loadParams.scanResultRDD.isDefined) {
       // take the already re-arranged attributes
       catalogTable.schema.toAttributes
@@ -1059,7 +1059,7 @@ object CommonLoadUtils {
         LOGGER.error(ex)
         throw ex
     } finally {
-      CarbonUtils.threadUnset("partition.operationcontext")
+      CarbonThreadUtil.threadUnset("partition.operationcontext")
       if (loadParams.isOverwriteTable) {
         IndexStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
         // Clean the overwriting segments if any.

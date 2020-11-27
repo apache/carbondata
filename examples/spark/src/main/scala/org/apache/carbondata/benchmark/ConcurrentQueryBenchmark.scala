@@ -513,7 +513,7 @@ object ConcurrentQueryBenchmark {
       .addProperty("carbon.blockletgroup.size.in.mb", "32")
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION, "false")
-    import org.apache.spark.sql.CarbonUtils._
+    import org.apache.spark.sql.CarbonThreadUtil._
 
     // 1. initParameters
     initParameters(args)

@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.rdd.{CarbonMergeFilesRDD, RDD}
-import org.apache.spark.sql.{functions, CarbonEnv, CarbonUtils, DataFrame, SparkSession, SQLContext}
+import org.apache.spark.sql.{functions, CarbonEnv, CarbonThreadUtil, DataFrame, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction}
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical.Project
@@ -593,7 +593,7 @@ object SecondaryIndexCreator {
       projections: String,
       segments: Array[String]): DataFrame = {
     try {
-      CarbonUtils.threadSet(
+      CarbonThreadUtil.threadSet(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS + carbonTable.getDatabaseName +
         CarbonCommonConstants.POINT + carbonTable.getTableName, segments.mkString(","))
       val logicalPlan = sparkSession.sql(
@@ -620,7 +620,7 @@ object SecondaryIndexCreator {
       tableProperties.put("isPositionIDRequested", "true")
       SparkSQLUtil.execute(newLogicalPlan, sparkSession)
     } finally {
-      CarbonUtils
+      CarbonThreadUtil
         .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
                      carbonTable.getDatabaseName + CarbonCommonConstants.POINT +
                      carbonTable.getTableName)

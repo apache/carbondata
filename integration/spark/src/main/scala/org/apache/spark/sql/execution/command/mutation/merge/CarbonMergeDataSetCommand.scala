@@ -27,7 +27,7 @@ import org.apache.hadoop.mapreduce.{Job, JobID, TaskAttemptID, TaskID, TaskType}
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{AnalysisException, CarbonUtils, Column, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonThreadUtil, Column, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.avro.AvroFileFormatFactory
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -49,7 +49,6 @@ import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -79,7 +78,7 @@ case class CarbonMergeDataSetCommand(
    *
    */
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val relations = CarbonUtils.collectCarbonRelation(targetDsOri.logicalPlan)
+    val relations = CarbonSparkUtil.collectCarbonRelation(targetDsOri.logicalPlan)
     // Target dataset must be backed by carbondata table.
     if (relations.length != 1) {
       throw new UnsupportedOperationException(

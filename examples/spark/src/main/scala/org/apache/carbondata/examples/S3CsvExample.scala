@@ -35,7 +35,7 @@ object S3CsvExample {
                             + "../../../..").getCanonicalPath
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-    import org.apache.spark.sql.CarbonUtils._
+    import org.apache.spark.sql.CarbonThreadUtil._
     if (args.length != 4) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
                    "<s3.csv.location> <spark-master>")

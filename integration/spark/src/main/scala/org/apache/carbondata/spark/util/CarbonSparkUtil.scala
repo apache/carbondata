@@ -26,6 +26,9 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkConf
 import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.sql.CarbonDatasourceHadoopRelation
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types._
 
@@ -45,6 +48,13 @@ object CarbonSparkUtil {
       tableInfo.getDatabaseName,
       tableInfo.getFactTable.getTableName,
       table)
+  }
+
+  def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDatasourceHadoopRelation] = {
+    plan collect {
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+    }
   }
 
   /**
