@@ -943,7 +943,12 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     val filterAttributes = filter.condition collect {
       case attr: AttributeReference => attr.name.toLowerCase
     }
-    val parentTableRelation = MatchIndexableRelation.unapply(filter.child).get
+    // get the parent table logical relation from the filter node
+    val parentRelation = MatchIndexableRelation.unapply(filter.child)
+    if (parentRelation.isEmpty) {
+      return false
+    }
+    val parentTableRelation = parentRelation.get
     val matchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
       filterAttributes.toSet.asJava,
       CarbonIndexUtil.getSecondaryIndexes(parentTableRelation).mapValues(_.toList.asJava).asJava)

@@ -171,6 +171,22 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
     assert(FileFactory.isFileExist(indexTable.getSegmentPath("1")))
   }
 
+  test("test pushing down filter for broadcast join with ISnotNull Filter and " +
+       "order by and Join with SI") {
+    sql("drop table if exists catalog_returns")
+    sql("drop table if exists date_dim")
+    sql("create table catalog_returns(cr_returned_date_sk string)  STORED AS carbondata ")
+    sql("create table date_dim( d_date_sk string) STORED AS carbondata")
+    sql("insert into catalog_returns select 2450926")
+    sql("insert into date_dim select 2450926")
+    val query = "SELECT  c.cr_returned_date_sk cr_returned_date_sk, count(*) cnt " +
+                "FROM catalog_returns c, date_dim d WHERE d.d_date_sk = c.cr_returned_date_sk " +
+                "group by c.cr_returned_date_sk having count(*) >=1 order by cnt limit 5"
+    val result = sql(query)
+    sql("create index index_si on table date_dim(d_date_sk) AS 'carbondata' ")
+    checkAnswer(result, sql(query))
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists source")
     sql("drop table if exists catalog_return")
