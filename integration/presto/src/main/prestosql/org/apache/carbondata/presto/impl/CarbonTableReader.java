@@ -309,29 +309,6 @@ public class CarbonTableReader {
     return multiBlockSplitList;
   }
 
-  /**
-   * Returns list of partition specs to query based on the domain constraints
-   *
-   * @param constraints presto filter
-   * @param carbonTable carbon table
-   * @throws IOException
-   */
-  private List<PartitionSpec> findRequiredPartitions(TupleDomain<HiveColumnHandle> constraints,
-      CarbonTable carbonTable, LoadMetadataDetails[] loadMetadataDetails) throws IOException {
-    Set<PartitionSpec> partitionSpecs = new HashSet<>();
-    for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
-      SegmentFileStore segmentFileStore = null;
-      segmentFileStore =
-          new SegmentFileStore(carbonTable.getTablePath(), loadMetadataDetail.getSegmentFile());
-      partitionSpecs.addAll(segmentFileStore.getPartitionSpecs());
-    }
-    List<String> partitionValuesFromExpression =
-        PrestoFilterUtil.getPartitionFilters(carbonTable, constraints);
-    return partitionSpecs.stream().filter(partitionSpec -> CollectionUtils
-        .isSubCollection(partitionValuesFromExpression, partitionSpec.getPartitions()))
-        .collect(Collectors.toList());
-  }
-
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
       AbsoluteTableIdentifier identifier, IndexFilter indexFilter,
       List<PartitionSpec> filteredPartitions) {
