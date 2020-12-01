@@ -33,8 +33,6 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil;
 
-import javafx.util.Pair;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -50,10 +48,12 @@ public class CleanFilesUtil {
    * copying the data to the trash and also remove the .segment files of the stale segments
    */
   public static void cleanStaleSegments(CarbonTable carbonTable)
-    throws IOException {
+      throws IOException {
     long timeStampForTrashFolder = CarbonUpdateUtil.readCurrentTime();
-    Pair<List<String>, List<String>> staleSegmentFiles = getStaleSegmentFiles(carbonTable);
-    for (String staleSegmentFile : staleSegmentFiles.getKey()) {
+    List<String> staleSegmentFiles = new ArrayList<>();
+    List<String> redundantSegmentFile = new ArrayList<>();
+    getStaleSegmentFiles(carbonTable, staleSegmentFiles, redundantSegmentFile);
+    for (String staleSegmentFile : staleSegmentFiles) {
       String segmentNumber = DataFileUtil.getSegmentNoFromSegmentFile(staleSegmentFile);
       SegmentFileStore fileStore = new SegmentFileStore(carbonTable.getTablePath(),
           staleSegmentFile);
@@ -72,7 +72,7 @@ public class CleanFilesUtil {
             // delete the segment file as well
             FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath(),
                 staleSegmentFile));
-            for (String duplicateStaleSegmentFile : staleSegmentFiles.getValue()) {
+            for (String duplicateStaleSegmentFile : redundantSegmentFile) {
               if (DataFileUtil.getSegmentNoFromSegmentFile(duplicateStaleSegmentFile)
                   .equals(segmentNumber)) {
                 FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable
@@ -93,10 +93,12 @@ public class CleanFilesUtil {
    * after copying the data to the trash and also remove the .segment files of the stale segments
    */
   public static void cleanStaleSegmentsForPartitionTable(CarbonTable carbonTable)
-    throws IOException {
+      throws IOException {
     long timeStampForTrashFolder = CarbonUpdateUtil.readCurrentTime();
-    Pair<List<String>, List<String>> staleSegmentFiles = getStaleSegmentFiles(carbonTable);
-    for (String staleSegmentFile : staleSegmentFiles.getKey()) {
+    List<String> staleSegmentFiles = new ArrayList<>();
+    List<String> redundantSegmentFile = new ArrayList<>();
+    getStaleSegmentFiles(carbonTable, staleSegmentFiles, redundantSegmentFile);
+    for (String staleSegmentFile : staleSegmentFiles) {
       String segmentNumber = DataFileUtil.getSegmentNoFromSegmentFile(staleSegmentFile);
       // for each segment we get the indexfile first, then we get the carbondata file. Move both
       // of those to trash folder
@@ -122,7 +124,7 @@ public class CleanFilesUtil {
         FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath(),
             staleSegmentFile));
         // remove duplicate segment files if any
-        for (String duplicateStaleSegmentFile : staleSegmentFiles.getValue()) {
+        for (String duplicateStaleSegmentFile : redundantSegmentFile) {
           if (DataFileUtil.getSegmentNoFromSegmentFile(duplicateStaleSegmentFile)
               .equals(segmentNumber)) {
             FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath(),
@@ -144,42 +146,51 @@ public class CleanFilesUtil {
    * in the metadata folder and is not present in the table status file is considered as a
    * stale segment. Only comparing from tablestatus file, not checking tablestatus.history file
    */
-  private static Pair<List<String>, List<String>> getStaleSegmentFiles(CarbonTable carbonTable) {
-    // details contains segments in the tablestatus file, and all segments contains segments files.
-    // Segment number from those segment files is extracted and Stale segement file name is
-    // returned.
+  private static void getStaleSegmentFiles(CarbonTable carbonTable, List<String> staleSegmentFiles,
+      List<String> redundantSegmentFile) {
     String segmentFilesLocation =
         CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath());
-    Pair<List<String>, List<String>> segmentFileNameList = getSegmentFiles(segmentFilesLocation);
-    ArrayList<String> staleSegmentList = new ArrayList<>(segmentFileNameList.getKey().size());
+    List<String> segmentFiles = Arrays.stream(FileFactory.getCarbonFile(segmentFilesLocation)
+        .listFiles()).map(segmentFile -> segmentFile.getName()).collect(Collectors
+        .toList());
     // there are no segments present in the Metadata folder. Can return here
-    if (segmentFileNameList.getKey().size() == 0) {
-      return segmentFileNameList;
+    if (segmentFiles.size() == 0) {
+      return;
     }
+    ArrayList<String> staleSegments = new ArrayList<>(staleSegmentFiles.size());
     LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(carbonTable
         .getMetadataPath());
     Set<String> loadNameSet = Arrays.stream(details).map(loadMetadataDetails -> loadMetadataDetails
         .getLoadName()).collect(Collectors.toSet());
-    for (String segmentFileName : segmentFileNameList.getKey()) {
+    for (String segmentFile : segmentFiles) {
       if (!loadNameSet.contains(DataFileUtil.getSegmentNoFromSegmentFile(
-          segmentFileName))) {
-        staleSegmentList.add(segmentFileName);
+          segmentFile))) {
+        staleSegments.add(segmentFile);
       }
     }
-    List<String> redundantSegmentFile = new ArrayList<>(segmentFileNameList.getValue().size());
-    for (String segmentFileName : segmentFileNameList.getValue()) {
-      if (!loadNameSet.contains(DataFileUtil.getSegmentNoFromSegmentFile(
-          segmentFileName))) {
-        redundantSegmentFile.add(segmentFileName);
+    if (staleSegments.size() == 0) {
+      return;
+    }
+    // sort the stale segment List
+    Collections.sort(staleSegments);
+    // in case of multiple segment files for a segment, add the segment with the largest
+    // timestamp to staleSegmentFiles list and add the others to redundantsegmentfile list.
+    for (int i = 0; i < staleSegments.size() - 1; i++) {
+      if (!DataFileUtil.getSegmentNoFromSegmentFile(staleSegments.get(i)).equals(
+          DataFileUtil.getSegmentNoFromSegmentFile(staleSegments.get(i + 1)))) {
+        staleSegmentFiles.add(staleSegments.get(i));
+      } else {
+        redundantSegmentFile.add(staleSegments.get(i));
       }
     }
-    return new Pair<>(staleSegmentList, redundantSegmentFile);
+    // adding the last occurence always
+    staleSegmentFiles.add(staleSegments.get(staleSegments.size() - 1));
   }
 
   /**
    * This method will delete all the empty partition folders starting from the table path
    */
-  public static void deleteEmptyPartitionFoldersRecursively(CarbonFile tablePath) {
+  private static void deleteEmptyPartitionFoldersRecursively(CarbonFile tablePath) {
     CarbonFile[] listOfFiles = tablePath.listFiles();
     if (listOfFiles.length == 0) {
       tablePath.delete();
@@ -190,34 +201,5 @@ public class CleanFilesUtil {
         }
       }
     }
-  }
-
-  /**
-   * This method will give the segment file names in the metadata folder after removing duplicates
-   * and will also return the duplicate segment files which are not required(the one with less
-   * than maximum timestamp)
-   */
-  public static Pair<List<String>, List<String>> getSegmentFiles(String segmentFileLocation) {
-    List<String> loadNameSet = Arrays.stream(FileFactory.getCarbonFile(segmentFileLocation)
-        .listFiles()).map(segmentFile -> segmentFile.getName()).sorted().collect(Collectors
-        .toList());
-    if (loadNameSet.size() == 0 || loadNameSet.size() == 1) {
-      return new Pair<>(loadNameSet, new ArrayList<>(0));
-    }
-    List<String> segmentFileNameList = new ArrayList<>(loadNameSet.size());
-    List<String> redundantSegmentFile = new ArrayList<>();
-    for (int i = 0; i < loadNameSet.size() - 1; i++) {
-      if (!DataFileUtil.getSegmentNoFromSegmentFile(loadNameSet.get(i)).equals(
-          DataFileUtil.getSegmentNoFromSegmentFile(loadNameSet.get(i + 1)))) {
-        segmentFileNameList.add(loadNameSet.get(i));
-      } else {
-        redundantSegmentFile.add(loadNameSet.get(i));
-      }
-    }
-    // adding the last occurence always
-    segmentFileNameList.add(loadNameSet.get(loadNameSet.size() - 1));
-    // the key of the pair contains the unique segment files which are to be processed
-    // the value of the pair contains the redundant segment files which are not required
-    return new Pair<>(segmentFileNameList, redundantSegmentFile);
   }
 }

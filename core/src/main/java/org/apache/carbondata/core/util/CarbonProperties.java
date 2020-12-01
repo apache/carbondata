@@ -2107,8 +2107,8 @@ public final class CarbonProperties {
         carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS, Integer
             .toString(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT));
       } else {
-        carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS, Integer
-            .toString(configuredValue));
+        carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
+            propertyValue);
       }
     } catch (NumberFormatException e) {
       LOGGER.error("Invalid value configured for " + CarbonCommonConstants

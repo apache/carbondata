@@ -205,7 +205,8 @@ public final class TrashUtil {
     // record current time.
     long currentTime = CarbonUpdateUtil.readCurrentTime();
     long retentionMilliSeconds = (long)Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS)) * TimeUnit.DAYS
+        .getProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS, Integer.toString(
+          CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT))) * TimeUnit.DAYS
         .toMillis(1);
     long difference = currentTime - fileTimestamp;
     return difference > retentionMilliSeconds;
