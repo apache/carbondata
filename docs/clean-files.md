@@ -44,14 +44,3 @@ The force option with clean files command deletes all the files and folders from
   CLEAN FILES FOR TABLE TABLE_NAME options('force'='true')
   ```
 Since Clean Files operation with force option will delete data that can never be recovered, the force option by default is disabled. Clean files with force option is only allowed when the carbon property ```carbon.clean.file.force.allowed``` is set to true. The default value of this property is false.
-
-### DATA RECOVERY FROM THE TRASH FOLDER
-
-The segments can be recovered from the trash folder by creating an External table from the desired segment location
-in the trash folder and inserting into the original table from the created external recovery table. It will create a new segment in the original table. Recovery is supported for both partition and non partition table in the was as mentioned below:
-
-  ```
-  val segment0Path = TrashFolderPath + "/timestamp1/Segment_0/" 
-  CREATE TABLE RECOVERY_TABLE USING CARBON LOCATION '$segment0Path'
-  INSERT INTO ORIGINAL_TABLE SELECT * FROM RECOVERY_TABLE  
-  ```

@@ -476,7 +476,7 @@ object SecondaryIndexCreator {
       try {
         if (!isCompactionCall) {
           SegmentStatusManager
-            .deleteLoadsAndUpdateMetadata(indexCarbonTable, false, null, false)
+            .deleteLoadsAndUpdateMetadata(indexCarbonTable, false, null)
         }
       } catch {
         case e: Exception =>

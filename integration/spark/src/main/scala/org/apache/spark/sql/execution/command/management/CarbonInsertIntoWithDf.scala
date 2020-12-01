@@ -108,7 +108,7 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
           operationContext = operationContext)
 
       // Clean up the old invalid segment data before creating a new entry for new load.
-      SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions, false)
+      SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions)
       // add the start entry for the new load in the table status file
       if ((updateModel.isEmpty || updateModel.isDefined)
           && !table.isHivePartitionTable) {

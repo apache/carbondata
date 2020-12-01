@@ -329,7 +329,7 @@ object CarbonStore {
           SegmentStatusManager.truncateTable(carbonTable)
         }
         SegmentStatusManager.deleteLoadsAndUpdateMetadata(
-          carbonTable, true, currentTablePartitions.map(_.asJava).orNull, true)
+          carbonTable, true, currentTablePartitions.map(_.asJava).orNull)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
         currentTablePartitions match {
           case Some(partitions) =>

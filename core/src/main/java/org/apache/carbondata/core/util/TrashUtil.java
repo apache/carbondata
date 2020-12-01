@@ -21,6 +21,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -203,7 +204,9 @@ public final class TrashUtil {
   public static boolean isTrashRetentionTimeoutExceeded(long fileTimestamp) {
     // record current time.
     long currentTime = CarbonUpdateUtil.readCurrentTime();
-    long retentionMilliSeconds = CarbonProperties.getInstance().getTrashFolderRetentionTime();
+    long retentionMilliSeconds = (long)Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS)) * TimeUnit.DAYS
+        .toMillis(1);
     long difference = currentTime - fileTimestamp;
     return difference > retentionMilliSeconds;
   }
