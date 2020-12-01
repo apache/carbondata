@@ -151,23 +151,17 @@ public class CleanFilesUtil {
     String segmentFilesLocation =
         CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath());
     List<String> segmentFiles = Arrays.stream(FileFactory.getCarbonFile(segmentFilesLocation)
-        .listFiles()).map(segmentFile -> segmentFile.getName()).collect(Collectors
-        .toList());
+        .listFiles()).map(CarbonFile::getName).collect(Collectors.toList());
     // there are no segments present in the Metadata folder. Can return here
     if (segmentFiles.size() == 0) {
       return;
     }
-    ArrayList<String> staleSegments = new ArrayList<>(staleSegmentFiles.size());
     LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(carbonTable
         .getMetadataPath());
-    Set<String> loadNameSet = Arrays.stream(details).map(loadMetadataDetails -> loadMetadataDetails
-        .getLoadName()).collect(Collectors.toSet());
-    for (String segmentFile : segmentFiles) {
-      if (!loadNameSet.contains(DataFileUtil.getSegmentNoFromSegmentFile(
-          segmentFile))) {
-        staleSegments.add(segmentFile);
-      }
-    }
+    Set<String> loadNameSet = Arrays.stream(details).map(LoadMetadataDetails::getLoadName)
+        .collect(Collectors.toSet());
+    List<String> staleSegments = segmentFiles.stream().filter(segmentFile -> !loadNameSet.contains(
+        DataFileUtil.getSegmentNoFromSegmentFile(segmentFile))).collect(Collectors.toList());
     if (staleSegments.size() == 0) {
       return;
     }
@@ -183,7 +177,7 @@ public class CleanFilesUtil {
         redundantSegmentFile.add(staleSegments.get(i));
       }
     }
-    // adding the last occurence always
+    // adding the last occurrence always
     staleSegmentFiles.add(staleSegments.get(staleSegments.size() - 1));
   }
 

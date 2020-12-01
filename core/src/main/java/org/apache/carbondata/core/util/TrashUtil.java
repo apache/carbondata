@@ -34,7 +34,7 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.log4j.Logger;
 
 /**
- * Mantains the trash folder in carbondata. This class has methods to copy data to the trash and
+ * Maintains the trash folder in carbondata. This class has methods to copy data to the trash and
  * remove data from the trash.
  */
 public final class TrashUtil {
@@ -47,7 +47,6 @@ public final class TrashUtil {
    *
    * @param sourcePath      the path from which to copy the file
    * @param destinationPath the path where the file will be copied
-   * @return
    */
   private static void copyToTrashFolder(String sourcePath, String destinationPath)
     throws IOException {
@@ -70,7 +69,6 @@ public final class TrashUtil {
    *
    * @param filePathToCopy           the files which are to be moved to the trash folder
    * @param trashFolderWithTimestamp timestamp, partition folder(if any) and segment number
-   * @return
    */
   public static void copyFileToTrashFolder(String filePathToCopy,
       String trashFolderWithTimestamp) throws IOException {
@@ -98,7 +96,6 @@ public final class TrashUtil {
    *
    * @param segmentPath              the folder which are to be moved to the trash folder
    * @param trashFolderWithTimestamp trashfolderpath with complete timestamp and segment number
-   * @return
    */
   public static void copySegmentToTrash(CarbonFile segmentPath,
       String trashFolderWithTimestamp) throws IOException {
@@ -129,7 +126,6 @@ public final class TrashUtil {
    * @param filesToCopy              absolute paths of the files to copy to the trash folder
    * @param trashFolderWithTimestamp trashfolderpath with complete timestamp and segment number
    * @param segmentNumber            segment number of the files which are being copied to trash
-   * @return
    */
   public static void copyFilesToTrash(List<String> filesToCopy,
       String trashFolderWithTimestamp, String segmentNumber) throws IOException {
@@ -218,7 +214,6 @@ public final class TrashUtil {
    * @param tablePath          absolute table path
    * @param timeStampSubFolder the timestamp for the clean files operation
    * @param segmentNumber      the segment number for which files are moved to the trash folder
-   * @return
    */
   public static String getCompleteTrashFolderPath(String tablePath, long timeStampSubFolder,
       String segmentNumber) {
