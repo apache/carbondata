@@ -20,17 +20,27 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   // scalastyle:off lineLength
   override def beforeEach(): Unit = {
     sql("drop table if exists complextable")
+    sql("drop table if exists complextable2")
+    sql("drop table if exists complextable3")
+    sql("drop table if exists complextable4")
+    sql("drop table if exists complextable5")
   }
 
   override def afterEach(): Unit = {
     sql("drop index if exists index_1 on complextable")
     sql("drop table if exists complextable")
+    sql("drop table if exists complextable2")
+    sql("drop table if exists complextable3")
+    sql("drop table if exists complextable4")
+    sql("drop table if exists complextable5")
   }
 
   test("test array<string> on secondary index") {
@@ -100,6 +110,115 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     checkAnswer(result, df)
   }
 
+  test("test SI global sort with si segment merge enabled for complex data types") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
+    sql("create table complextable2 (id int, name string, country array<string>) stored as " +
+      "carbondata tblproperties('sort_scope'='global_sort','sort_columns'='name')")
+    sql(
+      s"load data inpath '$resourcesPath/secindex/array.csv' into table complextable2 options('delimiter'=','," +
+        "'quotechar'='\"','fileheader'='id,name,country','complex_delimiter_level_1'='$'," +
+        "'global_sort_partitions'='10')")
+    val result = sql(" select * from complextable2 where array_contains(country,'china')")
+    sql("create index index_2 on table complextable2(country) as 'carbondata' properties" +
+      "('sort_scope'='global_sort')")
+    checkAnswer(sql("select count(*) from complextable2 where array_contains(country,'china')"),
+      sql("select count(*) from complextable2 where ni(array_contains(country,'china'))"))
+    val df = sql(" select * from complextable2 where array_contains(country,'china')")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
+  }
+
+  test("test SI global sort with si segment merge enabled for primitive data types") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
+    sql("create table complextable3 (id int, name string, country array<string>) stored as " +
+      "carbondata tblproperties('sort_scope'='global_sort','sort_columns'='name')")
+    sql(
+      s"load data inpath '$resourcesPath/secindex/array.csv' into table complextable3 options('delimiter'=','," +
+        "'quotechar'='\"','fileheader'='id,name,country','complex_delimiter_level_1'='$'," +
+        "'global_sort_partitions'='10')")
+    sql(
+      s"load data inpath '$resourcesPath/secindex/array.csv' into table complextable3 options('delimiter'=','," +
+        "'quotechar'='\"','fileheader'='id,name,country','complex_delimiter_level_1'='$'," +
+        "'global_sort_partitions'='10')")
+    val result = sql(" select * from complextable3 where name='abc'")
+    sql("create index index_3 on table complextable3(name) as 'carbondata' properties" +
+      "('sort_scope'='global_sort')")
+    checkAnswer(sql("select count(*) from complextable3 where name='abc'"),
+      sql("select count(*) from complextable3 where ni(name='abc')"))
+    val df = sql(" select * from complextable3 where name='abc'")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
+  }
+
+  test("test SI global sort with si segment merge complex data types by rebuild command") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
+    sql("create table complextable4 (id int, name string, country array<string>) stored as " +
+      "carbondata tblproperties('sort_scope'='global_sort','sort_columns'='name')")
+    sql(
+      s"load data inpath '$resourcesPath/secindex/array.csv' into table complextable4 options('delimiter'=','," +
+        "'quotechar'='\"','fileheader'='id,name,country','complex_delimiter_level_1'='$'," +
+        "'global_sort_partitions'='10')")
+    val result = sql(" select * from complextable4 where array_contains(country,'china')")
+    sql("create index index_4 on table complextable4(country) as 'carbondata' properties" +
+      "('sort_scope'='global_sort')")
+    checkAnswer(sql("select count(*) from complextable4 where array_contains(country,'china')"),
+      sql("select count(*) from complextable4 where ni(array_contains(country,'china'))"))
+    sql("REFRESH INDEX index_4 ON TABLE complextable4")
+    checkAnswer(sql("select count(*) from complextable4 where array_contains(country,'china')"),
+      sql("select count(*) from complextable4 where ni(array_contains(country,'china'))"))
+    val df = sql(" select * from complextable4 where array_contains(country,'china')")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+  }
+
+  test("test SI global sort with si segment merge primitive data types by rebuild command") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
+    sql("create table complextable5 (id int, name string, country array<string>) stored as " +
+      "carbondata tblproperties('sort_scope'='global_sort','sort_columns'='name')")
+    sql(
+      s"load data inpath '$resourcesPath/secindex/array.csv' into table complextable5 options('delimiter'=','," +
+        "'quotechar'='\"','fileheader'='id,name,country','complex_delimiter_level_1'='$'," +
+        "'global_sort_partitions'='10')")
+    sql(
+      s"load data inpath '$resourcesPath/secindex/array.csv' into table complextable5 options('delimiter'=','," +
+        "'quotechar'='\"','fileheader'='id,name,country','complex_delimiter_level_1'='$'," +
+        "'global_sort_partitions'='10')")
+    val result = sql(" select * from complextable5 where name='abc'")
+    sql("create index index_5 on table complextable5(name) as 'carbondata' properties" +
+      "('sort_scope'='global_sort')")
+    checkAnswer(sql("select count(*) from complextable5 where name='abc'"),
+      sql("select count(*) from complextable5 where ni(name='abc')"))
+    sql("REFRESH INDEX index_5 ON TABLE complextable5")
+    checkAnswer(sql("select count(*) from complextable5 where name='abc'"),
+      sql("select count(*) from complextable5 where ni(name='abc')"))
+    val df = sql(" select * from complextable5 where name='abc'")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+  }
   test("test si creation with struct and map type") {
     sql("create table complextable (country struct<b:string>, name string, id Map<string, string>, arr1 array<string>, arr2 array<string>) stored as carbondata")
     intercept[RuntimeException] {

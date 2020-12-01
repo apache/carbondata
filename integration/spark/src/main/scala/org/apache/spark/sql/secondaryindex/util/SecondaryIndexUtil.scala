@@ -667,10 +667,6 @@ object SecondaryIndexUtil {
     val job: Job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
     CarbonInputFormat.setTableInfo(job.getConfiguration, indexCarbonTable.getTableInfo)
-    val proj = indexCarbonTable.getCreateOrderColumn
-      .asScala
-      .map(_.getColName)
-      .filterNot(_.equalsIgnoreCase(CarbonCommonConstants.POSITION_REFERENCE)).toSet
     var mergeStatus = ArrayBuffer[((String, Boolean), String)]()
     val mergeSize = getTableBlockSizeInMb(indexCarbonTable)(sparkSession) * 1024 * 1024
     val header = indexCarbonTable.getCreateOrderColumn.asScala.map(_.getColName).toArray
@@ -682,10 +678,9 @@ object SecondaryIndexUtil {
       .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
     validSegments.foreach { segment =>
       outputModel.setSegmentId(segment.getSegmentNo)
-      val dataFrame = SecondaryIndexCreator.dataFrameOfSegments(sparkSession,
-        indexCarbonTable,
-        proj.mkString(","),
-        Array(segment.getSegmentNo))
+      val dataFrame = SparkSQLUtil.createInputDataFrame(
+        sparkSession,
+        indexCarbonTable)
       SecondaryIndexCreator.findCarbonScanRDD(dataFrame.rdd, null)
       val segList : java.util.List[Segment] = new util.ArrayList[Segment]()
       segList.add(segment)
