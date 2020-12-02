@@ -52,7 +52,7 @@ public class CleanFilesUtil {
     long timeStampForTrashFolder = CarbonUpdateUtil.readCurrentTime();
     List<String> staleSegmentFiles = new ArrayList<>();
     List<String> redundantSegmentFile = new ArrayList<>();
-    getStaleSegmentFiles(carbonTable, staleSegmentFiles, redundantSegmentFile);
+    collectStaleSegmentFiles(carbonTable, staleSegmentFiles, redundantSegmentFile);
     for (String staleSegmentFile : staleSegmentFiles) {
       String segmentNumber = DataFileUtil.getSegmentNoFromSegmentFile(staleSegmentFile);
       SegmentFileStore fileStore = new SegmentFileStore(carbonTable.getTablePath(),
@@ -97,7 +97,7 @@ public class CleanFilesUtil {
     long timeStampForTrashFolder = CarbonUpdateUtil.readCurrentTime();
     List<String> staleSegmentFiles = new ArrayList<>();
     List<String> redundantSegmentFile = new ArrayList<>();
-    getStaleSegmentFiles(carbonTable, staleSegmentFiles, redundantSegmentFile);
+    collectStaleSegmentFiles(carbonTable, staleSegmentFiles, redundantSegmentFile);
     for (String staleSegmentFile : staleSegmentFiles) {
       String segmentNumber = DataFileUtil.getSegmentNoFromSegmentFile(staleSegmentFile);
       // for each segment we get the indexfile first, then we get the carbondata file. Move both
@@ -146,8 +146,8 @@ public class CleanFilesUtil {
    * in the metadata folder and is not present in the table status file is considered as a
    * stale segment. Only comparing from tablestatus file, not checking tablestatus.history file
    */
-  private static void getStaleSegmentFiles(CarbonTable carbonTable, List<String> staleSegmentFiles,
-      List<String> redundantSegmentFile) {
+  private static void collectStaleSegmentFiles(CarbonTable carbonTable,
+      List<String> staleSegmentFiles, List<String> redundantSegmentFile) {
     String segmentFilesLocation =
         CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath());
     List<String> segmentFiles = Arrays.stream(FileFactory.getCarbonFile(segmentFilesLocation)

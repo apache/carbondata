@@ -178,18 +178,9 @@ public class StoreCreator {
     IndexStoreManager.getInstance().clearIndex(absoluteTableIdentifier);
   }
 
-  public CarbonLoadModel createTableAndLoadModel(boolean deleteOldStore) throws Exception {
-    if (deleteOldStore) {
-      File storeDir = new File(storePath);
-      CarbonUtil.deleteFoldersAndFiles(storeDir);
-    }
-
+  public CarbonLoadModel createTableAndLoadModel() throws Exception {
     CarbonTable table = createTable(absoluteTableIdentifier);
     return buildCarbonLoadModel(table, csvPath, absoluteTableIdentifier);
-  }
-
-  public CarbonLoadModel createTableAndLoadModel() throws Exception {
-    return createTableAndLoadModel(true);
   }
 
   public CarbonTable createTable(

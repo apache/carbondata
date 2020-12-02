@@ -19,29 +19,14 @@ package org.apache.carbondata.processing.loading;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.locks.CarbonLockFactory;
-import org.apache.carbondata.core.locks.CarbonLockUtil;
-import org.apache.carbondata.core.locks.ICarbonLock;
-import org.apache.carbondata.core.locks.LockUsage;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
@@ -52,105 +37,6 @@ import org.apache.log4j.Logger;
 public class TableProcessingOperations {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
-
-  /**
-   * delete folder which metadata no exist in tablestatus
-   * this method don't check tablestatus history.
-   */
-  public static void deletePartialLoadDataIfExist(CarbonTable carbonTable,
-      final boolean isCompactionFlow) throws IOException {
-    String metaDataLocation = carbonTable.getMetadataPath();
-    String partitionPath = CarbonTablePath.getPartitionDir(carbonTable.getTablePath());
-    if (FileFactory.isFileExist(partitionPath)) {
-      // list all segments before reading tablestatus file.
-      CarbonFile[] allSegments = FileFactory.getCarbonFile(partitionPath).listFiles();
-      // there is no segment
-      if (allSegments == null || allSegments.length == 0) {
-        return;
-      }
-      int retryCount = CarbonLockUtil
-          .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-              CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
-      int maxTimeout = CarbonLockUtil
-          .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-              CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
-      ICarbonLock carbonTableStatusLock = CarbonLockFactory
-          .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier(), LockUsage.TABLE_STATUS_LOCK);
-      try {
-        if (carbonTableStatusLock.lockWithRetries(retryCount, maxTimeout)) {
-          LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
-          // there is no segment or failed to read tablestatus file.
-          // so it should stop immediately.
-          if (details == null || details.length == 0) {
-            return;
-          }
-          Set<String> metadataSet = new HashSet<>(details.length);
-          for (LoadMetadataDetails detail : details) {
-            metadataSet.add(detail.getLoadName());
-          }
-          List<CarbonFile> staleSegments = new ArrayList<>(allSegments.length);
-          Set<String> staleSegmentsId = new HashSet<>(allSegments.length);
-          for (CarbonFile segment : allSegments) {
-            String segmentName = segment.getName();
-            // check segment folder pattern
-            if (segmentName.startsWith(CarbonTablePath.SEGMENT_PREFIX)) {
-              String[] parts = segmentName.split(CarbonCommonConstants.UNDERSCORE);
-              if (parts.length == 2) {
-                boolean isOriginal = !parts[1].contains(".");
-                if (isCompactionFlow) {
-                  // in compaction flow,
-                  // it should be merged segment and segment metadata doesn't exists
-                  if (!isOriginal && !metadataSet.contains(parts[1])) {
-                    staleSegments.add(segment);
-                    staleSegmentsId.add(parts[1]);
-                  }
-                } else {
-                  // in loading flow,
-                  // it should be original segment and segment metadata doesn't exists
-                  if (isOriginal && !metadataSet.contains(parts[1])) {
-                    staleSegments.add(segment);
-                    staleSegmentsId.add(parts[1]);
-                  }
-                }
-              }
-            }
-          }
-          // delete segment folders one by one
-          for (CarbonFile staleSegment : staleSegments) {
-            try {
-              CarbonUtil.deleteFoldersAndFiles(staleSegment);
-            } catch (IOException | InterruptedException e) {
-              LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
-            }
-          }
-          if (staleSegments.size() > 0) {
-            // get the segment metadata path
-            String segmentFilesLocation =
-                CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath());
-            // delete the segment metadata files also
-            CarbonFile[] staleSegmentMetadataFiles = FileFactory.getCarbonFile(segmentFilesLocation)
-                .listFiles(file -> (staleSegmentsId
-                    .contains(file.getName().split(CarbonCommonConstants.UNDERSCORE)[0])));
-            for (CarbonFile staleSegmentMetadataFile : staleSegmentMetadataFiles) {
-              staleSegmentMetadataFile.delete();
-            }
-          }
-        } else {
-          String errorMessage =
-              "Not able to acquire the Table status lock for partial load deletion for table "
-                  + carbonTable.getDatabaseName() + "." + carbonTable.getTableName();
-          if (isCompactionFlow) {
-            LOGGER.error(errorMessage + ", retry compaction");
-            throw new RuntimeException(errorMessage + ", retry compaction");
-          } else {
-            LOGGER.error(errorMessage);
-          }
-        }
-      } finally {
-        carbonTableStatusLock.unlock();
-      }
-    }
-  }
 
   /**
    *

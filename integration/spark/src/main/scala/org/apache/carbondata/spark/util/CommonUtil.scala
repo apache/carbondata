@@ -35,21 +35,17 @@ import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.{UnsafeArrayData, UnsafeMapData, UnsafeRow}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
-import org.apache.spark.sql.types.{ArrayType, DataType, DateType, DecimalType, MapType, StringType, StructField, StructType, TimestampType}
+import org.apache.spark.sql.types._
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil, ThreadLocalTaskInfo}
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.datatypes.{ArrayDataType, GenericDataType, StructDataType}
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration
 import org.apache.carbondata.processing.loading.complexobjects.{ArrayObject, StructObject}
@@ -540,53 +536,6 @@ object CommonUtil {
     UnsafeSortMemoryManager.
       INSTANCE.freeMemoryAll(taskId)
     ThreadLocalTaskInfo.clearCarbonTaskInfo()
-  }
-
-  /**
-   * The in-progress segments which are in stale state will be marked as deleted
-   * when driver is initializing.
-   * @param databaseLocation
-   * @param dbName
-   */
-  def cleanInProgressSegments(databaseLocation: String, dbName: String): Unit = {
-    val loaderDriver = CarbonProperties.getInstance().
-      getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
-        CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
-    if (!loaderDriver) {
-      return
-    }
-    try {
-      if (FileFactory.isFileExist(databaseLocation)) {
-        val file = FileFactory.getCarbonFile(databaseLocation)
-        if (file.isDirectory) {
-          val tableFolders = file.listFiles()
-          tableFolders.foreach { tableFolder =>
-            if (tableFolder.isDirectory) {
-              val tablePath = databaseLocation +
-                              CarbonCommonConstants.FILE_SEPARATOR + tableFolder.getName
-              val tableUniqueName = CarbonTable.buildUniqueName(dbName, tableFolder.getName)
-              val tableStatusFile =
-                CarbonTablePath.getTableStatusFilePath(tablePath)
-              if (FileFactory.isFileExist(tableStatusFile)) {
-                try {
-                  val carbonTable = CarbonMetadata.getInstance
-                    .getCarbonTable(tableUniqueName)
-                  SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable, true, null)
-                } catch {
-                  case _: Exception =>
-                    LOGGER.warn(s"Error while cleaning table " +
-                                s"${ tableUniqueName }")
-                }
-              }
-            }
-          }
-        }
-      }
-    } catch {
-      case s: java.io.FileNotFoundException =>
-        // Create folders and files.
-        LOGGER.error(s)
-    }
   }
 
   def getScaleAndPrecision(dataType: String): (Int, Int) = {

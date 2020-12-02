@@ -18,9 +18,9 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.trash.DataTrashManager
 
 /**
  * clean files api
@@ -29,46 +29,27 @@ import org.apache.carbondata.api.CarbonStore
 object CleanFiles {
 
   /**
-   * The method deletes all data if forceTableCLean <true> and lean garbage segment
-   * (MARKED_FOR_DELETE state) if forceTableCLean <false>
+   * The method clean garbage segment(MARKED_FOR_DELETE state)
    *
    * @param spark           : Database name
    * @param dbName          : Table name
    * @param tableName       : Table path
-   * @param forceTableClean : if true, it deletes the table and its contents with force.It does not
-   *                        drop table from hive metastore so should be very careful to use it.
    */
-  def cleanFiles(spark: SparkSession, dbName: String, tableName: String,
-     forceTableClean: Boolean = false): Unit = {
+  def cleanFiles(spark: SparkSession, dbName: String, tableName: String): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(spark)
-    val carbonTable = if (!forceTableClean) {
-      CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
-    } else {
-      null
-    }
-    CarbonStore.cleanFiles(
-      dbName = dbName,
-      tableName = tableName,
-      tablePath = tablePath,
-      carbonTable = carbonTable,
-      forceTableClean = forceTableClean)
+    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
+    DataTrashManager.cleanGarbageData(carbonTable = carbonTable)
   }
 
   def main(args: Array[String]): Unit = {
-
-    if (args.length < 2) {
+    if (args.length != 2) {
       System.err.println("Usage: CleanFiles <store path> <table name>")
       System.exit(1)
     }
 
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
-    var forceTableClean = false
-    if (args.length > 2) {
-      forceTableClean = args(2).toBoolean
-    }
     val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
-    cleanFiles(spark, dbName, tableName, forceTableClean)
+    cleanFiles(spark, dbName, tableName)
   }
 }

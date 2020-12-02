@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.api
 
-import java.io.{DataInputStream, File, FileNotFoundException, InputStreamReader}
+import java.io.{DataInputStream, FileNotFoundException, InputStreamReader}
 import java.time.{Duration, Instant}
 import java.util
 import java.util.{Collections, Comparator}
@@ -35,12 +35,9 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager, StageInput}
+import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatusManager, StageInput}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -284,131 +281,6 @@ object CarbonStore {
       }
     }
     (dataSize, indexSize)
-  }
-
-  /**
-   * The method deletes all data if forceTableCLean <true> and lean garbage segment
-   * (MARKED_FOR_DELETE state) if forceTableCLean <false>
-   *
-   * @param dbName          : Database name
-   * @param tableName       : Table name
-   * @param tablePath       : Table path
-   * @param carbonTable     : CarbonTable Object <null> in case of force clean
-   * @param forceTableClean : <true> for force clean it will delete all data
-   *                        <false> it will clean garbage segment (MARKED_FOR_DELETE state)
-   * @param currentTablePartitions : Hive Partitions  details
-   */
-  def cleanFiles(
-      dbName: String,
-      tableName: String,
-      tablePath: String,
-      carbonTable: CarbonTable,
-      forceTableClean: Boolean,
-      currentTablePartitions: Option[Seq[PartitionSpec]] = None,
-      truncateTable: Boolean = false): Unit = {
-  var carbonCleanFilesLock: ICarbonLock = null
-    val absoluteTableIdentifier = if (forceTableClean) {
-      AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableName)
-    } else {
-      carbonTable.getAbsoluteTableIdentifier
-    }
-    try {
-      val errorMsg = "Clean files request is failed for " +
-                     s"$dbName.$tableName" +
-                     ". Not able to acquire the clean files lock due to another clean files " +
-                     "operation is running in the background."
-      // in case of force clean the lock is not required
-      if (forceTableClean) {
-        FileFactory.deleteAllCarbonFilesOfDir(
-          FileFactory.getCarbonFile(absoluteTableIdentifier.getTablePath))
-      } else {
-        carbonCleanFilesLock =
-          CarbonLockUtil
-            .getLockObject(absoluteTableIdentifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
-        if (truncateTable) {
-          SegmentStatusManager.truncateTable(carbonTable)
-        }
-        SegmentStatusManager.deleteLoadsAndUpdateMetadata(
-          carbonTable, true, currentTablePartitions.map(_.asJava).orNull)
-        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
-        currentTablePartitions match {
-          case Some(partitions) =>
-            SegmentFileStore.cleanSegments(
-              carbonTable,
-              currentTablePartitions.map(_.asJava).orNull,
-              true)
-          case _ =>
-        }
-      }
-    } finally {
-      if (currentTablePartitions.equals(None)) {
-        cleanUpPartitionFoldersRecursively(carbonTable, List.empty[PartitionSpec])
-      } else {
-        cleanUpPartitionFoldersRecursively(carbonTable, currentTablePartitions.get.toList)
-      }
-
-      if (carbonCleanFilesLock != null) {
-        CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
-      }
-    }
-  }
-
-  /**
-   * delete partition folders recursively
-   *
-   * @param carbonTable
-   * @param partitionSpecList
-   */
-  def cleanUpPartitionFoldersRecursively(carbonTable: CarbonTable,
-      partitionSpecList: List[PartitionSpec]): Unit = {
-    if (carbonTable != null && carbonTable.isHivePartitionTable) {
-      val loadMetadataDetails = SegmentStatusManager
-        .readLoadMetadata(carbonTable.getMetadataPath)
-
-      val carbonFile = FileFactory.getCarbonFile(carbonTable.getTablePath)
-
-      // list all files from table path
-      val listOfDefaultPartFilesIterator = carbonFile.listFiles(true)
-      loadMetadataDetails.foreach { metadataDetail =>
-        if (metadataDetail.getSegmentStatus.equals(SegmentStatus.MARKED_FOR_DELETE) &&
-            metadataDetail.getSegmentFile == null) {
-          val loadStartTime: Long = metadataDetail.getLoadStartTime
-          // delete all files of @loadStartTime from table path
-          cleanCarbonFilesInFolder(listOfDefaultPartFilesIterator, loadStartTime)
-          partitionSpecList.foreach {
-            partitionSpec =>
-              val partitionLocation = partitionSpec.getLocation
-              // For partition folder outside the tablePath
-              if (!partitionLocation.toString.startsWith(carbonTable.getTablePath)) {
-                val partitionCarbonFile = FileFactory
-                  .getCarbonFile(partitionLocation.toString)
-                // list all files from partitionLocation
-                val listOfExternalPartFilesIterator = partitionCarbonFile.listFiles(true)
-                // delete all files of @loadStartTime from externalPath
-                cleanCarbonFilesInFolder(listOfExternalPartFilesIterator, loadStartTime)
-              }
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   *
-   * @param carbonFiles
-   * @param timestamp
-   */
-  private def cleanCarbonFilesInFolder(carbonFiles: java.util.List[CarbonFile],
-      timestamp: Long): Unit = {
-    carbonFiles.asScala.foreach {
-      carbonFile =>
-        val filePath = carbonFile.getPath
-        val fileName = carbonFile.getName
-        if (CarbonTablePath.DataFileUtil.compareCarbonFileTimeStamp(fileName, timestamp)) {
-          // delete the file
-          FileFactory.deleteFile(filePath)
-        }
-    }
   }
 
   // validates load ids

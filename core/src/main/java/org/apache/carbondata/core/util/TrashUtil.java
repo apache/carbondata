@@ -192,12 +192,9 @@ public final class TrashUtil {
   }
 
   /**
-   * This will tell whether the trash retention time has expired or not
-   *
-   * @param fileTimestamp
-   * @return
+   * whether trash data inside of .Trash folder is time out
    */
-  public static boolean isTrashRetentionTimeoutExceeded(long fileTimestamp) {
+  private static boolean isTrashRetentionTimeoutExceeded(long fileTimestamp) {
     // record current time.
     long currentTime = CarbonUpdateUtil.readCurrentTime();
     long retentionMilliSeconds = (long)Integer.parseInt(CarbonProperties.getInstance()
@@ -206,6 +203,14 @@ public final class TrashUtil {
         .toMillis(1);
     long difference = currentTime - fileTimestamp;
     return difference > retentionMilliSeconds;
+  }
+
+  /**
+   * whether trash data outside of .Trash folder is time out
+   */
+  public static boolean isTrashDataTimeout(long fileTimestamp) {
+    return isTrashRetentionTimeoutExceeded(fileTimestamp) &&
+        CarbonUpdateUtil.isMaxQueryTimeoutExceeded(fileTimestamp);
   }
 
   /**

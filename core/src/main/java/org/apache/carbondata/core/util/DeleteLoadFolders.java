@@ -35,7 +35,6 @@ import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -183,8 +182,7 @@ public final class DeleteLoadFolders {
         return true;
       }
       long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
-      return TrashUtil.isTrashRetentionTimeoutExceeded(deletionTime) && CarbonUpdateUtil
-          .isMaxQueryTimeoutExceeded(deletionTime);
+      return TrashUtil.isTrashDataTimeout(deletionTime);
     }
 
     return false;
@@ -201,8 +199,7 @@ public final class DeleteLoadFolders {
       }
       long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
 
-      return TrashUtil.isTrashRetentionTimeoutExceeded(deletionTime) && CarbonUpdateUtil
-          .isMaxQueryTimeoutExceeded(deletionTime);
+      return TrashUtil.isTrashDataTimeout(deletionTime);
 
     }
 

@@ -25,10 +25,10 @@ import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataLoadTableFileMapping, UpdateTableModel}
+import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataLoadTableFileMapping}
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
-import org.apache.spark.sql.types.{DateType, IntegerType, LongType, StringType, StructField, StructType, TimestampType}
-import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils, SparkUtil}
+import org.apache.spark.sql.types.{DateType, IntegerType, LongType, StringType, StructType, TimestampType}
+import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -40,10 +40,9 @@ import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.events.exception.PreEventException
-import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
+import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 
 case class CarbonLoadDataCommand(databaseNameOp: Option[String],
@@ -105,10 +104,6 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
     val (tf, df) = CommonLoadUtils.getTimeAndDateFormatFromLoadModel(carbonLoadModel)
     timeStampFormat = tf
     dateFormat = df
-    // Delete stale segment folders that are not in table status but are physically present in
-    // the Fact folder
-    LOGGER.info(s"Deleting stale folders if present for table $dbName.$tableName")
-    TableProcessingOperations.deletePartialLoadDataIfExist(table, false)
     var isUpdateTableStatusRequired = false
     val uuid = ""
     try {
@@ -124,8 +119,6 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
           isDataFrame = false,
           updateModel = None,
           operationContext = operationContext)
-      // Clean up the old invalid segment data before creating a new entry for new load.
-      SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions)
       // add the start entry for the new load in the table status file
       if (!table.isHivePartitionTable) {
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(

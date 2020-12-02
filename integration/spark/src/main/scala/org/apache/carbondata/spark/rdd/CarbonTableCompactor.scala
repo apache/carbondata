@@ -90,7 +90,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
     while (loadsToMerge.size() > 1 || needSortSingleSegment(loadsToMerge)) {
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
-      deletePartialLoadsInCompaction()
       val compactedLoad = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
       var segmentLocks: ListBuffer[ICarbonLock] = ListBuffer.empty
       loadsToMerge.asScala.foreach { segmentId =>

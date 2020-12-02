@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.rdd.RDD
@@ -354,7 +353,7 @@ object DeleteExecution {
   }
 
   // all or none : update status file, only if complete delete operation is successful.
-  def checkAndUpdateStatusFiles(
+  private def checkAndUpdateStatusFiles(
       executorErrors: ExecutionErrors,
       res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]],
       carbonTable: CarbonTable,

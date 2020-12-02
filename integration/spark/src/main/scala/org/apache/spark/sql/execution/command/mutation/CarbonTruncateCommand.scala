@@ -18,39 +18,31 @@
 package org.apache.spark.sql.execution.command.mutation
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.{DataCommand, TruncateTableCommand}
-import org.apache.spark.sql.execution.command.management.CarbonCleanFilesCommand
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.execution.command.{Checker, DataCommand, TruncateTableCommand}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
 case class CarbonTruncateCommand(child: TruncateTableCommand) extends DataCommand {
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val dbName = CarbonEnv.getDatabaseName(child.tableName.database)(sparkSession)
-    val tableName = child.tableName.table
-    setAuditTable(dbName, tableName)
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-      .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-    if (relation == null) {
-      throw new NoSuchTableException(dbName, tableName)
-    }
-    if (null == relation.carbonTable) {
-      LOGGER.error(s"Truncate table failed. table not found: $dbName.$child.tableName.table")
-      throw new NoSuchTableException(dbName, child.tableName.table)
+    Checker.validateTableExists(child.tableName.database, child.tableName.table, sparkSession)
+    val carbonTable = CarbonEnv.getCarbonTable(
+      child.tableName.database, child.tableName.table)(sparkSession)
+    setAuditTable(carbonTable)
+    if (!carbonTable.isTransactionalTable) {
+      LOGGER.error(s"Unsupported truncate non-transactional table")
+      throw new MalformedCarbonCommandException(
+        "Unsupported truncate non-transactional table")
     }
     if (child.partitionSpec.isDefined) {
       throw new MalformedCarbonCommandException(
         "Unsupported truncate table with specified partition")
     }
-    CarbonCleanFilesCommand(
-      databaseNameOp = Option(dbName),
-      tableName = Option(tableName),
-      None,
-      truncateTable = true
-    ).run(sparkSession)
+
+    SegmentStatusManager.truncateTable(carbonTable)
+    Seq.empty
   }
 
   override protected def opName = "TRUNCATE TABLE"

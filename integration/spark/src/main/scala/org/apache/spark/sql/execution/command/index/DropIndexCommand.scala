@@ -210,12 +210,6 @@ private[sql] case class DropIndexCommand(
           logError("Table metadata unlocking is unsuccessful, index table may be in stale state")
         }
       }
-      // in case if the the physical folders still exists for the index table
-      // but the carbon and hive info for the index table is removed,
-      // DROP INDEX IF EXISTS should clean up those physical directories
-      if (ifExistsSet && carbonTable.isEmpty) {
-        CarbonInternalMetastore.deleteTableDirectory(dbName, indexName, sparkSession)
-      }
     }
     Seq.empty
   }

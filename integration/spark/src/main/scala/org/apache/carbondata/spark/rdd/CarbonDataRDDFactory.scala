@@ -29,7 +29,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{SparkEnv, TaskContext}
+import org.apache.spark.SparkEnv
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, DataLoadWrapperRDD, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
@@ -45,7 +45,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, SortScopeOptions}
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
@@ -54,20 +53,18 @@ import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarForma
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonUtil, SessionParams, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.{DistributedRDDUtils, IndexServer}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
-import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
-import org.apache.carbondata.spark.{DataLoadResultImpl, _}
+import org.apache.carbondata.spark.DataLoadResultImpl
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, CommonUtil, Util}
 import org.apache.carbondata.view.MVManagerInSpark
@@ -264,14 +261,7 @@ object CarbonDataRDDFactory {
           }
         } finally {
           executor.shutdownNow()
-          try {
-            compactor.deletePartialLoadsInCompaction()
-          } catch {
-            // no need to throw this as compaction is over
-            case ex: Exception =>
-          } finally {
-            compactionLock.unlock()
-          }
+          compactionLock.unlock()
         }
       }
     }
@@ -470,7 +460,7 @@ object CarbonDataRDDFactory {
         LOGGER.info("********starting clean up**********")
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table
-          CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          CarbonLoaderUtil.deleteSegmentForFailure(carbonLoadModel)
           clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
@@ -487,7 +477,7 @@ object CarbonDataRDDFactory {
           LOGGER.info("********starting clean up**********")
           if (carbonLoadModel.isCarbonTransactionalTable) {
             // delete segment is applicable for transactional table
-            CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+            CarbonLoaderUtil.deleteSegmentForFailure(carbonLoadModel)
             clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
           }
           LOGGER.info("********clean up done**********")
@@ -558,7 +548,7 @@ object CarbonDataRDDFactory {
           LOGGER.info("********starting clean up**********")
           if (carbonLoadModel.isCarbonTransactionalTable) {
             // delete segment is applicable for transactional table
-            CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+            CarbonLoaderUtil.deleteSegmentForFailure(carbonLoadModel)
             // delete corresponding segment file from metadata
             val segmentFile =
               CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
