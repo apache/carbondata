@@ -248,4 +248,18 @@ class MergeIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
         Row(5, 5, "TX (updated)"),
         Row(7, 7, "LO (updated)")))
   }
+
+  test("test merge into insert with literal") {
+    val sqlText = "MERGE INTO A USING B ON A.ID=B.ID WHEN NOT MATCHED " +
+      "AND B.ID=7 THEN INSERT (A" +
+      ".ID,A.PRICE, A.state) VALUES (B.ID,B.PRICE, 'test-string')"
+    sql(sqlText)
+    sql(s"""SELECT * FROM A""").show()
+    checkAnswer(sql("select * from A"),
+      Seq(Row(1, 100, "MA"),
+        Row(2, 200, "NY"),
+        Row(3, 300, "NH"),
+        Row(4, 400, "FL"),
+        Row(7, 7, "test-string")))
+  }
 }

@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.model;
+package org.apache.spark.sql.merge.model;
 
-public class TmpTable {
+public class TableModel {
 
   String database;
   String table;
   String alias;
 
-  public TmpTable() {
+  public TableModel() {
 
   }
 
-  public TmpTable(String database, String table, String alias) {
+  public TableModel(String database, String table, String alias) {
     this.database = database;
     this.table = table;
     this.alias = alias;
