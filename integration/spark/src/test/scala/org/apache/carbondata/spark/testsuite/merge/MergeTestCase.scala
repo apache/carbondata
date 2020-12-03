@@ -40,7 +40,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
- * Test Class for join query with orderby and limit
+ * Test Class for carbon merge api
  */
 
 class MergeTestCase extends QueryTest with BeforeAndAfterAll {

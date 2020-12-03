@@ -22,10 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.model.CarbonJoinExpression;
-import org.apache.model.MergeInto;
-import org.apache.model.TmpColumn;
-import org.apache.model.TmpTable;
+import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute;
 import org.apache.spark.sql.catalyst.expressions.Expression;
 import org.apache.spark.sql.catalyst.parser.ParseException;
 import org.apache.spark.sql.catalyst.parser.ParserInterface;
@@ -33,15 +30,19 @@ import org.apache.spark.sql.execution.command.mutation.merge.DeleteAction;
 import org.apache.spark.sql.execution.command.mutation.merge.InsertAction;
 import org.apache.spark.sql.execution.command.mutation.merge.MergeAction;
 import org.apache.spark.sql.execution.command.mutation.merge.UpdateAction;
+import org.apache.spark.sql.merge.model.CarbonJoinExpression;
+import org.apache.spark.sql.merge.model.CarbonMergeIntoModel;
+import org.apache.spark.sql.merge.model.ColumnModel;
+import org.apache.spark.sql.merge.model.TableModel;
 import org.apache.spark.sql.parser.CarbonSqlBaseBaseVisitor;
 import org.apache.spark.sql.parser.CarbonSqlBaseParser;
 import org.apache.spark.util.SparkUtil;
 
-public class AntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
+public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
 
   private final ParserInterface sparkParser;
 
-  public AntlrSqlVisitor(ParserInterface sparkParser) {
+  public CarbonAntlrSqlVisitor(ParserInterface sparkParser) {
     this.sparkParser = sparkParser;
   }
 
@@ -137,9 +138,9 @@ public class AntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
   }
 
   @Override
-  public MergeInto visitMergeInto(CarbonSqlBaseParser.MergeIntoContext ctx) {
-    TmpTable targetTable = visitMultipartIdentifier(ctx.target);
-    TmpTable sourceTable = visitMultipartIdentifier(ctx.source);
+  public CarbonMergeIntoModel visitMergeInto(CarbonSqlBaseParser.MergeIntoContext ctx) {
+    TableModel targetTable = visitMultipartIdentifier(ctx.target);
+    TableModel sourceTable = visitMultipartIdentifier(ctx.source);
 
     //Once get these two table,
     //We can try to get CarbonTable
@@ -191,13 +192,46 @@ public class AntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
           e.printStackTrace();
         }
         mergeExpressions.add(whenNotMatchedExpression);
-        mergeActions.add(visitNotMatchedAction(
-            (CarbonSqlBaseParser.NotMatchedActionContext) ctx.getChild(currIdx)
-                .getChild(ctx.getChild(currIdx).getChildCount() - 1)));
+        CarbonSqlBaseParser.NotMatchedActionContext notMatchedActionContext =
+                (CarbonSqlBaseParser.NotMatchedActionContext) ctx.getChild(currIdx)
+                        .getChild(ctx.getChild(currIdx).getChildCount() - 1);
+        if (notMatchedActionContext.getChildCount() <= 2) {
+          mergeActions.add(InsertAction.apply(null, true));
+        } else if (notMatchedActionContext.ASTERISK() == null) {
+          if (notMatchedActionContext.columns.multipartIdentifier().size() !=
+                  notMatchedActionContext.expression().size()) {
+            // todo throw EX here
+          }
+          Map<Column, Column> insertMap = new HashMap<>();
+          for (int i = 0; i < notMatchedActionContext.columns.multipartIdentifier().size(); i++) {
+            String left = visitMultipartIdentifier(
+                            notMatchedActionContext.columns.multipartIdentifier().get(i), "")
+                            .getColName();
+            String right = notMatchedActionContext.expression().get(i).getText();
+            // some times the right side is literal or expression, not table column
+            // so we need to check the left side is a column or expression
+            Column rightColumn = null;
+            try {
+              Expression expression = sparkParser.parseExpression(right);
+              if (expression instanceof UnresolvedAttribute) {
+                rightColumn = new Column(right);
+              } else {
+                rightColumn = new Column(expression);
+              }
+            } catch (Exception ex) {
+              // todo throw EX here
+            }
+            insertMap.put(new Column(left), rightColumn);
+          }
+          mergeActions.add(InsertAction.apply(SparkUtil.convertMap(insertMap), false));
+        } else {
+          mergeActions.add(InsertAction.apply(null, false));
+        }
       }
       currIdx++;
     }
-    return new MergeInto(targetTable, sourceTable, joinExpression, mergeExpressions, mergeActions);
+    return new CarbonMergeIntoModel(targetTable, sourceTable, joinExpression,
+            mergeExpressions, mergeActions);
   }
 
   @Override
@@ -238,21 +272,21 @@ public class AntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
   }
 
   @Override
-  public TmpColumn visitDereference(CarbonSqlBaseParser.DereferenceContext ctx) {
+  public ColumnModel visitDereference(CarbonSqlBaseParser.DereferenceContext ctx) {
     // In this part, it will return two colunm name
     int count = ctx.getChildCount();
-    TmpColumn col = new TmpColumn();
+    ColumnModel col = new ColumnModel();
     if (count == 3) {
       String tableName = ctx.getChild(0).getText();
       String colName = ctx.getChild(2).getText();
-      col = new TmpColumn(tableName, colName);
+      col = new ColumnModel(tableName, colName);
     }
     return col;
   }
 
   @Override
-  public TmpTable visitMultipartIdentifier(CarbonSqlBaseParser.MultipartIdentifierContext ctx) {
-    TmpTable table = new TmpTable();
+  public TableModel visitMultipartIdentifier(CarbonSqlBaseParser.MultipartIdentifierContext ctx) {
+    TableModel table = new TableModel();
     List<CarbonSqlBaseParser.ErrorCapturingIdentifierContext> parts = ctx.parts;
     if (parts.size() == 2) {
       table.setDatabase(parts.get(0).getText());
@@ -264,9 +298,9 @@ public class AntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     return table;
   }
 
-  public TmpColumn visitMultipartIdentifier(CarbonSqlBaseParser.MultipartIdentifierContext ctx,
-      String x) {
-    TmpColumn column = new TmpColumn();
+  public ColumnModel visitMultipartIdentifier(CarbonSqlBaseParser.MultipartIdentifierContext ctx,
+                                              String x) {
+    ColumnModel column = new ColumnModel();
     List<CarbonSqlBaseParser.ErrorCapturingIdentifierContext> parts = ctx.parts;
     if (parts.size() == 2) {
       column.setTable(parts.get(0).getText());

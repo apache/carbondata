@@ -18,26 +18,25 @@
 package org.apache.spark.sql.parser
 
 import org.antlr.v4.runtime.{CharStreams, CommonTokenStream}
-import org.apache.spark.sql.{AntlrSqlVisitor, MergeIntoSQLCommand}
+import org.apache.spark.sql.{CarbonAntlrSqlVisitor, CarbonMergeIntoSQLCommand}
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
-import org.apache.spark.sql.parser.{CarbonSqlBaseLexer, CarbonSqlBaseParser}
 
 class CarbonAntlrParser(sparkParser: ParserInterface) {
 
   def parse(sqlText: String): AtomicRunnableCommand = {
 
-    if (!(sqlText.startsWith("MERGE") || sqlText.startsWith("merge"))) {
+    if (!sqlText.trim.toLowerCase.startsWith("merge")) {
       throw new UnsupportedOperationException(
         "Antlr SQL Parser will only deal with Merge Into SQL Command")
     }
     // Todo DO NOT NEW OBJECTS HERE
-    val visitor = new AntlrSqlVisitor(sparkParser)
+    val visitor = new CarbonAntlrSqlVisitor(sparkParser)
     val lexer = new CarbonSqlBaseLexer(CharStreams.fromString(sqlText))
     val tokenStream = new CommonTokenStream(lexer)
     val parser = new CarbonSqlBaseParser(tokenStream)
     val mergeInto = visitor.visitMergeInto(parser.mergeInto)
     // In this place check the mergeInto Map for update *
-    MergeIntoSQLCommand(mergeInto)
+    CarbonMergeIntoSQLCommand(mergeInto)
   }
 }

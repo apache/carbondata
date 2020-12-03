@@ -17,31 +17,29 @@
 
 package org.apache.spark.sql
 
-import org.apache.model.{MergeInto, TmpTable}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.mutation.merge._
 import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.merge.model.{CarbonMergeIntoModel, TableModel}
 import org.apache.spark.util.SparkUtil._
 import org.apache.spark.util.TableAPIUtil
 
-case class MergeIntoSQLCommand(mergeInto: MergeInto)
+case class CarbonMergeIntoSQLCommand(mergeInto: CarbonMergeIntoModel)
   extends AtomicRunnableCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-
-    val sourceTable: TmpTable = mergeInto.getSource
-    val targetTable: TmpTable = mergeInto.getTarget
+    val sourceTable: TableModel = mergeInto.getSource
+    val targetTable: TableModel = mergeInto.getTarget
     val mergeCondition: Expression = mergeInto.getMergeCondition
     val mergeExpression: Seq[Expression] = convertExpressionList(mergeInto.getMergeExpressions)
     val mergeActions: Seq[MergeAction] = convertMergeActionList(mergeInto.getMergeActions)
 
-    // Should validate the table here
+    // validate the table
     TableAPIUtil.validateTableExists(sparkSession,
       if (sourceTable.getDatabase == null) {
         "default"
@@ -61,15 +59,13 @@ case class MergeIntoSQLCommand(mergeInto: MergeInto)
     val tgDf = sparkSession.sql(s"""SELECT * FROM ${ targetTable.getTable }""")
 
     var matches = Seq.empty[MergeMatch]
-    // Length of MergeExpression
-    val mel: Int = mergeExpression.length
+    val mergeExpLength: Int = mergeExpression.length
 
-    // This for loop will gather the match condition and match action to Buil the MergeMatch
-    for (x <- 0 until mel) {
+    // This for loop will gather the match condition and match action to build the MergeMatch
+    for (x <- 0 until mergeExpLength) {
       val currExpression: Expression = mergeExpression.apply(x)
       val currAction: MergeAction = mergeActions.apply(x)
-      // Use Pattern Matching
-      // Convert the current Actions to Map
+      // Use pattern matching to convert current actions to Map
       // Since the delete action will delete the whole line, we don't need to build map here
       currAction match {
         case action: UpdateAction =>
@@ -96,9 +92,8 @@ case class MergeIntoSQLCommand(mergeInto: MergeInto)
           }
         case _ =>
       }
-      val ca = currAction
       if (currExpression == null) {
-        // According to the MergeAction to reGenerate the
+        // According to the merge actions to re-generate matches
         if (currAction.isInstanceOf[DeleteAction] || currAction.isInstanceOf[UpdateAction]) {
           matches ++= Seq(WhenMatched().addAction(currAction))
         } else {
@@ -107,7 +102,6 @@ case class MergeIntoSQLCommand(mergeInto: MergeInto)
       } else {
         // Since the mergeExpression is not null, we need to Initialize the
         // WhenMatched/WhenNotMatched with the Expression
-        // Check the example to see how they initialize the matches
         val carbonMergeExpression: Option[Column] = Option(Column(currExpression))
         if (currAction.isInstanceOf[DeleteAction] || currAction.isInstanceOf[UpdateAction]) {
           matches ++= Seq(WhenMatched(carbonMergeExpression).addAction(currAction))
@@ -116,10 +110,7 @@ case class MergeIntoSQLCommand(mergeInto: MergeInto)
         }
       }
     }
-
     val joinExpression = Column(mergeCondition)
-
-    // todo: Build the mergeColumn Map from mergeCondition
     val mergeDataSetMatches: MergeDataSetMatches = MergeDataSetMatches(joinExpression,
       matches.toList)
 

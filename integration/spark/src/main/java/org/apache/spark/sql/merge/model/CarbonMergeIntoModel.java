@@ -15,22 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.model;
+package org.apache.spark.sql.merge.model;
 
 import java.util.List;
 
 import org.apache.spark.sql.catalyst.expressions.Expression;
 import org.apache.spark.sql.execution.command.mutation.merge.MergeAction;
 
-public class MergeInto {
-  TmpTable target;
-  TmpTable source;
+public class CarbonMergeIntoModel {
+  TableModel target;
+  TableModel source;
   Expression mergeCondition;
   List<Expression> mergeExpressions;
   List<MergeAction> mergeActions;
 
-  public MergeInto(TmpTable target, TmpTable source, Expression mergeCondition,
-      List<Expression> mergeExpressions, List<MergeAction> mergeActions) {
+  public CarbonMergeIntoModel(TableModel target, TableModel source, Expression mergeCondition,
+                              List<Expression> mergeExpressions, List<MergeAction> mergeActions) {
     this.target = target;
     this.source = source;
     this.mergeCondition = mergeCondition;
@@ -38,19 +38,19 @@ public class MergeInto {
     this.mergeActions = mergeActions;
   }
 
-  public TmpTable getTarget() {
+  public TableModel getTarget() {
     return target;
   }
 
-  public void setTarget(TmpTable target) {
+  public void setTarget(TableModel target) {
     this.target = target;
   }
 
-  public TmpTable getSource() {
+  public TableModel getSource() {
     return source;
   }
 
-  public void setSource(TmpTable source) {
+  public void setSource(TableModel source) {
     this.source = source;
   }
 

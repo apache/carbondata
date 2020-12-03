@@ -32,8 +32,7 @@ object DataMergeIntoExample {
     updateSpecificColWithExpressionExample(spark)
     insertExampleBody(spark)
     insertWithExpressionExample(spark)
-    // todo deal with the exception
-    // insertSpecificColWithExpressionExample(spark)
+    insertSpecificColWithExpressionExample(spark)
     spark.close()
   }
 
@@ -157,7 +156,7 @@ object DataMergeIntoExample {
     dropTables(spark)
     initTable(spark)
     val sqlText = "MERGE INTO A USING B ON A.ID=B.ID WHEN NOT MATCHED AND B.ID=7 THEN INSERT (A" +
-                  ".ID,A.PRICE) VALUES (B.ID,B.PRICE)"
+                  ".ID,A.PRICE, A.state) VALUES (B.ID,B.PRICE, 'test-string')"
     spark.sql(sqlText)
     spark.sql(s"""SELECT * FROM A""").show()
     dropTables(spark)

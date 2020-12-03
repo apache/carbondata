@@ -15,52 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.model;
+package org.apache.spark.sql.merge.model;
 
-public class CarbonJoinExpression {
+public class ColumnModel {
 
-  String srcTable;
-  String srcCol;
-  String tgTable;
-  String tgCol;
+  private String table;
+  private String colName;
 
-  public CarbonJoinExpression(String srcTable, String srcCol, String tgTable, String tgCol) {
-    this.srcTable = srcTable;
-    this.srcCol = srcCol;
-    this.tgTable = tgTable;
-    this.tgCol = tgCol;
+  public ColumnModel() {
+
   }
 
-  public String getSrcTable() {
-    return srcTable;
+  public ColumnModel(String table, String colName) {
+    this.table = table;
+    this.colName = colName;
   }
 
-  public void setSrcTable(String srcTable) {
-    this.srcTable = srcTable;
+  public String getTable() {
+    return table;
   }
 
-  public String getSrcCol() {
-    return srcCol;
+  public void setTable(String table) {
+    this.table = table;
   }
 
-  public void setSrcCol(String srcCol) {
-    this.srcCol = srcCol;
+  public String getColName() {
+    return colName;
   }
 
-  public String getTgTable() {
-    return tgTable;
-  }
-
-  public void setTgTable(String tgTable) {
-    this.tgTable = tgTable;
-  }
-
-  public String getTgCol() {
-    return tgCol;
-  }
-
-  public void setTgCol(String tgCol) {
-    this.tgCol = tgCol;
+  public void setColName(String colName) {
+    this.colName = colName;
   }
 }
-
