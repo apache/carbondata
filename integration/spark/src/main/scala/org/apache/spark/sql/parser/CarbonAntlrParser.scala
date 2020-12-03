@@ -17,11 +17,11 @@
 
 package org.apache.spark.sql.parser
 
-import carbonSql.codeGen.{CarbonSqlBaseLexer, CarbonSqlBaseParser}
 import org.antlr.v4.runtime.{CharStreams, CommonTokenStream}
 import org.apache.spark.sql.{AntlrSqlVisitor, MergeIntoSQLCommand}
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
+import org.apache.spark.sql.parser.{CarbonSqlBaseLexer, CarbonSqlBaseParser}
 
 class CarbonAntlrParser(sparkParser: ParserInterface) {
 
