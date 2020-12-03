@@ -86,7 +86,7 @@
     <dependency>
       <groupId>org.antlr</groupId>
       <artifactId>antlr4-runtime</artifactId>
-      <version>4.8</version>
+      <version>${antlr4.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
@@ -544,6 +544,22 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>antlr4</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <visitor>true</visitor>
+          <sourceDirectory>../spark/src/main/antlr4</sourceDirectory>
+          <treatWarningsAsErrors>true</treatWarningsAsErrors>
+        </configuration>
       </plugin>
     </plugins>
   </build>
