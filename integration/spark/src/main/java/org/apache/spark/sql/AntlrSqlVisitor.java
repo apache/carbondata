@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import carbonSql.codeGen.CarbonSqlBaseBaseVisitor;
-import carbonSql.codeGen.CarbonSqlBaseParser;
 import org.apache.model.CarbonJoinExpression;
 import org.apache.model.MergeInto;
 import org.apache.model.TmpColumn;
@@ -35,6 +33,8 @@ import org.apache.spark.sql.execution.command.mutation.merge.DeleteAction;
 import org.apache.spark.sql.execution.command.mutation.merge.InsertAction;
 import org.apache.spark.sql.execution.command.mutation.merge.MergeAction;
 import org.apache.spark.sql.execution.command.mutation.merge.UpdateAction;
+import org.apache.spark.sql.parser.CarbonSqlBaseBaseVisitor;
+import org.apache.spark.sql.parser.CarbonSqlBaseParser;
 import org.apache.spark.util.SparkUtil;
 
 public class AntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {

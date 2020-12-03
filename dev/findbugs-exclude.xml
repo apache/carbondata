@@ -138,6 +138,6 @@
   </Match>
 
   <Match>
-    <Package name="~carbonSql.codeGen"/>
+    <Package name="org.apache.spark.sql.parser"/>
   </Match>
 </FindBugsFilter>
