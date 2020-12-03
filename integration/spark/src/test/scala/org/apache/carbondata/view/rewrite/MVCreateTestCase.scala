@@ -414,6 +414,40 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view mv32")
   }
 
+  test("test create materialized view having sub-query alias used in projection") {
+    sql("drop materialized view if exists mv_sub")
+    val subQuery = "select empname, sum(result) sum_ut from " +
+                   "(select empname, utilization result from fact_table1) fact_table1 " +
+                   "group by empname"
+    sql("create materialized view mv_sub as " + subQuery)
+    val frame = sql(subQuery)
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv_sub"))
+    checkAnswer(frame,
+      sql("select empname, sum(result) ut from (select empname, utilization result from " +
+          "fact_table2) fact_table2 group by empname"))
+    sql(s"drop materialized view mv_sub")
+  }
+
+  test("test create materialized view used as sub-query in actual query") {
+    sql("drop materialized view if exists mv_sub")
+    sql("create materialized view mv_sub as select empname, utilization result from fact_table1")
+    val df1 = sql("select empname, sum(result) sum_ut from " +
+                  "(select empname, utilization result from fact_table1) fact_table1 " +
+                  "group by empname")
+    val df2 = sql("select emp, sum(result) sum_ut from " +
+                  "(select empname emp, utilization result from fact_table1) fact_table1 " +
+                  "group by emp")
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv_sub"))
+    assert(TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "mv_sub"))
+    checkAnswer(df1,
+      sql("select empname, sum(result) ut from (select empname, utilization result from " +
+          "fact_table2) fact_table2 group by empname"))
+    checkAnswer(df2,
+      sql("select emp, sum(result) ut from (select empname emp, utilization result from " +
+          "fact_table2) fact_table2 group by emp"))
+    sql(s"drop materialized view mv_sub")
+  }
+
   test("test create materialized view with simple and sub group by query with filter on materialized view") {
     sql("create materialized view mv15 as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val frame = sql(

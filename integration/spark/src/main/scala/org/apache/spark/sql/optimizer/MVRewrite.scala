@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, Literal, NamedExpression, ScalaUDF, SortOrder}
@@ -33,6 +34,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum
 import org.apache.carbondata.mv.expressions.modular.{ModularSubquery, ScalarModularSubquery}
 import org.apache.carbondata.mv.plans.modular.{ExpressionHelper, GroupBy, HarmonizedRelation, LeafNode, Matchable, ModularPlan, ModularRelation, Select, SimpleModularizer}
@@ -48,6 +50,8 @@ import org.apache.carbondata.view.{MVCatalogInSpark, MVPlanWrapper, MVTimeGranul
  */
 class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
     session: SparkSession) {
+
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getName)
 
   private def getAliasName(expression: NamedExpression): String = {
     expression match {
@@ -226,6 +230,8 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
    */
   private def rewrite(modularPlan: ModularPlan): ModularPlan = {
     if (modularPlan.find(_.rewritten).isDefined) {
+      LOGGER.debug(s"Getting updated plan for the rewritten modular plan: " +
+                   s"{ ${ modularPlan.toString().trim } }")
       var updatedPlan = modularPlan transform {
         case select: Select =>
           updatePlan(select)
@@ -397,6 +403,7 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
         if (plan.rewritten || !plan.isSPJGH) {
           plan
         } else {
+          LOGGER.info("Query matching has been initiated with available mv schema's")
           val rewrittenPlans =
             for {schemaWrapper <- catalog.lookupFeasibleSchemas(plan).toStream
                  subsumer <- SimpleModularizer.modularize(
@@ -788,80 +795,108 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
         val plan = planWrapper.modularPlan.asInstanceOf[Select]
         val updatedPlanOutputList = getUpdatedOutputList(plan.outputList, groupBy.modularPlan)
         val outputListMapping = groupBy.outputList zip updatedPlanOutputList
-        val outputList = for ((output1, output2) <- outputListMapping) yield {
-          output1 match {
-            case Alias(aggregate@AggregateExpression(function@Sum(_), _, _, _), _) =>
-              val uFun = function.copy(child = output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(function@Max(_), _, _, _), _) =>
-              val uFun = function.copy(child = output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(function@Min(_), _, _, _), _) =>
-              val uFun = function.copy(child = output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@Count(Seq(_)), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(agg@AggregateExpression(_@Corr(_, _), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(agg.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@VariancePop(_), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@VarianceSamp(_), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@StddevSamp(_), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@StddevPop(_), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@CovPopulation(_, _), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@CovSample(_, _), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@Skewness(_), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case Alias(aggregate@AggregateExpression(_@Kurtosis(_), _, _, _), _) =>
-              val uFun = Sum(output2)
-              Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
-            case _ =>
-              if (output1.name != output2.name) {
-                Alias(output2, output1.name)(exprId = output1.exprId)
-              } else {
-                output2
-              }
-          }
-        }
-        val updatedPredicates = groupBy.predicateList.map {
-          predicate =>
-            outputListMapping.find {
-              case (output1, _) =>
-                output1 match {
-                  case alias: Alias if predicate.isInstanceOf[Alias] =>
-                    alias.child.semanticEquals(predicate.children.head)
-                  case alias: Alias =>
-                    alias.child.semanticEquals(predicate)
-                  case other =>
-                    other.semanticEquals(predicate)
-                }
-            } match {
-              case Some((_, output2)) => output2
-              case _ => predicate
-            }
-        }
+        val (outputList: Seq[NamedExpression], updatedPredicates: Seq[Expression]) =
+          getUpdatedOutputAndPredicateList(
+          groupBy,
+          outputListMapping)
         groupBy.copy(
           outputList = outputList,
           inputList = plan.outputList,
           predicateList = updatedPredicates,
           child = plan,
           modularPlan = None).setRewritten()
+      case groupBy: GroupBy if groupBy.predicateList.nonEmpty => groupBy.child match {
+        case select: Select if select.modularPlan.isDefined =>
+          val planWrapper = select.modularPlan.get.asInstanceOf[MVPlanWrapper]
+          val plan = planWrapper.modularPlan.asInstanceOf[Select]
+          val updatedPlanOutputList = getUpdatedOutputList(plan.outputList, select.modularPlan)
+          val outputListMapping = groupBy.outputList zip updatedPlanOutputList
+          val (outputList: Seq[NamedExpression], updatedPredicates: Seq[Expression]) =
+            getUpdatedOutputAndPredicateList(
+              groupBy,
+              outputListMapping)
+          groupBy.copy(
+            outputList = outputList,
+            inputList = plan.outputList,
+            predicateList = updatedPredicates,
+            child = select,
+            modularPlan = None)
+        case _ => groupBy
+      }
       case other => other
     }
+  }
+
+  private def getUpdatedOutputAndPredicateList(groupBy: GroupBy,
+      outputListMapping: Seq[(NamedExpression, NamedExpression)]):
+  (Seq[NamedExpression], Seq[Expression]) = {
+    val outputList = for ((output1, output2) <- outputListMapping) yield {
+      output1 match {
+        case Alias(aggregate@AggregateExpression(function@Sum(_), _, _, _), _) =>
+          val uFun = function.copy(child = output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(function@Max(_), _, _, _), _) =>
+          val uFun = function.copy(child = output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(function@Min(_), _, _, _), _) =>
+          val uFun = function.copy(child = output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@Count(Seq(_)), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(agg@AggregateExpression(_@Corr(_, _), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(agg.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@VariancePop(_), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@VarianceSamp(_), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@StddevSamp(_), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@StddevPop(_), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@CovPopulation(_, _), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@CovSample(_, _), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@Skewness(_), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case Alias(aggregate@AggregateExpression(_@Kurtosis(_), _, _, _), _) =>
+          val uFun = Sum(output2)
+          Alias(aggregate.copy(aggregateFunction = uFun), output1.name)(exprId = output1.exprId)
+        case _ =>
+          if (output1.name != output2.name) {
+            Alias(output2, output1.name)(exprId = output1.exprId)
+          } else {
+            output2
+          }
+      }
+    }
+    val updatedPredicates = groupBy.predicateList.map {
+      predicate =>
+        outputListMapping.find {
+          case (output1, _) =>
+            output1 match {
+              case alias: Alias if predicate.isInstanceOf[Alias] =>
+                alias.child.semanticEquals(predicate.children.head)
+              case alias: Alias =>
+                alias.child.semanticEquals(predicate)
+              case other =>
+                other.semanticEquals(predicate)
+            }
+        } match {
+          case Some((_, output2)) => output2
+          case _ => predicate
+        }
+    }
+    (outputList, updatedPredicates)
   }
 
   /**
