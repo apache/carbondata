@@ -18,14 +18,13 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.events._
+import org.apache.carbondata.events.{withEvents, CleanFilesPostEvent, CleanFilesPreEvent}
 import org.apache.carbondata.trash.DataTrashManager
 
 /**
@@ -56,23 +55,19 @@ case class CarbonCleanFilesCommand(
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
     }
     // only support transactional table
-    if (!carbonTable.getTableInfo.isTransactionalTable) {
+    if (!carbonTable.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    val operationContext = new OperationContext
-    val cleanFilesPreEvent: CleanFilesPreEvent = CleanFilesPreEvent(carbonTable, sparkSession)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent, operationContext)
+    val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
+    val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
+    withEvents(preEvent, postEvent) {
+      DataTrashManager.cleanGarbageData(
+        carbonTable = carbonTable,
+        force = force.toBoolean,
+        partitionSpecs = CarbonFilters.getPartitions(Seq.empty, sparkSession, carbonTable))
+    }
 
-    val partitions = CarbonFilters.getPartitions( Seq.empty[Expression], sparkSession, carbonTable)
-    DataTrashManager.cleanGarbageData(
-      carbonTable = carbonTable,
-      force = force.toBoolean,
-      partitionSpecs = partitions)
-
-    val cleanFilesPostEvent: CleanFilesPostEvent =
-      CleanFilesPostEvent(carbonTable, sparkSession, options)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent, operationContext)
     Seq.empty
   }
 
