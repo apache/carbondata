@@ -229,6 +229,34 @@ private abstract class MVMatchPattern extends Logging {
   }
 
   /**
+   * Compares the output list of subsumer/subsumee with/without alias. In case if, expression
+   * is instance of Alias, then compare it's child expression.
+   */
+  protected def compareOutputList(outputList1: Seq[NamedExpression],
+      outputList2: Seq[NamedExpression]): Boolean = {
+    outputList1.forall {
+      case a@Alias(cast: Cast, _) =>
+        outputList2.exists {
+          case Alias(castExp: Cast, _) => castExp.child.semanticEquals(cast.child)
+          case alias: Alias => alias.child.semanticEquals(cast.child)
+          case exp => exp.semanticEquals(cast.child)
+        } || isExpressionMatches(a, outputList2)
+      case a@Alias(_, _) =>
+        outputList2.exists {
+          case Alias(cast: Cast, _) => cast.child.semanticEquals(a.child)
+          case alias: Alias => alias.child.semanticEquals(a.child) ||
+                               alias.sql.equalsIgnoreCase(a.sql)
+          case exp => exp.semanticEquals(a.child)
+        } || isExpressionMatches(a, outputList2)
+      case ex@exp =>
+        outputList2.exists {
+          case alias: Alias => alias.child.semanticEquals(exp)
+          case expr => expr.semanticEquals(exp)
+        } || isExpressionMatches(ex, outputList2)
+    }
+  }
+
+  /**
    * Check if expr1 and expr2 matches TimeSeriesUDF function. If both expressions are
    * timeseries udf functions, then check it's children are same irrespective of case.
    */
@@ -723,12 +751,8 @@ private object SelectSelectNoChildDelta extends MVMatchPattern with PredicateHel
           val isPredicateEmR = sel_1q.predicateList.forall(expr =>
             sel_1a.predicateList.exists(_.semanticEquals(expr)) ||
             isExpressionMatches(expr, sel_1a.predicateList))
-          val isOutputEmR = sel_1q.outputList.forall(expr =>
-            sel_1a.outputList.exists(_.semanticEquals(expr)) ||
-            isExpressionMatches(expr, sel_1a.outputList))
-          val isOutputRmE = sel_1a.outputList.forall(expr =>
-            sel_1q.outputList.exists(_.semanticEquals(expr)) ||
-            isExpressionMatches(expr, sel_1q.outputList))
+          val isOutputEmR = compareOutputList(sel_1q.outputList, sel_1a.outputList)
+          val isOutputRmE = compareOutputList(sel_1a.outputList, sel_1q.outputList)
           val isLOEmLOR = !(isLeftJoinView(sel_1a) && sel_1q.joinEdges.head.joinType == Inner)
 
           if (r2eJoinsMatch) {
@@ -872,25 +896,7 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
         val isGroupingRmE = gb_2a.predicateList.forall(expr =>
           gb_2q.predicateList.exists(_.semanticEquals(expr)) ||
           isExpressionMatches(expr, gb_2q.predicateList))
-        val isOutputEmR = gb_2q.outputList.forall {
-          case Alias(cast: Cast, _) =>
-            gb_2a.outputList.exists {
-              case Alias(castExp: Cast, _) => castExp.child.semanticEquals(cast.child)
-              case alias: Alias => alias.child.semanticEquals(cast.child)
-              case exp => exp.semanticEquals(cast.child)
-            }
-          case a @ Alias(_, _) =>
-            gb_2a.outputList.exists {
-              case Alias(cast: Cast, _) => cast.child.semanticEquals(a.child)
-              case alias: Alias => alias.child.semanticEquals(a.child)
-              case exp => exp.semanticEquals(a.child)
-            }
-          case exp =>
-            gb_2a.outputList.exists {
-              case alias: Alias => alias.child.semanticEquals(exp)
-              case expr => expr.semanticEquals(exp)
-            }
-        }
+        val isOutputEmR = compareOutputList(gb_2q.outputList, gb_2a.outputList)
         if (isGroupingEmR && isGroupingRmE) {
           if (isOutputEmR) {
             // Mappings of output of two plans by checking semantic equals.
@@ -898,7 +904,8 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
               (exp, gb_2q.outputList.find {
                 case a: Alias if exp.isInstanceOf[Alias] =>
                   a.child.semanticEquals(exp.children.head) ||
-                    isExpressionMatches(a.child, exp.children.head)
+                  isExpressionMatches(a.child, exp.children.head) ||
+                  a.sql.equalsIgnoreCase(exp.sql)
                 case a: Alias => a.child.semanticEquals(exp)
                 case other => exp match {
                   case alias: Alias =>
