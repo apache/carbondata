@@ -53,6 +53,7 @@ import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonData
 import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 import org.apache.carbondata.spark.util.CarbonSparkUtil
+import org.apache.carbondata.trash.DataTrashManager
 import org.apache.carbondata.view.MVManagerInSpark
 
 /**
@@ -97,7 +98,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           .getCarbonLockObj(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
             .getAbsoluteTableIdentifier,
             CarbonTablePath.addSegmentPrefix(segmentId.getLoadName) + LockUsage.LOCK)
-        segmentLock.lockWithRetries()
+        if (!segmentLock.lockWithRetries()) {
+          throw new Exception(s"Failed to acquire lock on segment ${segmentId.getLoadName}," +
+            s" during compaction of table ${compactionModel.carbonTable.getQualifiedName}")
+        }
         segmentLocks += segmentLock
       }
       try {
@@ -173,7 +177,18 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       compactionModel.compactionType,
       compactionModel.currentPartitions,
       compactedSegments)
-    triggerCompaction(compactionCallableModel, mergedLoadName: String)
+    try {
+      triggerCompaction(compactionCallableModel, mergedLoadName: String)
+    } catch {
+      case e: Throwable =>
+        // clean stale compaction segment immediately after compaction failure
+        DataTrashManager.cleanStaleCompactionSegment(
+          carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+          mergedLoadName,
+          carbonLoadModel.getFactTimeStamp,
+          compactionCallableModel.currentPartitions)
+        throw e
+    }
   }
 
   private def triggerCompaction(compactionCallableModel: CompactionCallableModel,

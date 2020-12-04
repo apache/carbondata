@@ -37,6 +37,10 @@ Clean files command is used to remove the Compacted, Marked For Delete ,In Progr
    ``` 
   Once the timestamp subdirectory is expired as per the configured expiration day value, that subdirectory is deleted from the trash folder in the subsequent clean files command.
 
+  **NOTE**:
+  * In trash folder, the retention time is "carbon.trash.retention.days"
+  * Outside trash folder, the retention time is max value of two properties("carbon.trash.retention.days", "max.query.execution.time")
+
 ### FORCE DELETE TRASH
 The force option with clean files command deletes all the files and folders from the trash folder.
 

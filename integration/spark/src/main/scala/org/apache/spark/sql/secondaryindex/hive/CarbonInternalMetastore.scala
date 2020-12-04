@@ -36,7 +36,6 @@ import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.core.util.path.CarbonTablePath
 
 object CarbonInternalMetastore {
 
@@ -339,15 +338,11 @@ object CarbonInternalMetastore {
     keysParts
   }
 
-  def deleteTableDirectory(dbName: String, tableName: String,
-    sparkSession: SparkSession): Unit = {
-    val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
-    val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
-    val metadataFilePath =
-      CarbonTablePath.getMetadataPath(tablePath)
-    if (FileFactory.isFileExist(metadataFilePath)) {
-      val file = FileFactory.getCarbonFile(metadataFilePath)
-      CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
+  def deleteTableDirectory(carbonTable: CarbonTable): Unit = {
+    if (FileFactory.isFileExist(carbonTable.getTablePath) &&
+      !(carbonTable.isExternalTable || carbonTable.isFileLevelFormat)) {
+      val file = FileFactory.getCarbonFile(carbonTable.getTablePath)
+      CarbonUtil.deleteFoldersAndFilesSilent(file)
     }
   }
 }

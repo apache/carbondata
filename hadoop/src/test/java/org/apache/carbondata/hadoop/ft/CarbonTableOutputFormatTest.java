@@ -22,6 +22,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -55,7 +56,11 @@ public class CarbonTableOutputFormatTest {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "CarbonTableOutputFormatTest");
     try {
-      carbonLoadModel = new StoreCreator(new File("target/store").getAbsolutePath(),
+      String storePath = new File("target/store").getAbsolutePath();
+      if (FileFactory.isFileExist(storePath)) {
+        FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(storePath));
+      }
+      carbonLoadModel = new StoreCreator(storePath,
           new File("../hadoop/src/test/resources/data.csv").getCanonicalPath()).createTableAndLoadModel();
     } catch (Exception e) {
       Assert.fail("create table failed: " + e.getMessage());
@@ -76,8 +81,7 @@ public class CarbonTableOutputFormatTest {
             name.endsWith(".carbonindexmerge");
       }
     });
-
-    Assert.assertTrue(listFiles.length == 2);
+    Assert.assertEquals(listFiles.length, 2);
   }
 
   @After

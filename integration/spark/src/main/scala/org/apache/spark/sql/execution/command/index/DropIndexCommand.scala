@@ -58,6 +58,8 @@ private[sql] case class DropIndexCommand(
     if (!parentTable.getIndexTableNames().contains(indexName)) {
       if (!ifExistsSet) {
         throw new MalformedIndexCommandException("Index with name " + indexName + " does not exist")
+      } else {
+        return Seq.empty
       }
     }
     if (parentTable.getIndexTableNames(IndexType.SI.getIndexProviderName)
@@ -203,7 +205,7 @@ private[sql] case class DropIndexCommand(
           logInfo("Table MetaData Unlocked Successfully")
           if (isValidDeletion) {
             if (carbonTable != null && carbonTable.isDefined) {
-              CarbonInternalMetastore.deleteTableDirectory(dbName, indexName, sparkSession)
+              CarbonInternalMetastore.deleteTableDirectory(carbonTable.get)
             }
           }
         } else {

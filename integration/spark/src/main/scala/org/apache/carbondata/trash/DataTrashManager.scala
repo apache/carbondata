@@ -21,12 +21,15 @@ import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CleanFilesUtil, TrashUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CleanFilesUtil, TrashUtil}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * This object will manage the following data.
@@ -86,6 +89,9 @@ object DataTrashManager {
     }
   }
 
+  /**
+   * move stale segment to trash folder, but not include compaction segment
+   */
   private def moveStaleSegmentsToTrash(carbonTable: CarbonTable): Unit = {
     if (carbonTable.isHivePartitionTable) {
       CleanFilesUtil.cleanStaleSegmentsForPartitionTable(carbonTable)
@@ -106,4 +112,58 @@ object DataTrashManager {
     }
   }
 
+  /**
+   * clean the stale compact segment immediately after compaction failure
+   */
+  def cleanStaleCompactionSegment(
+      carbonTable: CarbonTable,
+      mergedLoadName: String,
+      factTimestamp: Long,
+      partitionSpecs: Option[Seq[PartitionSpec]]): Unit = {
+    val metadataFolderPath = CarbonTablePath.getMetadataPath(carbonTable.getTablePath)
+    val details = SegmentStatusManager.readLoadMetadata(metadataFolderPath)
+    if (details == null || details.isEmpty) {
+      return
+    }
+    val loadDetail = details.find(detail => mergedLoadName.equals(detail.getLoadName))
+    // only clean stale compaction segment
+    if (loadDetail.isEmpty) {
+      val segmentId = mergedLoadName.split(CarbonCommonConstants.UNDERSCORE)(1)
+      if (carbonTable.isHivePartitionTable) {
+        if (partitionSpecs.isDefined) {
+          partitionSpecs.get.foreach { partitionSpec =>
+            cleanStaleCompactionDataFiles(
+              partitionSpec.getLocation.toString, segmentId, factTimestamp)
+          }
+        }
+      } else {
+        val segmentPath = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
+        cleanStaleCompactionDataFiles(
+          segmentPath, segmentId, factTimestamp)
+      }
+    }
+  }
+
+  private def cleanStaleCompactionDataFiles(
+      folderPath: String,
+      segmentId: String,
+      factTimestamp: Long): Unit = {
+    if (FileFactory.isFileExist(folderPath)) {
+      val namePart = CarbonCommonConstants.HYPHEN + segmentId +
+        CarbonCommonConstants.HYPHEN + factTimestamp
+      val toBeDelete = FileFactory.getCarbonFile(folderPath).listFiles(new CarbonFileFilter() {
+        override def accept(file: CarbonFile): Boolean = {
+          file.getName.contains(namePart)
+        }
+      })
+      if (toBeDelete != null && toBeDelete.nonEmpty) {
+        try {
+          CarbonUtil.deleteFoldersAndFilesSilent(toBeDelete: _*)
+        } catch {
+          case e: Throwable =>
+            LOGGER.error("Exception in deleting the delta files." + e)
+        }
+      }
+    }
+  }
 }

@@ -17,9 +17,10 @@
 
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
+import java.util
+
 import scala.collection.JavaConverters._
 
-import java.util
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll

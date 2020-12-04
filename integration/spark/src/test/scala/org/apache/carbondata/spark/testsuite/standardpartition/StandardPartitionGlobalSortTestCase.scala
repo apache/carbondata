@@ -16,9 +16,9 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import java.util
 import java.util.concurrent.{Callable, Executors, ExecutorService}
 
-import java.util
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
