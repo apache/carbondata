@@ -160,9 +160,8 @@ case class CarbonAlterTableAddHivePartitionCommand(
         // carbon index files, and it is not good for query performance since all index files
         // need to be read to spark driver.
         // So, here trigger to merge the index files by sending an event
-        val customSegmentIds = if (loadModel.getCurrentLoadMetadataDetail
-          .getFileFormat
-          .equals(FileFormat.ROW_V1)) {
+        val customSegmentIds = if (FileFormat.ROW_V1.equals(loadModel.getCurrentLoadMetadataDetail
+          .getFileFormat)) {
           Some(Seq("").toList)
         } else {
           Some(Seq(loadModel.getSegmentId).toList)

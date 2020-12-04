@@ -467,7 +467,7 @@ class CarbonScanRDD[T: ClassTag](
       // get RecordReader by FileFormat
 
       var reader: RecordReader[Void, Object] =
-        if (inputSplit.getFileFormat.equals(FileFormat.ROW_V1)) {
+        if (FileFormat.ROW_V1.equals(inputSplit.getFileFormat)) {
           // create record reader for row format
           DataTypeUtil.setDataTypeConverter(dataTypeConverterClz.newInstance())
           val inputFormat = new CarbonStreamInputFormat

@@ -45,7 +45,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonUtil, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 object MixedFormatHandler {
@@ -152,9 +152,7 @@ object MixedFormatHandler {
     val rdds = loadMetadataDetails.filter(metaDetail =>
       (metaDetail.getSegmentStatus.equals(SegmentStatus.SUCCESS) ||
        metaDetail.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS)))
-      .filterNot(currLoad =>
-        currLoad.getFileFormat.equals(FileFormatName.COLUMNAR_V3) ||
-        currLoad.getFileFormat.equals(FileFormatName.ROW_V1))
+      .filterNot(CarbonUtil.isCarbonFormat(_))
       .filter(l => segsToAccess.isEmpty || segsToAccess.contains(l.getLoadName))
       .groupBy(_.getFileFormat)
       .map { case (format, details) =>
@@ -181,7 +179,7 @@ object MixedFormatHandler {
             }.toSeq
           }
         }
-        val fileFormat = getFileFormat(format, supportBatch)
+        val fileFormat = getFileFormat(new FileFormatName(format), supportBatch)
         getRDDForExternalSegments(l, projects, filters, fileFormat, paths)
       }
     if (rdds.nonEmpty) {
@@ -390,6 +388,6 @@ object MixedFormatHandler {
    */
   def otherFormatSegmentsExist(metadataPath: String): Boolean = {
     val allSegments = SegmentStatusManager.readLoadMetadata(metadataPath)
-    allSegments.exists(a => a.getFileFormat != null && !a.isCarbonFormat)
+    allSegments.exists(a => !CarbonUtil.isCarbonFormat(a))
   }
 }

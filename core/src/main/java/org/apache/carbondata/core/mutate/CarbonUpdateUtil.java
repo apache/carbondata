@@ -47,6 +47,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -297,7 +298,7 @@ public class CarbonUpdateUtil {
               // String will come empty then no need to write into table status file.
               if (isTimestampUpdateRequired) {
                 // if in case of update flow.
-                if (loadMetadata.getUpdateDeltaStartTimestamp().isEmpty()) {
+                if (StringUtils.isEmpty(loadMetadata.getUpdateDeltaStartTimestamp())) {
                   // this means for first time it is getting updated .
                   loadMetadata.setUpdateDeltaStartTimestamp(updatedTimeStamp);
                 }
@@ -520,7 +521,7 @@ public class CarbonUpdateUtil {
               || segment.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
         // when there is no update operations done on table, then no need to go ahead. So
         // just check the update delta start timestamp and proceed if not empty
-        if (!segment.getUpdateDeltaStartTimestamp().isEmpty()
+        if (!StringUtils.isEmpty(segment.getUpdateDeltaStartTimestamp())
                 || updatedSegments.contains(segment.getLoadName())) {
           // take the list of files from this segment.
           String segmentPath = CarbonTablePath.getSegmentPath(

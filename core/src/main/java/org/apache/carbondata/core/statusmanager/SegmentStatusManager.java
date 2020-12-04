@@ -62,8 +62,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.alibaba.fastjson.JSON;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -330,18 +329,18 @@ public class SegmentStatusManager {
     int retry = READ_TABLE_STATUS_RETRY_COUNT;
 
     // When storing table status file in object store, reading of table status file may
-    // fail (receive IOException or JsonSyntaxException)
+    // fail (receive Exception)
     // when table status file is being modifying
     // so here we retry multiple times before
-    // throwing IOException or JsonSyntaxException
+    // throwing Exception
     while (retry > 0) {
       try {
         String content = readFileAsString(tableStatusPath);
         if (content == null) {
           return new LoadMetadataDetails[0];
         }
-        return new Gson().fromJson(content, LoadMetadataDetails[].class);
-      } catch (JsonSyntaxException | IOException ex) {
+        return JSON.parseObject(content, LoadMetadataDetails[].class);
+      } catch (Exception ex) {
         retry--;
         if (retry == 0) {
           // we have retried several times, throw this exception to make the execution failed
@@ -610,7 +609,7 @@ public class SegmentStatusManager {
         CarbonProperties.isEnableTableStatusBackup()) {
       backupTableStatus(tableStatusPath);
     }
-    String content = new Gson().toJson(listOfLoadFolderDetailsArray);
+    String content = JSON.toJSONString(listOfLoadFolderDetailsArray);
     mockForTest();
     // make the table status file smaller by removing fields that are default value
     for (LoadMetadataDetails loadMetadataDetails : listOfLoadFolderDetailsArray) {
@@ -963,7 +962,7 @@ public class SegmentStatusManager {
             || SegmentStatus.COMPACTED == oneRow.getSegmentStatus()
             || SegmentStatus.INSERT_IN_PROGRESS == oneRow.getSegmentStatus()
             || SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneRow.getSegmentStatus())
-            && oneRow.getVisibility().equalsIgnoreCase("true")) {
+            && "true".equalsIgnoreCase(oneRow.getVisibility())) {
           return true;
         }
       }
@@ -988,46 +987,6 @@ public class SegmentStatusManager {
       }
     }
     return newListMetadata;
-  }
-
-  private static void writeLoadMetadata(AbsoluteTableIdentifier identifier,
-      List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
-    String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
-
-    DataOutputStream dataOutputStream;
-    Gson gsonObjectToWrite = new Gson();
-    BufferedWriter brWriter = null;
-
-    AtomicFileOperations writeOperation =
-        AtomicFileOperationFactory.getAtomicFileOperations(dataLoadLocation);
-
-    try {
-
-      dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
-      brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
-          Charset.forName(DEFAULT_CHARSET)));
-
-      // make the table status file smaller by removing fields that are default value
-      listOfLoadFolderDetails.forEach(LoadMetadataDetails::removeUnnecessaryField);
-
-      String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
-      brWriter.write(metadataInstance);
-    } catch (IOException ie) {
-      LOG.error("Error message: " + ie.getLocalizedMessage());
-      writeOperation.setFailed();
-      throw ie;
-    } finally {
-      try {
-        if (null != brWriter) {
-          brWriter.flush();
-        }
-      } catch (Exception e) {
-        LOG.error("error in  flushing ");
-
-      }
-      CarbonUtil.closeStreams(brWriter);
-      writeOperation.close();
-    }
   }
 
   private static class ReturnTuple {
@@ -1207,9 +1166,9 @@ public class SegmentStatusManager {
         // for example: updateStatusFileName
         // also can not remove the max segment id,
         // otherwise will impact the generation of segment id
-        if (!eachSeg.getLoadName().equalsIgnoreCase("0")
+        if (!"0".equalsIgnoreCase(eachSeg.getLoadName())
             && !eachSeg.getLoadName().equalsIgnoreCase(String.valueOf(maxSegmentId))
-            && eachSeg.getVisibility().equalsIgnoreCase("false")) {
+            && "false".equalsIgnoreCase(eachSeg.getVisibility())) {
           invisibleSegmentCnt += 1;
         }
       }

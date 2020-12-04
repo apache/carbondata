@@ -252,8 +252,8 @@ case class CarbonAlterTableCompactionCommand(
       ids match {
         case Some(x) =>
           val loadMetadataDetails = carbonLoadModel.getLoadMetadataDetails.asScala
-          val otherLoadDetails = loadMetadataDetails
-            .exists(p => x.exists(a => a.equalsIgnoreCase(p.getLoadName)) && !p.isCarbonFormat)
+          val otherLoadDetails = loadMetadataDetails.exists(p => x.exists(a =>
+            a.equalsIgnoreCase(p.getLoadName)) && !CarbonUtil.isCarbonFormat(p))
           if (otherLoadDetails) {
             throw new AnalysisException(s"Custom compaction does not support other format segment")
           }

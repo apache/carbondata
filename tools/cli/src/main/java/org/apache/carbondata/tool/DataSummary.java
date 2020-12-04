@@ -36,6 +36,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
+import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -183,7 +184,7 @@ class DataSummary implements Command {
             new java.sql.Timestamp(segment.getLoadStartTime()).toString(),
             new java.sql.Timestamp(segment.getLoadEndTime()).toString(),
             segment.getMergedLoadName() == null ? "NA" : segment.getMergedLoadName(),
-            segment.getFileFormat().toString(),
+            CarbonUtil.getFileFormatOrElse(segment, FileFormat.COLUMNAR_V3),
             dataSize,
             indexSize}
         );

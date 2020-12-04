@@ -178,7 +178,7 @@ public final class DeleteLoadFolders {
         SegmentStatus.COMPACTED == oneLoad.getSegmentStatus() ||
         SegmentStatus.INSERT_IN_PROGRESS == oneLoad.getSegmentStatus() ||
         SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneLoad.getSegmentStatus())
-        && oneLoad.getVisibility().equalsIgnoreCase("true")) {
+        && "true".equalsIgnoreCase(oneLoad.getVisibility())) {
       if (isForceDelete) {
         return true;
       }

@@ -149,7 +149,7 @@ case class CarbonShowSegmentsAsSelectCommand(
         dataSize,
         indexSize,
         mergedToId,
-        segment.getFileFormat.toString,
+        segment.getFileFormat,
         path,
         endTime,
         if (segment.getSegmentFile == null) "NA" else segment.getSegmentFile)

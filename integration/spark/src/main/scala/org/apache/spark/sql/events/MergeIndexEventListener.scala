@@ -57,7 +57,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
         }
         val tempPath = operationContext.getProperty("tempPath")
         val loadMetaDetails = loadModel.getCurrentLoadMetadataDetail
-        if (loadMetaDetails != null && !loadMetaDetails.getFileFormat.equals(FileFormat.ROW_V1)) {
+        if (loadMetaDetails != null &&
+          !FileFormat.ROW_V1.toString.equals(loadMetaDetails.getFileFormat)) {
           if (null != compactedSegments && !compactedSegments.isEmpty) {
             MergeIndexUtil.mergeIndexFilesForCompactedSegments(sparkSession,
               carbonTable,
@@ -115,7 +116,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               String]()
             var streamingSegment: Set[String] = Set[String]()
             loadFolderDetailsArray.foreach(loadMetadataDetails => {
-              if (loadMetadataDetails.getFileFormat.equals(FileFormat.ROW_V1)) {
+              if (FileFormat.ROW_V1.equals(loadMetadataDetails.getFileFormat)) {
                 streamingSegment += loadMetadataDetails.getLoadName
               }
               segmentFileNameMap
@@ -129,7 +130,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                 val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
                 validSegments.foreach { segment =>
                   // do not add ROW_V1 format
-                  if (!segment.getLoadMetadataDetails.getFileFormat.equals(FileFormat.ROW_V1)) {
+                  if (!FileFormat.ROW_V1.equals(segment.getLoadMetadataDetails.getFileFormat)) {
                     validSegmentIds += segment.getSegmentNo
                   }
                 }

@@ -27,6 +27,7 @@ import org.apache.spark.sql.execution.command.CompactionModel
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
@@ -51,7 +52,8 @@ abstract class Compactor(carbonLoadModel: CarbonLoadModel,
       .identifySegmentsToBeMerged(carbonLoadModel,
         compactionModel.compactionSize,
         new util.ArrayList(
-          carbonLoadModel.getLoadMetadataDetails.asScala.filter(_.isCarbonFormat).asJava),
+          carbonLoadModel.getLoadMetadataDetails.asScala.filter(
+            CarbonUtil.isCarbonFormat(_)).asJava),
         compactionModel.compactionType,
         customSegmentIds)
   }
