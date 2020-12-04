@@ -119,7 +119,7 @@ object QuerySegmentExample {
        """.stripMargin).show()
 
     spark.sql("ALTER TABLE querysegment_table COMPACT 'MAJOR'")
-    spark.sql("CLEAN FILES FOR TABLE querysegment_table")
+    spark.sql("CLEAN FILES FOR TABLE querysegment_table OPTIONS('FORCE'='TRUE')")
     spark.sql("SHOW SEGMENTS FOR TABLE querysegment_table").show()
 
     // Load 2 new segments

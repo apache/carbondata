@@ -32,260 +32,144 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterAll {
 
-  var count = 0
-
   test("clean up table and test trash folder with IN PROGRESS segments") {
     // do not send the segment folders to trash
-    createParitionTable()
+    createPartitionTable()
     loadData()
-    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
-      .getTablePath
-    val trashFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.TRASH_DIR
+    val (path, trashFolderPath) = getTableAndTrashPath
     editTableStatusFile(path)
     assert(!FileFactory.isFileExist(trashFolderPath))
-    val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
-    assert(segmentNumber1 == 4)
-    sql(s"CLEAN FILES FOR TABLE cleantest").show
-    val segmentNumber2 = sql(s"""show segments for table cleantest""").count()
-    assert(0 == segmentNumber2)
+    assertResult(4)(sql(s"""show segments for table cleantest""").count())
+    sql(s"CLEAN FILES FOR TABLE cleantest")
+    assertResult(4)(sql(s"""show segments for table cleantest""").count())
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('FORCE'='TRUE')")
+    assertResult(0)(sql(s"""show segments for table cleantest""").count())
     assert(!FileFactory.isFileExist(trashFolderPath))
-    val list = getFileCountInTrashFolder(trashFolderPath)
     // no carbondata file is added to the trash
-    assert(list == 0)
-    sql("""DROP TABLE IF EXISTS CLEANTEST""")
+    assertResult(0)(getFileCountInTrashFolder(trashFolderPath))
   }
 
   test("clean up table and test trash folder with Marked For Delete and Compacted segments") {
     // do not send MFD folders to trash
-    createParitionTable()
+    createPartitionTable()
     loadData()
     sql(s"""ALTER TABLE CLEANTEST COMPACT "MINOR" """)
     loadData()
-    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
-      .getTablePath
-    val trashFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.TRASH_DIR
+    val (_, trashFolderPath) = getTableAndTrashPath
     assert(!FileFactory.isFileExist(trashFolderPath))
     sql(s"""Delete from table cleantest where segment.id in(4)""")
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
-    sql(s"CLEAN FILES FOR TABLE cleantest").show
+    sql(s"CLEAN FILES FOR TABLE cleantest")
     val segmentNumber2 = sql(s"""show segments for table cleantest""").count()
-    assert(segmentNumber1 == segmentNumber2 + 5)
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('FORCE'='TRUE')")
+    val segmentNumber3 = sql(s"""show segments for table cleantest""").count()
+    assert(segmentNumber1 == segmentNumber2)
+    assert(segmentNumber2 == segmentNumber3 + 5)
     assert(!FileFactory.isFileExist(trashFolderPath))
-    count = 0
-    var list = getFileCountInTrashFolder(trashFolderPath)
     // no carbondata file is added to the trash
-    assert(list == 0)
-    sql("""DROP TABLE IF EXISTS CLEANTEST""")
+    assertResult(0)(getFileCountInTrashFolder(trashFolderPath))
   }
 
   test("test trash folder with 2 segments with same segment number") {
-    createParitionTable()
+    createPartitionTable()
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"hello","abc"""")
-
-    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
-      .getTablePath
-    val trashFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.TRASH_DIR
+    val (path, trashFolderPath) = getTableAndTrashPath
     assert(!FileFactory.isFileExist(trashFolderPath))
     deleteTableStatusFile(path)
-
     assert(!FileFactory.isFileExist(trashFolderPath))
-    sql(s"CLEAN FILES FOR TABLE cleantest").show()
-    count = 0
-    var list = getFileCountInTrashFolder(trashFolderPath)
-    assert(list == 2)
-
+    sql(s"CLEAN FILES FOR TABLE cleantest")
+    assertResult(2)(getFileCountInTrashFolder(trashFolderPath))
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"hello","abc"""")
     deleteTableStatusFile(path)
-
-    sql(s"CLEAN FILES FOR TABLE cleantest").show()
-    count = 0
-    list = getFileCountInTrashFolder(trashFolderPath)
-    assert(list == 4)
-
-    intercept[RuntimeException] {
-      sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
-    }
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
-    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
-    CarbonProperties.getInstance()
-      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
-    count = 0
-    list = getFileCountInTrashFolder(trashFolderPath)
+    sql(s"CLEAN FILES FOR TABLE cleantest")
+    assertResult(4)(getFileCountInTrashFolder(trashFolderPath))
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')")
     // no carbondata file is added to the trash
-    assert(list == 0)
+    assertResult(0)(getFileCountInTrashFolder(trashFolderPath))
     sql("""DROP TABLE IF EXISTS CLEANTEST""")
   }
 
   test("clean up table and test trash folder with stale segments") {
-    sql("""DROP TABLE IF EXISTS C1""")
-    createParitionTable()
+    createPartitionTable()
     loadData()
-    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
-      .getTablePath
-    val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
+    val (path, trashFolderPath) = getTableAndTrashPath
     // All 4  segments are made as stale segments, they should be moved to the trash folder
     deleteTableStatusFile(path)
-
-    sql(s"CLEAN FILES FOR TABLE CLEANTEST").show()
-    checkAnswer(sql(s"""select count(*) from cleantest"""),
-      Seq(Row(0)))
-
+    sql(s"CLEAN FILES FOR TABLE CLEANTEST")
+    checkAnswer(sql(s"""select count(*) from cleantest"""), Seq(Row(0)))
     val timeStamp = getTimestampFolderName(trashFolderPath)
     // test recovery from partition table
-    val segment0Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_0"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment0Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    val segment1Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_1"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment1Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    val segment2Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_2"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment2Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    val segment3Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_3"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment3Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    checkAnswer(sql(s"""select count(*) from cleantest"""),
-      Seq(Row(4)))
-
-    sql("""DROP TABLE IF EXISTS C1""")
-    sql("""DROP TABLE IF EXISTS CLEANTEST""")
+    recoverSegment(trashFolderPath, timeStamp, "0")
+    recoverSegment(trashFolderPath, timeStamp, "1")
+    recoverSegment(trashFolderPath, timeStamp, "2")
+    recoverSegment(trashFolderPath, timeStamp, "3")
+    checkAnswer(sql(s"""select count(*) from cleantest"""), Seq(Row(4)))
   }
-
 
   test("clean up table and test trash folder with stale segments part 2") {
     sql("""DROP TABLE IF EXISTS CLEANTEST""")
-    sql("""DROP TABLE IF EXISTS C1""")
-
     sql("create table cleantest(" +
       "value int) partitioned by (name string, age int) stored as carbondata")
     sql("insert into cleantest values (30, 'amy', 12), (40, 'bob', 13)")
     sql("insert into cleantest values (30, 'amy', 20), (10, 'bob', 13)")
     sql("insert into cleantest values (30, 'cat', 12), (40, 'dog', 13)")
-
-
-    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
-      .getTablePath
-    val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
+    val (path, trashFolderPath) = getTableAndTrashPath
     // All 4  segments are made as stale segments, they should be moved to the trash folder
     // createStaleSegments(path)
     deleteTableStatusFile(path)
-
-    sql(s"CLEAN FILES FOR TABLE CLEANTEST").show()
-
+    sql(s"CLEAN FILES FOR TABLE CLEANTEST")
     val timeStamp = getTimestampFolderName(trashFolderPath)
     // test recovery from partition table
-    val segment0Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_0"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment0Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    val segment1Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_1"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment1Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    val segment2Path = trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
-      "/Segment_2"
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment2Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    checkAnswer(sql(s"""select count(*) from cleantest"""),
-      Seq(Row(6)))
-    checkAnswer(sql(s"""select count(*) from cleantest where age=13"""),
-      Seq(Row(3)))
-
-    sql("""DROP TABLE IF EXISTS C1""")
-    sql("""DROP TABLE IF EXISTS CLEANTEST""")
+    recoverSegment(trashFolderPath, timeStamp, "0")
+    recoverSegment(trashFolderPath, timeStamp, "1")
+    recoverSegment(trashFolderPath, timeStamp, "2")
+    checkAnswer(sql(s"""select count(*) from cleantest"""), Seq(Row(6)))
+    checkAnswer(sql(s"""select count(*) from cleantest where age=13"""), Seq(Row(3)))
   }
 
   test("clean up maintable table and test trash folder with SI with stale segments") {
-    createParitionTable()
+    createPartitionTable()
     loadData()
     sql(s"""CREATE INDEX SI_CLEANTEST on cleantest(name) as 'carbondata' """)
-    checkAnswer(sql(s"""select count(*) from cleantest"""),
-      Seq(Row(4)))
-    checkAnswer(sql(s"""select count(*) from si_cleantest"""),
-      Seq(Row(4)))
-
-    val mainTablePath = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext
-      .sparkSession).getTablePath
+    checkAnswer(sql(s"""select count(*) from cleantest"""), Seq(Row(4)))
+    checkAnswer(sql(s"""select count(*) from si_cleantest"""), Seq(Row(4)))
+    val (mainTablePath, mainTableTrashFolderPath) = getTableAndTrashPath
     deleteTableStatusFile(mainTablePath)
-    val mainTableTrashFolderPath = mainTablePath + CarbonCommonConstants.FILE_SEPARATOR +
-      CarbonTablePath.TRASH_DIR
-
     assert(!FileFactory.isFileExist(mainTableTrashFolderPath))
-
-    sql(s"CLEAN FILES FOR TABLE CLEANTEST").show()
+    sql(s"CLEAN FILES FOR TABLE CLEANTEST")
     checkAnswer(sql(s"""select count(*) from cleantest"""), Seq(Row(0)))
     checkAnswer(sql(s"""select count(*) from si_cleantest"""), Seq(Row(4)))
-
     assert(FileFactory.isFileExist(mainTableTrashFolderPath))
-
-    count = 0
-    var listMainTable = getFileCountInTrashFolder(mainTableTrashFolderPath)
-    assert(listMainTable == 8)
+    assertResult(8)(getFileCountInTrashFolder(mainTableTrashFolderPath))
 
     // recovering data from trash folder
     val timeStamp = getTimestampFolderName(mainTableTrashFolderPath)
+    recoverSegment(mainTableTrashFolderPath, timeStamp, "0")
+    recoverSegment(mainTableTrashFolderPath, timeStamp, "1")
+    recoverSegment(mainTableTrashFolderPath, timeStamp, "2")
+    recoverSegment(mainTableTrashFolderPath, timeStamp, "3")
 
-    val segment0Path = mainTableTrashFolderPath + CarbonCommonConstants.FILE_SEPARATOR +
-      timeStamp + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + '0'
-    val segment1Path = mainTableTrashFolderPath + CarbonCommonConstants.FILE_SEPARATOR +
-      timeStamp + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + '1'
-    val segment2Path = mainTableTrashFolderPath + CarbonCommonConstants.FILE_SEPARATOR +
-      timeStamp + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + '2'
-    val segment3Path = mainTableTrashFolderPath + CarbonCommonConstants.FILE_SEPARATOR +
-      timeStamp + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + '3'
-
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment0Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment1Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment2Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$segment3Path'")
-    sql("INSERT INTO cleantest select * from c1").show()
-    sql("drop table c1")
-
-    checkAnswer(sql(s"""select count(*) from cleantest"""),
-      Seq(Row(4)))
-    intercept[RuntimeException] {
-      sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
-    }
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
-    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
-    CarbonProperties.getInstance()
-      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
+    checkAnswer(sql(s"""select count(*) from cleantest"""), Seq(Row(4)))
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')")
     // no files in trash anymore
-    count = 0
-    listMainTable = getFileCountInTrashFolder(mainTableTrashFolderPath)
-    assert(listMainTable == 0)
-    sql("show segments for table cleantest").show()
-    sql("show segments for table si_cleantest").show()
-    sql("""DROP TABLE IF EXISTS CLEANTEST""")
+    assertResult(0)(getFileCountInTrashFolder(mainTableTrashFolderPath))
+  }
+
+  test("clean files not allowed force option by default") {
+    try {
+      createPartitionTable()
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+          CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+      val exception = intercept[RuntimeException] {
+        sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')")
+      }
+      assertResult("Clean files with force operation not permitted by default")(
+        exception.getMessage)
+    } finally {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    }
   }
 
   def editTableStatusFile(carbonTablePath: String) : Unit = {
@@ -309,15 +193,15 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
   }
 
   def getFileCountInTrashFolder(dirPath: String): Int = {
+    var count = 0
     val fileName = new File(dirPath)
     val files = fileName.listFiles()
     if (files != null) {
       files.foreach(file => {
-        if (file.isFile) {
-          count = count + 1
-        }
         if (file.isDirectory()) {
-          getFileCountInTrashFolder(file.getAbsolutePath())
+          count = count + getFileCountInTrashFolder(file.getAbsolutePath())
+        } else {
+          count = count + 1
         }
       })
     }
@@ -335,8 +219,8 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     f1.delete()
   }
 
-  def createParitionTable() : Unit = {
-    sql("""DROP TABLE IF EXISTS CLEANTEST""")
+  def createPartitionTable() : Unit = {
+    dropTable
     sql(
       """
         | CREATE TABLE CLEANTEST (id Int, id1 INT, name STRING ) PARTITIONED BY (add String)
@@ -349,5 +233,40 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"jack","abc"""")
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"johnny","adc"""")
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"Reddit","adc"""")
+  }
+
+  private def getTableAndTrashPath: (String, String) = {
+    val path =
+      CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession).getTablePath
+    (path, CarbonTablePath.getTrashFolderPath(path))
+  }
+
+  private def getTrashSegmentPath(
+      trashFolderPath: String,
+      timeStamp: String,
+      segmentNo: String): String = {
+    trashFolderPath + CarbonCommonConstants.FILE_SEPARATOR + timeStamp +
+      CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER + segmentNo
+  }
+
+  private def recoverDataFromTrash(path: String) = {
+    sql("drop table if exists c1")
+    sql(s"CREATE TABLE c1 USING CARBON LOCATION '$path'")
+    sql("INSERT INTO cleantest select * from c1")
+    sql("drop table c1")
+  }
+
+  private def recoverSegment(trashFolderPath: String,
+      timeStamp: String,
+      segmentNo: String): Unit = {
+    recoverDataFromTrash(getTrashSegmentPath(trashFolderPath, timeStamp, segmentNo))
+  }
+
+  override protected def afterAll(): Unit = {
+    dropTable()
+  }
+  private def dropTable(): Unit = {
+    sql("""DROP TABLE IF EXISTS CLEANTEST""")
+    sql("drop table if exists c1")
   }
 }

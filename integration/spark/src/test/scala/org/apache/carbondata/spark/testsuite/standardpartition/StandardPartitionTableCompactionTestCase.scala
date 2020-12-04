@@ -166,7 +166,7 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     for (i <- 0 until 4) {
       sql(s"""insert into staticpartitioncompaction PARTITION(deptname='software') select empno,doj,workgroupcategoryname,deptno,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
     }
-    sql("CLEAN FILES FOR TABLE staticpartitioncompaction").collect()
+    sql("CLEAN FILES FOR TABLE staticpartitioncompaction OPTIONS('FORCE'='true')").collect()
     val segments = sql("SHOW SEGMENTS FOR TABLE staticpartitioncompaction")
     val segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(segmentSequenceIds.size==1)

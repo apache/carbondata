@@ -517,7 +517,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_global_sort_update")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_global_sort_update")
     sql("alter table carbon_global_sort_update compact 'major'")
-    sql("clean files for table carbon_global_sort_update")
+    sql("clean files for table carbon_global_sort_update options('force'='true')")
     assert(sql("select * from carbon_global_sort_update").count() == 24)
     val updatedRows = sql(
       "update carbon_global_sort_update d set (id) = (id + 3) where d.name = 'd'").collect()

@@ -286,6 +286,7 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""ALTER TABLE default.ud_index1 SET
            |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
+    sql("clean files for table uniqdata options('force'='true')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE uniqdata " +
         "OPTIONS('DELIMITER'=',','BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')")
     val count1 = sql("select * from uniqdata where workgroupcategoryname = 'developer'").count()

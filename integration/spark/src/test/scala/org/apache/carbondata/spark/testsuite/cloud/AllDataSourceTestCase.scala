@@ -570,7 +570,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
          |  """.stripMargin
     ).collect()
 
-    sql(s"clean files for table $tableName").collect()
+    sql(s"clean files for table $tableName options('force'='true')").collect()
 
     checkAnswer(
       sql(s"select * from $tableName order by col1"),

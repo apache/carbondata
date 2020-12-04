@@ -192,7 +192,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     segmentList.add("3")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
     checkExistence(sql("show segments for table mv1"), true, "0.1")
-    sql("clean files for table mv1")
+    sql("clean files for table mv1 options('force'='true')")
     sql("drop table IF EXISTS test_table")
   }
 
@@ -216,8 +216,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"refresh materialized view mv1")
     loadDataToFactTable("test_table")
     sql(s"refresh materialized view mv1")
-    sql("clean files for table mv1")
-    sql("clean files for table test_table")
+    sql("clean files for table mv1 options('force'='true')")
+    sql("clean files for table test_table options('force'='true')")
     val viewTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
       "mv1")

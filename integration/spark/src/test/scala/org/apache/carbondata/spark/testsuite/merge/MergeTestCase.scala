@@ -1105,7 +1105,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         .execute()
     }
 
-    sql("clean files for table target").collect()
+    sql("clean files for table target options('force'='true')").collect()
     checkAnswer(sql("select count(*) from target"), Seq(Row(70)))
 
     CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "false")

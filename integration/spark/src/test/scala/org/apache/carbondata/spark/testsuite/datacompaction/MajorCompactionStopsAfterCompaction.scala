@@ -110,7 +110,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
    */
   test("delete merged folder and check segments") {
     // delete merged segments
-    sql("clean files for table stopmajor")
+    sql("clean files for table stopmajor options('force'='true')")
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,

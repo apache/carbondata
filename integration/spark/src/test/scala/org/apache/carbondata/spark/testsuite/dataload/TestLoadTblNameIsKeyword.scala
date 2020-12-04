@@ -86,7 +86,7 @@ class TestLoadTblNameIsKeyword extends QueryTest with BeforeAndAfterAll {
         """)
     sql("show segments for table timestamp")
     sql("delete from table timestamp where segment.starttime before '2099-10-01 18:00:00'")
-    sql("clean files for table timestamp")
+    sql("clean files for table timestamp options('force'='true')")
   }
 
   override def afterAll {

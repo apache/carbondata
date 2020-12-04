@@ -138,7 +138,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT COUNT(*) FROM index_main WHERE TEXT_MATCH('country:china')"),
       sql("select COUNT(*) from index_main where country='china'"))
     sql("delete from table index_main where SEGMENT.ID in (0) ")
-    sql("clean files for table index_main")
+    sql("clean files for table index_main options('force'='true')")
     checkAnswer(sql("SELECT COUNT(*) FROM index_main WHERE TEXT_MATCH('country:china')"),
       sql("select COUNT(*) from index_main where country='china'"))
     sql("drop index if exists lucene_index on table index_main")

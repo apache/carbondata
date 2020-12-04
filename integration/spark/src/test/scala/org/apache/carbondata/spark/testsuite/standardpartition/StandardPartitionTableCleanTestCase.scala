@@ -94,7 +94,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
 
     sql(s"""ALTER TABLE partitionone DROP PARTITION(empno='11')""")
     validateDataFiles("default_partitionone", "0", 9, 9)
-    sql(s"CLEAN FILES FOR TABLE partitionone").collect()
+    sql(s"CLEAN FILES FOR TABLE partitionone OPTIONS('FORCE'='TRUE')").collect()
     validateDataFiles("default_partitionone", "0", 9, 9)
     checkExistence(sql(s"""SHOW PARTITIONS partitionone"""), false, "empno=11")
     checkAnswer(
@@ -122,7 +122,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
       sql(s"""ALTER TABLE partitionmany DROP PARTITION(deptname='Learning')""")
       validateDataFiles("default_partitionmany", "0", 8, 8)
       validateDataFiles("default_partitionmany", "1", 8, 8)
-      sql(s"CLEAN FILES FOR TABLE partitionmany").collect()
+      sql(s"CLEAN FILES FOR TABLE partitionmany OPTIONS('FORCE'='TRUE')").collect()
       validateDataFiles("default_partitionmany", "0", 8, 8)
       validateDataFiles("default_partitionmany", "1", 8, 8)
       checkExistence(sql(s"""SHOW PARTITIONS partitionmany"""),
@@ -157,7 +157,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     sql(s"""ALTER TABLE partitionall DROP PARTITION(deptname='security')""")
     assert(sql(s"""SHOW PARTITIONS partitionall""").collect().length == 0)
     validateDataFiles("default_partitionall", "0", 0, 0)
-    sql(s"CLEAN FILES FOR TABLE partitionall").collect()
+    sql(s"CLEAN FILES FOR TABLE partitionall OPTIONS('FORCE'='TRUE')").collect()
     validateDataFiles("default_partitionall", "0", 0, 0)
     checkAnswer(
       sql(s"""select count (*) from partitionall"""),
@@ -195,7 +195,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     sql(s"delete from table partitionalldeleteseg where segment.id in (1)").collect()
     checkExistence(sql(s"show segments for table partitionalldeleteseg"), true, "Marked for Delete")
     checkAnswer(sql(s"Select count(*) from partitionalldeleteseg"), Seq(Row(30)))
-    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg").collect()
+    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg OPTIONS('FORCE'='TRUE')").collect()
     assert(sql(s"show segments for table partitionalldeleteseg").count == 3)
   }
 

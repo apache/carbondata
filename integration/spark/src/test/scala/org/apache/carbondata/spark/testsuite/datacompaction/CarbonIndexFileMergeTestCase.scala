@@ -198,7 +198,7 @@ class CarbonIndexFileMergeTestCase
     sql("create table mitable(id int, issue date) STORED AS carbondata")
     sql("insert into table mitable select '1','2000-02-01'")
     sql("update mitable set(id)=(2) where issue = '2000-02-01'").collect()
-    sql("clean files for table mitable")
+    sql("clean files for table mitable options('force'='true')")
     sql("select * from mitable")collect()
 }
 

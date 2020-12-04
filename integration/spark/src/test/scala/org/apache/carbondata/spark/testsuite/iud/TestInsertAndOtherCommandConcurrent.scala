@@ -206,7 +206,7 @@ class TestInsertAndOtherCommandConcurrent
   test("clean file should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
-      sql("clean files for table  orders")
+      sql("clean files for table  orders options('force'='true')")
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(

@@ -17,12 +17,12 @@
 
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
-import java.util
+import scala.collection.JavaConverters._
 
+import java.util
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-import scala.collection.JavaConverters._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
@@ -81,7 +81,7 @@ class TestLoadDataWithStaleDataInSegmentFolder extends QueryTest with BeforeAndA
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table $tableName")
     verifyThereIsNoSameContentInDifferentIndexes(tableName, "0")
     checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(6)))
-    sql(s"clean files for table $tableName")
+    sql(s"clean files for table $tableName options('force'='true')")
     checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(6)))
   }
 
@@ -96,7 +96,7 @@ class TestLoadDataWithStaleDataInSegmentFolder extends QueryTest with BeforeAndA
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table $tableName")
     sql(s"ALTER TABLE $tableName COMPACT 'MINOR'")
     checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(24)))
-    sql(s"clean files for table $tableName")
+    sql(s"clean files for table $tableName options('force'='true')")
     checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(24)))
   }
 
@@ -116,7 +116,7 @@ class TestLoadDataWithStaleDataInSegmentFolder extends QueryTest with BeforeAndA
     } else {
       checkAnswer(sql(s"select count(1) from $siName"), Seq(Row(4)))
     }
-    sql(s"clean files for table $tableName")
+    sql(s"clean files for table $tableName options('force'='true')")
     checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(6)))
     if (isPartition) {
       checkAnswer(sql(s"select count(1) from $siName"), Seq(Row(6)))
@@ -133,7 +133,7 @@ class TestLoadDataWithStaleDataInSegmentFolder extends QueryTest with BeforeAndA
     sql(s"INSERT INTO $tableName values(1, 'a', 'c', 2)")
     verifyThereIsNoSameContentInDifferentIndexes(tableName, "0")
     checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(1)))
-    sql(s"clean files for table $tableName")
+    sql(s"clean files for table $tableName options('force'='true')")
     checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(1)))
   }
 

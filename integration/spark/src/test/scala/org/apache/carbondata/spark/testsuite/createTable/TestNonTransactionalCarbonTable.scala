@@ -730,7 +730,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     //14. Block clean files
     exception = intercept[MalformedCarbonCommandException] {
-      sql("clean files for table sdkOutputTable")
+      sql("clean files for table sdkOutputTable options('force'='true')")
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on non transactional table"))

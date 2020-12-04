@@ -108,7 +108,7 @@ object TableLevelCompactionOptionExample {
 
     // do major compaction, there will be 3 segment left(2 preserved segments)
     spark.sql("ALTER TABLE tablecompaction_table COMPACT 'MAJOR'")
-    spark.sql("CLEAN FILES FOR TABLE tablecompaction_table")
+    spark.sql("CLEAN FILES FOR TABLE tablecompaction_table OPTIONS('FORCE'='TRUE')")
     spark.sql("SHOW SEGMENTS FOR TABLE tablecompaction_table").show()
 
     CarbonProperties.getInstance().addProperty(

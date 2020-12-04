@@ -2424,7 +2424,7 @@ class DataLoadingIUDTestCase
    sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
    sql(s""" update t_carbn01 set(item_name) = ('Ram')""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(10)), "DataLoadingIUDTestCase_IUD-01-01-02_023-09")
      sql(s"""drop table t_carbn01  """).collect
@@ -2437,7 +2437,7 @@ class DataLoadingIUDTestCase
    sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
    sql(s"""delete from t_carbn01""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(0)), "DataLoadingIUDTestCase_IUD-01-01-02_023-10")
      sql(s"""drop table t_carbn01  """).collect
@@ -2458,7 +2458,7 @@ class DataLoadingIUDTestCase
    sql(s"""update t_carbn01 set (item_name) =('Apple') where item_type_cd =3""").collect
    sql(s"""update t_carbn01 set (item_name) =('Apple') where item_type_cd =4""").collect
    sql(s"""update t_carbn01 set (item_name) =('Apple') where item_type_cd =2""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_name) from t_carbn01""",
       Seq(Row(10)), "DataLoadingIUDTestCase_IUD-01-01-02_023-11")
      sql(s"""drop table t_carbn01""").collect
@@ -2479,7 +2479,7 @@ class DataLoadingIUDTestCase
    sql(s"""delete from t_carbn01 where item_type_cd =3""").collect
    sql(s"""delete from t_carbn01 where item_type_cd =4""").collect
    sql(s"""delete from t_carbn01 where item_type_cd =2""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(1)), "DataLoadingIUDTestCase_IUD-01-01-02_023-12")
      sql(s"""drop table t_carbn01""").collect
@@ -2515,7 +2515,7 @@ class DataLoadingIUDTestCase
    sql(s"""update t_carbn01 set (item_name) =('Apple7') """).collect
    sql(s"""update t_carbn01 set (item_name) =('Apple8') """).collect
    sql(s"""update t_carbn01 set (item_name) =('Apple9') """).collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_name) from t_carbn01""",
       Seq(Row(10)), "DataLoadingIUDTestCase_IUD-01-01-02_023-13")
      sql(s"""drop table t_carbn01""").collect
@@ -2529,7 +2529,7 @@ class DataLoadingIUDTestCase
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""update t_carbn01 set (item_name) =('Apple1')""").collect
    sql(s"""delete from t_carbn01""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_name) from t_carbn01""",
       Seq(Row(0)), "DataLoadingIUDTestCase_IUD-01-01-02_023-14")
      sql(s"""drop table t_carbn01""").collect
@@ -2542,7 +2542,7 @@ class DataLoadingIUDTestCase
    sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s""" insert into t_carbn01 select * from t_carbn01b""").collect
    sql(s"""delete from t_carbn01""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
    sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(10)), "DataLoadingIUDTestCase_IUD-01-01-02_023-15")
@@ -2556,7 +2556,7 @@ class DataLoadingIUDTestCase
    sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
    sql(s"""delete from t_carbn01""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""show tables""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
@@ -2595,7 +2595,7 @@ class DataLoadingIUDTestCase
    sql(s"""insert into t_carbn2 select * from t_hive01""").collect
    sql(s"""insert into t_carbn2 select 2, 200000,23.3,'Banana','2012-11-11 11:11:11'""").collect
    sql(s"""delete from t_carbn2 where item_name = 'Banana'""").collect
-   sql(s"""clean files for table t_carbn2""").collect
+   sql(s"""clean files for table t_carbn2 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn2""",
       Seq(Row(2)), "DataLoadingIUDTestCase_IUD-01-01-02_023-18")
      sql(s"""drop table t_carbn2""").collect
@@ -2609,7 +2609,7 @@ class DataLoadingIUDTestCase
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""update t_carbn01 set (item_name) =('Apple1')""").collect
    sql(s"""delete from t_carbn01""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(0)), "DataLoadingIUDTestCase_IUD-01-01-02_023-19")
      sql(s"""drop table t_carbn01""").collect
@@ -2623,7 +2623,7 @@ class DataLoadingIUDTestCase
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""update t_carbn01 set (item_name) =('Apple1') where item_type_cd in (123,41,14,13,114)""").collect
    sql(s"""delete from t_carbn01 where item_type_cd in (11,3,4,2)""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(6)), "DataLoadingIUDTestCase_IUD-01-01-02_023-20")
      sql(s"""drop table t_carbn01""").collect
@@ -2640,7 +2640,7 @@ class DataLoadingIUDTestCase
    sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
    sql(s"""insert into t_carbn2 select * from t_carbn1""").collect
    sql(s"""delete from t_carbn2 where item_name = 'Apple'""").collect
-   sql(s"""clean files for table t_carbn2""").collect
+   sql(s"""clean files for table t_carbn2 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn2""",
       Seq(Row(1)), "DataLoadingIUDTestCase_IUD-01-01-02_023-21")
      sql(s"""drop table t_carbn2""").collect
@@ -2657,7 +2657,7 @@ class DataLoadingIUDTestCase
    sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
    sql(s"""insert into t_carbn2 select * from t_carbn1""").collect
    sql(s"""delete from t_carbn2 where item_name in ('Orange','Apple')""").collect
-   sql(s"""clean files for table t_carbn2""").collect
+   sql(s"""clean files for table t_carbn2 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn2""",
       Seq(Row(0)), "DataLoadingIUDTestCase_IUD-01-01-02_023-22")
      sql(s"""drop table t_carbn2""").collect
@@ -2671,7 +2671,7 @@ class DataLoadingIUDTestCase
    sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
    sql(s"""insert into t_carbn1 select 2,300000,33.3,'Apple','2012-11-11 11:11:11'""").collect
    sql(s"""delete from t_carbn1 where item_name = 'Apple'""").collect
-   sql(s"""clean files for table t_carbn1""").collect
+   sql(s"""clean files for table t_carbn1 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn1""",
       Seq(Row(0)), "DataLoadingIUDTestCase_IUD-01-01-02_023-23")
      sql(s"""drop table t_carbn1""").collect
@@ -2686,7 +2686,7 @@ class DataLoadingIUDTestCase
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""update t_carbn01 set(item_name) = ('Apple')""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(30)), "DataLoadingIUDTestCase_IUD-01-01-02_023-24")
      sql(s"""drop table t_carbn01""").collect
@@ -2701,7 +2701,7 @@ class DataLoadingIUDTestCase
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""delete from t_carbn01""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(0)), "DataLoadingIUDTestCase_IUD-01-01-02_023-25")
      sql(s"""drop table t_carbn01""").collect
@@ -2717,7 +2717,7 @@ class DataLoadingIUDTestCase
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""update t_carbn01 set (item_name) =('Apple1') where item_type_cd in (123,41,14,13,114)""").collect
    sql(s"""delete from t_carbn01 where item_type_cd in (11,3,4,2)""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn01""",
       Seq(Row(18)), "DataLoadingIUDTestCase_IUD-01-01-02_023-26")
      sql(s"""drop table t_carbn01""").collect
@@ -2838,7 +2838,7 @@ class DataLoadingIUDTestCase
    sql(s"""update t_carbn1 set (sell_price) = (10)""").collect
    sql(s"""update t_carbn1 set (sell_price) = (11)""").collect
    sql(s"""update t_carbn1 set (sell_price) = (12)""").collect
-   sql(s"""clean files for table t_carbn1""").collect
+   sql(s"""clean files for table t_carbn1 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from t_carbn1 where sell_price=12""",
       Seq(Row(2)), "DataLoadingIUDTestCase_IUD-01-01-02_023-29")
      sql(s"""drop table t_carbn1""").collect
@@ -2859,7 +2859,7 @@ class DataLoadingIUDTestCase
    sql(s"""delete from t_carbn01 where item_type_cd=3""").collect
    sql(s"""delete from t_carbn01 where item_type_cd=4""").collect
    sql(s"""delete from t_carbn01 where item_type_cd=2""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from default.t_carbn01""",
       Seq(Row(1)), "DataLoadingIUDTestCase_IUD-01-01-02_023-30")
      sql(s"""drop table default.t_carbn01""").collect
@@ -2887,7 +2887,7 @@ class DataLoadingIUDTestCase
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""delete from t_carbn01 where item_type_cd between 100 and 200""").collect
 
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select  count(item_type_cd) from default.t_carbn01""",
       Seq(Row(8)), "DataLoadingIUDTestCase_IUD-01-01-02_023-31")
      sql(s"""drop table default.t_carbn01""").collect
@@ -2915,7 +2915,7 @@ class DataLoadingIUDTestCase
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""update t_carbn01 set (item_name) = ('Banana') where item_type_cd between 100 and 200""").collect
    sql(s"""update t_carbn01 set(item_name) = ('Apple') where item_type_cd between 1 and 100""").collect
-   sql(s"""clean files for table t_carbn01""").collect
+   sql(s"""clean files for table t_carbn01 options('force'='true')""").collect
     checkAnswer(s"""select item_name, count(*) from t_carbn01 group by item_name""",
       Seq(Row("Apple", 112), Row("Banana", 28)), "DataLoadingIUDTestCase_IUD-01-01-02_023-32")
      sql(s"""drop table default.t_carbn01""").collect
@@ -3689,7 +3689,7 @@ class DataLoadingIUDTestCase
     sql("update brinjal set (AMSize)= ('8RAM size') where AMSize='4RAM size'").collect
     sql("delete from brinjal where AMSize='8RAM size'").collect
     sql("delete from table brinjal where segment.id IN(0)").collect
-    sql("clean files for table brinjal").collect
+    sql("clean files for table brinjal options('force'='true')").collect
     sql("alter table brinjal compact 'minor'").collect
     sql("alter table brinjal compact 'major'").collect
     checkAnswer(s"""select count(*) from brinjal""",

@@ -34,6 +34,7 @@ case class CleanFilesPreEvent(carbonTable: CarbonTable, sparkSession: SparkSessi
  * @param carbonTable
  * @param sparkSession
  */
-case class CleanFilesPostEvent(carbonTable: CarbonTable,
+case class CleanFilesPostEvent(
+    carbonTable: CarbonTable,
     sparkSession: SparkSession,
     options: Map[String, String]) extends Event with CleanFilesEventInfo

@@ -81,7 +81,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
         Row("e", 5, "ee", "eee"))
     )
     sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'e'""").collect()
-    sql("clean files for table iud.zerorows")
+    sql("clean files for table iud.zerorows options('force'='true')")
     val carbonTable = CarbonEnv.getCarbonTable(Some("iud"), "zerorows")(sqlContext.sparkSession)
     val segmentFileLocation = FileFactory.getCarbonFile(CarbonTablePath.getSegmentFilesLocation(
       carbonTable.getTablePath))
@@ -157,7 +157,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into iud.zerorows select 'abc',34,'def','des'")
     sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").collect()
     sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").collect()
-    sql("clean files for table iud.zerorows")
+    sql("clean files for table iud.zerorows options('force'='true')")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from iud.zerorows"""),
       Seq(Row("a", 2, "aa", "aaa"),
@@ -953,7 +953,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into t select 'aswd','sdfw',4,'dfgw'")
     sql("insert into t select 'aesd','sdef',5,'dfge'")
     sql("alter table t compact 'minor'")
-    sql("clean files for table t")
+    sql("clean files for table t options('force'='true')")
     sql("delete from t where c3 = 2").collect()
     sql("update t set(c4) = ('yyy') where c3 = 3").collect()
     checkAnswer(sql("select count(*) from t where c4 = 'yyy'"), Seq(Row(1)))

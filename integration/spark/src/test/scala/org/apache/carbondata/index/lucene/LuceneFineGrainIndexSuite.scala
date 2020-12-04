@@ -434,7 +434,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("delete from table index_test_table where SEGMENT.ID in (0) ")
     checkAnswer(sql("SELECT count(*) FROM index_test_table WHERE TEXT_MATCH('name:n99*')"),
       sql("select count(*) from index_test_table where name like 'n99%'"))
-    sql("clean files for table index_test_table")
+    sql("clean files for table index_test_table options('force'='true')")
     sql("drop index if exists dm2 on table index_test_table")
   }
 

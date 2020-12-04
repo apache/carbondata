@@ -1333,7 +1333,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE Compaction_ShowSegment OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE Compaction_ShowSegment OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
    sql(s"""alter table Compaction_ShowSegment compact 'minor'""").collect
-   sql(s"""CLEAN FILES FOR TABLE Compaction_ShowSegment""").collect
+   sql(s"""CLEAN FILES FOR TABLE Compaction_ShowSegment options('force'='true')""").collect
    sql(s"""show segments for table Compaction_ShowSegment""").collect
     checkAnswer(s"""select count(*) from Compaction_ShowSegment""",
       Seq(Row(495)), "DataLoadingTestCase_Details-Loading-Incremental-001-01_TC_037_869")
@@ -1382,7 +1382,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE Compaction_T_Delete OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE Compaction_T_Delete OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
    sql(s"""alter table Compaction_T_Delete compact 'minor'""").collect
-   sql(s"""CLEAN FILES FOR TABLE Compaction_T_Delete""").collect
+   sql(s"""CLEAN FILES FOR TABLE Compaction_T_Delete options('force'='true')""").collect
    sql(s"""show segments for table Compaction_T_Delete""").collect
    sql(s"""delete from table Compaction_T_Delete where segment.id in (0.1)""").collect
     checkAnswer(s"""select count(*) from Compaction_T_Delete""",

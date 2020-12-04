@@ -44,11 +44,7 @@ object ExampleUtils {
       s"$rootPath/examples/spark/target/store"
     }
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
-      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "")
+    initCarbonProperties
 
     val masterUrl = if (workThreadNum <= 1) {
       "local"
@@ -71,15 +67,20 @@ object ExampleUtils {
     spark
   }
 
-  def createSparkSession(appName: String, workThreadNum: Int = 1): SparkSession = {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-    val warehouse = s"$rootPath/examples/spark/target/warehouse"
+  private def initCarbonProperties = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
       .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "")
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+  }
+
+  def createSparkSession(appName: String, workThreadNum: Int = 1): SparkSession = {
+    val rootPath = new File(this.getClass.getResource("/").getPath
+                            + "../../../..").getCanonicalPath
+    val warehouse = s"$rootPath/examples/spark/target/warehouse"
+    initCarbonProperties
     val masterUrl = if (workThreadNum <= 1) {
       "local"
     } else {

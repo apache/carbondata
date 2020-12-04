@@ -80,7 +80,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
       """update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and (s.c22 > 5 and c22 < 8) or (s.c22 > 15 and s.c22 < 18 ) or (s.c22 > 25 and c22 < 28) or (s.c22 > 35 and c22 < 38))""")
       .collect()
     sql("""alter table dest2 compact 'minor'""")
-    sql("""clean files for table dest2""")
+    sql("""clean files for table dest2 options('force'='true')""")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from dest2 order by c2"""),
       Seq(Row("a", 1, "MGM", "Disco"),
@@ -148,7 +148,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""delete from dest2 where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""").collect()
     sql("""select * from dest2 order by 2""")
     sql("""delete from dest2 where (c2 > 5 and c2 < 8) or (c2 > 15 and c2 < 18 ) or (c2 > 25 and c2 < 28) or (c2 > 35 and c2 < 38)""").collect()
-    sql("""clean files for table dest2""")
+    sql("""clean files for table dest2 options('force'='true')""")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from dest2 order by c2"""),
       Seq(Row("c", 3, "cc", "ccc"),
@@ -195,7 +195,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and (s.c22 > 5 and c22 < 8) or (s.c22 > 15 and s.c22 < 18 ) or (s.c22 > 25 and c22 < 28) or (s.c22 > 35 and c22 < 38))""").collect()
     sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c11,s.c66 from source2 s where d.c1 = s.c11 and (s.c22 > 5 and c22 < 8) or (s.c22 > 15 and s.c22 < 18 ) or (s.c22 > 25 and c22 < 28) or (s.c22 > 35 and c22 < 38))""").collect()
     sql("""alter table dest2 compact 'major'""")
-    sql("""clean files for table dest2""")
+    sql("""clean files for table dest2 options('force'='true')""")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from dest2 order by c2"""),
       Seq(Row("a", 1, "a", "10"),
@@ -261,7 +261,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""delete from dest2 where (c2 < 2) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").collect()
     sql("""delete from dest2 where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""").collect()
     sql("""delete from dest2 where (c2 > 5 and c2 < 8) or (c2 > 15 and c2 < 18 ) or (c2 > 25 and c2 < 28) or (c2 > 35 and c2 < 38)""").collect()
-    sql("""clean files for table dest2""")
+    sql("""clean files for table dest2 options('force'='true')""")
     checkAnswer(
       sql("""select c1,c2,c3,c5 from dest2 order by c2"""),
       Seq(Row("b", 2, "RGK", "Music"),
@@ -325,7 +325,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """delete from dest2 where (c2 < 3) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").collect()
     sql("""delete from table dest2 where segment.id in (0) """)
-    sql("""clean files for table dest2""")
+    sql("""clean files for table dest2 options('force'='true')""")
     sql(
       """update dest2 set (c5) = ('8RAM size') where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""")
       .collect()

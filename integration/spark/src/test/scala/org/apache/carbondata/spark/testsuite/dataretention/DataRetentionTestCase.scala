@@ -168,7 +168,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     // these queries should execute without any error.
     sql("show segments for table DataRetentionTable")
-    sql("clean files for table DataRetentionTable")
+    sql("clean files for table DataRetentionTable options('force'='true')")
   }
 
   test("RetentionTest4_DeleteByInvalidLoadId") {
@@ -270,7 +270,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     // it should fail
     intercept[Exception] {
-      sql("clean files for table retentionlock")
+      sql("clean files for table retentionlock options('force'='true')")
     }
 
     sql("SHOW SEGMENTS FOR TABLE retentionlock").collect()

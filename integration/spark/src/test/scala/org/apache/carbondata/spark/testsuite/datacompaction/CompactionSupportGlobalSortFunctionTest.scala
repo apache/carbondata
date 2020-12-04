@@ -255,7 +255,7 @@ class CompactionSupportGlobalSortFunctionTest
 
     sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'major'")
-    sql("clean files for table compaction_globalsort")
+    sql("clean files for table compaction_globalsort options('force'='true')")
 
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), false, "Compacted")
 
@@ -290,7 +290,7 @@ class CompactionSupportGlobalSortFunctionTest
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
     sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'minor'")
-    sql("clean files for table compaction_globalsort")
+    sql("clean files for table compaction_globalsort options('force'='true')")
 
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), false, "Compacted")
 
@@ -324,7 +324,7 @@ class CompactionSupportGlobalSortFunctionTest
 
     sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'major'")
-    sql("clean files for table compaction_globalsort")
+    sql("clean files for table compaction_globalsort options('force'='true')")
 
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), false, "Compacted")
 
@@ -361,7 +361,7 @@ class CompactionSupportGlobalSortFunctionTest
 
     sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='2')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'major'")
-    sql("clean files for table compaction_globalsort")
+    sql("clean files for table compaction_globalsort options('force'='true')")
 
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), false, "Compacted")
 
@@ -394,7 +394,7 @@ class CompactionSupportGlobalSortFunctionTest
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
     sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='2')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'major'")
-    sql("clean files for table compaction_globalsort")
+    sql("clean files for table compaction_globalsort options('force'='true')")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), false, "Compacted")
 
     val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
@@ -498,7 +498,7 @@ class CompactionSupportGlobalSortFunctionTest
 
     sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
-    sql("clean files for table compaction_globalsort")
+    sql("clean files for table compaction_globalsort options('force'='true')")
 
     val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }

@@ -104,7 +104,7 @@ object DataManagementExample {
 
     // force clean up all 'MARKED_FOR_DELETE' and 'COMPACTED' segments immediately
     spark.sql("SHOW SEGMENTS FOR TABLE datamanagement_table").show()
-    spark.sql("CLEAN FILES FOR TABLE datamanagement_table")
+    spark.sql("CLEAN FILES FOR TABLE datamanagement_table OPTIONS('FORCE'='TRUE')")
     spark.sql("SHOW SEGMENTS FOR TABLE datamanagement_table").show()
 
     // Drop table

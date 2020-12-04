@@ -39,12 +39,9 @@ object DataTrashManager {
 
   /**
    * clean garbage data
-   *  1. clean .Trash folder
-   *  2. clean stale segments without metadata
-   *  3. clean expired segments (MARKED_FOR_DELETE, Compacted, In Progress)
-   *
-   * @param carbonTable     : CarbonTable Object
-   * @param partitionSpecs : Hive Partitions  details
+   *  1. check and clean .Trash folder
+   *  2. move stale segments without metadata into .Trash
+   *  3. clean expired segments(MARKED_FOR_DELETE, Compacted, In Progress)
    */
   def cleanGarbageData(
       carbonTable: CarbonTable,
@@ -59,11 +56,11 @@ object DataTrashManager {
         "operation is running in the background."
       carbonCleanFilesLock = CarbonLockUtil.getLockObject(absoluteTableIdentifier,
         LockUsage.CLEAN_FILES_LOCK, errorMsg)
-      // step 1: clean trash folder
-      cleanTrashFolder(carbonTable, force)
-      // step 2: clean stale segments which are not exists in metadata
-      cleanStaleSegments(carbonTable)
-      // step 3: clean expired segments
+      // step 1: check and clean trash folder
+      checkAndCleanTrashFolder(carbonTable, force)
+      // step 2: move stale segments which are not exists in metadata into .Trash
+      moveStaleSegmentsToTrash(carbonTable)
+      // step 3: clean expired segments(MARKED_FOR_DELETE, Compacted, In Progress)
       cleanExpiredSegments(carbonTable, force, partitionSpecs)
     } finally {
       if (carbonCleanFilesLock != null) {
@@ -72,7 +69,7 @@ object DataTrashManager {
     }
   }
 
-  private def cleanTrashFolder(carbonTable: CarbonTable, forceClean: Boolean): Unit = {
+  private def checkAndCleanTrashFolder(carbonTable: CarbonTable, forceClean: Boolean): Unit = {
     if (forceClean) {
       // empty the trash folder
       if (CarbonProperties.getInstance().isCleanFilesForceAllowed) {
@@ -89,7 +86,7 @@ object DataTrashManager {
     }
   }
 
-  private def cleanStaleSegments(carbonTable: CarbonTable): Unit = {
+  private def moveStaleSegmentsToTrash(carbonTable: CarbonTable): Unit = {
     if (carbonTable.isHivePartitionTable) {
       CleanFilesUtil.cleanStaleSegmentsForPartitionTable(carbonTable)
     } else {

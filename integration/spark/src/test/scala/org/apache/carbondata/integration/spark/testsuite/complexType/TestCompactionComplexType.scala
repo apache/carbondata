@@ -201,7 +201,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
 
     sql("alter table adaptive compact 'major'").collect()
     sql("SHOW SEGMENTS FOR TABLE adaptive").collect()
-    sql("clean files for table adaptive").collect()
+    sql("clean files for table adaptive options('force'='true')").collect()
     sql("SHOW SEGMENTS FOR TABLE adaptive").collect()
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -234,7 +234,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
 
     sql("alter table adaptive compact 'major'").collect()
     sql("SHOW SEGMENTS FOR TABLE adaptive").collect()
-    sql("clean files for table adaptive").collect()
+    sql("clean files for table adaptive options('force'='true')").collect()
     sql("SHOW SEGMENTS FOR TABLE adaptive").collect()
 
     checkAnswer(sql("select * from adaptive"),

@@ -20,7 +20,7 @@ package org.apache.carbondata.spark.testsuite.createTable
 import scala.util.Random
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.{AnalysisException, CarbonEnv}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -70,6 +70,7 @@ class TestCreateTableWithBlockletSize extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table with invalid blocklet size") {
+    sql("drop table if exists t1")
     val ex = intercept[MalformedCarbonCommandException] {
       sql("CREATE TABLE T1(name String) STORED AS CARBONDATA " +
           "TBLPROPERTIES('TABLE_BLOCKLET_SIZE'='3X')")
