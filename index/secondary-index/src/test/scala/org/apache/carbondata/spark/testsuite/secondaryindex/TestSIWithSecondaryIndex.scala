@@ -428,6 +428,19 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     assert(df.exists(_.get(0).toString.contains("nam(e")))
   }
 
+  test("test change data type from string to long string of SI column") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c int) STORED AS carbondata ")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    sql("insert into maintable values('k','x',2)")
+    val exception = intercept[RuntimeException] {
+      sql("ALTER TABLE maintable SET TBLPROPERTIES('long_String_columns'='b')")
+    }
+    assert(exception.getMessage.contains("col b is part of index indextable. " +
+      "LONG_STRING_COLUMNS cannot be part of index table."))
+    sql("drop table if exists maintable")
+  }
+
   override def afterAll {
     dropIndexAndTable()
   }

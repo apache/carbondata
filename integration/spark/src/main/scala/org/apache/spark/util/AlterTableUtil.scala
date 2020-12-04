@@ -30,6 +30,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
+import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -450,7 +451,7 @@ object AlterTableUtil {
       // validate long string columns
       val longStringColumns = lowerCasePropertiesMap.get("long_string_columns");
       if (longStringColumns.isDefined) {
-        validateLongStringColumns(longStringColumns.get, carbonTable)
+        validateLongStringColumns(longStringColumns.get, carbonTable, sparkSession)
         // update schema for long string columns
         updateSchemaForLongStringColumns(thriftTable, longStringColumns.get)
       } else if (propKeys.exists(_.equalsIgnoreCase("long_string_columns") && !set)) {
@@ -877,7 +878,7 @@ object AlterTableUtil {
    * @param carbonTable
    */
   def validateLongStringColumns(longStringColumns: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable, sparkSession: SparkSession): Unit = {
     // don't allow duplicate column names
     val longStringCols = longStringColumns.split(",").map(column => column.trim.toLowerCase)
     if (longStringCols.distinct.lengthCompare(longStringCols.size) != 0) {
@@ -913,6 +914,19 @@ object AlterTableUtil {
           throw new MalformedCarbonCommandException(errMsg)
         }
       }
+    }
+    // should not be present in index tables
+    val indexTables = CarbonIndexUtil.getSecondaryIndexes(carbonTable)
+    if (!indexTables.isEmpty) {
+      indexTables.asScala.map(indexTable => {
+        CarbonEnv.getCarbonTable(Some(carbonTable.getDatabaseName), indexTable)(sparkSession)
+          .getCreateOrderColumn.asScala.map(column => {
+          if (longStringCols.contains(column.getColName)) {
+            throw new MalformedCarbonCommandException(s"col ${column.getColName} is " +
+              s"part of index ${indexTable}. LONG_STRING_COLUMNS cannot be part of index table.")
+          }
+        })
+      })
     }
   }
 
