@@ -434,6 +434,38 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     assert(df.exists(_.get(0).toString.contains("nam(e")))
   }
 
+  test("test alter table set streaming for table having SI") {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c int) STORED AS carbondata ")
+    sql("insert into maintable2 values('k','x',2)")
+    sql("create index m_indextable on table maintable2(b) AS 'carbondata'")
+    var exeption = intercept[RuntimeException] {
+      sql("ALTER TABLE maintable2 SET TBLPROPERTIES('streaming'='true')")
+    }
+    assert(exeption.getMessage.contains("Set streaming table is " +
+      "not allowed for tables which are having index(s)."))
+
+    exeption = intercept[RuntimeException] {
+      sql("ALTER TABLE m_indextable SET TBLPROPERTIES('streaming'='true')")
+    }
+    assert(exeption.getMessage.contains("Set streaming table is not allowed on the index table."))
+    sql("drop table if exists maintable2")
+  }
+
+  test("test change data type from string to long string of SI column") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c int) STORED AS carbondata ")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    sql("insert into maintable values('k','x',2)")
+    val exception = intercept[RuntimeException] {
+      sql("ALTER TABLE maintable SET TBLPROPERTIES('long_String_columns'='b')")
+    }
+    assert(exception.getMessage.contains("Cannot Alter column b to " +
+      "Long_string_column, as the column exists in a secondary index with name " +
+      "indextable. LONG_STRING_COLUMNS is not allowed on secondary index."))
+    sql("drop table if exists maintable")
+  }
+
   override def afterAll {
     dropIndexAndTable()
   }

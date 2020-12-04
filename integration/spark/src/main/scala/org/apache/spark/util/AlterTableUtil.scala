@@ -24,12 +24,11 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
-import org.apache.spark.sql.hive.HiveExternalCatalog._
+import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -41,8 +40,9 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -456,6 +456,19 @@ object AlterTableUtil {
       } else if (propKeys.exists(_.equalsIgnoreCase("long_string_columns") && !set)) {
         if (tblPropertiesMap.exists(prop => prop._1.equalsIgnoreCase("long_string_columns"))) {
           updateSchemaForLongStringColumns(thriftTable, "")
+        }
+      }
+      // validate set for streaming table
+      val streamingOption = lowerCasePropertiesMap.get("streaming")
+      if (streamingOption.isDefined && set) {
+        if (carbonTable.isIndexTable) {
+          throw new UnsupportedOperationException("Set streaming table is " +
+            "not allowed on the index table.")
+        }
+        val indexTables = CarbonIndexUtil.getSecondaryIndexes(carbonTable)
+        if (!indexTables.isEmpty) {
+          throw new UnsupportedOperationException("Set streaming table is " +
+            "not allowed for tables which are having index(s).")
         }
       }
       // below map will be used for cache invalidation. As tblProperties map is getting modified
@@ -915,6 +928,19 @@ object AlterTableUtil {
           throw new MalformedCarbonCommandException(errMsg)
         }
       }
+    }
+    // should not be present in index tables
+    val secondaryIndexMap = carbonTable.getIndexesMap.get(IndexType.SI.getIndexProviderName)
+    if (secondaryIndexMap != null) {
+      secondaryIndexMap.asScala.foreach(indexTable => {
+        indexTable._2.asScala(CarbonCommonConstants.INDEX_COLUMNS).split(",").foreach(col =>
+          if (longStringCols.contains(col.toLowerCase)) {
+            throw new MalformedCarbonCommandException(s"Cannot Alter column $col to " +
+              s"Long_string_column, as the column exists in a secondary index with name " +
+              s"${indexTable._1}. LONG_STRING_COLUMNS is not allowed on secondary index.")
+          }
+        )
+      })
     }
   }
 
