@@ -86,25 +86,20 @@ public class FileMergeSortComparatorTest {
         && noDictDataTypes[1].equals(DataTypes.STRING) && noDictDataTypes[2]
         .equals(DataTypes.LONG));
 
-    // test getSortColSchemaOrderMapping
-    Map<Integer, List<Boolean>> sortColSchemaOrderMapping =
-        CarbonDataProcessorUtil.getSortColSchemaOrderMapping(carbonTable);
-    assert (sortColSchemaOrderMapping.get(0).get(0).equals(false) && sortColSchemaOrderMapping
-        .get(0).get(1).equals(false));
-    assert (sortColSchemaOrderMapping.get(1).get(0).equals(true) && sortColSchemaOrderMapping.get(1)
-        .get(1).equals(false));
-    assert (sortColSchemaOrderMapping.get(2).get(0).equals(true) && sortColSchemaOrderMapping
-        .get(2).get(1).equals(false));
-    assert (sortColSchemaOrderMapping.get(3).get(0).equals(true) && sortColSchemaOrderMapping.get(3)
-        .get(1).equals(true));
-
     // test comparator
-    boolean[] isSortColNoDict = { true, false };
-    int[] columnIdxBasedOnSchemaInRow =
+    Map<String, int[]> columnIdxMap =
         CarbonDataProcessorUtil.getColumnIdxBasedOnSchemaInRow(carbonTable);
+    int[] columnIdxBasedOnSchemaInRows = columnIdxMap.get("columnIdxBasedOnSchemaInRow");
+    int[] noDictSortIdxBasedOnSchemaInRows = columnIdxMap.get("noDictSortIdxBasedOnSchemaInRow");
+    int[] dictSortIdxBasedOnSchemaInRows = columnIdxMap.get("dictSortIdxBasedOnSchemaInRow");
+ 
+    assert (noDictSortIdxBasedOnSchemaInRows.length == 2 && noDictSortIdxBasedOnSchemaInRows[0] == 1
+        && noDictSortIdxBasedOnSchemaInRows[1] == 2);
+    assert (dictSortIdxBasedOnSchemaInRows.length == 1 && dictSortIdxBasedOnSchemaInRows[0] == 0);
+
     FileMergeSortComparator comparator =
-        new FileMergeSortComparator(isSortColNoDict, noDictDataTypes, columnIdxBasedOnSchemaInRow,
-            sortColSchemaOrderMapping);
+        new FileMergeSortComparator(noDictDataTypes, columnIdxBasedOnSchemaInRows,
+            noDictSortIdxBasedOnSchemaInRows, dictSortIdxBasedOnSchemaInRows);
 
     // prepare data for final sort
     int[] dictSortDims1 = { 1 };

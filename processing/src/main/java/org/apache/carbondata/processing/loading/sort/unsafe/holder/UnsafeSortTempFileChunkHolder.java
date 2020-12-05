@@ -120,10 +120,10 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       comparator = new IntermediateSortTempRowComparator(parameters.getNoDictionarySortColumn(),
           parameters.getNoDictDataType());
     } else {
-      this.comparator = new FileMergeSortComparator(tableFieldStat.getIsSortColNoDictFlags(),
-          tableFieldStat.getNoDictSchemaDataType(),
+      this.comparator = new FileMergeSortComparator(tableFieldStat.getNoDictSchemaDataType(),
           tableFieldStat.getNoDictSortColumnSchemaOrderMapping(),
-          tableFieldStat.getSortColSchemaOrderMap());
+          tableFieldStat.getNoDictSortColIdxSchemaOrderMapping(),
+          tableFieldStat.getDictSortColIdxSchemaOrderMapping());
     }
     initialize();
   }

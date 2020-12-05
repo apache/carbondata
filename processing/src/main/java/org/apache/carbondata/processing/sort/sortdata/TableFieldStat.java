@@ -20,7 +20,6 @@ package org.apache.carbondata.processing.sort.sortdata;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -83,7 +82,15 @@ public class TableFieldStat implements Serializable {
 
   private DataType[] noDictSchemaDataType;
 
-  private Map<Integer, List<Boolean>> sortColSchemaOrderMap;
+  /**
+   * Index of the no dict Sort columns in schema order used for final merge step of sorting.
+   */
+  private int[] noDictSortColIdxSchemaOrderMapping;
+
+  /**
+   * Index of the dict Sort columns in schema order for final merge step of sorting.
+   */
+  private int[] dictSortColIdxSchemaOrderMapping;
 
   public TableFieldStat(SortParameters sortParameters) {
     int noDictDimCnt = sortParameters.getNoDictionaryCount();
@@ -106,7 +113,9 @@ public class TableFieldStat implements Serializable {
     this.noDictSortDataType = sortParameters.getNoDictSortDataType();
     this.noDictNoSortDataType = sortParameters.getNoDictNoSortDataType();
     this.noDictSchemaDataType = sortParameters.getNoDictSchemaDataType();
-    this.sortColSchemaOrderMap = sortParameters.getSortColumnSchemaOrderMap();
+    this.noDictSortColIdxSchemaOrderMapping =
+        sortParameters.getNoDictSortColIdxSchemaOrderMapping();
+    this.dictSortColIdxSchemaOrderMapping = sortParameters.getDictSortColIdxSchemaOrderMapping();
     for (boolean flag : isVarcharDimFlags) {
       if (flag) {
         varcharDimCnt++;
@@ -359,11 +368,15 @@ public class TableFieldStat implements Serializable {
     return otherCols;
   }
 
-  public Map<Integer, List<Boolean>> getSortColSchemaOrderMap() {
-    return sortColSchemaOrderMap;
-  }
-
   public DataType[] getNoDictSchemaDataType() {
     return noDictSchemaDataType;
+  }
+
+  public int[] getNoDictSortColIdxSchemaOrderMapping() {
+    return noDictSortColIdxSchemaOrderMapping;
+  }
+
+  public int[] getDictSortColIdxSchemaOrderMapping() {
+    return dictSortColIdxSchemaOrderMapping;
   }
 }
