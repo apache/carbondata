@@ -195,19 +195,19 @@ public final class DeleteLoadFolders {
   private static Boolean canDeleteThisLoad(LoadMetadataDetails oneLoad,
       boolean isForceDelete, boolean cleanStaleInProgress) {
     /*
-     * if cleanStaleInProgress == false and  force == false, clean MFD and Compacted
+     * if cleanStaleInProgress == false and  isForceDelete == false, clean MFD and Compacted
      *  segments will depend on query timeout(1 hr) and trashRetentionTimeout(7 days, default).
      *  For example:
      *  If trashRetentionTimeout is 7 days and query timeout is 1 hr--> Delete after 7 days
      *  If trashRetentionTimeout is 0 days and query timeout is 1 hr--> Delete after 1 hr
      *
-     * if cleanStaleInProgress == false and  force == true, clean MFD and Compacted
+     * if cleanStaleInProgress == false and  isForceDelete == true, clean MFD and Compacted
      *  segments immediately(Do not check for any timeout)
      *
-     * if cleanStaleInProgress == true and  force == false, clean Stale Inprogress, MFD and
+     * if cleanStaleInProgress == true and  isForceDelete == false, clean Stale Inprogress, MFD and
      *  compacted segments after 7 days(taking carbon.trash.retention.time value)
      *
-     * if cleanStaleInProgress == true and  force == true, clean MFD, Compacted and
+     * if cleanStaleInProgress == true and  isForceDelete == true, clean MFD, Compacted and
      *  stale inprogress segments immediately.(Do not check for any timeout)
      */
     if (isForceDelete) {
