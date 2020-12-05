@@ -441,38 +441,6 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * Get the sort/no_sort column map based on schema order.
-   * This will be used in the final sort step to find the index of sort column, to compare the
-   * intermediate row data based on schema.
-   */
-  public static Map<Integer, List<Boolean>> getSortColSchemaOrderMapping(CarbonTable carbonTable) {
-    List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
-    Map<Integer, List<Boolean>> sortColSchemaOrderMap = new HashMap<>();
-    for (CarbonDimension dimension : dimensions) {
-      List<Boolean> sortDictOrNoDictMap = new ArrayList<>();
-      // check if the dimension is sort column or not and add to first index of sortDictOrNoDictMap
-      // check if the dimension is dict column or not and add to second index of sortDictOrNoDictMap
-      if (dimension.isSortColumn()) {
-        sortDictOrNoDictMap.add(true);
-        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
-          sortDictOrNoDictMap.add(true);
-        } else {
-          sortDictOrNoDictMap.add(false);
-        }
-      } else {
-        sortDictOrNoDictMap.add(false);
-        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
-          sortDictOrNoDictMap.add(true);
-        } else {
-          sortDictOrNoDictMap.add(false);
-        }
-      }
-      sortColSchemaOrderMap.put(dimension.getOrdinal(), sortDictOrNoDictMap);
-    }
-    return sortColSchemaOrderMap;
-  }
-
-  /**
    * get mapping based on data fields order
    *
    * @param dataFields
@@ -504,14 +472,26 @@ public final class CarbonDataProcessorUtil {
    * initial sorting, carbonrow will be in order where added sort column is at the beginning, But
    * before final merger of sort, the data should be in schema order
    * (org.apache.carbondata.processing.sort.SchemaBasedRowUpdater updates the carbonRow in schema
-   * order), so This method helps to find the index of no dictionary sort column in the carbonrow
-   * data.
+   * order), so This method helps to find the index of no dictionary/ dictionary sort column in
+   * the carbonrow data.
    */
-  public static int[] getColumnIdxBasedOnSchemaInRow(CarbonTable carbonTable) {
+  public static Map<String, int[]> getColumnIdxBasedOnSchemaInRow(CarbonTable carbonTable) {
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<Integer> noDicSortColMap = new ArrayList<>();
+    // get no-dict / dict sort dimensions
+    List<CarbonDimension> noDictSortDimensions = new ArrayList<>();
+    List<CarbonDimension> dictSortDimensions = new ArrayList<>();
+
+    List<Integer> noDictSortColIdx = new ArrayList<>();
+    List<Integer> dictSortColIdx = new ArrayList<>();
+
     int counter = 0;
     for (CarbonDimension dimension : dimensions) {
+      if (dimension.hasEncoding(Encoding.DICTIONARY) || dimension.getDataType() == DataTypes.DATE) {
+        dictSortDimensions.add(dimension);
+      } else {
+        noDictSortDimensions.add(dimension);
+      }
       if (dimension.getDataType() == DataTypes.DATE) {
         continue;
       }
@@ -520,12 +500,39 @@ public final class CarbonDataProcessorUtil {
       }
       counter++;
     }
+    // add no-Dict sort column index
+    for (int i = 0; i < noDictSortDimensions.size(); i++) {
+      if (noDictSortDimensions.get(i).isSortColumn()) {
+        noDictSortColIdx.add(i);
+      }
+    }
+    // add dict sort column index
+    for (int i = 0; i < dictSortDimensions.size(); i++) {
+      if (dictSortDimensions.get(i).isSortColumn()) {
+        dictSortColIdx.add(i);
+      }
+    }
     Integer[] mapping = noDicSortColMap.toArray(new Integer[0]);
     int[] columnIdxBasedOnSchemaInRow = new int[mapping.length];
     for (int i = 0; i < mapping.length; i++) {
       columnIdxBasedOnSchemaInRow[i] = mapping[i];
     }
-    return columnIdxBasedOnSchemaInRow;
+    Integer[] noDictSortIdx = noDictSortColIdx.toArray(new Integer[0]);
+    int[] noDictSortIdxBasedOnSchemaInRow = new int[noDictSortIdx.length];
+    for (int i = 0; i < noDictSortIdx.length; i++) {
+      noDictSortIdxBasedOnSchemaInRow[i] = noDictSortIdx[i];
+    }
+    Integer[] dictSortIdx = dictSortColIdx.toArray(new Integer[0]);
+    int[] dictSortIdxBasedOnSchemaInRow = new int[dictSortIdx.length];
+    for (int i = 0; i < dictSortIdx.length; i++) {
+      dictSortIdxBasedOnSchemaInRow[i] = dictSortIdx[i];
+    }
+
+    Map<String, int[]> dictOrNoDictSortInfoMap = new HashMap<>();
+    dictOrNoDictSortInfoMap.put("columnIdxBasedOnSchemaInRow", columnIdxBasedOnSchemaInRow);
+    dictOrNoDictSortInfoMap.put("noDictSortIdxBasedOnSchemaInRow", noDictSortIdxBasedOnSchemaInRow);
+    dictOrNoDictSortInfoMap.put("dictSortIdxBasedOnSchemaInRow", dictSortIdxBasedOnSchemaInRow);
+    return dictOrNoDictSortInfoMap;
   }
 
   /**
@@ -533,14 +540,27 @@ public final class CarbonDataProcessorUtil {
    * initial sorting, carbonrow will be in order where added sort column is at the beginning, But
    * before final merger of sort, the data should be in schema order
    * (org.apache.carbondata.processing.sort.SchemaBasedRowUpdater updates the carbonRow in schema
-   * order), so This method helps to find the index of no dictionary sort column in the carbonrow
-   * data.
+   * order), so This method helps to find the index of no dictionary/ dictionary sort column in
+   * the carbonrow data.
    */
-  public static int[] getColumnIdxBasedOnSchemaInRowAsDataFieldOrder(DataField[] dataFields) {
+  public static Map<String, int[]> getColumnIdxBasedOnSchemaInRowAsDataFieldOrder(
+      DataField[] dataFields) {
     List<Integer> noDicSortColMap = new ArrayList<>();
     int counter = 0;
+    // get no-dict / dict sort column schema
+    List<CarbonColumn> noDictSortColumns = new ArrayList<>();
+    List<CarbonColumn> dictSortColumns = new ArrayList<>();
+
+    List<Integer> noDictSortColIdx = new ArrayList<>();
+    List<Integer> dictSortColIdx = new ArrayList<>();
     for (DataField dataField : dataFields) {
       if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
+        if (dataField.getColumn().getColumnSchema().hasEncoding(Encoding.DICTIONARY)
+            || dataField.getColumn().getColumnSchema().getDataType() == DataTypes.DATE) {
+          dictSortColumns.add(dataField.getColumn());
+        } else {
+          noDictSortColumns.add(dataField.getColumn());
+        }
         if (dataField.getColumn().getColumnSchema().getDataType() == DataTypes.DATE) {
           continue;
         }
@@ -551,12 +571,39 @@ public final class CarbonDataProcessorUtil {
         counter++;
       }
     }
+    // add no-Dict sort column index
+    for (int i = 0; i < noDictSortColumns.size(); i++) {
+      if (noDictSortColumns.get(i).getColumnSchema().isSortColumn()) {
+        noDictSortColIdx.add(i);
+      }
+    }
+    // add dict sort column index
+    for (int i = 0; i < dictSortColumns.size(); i++) {
+      if (dictSortColumns.get(i).getColumnSchema().isSortColumn()) {
+        dictSortColIdx.add(i);
+      }
+    }
     Integer[] mapping = noDicSortColMap.toArray(new Integer[0]);
     int[] columnIdxBasedOnSchemaInRow = new int[mapping.length];
     for (int i = 0; i < mapping.length; i++) {
       columnIdxBasedOnSchemaInRow[i] = mapping[i];
     }
-    return columnIdxBasedOnSchemaInRow;
+    Integer[] noDictSortIdx = noDictSortColIdx.toArray(new Integer[0]);
+    int[] noDictSortIdxBasedOnSchemaInRow = new int[noDictSortIdx.length];
+    for (int i = 0; i < noDictSortIdx.length; i++) {
+      noDictSortIdxBasedOnSchemaInRow[i] = noDictSortIdx[i];
+    }
+    Integer[] dictSortIdx = dictSortColIdx.toArray(new Integer[0]);
+    int[] dictSortIdxBasedOnSchemaInRow = new int[dictSortIdx.length];
+    for (int i = 0; i < dictSortIdx.length; i++) {
+      dictSortIdxBasedOnSchemaInRow[i] = dictSortIdx[i];
+    }
+
+    Map<String, int[]> dictOrNoSortInfoMap = new HashMap<>();
+    dictOrNoSortInfoMap.put("columnIdxBasedOnSchemaInRow", columnIdxBasedOnSchemaInRow);
+    dictOrNoSortInfoMap.put("noDictSortIdxBasedOnSchemaInRow", noDictSortIdxBasedOnSchemaInRow);
+    dictOrNoSortInfoMap.put("dictSortIdxBasedOnSchemaInRow", dictSortIdxBasedOnSchemaInRow);
+    return dictOrNoSortInfoMap;
   }
 
   /**

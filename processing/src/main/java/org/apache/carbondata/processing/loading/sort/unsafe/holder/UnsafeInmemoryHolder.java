@@ -48,10 +48,10 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
     this.rowPage = rowPage;
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator =
-        new FileMergeSortComparator(rowPage.getTableFieldStat().getIsSortColNoDictFlags(),
-            rowPage.getTableFieldStat().getNoDictSchemaDataType(),
+        new FileMergeSortComparator(rowPage.getTableFieldStat().getNoDictSchemaDataType(),
             rowPage.getTableFieldStat().getNoDictSortColumnSchemaOrderMapping(),
-            rowPage.getTableFieldStat().getSortColSchemaOrderMap());
+            rowPage.getTableFieldStat().getNoDictSortColIdxSchemaOrderMapping(),
+            rowPage.getTableFieldStat().getDictSortColIdxSchemaOrderMapping());
     this.rowPage.setReadConvertedNoSortField();
   }
 

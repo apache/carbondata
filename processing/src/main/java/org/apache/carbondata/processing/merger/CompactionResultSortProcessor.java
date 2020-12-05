@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -480,8 +481,14 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     boolean[] noDictionarySortColumnMapping = CarbonDataProcessorUtil
         .getNoDictSortColMapping(carbonTable);
     sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
-    sortParameters.setSortColumnSchemaOrderMap(
-        CarbonDataProcessorUtil.getSortColSchemaOrderMapping(carbonTable));
+    Map<String, int[]> columnIdxMap = CarbonDataProcessorUtil
+        .getColumnIdxBasedOnSchemaInRow(carbonTable);
+    sortParameters.setNoDictSortColumnSchemaOrderMapping(
+        columnIdxMap.get("columnIdxBasedOnSchemaInRow"));
+    sortParameters.setNoDictSortColIdxSchemaOrderMapping(
+        columnIdxMap.get("noDictSortIdxBasedOnSchemaInRow"));
+    sortParameters.setDictSortColIdxSchemaOrderMapping(
+        columnIdxMap.get("dictSortIdxBasedOnSchemaInRow"));
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
