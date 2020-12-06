@@ -21,7 +21,7 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.optimizer.CarbonFilters
 
-import org.apache.carbondata.trash.TrashDataManager
+import org.apache.carbondata.trash.DataTrashManager
 
 /**
  * clean files api
@@ -36,7 +36,7 @@ object CleanFiles {
       isForceDeletion: Boolean = false, cleanStaleInProgress: Boolean = false ): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
-    TrashDataManager.cleanGarbageData(
+    DataTrashManager.cleanGarbageData(
       carbonTable,
       isForceDeletion,
       cleanStaleInProgress,

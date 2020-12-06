@@ -31,7 +31,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CleanFilesUtil, TrashUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
-object TrashDataManager {
+object DataTrashManager {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**

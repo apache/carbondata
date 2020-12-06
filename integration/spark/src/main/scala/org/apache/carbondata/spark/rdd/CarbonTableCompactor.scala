@@ -53,7 +53,7 @@ import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonData
 import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 import org.apache.carbondata.spark.util.CarbonSparkUtil
-import org.apache.carbondata.trash.TrashDataManager
+import org.apache.carbondata.trash.DataTrashManager
 import org.apache.carbondata.view.MVManagerInSpark
 
 /**
@@ -181,7 +181,7 @@ class CarbonTableCompactor(
     } catch {
       case e: Throwable =>
         // clean stale compaction segment immediately after compaction failure
-        TrashDataManager.cleanStaleCompactionSegment(
+        DataTrashManager.cleanStaleCompactionSegment(
           carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
           mergedLoadName,
           carbonLoadModel.getFactTimeStamp,

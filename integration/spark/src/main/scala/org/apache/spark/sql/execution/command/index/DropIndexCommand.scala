@@ -60,7 +60,7 @@ private[sql] case class DropIndexCommand(
         throw new MalformedIndexCommandException("Index with name " + indexName + " does not exist")
       } else {
       return Seq.empty
-    }
+      }
     }
     if (parentTable.getIndexTableNames(IndexType.SI.getIndexProviderName)
       .contains(indexName)) {
@@ -208,7 +208,8 @@ private[sql] case class DropIndexCommand(
           logInfo("Table MetaData Unlocked Successfully")
           if (isValidDeletion) {
             if (carbonTable != null && carbonTable.isDefined) {
-              CarbonInternalMetastore.deleteTableDirectory(carbonTable.get)            }
+              CarbonInternalMetastore.deleteTableDirectory(carbonTable.get)
+            }
           }
         } else {
           logError("Table metadata unlocking is unsuccessful, index table may be in stale state")

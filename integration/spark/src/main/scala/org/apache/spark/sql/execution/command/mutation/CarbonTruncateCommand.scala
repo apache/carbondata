@@ -25,7 +25,8 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.trash.TrashDataManager
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.trash.DataTrashManager
 
 case class CarbonTruncateCommand(child: TruncateTableCommand) extends DataCommand {
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -44,11 +45,6 @@ case class CarbonTruncateCommand(child: TruncateTableCommand) extends DataComman
         "Unsupported truncate table with specified partition")
     }
     SegmentStatusManager.truncateTable(carbonTable)
-    TrashDataManager.cleanGarbageData(
-      carbonTable,
-      true,
-      false,
-      CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, carbonTable))
     Seq.empty
   }
 

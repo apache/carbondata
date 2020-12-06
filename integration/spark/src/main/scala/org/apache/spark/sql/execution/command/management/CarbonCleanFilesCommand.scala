@@ -26,10 +26,10 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events._
-import org.apache.carbondata.trash.TrashDataManager
+import org.apache.carbondata.trash.DataTrashManager
 
 /**
- * Clean data in table, it invokes TrashDataManager.cleanGarbageData to implement it.
+ * Clean garbage data in table, it invokes TrashDataManager.cleanGarbageData to implement it.
  */
 case class CarbonCleanFilesCommand(
     databaseNameOp: Option[String],
@@ -53,7 +53,7 @@ case class CarbonCleanFilesCommand(
     val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
     val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
     withEvents(preEvent, postEvent) {
-      TrashDataManager.cleanGarbageData(
+      DataTrashManager.cleanGarbageData(
         carbonTable,
         options.getOrElse("force", "false").toBoolean,
         options.getOrElse("stale_inprogress", "false").toBoolean,
