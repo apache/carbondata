@@ -18,9 +18,10 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.optimizer.CarbonFilters
 
-import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.trash.TrashDataManager
 
 /**
  * clean files api
@@ -29,33 +30,17 @@ import org.apache.carbondata.api.CarbonStore
 object CleanFiles {
 
   /**
-   * The method deletes all data if forceTableCLean <true> and lean garbage segment
-   * (MARKED_FOR_DELETE state) if forceTableCLean <false>
-   *
-   * @param spark           : Database name
-   * @param dbName          : Table name
-   * @param tableName       : Table path
-   * @param forceTableClean : if true, it deletes the table and its contents with force.It does not
-   *                        drop table from hive metastore so should be very careful to use it.
+   * The method clean garbage data
    */
   def cleanFiles(spark: SparkSession, dbName: String, tableName: String,
-     forceTableClean: Boolean = false, isForceDeletion: Boolean = false,
-     cleanStaleInProgress: Boolean = false ): Unit = {
+      isForceDeletion: Boolean = false, cleanStaleInProgress: Boolean = false ): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(spark)
-    val carbonTable = if (!forceTableClean) {
-      CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
-    } else {
-      null
-    }
-    CarbonStore.cleanFiles(
-      dbName = dbName,
-      tableName = tableName,
-      tablePath = tablePath,
-      carbonTable = carbonTable,
-      forceTableClean = forceTableClean,
+    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
+    TrashDataManager.cleanGarbageData(
+      carbonTable,
       isForceDeletion,
-      cleanStaleInProgress)
+      cleanStaleInProgress,
+      CarbonFilters.getPartitions(Seq.empty[Expression], spark, carbonTable))
   }
 
   def main(args: Array[String]): Unit = {
@@ -67,15 +52,13 @@ object CleanFiles {
 
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
-    var forceTableClean = false
     var isForceDeletion = false
     var cleanInprogress = false
-    if (args.length > 4) {
-      forceTableClean = args(2).toBoolean
-      isForceDeletion = args(3).toBoolean
-      cleanInprogress = args(4).toBoolean
+    if (args.length > 3) {
+      isForceDeletion = args(2).toBoolean
+      cleanInprogress = args(3).toBoolean
     }
     val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
-    cleanFiles(spark, dbName, tableName, forceTableClean, isForceDeletion, cleanInprogress)
+    cleanFiles(spark, dbName, tableName, isForceDeletion, cleanInprogress)
   }
 }

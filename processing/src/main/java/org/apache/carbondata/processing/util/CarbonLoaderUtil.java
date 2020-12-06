@@ -40,7 +40,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
-import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -89,10 +88,21 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad) {
+  /**
+   * delete segment after data loading failure
+   */
+  public static void deleteSegmentForFailure(CarbonLoadModel loadModel) {
+    int currentLoad = Integer.parseInt(loadModel.getSegmentId());
     String segmentPath = CarbonTablePath.getSegmentPath(
         loadModel.getTablePath(), currentLoad + "");
-    deleteStorePath(segmentPath);
+    try {
+      if (FileFactory.isFileExist(segmentPath)) {
+        CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
+        CarbonUtil.deleteFoldersAndFiles(carbonFile);
+      }
+    } catch (IOException | InterruptedException e) {
+      LOGGER.error("Unable to delete segment: " + segmentPath + ", " + e.getMessage(), e);
+    }
   }
 
   /**
@@ -128,17 +138,6 @@ public final class CarbonLoaderUtil {
       return false;
     }
     return true;
-  }
-
-  public static void deleteStorePath(String path) {
-    try {
-      if (FileFactory.isFileExist(path)) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(path);
-        CarbonUtil.deleteFoldersAndFiles(carbonFile);
-      }
-    } catch (IOException | InterruptedException e) {
-      LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
-    }
   }
 
   /**
@@ -252,8 +251,6 @@ public final class CarbonLoaderUtil {
     int maxTimeout = CarbonLockUtil
         .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
             CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
-    // TODO only for overwrite scene
-    final List<LoadMetadataDetails> staleLoadMetadataDetails = new ArrayList<>();
     try {
       if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
         LOGGER.info(
@@ -264,7 +261,6 @@ public final class CarbonLoaderUtil {
                 CarbonTablePath.getMetadataPath(identifier.getTablePath()));
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        List<CarbonFile> staleFolders = new ArrayList<>();
         Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
         // create a new segment Id if load has just begun else add the already generated Id
         if (loadStartEntry) {
@@ -323,10 +319,6 @@ public final class CarbonLoaderUtil {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
               if (entry.getSegmentStatus() != SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
                 entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
-                // For insert overwrite, we will delete the old segment folder immediately
-                // So collect the old segments here
-                addToStaleFolders(identifier, staleFolders, entry);
-                staleLoadMetadataDetails.add(entry);
               }
             }
           }
@@ -336,11 +328,6 @@ public final class CarbonLoaderUtil {
             throw new IOException("Entry not found to update in the table status file");
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
-        }
-        // when no records are inserted then newSegmentEntry will be SegmentStatus.MARKED_FOR_DELETE
-        // so empty segment folder should be deleted
-        if (newMetaEntry.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
-          addToStaleFolders(identifier, staleFolders, newMetaEntry);
         }
 
         for (LoadMetadataDetails detail: listOfLoadFolderDetails) {
@@ -354,47 +341,8 @@ public final class CarbonLoaderUtil {
                     + CarbonTablePath.SEGMENT_EXT);
           }
         }
-
         SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
             .toArray(new LoadMetadataDetails[0]));
-
-        // Delete all old stale segment folders
-        for (CarbonFile staleFolder : staleFolders) {
-          // try block is inside for loop because even if there is failure in deletion of 1 stale
-          // folder still remaining stale folders should be deleted
-          try {
-            CarbonUtil.deleteFoldersAndFiles(staleFolder);
-          } catch (IOException | InterruptedException e) {
-            LOGGER.error("Failed to delete stale folder: " + e.getMessage(), e);
-          }
-        }
-        if (!staleLoadMetadataDetails.isEmpty()) {
-          final String segmentFileLocation =
-              CarbonTablePath.getSegmentFilesLocation(identifier.getTablePath())
-                  + CarbonCommonConstants.FILE_SEPARATOR;
-          final String segmentLockFileLocation =
-              CarbonTablePath.getLockFilesDirPath(identifier.getTablePath())
-                  + CarbonCommonConstants.FILE_SEPARATOR;
-          for (LoadMetadataDetails staleLoadMetadataDetail : staleLoadMetadataDetails) {
-            try {
-              CarbonUtil.deleteFoldersAndFiles(
-                  FileFactory.getCarbonFile(segmentFileLocation
-                      + staleLoadMetadataDetail.getSegmentFile())
-              );
-            } catch (IOException | InterruptedException e) {
-              LOGGER.error("Failed to delete segment file: " + e.getMessage(), e);
-            }
-            try {
-              CarbonUtil.deleteFoldersAndFiles(
-                  FileFactory.getCarbonFile(segmentLockFileLocation
-                      + CarbonTablePath.addSegmentPrefix(staleLoadMetadataDetail.getLoadName())
-                      + LockUsage.LOCK)
-              );
-            } catch (IOException | InterruptedException e) {
-              LOGGER.error("Failed to delete segment lock file: " + e.getMessage(), e);
-            }
-          }
-        }
         status = true;
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + loadModel
@@ -412,17 +360,6 @@ public final class CarbonLoaderUtil {
       }
     }
     return status;
-  }
-
-  private static void addToStaleFolders(AbsoluteTableIdentifier identifier,
-      List<CarbonFile> staleFolders, LoadMetadataDetails entry) throws IOException {
-    String path = CarbonTablePath.getSegmentPath(
-        identifier.getTablePath(), entry.getLoadName());
-    // add to the deletion list only if file exist else HDFS file system will throw
-    // exception while deleting the file if file path does not exist
-    if (FileFactory.isFileExist(path)) {
-      staleFolders.add(FileFactory.getCarbonFile(path));
-    }
   }
 
   /**

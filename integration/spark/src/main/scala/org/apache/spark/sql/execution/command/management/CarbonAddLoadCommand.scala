@@ -324,7 +324,7 @@ case class CarbonAddLoadCommand(
       CarbonLoaderUtil.updateTableStatusForFailure(model, "uniqueTableStatusId")
       LOGGER.info("********starting clean up**********")
       // delete segment is applicable for transactional table
-      CarbonLoaderUtil.deleteSegment(model, model.getSegmentId.toInt)
+      CarbonLoaderUtil.deleteSegmentForFailure(model)
       // delete corresponding segment file from metadata
       val segmentFile = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath) +
                         File.separator + segment.getSegmentFileName

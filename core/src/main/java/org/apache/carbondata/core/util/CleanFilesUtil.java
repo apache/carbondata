@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
@@ -163,8 +164,13 @@ public class CleanFilesUtil {
     }
     Set<String> loadNameSet = Arrays.stream(details).map(LoadMetadataDetails::getLoadName)
         .collect(Collectors.toSet());
-    List<String> staleSegments = segmentFiles.stream().filter(segmentFile -> !loadNameSet.contains(
-        DataFileUtil.getSegmentNoFromSegmentFile(segmentFile))).collect(Collectors.toList());
+    // get all stale segment files, not include compaction segments
+    List<String> staleSegments = segmentFiles.stream()
+        .filter(segmentFile -> !DataFileUtil.getSegmentNoFromSegmentFile(segmentFile).contains(
+            CarbonCommonConstants.POINT))
+        .filter(segmentFile -> !loadNameSet.contains(
+            DataFileUtil.getSegmentNoFromSegmentFile(segmentFile)))
+        .collect(Collectors.toList());
     if (staleSegments.size() == 0) {
       return;
     }

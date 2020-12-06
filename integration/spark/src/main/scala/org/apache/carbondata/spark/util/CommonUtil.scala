@@ -566,54 +566,6 @@ object CommonUtil {
     ThreadLocalTaskInfo.clearCarbonTaskInfo()
   }
 
-  /**
-   * The in-progress segments which are in stale state will be marked as deleted
-   * when driver is initializing.
-   * @param databaseLocation
-   * @param dbName
-   */
-  def cleanInProgressSegments(databaseLocation: String, dbName: String): Unit = {
-    val loaderDriver = CarbonProperties.getInstance().
-      getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
-        CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
-    if (!loaderDriver) {
-      return
-    }
-    try {
-      if (FileFactory.isFileExist(databaseLocation)) {
-        val file = FileFactory.getCarbonFile(databaseLocation)
-        if (file.isDirectory) {
-          val tableFolders = file.listFiles()
-          tableFolders.foreach { tableFolder =>
-            if (tableFolder.isDirectory) {
-              val tablePath = databaseLocation +
-                              CarbonCommonConstants.FILE_SEPARATOR + tableFolder.getName
-              val tableUniqueName = CarbonTable.buildUniqueName(dbName, tableFolder.getName)
-              val tableStatusFile =
-                CarbonTablePath.getTableStatusFilePath(tablePath)
-              if (FileFactory.isFileExist(tableStatusFile)) {
-                try {
-                  val carbonTable = CarbonMetadata.getInstance
-                    .getCarbonTable(tableUniqueName)
-                  SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable, false, null,
-                    true, true)
-                } catch {
-                  case _: Exception =>
-                    LOGGER.warn(s"Error while cleaning table " +
-                                s"${ tableUniqueName }")
-                }
-              }
-            }
-          }
-        }
-      }
-    } catch {
-      case s: java.io.FileNotFoundException =>
-        // Create folders and files.
-        LOGGER.error(s)
-    }
-  }
-
   def getScaleAndPrecision(dataType: String): (Int, Int) = {
     val m: Matcher = Pattern.compile("^decimal\\(([^)]+)\\)").matcher(dataType)
     m.find()

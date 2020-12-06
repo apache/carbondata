@@ -18,24 +18,17 @@
 package org.apache.carbondata.spark.rdd
 
 import java.util
-import java.util.concurrent.ExecutorService
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.CompactionModel
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
-abstract class Compactor(carbonLoadModel: CarbonLoadModel,
-    compactionModel: CompactionModel,
-    executor: ExecutorService,
-    sqlContext: SQLContext,
-    storeLocation: String) {
+abstract class Compactor(carbonLoadModel: CarbonLoadModel, compactionModel: CompactionModel) {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -55,20 +48,4 @@ abstract class Compactor(carbonLoadModel: CarbonLoadModel,
         compactionModel.compactionType,
         customSegmentIds)
   }
-
-  def deletePartialLoadsInCompaction(): Unit = {
-    // Deleting the any partially loaded data if present.
-    // in some case the segment folder which is present in store will not have entry in
-    // status.
-    // so deleting those folders.
-    try {
-      TableProcessingOperations
-        .deletePartialLoadDataIfExist(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable, true)
-    } catch {
-      case e: Exception =>
-        LOGGER.error(s"Exception in compaction thread while clean up of stale segments" +
-                     s" ${ e.getMessage }")
-    }
-  }
-
 }

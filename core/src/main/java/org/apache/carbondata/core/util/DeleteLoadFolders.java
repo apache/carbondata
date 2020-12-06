@@ -35,7 +35,6 @@ import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -210,32 +209,18 @@ public final class DeleteLoadFolders {
      * if cleanStaleInProgress == true and  isForceDelete == true, clean MFD, Compacted and
      *  stale inprogress segments immediately.(Do not check for any timeout)
      */
-    if (isForceDelete) {
-      // immediately delete compacted and MFD
-      if (SegmentStatus.COMPACTED == oneLoad.getSegmentStatus() || SegmentStatus
-          .MARKED_FOR_DELETE == oneLoad.getSegmentStatus()) {
-        return true;
-      }
-      // immediately delete inprogress segments if cleanstaleinprogress is true
-      return cleanStaleInProgress && (SegmentStatus.INSERT_IN_PROGRESS == oneLoad
-          .getSegmentStatus() || SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneLoad
-          .getSegmentStatus());
+    boolean canDelete = isForceDelete || TrashUtil.isTrashDataTimeout(
+        oneLoad.getModificationOrDeletionTimestamp());
+    switch (oneLoad.getSegmentStatus()) {
+      case COMPACTED:
+      case MARKED_FOR_DELETE:
+        return canDelete;
+      case INSERT_IN_PROGRESS:
+      case INSERT_OVERWRITE_IN_PROGRESS:
+        return canDelete && cleanStaleInProgress;
+      default:
+        return false;
     }
-    long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
-    // in case there is no deletion or modification timestamp, take the load start time as
-    // deleteTime
-    if (deletionTime == 0) {
-      deletionTime = oneLoad.getLoadStartTime();
-    }
-    if (SegmentStatus.COMPACTED == oneLoad.getSegmentStatus() || SegmentStatus
-        .MARKED_FOR_DELETE == oneLoad.getSegmentStatus()) {
-      // delete MFD, compacted segments after checking trash timeout and query timeout
-      return TrashUtil.isTrashRetentionTimeoutExceeded(deletionTime) && CarbonUpdateUtil
-        .isMaxQueryTimeoutExceeded(deletionTime);
-    }
-    return (SegmentStatus.INSERT_IN_PROGRESS == oneLoad.getSegmentStatus() || SegmentStatus
-        .INSERT_OVERWRITE_IN_PROGRESS == oneLoad.getSegmentStatus()) && cleanStaleInProgress &&
-        TrashUtil.isTrashRetentionTimeoutExceeded(deletionTime);
   }
 
   private static LoadMetadataDetails getCurrentLoadStatusOfSegment(String segmentId,

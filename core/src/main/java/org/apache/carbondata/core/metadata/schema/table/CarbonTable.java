@@ -465,6 +465,10 @@ public class CarbonTable implements Serializable, Writable {
     return tableInfo.getTableUniqueName();
   }
 
+  public String getQualifiedName() {
+    return getDatabaseName() + CarbonCommonConstants.POINT + getTableName();
+  }
+
   /**
    * Return true if local dictionary enabled for the table
    */

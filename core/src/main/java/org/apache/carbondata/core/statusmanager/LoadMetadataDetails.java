@@ -171,7 +171,14 @@ public class LoadMetadataDetails implements Serializable {
    */
   public long getModificationOrDeletionTimestamp() {
     if (null == modificationOrDeletionTimestamp) {
-      return 0;
+      // 1. try to get last modified time
+      long lastModification = getLastModifiedTime();
+      if (lastModification == -1) {
+        // 2. get load start time
+        return getLoadStartTime();
+      } else {
+        return lastModification;
+      }
     }
     return convertTimeStampToLong(modificationOrDeletionTimestamp);
   }

@@ -796,7 +796,7 @@ public class CarbonTablePath {
     }
   }
 
-  public static String getTrashFolderPath(String carbonTablePath) {
-    return carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + TRASH_DIR;
+  public static String getTrashFolderPath(String tablePath) {
+    return tablePath + CarbonCommonConstants.FILE_SEPARATOR + TRASH_DIR;
   }
 }

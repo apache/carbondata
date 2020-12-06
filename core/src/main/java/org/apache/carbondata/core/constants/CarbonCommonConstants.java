@@ -1432,7 +1432,7 @@ public final class CarbonCommonConstants {
   /**
    * Default retention time of a subdirectory in trash folder is 7 days.
    */
-  public static final int CARBON_TRASH_RETENTION_DAYS_DEFAULT = 7;
+  public static final String CARBON_TRASH_RETENTION_DAYS_DEFAULT = "7";
 
   /**
    * Maximum allowed retention time of a subdirectory in trash folder is 365 days.

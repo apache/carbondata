@@ -136,7 +136,8 @@ case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     sqlContext: SQLContext,
     compactionType: CompactionType,
     currentPartitions: Option[Seq[PartitionSpec]],
-    compactedSegments: java.util.List[String])
+    compactedSegments: java.util.List[String],
+    var compactedPartitions: Option[Seq[PartitionSpec]] = None)
 
 case class AlterPartitionModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,

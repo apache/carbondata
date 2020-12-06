@@ -27,6 +27,7 @@ import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.index.DropIndexCommand
 import org.apache.spark.sql.execution.command.view.CarbonDropMVCommand
 import org.apache.spark.sql.hive.CarbonFileMetastore
+import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -165,13 +166,7 @@ case class CarbonDropTableCommand(
         && carbonTable != null
         && !(carbonTable.isMV && !dropChildTable)) {
       // delete the table folder
-      val tablePath = carbonTable.getTablePath
-      // delete table data only if it is not external table
-      if (FileFactory.isFileExist(tablePath) &&
-          !(carbonTable.isExternalTable || carbonTable.isFileLevelFormat)) {
-        val file = FileFactory.getCarbonFile(tablePath)
-        CarbonUtil.deleteFoldersAndFilesSilent(file)
-      }
+      CarbonInternalMetastore.deleteTableDirectory(carbonTable)
       // Delete lock directory if external lock path is specified.
       if (CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_PATH,
         CarbonCommonConstants.LOCK_PATH_DEFAULT).toLowerCase

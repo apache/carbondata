@@ -21,7 +21,9 @@ import scala.collection.JavaConverters._
 
 import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.execution.command.management.CarbonCleanFilesCommand
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 
@@ -30,11 +32,11 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{CleanFilesPostEvent, Event, OperationContext, OperationEventListener}
+import org.apache.carbondata.view.MVManagerInSpark
 
 class CleanFilesPostEventListener extends OperationEventListener with Logging {
 
@@ -48,22 +50,53 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
     event match {
       case cleanFilesPostEvent: CleanFilesPostEvent =>
         LOGGER.info("Clean files post event listener called")
-        val carbonTable = cleanFilesPostEvent.carbonTable
-        val indexTables = CarbonIndexUtil
-          .getIndexCarbonTables(carbonTable, cleanFilesPostEvent.sparkSession)
-        val isForceDelete = cleanFilesPostEvent.ifForceDelete
-        val inProgressSegmentsClean = cleanFilesPostEvent.cleanStaleInProgress
-        indexTables.foreach { indexTable =>
-          val partitions: Option[Seq[PartitionSpec]] = CarbonFilters.getPartitions(
-            Seq.empty[Expression],
-            cleanFilesPostEvent.sparkSession,
-            indexTable)
-          SegmentStatusManager.deleteLoadsAndUpdateMetadata(
-              indexTable, isForceDelete, partitions.map(_.asJava).orNull, inProgressSegmentsClean,
-            true)
-          CarbonUpdateUtil.cleanUpDeltaFiles(indexTable, true)
-          cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
-        }
+        cleanFilesForIndex(
+          cleanFilesPostEvent.sparkSession,
+          cleanFilesPostEvent.carbonTable,
+          cleanFilesPostEvent.options.getOrElse("force", "false").toBoolean,
+          cleanFilesPostEvent.options.getOrElse("stale_inprogress", "false").toBoolean)
+
+        cleanFilesForMv(
+          cleanFilesPostEvent.sparkSession,
+          cleanFilesPostEvent.carbonTable,
+          cleanFilesPostEvent.options)
+    }
+  }
+
+  private def cleanFilesForIndex(
+      sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      isForceDelete: Boolean,
+      cleanStaleInProgress: Boolean
+  ): Unit = {
+    val indexTables = CarbonIndexUtil
+      .getIndexCarbonTables(carbonTable, sparkSession)
+    indexTables.foreach { indexTable =>
+      val partitions: Option[Seq[PartitionSpec]] = CarbonFilters.getPartitions(
+        Seq.empty[Expression],
+        sparkSession,
+        indexTable)
+      SegmentStatusManager.deleteLoadsAndUpdateMetadata(
+        indexTable, isForceDelete, partitions.map(_.asJava).orNull, cleanStaleInProgress,
+        true)
+      cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
+    }
+  }
+
+  private def cleanFilesForMv(
+      sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      options: Map[String, String]
+  ): Unit = {
+    val viewSchemas = MVManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
+    if (!viewSchemas.isEmpty) {
+      viewSchemas.asScala.map { schema =>
+        CarbonCleanFilesCommand(
+          Some(carbonTable.getDatabaseName),
+          carbonTable.getTableName,
+          options,
+          isInternalCleanCall = true)
+      }.foreach(_.run(sparkSession))
     }
   }
 
@@ -71,7 +104,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
    * This method added to clean the segments which are success in SI and may be compacted or marked
    * for delete in main table, which can happen in case of concurrent scenarios.
    */
-  def cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable: CarbonTable,
+  private def cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable: CarbonTable,
       mainTable: CarbonTable): Unit = {
     val mainTableStatusLock: ICarbonLock = CarbonLockFactory
       .getCarbonLockObj(mainTable.getAbsoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
