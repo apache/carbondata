@@ -19,17 +19,14 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.File
 import java.util
-import java.util.concurrent._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-import scala.util.Random
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, DataLoadWrapperRDD, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
@@ -45,7 +42,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, SortScopeOptions}
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
@@ -54,16 +50,14 @@ import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarForma
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonUtil, SessionParams, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.{DistributedRDDUtils, IndexServer}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
-import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
@@ -82,7 +76,6 @@ object CarbonDataRDDFactory {
 
   def handleCompactionForSystemLocking(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storeLocation: String,
       compactionType: CompactionType,
       carbonTable: CarbonTable,
       compactedSegments: java.util.List[String],
@@ -106,7 +99,6 @@ object CarbonDataRDDFactory {
         startCompactionThreads(
           sqlContext,
           carbonLoadModel,
-          storeLocation,
           compactionModel,
           lock,
           compactedSegments,
@@ -142,12 +134,10 @@ object CarbonDataRDDFactory {
 
   def startCompactionThreads(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storeLocation: String,
       compactionModel: CompactionModel,
       compactionLock: ICarbonLock,
       compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
-    val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
     carbonLoadModel.readAndSetLoadMetadataDetails()
 
@@ -156,9 +146,7 @@ object CarbonDataRDDFactory {
         val compactor = CompactionFactory.getCompactor(
           carbonLoadModel,
           compactionModel,
-          executor,
           sqlContext,
-          storeLocation,
           compactedSegments,
           operationContext)
         try {
@@ -212,9 +200,7 @@ object CarbonDataRDDFactory {
                 CompactionFactory.getCompactor(
                   newCarbonLoadModel,
                   newCompactionModel,
-                  executor,
                   sqlContext,
-                  storeLocation,
                   compactedSegments,
                   operationContext).executeCompaction()
               } catch {
@@ -263,15 +249,7 @@ object CarbonDataRDDFactory {
             throw new Exception("Exception in compaction " + exception.getMessage)
           }
         } finally {
-          executor.shutdownNow()
-          try {
-            compactor.deletePartialLoadsInCompaction()
-          } catch {
-            // no need to throw this as compaction is over
-            case ex: Exception =>
-          } finally {
-            compactionLock.unlock()
-          }
+          compactionLock.unlock()
         }
       }
     }
@@ -461,6 +439,7 @@ object CarbonDataRDDFactory {
         LOGGER.info(errorMessage)
         LOGGER.error(ex)
     }
+    var isLoadingCommitted = false
     try {
       val uniqueTableStatusId = Option(operationContext.getProperty("uuid")).getOrElse("")
         .asInstanceOf[String]
@@ -470,7 +449,7 @@ object CarbonDataRDDFactory {
         LOGGER.info("********starting clean up**********")
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table
-          CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          CarbonLoaderUtil.deleteSegmentForFailure(carbonLoadModel)
           clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
@@ -487,7 +466,7 @@ object CarbonDataRDDFactory {
           LOGGER.info("********starting clean up**********")
           if (carbonLoadModel.isCarbonTransactionalTable) {
             // delete segment is applicable for transactional table
-            CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+            CarbonLoaderUtil.deleteSegmentForFailure(carbonLoadModel)
             clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
           }
           LOGGER.info("********clean up done**********")
@@ -558,7 +537,7 @@ object CarbonDataRDDFactory {
           LOGGER.info("********starting clean up**********")
           if (carbonLoadModel.isCarbonTransactionalTable) {
             // delete segment is applicable for transactional table
-            CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+            CarbonLoaderUtil.deleteSegmentForFailure(carbonLoadModel)
             // delete corresponding segment file from metadata
             val segmentFile =
               CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
@@ -577,38 +556,46 @@ object CarbonDataRDDFactory {
           LOGGER.info("Data load is successful for " +
                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         }
-
-        // code to handle Pre-Priming cache for loading
-
-        if (!StringUtils.isEmpty(carbonLoadModel.getSegmentId)) {
-          DistributedRDDUtils.triggerPrepriming(sqlContext.sparkSession, carbonTable, Seq(),
-            operationContext, hadoopConf, List(carbonLoadModel.getSegmentId))
-        }
-        try {
-          // compaction handling
-          if (carbonTable.isHivePartitionTable) {
-            carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
-          }
-          val compactedSegments = new util.ArrayList[String]()
-          handleSegmentMerging(sqlContext,
-            carbonLoadModel
-              .getCopyWithPartition(carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter),
-            carbonTable,
-            compactedSegments,
-            operationContext)
-          carbonLoadModel.setMergedSegmentIds(compactedSegments)
-          writtenSegment
-        } catch {
-          case e: Exception =>
-            LOGGER.error(
-              "Auto-Compaction has failed. Ignoring this exception because the" +
-              " load is passed.", e)
-            writtenSegment
-        }
+        isLoadingCommitted = true
+        writtenSegment
       }
     } finally {
       // Release the segment lock, once table status is finally updated
       segmentLock.unlock()
+      if (isLoadingCommitted) {
+        triggerEventsAfterLoading(sqlContext, carbonLoadModel, hadoopConf, operationContext)
+      }
+    }
+  }
+
+  private def triggerEventsAfterLoading(
+      sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration,
+      operationContext: OperationContext): Unit = {
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    // code to handle Pre-Priming cache for loading
+    if (!StringUtils.isEmpty(carbonLoadModel.getSegmentId)) {
+      DistributedRDDUtils.triggerPrepriming(sqlContext.sparkSession, carbonTable, Seq(),
+        operationContext, hadoopConf, List(carbonLoadModel.getSegmentId))
+    }
+    try {
+      // compaction handling
+      if (carbonTable.isHivePartitionTable) {
+        carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
+      }
+      val compactedSegments = new util.ArrayList[String]()
+      handleSegmentMerging(sqlContext,
+        carbonLoadModel
+          .getCopyWithPartition(carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter),
+        carbonTable,
+        compactedSegments,
+        operationContext)
+      carbonLoadModel.setMergedSegmentIds(compactedSegments)
+    } catch {
+      case e: Exception =>
+        LOGGER.error(
+          "Auto-Compaction has failed. Ignoring this exception because the load is passed.", e)
     }
   }
 
@@ -650,15 +637,6 @@ object CarbonDataRDDFactory {
         CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
           TableIdentifier(carbonTable.getTableName,
             Some(carbonTable.getDatabaseName))), None)
-      var storeLocation = ""
-      val configuredStore = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != configuredStore && configuredStore.nonEmpty) {
-        storeLocation = configuredStore(Random.nextInt(configuredStore.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
-      }
-      storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
       val isConcurrentCompactionAllowed = CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
@@ -668,7 +646,6 @@ object CarbonDataRDDFactory {
       if (!isConcurrentCompactionAllowed) {
         handleCompactionForSystemLocking(sqlContext,
           carbonLoadModel,
-          storeLocation,
           CompactionType.MINOR,
           carbonTable,
           compactedSegments,
@@ -687,7 +664,6 @@ object CarbonDataRDDFactory {
               LOGGER.info("Acquired the compaction lock.")
               startCompactionThreads(sqlContext,
                 carbonLoadModel,
-                storeLocation,
                 compactionModel,
                 lock,
                 compactedSegments,

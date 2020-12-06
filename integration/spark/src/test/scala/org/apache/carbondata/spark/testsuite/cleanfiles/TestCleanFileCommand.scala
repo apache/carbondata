@@ -50,7 +50,7 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     assert(segmentNumber1 == 4)
     sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('stale_inprogress'='true')").show
     val segmentNumber2 = sql(s"""show segments for table cleantest""").count()
-    assert(0 == segmentNumber2)
+    assert(4 == segmentNumber2)
     assert(!FileFactory.isFileExist(trashFolderPath))
     // no carbondata file is added to the trash
     assert(getFileCountInTrashFolder(trashFolderPath) == 0)

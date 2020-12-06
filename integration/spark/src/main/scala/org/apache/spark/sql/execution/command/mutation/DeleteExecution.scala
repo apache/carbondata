@@ -354,7 +354,7 @@ object DeleteExecution {
   }
 
   // all or none : update status file, only if complete delete operation is successful.
-  def checkAndUpdateStatusFiles(
+  private def checkAndUpdateStatusFiles(
       executorErrors: ExecutionErrors,
       res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]],
       carbonTable: CarbonTable,

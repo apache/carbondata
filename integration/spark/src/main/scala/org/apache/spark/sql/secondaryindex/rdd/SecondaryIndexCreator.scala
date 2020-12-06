@@ -482,17 +482,6 @@ object SecondaryIndexCreator {
           }.${ secondaryIndexModel.secondaryIndex.indexName } SET
              |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin).collect()
       }
-      try {
-        if (!isCompactionCall) {
-          SegmentStatusManager
-            .deleteLoadsAndUpdateMetadata(indexCarbonTable, false, null, false, false)
-        }
-      } catch {
-        case e: Exception =>
-          LOGGER
-            .error("Problem while cleaning up stale folder for index table " +
-                   secondaryIndexModel.secondaryIndex.indexName, e)
-      }
       // close the executor service
       if (null != executorService) {
         executorService.shutdownNow()

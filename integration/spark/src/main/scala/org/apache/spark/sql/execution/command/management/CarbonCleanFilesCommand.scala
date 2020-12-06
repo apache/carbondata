@@ -17,178 +17,50 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Checker}
+import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 
-import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.ConcurrentOperationException
-import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CleanFilesUtil, TrashUtil}
 import org.apache.carbondata.events._
-import org.apache.carbondata.spark.util.CommonUtil
-import org.apache.carbondata.view.MVManagerInSpark
+import org.apache.carbondata.trash.DataTrashManager
 
 /**
- * Clean data in table
- * If table name is specified and forceTableClean is false, it will clean garbage
- * segment (MARKED_FOR_DELETE state).
- * If table name is specified and forceTableClean is true, it will delete all data
- * in the table.
- * If table name is not provided, it will clean garbage segment in all tables.
+ * Clean garbage data in table, it invokes TrashDataManager.cleanGarbageData to implement it.
  */
 case class CarbonCleanFilesCommand(
     databaseNameOp: Option[String],
-    tableName: Option[String],
-    options: Option[List[(String, String)]],
-    forceTableClean: Boolean = false,
-    isInternalCleanCall: Boolean = false,
-    truncateTable: Boolean = false)
-  extends AtomicRunnableCommand {
-
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-  var carbonTable: CarbonTable = _
-  var cleanFileCommands: List[CarbonCleanFilesCommand] = List.empty
-  val optionsMap = options.getOrElse(List.empty[(String, String)]).toMap
-  // forceClean will clean the MFD and Compacted segments immediately and also empty the trash
-  // folder
-  val forceClean = optionsMap.getOrElse("force", "false").toBoolean
-  // stale_inprogress will clean the In Progress segments based on retention time and it will
-  // clean immediately when force is true
-  val staleInprogress = optionsMap.getOrElse("stale_inprogress", "false").toBoolean
-
-  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
-    setAuditTable(carbonTable)
-    setAuditInfo(Map(
-      "force" -> forceTableClean.toString,
-      "internal" -> isInternalCleanCall.toString))
-    val viewSchemas =
-      MVManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
-    if (!viewSchemas.isEmpty) {
-      val commands = viewSchemas.asScala.map {
-        schema =>
-          val relationIdentifier = schema.getIdentifier
-          CarbonCleanFilesCommand(
-            Some(relationIdentifier.getDatabaseName),
-            Some(relationIdentifier.getTableName),
-            options,
-            isInternalCleanCall = true)
-      }.toList
-      commands.foreach(_.processMetadata(sparkSession))
-      cleanFileCommands = cleanFileCommands ++ commands
-    }
-    Seq.empty
-  }
+    tableName: String,
+    options: Map[String, String] = Map.empty,
+    isInternalCleanCall: Boolean = false)
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    setAuditTable(carbonTable)
     // if insert overwrite in progress, do not allow delete segment
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
     }
-    val operationContext = new OperationContext
-    val cleanFilesPreEvent: CleanFilesPreEvent =
-      CleanFilesPreEvent(carbonTable,
-        sparkSession)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent, operationContext)
-    if (tableName.isDefined) {
-      Checker.validateTableExists(databaseNameOp, tableName.get, sparkSession)
-      if (forceClean) {
-        // empty the trash folder
-        if (CarbonProperties.getInstance().isCleanFilesForceAllowed) {
-          TrashUtil.emptyTrash(carbonTable.getTablePath)
-        } else {
-          LOGGER.error("Clean Files with Force option deletes the physical data and it cannot be" +
-              " recovered. It is disabled by default, to enable clean files with force option," +
-              " set " + CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED + " to true")
-            throw new RuntimeException("Clean files with force operation not permitted by default")
-        }
-      } else {
-        // clear trash based on timestamp
-        TrashUtil.deleteExpiredDataFromTrash(carbonTable.getTablePath)
-      }
-      if (carbonTable.isHivePartitionTable) {
-        CleanFilesUtil.cleanStaleSegmentsForPartitionTable(carbonTable)
-      } else {
-        CleanFilesUtil.cleanStaleSegments(carbonTable)
-      }
-      if (forceTableClean) {
-        deleteAllData(sparkSession, databaseNameOp, tableName.get, forceClean, staleInprogress)
-      } else {
-        cleanGarbageData(sparkSession, databaseNameOp, tableName.get, forceClean, staleInprogress)
-      }
-    } else {
-      cleanGarbageDataInAllTables(sparkSession)
-    }
-    if (cleanFileCommands != null) {
-      cleanFileCommands.foreach(_.processData(sparkSession))
-    }
-    val cleanFilesPostEvent: CleanFilesPostEvent =
-      CleanFilesPostEvent(carbonTable, staleInprogress, forceClean, sparkSession)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent, operationContext)
-    Seq.empty
-  }
-
-  private def deleteAllData(sparkSession: SparkSession,
-      databaseNameOp: Option[String], tableName: String, isForceDelete: Boolean,
-      cleanStaleInprogress: Boolean): Unit = {
-    val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
-    val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
-    val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    CarbonStore.cleanFiles(
-      dbName = dbName,
-      tableName = tableName,
-      tablePath = tablePath,
-      carbonTable = null, // in case of delete all data carbonTable is not required.
-      forceTableClean = forceTableClean,
-      isForceDelete = isForceDelete,
-      cleanStaleInprogress = cleanStaleInprogress)
-  }
-
-  private def cleanGarbageData(sparkSession: SparkSession,
-      databaseNameOp: Option[String], tableName: String, isForceDelete: Boolean,
-      cleanStaleInprogress: Boolean): Unit = {
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    val partitions: Option[Seq[PartitionSpec]] = CarbonFilters.getPartitions(
-      Seq.empty[Expression],
-      sparkSession,
-      carbonTable)
-    CarbonStore.cleanFiles(
-      dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
-      tableName = tableName,
-      tablePath = carbonTable.getTablePath,
-      carbonTable = carbonTable,
-      forceTableClean = forceTableClean,
-      isForceDelete = isForceDelete,
-      cleanStaleInprogress = cleanStaleInprogress,
-      currentTablePartitions = partitions,
-      truncateTable = truncateTable)
-  }
 
-  // Clean garbage data in all tables in all databases
-  private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {
-    try {
-      val databases = sparkSession.sessionState.catalog.listDatabases()
-      databases.foreach(dbName => {
-        val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
-        CommonUtil.cleanInProgressSegments(databaseLocation, dbName)
-      })
-    } catch {
-      case e: Throwable =>
-        // catch all exceptions to avoid failure
-        LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-          .error("Failed to clean in progress segments", e)
+    val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
+    val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
+    withEvents(preEvent, postEvent) {
+      DataTrashManager.cleanGarbageData(
+        carbonTable,
+        options.getOrElse("force", "false").toBoolean,
+        options.getOrElse("stale_inprogress", "false").toBoolean,
+        CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, carbonTable))
     }
+
+    Seq.empty
   }
 
   override protected def opName: String = "CLEAN FILES"

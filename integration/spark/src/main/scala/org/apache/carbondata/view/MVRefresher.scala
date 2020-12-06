@@ -65,8 +65,6 @@ object MVRefresher {
       viewSchema.getIdentifier.getTableId)
     val viewIdentifier = viewSchema.getIdentifier
     val viewTableIdentifier = viewTable.getAbsoluteTableIdentifier
-    // Clean up the old invalid segment data before creating a new entry for new load.
-    SegmentStatusManager.deleteLoadsAndUpdateMetadata(viewTable, false, null, false, false)
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(viewTableIdentifier)
     // Acquire table status lock to handle concurrent data loading
     val lock: ICarbonLock = segmentStatusManager.getTableStatusLock

@@ -287,7 +287,6 @@ case class CarbonAlterTableCompactionCommand(
       CarbonDataRDDFactory.handleCompactionForSystemLocking(
         sqlContext,
         carbonLoadModel,
-        storeLocation,
         compactionType,
         carbonTable,
         compactedSegments,
@@ -319,7 +318,6 @@ case class CarbonAlterTableCompactionCommand(
         CarbonDataRDDFactory.startCompactionThreads(
           sqlContext,
           carbonLoadModel,
-          storeLocation,
           compactionModel,
           lock,
           compactedSegments,

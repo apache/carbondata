@@ -332,7 +332,7 @@ object StreamHandoffRDD {
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
       CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
       LOGGER.info("********starting clean up**********")
-      CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+      CarbonLoaderUtil.deleteSegmentForFailure(carbonLoadModel)
       LOGGER.info("********clean up done**********")
       LOGGER.error("Cannot write load metadata file as handoff failed")
       throw new Exception(errorMessage)

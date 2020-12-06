@@ -15,31 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.rdd
+package org.apache.carbondata
 
-import java.util.concurrent.ExecutorService
-
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.CompactionModel
-
-import org.apache.carbondata.events.OperationContext
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-
-object CompactionFactory {
-
-  /**
-   *  Returns appropriate Compactor object.
-   */
-  def getCompactor(carbonLoadModel: CarbonLoadModel,
-      compactionModel: CompactionModel,
-      sqlContext: SQLContext,
-      mergedLoads: java.util.List[String],
-      operationContext: OperationContext): Compactor = {
-    new CarbonTableCompactor(
-      carbonLoadModel,
-      compactionModel,
-      sqlContext,
-      mergedLoads,
-      operationContext)
+package object events {
+  def withEvents(preEvent: Event, postEvent: Event)(func: => Unit): Unit = {
+    val operationContext = new OperationContext
+    OperationListenerBus.getInstance.fireEvent(preEvent, operationContext)
+    func
+    OperationListenerBus.getInstance.fireEvent(postEvent, operationContext)
   }
 }

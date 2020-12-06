@@ -2123,27 +2123,30 @@ public final class CarbonProperties {
    * folder will take place
    */
   private void validateTrashFolderRetentionTime() {
-    String propertyValue = carbonProperties.getProperty(CarbonCommonConstants
-        .CARBON_TRASH_RETENTION_DAYS, Integer.toString(CarbonCommonConstants
-        .CARBON_TRASH_RETENTION_DAYS_DEFAULT));
     try {
-      int configuredValue = Integer.parseInt(propertyValue);
-      if (configuredValue < 0 || configuredValue > CarbonCommonConstants
-          .CARBON_TRASH_RETENTION_DAYS_MAXIMUM) {
+      int configuredValue = getTrashFolderRetentionTime();
+      if (configuredValue < 0 ||
+          configuredValue > CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_MAXIMUM) {
         LOGGER.warn("Value of " + CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS + " is" +
             " invalid, taking default value instead");
-        carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS, Integer
-            .toString(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT));
+        carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
+            CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT);
       } else {
         carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
-            propertyValue);
+            configuredValue + "");
       }
     } catch (NumberFormatException e) {
       LOGGER.error("Invalid value configured for " + CarbonCommonConstants
           .CARBON_TRASH_RETENTION_DAYS + ", considering the default value");
-      carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS, Integer
-          .toString(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT));
+      carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
+          CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT);
     }
+  }
+
+  public int getTrashFolderRetentionTime() {
+    return Integer.parseInt(carbonProperties.getProperty(
+        CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
+        CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT));
   }
 
   /**

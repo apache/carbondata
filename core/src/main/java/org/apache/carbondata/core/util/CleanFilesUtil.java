@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
@@ -54,34 +55,36 @@ public class CleanFilesUtil {
     List<String> redundantSegmentFile = new ArrayList<>();
     getStaleSegmentFiles(carbonTable, staleSegmentFiles, redundantSegmentFile);
     for (String staleSegmentFile : staleSegmentFiles) {
-      String segmentNumber = DataFileUtil.getSegmentNoFromSegmentFile(staleSegmentFile);
       SegmentFileStore fileStore = new SegmentFileStore(carbonTable.getTablePath(),
           staleSegmentFile);
-      Map<String, SegmentFileStore.FolderDetails> locationMap = fileStore.getSegmentFile()
-          .getLocationMap();
-      if (locationMap != null) {
-        if (locationMap.entrySet().iterator().next().getValue().isRelative()) {
-          CarbonFile segmentPath = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(
-              carbonTable.getTablePath(), segmentNumber));
-          // copy the complete segment to the trash folder
-          TrashUtil.copySegmentToTrash(segmentPath, TrashUtil.getCompleteTrashFolderPath(
-              carbonTable.getTablePath(), timeStampForTrashFolder, segmentNumber));
-          // Deleting the stale Segment folders and the segment file.
-          try {
-            CarbonUtil.deleteFoldersAndFiles(segmentPath);
-            // delete the segment file as well
-            FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath(),
-                staleSegmentFile));
-            for (String duplicateStaleSegmentFile : redundantSegmentFile) {
-              if (DataFileUtil.getSegmentNoFromSegmentFile(duplicateStaleSegmentFile)
-                  .equals(segmentNumber)) {
-                FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable
-                    .getTablePath(), duplicateStaleSegmentFile));
+      SegmentFileStore.SegmentFile segmentFile = fileStore.getSegmentFile();
+      if (segmentFile != null) {
+        Map<String, SegmentFileStore.FolderDetails> locationMap = segmentFile.getLocationMap();
+        if (locationMap != null) {
+          if (locationMap.entrySet().iterator().next().getValue().isRelative()) {
+            String segmentNumber = DataFileUtil.getSegmentNoFromSegmentFile(staleSegmentFile);
+            CarbonFile segmentPath = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(
+                carbonTable.getTablePath(), segmentNumber));
+            // copy the complete segment to the trash folder
+            TrashUtil.copySegmentToTrash(segmentPath, TrashUtil.getCompleteTrashFolderPath(
+                carbonTable.getTablePath(), timeStampForTrashFolder, segmentNumber));
+            // Deleting the stale Segment folders and the segment file.
+            try {
+              CarbonUtil.deleteFoldersAndFiles(segmentPath);
+              // delete the segment file as well
+              FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath(),
+                  staleSegmentFile));
+              for (String duplicateStaleSegmentFile : redundantSegmentFile) {
+                if (DataFileUtil.getSegmentNoFromSegmentFile(duplicateStaleSegmentFile)
+                    .equals(segmentNumber)) {
+                  FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable
+                      .getTablePath(), duplicateStaleSegmentFile));
+                }
               }
+            } catch (IOException | InterruptedException e) {
+              LOGGER.error("Unable to delete the segment: " + segmentPath + " from after moving" +
+                  " it to the trash folder. Please delete them manually : " + e.getMessage(), e);
             }
-          } catch (IOException | InterruptedException e) {
-            LOGGER.error("Unable to delete the segment: " + segmentPath + " from after moving" +
-                " it to the trash folder. Please delete them manually : " + e.getMessage(), e);
           }
         }
       }
@@ -163,8 +166,13 @@ public class CleanFilesUtil {
     }
     Set<String> loadNameSet = Arrays.stream(details).map(LoadMetadataDetails::getLoadName)
         .collect(Collectors.toSet());
-    List<String> staleSegments = segmentFiles.stream().filter(segmentFile -> !loadNameSet.contains(
-        DataFileUtil.getSegmentNoFromSegmentFile(segmentFile))).collect(Collectors.toList());
+    // get all stale segment files, not include compaction segments.
+    // during compaction, we don't add in-progress metadata entry into tablestatus file,
+    // so here we don't known whether compaction segment is stale or not.
+    List<String> staleSegments = segmentFiles.stream().filter(segmentFile -> {
+      String segmentNo = DataFileUtil.getSegmentNoFromSegmentFile(segmentFile);
+      return !loadNameSet.contains(segmentNo) && !segmentNo.contains(CarbonCommonConstants.POINT);
+    }).collect(Collectors.toList());
     if (staleSegments.size() == 0) {
       return;
     }
