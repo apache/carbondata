@@ -334,6 +334,8 @@ object CarbonDataRDDFactory {
     val segmentLock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
       CarbonTablePath.addSegmentPrefix(carbonLoadModel.getSegmentId) + LockUsage.LOCK)
 
+    mockForConcurrentTest()
+
     try {
       if (!carbonLoadModel.isCarbonTransactionalTable || segmentLock.lockWithRetries()) {
         status = if (scanResultRdd.isDefined) {
@@ -606,6 +608,14 @@ object CarbonDataRDDFactory {
       segmentLock.unlock()
     }
   }
+
+  def mockForConcurrentTest(): Unit = {
+    mockForConcurrentUpdateTest()
+    mockForConcurrentDeleteTest()
+  }
+
+  def mockForConcurrentUpdateTest(): Unit = {}
+  def mockForConcurrentDeleteTest(): Unit = {}
 
   /**
    * clear indexSchema files for segment

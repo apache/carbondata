@@ -25,9 +25,11 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.mutation.transaction.{TransactionManager, TransactionType}
 import org.apache.spark.sql.types.LongType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
@@ -57,18 +59,20 @@ case class CarbonProjectForDeleteCommand(
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> logicPlan.simpleString))
 
-    // Step1: trigger PreDelete event for table
+    val transactionManager = TransactionManager(carbonTable)
+    val deleteTransaction = transactionManager.beginTransaction(TransactionType.DELETE)
+
+        // Step1: trigger PreDelete event for table
     val operationContext = new OperationContext
     val deleteFromTablePreEvent: DeleteFromTablePreEvent =
       DeleteFromTablePreEvent(sparkSession, carbonTable)
     OperationListenerBus.getInstance.fireEvent(deleteFromTablePreEvent, operationContext)
 
     // Step2. acquire locks
-    val locksToBeAcquired =
-      List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK, LockUsage.UPDATE_LOCK)
-    val acquiredLocks =
-      CarbonLockUtil.acquireLocks(carbonTable, locksToBeAcquired.asJava)
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
+    var acquiredLocks = CarbonLockUtil.acquireLocks(carbonTable, locksToBeAcquired.asJava)
 
+    val startTimestamp = deleteTransaction.startTimestamp
     var hasDeleteException = false
     val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
     var updatedSegmentList: util.Set[String] = new util.HashSet[String]()
@@ -91,8 +95,8 @@ case class CarbonProjectForDeleteCommand(
         DeleteExecution.deleteDeltaExecution(
         carbonTable,
         sparkSession,
-          dataFrame.rdd,
-        timestamp,
+        dataFrame.rdd,
+        startTimestamp,
         isUpdateOperation = false,
         executorErrors)
       deletedRowCount = deletedRowCountTmp
@@ -100,9 +104,15 @@ case class CarbonProjectForDeleteCommand(
       deletedSegmentList = deletedSegmentListTmp
       if (deletedRowCount == 0) return Seq(Row(0L))
 
+      if (IUDCommonUtil.isTest()) {
+        acquiredLocks = IUDCommonUtil.mockForConcurrentTest(
+          carbonTable, acquiredLocks, locksToBeAcquired
+        )
+      }
+
       // Step4.3 write updatetablestatus and tablestatus
-      DeleteExecution.checkAndUpdateStatusFiles(executorErrors,
-        carbonTable, timestamp + "", false, null,
+      DeleteExecution.checkAndUpdateStatusFiles(deleteTransaction,
+        executorErrors, carbonTable, startTimestamp, false, null,
         blockUpdateDetailsList, updatedSegmentList, deletedSegmentList)
 
       // Step5.1 Delta Compaction
@@ -115,6 +125,9 @@ case class CarbonProjectForDeleteCommand(
       IUDCommonUtil.refreshMVandIndex(sparkSession, carbonTable,
         operationContext, deleteFromTablePostEvent)
     } catch {
+      case e: ConcurrentOperationException =>
+        hasDeleteException = true
+        throw e
       case e: Exception =>
         LOGGER.error("Exception in Delete data operation " + e.getMessage, e)
         // ****** start clean up.
@@ -130,13 +143,13 @@ case class CarbonProjectForDeleteCommand(
         }
     } finally {
       // release the locks
-      CarbonLockUtil.releaseLocks(acquiredLocks.asInstanceOf[java.util.List[ICarbonLock]])
+      CarbonLockUtil.releaseLocks(acquiredLocks)
 
       if (hasDeleteException) {
         // In case of failure , clean all related delete delta files
         // When the table has too many segemnts, it will take a long time.
         // So moving it to the end and it is outside of locking.
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, startTimestamp)
       }
     }
 

@@ -26,11 +26,13 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoWithDf
+import org.apache.spark.sql.execution.command.mutation.transaction.{TransactionManager, TransactionType}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{ArrayType, LongType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -60,22 +62,23 @@ case class CarbonProjectForUpdateCommand(
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> logicPlan.simpleString))
 
+    val transactionManager = TransactionManager(carbonTable)
+    val updateTransaction = transactionManager.beginTransaction(TransactionType.UPDATE)
+
     // Step1: trigger PreUpdate event for table
     val operationContext = new OperationContext
     val updateTablePreEvent: UpdateTablePreEvent = UpdateTablePreEvent(sparkSession, carbonTable)
     OperationListenerBus.getInstance.fireEvent(updateTablePreEvent, operationContext)
 
     // Step2. acquire locks
-    val locksToBeAcquired =
-      List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK, LockUsage.UPDATE_LOCK)
-    val acquiredLocks =
-      CarbonLockUtil.acquireLocks(carbonTable, locksToBeAcquired.asJava)
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
+    var acquiredLocks = CarbonLockUtil.acquireLocks(carbonTable, locksToBeAcquired.asJava)
 
     // Initialize the variables
     var updatedRowCount = 0L
     var dataFrame: DataFrame = null
     var hasUpdateException = false
-    val deltaDeltaFileTimestamp = CarbonUpdateUtil.readCurrentTime.toString
+    val startTimestamp = updateTransaction.startTimestamp
     var updateTableModel: UpdateTableModel = null
     val executionErrors = ExecutionErrors(FailureCauses.NONE, "")
     val isPersistEnabled = CarbonProperties.getInstance.isPersistUpdateDataset
@@ -94,7 +97,7 @@ case class CarbonProjectForUpdateCommand(
 
       // Step4.2 calculate the non empty partition in dataframe, then try to coalesce partitions
       val nonEmptyPartitionCount = IUDCommonUtil.countNonEmptyPartitions(sparkSession, dataFrame,
-        carbonTable, deltaDeltaFileTimestamp)
+        carbonTable, startTimestamp)
       if(nonEmptyPartitionCount == 0L) return Seq(Row(0L))
       dataFrame = IUDCommonUtil.coalesceDataSetIfNeeded(dataFrame,
         nonEmptyPartitionCount, isPersistEnabled)
@@ -104,7 +107,7 @@ case class CarbonProjectForUpdateCommand(
         DeleteExecution.deleteDeltaExecution(
         carbonTable, sparkSession,
         dataFrame.rdd,
-        deltaDeltaFileTimestamp,
+        startTimestamp,
         isUpdateOperation = true,
         executionErrors,
         Some(dataFrame.schema.fields.length - 1))
@@ -113,8 +116,14 @@ case class CarbonProjectForUpdateCommand(
       updatedRowCount = updatedRowCountTmp
       if (updatedRowCount == 0) return Seq(Row(0L))
 
+      if (IUDCommonUtil.isTest()) {
+        acquiredLocks = IUDCommonUtil.mockForConcurrentTest(
+          carbonTable, acquiredLocks, locksToBeAcquired
+        )
+      }
+
       // Step4.4 do insert operation.
-      updateTableModel = UpdateTableModel(true, deltaDeltaFileTimestamp.toLong,
+      updateTableModel = UpdateTableModel(true, startTimestamp.toLong,
         executionErrors, Seq.empty, Option.empty, Option.empty)
       // coalesce rdd partitions to reduce carbondata files added in once update
       val rowCountForCoalesce = CarbonCommonConstants.CARBON_UPDATE_ROW_COUNT_FOR_COALESCE
@@ -130,8 +139,8 @@ case class CarbonProjectForUpdateCommand(
         executionErrors)
 
       // Step4.5 write updatetablestatus and tablestatus
-      DeleteExecution.checkAndUpdateStatusFiles(executionErrors, carbonTable,
-        deltaDeltaFileTimestamp.toString, true,
+      DeleteExecution.checkAndUpdateStatusFiles(updateTransaction,
+        executionErrors, carbonTable, startTimestamp, true,
         updateTableModel, blockUpdateDetailsList, updatedSegmentList, deletedSegmentList)
 
       // Step5.1 Delta Compaction
@@ -152,6 +161,9 @@ case class CarbonProjectForUpdateCommand(
       IndexStoreManager.getInstance()
         .clearInvalidSegments(carbonTable, deletedSegmentList.asScala.toList.asJava)
     } catch {
+      case e: ConcurrentOperationException =>
+        hasUpdateException = true
+        throw e
       case e: Exception =>
         LOGGER.error("Exception in update operation", e)
         hasUpdateException = true
@@ -164,7 +176,7 @@ case class CarbonProjectForUpdateCommand(
         sys.error("Update operation failed. please check logs.")
     } finally {
       // release the locks
-      CarbonLockUtil.releaseLocks(acquiredLocks.asInstanceOf[java.util.List[ICarbonLock]])
+      CarbonLockUtil.releaseLocks(acquiredLocks)
 
       if (null != dataFrame && isPersistEnabled) {
         try {
@@ -179,7 +191,7 @@ case class CarbonProjectForUpdateCommand(
         // In case of failure , clean all related delete delta files
         // When the table has too many segemnts, it will take a long time.
         // So moving it to the end and it is outside of locking.
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, deltaDeltaFileTimestamp)
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, startTimestamp)
       }
     }
 

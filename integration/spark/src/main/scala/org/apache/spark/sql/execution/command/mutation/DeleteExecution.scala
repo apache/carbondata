@@ -28,6 +28,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.execution.command.{ExecutionErrors, UpdateTableModel}
+import org.apache.spark.sql.execution.command.mutation.transaction.{Transaction, TransactionManager}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.SparkSQLUtil
 
@@ -35,6 +36,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -336,6 +338,7 @@ object DeleteExecution {
 
   // all or none : update status file, only if complete delete operation is successful.
   def checkAndUpdateStatusFiles(
+      transaction: Transaction,
       executorErrors: ExecutionErrors,
       carbonTable: CarbonTable,
       timestamp: String,
@@ -344,6 +347,14 @@ object DeleteExecution {
       blockUpdateDetailsList: java.util.List[SegmentUpdateDetails],
       updatedSegmentList: util.Set[String],
       deletedSegmentList: util.Set[String]): Unit = {
+
+    val isChanged = IUDCommonUtil.checkIfSegmentsAlreadyUpdated(
+      carbonTable, timestamp, updatedSegmentList)
+    if (isChanged) {
+      throw new ConcurrentOperationException(carbonTable.getDatabaseName,
+        carbonTable.getTableName, "Another conflict operation",
+        transaction.transactionType.toString)
+    }
 
     val updateSegmentStatus = CarbonUpdateUtil
       .updateSegmentStatus(blockUpdateDetailsList, carbonTable, timestamp, false)
@@ -358,8 +369,7 @@ object DeleteExecution {
     }
 
     var newMetaEntry: LoadMetadataDetails = null
-    if (isUpdateOperation && !updateModel.addedLoadDetail.isEmpty
-      && updateModel.addedLoadDetail.isDefined) {
+    if (isUpdateOperation && updateModel.addedLoadDetail.isDefined) {
       newMetaEntry = updateModel.addedLoadDetail.get
     }
 

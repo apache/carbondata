@@ -123,6 +123,9 @@ public class LoadMetadataDetails implements Serializable {
    */
   private String extraInfo;
 
+  // end timestamp of latest operation on the segment
+  private String latestUpdateEndTimestamp;
+
   public String getDataSize() {
     return dataSize;
   }
@@ -451,6 +454,14 @@ public class LoadMetadataDetails implements Serializable {
 
   public void setExtraInfo(String extraInfo) {
     this.extraInfo = extraInfo;
+  }
+
+  public String getLatestUpdateEndTimestamp() {
+    return latestUpdateEndTimestamp;
+  }
+
+  public void setLatestUpdateEndTimestamp(String latestUpdateEndTimestamp) {
+    this.latestUpdateEndTimestamp = latestUpdateEndTimestamp;
   }
 
   public String getPath() {

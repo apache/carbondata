@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command.mutation
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
@@ -35,12 +36,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.view.{MVSchema, MVStatus}
-import org.apache.carbondata.events.{Event, OperationContext, OperationListenerBus, UpdateTablePostEvent}
+import org.apache.carbondata.events.{Event, OperationContext, OperationListenerBus}
 import org.apache.carbondata.view.MVManagerInSpark
 
 
@@ -188,8 +190,8 @@ object IUDCommonUtil {
   }
 
   def checkIsLoadInProgressInTable(carbonTable: CarbonTable): Unit = {
-    if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
-      throw new ConcurrentOperationException(carbonTable, "loading", "data update")
+    if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "data update")
     }
   }
 
@@ -268,4 +270,43 @@ object IUDCommonUtil {
       case _ =>
     }
   }
+
+  def checkIfSegmentsAlreadyUpdated(
+      carbonTable: CarbonTable,
+      startTimestamp: String,
+      updatedSegments: util.Set[String]): Boolean = {
+
+    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    var isChanged = false
+    breakable {
+      loadMetadataDetails
+        .filter(load => updatedSegments.contains(load.getLoadName))
+        .foreach(load =>
+          if (load.getLatestUpdateEndTimestamp != null &&
+            load.getLatestUpdateEndTimestamp.toLong > startTimestamp.toLong) {
+            isChanged = true
+            break()
+          }
+        )
+    }
+    isChanged
+  }
+
+  def mockForConcurrentTest(carbonTable: CarbonTable,
+      acquiredLocks: util.List[ICarbonLock],
+      locksToBeAcquired: List[String]): util.List[ICarbonLock] = {
+    CarbonLockUtil.releaseLocks(acquiredLocks)
+    mockForConcurrentInsertTest()
+    mockForConcurrentUpdateTest()
+    mockForConcurrentDeleteTest()
+    CarbonLockUtil.acquireLocks(carbonTable, locksToBeAcquired.asJava)
+  }
+
+  def isTest(): Boolean = {
+    false
+  }
+
+  def mockForConcurrentInsertTest(): Unit = {}
+  def mockForConcurrentUpdateTest(): Unit = {}
+  def mockForConcurrentDeleteTest(): Unit = {}
 }

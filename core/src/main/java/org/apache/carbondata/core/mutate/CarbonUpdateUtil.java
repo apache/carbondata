@@ -341,8 +341,11 @@ public class CarbonUpdateUtil {
                   // this means for first time it is getting updated .
                   loadMetadata.setUpdateDeltaStartTimestamp(updatedTimeStamp);
                 }
-                // update end timestamp for each time.
+                // update delta end timestamp for each time.
                 loadMetadata.setUpdateDeltaEndTimestamp(updatedTimeStamp);
+                // record end timestamp of operation each time
+                long operationEndTimestamp = System.currentTimeMillis();
+                loadMetadata.setLatestUpdateEndTimestamp(String.valueOf(operationEndTimestamp));
               }
               if (segmentFilesTobeUpdated.contains(loadMetadata.getLoadName())) {
                 loadMetadata.setSegmentFile(loadMetadata.getLoadName() + "_" + updatedTimeStamp
