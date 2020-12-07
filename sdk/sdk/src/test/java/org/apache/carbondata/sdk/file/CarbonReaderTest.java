@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.Field;
+import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -1738,6 +1739,272 @@ public class CarbonReaderTest extends TestCase {
     } catch (Throwable e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testReadDateAndTimestampColumnInMap() {
+    String path = "./testWriteFiles";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+      Field[] fields = new Field[6];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("shortField", DataTypes.SHORT);
+      fields[2] = new Field("dateField", DataTypes.DATE);
+      fields[3] = new Field("timeField", DataTypes.TIMESTAMP);
+      fields[4] = new Field("varcharField", DataTypes.VARCHAR);
+      fields[5] =
+          new Field("mapType", DataTypes.createMapType(DataTypes.TIMESTAMP, DataTypes.DATE));
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withCsvInput(new Schema(fields))
+          .writtenBy("CarbonReaderTest").build();
+
+      for (int i = 0; i < 10; i++) {
+        String[] row2 = new String[] { "robot" + (i % 10), String.valueOf(i % 10000), "2019-03-02",
+            "2019-02-12 03:03:34", "varchar", "2019-03-30 17:22:31\u00022019-03-30"
+            + "\u00012019-03-30 17:22:32\u00022019-03-10\u00012019-03-30 17:22:33\u00022019-03-14"
+            + "\u00012019-03-30 17:22:36\u00022019-03-18" };
+        writer.write(row2);
+      }
+      writer.close();
+      File[] dataFiles = new File(path).listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          if (name == null) {
+            return false;
+          }
+          return name.endsWith("carbondata");
+        }
+      });
+      if (dataFiles == null || dataFiles.length < 1) {
+        throw new RuntimeException("Carbon data file not exists.");
+      }
+      Schema schema = CarbonSchemaReader.readSchema(dataFiles[0].getAbsolutePath()).asOriginOrder();
+      // Transform the schema
+      String[] strings = new String[schema.getFields().length];
+      for (int i = 0; i < schema.getFields().length; i++) {
+        strings[i] = (schema.getFields())[i].getFieldName();
+      }
+      // Read data
+      CarbonReader reader = CarbonReader.builder(path).projection(strings).build();
+      Object[] mapKeValue = new Object[2];
+      mapKeValue[0] = new Object[] { "2019-03-30 17:22:36", "2019-03-30 17:22:33",
+          "2019-03-30 17:22:32", "2019-03-30 17:22:31" };
+      mapKeValue[1] = new Object[] { "2019-03-18", "2019-03-14", "2019-03-10", "2019-03-30" };
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        assert (row[0].equals("robot" + i));
+        assert (row[2].equals("2019-03-02"));
+        assert (row[3].equals("2019-02-12 03:03:34"));
+        Assert.assertArrayEquals(mapKeValue, (Object[]) row[5]);
+        i++;
+      }
+      Assert.assertEquals(i, 10);
+      reader.close();
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testReadDateAndTimestampColumnInArray() {
+    String path = "./testWriteFiles";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+      Field[] fields = new Field[7];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("shortField", DataTypes.SHORT);
+      fields[2] = new Field("dateField", DataTypes.DATE);
+      fields[3] = new Field("timeField", DataTypes.TIMESTAMP);
+      fields[4] = new Field("varcharField", DataTypes.VARCHAR);
+      fields[5] = new Field("arrayFieldDate", DataTypes.createArrayType(DataTypes.DATE));
+      fields[6] = new Field("arrayFieldTimestamp", DataTypes.createArrayType(DataTypes.TIMESTAMP));
+      Map<String, String> map = new HashMap<>();
+      map.put("complex_delimiter_level_1", "#");
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withLoadOptions(map)
+          .withCsvInput(new Schema(fields)).writtenBy("CarbonReaderTest").build();
+
+      for (int i = 0; i < 10; i++) {
+        String[] row2 = new String[] { "robot" + (i % 10), String.valueOf(i % 10000), "2019-03-02",
+            "2019-02-12 03:03:34", "varchar", "2019-03-02#2019-03-03#2019-03-04#2019-03-05",
+            "2019-02-12 03:03:34#2019-02-12 03:03:38#2019-02-12 03:03:41#2019-02-12 03:12:34" };
+        writer.write(row2);
+      }
+      writer.close();
+      File[] dataFiles = new File(path).listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          if (name == null) {
+            return false;
+          }
+          return name.endsWith("carbondata");
+        }
+      });
+      if (dataFiles == null || dataFiles.length < 1) {
+        throw new RuntimeException("Carbon data file not exists.");
+      }
+      Schema schema = CarbonSchemaReader.readSchema(dataFiles[0].getAbsolutePath()).asOriginOrder();
+      // Transform the schema
+      String[] strings = new String[schema.getFields().length];
+      for (int i = 0; i < schema.getFields().length; i++) {
+        strings[i] = (schema.getFields())[i].getFieldName();
+      }
+      // Read data
+      CarbonReader reader = CarbonReader.builder(path).projection(strings).build();
+      Object[] arrDate = new Object[] { "2019-03-02", "2019-03-03", "2019-03-04", "2019-03-05" };
+      Object[] arrTimestamp = new Object[] { "2019-02-12 03:03:34", "2019-02-12 03:03:38",
+          "2019-02-12 03:03:41", "2019-02-12 03:12:34" };
+
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        assert (row[0].equals("robot" + i));
+        assert (row[2].equals("2019-03-02"));
+        assert (row[3].equals("2019-02-12 03:03:34"));
+        Assert.assertArrayEquals(arrDate, (Object[]) row[5]);
+        Assert.assertArrayEquals(arrTimestamp, (Object[]) row[6]);
+        i++;
+      }
+      Assert.assertEquals(i, 10);
+      reader.close();
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testReadDateAndTimestampColumnInStruct() {
+    String path = "./testWriteFiles";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+      Field[] fields = new Field[3];
+      fields[0] = new Field("name", DataTypes.STRING);
+      fields[1] = new Field("age", DataTypes.INT);
+      ArrayList<StructField> structFields = new ArrayList<>();
+      structFields.add(new StructField("dateField", DataTypes.DATE));
+      structFields.add(new StructField("timestampField", DataTypes.TIMESTAMP));
+      fields[2] = new Field("structField", DataTypes.createStructType(structFields));
+      Map<String, String> map = new HashMap<>();
+      map.put("complex_delimiter_level_1", "#");
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withLoadOptions(map)
+          .withCsvInput(new Schema(fields)).writtenBy("CarbonReaderTest").build();
+
+      for (int i = 0; i < 10; i++) {
+        String[] row2 = new String[] { "robot" + (i % 10), String.valueOf(i % 10000),
+            "2019-03-02#2019-02-12 03:12:34" };
+        writer.write(row2);
+      }
+      writer.close();
+      File[] dataFiles = new File(path).listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          if (name == null) {
+            return false;
+          }
+          return name.endsWith("carbondata");
+        }
+      });
+      if (dataFiles == null || dataFiles.length < 1) {
+        throw new RuntimeException("Carbon data file not exists.");
+      }
+      Schema schema = CarbonSchemaReader.readSchema(dataFiles[0].getAbsolutePath()).asOriginOrder();
+      // Transform the schema
+      String[] strings = new String[schema.getFields().length];
+      for (int i = 0; i < schema.getFields().length; i++) {
+        strings[i] = (schema.getFields())[i].getFieldName();
+      }
+      // Read data
+      CarbonReader reader = CarbonReader.builder(path).projection(strings).build();
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        assert (row[0].equals("robot" + i));
+        Object[] arr = (Object[]) row[2];
+        assert (arr[0].equals("2019-03-02"));
+        assert (arr[1].equals("2019-02-12 03:12:34"));
+        i++;
+      }
+      Assert.assertEquals(i, 10);
+      reader.close();
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testReadingDateAndTimestampColumnInArrayOfStruct() throws IOException {
+    String path = "./testWriteFilesArrayStruct";
+    FileUtils.deleteDirectory(new File(path));
+    Field[] fields = new Field[4];
+    fields[0] = new Field("id", DataTypes.STRING);
+    fields[1] = new Field("source", DataTypes.STRING);
+    fields[2] = new Field("usage", DataTypes.STRING);
+    List<StructField> structFieldsList = new ArrayList<>();
+    structFieldsList.add(new StructField("name", DataTypes.STRING));
+    structFieldsList.add(new StructField("type", DataTypes.STRING));
+    structFieldsList.add(new StructField("creation-date", DataTypes.DATE));
+    structFieldsList.add(new StructField("creation-timestamp", DataTypes.TIMESTAMP));
+    StructField structTypeByList =
+        new StructField("annotation", DataTypes.createStructType(structFieldsList),
+            structFieldsList);
+    List<StructField> list = new ArrayList<>();
+    list.add(structTypeByList);
+    Field arrayType = new Field("annotations", "array", list);
+    fields[3] = arrayType;
+    try {
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withCsvInput(new Schema(fields))
+          .writtenBy("complexTest").build();
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + i, String.valueOf(i), i + "." + i,
+            "sunflowers" + (i % 10) + "\002" + "modelarts/image_classification" + "\002"
+                + "2019-03-30" + "\002" + "2019-03-30 17:22:31" + "\001" + "roses" + (i % 10)
+                + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30" + "\002"
+                + "2019-03-30 17:22:31" };
+        writer.write(row);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    }
+    Schema schema = CarbonSchemaReader.readSchema(path).asOriginOrder();
+    assert (4 == schema.getFieldsLength());
+    CarbonReader reader = null;
+    try {
+      reader = CarbonReader.builder(path)
+          .projection(new String[] { "id", "source", "usage", "annotations" }).build();
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        assert (4 == row.length);
+        assert (row[0].equals("robot" + i));
+        int value = Integer.valueOf((String) row[1]);
+        Float value2 = Float.valueOf((String) row[2]);
+        assert (value > -1 || value < 15);
+        assert (value2 > -1 || value2 < 15);
+        Object[] annotations = (Object[]) row[3];
+        for (int j = 0; j < annotations.length; j++) {
+          Object[] annotation = (Object[]) annotations[j];
+          assert (((String) annotation[0]).contains("sunflowers") || ((String) annotation[0])
+              .contains("roses"));
+          assert (((String) annotation[1]).contains("modelarts/image_classification"));
+          assert (annotation[2].equals("2019-03-30"));
+          assert (annotation[3].equals("2019-03-30 17:22:31"));
+        }
+        i++;
+      }
+      assert (15 == i);
+      reader.close();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
     }
   }
 

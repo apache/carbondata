@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -126,6 +127,75 @@ public class CarbonReader<T> {
     return formatDateAndTimeStamp((Object []) row);
   }
 
+  /**
+   * This method converts the date and timestamp columns into right format. Before conversion date
+   * is present as integer and timestamp is present as long. This method also flattens complex
+   * columns and format the date/timestamp child present in them.
+   */
+  public Object getFormattedData(CarbonDimension dimension, Object row, SimpleDateFormat dateFormat,
+      SimpleDateFormat timeStampFormat) {
+    ColumnSchema columnSchema = dimension.getColumnSchema();
+    if (row != null && columnSchema != null) {
+      DataType dataType = columnSchema.getDataType();
+      if (dataType == DataTypes.DATE) {
+        return dateFormat
+            .format(new Date(DateDirectDictionaryGenerator.MILLIS_PER_DAY * (int) row));
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        return timeStampFormat.format(new Date((long) row / 1000));
+      } else if (dataType.isComplexType()) {
+        List<CarbonDimension> listOfChildDimensions = dimension.getListOfChildDimensions();
+        Object[] childDimensionFormattedValues = new Object[((Object[]) row).length];
+        if (listOfChildDimensions != null && listOfChildDimensions.size() > 0) {
+          int i = 0;
+          if (DataTypes.isArrayType(dataType)) {
+            DataType childDataType = listOfChildDimensions.get(0).getColumnSchema().getDataType();
+            if (childDataType == DataTypes.DATE || childDataType == DataTypes.TIMESTAMP
+                || childDataType.isComplexType()) {
+              for (Object val : (Object[]) row) {
+                childDimensionFormattedValues[i] =
+                   getFormattedData(listOfChildDimensions.get(0), val, dateFormat, timeStampFormat);
+                i++;
+              }
+            } else {
+              return row;
+            }
+          } else if (DataTypes.isStructType(dataType)) {
+            for (Object val : (Object[]) row) {
+              childDimensionFormattedValues[i] =
+                  getFormattedData(listOfChildDimensions.get(i), val, dateFormat, timeStampFormat);
+              i++;
+            }
+          } else if (DataTypes.isMapType(dataType)) {
+            CarbonDimension childDimension = listOfChildDimensions.get(0);
+            ColumnSchema childSchema = childDimension.getColumnSchema();
+            DataType childDataType = childSchema.getDataType();
+            if (DataTypes.isStructType(childDataType)) {
+              /* Map is returned as array of keys and values. So convert map childrens
+               * (key and value) into array dimension before processing
+               */
+              List<CarbonDimension> mapChilds = childDimension.getListOfChildDimensions();
+              ColumnSchema arraySchema = childSchema.clone();
+              arraySchema.setDataType(
+                  DataTypes.createArrayType(mapChilds.get(i).getColumnSchema().getDataType()));
+              CarbonDimension arrayDimension = new CarbonDimension(arraySchema,
+                  childDimension.getOrdinal(), childDimension.getKeyOrdinal(),
+                  childDimension.getSchemaOrdinal());
+              for (Object val : (Object[]) row) {
+                arrayDimension.initializeChildDimensionsList(1);
+                arrayDimension.getListOfChildDimensions().add(mapChilds.get(i));
+                childDimensionFormattedValues[i] =
+                    getFormattedData(arrayDimension, val, dateFormat, timeStampFormat);
+                i++;
+              }
+            }
+          }
+          return childDimensionFormattedValues;
+        }
+      }
+    }
+    return row;
+  }
+
   public T formatDateAndTimeStamp(Object[] row) {
     List<ProjectionDimension> dimensions = ((AbstractRecordReader) currentReader)
             .getQueryModel().getProjectionDimensions();
@@ -142,19 +212,8 @@ public class CarbonReader<T> {
     }
     SimpleDateFormat timeStampFormat = new SimpleDateFormat(carbonTimeStampFormat);
     for (ProjectionDimension dimension : dimensions) {
-      ColumnSchema columnSchema = dimension.getDimension().getColumnSchema();
-      if (columnSchema == null) {
-        continue;
-      }
-      DataType dataType = columnSchema.getDataType();
-      if (dataType == DataTypes.DATE) {
-        row[dimension.getOrdinal()] = dateFormat
-                .format(new Date(DateDirectDictionaryGenerator.MILLIS_PER_DAY
-                        * (int)row[dimension.getOrdinal()]));
-      } else if (dataType == DataTypes.TIMESTAMP) {
-        row[dimension.getOrdinal()] = timeStampFormat
-                .format(new Date((long)row[dimension.getOrdinal()] / 1000));
-      }
+      row[dimension.getOrdinal()] = getFormattedData(dimension.getDimension(),
+          row[dimension.getOrdinal()], dateFormat, timeStampFormat);
     }
     return (T)row;
   }
