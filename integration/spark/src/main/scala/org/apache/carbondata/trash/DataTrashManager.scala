@@ -69,7 +69,7 @@ object DataTrashManager {
       // step 2: move stale segments which are not exists in metadata into .Trash
       moveStaleSegmentsToTrash(carbonTable)
       // step 3: clean expired segments(MARKED_FOR_DELETE, Compacted, In Progress)
-      cleanExpiredSegments(carbonTable, isForceDelete, cleanStaleInProgress, partitionSpecs)
+      checkAndCleanExpiredSegments(carbonTable, isForceDelete, cleanStaleInProgress, partitionSpecs)
     } finally {
       if (carbonCleanFilesLock != null) {
         CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
@@ -88,7 +88,7 @@ object DataTrashManager {
   }
 
   /**
-   * move stale segment to trash folder, but not include compaction segment
+   * move stale segment to trash folder, but not include stale compaction (x.y) segment
    */
   private def moveStaleSegmentsToTrash(carbonTable: CarbonTable): Unit = {
     if (carbonTable.isHivePartitionTable) {
@@ -98,7 +98,7 @@ object DataTrashManager {
     }
   }
 
-  private def cleanExpiredSegments(
+  private def checkAndCleanExpiredSegments(
       carbonTable: CarbonTable,
       isForceDelete: Boolean,
       cleanStaleInProgress: Boolean,
