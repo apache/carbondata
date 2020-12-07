@@ -1045,7 +1045,7 @@ public class SegmentFileStore {
           Long fileTimestamp = CarbonUpdateUtil.getTimeStampAsLong(indexFile
               .substring(indexFile.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
                   indexFile.length() - CarbonTablePath.INDEX_FILE_EXT.length()));
-          if (TrashUtil.isTrashDataTimeout(fileTimestamp) || forceDelete) {
+          if (TrashUtil.isDataOutsideTrashIsExpired(fileTimestamp) || forceDelete) {
             // Add the corresponding carbondata files to the delete list.
             toBeDeletedDataFiles.addAll(entry.getValue());
           }
@@ -1061,7 +1061,7 @@ public class SegmentFileStore {
                 .substring(indexFile.lastIndexOf(CarbonCommonConstants.UNDERSCORE) + 1,
                     indexFile.length() - CarbonTablePath.MERGE_INDEX_FILE_EXT.length()));
           }
-          if (TrashUtil.isTrashDataTimeout(fileTimestamp) || forceDelete) {
+          if (TrashUtil.isDataOutsideTrashIsExpired(fileTimestamp) || forceDelete) {
             toBeDeletedIndexFiles.add(indexFile);
           }
         }

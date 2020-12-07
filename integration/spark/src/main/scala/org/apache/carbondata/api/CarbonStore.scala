@@ -19,13 +19,13 @@ package org.apache.carbondata.api
 
 import java.io.{DataInputStream, FileNotFoundException, InputStreamReader}
 import java.time.{Duration, Instant}
+import java.util
 import java.util.{Collections, Comparator}
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
 
 import com.google.gson.Gson
-import java.util
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.unsafe.types.UTF8String

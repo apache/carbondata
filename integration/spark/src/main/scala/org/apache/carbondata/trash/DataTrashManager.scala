@@ -116,7 +116,7 @@ object DataTrashManager {
    */
   def cleanStaleCompactionSegment(
       carbonTable: CarbonTable,
-      mergedLoadName: String,
+      mergedSegmentId: String,
       factTimestamp: Long,
       partitionSpecs: Option[Seq[PartitionSpec]]): Unit = {
     val metadataFolderPath = CarbonTablePath.getMetadataPath(carbonTable.getTablePath)
@@ -124,21 +124,19 @@ object DataTrashManager {
     if (details == null || details.isEmpty) {
       return
     }
-    val loadDetail = details.find(detail => mergedLoadName.equals(detail.getLoadName))
+    val loadDetail = details.find(detail => mergedSegmentId.equals(detail.getLoadName))
     // only clean stale compaction segment
     if (loadDetail.isEmpty) {
-      val segmentId = mergedLoadName.split(CarbonCommonConstants.UNDERSCORE)(1)
-      if (carbonTable.isHivePartitionTable) {
-        if (partitionSpecs.isDefined) {
-          partitionSpecs.get.foreach { partitionSpec =>
-            cleanStaleCompactionDataFiles(
-              partitionSpec.getLocation.toString, segmentId, factTimestamp)
-          }
+      if (carbonTable.isHivePartitionTable && partitionSpecs.isDefined) {
+        partitionSpecs.get.foreach { partitionSpec =>
+          cleanStaleCompactionDataFiles(
+            partitionSpec.getLocation.toString, mergedSegmentId, factTimestamp)
         }
       } else {
-        val segmentPath = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
         cleanStaleCompactionDataFiles(
-          segmentPath, segmentId, factTimestamp)
+          CarbonTablePath.getSegmentPath(carbonTable.getTablePath, mergedSegmentId),
+          mergedSegmentId,
+          factTimestamp)
       }
     }
   }
@@ -150,17 +148,18 @@ object DataTrashManager {
     if (FileFactory.isFileExist(folderPath)) {
       val namePart = CarbonCommonConstants.HYPHEN + segmentId +
         CarbonCommonConstants.HYPHEN + factTimestamp
-      val toBeDelete = FileFactory.getCarbonFile(folderPath).listFiles(new CarbonFileFilter() {
+      val toBeDeleted = FileFactory.getCarbonFile(folderPath).listFiles(new CarbonFileFilter() {
         override def accept(file: CarbonFile): Boolean = {
           file.getName.contains(namePart)
         }
       })
-      if (toBeDelete != null && toBeDelete.nonEmpty) {
+      if (toBeDeleted != null && toBeDeleted.nonEmpty) {
         try {
-          CarbonUtil.deleteFoldersAndFilesSilent(toBeDelete: _*)
+          CarbonUtil.deleteFoldersAndFilesSilent(toBeDeleted: _*)
         } catch {
           case e: Throwable =>
-            LOGGER.error("Exception in deleting the delta files." + e)
+            LOGGER.error(
+              s"Failed to clean stale data under folder $folderPath, match filter: $namePart", e)
         }
       }
     }

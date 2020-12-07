@@ -40,7 +40,7 @@ The above clean files command will clean Marked For Delete and Compacted segment
 
 **NOTE**:
   * In trash folder, the retention time is "carbon.trash.retention.days"
-  * Outside trash folder, the retention time is max value of two properties("carbon.trash.retention.days", "max.query.execution.time")
+  * Outside trash folder(Segment Directories in table path), the retention time is Max("carbon.trash.retention.days", "max.query.execution.time")
 ### FORCE OPTION
 The force option with clean files command deletes all the files and folders from the trash folder and delete the Marked for Delete and Compacted segments immediately. Since Clean Files operation with force option will delete data that can never be recovered, the force option by default is disabled. Clean files with force option is only allowed when the carbon property ```carbon.clean.file.force.allowed``` is set to true. The default value of this property is false.
                                                                                                                                                                        

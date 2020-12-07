@@ -183,7 +183,7 @@ class CarbonTableCompactor(
         // clean stale compaction segment immediately after compaction failure
         DataTrashManager.cleanStaleCompactionSegment(
           carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-          mergedLoadName,
+          mergedLoadName.split(CarbonCommonConstants.UNDERSCORE)(1),
           carbonLoadModel.getFactTimeStamp,
           compactionCallableModel.compactedPartitions)
         throw e

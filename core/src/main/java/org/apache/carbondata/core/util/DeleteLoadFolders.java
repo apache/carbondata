@@ -209,7 +209,7 @@ public final class DeleteLoadFolders {
      * if cleanStaleInProgress == true and  isForceDelete == true, clean MFD, Compacted and
      *  stale inprogress segments immediately.(Do not check for any timeout)
      */
-    boolean canDelete = isForceDelete || TrashUtil.isTrashDataTimeout(
+    boolean canDelete = isForceDelete || TrashUtil.isDataOutsideTrashIsExpired(
         oneLoad.getModificationOrDeletionTimestamp());
     switch (oneLoad.getSegmentStatus()) {
       case COMPACTED:

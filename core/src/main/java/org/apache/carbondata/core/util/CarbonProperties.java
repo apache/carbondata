@@ -2123,11 +2123,8 @@ public final class CarbonProperties {
    * folder will take place
    */
   private void validateTrashFolderRetentionTime() {
-    String propertyValue = carbonProperties.getProperty(
-        CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
-        CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT);
     try {
-      int configuredValue = Integer.parseInt(propertyValue);
+      int configuredValue = getTrashFolderRetentionTime();
       if (configuredValue < 0 ||
           configuredValue > CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_MAXIMUM) {
         LOGGER.warn("Value of " + CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS + " is" +
@@ -2136,7 +2133,7 @@ public final class CarbonProperties {
             CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS_DEFAULT);
       } else {
         carbonProperties.setProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS,
-            propertyValue);
+            configuredValue + "");
       }
     } catch (NumberFormatException e) {
       LOGGER.error("Invalid value configured for " + CarbonCommonConstants

@@ -67,8 +67,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
       isForceDelete: Boolean,
-      cleanStaleInProgress: Boolean
-  ): Unit = {
+      cleanStaleInProgress: Boolean): Unit = {
     val indexTables = CarbonIndexUtil
       .getIndexCarbonTables(carbonTable, sparkSession)
     indexTables.foreach { indexTable =>
@@ -86,8 +85,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
   private def cleanFilesForMv(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
-      options: Map[String, String]
-  ): Unit = {
+      options: Map[String, String]): Unit = {
     val viewSchemas = MVManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
     if (!viewSchemas.isEmpty) {
       viewSchemas.asScala.map { schema =>

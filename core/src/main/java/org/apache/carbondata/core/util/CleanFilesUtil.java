@@ -164,13 +164,13 @@ public class CleanFilesUtil {
     }
     Set<String> loadNameSet = Arrays.stream(details).map(LoadMetadataDetails::getLoadName)
         .collect(Collectors.toSet());
-    // get all stale segment files, not include compaction segments
-    List<String> staleSegments = segmentFiles.stream()
-        .filter(segmentFile -> !DataFileUtil.getSegmentNoFromSegmentFile(segmentFile).contains(
-            CarbonCommonConstants.POINT))
-        .filter(segmentFile -> !loadNameSet.contains(
-            DataFileUtil.getSegmentNoFromSegmentFile(segmentFile)))
-        .collect(Collectors.toList());
+    // get all stale segment files, not include compaction segments.
+    // during compaction, we don't add in-progress metadata entry into tablestatus file,
+    // so here we don't known whether compaction segment is stale or not.
+    List<String> staleSegments = segmentFiles.stream().filter(segmentFile -> {
+      String segmentNo = DataFileUtil.getSegmentNoFromSegmentFile(segmentFile);
+      return !loadNameSet.contains(segmentNo) && !segmentNo.contains(CarbonCommonConstants.POINT);
+    }).collect(Collectors.toList());
     if (staleSegments.size() == 0) {
       return;
     }
