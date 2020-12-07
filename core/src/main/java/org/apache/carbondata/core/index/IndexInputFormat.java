@@ -418,6 +418,10 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     return validSegments;
   }
 
+  public void setValidSegments(List<Segment> validSegments) {
+    this.validSegments = validSegments;
+  }
+
   public void createIndexChooser() throws IOException {
     if (null != filterResolverIntf) {
       this.indexChooser = new IndexChooser(table);

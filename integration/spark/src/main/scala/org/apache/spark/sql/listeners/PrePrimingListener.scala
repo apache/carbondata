@@ -33,9 +33,11 @@ object PrePrimingEventListener extends OperationEventListener {
       operationContext: OperationContext): Unit = {
     val prePrimingEvent = event.asInstanceOf[IndexServerLoadEvent]
     val carbonTable = prePrimingEvent.carbonTable
+    // get only carbon segments.
+    val validSegments = prePrimingEvent.segment.filter(segment => segment.isCarbonSegment).asJava
     val indexInputFormat = new IndexInputFormat(carbonTable,
       null,
-      prePrimingEvent.segment.asJava,
+      validSegments,
       prePrimingEvent.invalidSegment.asJava,
       null,
       false,
