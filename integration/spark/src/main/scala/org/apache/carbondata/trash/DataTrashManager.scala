@@ -37,8 +37,8 @@ object DataTrashManager {
   /**
    * clean garbage data
    *  1. check and clean .Trash folder
-   *     2. move stale segments without metadata into .Trash
-   *     3. clean expired segments(MARKED_FOR_DELETE, Compacted, In Progress)
+   *  2. move stale segments without metadata into .Trash
+   *  3. clean expired segments(MARKED_FOR_DELETE, Compacted, In Progress)
    *
    * @param isForceDelete        clean the MFD/Compacted segments immediately and empty trash folder
    * @param cleanStaleInProgress clean the In Progress segments based on retention time,
