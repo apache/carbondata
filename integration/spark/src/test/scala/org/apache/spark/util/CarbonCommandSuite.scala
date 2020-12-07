@@ -137,11 +137,15 @@ class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
     val table = "carbon_table4"
     dropTable(table)
     createAndLoadTestTable(table, "csv_table")
-    CleanFiles.main(Array(s"${location}", table, "false", "false"))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    CleanFiles.main(Array(s"${location}", table, "true", "false"))
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", table)
     val tablePath = carbonTable.getTablePath
     val f = new File(tablePath)
-    assert(!f.exists())
+    assert(f.exists())
 
     dropTable(table)
   }
