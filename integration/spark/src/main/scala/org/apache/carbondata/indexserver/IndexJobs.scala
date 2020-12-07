@@ -47,6 +47,11 @@ class DistributedIndexJob extends AbstractIndexJob {
 
   override def execute(indexFormat: IndexInputFormat,
       configuration: Configuration): util.List[ExtendedBlocklet] = {
+    // get only carbon segments.
+    if (indexFormat.getValidSegments != null) {
+      indexFormat.setValidSegments(indexFormat.getValidSegments.asScala
+        .filter(segment => segment.isCarbonSegment).toList.asJava)
+    }
     if (LOGGER.isDebugEnabled) {
       val messageSize = SizeEstimator.estimate(indexFormat)
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
