@@ -18,6 +18,7 @@ package org.apache.spark.sql.optimizer
 
 import scala.collection.JavaConverters._
 
+import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
@@ -38,6 +39,8 @@ import org.apache.carbondata.view.MVFunctions.DUMMY_FUNCTION
  * Analyzer rule to rewrite the query for MV
  */
 class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
+
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def apply(logicalPlan: LogicalPlan): LogicalPlan = {
     // only query need to check this rule
@@ -97,6 +100,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
     }
     val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
     if (viewCatalog != null && hasSuitableMV(logicalPlan, viewCatalog)) {
+      LOGGER.debug("Query Rewrite has been initiated for the plan: " + logicalPlan.toString().trim)
       val viewRewrite = new MVRewrite(viewCatalog, logicalPlan, session)
       val rewrittenPlan = viewRewrite.rewrittenPlan
       if (rewrittenPlan.find(_.rewritten).isDefined) {
@@ -131,7 +135,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
    */
   private def rewriteFunctionWithQualifierName(modularPlan: ModularPlan): String = {
     val compactSQL = modularPlan.asCompactSQL
-    modularPlan match {
+    val finalCompactSQL = modularPlan match {
       case select: Select =>
         var outputColumn = ""
         select.outputList.collect {
@@ -154,6 +158,9 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
       case _ =>
         compactSQL
     }
+    LOGGER.debug("Converting from Modular Plan to Logical Plan for query " +
+                 "{ " + finalCompactSQL.trim + " }")
+    finalCompactSQL
   }
 
   /**

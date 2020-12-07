@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, Literal, NamedExpression, ScalaUDF, SortOrder}
@@ -33,6 +34,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum
 import org.apache.carbondata.mv.expressions.modular.{ModularSubquery, ScalarModularSubquery}
 import org.apache.carbondata.mv.plans.modular.{ExpressionHelper, GroupBy, HarmonizedRelation, LeafNode, Matchable, ModularPlan, ModularRelation, Select, SimpleModularizer}
@@ -48,6 +50,8 @@ import org.apache.carbondata.view.{MVCatalogInSpark, MVPlanWrapper, MVTimeGranul
  */
 class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
     session: SparkSession) {
+
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getName)
 
   private def getAliasName(expression: NamedExpression): String = {
     expression match {
@@ -226,6 +230,8 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
    */
   private def rewrite(modularPlan: ModularPlan): ModularPlan = {
     if (modularPlan.find(_.rewritten).isDefined) {
+      LOGGER.debug("Getting updated plan for the rewritten modular plan: " +
+                   "{ " + modularPlan.toString().trim + " }")
       var updatedPlan = modularPlan transform {
         case select: Select =>
           updatePlan(select)
@@ -397,6 +403,7 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
         if (plan.rewritten || !plan.isSPJGH) {
           plan
         } else {
+          LOGGER.info("Query matching has been initiated with available mv schema's")
           val rewrittenPlans =
             for {schemaWrapper <- catalog.lookupFeasibleSchemas(plan).toStream
                  subsumer <- SimpleModularizer.modularize(
