@@ -213,11 +213,7 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
             Column rightColumn = null;
             try {
               Expression expression = sparkParser.parseExpression(right);
-              if (expression instanceof UnresolvedAttribute) {
-                rightColumn = new Column(right);
-              } else {
-                rightColumn = new Column(expression);
-              }
+              rightColumn = new Column(expression);
             } catch (Exception ex) {
               // todo throw EX here
             }
