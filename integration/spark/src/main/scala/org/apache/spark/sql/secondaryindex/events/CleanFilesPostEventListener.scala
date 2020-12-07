@@ -92,8 +92,8 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
     if (!viewSchemas.isEmpty) {
       viewSchemas.asScala.map { schema =>
         CarbonCleanFilesCommand(
-          Some(carbonTable.getDatabaseName),
-          carbonTable.getTableName,
+          Some(schema.getIdentifier.getDatabaseName),
+          schema.getIdentifier.getTableName,
           options,
           isInternalCleanCall = true)
       }.foreach(_.run(sparkSession))
