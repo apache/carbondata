@@ -115,12 +115,17 @@ public final class DeleteLoadFolders {
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(carbonTable, currLoadDetails);
     for (final LoadMetadataDetails oneLoad : loadDetails) {
-      if (checkIfLoadCanBeDeletedPhysically(oneLoad, isForceDelete, cleanStaleInProgress)) {
+      if (canDeleteThisLoad(oneLoad, isForceDelete, cleanStaleInProgress)) {
         try {
           if (oneLoad.getSegmentFile() != null) {
-            SegmentFileStore.deleteSegment(carbonTable.getAbsoluteTableIdentifier().getTablePath(),
-                new Segment(oneLoad.getLoadName(), oneLoad.getSegmentFile()),
-                specs, updateStatusManager);
+            String tablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
+            Segment segment = new Segment(oneLoad.getLoadName(), oneLoad.getSegmentFile());
+            // No need to delete physical data for external segments.
+            if (oneLoad.getPath() == null || oneLoad.getPath().equalsIgnoreCase("NA")) {
+              SegmentFileStore.deleteSegment(tablePath, segment, specs, updateStatusManager);
+            }
+            // delete segment files for all segments.
+            SegmentFileStore.deleteSegmentFile(tablePath, segment);
           } else {
             String path = getSegmentPath(carbonTable.getAbsoluteTableIdentifier(), oneLoad);
             boolean status = false;
@@ -178,15 +183,6 @@ public final class DeleteLoadFolders {
       boolean isForceDelete, boolean cleanStaleInProgress) {
     if (oneLoad.getVisibility().equalsIgnoreCase("true")) {
       return canDeleteThisLoad(oneLoad, isForceDelete, cleanStaleInProgress);
-    }
-    return false;
-  }
-
-  private static boolean checkIfLoadCanBeDeletedPhysically(LoadMetadataDetails oneLoad,
-      boolean isForceDelete, boolean cleanStaleInProgress) {
-    // Check if the segment is added externally and path is set then do not delete it
-    if (oneLoad.getPath() == null || oneLoad.getPath().equalsIgnoreCase("NA")) {
-      return canDeleteThisLoad(oneLoad,  isForceDelete, cleanStaleInProgress);
     }
     return false;
   }
