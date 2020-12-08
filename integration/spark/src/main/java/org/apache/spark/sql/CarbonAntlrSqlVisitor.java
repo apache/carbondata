@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute;
 import org.apache.spark.sql.catalyst.expressions.Expression;
 import org.apache.spark.sql.catalyst.parser.ParseException;
 import org.apache.spark.sql.catalyst.parser.ParserInterface;
@@ -64,8 +63,18 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
       if (ctx.getChild(currIdx) instanceof CarbonSqlBaseParser.AssignmentContext) {
         //Assume the actions are all use to pass value
         String left = ctx.getChild(currIdx).getChild(0).getText();
+        if (left.split("\\.").length > 1) {
+          left = left.split("\\.")[1];
+        }
         String right = ctx.getChild(currIdx).getChild(2).getText();
-        map.put(new Column(left), new Column(right));
+        Column rightColumn = null;
+        try {
+          Expression expression = sparkParser.parseExpression(right);
+          rightColumn = new Column(expression);
+        } catch (Exception ex) {
+          // todo throw EX here
+        }
+        map.put(new Column(left), rightColumn);
       }
     }
     return new UpdateAction(SparkUtil.convertMap(map), false);

@@ -95,6 +95,23 @@ class MergeIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
         Row(4, 400, "FL")))
   }
 
+  test("test merge into update with expression") {
+    sql(
+      """MERGE INTO A
+        |USING B
+        |ON A.ID=B.ID
+        |WHEN MATCHED AND A.ID=2 THEN DELETE
+        |WHEN MATCHED AND A.ID=1 THEN UPDATE SET  A.id=9, A.price=100, A.state='hahaha'
+        |""".stripMargin)
+
+    sql("select * from A").show(100, false)
+
+    checkAnswer(sql("select * from A"),
+      Seq(Row(9, 100, "hahaha"),
+        Row(3, 300, "NH"),
+        Row(4, 400, "FL")))
+  }
+
   test("test merge into delete and insert") {
     sql(
       """MERGE INTO A
@@ -254,7 +271,6 @@ class MergeIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
       "AND B.ID=7 THEN INSERT (A" +
       ".ID,A.PRICE, A.state) VALUES (B.ID,B.PRICE, 'test-string')"
     sql(sqlText)
-    sql(s"""SELECT * FROM A""").show()
     checkAnswer(sql("select * from A"),
       Seq(Row(1, 100, "MA"),
         Row(2, 200, "NY"),
@@ -268,7 +284,6 @@ class MergeIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
       "AND B.ID=7 THEN INSERT (A" +
       ".ID,A.PRICE, A.state) VALUES (B.ID,B.PRICE + 10, B.state)"
     sql(sqlText)
-    sql(s"""SELECT * FROM A""").show()
     checkAnswer(sql("select * from A"),
       Seq(Row(1, 100, "MA"),
         Row(2, 200, "NY"),
