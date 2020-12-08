@@ -17,7 +17,6 @@
 package org.apache.carbondata.spark.testsuite.addsegment
 
 import java.io.File
-import java.nio.file.{Files, Paths}
 
 import scala.io.Source
 
@@ -35,7 +34,7 @@ import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFi
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
 import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
@@ -64,7 +63,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
     val newPath = storeLocation + "/" + "addsegtest"
     val newPathWithLineSeparator = storeLocation + "/" + "addsegtest/"
-    copy(path, newPath)
+    CarbonTestUtil.copy(path, newPath)
     sql("delete from table addsegment1 where segment.id in (1)")
     sql("clean files for table addsegment1")
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
@@ -92,7 +91,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
     val newPath = storeLocation + "/" + "addsegtest"
-    copy(path, newPath)
+    CarbonTestUtil.copy(path, newPath)
     sql("delete from table addsegment1 where segment.id in (1)")
     sql("clean files for table addsegment1")
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
@@ -120,7 +119,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
     val newPath = storeLocation + "/" + "addsegtest"
-    copy(path, newPath)
+    CarbonTestUtil.copy(path, newPath)
     sql("delete from table addsegment1 where segment.id in (1)")
     sql("clean files for table addsegment1")
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
@@ -151,7 +150,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
     val newPath = storeLocation + "/" + "addsegtest"
     for (i <- 0 until 10) {
-      copy(path, newPath + i)
+      CarbonTestUtil.copy(path, newPath + i)
     }
 
     sql("delete from table addsegment1 where segment.id in (1)")
@@ -187,7 +186,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
     val newPath = storeLocation + "/" + "addsegtest"
-    copy(path, newPath)
+    CarbonTestUtil.copy(path, newPath)
     sql("delete from table addsegment1 where segment.id in (1)")
     sql("clean files for table addsegment1")
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
@@ -224,7 +223,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val table = CarbonEnv.getCarbonTable(None, "addsegment2") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
     val newPath = storeLocation + "/" + "addsegtest"
-    copy(path, newPath)
+    CarbonTestUtil.copy(path, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
 
     val ex = intercept[Exception] {
@@ -246,7 +245,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path.toString, newPath)
+    CarbonTestUtil.copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
 
     sql(s"alter table addsegment1 add segment " +
@@ -282,7 +281,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path.toString, newPath)
+    CarbonTestUtil.copy(path.toString, newPath)
 
     sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')")
     val exception1 = intercept[MalformedCarbonCommandException](sql(
@@ -309,7 +308,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path.toString, newPath)
+    CarbonTestUtil.copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
     sql(
       """
@@ -340,7 +339,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path.toString, newPath)
+    CarbonTestUtil.copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
 
     sql(s"alter table addsegment1 add segment " +
@@ -444,7 +443,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path.toString, newPath)
+    CarbonTestUtil.copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
 
     sql(s"alter table addsegment1 add segment " +
@@ -466,7 +465,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path.toString, newPath)
+    CarbonTestUtil.copy(path.toString, newPath)
 
     val res1 = sql("select empname, deptname from addsegment1 where deptno=10")
 
@@ -502,7 +501,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path.toString, newPath)
+    CarbonTestUtil.copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
 
     sql("alter table addsegment1 add segment " +
@@ -738,7 +737,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val path1 = table1.location
     val newPath1 = storeLocation + "/" + pathName
     FileFactory.deleteAllFilesOfDir(new File(newPath1))
-    copy(path1.toString, newPath1)
+    CarbonTestUtil.copy(path1.toString, newPath1)
     newPath1
   }
 
@@ -962,14 +961,17 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop table $tableName")
   }
 
-  def copy(oldLoc: String, newLoc: String): Unit = {
-    val oldFolder = FileFactory.getCarbonFile(oldLoc)
-    FileFactory.mkdirs(newLoc, FileFactory.getConfiguration)
-    val oldFiles = oldFolder.listFiles
-    for (file <- oldFiles) {
-      Files.copy(Paths.get(file.getParentFile.getPath, file.getName),
-        Paths.get(newLoc, file.getName))
+  test("Test Adding invalid segment which is already present inside the table") {
+    createCarbonTable()
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
+    val ex = intercept[Exception] {
+      sql("alter table addsegment1 add segment " +
+          s"options('path'='$path', 'format'='carbon')").collect()
     }
+    assert(ex.getMessage.contains("can not add same segment path repeatedly"))
   }
 
   def getDataSize(path: String): String = {

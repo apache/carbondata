@@ -21,14 +21,19 @@ import java.io.{File, PrintWriter}
 
 import scala.io.Source
 
+import org.apache.commons.lang.StringUtils
 import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil
 
 class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
 
@@ -306,6 +311,161 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
       .removeProperty(CarbonCommonConstants.CARBON_TRASH_RETENTION_DAYS)
   }
 
+  test("Test clean files on segments after compaction and deletion of segments on" +
+       " partition table with mixed formats") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql("DROP TABLE IF EXISTS partition_carbon_table")
+    sql("DROP TABLE IF EXISTS partition_parquet_table")
+    sql("""CREATE TABLE partition_carbon_table (id Int, vin String, logdate Date,phonenumber Long,
+         area String, salary Int) PARTITIONED BY (country String)
+          STORED AS carbondata""".stripMargin)
+    for (i <- 0 until 5) {
+      sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/partition_data_example.csv'
+             | into table partition_carbon_table""".stripMargin)
+    }
+    sql("""CREATE TABLE partition_parquet_table (id Int, vin String, logdate Date,phonenumber Long,
+         country String, area String, salary Int)
+         using parquet PARTITIONED BY (country)""".stripMargin)
+    sql(s"""insert into partition_parquet_table select * from partition_carbon_table""")
+    val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("partition_parquet_table")).location
+    sql(s"alter table partition_carbon_table add segment options ('path'='$parquetRootPath', " +
+        "'format'='parquet', 'partition'='country:string')")
+    sql("alter table partition_carbon_table compact 'minor'").collect()
+    sql("delete from table partition_carbon_table where segment.id in (7,8)")
+    sql("clean files for table partition_carbon_table OPTIONS('force'='true')")
+    val table = CarbonEnv
+      .getCarbonTable(None, "partition_carbon_table") (sqlContext.sparkSession)
+    val segmentsFilePath = CarbonTablePath.getSegmentFilesLocation(table.getTablePath)
+    val files = new File(segmentsFilePath).listFiles()
+    assert(files.length == 6)
+    val segmentIds = files.map(file => getSegmentIdFromSegmentFilePath(file.getAbsolutePath))
+    assert(segmentIds.contains("0.1"))
+    assert(!segmentIds.contains("7"))
+    assert(!segmentIds.contains("8"))
+    sql("DROP TABLE IF EXISTS partition_carbon_table")
+    sql("DROP TABLE IF EXISTS partition_parquet_table")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+        CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+  }
+
+  test("Test clean files on segments(MFD/Compacted/inProgress) after compaction and" +
+       " deletion of segments") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql("drop table if exists addsegment1")
+    sql(
+      """
+        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
+    val newPath = storeLocation + "/" + "addsegtest"
+    for (i <- 0 until 6) {
+      FileFactory.deleteAllFilesOfDir(new File(newPath + i))
+      CarbonTestUtil.copy(path, newPath + i)
+    }
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
+    for (i <- 0 until 6) {
+      sql(s"alter table addsegment1 add segment " +
+          s"options('path'='${ newPath + i }', 'format'='carbon')").collect()
+    }
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(80)))
+    sql("alter table addsegment1 compact 'minor'").collect()
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(80)))
+    sql("clean files for table addsegment1 OPTIONS('force'='true')")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(80)))
+    sql(s"alter table addsegment1 add segment " +
+        s"options('path'='${ newPath + 0 }', 'format'='carbon')").collect()
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(90)))
+    sql("delete from table addsegment1 where segment.id in (8)")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(80)))
+    sql("clean files for table addsegment1 OPTIONS('force'='true')")
+    sql(s"alter table addsegment1 add segment " +
+        s"options('path'='${ newPath + 0 }', 'format'='carbon')").collect()
+    // testing for in progress segments
+    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(table.getTablePath)
+    val segments = SegmentStatusManager.readTableStatusFile(tableStatusPath)
+    segments.foreach(segment => if (segment.getLoadName.equals("9")) {
+      segment.setSegmentStatus(SegmentStatus.INSERT_IN_PROGRESS)
+    })
+    SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, segments)
+    sql("clean files for table addsegment1 OPTIONS('force'='true','stale_inprogress'='true')")
+    val segmentsFilePath = CarbonTablePath.getSegmentFilesLocation(table.getTablePath)
+    val files = new File(segmentsFilePath).listFiles()
+    assert(files.length == 2)
+    val segmentIds = files.map(file => getSegmentIdFromSegmentFilePath(file.getAbsolutePath))
+    assert(segmentIds.contains("0.1"))
+    assert(segmentIds.contains("4.1"))
+    assert(!segmentIds.contains("8"))
+    assert(!segmentIds.contains("9"))
+    for (i <- 0 until 6) {
+      val oldFolder = FileFactory.getCarbonFile(newPath + i)
+      assert(oldFolder.listFiles.length == 2,
+        "Older data present at external location should not be deleted")
+      FileFactory.deleteAllFilesOfDir(new File(newPath + i))
+    }
+    sql("drop table if exists addsegment1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+        CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+  }
+
+  test("Test clean files on segments(MFD/Compacted/inProgress) after deletion of segments" +
+       " present inside table path") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql("drop table if exists addsegment1")
+    sql(
+      """
+        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
+    val newPath = table.getTablePath + "/internalPath"
+    CarbonTestUtil.copy(path, newPath)
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
+    sql(s"alter table addsegment1 add segment " +
+          s"options('path'='$newPath', 'format'='carbon')").collect()
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
+    sql("delete from table addsegment1 where segment.id in (1)")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
+    sql("clean files for table addsegment1 OPTIONS('force'='true')")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
+    val segmentsFilePath = CarbonTablePath.getSegmentFilesLocation(table.getTablePath)
+    val files = new File(segmentsFilePath).listFiles()
+    assert(files.length == 1)
+    val segmentIds = files.map(file => getSegmentIdFromSegmentFilePath(file.getAbsolutePath))
+    assert(segmentIds.contains("0"))
+    assert(!segmentIds.contains("1"))
+    val oldFolder = FileFactory.getCarbonFile(newPath)
+    assert(oldFolder.listFiles.length == 2,
+        "Older data present at external location should not be deleted")
+    sql("drop table if exists addsegment1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+        CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+    }
+
   def editTableStatusFile(carbonTablePath: String) : Unit = {
     // original table status file
     val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath))
@@ -353,6 +513,23 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE cleantest (name String, id Int, add String)
         | STORED AS carbondata
       """.stripMargin)
+  }
+
+  /**
+   * gets segment id from given absolute segment file path
+   */
+  def getSegmentIdFromSegmentFilePath(segmentFilePath: String): String = {
+    val tempSegmentFileAbsolutePath = segmentFilePath.replace(CarbonCommonConstants
+      .WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
+    if (!StringUtils.isBlank(tempSegmentFileAbsolutePath)) {
+      val pathElements = tempSegmentFileAbsolutePath.split(CarbonCommonConstants
+        .FILE_SEPARATOR)
+      if (pathElements != null && pathElements.nonEmpty) {
+        val fileName = pathElements(pathElements.length - 1)
+        return DataFileUtil.getSegmentNoFromSegmentFile(fileName)
+      }
+    }
+    CarbonCommonConstants.INVALID_SEGMENT_ID
   }
 
   def loadData() : Unit = {

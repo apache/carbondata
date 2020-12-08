@@ -20,6 +20,8 @@ package org.apache.carbondata.core.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -157,5 +159,15 @@ public class CarbonTestUtil {
       }
     }
     return isLocalDictionaryGenerated;
+  }
+
+  public static void copy(String oldLoc, String newLoc) throws IOException {
+    CarbonFile oldFolder = FileFactory.getCarbonFile(oldLoc);
+    FileFactory.mkdirs(newLoc, FileFactory.getConfiguration());
+    CarbonFile[] oldFiles = oldFolder.listFiles();
+    for (CarbonFile file : oldFiles) {
+      Files.copy(Paths.get(file.getParentFile().getPath(), file.getName()),
+          Paths.get(newLoc, file.getName()));
+    }
   }
 }

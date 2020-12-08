@@ -1112,6 +1112,13 @@ public class SegmentFileStore {
     cleanSegments(table, details, partitionSpecs, forceDelete);
   }
 
+  public static void deleteSegmentFile(String tablePath, Segment segment) throws Exception {
+    String segmentFilePath =
+        CarbonTablePath.getSegmentFilePath(tablePath, segment.getSegmentFileName());
+    // Deletes the physical segment file
+    FileFactory.deleteFile(segmentFilePath);
+  }
+
   /**
    * Deletes the segment file and its physical files like partition folders from disk
    * @param tablePath
@@ -1138,10 +1145,6 @@ public class SegmentFileStore {
       }
     }
     deletePhysicalPartition(partitionSpecs, indexFilesMap, indexOrMergeFiles, tablePath);
-    String segmentFilePath =
-        CarbonTablePath.getSegmentFilePath(tablePath, segment.getSegmentFileName());
-    // Deletes the physical segment file
-    FileFactory.deleteFile(segmentFilePath);
   }
 
   /**
