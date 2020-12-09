@@ -55,6 +55,7 @@ import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.statusmanager.StageInputCollector;
@@ -220,7 +221,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * `INPUT_SEGMENT_NUMBERS` in job configuration
    */
   private List<Segment> getFilteredSegment(JobContext job, List<Segment> validSegments,
-      boolean validationRequired, ReadCommittedScope readCommittedScope) {
+      boolean validationRequired, ReadCommittedScope readCommittedScope) throws IOException {
     Segment[] segmentsToAccess = getSegmentsToAccess(job, readCommittedScope);
     if (segmentsToAccess.length == 0 || segmentsToAccess[0].getSegmentNo().equalsIgnoreCase("*")) {
       return validSegments;
@@ -241,7 +242,17 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     if (!validationRequired && filteredSegmentToAccess.size() != segmentToAccessMap.size()) {
       for (Segment segment : segmentToAccessMap.values()) {
-        if (!filteredSegmentToAccess.containsKey(segment.getSegmentNo())) {
+        boolean isSegmentValid = true;
+        LoadMetadataDetails[] segmentList = readCommittedScope.getSegmentList();
+        for (LoadMetadataDetails validSegment : segmentList) {
+          if (validSegment.getLoadName().equals(segment.getSegmentNo()) && (
+              validSegment.getSegmentStatus().equals(SegmentStatus.MARKED_FOR_DELETE)
+                  || validSegment.getSegmentStatus().equals(SegmentStatus.COMPACTED))) {
+            isSegmentValid = false;
+            break;
+          }
+        }
+        if (isSegmentValid && !filteredSegmentToAccess.containsKey(segment.getSegmentNo())) {
           filteredSegmentToAccess.put(segment.getSegmentNo(), segment);
         }
       }

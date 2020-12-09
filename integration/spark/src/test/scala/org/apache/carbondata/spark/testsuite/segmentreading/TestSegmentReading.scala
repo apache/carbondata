@@ -22,6 +22,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.view.rewrite.TestUtil
 
 /**
  * Created by rahul on 19/9/17.
@@ -420,4 +422,106 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
 
     sql("set spark.sql.adaptive.enabled=false")
   }
+
+  test("Read marked for delete segments") {
+    sql("drop table if exists carbonTable")
+    sql(
+      "create table carbonTable(a string, b int, c string) stored as carbondata ")
+    sql("insert into carbonTable values ('k',1,'k'), ('k',1,'b')")
+    sql("insert into carbonTable values ('a',2,'a')")
+    sql("insert into carbonTable values ('b',2,'b'),('b',2,'b')")
+    sql("insert into carbonTable values ('c',2,'c')")
+
+    sql("delete from table carbonTable where segment.id in (0,3)")
+    sql("set carbon.input.segments.default.carbonTable = 0,2,3")
+
+    checkAnswer(sql("select count(*) from carbonTable"), Seq(Row(2)))
+  }
+
+  test("Read marked for delete segments after SI creation") {
+    sql("drop table if exists carbonTable")
+    sql(
+      "create table carbonTable(a string, b int, c string) stored as carbondata ")
+    sql("insert into carbonTable values ('k',1,'k'), ('k',1,'b')")
+    sql("insert into carbonTable values ('a',2,'a')")
+    sql("insert into carbonTable values ('b',2,'b'),('b',2,'b')")
+    sql("insert into carbonTable values ('c',2,'c')")
+
+    sql("drop index if exists indextable1 on carbonTable")
+    sql("create index indextable1 on table carbonTable (c) AS 'carbondata'")
+
+    sql("delete from table carbonTable where segment.id in (0,3)")
+    sql("set carbon.input.segments.default.carbonTable = 0,2,3")
+
+    checkAnswer(sql("select count(*) from carbonTable"), Seq(Row(2)))
+  }
+
+  test("Read compacted segments") {
+    sql("drop table if exists carbonTable")
+    sql(
+      "create table carbonTable(a string, b int, c string) stored as carbondata")
+    sql("insert into carbonTable values ('k',5,'k'), ('k',5,'b')")
+    sql("insert into carbonTable values ('a',1,'a')")
+    sql("insert into carbonTable values ('b',2,'b'),('b',2,'b')")
+    sql("insert into carbonTable values ('c',3,'c')")
+    sql("alter table carbonTable compact 'major'")
+
+    sql("set carbon.input.segments.default.carbonTable = 0,1,2,3,0.1")
+    checkAnswer(sql("select count(*) from carbonTable"), Seq(Row(6)))
+  }
+
+  test("Read compacted segments after SI creation") {
+    sql("drop table if exists carbonTable")
+    sql(
+      "create table carbonTable(a string, b int, c string) stored as carbondata")
+    sql("insert into carbonTable values ('k',5,'k'), ('k',5,'b')")
+    sql("insert into carbonTable values ('a',1,'a')")
+    sql("insert into carbonTable values ('b',2,'b'),('b',2,'b')")
+    sql("insert into carbonTable values ('c',3,'c')")
+
+    sql("drop index if exists indextable1 on carbonTable")
+    sql("create index indextable1 on table carbonTable (c) AS 'carbondata'")
+
+    sql("alter table carbonTable compact 'major'")
+    sql("set carbon.input.segments.default.carbonTable = 0,1,2,3,0.1")
+    checkAnswer(sql("select count(*) from carbonTable where c = 'b'"), Seq(Row(3)))
+  }
+
+  test("Read marked for delete segments for partition tables") {
+    sql("drop table if exists carbonTable")
+    sql(
+      "create table carbonTable(c1 string, c2 int) PARTITIONED by (c3 string) stored as " +
+      "carbondata ")
+    sql("insert into carbonTable values ('k',1,'k'), ('k',2,'k')")
+    sql("insert into carbonTable values ('a',2,'a')")
+    sql("insert into carbonTable values ('b',2,'b'),('b',2,'b')")
+    sql("insert into carbonTable values ('c',2,'c')")
+
+    sql("delete from table carbonTable where segment.id in (0,3)")
+    sql("set carbon.input.segments.default.carbonTable = 0,1,2,3")
+
+    checkAnswer(sql("select count(*) from carbonTable where c3 = 'k' or c3 = 'a' or c3 = 'c'"),
+      Seq(Row(1)))
+  }
+
+  test("Read marked for delete segments with MV creation") {
+    sql("drop table if exists carbonTable")
+    sql(" CREATE TABLE carbonTable (id int, name string)  STORED AS carbondata")
+    sql("insert into carbonTable values(1,'a')")
+    sql("insert into carbonTable values(2,'b')")
+    sql("insert into carbonTable values(3,'c')")
+    sql("insert into carbonTable values(4,'d')")
+    sql("delete from table carbonTable where segment.id in (0,3)")
+
+    sql("drop materialized view if exists agg_sale")
+    sql(
+      "CREATE MATERIALIZED VIEW agg_sale AS SELECT id, name, sum(id) FROM carbonTable GROUP BY " +
+      "id, name")
+
+    sql("set carbon.input.segments.default.carbonTable = 0,1,2,3")
+    checkAnswer(sql("SELECT count(*)  FROM carbonTable where name = 'a' or name = 'd' or name = " +
+                    "'b'"),
+      Seq(Row(1)))
+  }
+
 }
