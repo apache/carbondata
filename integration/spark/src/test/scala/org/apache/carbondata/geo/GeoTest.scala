@@ -123,6 +123,18 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     assert(exception.getMessage.contains(
       s"mygeohash is a spatial index column and is not allowed for " +
       s"the option(s): bucket_columns"))
+
+    exception = intercept[MalformedCarbonCommandException](
+      createTable(table1, " 'LOCAL_DICTIONARY_INCLUDE'='mygeohash', "))
+    assert(exception.getMessage.contains(
+      s"mygeohash is a spatial index column and is not allowed for " +
+        s"the option(s): local_dictionary_include"))
+
+    exception = intercept[MalformedCarbonCommandException](
+      createTable(table1, " 'LONG_STRING_COLUMNS'='mygeohash', "))
+    assert(exception.getMessage.contains(
+      s"mygeohash is a spatial index column and is not allowed for " +
+        s"the option(s): long_string_columns"))
   }
 
   test("test alter table with invalid table properties") {
@@ -145,6 +157,18 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     assert(exception.getMessage.contains(
       s"mygeohash is a spatial index column and is not allowed for " +
       s"the option(s): column_meta_cache"))
+
+    exception = intercept[RuntimeException](
+      sql(s"ALTER TABLE $table1 SET TBLPROPERTIES('LOCAL_DICTIONARY_INCLUDE' = 'mygeohash')"))
+    assert(exception.getMessage.contains(
+      s"mygeohash is a spatial index column and is not allowed for " +
+        s"the option(s): local_dictionary_include"))
+
+    exception = intercept[RuntimeException](
+      sql(s"ALTER TABLE $table1 SET TBLPROPERTIES('LONG_STRING_COLUMNS' = 'mygeohash')"))
+    assert(exception.getMessage.contains(
+      s"mygeohash is a spatial index column and is not allowed for " +
+        s"the option(s): long_string_columns"))
   }
 
   test("test materialized view with spatial column") {

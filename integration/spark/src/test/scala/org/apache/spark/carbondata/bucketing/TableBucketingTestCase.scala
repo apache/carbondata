@@ -20,7 +20,7 @@ package org.apache.spark.carbondata.bucketing
 import java.sql.Date
 import java.text.SimpleDateFormat
 
-import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.sql.execution.WholeStageCodegenExec
 import org.apache.spark.sql.execution.exchange.Exchange
 import org.apache.spark.sql.execution.joins.SortMergeJoinExec
@@ -137,6 +137,20 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(new Date(sdf.parse("2015-07-25").getTime)))
     )
     sql("DROP TABLE IF EXISTS table_bucket")
+  }
+
+  test("test bucketing with column not present in the table") {
+    sql("DROP TABLE IF EXISTS table_bucket")
+    val ex = intercept[AnalysisException] {
+      sql(
+        """
+           CREATE TABLE IF NOT EXISTS table_bucket
+           (ID Int, date DATE, starttime Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='2', 'BUCKET_COLUMNS'='abc')
+        """)
+    }
+    assert(ex.message.contains("Bucket field is not present in table columns"))
   }
 
   test("test IUD of bucket table") {

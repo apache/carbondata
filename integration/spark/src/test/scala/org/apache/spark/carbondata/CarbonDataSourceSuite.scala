@@ -238,11 +238,12 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
 
   test("test to create bucket columns with complex data type field") {
     sql("drop table if exists create_source")
-    intercept[Exception] {
+    val ex = intercept[Exception] {
       sql("create table create_source(intField int, stringField string, " +
           "complexField array<string>) USING carbondata " +
           "OPTIONS('bucket_number'='1', 'bucket_columns'='complexField')")
     }
+    assert(ex.getMessage.contains("Bucket field should not be complex column or decimal data type"))
   }
 
   test("test check results of table with complex data type and bucketing") {
