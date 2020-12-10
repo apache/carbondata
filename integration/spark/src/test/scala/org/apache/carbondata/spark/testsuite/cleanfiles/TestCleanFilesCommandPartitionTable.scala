@@ -132,6 +132,7 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     loadData()
     val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
       .getTablePath
+    addRandomFiles(path)
     val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
     removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
       sqlContext.sparkSession), "1")
@@ -178,6 +179,7 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
 
     val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
       .getTablePath
+    addRandomFiles(path)
     val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
     removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
       sqlContext.sparkSession), "1")
@@ -330,6 +332,15 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"jack","abc"""")
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"johnny","adc"""")
     sql(s"""INSERT INTO CLEANTEST SELECT 1, 2,"Reddit","adc"""")
+  }
+
+  def addRandomFiles(carbonTablePath: String) : Unit = {
+    val f1 = CarbonTablePath.getSegmentFilesLocation(carbonTablePath) +
+      CarbonCommonConstants.FILE_SEPARATOR  + "_.tmp"
+    val f2 = CarbonTablePath.getSegmentFilesLocation(carbonTablePath) +
+      CarbonCommonConstants.FILE_SEPARATOR  + "1_.tmp"
+      FileFactory.createNewFile(f1)
+      FileFactory.createNewFile(f2)
   }
 
 }

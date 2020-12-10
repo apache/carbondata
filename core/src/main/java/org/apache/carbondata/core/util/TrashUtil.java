@@ -111,7 +111,7 @@ public final class TrashUtil {
         LOGGER.info("Segment: " + segmentPath.getAbsolutePath() + " has been copied to" +
             " the trash folder successfully. Total files copied: " + dataFiles.length);
       } else {
-        LOGGER.info("Segment: " + segmentPath.getAbsolutePath() + " does not exist");
+        LOGGER.info("Segment: " + segmentPath.getName() + " does not exist");
       }
     } catch (IOException e) {
       LOGGER.error("Error while copying the segment: " + segmentPath.getName() + " to the trash" +
@@ -153,15 +153,17 @@ public final class TrashUtil {
    * per the user defined retention time
    */
   public static void deleteExpiredDataFromTrash(String tablePath) {
-    String trashPath = CarbonTablePath.getTrashFolderPath(tablePath);
+    CarbonFile trashFolder = FileFactory.getCarbonFile(CarbonTablePath
+        .getTrashFolderPath(tablePath));
     // Deleting the timestamp based subdirectories in the trashfolder by the given timestamp.
     try {
-      if (FileFactory.isFileExist(trashPath)) {
-        List<CarbonFile> timestampFolderList = FileFactory.getFolderList(trashPath);
+      if (trashFolder.isFileExist()) {
+        CarbonFile[] timestampFolderList = trashFolder.listFiles();
         for (CarbonFile timestampFolder : timestampFolderList) {
           // If the timeStamp at which the timeStamp subdirectory has expired as per the user
           // defined value, delete the complete timeStamp subdirectory
-          if (isTrashRetentionTimeoutExceeded(Long.parseLong(timestampFolder.getName()))) {
+          if (timestampFolder.isDirectory() && isTrashRetentionTimeoutExceeded(Long
+              .parseLong(timestampFolder.getName()))) {
             FileFactory.deleteAllCarbonFilesOfDir(timestampFolder);
             LOGGER.info("Timestamp subfolder from the Trash folder deleted: " + timestampFolder
                 .getAbsolutePath());
@@ -177,11 +179,12 @@ public final class TrashUtil {
    * The below method deletes all the files and folders in the trash folder of a carbon table.
    */
   public static void emptyTrash(String tablePath) {
-    String trashPath = CarbonTablePath.getTrashFolderPath(tablePath);
+    CarbonFile trashFolder = FileFactory.getCarbonFile(CarbonTablePath
+        .getTrashFolderPath(tablePath));
     // if the trash folder exists delete the contents of the trash folder
     try {
-      if (FileFactory.isFileExist(trashPath)) {
-        List<CarbonFile> carbonFileList = FileFactory.getFolderList(trashPath);
+      if (trashFolder.isFileExist()) {
+        CarbonFile[] carbonFileList = trashFolder.listFiles();
         for (CarbonFile carbonFile : carbonFileList) {
           FileFactory.deleteAllCarbonFilesOfDir(carbonFile);
         }

@@ -17,12 +17,14 @@
 
 package org.apache.spark.sql.execution.command.management
 
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events._
@@ -38,13 +40,20 @@ case class CarbonCleanFilesCommand(
     isInternalCleanCall: Boolean = false)
   extends DataCommand {
 
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
     // if insert overwrite in progress, do not allow delete segment
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
-      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
+      if ((carbonTable.isMV && !isInternalCleanCall) || !carbonTable.isMV) {
+        throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
+      } else if (carbonTable.isMV && isInternalCleanCall) {
+        LOGGER.info(s"Clean files not allowed on table: {${carbonTable.getTableName}}")
+        return Seq.empty
+      }
     }
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")

@@ -26,6 +26,9 @@ Clean files command is used to remove the Compacted, Marked For Delete ,In Progr
    ```
 The above clean files command will clean Marked For Delete and Compacted segments depending on ```max.query.execution.time``` (default 1 hr) and ``` carbon.trash.retention.days``` (default 7 days). It will also delete the timestamp subdirectories from the trash folder after expiration day(default 7 day, can be configured)
 
+**NOTE**:
+  * Clean files operation not supported on non transactional tables.
+  * Clean files operation not supported on tables with concurrent insert overwrite operation.
 
 ### TRASH FOLDER
 

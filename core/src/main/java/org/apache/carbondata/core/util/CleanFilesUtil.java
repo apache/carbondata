@@ -154,7 +154,8 @@ public class CleanFilesUtil {
     String segmentFilesLocation =
         CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath());
     List<String> segmentFiles = Arrays.stream(FileFactory.getCarbonFile(segmentFilesLocation)
-        .listFiles()).map(CarbonFile::getName).collect(Collectors.toList());
+        .listFiles()).map(CarbonFile::getName).filter(segmentFileName -> segmentFileName
+        .endsWith(CarbonTablePath.SEGMENT_EXT)).collect(Collectors.toList());
     // there are no segments present in the Metadata folder. Can return here
     if (segmentFiles.size() == 0) {
       return;
