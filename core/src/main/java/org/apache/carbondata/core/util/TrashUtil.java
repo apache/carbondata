@@ -111,7 +111,7 @@ public final class TrashUtil {
         LOGGER.info("Segment: " + segmentPath.getAbsolutePath() + " has been copied to" +
             " the trash folder successfully. Total files copied: " + dataFiles.length);
       } else {
-        LOGGER.info("Segment: " + segmentPath.getAbsolutePath() + " does not exist");
+        LOGGER.info("Segment: " + segmentPath.getName() + " does not exist");
       }
     } catch (IOException e) {
       LOGGER.error("Error while copying the segment: " + segmentPath.getName() + " to the trash" +
@@ -157,11 +157,12 @@ public final class TrashUtil {
     // Deleting the timestamp based subdirectories in the trashfolder by the given timestamp.
     try {
       if (FileFactory.isFileExist(trashPath)) {
-        List<CarbonFile> timestampFolderList = FileFactory.getFolderList(trashPath);
+        CarbonFile[] timestampFolderList = FileFactory.getCarbonFile(trashPath).listFiles();
         for (CarbonFile timestampFolder : timestampFolderList) {
           // If the timeStamp at which the timeStamp subdirectory has expired as per the user
           // defined value, delete the complete timeStamp subdirectory
-          if (isTrashRetentionTimeoutExceeded(Long.parseLong(timestampFolder.getName()))) {
+          if (timestampFolder.isDirectory() && isTrashRetentionTimeoutExceeded(Long
+              .parseLong(timestampFolder.getName()))) {
             FileFactory.deleteAllCarbonFilesOfDir(timestampFolder);
             LOGGER.info("Timestamp subfolder from the Trash folder deleted: " + timestampFolder
                 .getAbsolutePath());
@@ -181,7 +182,7 @@ public final class TrashUtil {
     // if the trash folder exists delete the contents of the trash folder
     try {
       if (FileFactory.isFileExist(trashPath)) {
-        List<CarbonFile> carbonFileList = FileFactory.getFolderList(trashPath);
+        CarbonFile[] carbonFileList = FileFactory.getCarbonFile(trashPath).listFiles();
         for (CarbonFile carbonFile : carbonFileList) {
           FileFactory.deleteAllCarbonFilesOfDir(carbonFile);
         }
