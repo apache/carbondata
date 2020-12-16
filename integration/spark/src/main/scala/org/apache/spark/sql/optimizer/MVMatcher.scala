@@ -234,27 +234,27 @@ private abstract class MVMatchPattern extends Logging {
    * Compares the output list of subsumer/subsumee with/without alias. In case if, expression
    * is instance of Alias, then compare it's child expression.
    */
-  protected def compareOutputList(outputList1: Seq[NamedExpression],
-      outputList2: Seq[NamedExpression]): Boolean = {
-    outputList1.forall {
+  protected def compareOutputList(subsumerOutputList: Seq[NamedExpression],
+      subsumeeOutputList: Seq[NamedExpression]): Boolean = {
+    subsumerOutputList.forall {
       case a@Alias(cast: Cast, _) =>
-        outputList2.exists {
+        subsumeeOutputList.exists {
           case Alias(castExp: Cast, _) => castExp.child.semanticEquals(cast.child)
           case alias: Alias => alias.child.semanticEquals(cast.child)
           case exp => exp.semanticEquals(cast.child)
-        } || isExpressionMatches(a, outputList2)
+        } || isExpressionMatches(a, subsumeeOutputList)
       case a@Alias(_, _) =>
-        outputList2.exists {
+        subsumeeOutputList.exists {
           case Alias(cast: Cast, _) => cast.child.semanticEquals(a.child)
           case alias: Alias => alias.child.semanticEquals(a.child) ||
                                alias.sql.equalsIgnoreCase(a.sql)
           case exp => exp.semanticEquals(a.child)
-        } || isExpressionMatches(a, outputList2)
+        } || isExpressionMatches(a, subsumeeOutputList)
       case ex@exp =>
-        outputList2.exists {
+        subsumeeOutputList.exists {
           case alias: Alias => alias.child.semanticEquals(exp)
           case expr => expr.semanticEquals(exp)
-        } || isExpressionMatches(ex, outputList2)
+        } || isExpressionMatches(ex, subsumeeOutputList)
     }
   }
 
@@ -680,9 +680,9 @@ private object SelectSelectNoChildDelta extends MVMatchPattern with PredicateHel
         ) if sel_1a.children.forall { _.isInstanceOf[modular.LeafNode] } &&
              sel_1q.children.forall { _.isInstanceOf[modular.LeafNode] } =>
 
-        LOGGER.debug(
-          "Applying pattern: {SelectSelectNoChildDelta} for the plan: {" +
-          subsumee.toString().trim + " }. Current Subsumer: {" + subsumer.toString().trim + " }")
+        LOGGER.debug(s"Applying pattern: {SelectSelectNoChildDelta} for the plan: " +
+                     s"{ ${ subsumee.toString().trim } }. " +
+                     s"Current Subsumer: { ${ subsumer.toString().trim } }. ")
 
         // assume children (including harmonized relation) of subsumer and subsumee
         // are 1-1 correspondence.
@@ -836,9 +836,9 @@ private object SelectSelectNoChildDelta extends MVMatchPattern with PredicateHel
         sel_3q @ modular.Select(_, _, _, _, _, _, _, _, _, _), None)
         if sel_3a.children.forall(_.isInstanceOf[GroupBy]) &&
            sel_3q.children.forall(_.isInstanceOf[GroupBy]) =>
-        LOGGER.debug(
-          "Applying pattern: {SelectSelectNoChildDelta} for the plan: {" +
-          subsumee.toString().trim + " }. Current Subsumer: {" + subsumer.toString().trim + " }")
+        LOGGER.debug(s"Applying pattern: {SelectSelectNoChildDelta} for the plan: " +
+                     s"{ ${ subsumee.toString().trim } }. " +
+                     s"Current Subsumer: { ${ subsumer.toString().trim } }")
         val isPredicateRmE = sel_3a.predicateList.isEmpty ||
                              sel_3a.predicateList.forall(expr =>
                                sel_3q.predicateList.exists(_.semanticEquals(expr)) ||
@@ -905,9 +905,9 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
         gb_2a @ modular.GroupBy(_, _, _, _, _, _, _, _),
         gb_2q @ modular.GroupBy(_, _, _, _, _, _, _, _),
         None) =>
-        LOGGER.debug(
-          "Applying pattern: {GroupbyGroupbyNoChildDelta} for the plan: {" +
-          subsumee.toString().trim + " }. Current Subsumer: {" + subsumer.toString().trim + " }")
+        LOGGER.debug(s"Applying pattern: {GroupbyGroupbyNoChildDelta} for the plan: " +
+                     s"{ ${ subsumee.toString().trim } }. " +
+                     s"Current Subsumer: { ${ subsumer.toString().trim } }")
         val isGroupingEmR = gb_2q.predicateList.forall(expr =>
           gb_2a.predicateList.exists(_.semanticEquals(expr)) ||
           isExpressionMatches(expr, gb_2a.predicateList))
@@ -1111,11 +1111,10 @@ private object GroupbyGroupbySelectOnlyChildDelta
         true)
         if !gb_2q.flags.hasFlag(EXPAND) && !gb_2a.flags.hasFlag(EXPAND) =>
 
-        LOGGER.debug(
-          "Applying pattern: {GroupbyGroupbySelectOnlyChildDelta} for the plan: {" +
-          subsumee.toString().trim + " }. Current Subsumer: {" + subsumer.toString().trim +
-          " }. Compensation: {" + sel_1c1.toString().trim + " }")
-
+        LOGGER.debug(s"Applying pattern: {GroupbyGroupbySelectOnlyChildDelta} for the plan: " +
+                     s"{ ${ subsumee.toString().trim } }. " +
+                     s"Current Subsumer: { ${ subsumer.toString().trim } }. " +
+                     s"Compensation: { ${ sel_1c1.toString().trim } }")
 
         val rejoinOutputList = sel_1c1.children.tail.flatMap(_.output)
         val isGroupingEdR = gb_2q.predicateList.forall(expr =>
@@ -1218,9 +1217,9 @@ private object GroupbyGroupbyGroupbyChildDelta extends MVMatchPattern {
         Select(_, _, _, _, _, _, _, _, _, _),
         Select(_, _, _, _, _, _, _, _, _, _),
         true) =>
-        LOGGER.debug(
-          "Applying pattern: {GroupbyGroupbyGroupbyChildDelta} for the plan: {" +
-          subsumee.toString().trim + " }. Current Subsumer: {" + subsumer.toString().trim + " }")
+        LOGGER.debug(s"Applying pattern: {GroupbyGroupbyGroupbyChildDelta} for the plan: " +
+                     s"{ ${ subsumee.toString().trim } }. " +
+                     s"Current Subsumer: { ${ subsumer.toString().trim } }")
         // TODO: implement me
         Nil
 
@@ -1249,9 +1248,9 @@ private object SelectSelectSelectChildDelta extends MVMatchPattern {
         modular.Select(_, _, _, _, _, _, _, _, _, _),
         modular.Select(_, _, _, _, _, _, _, _, _, _),
         true) =>
-        LOGGER.debug(
-          "Applying pattern: {SelectSelectSelectChildDelta} for the plan: {" +
-          subsumee.toString().trim + " }. Current Subsumer: {" + subsumer.toString().trim + " }")
+        LOGGER.debug(s"Applying pattern: {SelectSelectSelectChildDelta} for the plan: " +
+                     s"{ ${ subsumee.toString().trim } }. " +
+                     s"Current Subsumer: { ${ subsumer.toString().trim } }")
         // TODO: implement me
         Nil
       case _ => Nil
@@ -1470,10 +1469,10 @@ private object SelectSelectGroupbyChildDelta
         Some(gb_2c@modular.GroupBy(_, _, _, _, _, _, _, _)),
         _ :: Nil,
         _ :: Nil) =>
-        LOGGER.debug(
-          "Applying pattern: {SelectSelectGroupbyChildDelta} for the plan: {" +
-          subsumee.toString().trim + " }. Current Subsumer: {" + subsumer.toString().trim +
-          " }. Compensation: {" + gb_2c.toString().trim + " }")
+        LOGGER.debug(s"Applying pattern: {SelectSelectGroupbyChildDelta} for the plan: " +
+                     s"{ ${ subsumee.toString().trim } }. " +
+                     s"Current Subsumer: { ${ subsumer.toString().trim } }. " +
+                     s"Compensation: { ${ gb_2c.toString().trim } }")
         val tbls_sel_3a = sel_3a.collect { case tbl: modular.LeafNode => tbl }
         val tbls_sel_3q = sel_3q_dup.collect { case tbl: modular.LeafNode => tbl }
         val distinctSelOList = getDistinctOutputList(sel_3q_dup.outputList)

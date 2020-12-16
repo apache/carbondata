@@ -30,7 +30,6 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
-import org.apache.carbondata.core.view.{MVCatalog, MVCatalogFactory}
 import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
 import org.apache.carbondata.view.{MVCatalogInSpark, MVManagerInSpark, MVSchemaWrapper}
 import org.apache.carbondata.view.MVFunctions.DUMMY_FUNCTION
@@ -54,7 +53,11 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
     } catch {
       case e =>
         // if exception is thrown while rewriting the query, will fallback to original query plan.
-        MVRewriteRule.LOGGER.warn("Failed to rewrite plan with mv: " + e.getMessage)
+        MVRewriteRule.LOGGER
+          .warn("Failed to rewrite plan with mv. Enable debug log to check the Exception")
+        if (MVRewriteRule.LOGGER.isDebugEnabled) {
+          MVRewriteRule.LOGGER.debug(e.getMessage)
+        }
         logicalPlan
     }
   }
@@ -91,6 +94,9 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
           canApply = false
         }
         Aggregate(groupBy, aggregations, child)
+      case localRelation@LocalRelation(_, _, _) =>
+        canApply = false
+        localRelation
     }
     if (!canApply) {
       return logicalPlan
@@ -100,7 +106,8 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
     }
     val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
     if (viewCatalog != null && hasSuitableMV(logicalPlan, viewCatalog)) {
-      LOGGER.debug("Query Rewrite has been initiated for the plan: " + logicalPlan.toString().trim)
+      LOGGER.debug(s"Query Rewrite has been initiated for the plan: " +
+                   s"${ logicalPlan.toString().trim }")
       val viewRewrite = new MVRewrite(viewCatalog, logicalPlan, session)
       val rewrittenPlan = viewRewrite.rewrittenPlan
       if (rewrittenPlan.find(_.rewritten).isDefined) {
@@ -158,8 +165,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
       case _ =>
         compactSQL
     }
-    LOGGER.debug("Converting from Modular Plan to Logical Plan for query " +
-                 "{ " + finalCompactSQL.trim + " }")
+    LOGGER.debug(s"Rewritten Query: { ${finalCompactSQL.trim} }")
     finalCompactSQL
   }
 

@@ -177,7 +177,11 @@ public abstract class MVManager {
               catalog.registerSchema(schema);
             } catch (Exception e) {
               // Ignore the schema
-              LOGGER.error("Error while registering schema", e);
+              LOGGER.error("Error while registering schema for mv: " + schema.getIdentifier()
+                  .getTableName());
+              if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(e.getMessage());
+              }
             }
           }
           this.catalog = catalog;
