@@ -54,8 +54,8 @@ case class CarbonCleanFilesCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    // only proceed if not a MV and if insert overwrite not in progress
-    if (!carbonTable.isMV && !SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
+    // if insert overwrite not in progress, then do nothing
+    if (!SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
       val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
       withEvents(preEvent, postEvent) {

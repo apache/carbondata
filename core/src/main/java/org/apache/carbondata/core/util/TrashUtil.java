@@ -153,11 +153,12 @@ public final class TrashUtil {
    * per the user defined retention time
    */
   public static void deleteExpiredDataFromTrash(String tablePath) {
-    String trashPath = CarbonTablePath.getTrashFolderPath(tablePath);
+    CarbonFile trashFolder = FileFactory.getCarbonFile(CarbonTablePath
+        .getTrashFolderPath(tablePath));
     // Deleting the timestamp based subdirectories in the trashfolder by the given timestamp.
     try {
-      if (FileFactory.isFileExist(trashPath)) {
-        CarbonFile[] timestampFolderList = FileFactory.getCarbonFile(trashPath).listFiles();
+      if (trashFolder.isFileExist()) {
+        CarbonFile[] timestampFolderList = trashFolder.listFiles();
         for (CarbonFile timestampFolder : timestampFolderList) {
           // If the timeStamp at which the timeStamp subdirectory has expired as per the user
           // defined value, delete the complete timeStamp subdirectory
@@ -178,11 +179,12 @@ public final class TrashUtil {
    * The below method deletes all the files and folders in the trash folder of a carbon table.
    */
   public static void emptyTrash(String tablePath) {
-    String trashPath = CarbonTablePath.getTrashFolderPath(tablePath);
+    CarbonFile trashFolder = FileFactory.getCarbonFile(CarbonTablePath
+        .getTrashFolderPath(tablePath));
     // if the trash folder exists delete the contents of the trash folder
     try {
-      if (FileFactory.isFileExist(trashPath)) {
-        CarbonFile[] carbonFileList = FileFactory.getCarbonFile(trashPath).listFiles();
+      if (trashFolder.isFileExist()) {
+        CarbonFile[] carbonFileList = trashFolder.listFiles();
         for (CarbonFile carbonFile : carbonFileList) {
           FileFactory.deleteAllCarbonFilesOfDir(carbonFile);
         }
