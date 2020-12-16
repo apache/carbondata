@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -84,6 +85,11 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     vector = ColumnarVectorWrapperDirectFactory
         .getDirectVectorWrapperFactory(vectorInfo, vector, invertedIndex, nullBitset,
             vectorInfo.deletedRows, false, false);
+    // this check is in case of array of string type
+    if (vectorInfo.vector.getType().isComplexType()
+        && ((CarbonColumnVectorImpl) dictionaryVector).getIntArraySize() < rowsNum) {
+      ((CarbonColumnVectorImpl) dictionaryVector).increaseIntArraySize(rowsNum);
+    }
     for (int i = 0; i < rowsNum; i++) {
       int surrogate = CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
       // If complex string primitive value is null then surrogate will be unequal to

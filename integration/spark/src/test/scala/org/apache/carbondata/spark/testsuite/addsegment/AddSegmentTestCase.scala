@@ -74,10 +74,12 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
     checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(20)))
 
+    // cannot add segment from same path file again so deleting previously added segment
+    sql("delete from table addsegment1 where segment.id in (2)")
     sql(s"alter table addsegment1 add segment options('path'='$newPathWithLineSeparator', " +
         s"'format'='carbon')")
       .collect()
-    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 

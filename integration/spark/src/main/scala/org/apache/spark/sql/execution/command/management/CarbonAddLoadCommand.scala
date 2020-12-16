@@ -93,7 +93,7 @@ case class CarbonAddLoadCommand(
     var givenPath = options.getOrElse(
       "path", throw new UnsupportedOperationException("PATH is mandatory"))
     // remove file separator if already present
-    if (givenPath.charAt(givenPath.length - 1) == CarbonCommonConstants.FILE_SEPARATOR) {
+    if (givenPath.charAt(givenPath.length - 1) == '/') {
       givenPath = givenPath.substring(0, givenPath.length - 1)
     }
     val inputPath = givenPath
