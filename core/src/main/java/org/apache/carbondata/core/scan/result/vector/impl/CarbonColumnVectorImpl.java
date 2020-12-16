@@ -509,6 +509,14 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     return lengths;
   }
 
+  public int getIntArraySize() {
+    return ints.length;
+  }
+
+  public void increaseIntArraySize(int size) {
+    this.ints = new int[size];
+  }
+
   public int[] getOffsets() {
     return offsets;
   }

@@ -777,4 +777,40 @@ class PrestoTestNonTransactionalTableFiles
 
   }
 
+  test("test Array of varchar type with huge data enabling local dictionary") {
+    val writerPathComplex = storePath + "/sdk_output/files9"
+    import scala.collection.JavaConverters._
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+    prestoServer.execute("drop table if exists sdk_output.files9")
+    prestoServer
+      .execute(
+        "create table sdk_output.files9(arrayString ARRAY(varchar)) with(format='CARBON') ")
+    val fields8 = List(new StructField("intField", DataTypes.STRING))
+    val structType8 = new Field("arrayString", "array", fields8.asJava)
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(writerPathComplex)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2).enableLocalDictionary(true)
+          .withCsvInput(new Schema(Array[Field](structType8))).writtenBy("presto").build()
+
+      var i = 0
+      while (i < 50000) {
+        val array = Array[String]("India" + "\001" + "China" + "\001" + "Japan")
+        writer.write(array)
+        val array1 = Array[String]("Korea")
+        writer.write(array1)
+        i += 1
+      }
+      writer.close()
+    } catch {
+      case e: Exception =>
+        assert(false)
+    }
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select * from files9 ")
+    PrestoTestUtil.validateHugeDataForArrayWithLocalDict(actualResult)
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+  }
+
 }

@@ -170,4 +170,23 @@ object PrestoTestUtil {
       }
     }
   }
+
+    // this method depends on prestosql jdbc PrestoArray class
+    def validateHugeDataForArrayWithLocalDict(actualResult: List[Map[String, Any]]): Unit = {
+      assert(actualResult.size == 100 * 1000)
+      val data1 = actualResult(actualResult.size - 2)("arraystring")
+        .asInstanceOf[PrestoArray]
+        .getArray()
+        .asInstanceOf[Array[Object]]
+      val data2 = actualResult(actualResult.size - 1)("arraystring")
+        .asInstanceOf[PrestoArray]
+        .getArray()
+        .asInstanceOf[Array[Object]]
+      assert(data1.size == 3)
+      assert(data2.size == 1)
+
+      assert(data1.sameElements(Array("India", "China", "Japan")))
+      assert(data2.sameElements(Array("Korea")))
+    }
+
 }
