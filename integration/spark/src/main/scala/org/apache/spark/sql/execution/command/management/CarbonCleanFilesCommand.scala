@@ -46,27 +46,27 @@ case class CarbonCleanFilesCommand(
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
-    // if insert overwrite in progress and table not a MV, do not allow delete segment
-    if (!carbonTable.isMV && SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
-      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
+    // if insert overwrite in progress, do not allow delete segment
+    if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
+      if ((carbonTable.isMV && !isInternalCleanCall) || !carbonTable.isMV) {
+        throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
+      } else if (carbonTable.isMV && isInternalCleanCall) {
+        LOGGER.info(s"Clean files not allowed on table: {${carbonTable.getTableName}}")
+        return Seq.empty
+      }
     }
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    // if insert overwrite not in progress, then do nothing
-    if (!SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
-      val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
-      val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
-      withEvents(preEvent, postEvent) {
-        DataTrashManager.cleanGarbageData(
-          carbonTable,
-          options.getOrElse("force", "false").toBoolean,
-          options.getOrElse("stale_inprogress", "false").toBoolean,
-          CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, carbonTable))
-      }
-    } else {
-      LOGGER.info(s"Can not do clean files operation for the MV: ${carbonTable.getTableName}")
+    val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
+    val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
+    withEvents(preEvent, postEvent) {
+      DataTrashManager.cleanGarbageData(
+        carbonTable,
+        options.getOrElse("force", "false").toBoolean,
+        options.getOrElse("stale_inprogress", "false").toBoolean,
+        CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, carbonTable))
     }
 
     Seq.empty
