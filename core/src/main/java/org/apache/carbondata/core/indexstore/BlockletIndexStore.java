@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
@@ -58,21 +57,12 @@ public class BlockletIndexStore
   protected CarbonLRUCache lruCache;
 
   /**
-   * map of block info to lock object map, while loading the btree this will be filled
-   * and removed after loading the tree for that particular block info, this will be useful
-   * while loading the tree concurrently so only block level lock will be applied another
-   * block can be loaded concurrently
-   */
-  private Map<String, Object> segmentLockMap;
-
-  /**
    * constructor to initialize the SegmentTaskIndexStore
    *
    * @param lruCache
    */
   public BlockletIndexStore(CarbonLRUCache lruCache) {
     this.lruCache = lruCache;
-    segmentLockMap = new ConcurrentHashMap<String, Object>();
   }
 
   @Override
@@ -288,41 +278,15 @@ public class BlockletIndexStore
       SegmentIndexFileStore indexFileStore, Map<String, BlockMetaInfo> blockMetaInfoMap,
       CarbonTable carbonTable, boolean addTableBlockToUnsafe, Configuration configuration,
       boolean serializeDmStore, List<DataFileFooter> indexInfos) throws IOException {
-    String uniqueTableSegmentIdentifier =
-        identifier.getUniqueTableSegmentIdentifier();
-    Object lock = segmentLockMap.get(uniqueTableSegmentIdentifier);
-    if (lock == null) {
-      lock = addAndGetSegmentLock(uniqueTableSegmentIdentifier);
-    }
-    BlockIndex blockIndex;
-    synchronized (lock) {
-      blockIndex = (BlockIndex) BlockletIndexFactory.createIndex(carbonTable);
-      final BlockletIndexModel blockletIndexModel = new BlockletIndexModel(carbonTable,
-          identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-              .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
-          blockMetaInfoMap, identifier.getSegmentId(), addTableBlockToUnsafe, configuration,
-          serializeDmStore);
-      blockletIndexModel.setIndexInfos(indexInfos);
-      blockIndex.init(blockletIndexModel);
-    }
+    BlockIndex blockIndex = (BlockIndex) BlockletIndexFactory.createIndex(carbonTable);
+    final BlockletIndexModel blockletIndexModel = new BlockletIndexModel(carbonTable,
+        identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+            .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
+        blockMetaInfoMap, identifier.getSegmentId(), addTableBlockToUnsafe, configuration,
+        serializeDmStore);
+    blockletIndexModel.setIndexInfos(indexInfos);
+    blockIndex.init(blockletIndexModel);
     return blockIndex;
-  }
-
-  /**
-   * Below method will be used to get the segment level lock object
-   *
-   * @param uniqueIdentifier
-   * @return lock object
-   */
-  private synchronized Object addAndGetSegmentLock(String uniqueIdentifier) {
-    // get the segment lock object if it is present then return
-    // otherwise add the new lock and return
-    Object segmentLockObject = segmentLockMap.get(uniqueIdentifier);
-    if (null == segmentLockObject) {
-      segmentLockObject = new Object();
-      segmentLockMap.put(uniqueIdentifier, segmentLockObject);
-    }
-    return segmentLockObject;
   }
 
   /**

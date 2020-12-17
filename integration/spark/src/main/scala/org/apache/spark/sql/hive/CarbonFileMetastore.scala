@@ -18,10 +18,11 @@
 package org.apache.spark.sql.hive
 
 import java.io.IOException
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
+import net.jodah.expiringmap.{ExpirationPolicy, ExpiringMap}
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSource, EnvHelper, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -47,7 +48,7 @@ import org.apache.carbondata.core.metadata.schema
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.metadata.schema.table
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.events.{CreateCarbonRelationPostEvent, LookupRelationPostEvent, OperationContext, OperationListenerBus}
@@ -64,7 +65,9 @@ object MatchLogicalRelation {
 
 private object CarbonFileMetastore {
 
-  final val tableModifiedTimeStore = new ConcurrentHashMap[String, Long]()
+  final val tableModifiedTimeStore = ExpiringMap.builder()
+    .expiration(CarbonProperties.getInstance().getMetaCacheExpirationTime, TimeUnit.SECONDS)
+    .expirationPolicy(ExpirationPolicy.ACCESSED).build[String, java.lang.Long]
 
   def checkIfRefreshIsNeeded(absoluteTableIdentifier: AbsoluteTableIdentifier,
       localTimeStamp: Long): Boolean = {
@@ -109,7 +112,7 @@ private object CarbonFileMetastore {
     tableModifiedTimeStore.put(tableUniqueId, timeStamp)
   }
 
-  def getTableModifiedTime(tableUniqueId: String): Long = {
+  def getTableModifiedTime(tableUniqueId: String): java.lang.Long = {
     tableModifiedTimeStore.get(tableUniqueId)
   }
 
@@ -123,8 +126,6 @@ private object CarbonFileMetastore {
 class CarbonFileMetastore extends CarbonMetaStore {
 
   @transient private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-
-  final val tableModifiedTimeStore = new ConcurrentHashMap[String, Long]()
 
   /**
    * Create Carbon Relation by reading the schema file
@@ -501,13 +502,12 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * This method will put the updated timestamp of schema file in the table modified time store map
    */
   private def updateSchemasUpdatedTime(tableUniqueId: String, timeStamp: Long) {
-    tableModifiedTimeStore.put(tableUniqueId, timeStamp)
     CarbonFileMetastore.updateTableSchemaModifiedTime(tableUniqueId, timeStamp)
   }
 
   override def isSchemaRefreshed(absoluteTableIdentifier: AbsoluteTableIdentifier,
       sparkSession: SparkSession): Boolean = {
-    val localTimeStamp = Option(tableModifiedTimeStore.get(absoluteTableIdentifier
+    val localTimeStamp = Option(CarbonFileMetastore.getTableModifiedTime(absoluteTableIdentifier
       .getCarbonTableIdentifier
       .getTableId))
     if (localTimeStamp.isDefined) {
