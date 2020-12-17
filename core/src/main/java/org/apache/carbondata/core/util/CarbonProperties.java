@@ -2086,6 +2086,27 @@ public final class CarbonProperties {
     return Boolean.parseBoolean(configuredValue);
   }
 
+  public long getMetaCacheExpirationTime() {
+    String configuredValue = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_METACACHE_EXPIRATION_TIME_IN_SECONDS);
+    if (configuredValue == null || configuredValue.equalsIgnoreCase("0")) {
+      return CarbonCommonConstants.CARBON_METACACHE_EXPIRATION_TIME_IN_SECONDS_DEFAULT;
+    }
+    try {
+      long expirationTime = Long.parseLong(configuredValue);
+      LOGGER.info("Value for "
+          + CarbonCommonConstants.CARBON_METACACHE_EXPIRATION_TIME_IN_SECONDS + " is "
+          + expirationTime + ".");
+      return expirationTime;
+    } catch (NumberFormatException e) {
+      LOGGER.warn(configuredValue + " is not a valid input for "
+          + CarbonCommonConstants.CARBON_METACACHE_EXPIRATION_TIME_IN_SECONDS + ", taking "
+          + CarbonCommonConstants.CARBON_METACACHE_EXPIRATION_TIME_IN_SECONDS_DEFAULT
+          + " as default value.");
+      return CarbonCommonConstants.CARBON_METACACHE_EXPIRATION_TIME_IN_SECONDS_DEFAULT;
+    }
+  }
+
   public boolean isSIRepairEnabled(String dbName, String tableName) {
     // Check if user has enabled/disabled the use of property for the current db and table using
     // the set command

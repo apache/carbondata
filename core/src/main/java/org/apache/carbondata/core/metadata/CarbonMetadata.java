@@ -19,12 +19,15 @@ package org.apache.carbondata.core.metadata;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.util.CarbonProperties;
+
+import net.jodah.expiringmap.ExpirationPolicy;
+import net.jodah.expiringmap.ExpiringMap;
 
 /**
  * Class which persist the information about the tables present the carbon schemas
@@ -39,11 +42,13 @@ public final class CarbonMetadata {
   /**
    * holds the list of tableInfo currently present
    */
-  private Map<String, CarbonTable> tableInfoMap;
+  private ExpiringMap<String, CarbonTable> tableInfoMap;
 
   private CarbonMetadata() {
     // creating a concurrent map as it will be updated by multiple thread
-    tableInfoMap = new ConcurrentHashMap<String, CarbonTable>();
+    tableInfoMap = ExpiringMap.builder()
+        .expiration(CarbonProperties.getInstance().getMetaCacheExpirationTime(), TimeUnit.SECONDS)
+        .expirationPolicy(ExpirationPolicy.ACCESSED).build();
   }
 
   public static CarbonMetadata getInstance() {

@@ -2557,6 +2557,20 @@ public final class CarbonCommonConstants {
           " characters. Please consider long string data type.";
 
   /**
+   * Expiration time for tableInfo cache in CarbonMetadata, after the time configured
+   * since last access to the cache entry, tableInfo will be removed from cache. Recent
+   * access will refresh the timer. At the time when cache is being expired, queries on
+   * the table may fail with NullPointerException.
+   */
+  public static final String CARBON_METACACHE_EXPIRATION_TIME_IN_SECONDS =
+        "carbon.metacache.expiration.seconds";
+
+  /**
+   * By default, the cache in CarbonMetadata will not be expired by time.
+   */
+  public static final long CARBON_METACACHE_EXPIRATION_TIME_IN_SECONDS_DEFAULT = Long.MAX_VALUE;
+
+  /**
    * property which defines the presto query
    */
   @CarbonProperty public static final String IS_QUERY_FROM_PRESTO = "is_query_from_presto";

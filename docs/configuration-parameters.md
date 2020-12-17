@@ -149,6 +149,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.max.pagination.lru.cache.size.in.mb | -1 | Maximum memory **(in MB)** upto which the SDK pagination reader can cache the blocklet rows. Suggest to configure as multiple of blocklet size. Default value of -1 means there is no memory limit for caching. Only integer values greater than 0 are accepted. |
 | carbon.partition.max.driver.lru.cache.size | -1 | Maximum memory **(in MB)** upto which driver can cache partition metadata. Beyond this, least recently used data will be removed from cache before loading new set of values.
 | carbon.mapOrderPushDown.<db_name>_<table_name>.column| empty | If order by column is in sort column, specify that sort column here to avoid ordering at map task . |
+| carbon.metacache.expiration.seconds | Long.MAX_VALUE | Expiration time **(in seconds)** for tableInfo cache in CarbonMetadata and tableModifiedTime in CarbonFileMetastore, after the time configured since last access to the cache entry, tableInfo and tableModifiedTime will be removed from each cache. Recent access will refresh the timer. Default value of Long.MAX_VALUE means the cache will not be expired by time. **NOTE:** At the time when cache is being expired, queries on the table may fail with NullPointerException. |
 
 ## Data Mutation Configuration
 | Parameter | Default Value | Description |
