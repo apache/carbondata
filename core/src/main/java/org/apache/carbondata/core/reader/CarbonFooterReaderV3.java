@@ -19,13 +19,18 @@ package org.apache.carbondata.core.reader;
 
 import java.io.IOException;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.format.FileFooter3;
+
+import org.apache.log4j.Logger;
 
 /**
  * Below class to read file footer of version3
  * carbon data file
  */
 public class CarbonFooterReaderV3 {
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(CarbonFooterReaderV3.class.getName());
 
   //Fact file path
   private String filePath;
@@ -45,14 +50,19 @@ public class CarbonFooterReaderV3 {
    * @throws IOException
    */
   public FileFooter3 readFooterVersion3() throws IOException {
-    ThriftReader thriftReader = openThriftReader(filePath);
-    thriftReader.open();
+    try {
+      ThriftReader thriftReader = openThriftReader(filePath);
+      thriftReader.open();
 
-    // Set the offset from where it should read
-    thriftReader.setReadOffset(footerOffset);
-    FileFooter3 footer = (FileFooter3) thriftReader.read();
-    thriftReader.close();
-    return footer;
+      // Set the offset from where it should read
+      thriftReader.setReadOffset(footerOffset);
+      FileFooter3 footer = (FileFooter3) thriftReader.read();
+      thriftReader.close();
+      return footer;
+    } catch (Exception e) {
+      LOGGER.error("Failed to read footer in file: " + filePath, e);
+      throw e;
+    }
   }
 
   /**

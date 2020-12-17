@@ -95,14 +95,7 @@ public final class CarbonLoaderUtil {
     int currentLoad = Integer.parseInt(loadModel.getSegmentId());
     String segmentPath = CarbonTablePath.getSegmentPath(
         loadModel.getTablePath(), currentLoad + "");
-    try {
-      if (FileFactory.isFileExist(segmentPath)) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
-        CarbonUtil.deleteFoldersAndFiles(carbonFile);
-      }
-    } catch (IOException | InterruptedException e) {
-      LOGGER.error("Unable to delete segment: " + segmentPath + ", " + e.getMessage(), e);
-    }
+    deleteStorePath(segmentPath);
   }
 
   /**
@@ -153,6 +146,17 @@ public final class CarbonLoaderUtil {
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
       throws IOException {
     return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, "");
+  }
+
+  public static void deleteStorePath(String segmentPath) {
+    try {
+      if (FileFactory.isFileExist(segmentPath)) {
+        CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
+        CarbonUtil.deleteFoldersAndFiles(carbonFile);
+      }
+    } catch (IOException | InterruptedException e) {
+      LOGGER.error("Unable to delete segment: " + segmentPath + ", " + e.getMessage(), e);
+    }
   }
 
   /**
@@ -1097,10 +1101,14 @@ public final class CarbonLoaderUtil {
 
   /**
    * This method will get the store location for the given path, segment id and partition id
+   * To prevent any stale file exists in the folder because of the abnormal interrupt happened
+   * at last loading, compaction or SI creation, we delete the store path first, then create
+   * it  again.
    */
   public static void checkAndCreateCarbonDataLocation(String segmentId, CarbonTable carbonTable) {
     String segmentFolder = CarbonTablePath.getSegmentPath(
         carbonTable.getTablePath(), segmentId);
+    deleteStorePath(segmentFolder);
     CarbonUtil.checkAndCreateFolder(segmentFolder);
   }
 
