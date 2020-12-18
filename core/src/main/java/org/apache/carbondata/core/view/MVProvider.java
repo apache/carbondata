@@ -429,8 +429,9 @@ public class MVProvider {
         }
         this.schemas.add(viewSchema);
         CarbonUtil.closeStreams(dataOutputStream, brWriter);
-        checkAndReloadSchemas(viewManager, true);
-        touchMDTFile();
+        if (!checkAndReloadSchemas(viewManager, true)) {
+          touchMDTFile();
+        }
       }
     }
 
@@ -523,7 +524,7 @@ public class MVProvider {
       LOG.info(String.format("Materialized view %s schema is deleted", viewName));
     }
 
-    private void checkAndReloadSchemas(MVManager viewManager, boolean touchFile)
+    private synchronized boolean checkAndReloadSchemas(MVManager viewManager, boolean touchFile)
         throws IOException {
       if (FileFactory.isFileExist(this.schemaIndexFilePath)) {
         long lastModifiedTime =
@@ -531,16 +532,19 @@ public class MVProvider {
         if (this.lastModifiedTime != lastModifiedTime) {
           this.schemas = this.retrieveAllSchemasInternal(viewManager);
           touchMDTFile();
+          return true;
         }
       } else {
         this.schemas = this.retrieveAllSchemasInternal(viewManager);
         if (touchFile) {
           touchMDTFile();
+          return true;
         }
       }
+      return false;
     }
 
-    private void touchMDTFile() throws IOException {
+    private synchronized void touchMDTFile() throws IOException {
       if (!FileFactory.isFileExist(this.systemDirectory)) {
         FileFactory.createDirectoryAndSetPermission(this.systemDirectory,
             new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
