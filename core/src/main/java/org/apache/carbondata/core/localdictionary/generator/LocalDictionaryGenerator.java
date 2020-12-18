@@ -46,4 +46,10 @@ public interface LocalDictionaryGenerator {
    * @return dictionary key based on value
    */
   byte[] getDictionaryKeyBasedOnValue(int value);
+
+  /**
+   * @return number of bytes used for storing the length of the dictionary value
+   * for String type 2 Bytes and Long String 4 bytes
+   */
+  int getLVLength();
 }

@@ -114,8 +114,24 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     for (int i = 0; i < pageSize; i++) {
       int index = reverseInvertedIndex[i] * 3;
       int keyArray = (int) keyGenerator.getKeyArray(bytes, index)[0];
-      actualDataColumnPage
-          .putBytes(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray));
+      if (actualDataColumnPage instanceof LVByteBufferColumnPage) {
+        //TODO It's a quick fix, we can fallback to old logic adding Length outside of
+        // LVByteBufferColumnPage. Update the page data with Length before adding to column page.
+        // so it won't be added again when fallback scenario occurs.
+        // Though this is not a bottleneck as after fallback only encoded page will be decoded
+        // and System.array copy is very fast. So for few pages it won't impact much
+        byte[] dictionaryKeyBasedOnValue =
+            localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray);
+        byte[] output =
+            new byte[dictionaryKeyBasedOnValue.length - localDictionaryGenerator.getLVLength()];
+        System
+            .arraycopy(dictionaryKeyBasedOnValue, localDictionaryGenerator.getLVLength(), output, 0,
+                output.length);
+        actualDataColumnPage.putBytes(rowId++, output);
+      } else {
+        actualDataColumnPage
+            .putBytes(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray));
+      }
     }
 
     // get column spec for existing column page

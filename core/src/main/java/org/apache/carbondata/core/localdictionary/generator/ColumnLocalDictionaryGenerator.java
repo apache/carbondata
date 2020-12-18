@@ -34,10 +34,16 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    */
   private DictionaryStore dictionaryHolder;
 
+  /**
+   * number of bytes used for storing the length of the dictionary value
+   */
+  private int lvLength;
+
   public ColumnLocalDictionaryGenerator(int threshold, int lvLength) {
     // adding 1 to threshold for null value
     int newThreshold = threshold + 1;
     this.dictionaryHolder = new MapBasedDictionaryStore(newThreshold);
+    this.lvLength = lvLength;
     ByteBuffer byteBuffer = ByteBuffer.allocate(
         lvLength + CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
 
@@ -85,5 +91,10 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
   @Override
   public byte[] getDictionaryKeyBasedOnValue(int value) {
     return this.dictionaryHolder.getDictionaryKeyBasedOnValue(value);
+  }
+
+  @Override
+  public int getLVLength() {
+    return this.lvLength;
   }
 }
