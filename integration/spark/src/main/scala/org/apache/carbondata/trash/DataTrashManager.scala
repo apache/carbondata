@@ -57,13 +57,20 @@ object DataTrashManager {
       throw new RuntimeException("Clean files with force operation not permitted by default")
     }
     var carbonCleanFilesLock: ICarbonLock = null
+    var carbonDeleteSegmentLock : ICarbonLock = null
     try {
       val errorMsg = "Clean files request is failed for " +
         s"${ carbonTable.getQualifiedName }" +
         ". Not able to acquire the clean files lock due to another clean files " +
         "operation is running in the background."
+      val deleteSegmentErrorMsg = "Clean files request is failed for " +
+        s"${ carbonTable.getQualifiedName }" +
+        ". Not able to acquire the delete segment lock due to another delete segment " +
+        "operation running in the background."
       carbonCleanFilesLock = CarbonLockUtil.getLockObject(carbonTable.getAbsoluteTableIdentifier,
         LockUsage.CLEAN_FILES_LOCK, errorMsg)
+      carbonDeleteSegmentLock = CarbonLockUtil.getLockObject(carbonTable
+        .getAbsoluteTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK, deleteSegmentErrorMsg)
       // step 1: check and clean trash folder
       checkAndCleanTrashFolder(carbonTable, isForceDelete)
       // step 2: move stale segments which are not exists in metadata into .Trash
@@ -73,6 +80,9 @@ object DataTrashManager {
     } finally {
       if (carbonCleanFilesLock != null) {
         CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
+      }
+      if (carbonDeleteSegmentLock != null) {
+        CarbonLockUtil.fileUnlock(carbonDeleteSegmentLock, LockUsage.DELETE_SEGMENT_LOCK)
       }
     }
   }
