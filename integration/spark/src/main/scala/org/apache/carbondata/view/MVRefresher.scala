@@ -34,6 +34,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.ICarbonLock
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager.ValidAndInvalidSegmentsInfo
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -111,8 +112,10 @@ object MVRefresher {
           val relatedTableIds =
             viewSchema.getRelatedTables.asScala.filter(_.isCarbonDataTable)
           for (relatedTableId <- relatedTableIds) {
-            val relatedTableSegmentList: util.List[String] =
-              SegmentStatusManager.getValidSegmentList(relatedTableId)
+            val validAndInvalidSegmentsInfo =
+              SegmentStatusManager.getValidAndInvalidSegmentsInfo(relatedTableId)
+            val relatedTableSegmentList: util.List[String] = SegmentStatusManager
+              .getValidSegmentList(validAndInvalidSegmentsInfo)
             if (relatedTableSegmentList.isEmpty) {
               return false
             }
@@ -236,8 +239,10 @@ object MVRefresher {
     if (listOfLoadFolderDetails.isEmpty) {
       // If segment Map is empty, load all valid segments from main tables to mv
       for (relationIdentifier <- relationIdentifiers.asScala) {
-        val mainTableSegmentList: util.List[String] = SegmentStatusManager.getValidSegmentList(
-          relationIdentifier)
+        val validAndInvalidSegmentsInfo =
+          SegmentStatusManager.getValidAndInvalidSegmentsInfo(relationIdentifier)
+        val mainTableSegmentList: util.List[String] = SegmentStatusManager
+          .getValidSegmentList(validAndInvalidSegmentsInfo)
         // If mainTableSegmentList is empty, no need to trigger load command
         // TODO: handle in case of multiple tables load to mv table
         if (mainTableSegmentList.isEmpty) return false
@@ -249,19 +254,16 @@ object MVRefresher {
       for (relationIdentifier <- relationIdentifiers.asScala) {
         val segmentList: util.List[String] = new util.ArrayList[String]
         // Get all segments for parent relationIdentifier
-        val mainTableSegmentList: util.List[String] = SegmentStatusManager.getValidSegmentList(
-          relationIdentifier)
+        val validAndInvalidSegmentsInfo =
+          SegmentStatusManager.getValidAndInvalidSegmentsInfo(relationIdentifier)
+        val mainTableSegmentList: util.List[String] = SegmentStatusManager
+          .getValidSegmentList(validAndInvalidSegmentsInfo)
         var ifTableStatusUpdateRequired: Boolean = false
         for (loadMetaDetail <- listOfLoadFolderDetails.asScala) {
           if ((loadMetaDetail.getSegmentStatus eq SegmentStatus.SUCCESS) ||
               (loadMetaDetail.getSegmentStatus eq SegmentStatus.INSERT_IN_PROGRESS)) {
             val segmentMaps: util.Map[String, util.List[String]] =
               new Gson().fromJson(loadMetaDetail.getExtraInfo, classOf[util.Map[_, _]])
-            val mainTableMetaDataPath: String = CarbonTablePath.getMetadataPath(relationIdentifier
-              .getTablePath)
-            val parentTableLoadMetaDataDetails: Array[LoadMetadataDetails] = SegmentStatusManager
-              .readLoadMetadata(
-                mainTableMetaDataPath)
             val table: String = relationIdentifier.getDatabaseName + CarbonCommonConstants.POINT +
                                 relationIdentifier.getTableName
             for (segmentId <- mainTableSegmentList.asScala) {
@@ -270,7 +272,7 @@ object MVRefresher {
               // {0,1,2} segments of mainTable are compacted to 0.1. Then,
               // on next rebuild/load to mv, no need to load segment(0.1) again. Update the
               // segmentMapping of mv segment from {0,1,2} to {0.1}
-              if (!checkIfSegmentsToBeReloaded(parentTableLoadMetaDataDetails,
+              if (!checkIfSegmentsToBeReloaded(validAndInvalidSegmentsInfo,
                 segmentMaps.get(table),
                 segmentId)) {
                 ifTableStatusUpdateRequired = true
@@ -350,16 +352,14 @@ object MVRefresher {
   /**
    * This method checks if mv table segment has to be reloaded again or not
    */
-  private def checkIfSegmentsToBeReloaded(loadMetaDataDetails: Array[LoadMetadataDetails],
+  private def checkIfSegmentsToBeReloaded(validAndInvalidSegmentsInfo: ValidAndInvalidSegmentsInfo,
       segmentIds: util.List[String],
       segmentId: String): Boolean = {
     var isToBeLoadedAgain: Boolean = true
     val mergedSegments: util.List[String] = new util.ArrayList[String]
-    for (loadMetadataDetail <- loadMetaDataDetails) {
-      if (null != loadMetadataDetail.getMergedLoadName &&
-          loadMetadataDetail.getMergedLoadName.equalsIgnoreCase(segmentId)) {
-        mergedSegments.add(loadMetadataDetail.getLoadName)
-      }
+    val mergedLoadMapping = validAndInvalidSegmentsInfo.getMergedLoadMapping
+    if (!mergedLoadMapping.isEmpty && mergedLoadMapping.containsKey(segmentId)) {
+      mergedSegments.addAll(mergedLoadMapping.get(segmentId))
     }
     if (!mergedSegments.isEmpty && segmentIds.containsAll(mergedSegments)) {
       isToBeLoadedAgain = false

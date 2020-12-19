@@ -522,9 +522,11 @@ public class SortParameters implements Serializable {
           columnIdxMap.get("noDictSortIdxBasedOnSchemaInRow"));
       parameters.setDictSortColIdxSchemaOrderMapping(
           columnIdxMap.get("dictSortIdxBasedOnSchemaInRow"));
+      parameters.setNoDictSchemaDataType(CarbonDataProcessorUtil
+          .getNoDictDataTypesAsDataFieldOrder(configuration.getDataFields()));
       parameters.setMeasureDataType(configuration.getMeasureDataTypeAsDataFieldOrder());
       parameters.setNoDictDataType(CarbonDataProcessorUtil
-          .getNoDictDataTypesAsDataFieldOrder(configuration.getDataFields()));
+          .getNoDictSortDataTypesAsDataFieldOrder(configuration.getDataFields()));
       Map<String, DataType[]> noDictSortAndNoSortDataTypes = CarbonDataProcessorUtil
           .getNoDictSortAndNoSortDataTypesAsDataFieldOrder(configuration.getDataFields());
       parameters.setNoDictSortDataType(noDictSortAndNoSortDataTypes.get("noDictSortDataTypes"));

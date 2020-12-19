@@ -31,12 +31,7 @@ class MVManagerInSpark(session: SparkSession) extends MVManager {
   override def getDatabases: util.List[String] = {
     CarbonThreadUtil.threadSet(CarbonCommonConstants.CARBON_ENABLE_MV, "true")
     try {
-      val databaseList = session.catalog.listDatabases()
-      val databaseNameList = new util.ArrayList[String]()
-      for (database <- databaseList.collect()) {
-        databaseNameList.add(database.name)
-      }
-      databaseNameList
+      session.sessionState.catalog.listDatabases().asJava
     } finally {
       CarbonThreadUtil.threadUnset(CarbonCommonConstants.CARBON_ENABLE_MV)
     }
