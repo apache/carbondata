@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.view
 
+import java.util
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.collection.JavaConverters._
@@ -67,8 +68,8 @@ case class MVCatalogInSpark(session: SparkSession)
     }
   }
 
-  override def getValidSchemas: Array[MVSchemaWrapper] = {
-    val enabledStatusDetails = viewManager.getEnabledStatusDetails.asScala
+  override def getValidSchemas(databases: util.List[String]): Array[MVSchemaWrapper] = {
+    val enabledStatusDetails = viewManager.getEnabledStatusDetails(databases).asScala
     // Only select the enabled mvs for the query.
     val enabledSchemas = viewSchemas.filter {
       enabledSchema =>

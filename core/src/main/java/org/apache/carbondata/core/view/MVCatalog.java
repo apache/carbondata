@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.view;
 
+import java.util.List;
+
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 
 /**
@@ -27,9 +29,9 @@ import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 public interface MVCatalog<T> {
 
   /**
-   * List all registered valid schema catalogs
+   * List list databases valid schema catalogs
    */
-  T[] getValidSchemas();
+  T[] getValidSchemas(List<String> databases);
 
   /**
    * Register schema to the catalog.

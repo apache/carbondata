@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.optimizer
 
+import java.util
+
 import scala.collection.JavaConverters._
 
 import org.apache.log4j.Logger
@@ -179,7 +181,11 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
         case relation: LogicalRelation if relation.catalogTable.isDefined => relation.catalogTable
         case relation: HiveTableRelation => Option(relation.tableMeta)
       }
-      val validSchemas = catalog.getValidSchemas()
+      val databasesList = new util.ArrayList[String]()
+      catalogs.foreach (carbonTable => {
+        databasesList.add(carbonTable.get.database)
+      })
+      val validSchemas = catalog.getValidSchemas(databasesList)
       catalogs.nonEmpty &&
       !isRewritten(validSchemas, catalogs) &&
       !isRelatedTableSegmentsSetAsInput(catalogs) &&
