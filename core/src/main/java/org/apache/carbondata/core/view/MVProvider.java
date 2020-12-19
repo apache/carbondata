@@ -27,6 +27,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -246,7 +248,7 @@ public class MVProvider {
         LOG.info("Materialized view status lock has been successfully acquired.");
         if (status == MVStatus.ENABLED) {
           // Enable mv only if mv tables and main table are in sync
-          if (!isViewCanBeEnabled(schemaList.get(0))) {
+          if (!isViewCanBeEnabled(schemaList.get(0), false)) {
             return;
           }
         }
@@ -336,10 +338,12 @@ public class MVProvider {
    * @return flag to enable or disable mv
    * @throws IOException
    */
-  private static boolean isViewCanBeEnabled(MVSchema schema)
+  public boolean isViewCanBeEnabled(MVSchema schema, boolean ignoreDeferredCheck)
       throws IOException {
-    if (!schema.isRefreshIncremental()) {
-      return true;
+    if (!ignoreDeferredCheck) {
+      if (!schema.isRefreshIncremental()) {
+        return true;
+      }
     }
     boolean isViewCanBeEnabled = true;
     String viewMetadataPath =
@@ -364,17 +368,33 @@ public class MVProvider {
     }
     List<RelationIdentifier> relatedTables = schema.getRelatedTables();
     for (RelationIdentifier relatedTable : relatedTables) {
+      SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
+          SegmentStatusManager.getValidAndInvalidSegmentsInfo(relatedTable);
       List<String> relatedTableSegmentList =
-          SegmentStatusManager.getValidSegmentList(relatedTable);
+          SegmentStatusManager.getValidSegmentList(validAndInvalidSegmentsInfo);
       if (!relatedTableSegmentList.isEmpty()) {
         if (viewSegmentMap.isEmpty()) {
           isViewCanBeEnabled = false;
         } else {
-          isViewCanBeEnabled = viewSegmentMap.get(
-              relatedTable.getDatabaseName() + CarbonCommonConstants.POINT +
-                  relatedTable.getTableName()).containsAll(relatedTableSegmentList);
+          String tableUniqueName =
+              relatedTable.getDatabaseName() + CarbonCommonConstants.POINT + relatedTable
+                  .getTableName();
+          isViewCanBeEnabled =
+              viewSegmentMap.get(tableUniqueName).containsAll(relatedTableSegmentList);
+          if (!isViewCanBeEnabled) {
+            // in case if main table is compacted and mv table mapping is not updated,
+            // check from merged Load Mapping
+            isViewCanBeEnabled = viewSegmentMap.get(tableUniqueName).containsAll(
+                relatedTableSegmentList.stream()
+                    .map(validAndInvalidSegmentsInfo.getMergedLoadMapping()::get)
+                    .flatMap(Collection::stream).collect(Collectors.toList()));
+          }
         }
       }
+    }
+    if (!isViewCanBeEnabled) {
+      LOG.error("MV `" + schema.getIdentifier().getTableName()
+          + "` is not in Sync with its related tables. Refresh MV to sync it.");
     }
     return isViewCanBeEnabled;
   }

@@ -82,6 +82,10 @@ case class MVCatalogInSpark(session: SparkSession)
     enabledSchemas.toArray
   }
 
+  def isMVInSync(mvSchema: MVSchema): Boolean = {
+    viewManager.isMVInSyncWithParentTables(mvSchema)
+  }
+
   /**
    * Registers the data produced by the logical representation of the given [[DataFrame]]. Unlike
    * `RDD.cache()`, the default storage level is set to be `MEMORY_AND_DISK` because recomputing

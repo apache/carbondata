@@ -75,6 +75,10 @@ public abstract class MVManager {
     return false;
   }
 
+  public boolean isMVInSyncWithParentTables(MVSchema mvSchema) throws IOException {
+    return schemaProvider.isViewCanBeEnabled(mvSchema, true);
+  }
+
   /**
    * It gives all mv schemas of a given table.
    * For show mv command.
@@ -114,7 +118,16 @@ public abstract class MVManager {
   public List<MVSchema> getSchemas() throws IOException {
     List<MVSchema> schemas = new ArrayList<>();
     for (String database : this.getDatabases()) {
-      schemas.addAll(this.getSchemas(database));
+      try {
+        schemas.addAll(this.getSchemas(database));
+      } catch (IOException ex) {
+        throw ex;
+      } catch (Exception ex) {
+        LOGGER.error("Exception Occurred: Skipping MV schemas from database: " + database);
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug(ex.getMessage());
+        }
+      }
     }
     return schemas;
   }
@@ -234,7 +247,16 @@ public abstract class MVManager {
   public List<MVStatusDetail> getEnabledStatusDetails() throws IOException {
     List<MVStatusDetail> statusDetails = new ArrayList<>();
     for (String database : this.getDatabases()) {
-      statusDetails.addAll(this.getEnabledStatusDetails(database));
+      try {
+        statusDetails.addAll(this.getEnabledStatusDetails(database));
+      } catch (IOException ex) {
+        throw ex;
+      } catch (Exception ex) {
+        LOGGER.error("Exception Occurred: Skipping MV schemas from database: " + database);
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug(ex.getMessage());
+        }
+      }
     }
     return statusDetails;
   }

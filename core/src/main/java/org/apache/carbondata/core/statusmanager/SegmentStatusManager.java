@@ -142,6 +142,7 @@ public class SegmentStatusManager {
     List<Segment> listOfInvalidSegments = new ArrayList<>(10);
     List<Segment> listOfStreamSegments = new ArrayList<>(10);
     List<Segment> listOfInProgressSegments = new ArrayList<>(10);
+    Map<String, List<String>> mergedLoadMapping = new HashMap<>();
 
     try {
       if (loadMetadataDetails == null) {
@@ -204,6 +205,20 @@ public class SegmentStatusManager {
             || SegmentStatus.COMPACTED == segment.getSegmentStatus()
             || SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {
           listOfInvalidSegments.add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+          if (SegmentStatus.COMPACTED == segment.getSegmentStatus()) {
+            // After main table compaction, segment mapping of child tables may not be updated.
+            // In order to check if main table and child table are in sync after compaction,
+            // check the main table's merged segment's map. ex: {0.1 -> 0,1,2,3}
+            if (null != segment.getMergedLoadName()) {
+              if (mergedLoadMapping.containsKey(segment.getMergedLoadName())) {
+                mergedLoadMapping.get(segment.getMergedLoadName()).add(segment.getLoadName());
+              } else {
+                List<String> mergedLoads = new ArrayList<>();
+                mergedLoads.add(segment.getLoadName());
+                mergedLoadMapping.put(segment.getMergedLoadName(), mergedLoads);
+              }
+            }
+          }
         } else if (SegmentStatus.INSERT_IN_PROGRESS == segment.getSegmentStatus() ||
             SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == segment.getSegmentStatus()) {
           listOfInProgressSegments.add(
@@ -215,7 +230,7 @@ public class SegmentStatusManager {
       throw e;
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
-        listOfInvalidSegments, listOfStreamSegments, listOfInProgressSegments);
+        listOfInvalidSegments, listOfStreamSegments, listOfInProgressSegments, mergedLoadMapping);
   }
 
   /**
@@ -235,21 +250,28 @@ public class SegmentStatusManager {
   }
 
   /**
-   * Returns valid segment list for a given RelationIdentifier
-   *
-   * @param relationIdentifier get list of segments for relation identifier
-   * @return list of valid segment id's
+   * Returns valid segment list from validAndInvalidSegmentsInfo
    */
-  public static List<String> getValidSegmentList(RelationIdentifier relationIdentifier)
-      throws IOException {
+  public static List<String> getValidSegmentList(
+      ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo) {
     List<String> segmentList = new ArrayList<>();
-    List<Segment> validSegments = new SegmentStatusManager(AbsoluteTableIdentifier
-        .from(relationIdentifier.getTablePath(), relationIdentifier.getDatabaseName(),
-            relationIdentifier.getTableName())).getValidAndInvalidSegments().getValidSegments();
-    for (Segment segment : validSegments) {
+    for (Segment segment : validAndInvalidSegmentsInfo.getValidSegments()) {
       segmentList.add(segment.getSegmentNo());
     }
     return segmentList;
+  }
+
+  /**
+   * Returns ValidAndInvalidSegmentsInfo for a given RelationIdentifier
+   *
+   * @param relationIdentifier get list of segments for relation identifier
+   * @return validAndInvalidSegmentsInfo
+   */
+  public static ValidAndInvalidSegmentsInfo getValidAndInvalidSegmentsInfo(
+      RelationIdentifier relationIdentifier) throws IOException {
+    return new SegmentStatusManager(AbsoluteTableIdentifier
+        .from(relationIdentifier.getTablePath(), relationIdentifier.getDatabaseName(),
+            relationIdentifier.getTableName())).getValidAndInvalidSegments();
   }
 
   /**
@@ -845,15 +867,18 @@ public class SegmentStatusManager {
     private final List<Segment> listOfInvalidSegments;
     private final List<Segment> listOfStreamSegments;
     private final List<Segment> listOfInProgressSegments;
+    Map<String, List<String>> mergedLoadMapping;
 
     private ValidAndInvalidSegmentsInfo(List<Segment> listOfValidSegments,
         List<Segment> listOfValidUpdatedSegments, List<Segment> listOfInvalidUpdatedSegments,
-        List<Segment> listOfStreamSegments, List<Segment> listOfInProgressSegments) {
+        List<Segment> listOfStreamSegments, List<Segment> listOfInProgressSegments,
+        Map<String, List<String>> mergedLoadMapping) {
       this.listOfValidSegments = listOfValidSegments;
       this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
       this.listOfInvalidSegments = listOfInvalidUpdatedSegments;
       this.listOfStreamSegments = listOfStreamSegments;
       this.listOfInProgressSegments = listOfInProgressSegments;
+      this.mergedLoadMapping = mergedLoadMapping;
     }
 
     public List<Segment> getInvalidSegments() {
@@ -870,6 +895,10 @@ public class SegmentStatusManager {
 
     public List<Segment> getListOfInProgressSegments() {
       return listOfInProgressSegments;
+    }
+
+    public Map<String, List<String>> getMergedLoadMapping() {
+      return mergedLoadMapping;
     }
   }
 

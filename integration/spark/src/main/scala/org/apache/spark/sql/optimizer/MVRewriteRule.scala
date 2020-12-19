@@ -42,6 +42,10 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def apply(logicalPlan: LogicalPlan): LogicalPlan = {
+    // check if query needs to be rewritten with mv
+    if (!CarbonProperties.getInstance().isMVEnabled) {
+      return logicalPlan
+    }
     // only query need to check this rule
     logicalPlan match {
       case _: Command => return logicalPlan
@@ -99,9 +103,6 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
         localRelation
     }
     if (!canApply) {
-      return logicalPlan
-    }
-    if (!CarbonProperties.getInstance().isMVEnabled) {
       return logicalPlan
     }
     val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
@@ -173,17 +174,17 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
    * Whether the plan is valid for doing modular plan matching and mv replacing.
    */
   private def hasSuitableMV(logicalPlan: LogicalPlan,
-      catalog: MVCatalogInSpark): Boolean = {
+      mvCatalog: MVCatalogInSpark): Boolean = {
     if (!logicalPlan.isInstanceOf[Command] && !logicalPlan.isInstanceOf[DeserializeToObject]) {
-      val catalogs = logicalPlan collect {
+      val catalogTables = logicalPlan collect {
         case relation: LogicalRelation if relation.catalogTable.isDefined => relation.catalogTable
         case relation: HiveTableRelation => Option(relation.tableMeta)
       }
-      val validSchemas = catalog.getValidSchemas()
-      catalogs.nonEmpty &&
-      !isRewritten(validSchemas, catalogs) &&
-      !isRelatedTableSegmentsSetAsInput(catalogs) &&
-      isRelated(validSchemas, catalogs)
+      val validSchemas = mvCatalog.getValidSchemas()
+      catalogTables.nonEmpty &&
+      !isRewritten(validSchemas, catalogTables) &&
+      !isRelatedTableSegmentsSetAsInput(catalogTables) &&
+      isRelatedAndSyncWithParentTables(mvCatalog, validSchemas, catalogTables)
     } else {
       false
     }
@@ -215,8 +216,9 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
    *
    * @return
    */
-  private def isRelated(mvSchemas: Array[MVSchemaWrapper],
-                        tables: Seq[Option[CatalogTable]]): Boolean = {
+  private def isRelatedAndSyncWithParentTables(catalog: MVCatalogInSpark,
+      mvSchemas: Array[MVSchemaWrapper],
+      tables: Seq[Option[CatalogTable]]): Boolean = {
     tables.exists {
       table =>
         mvSchemas.exists {
@@ -225,7 +227,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
             mvIdentifier =>
               mvIdentifier.getTableName.equals(table.get.identifier.table) &&
               mvIdentifier.getDatabaseName.equals(table.get.database)
-          }
+          } && catalog.isMVInSync(mvSchema.viewSchema)
         }
     }
   }
