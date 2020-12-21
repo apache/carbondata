@@ -396,12 +396,28 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * get visible no dictionary dimensions as per data field order
+   * Get visible no dictionary sort dimensions as per data field order
+   */
+  public static DataType[] getNoDictDataTypesAsDataFieldOrder(DataField[] dataFields) {
+    List<DataType> type = new ArrayList<>();
+    for (DataField dataField : dataFields) {
+      if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
+        if (!dataField.getColumn().hasEncoding(Encoding.DICTIONARY)
+            && dataField.getColumn().getColumnSchema().getDataType() != DataTypes.DATE) {
+          type.add(dataField.getColumn().getColumnSchema().getDataType());
+        }
+      }
+    }
+    return type.toArray(new DataType[type.size()]);
+  }
+
+  /**
+   * get visible no dictionary sort dimensions as per data field order
    *
    * @param dataFields
    * @return
    */
-  public static DataType[] getNoDictDataTypesAsDataFieldOrder(DataField[] dataFields) {
+  public static DataType[] getNoDictSortDataTypesAsDataFieldOrder(DataField[] dataFields) {
     List<DataType> type = new ArrayList<>();
     for (DataField dataField : dataFields) {
       if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
