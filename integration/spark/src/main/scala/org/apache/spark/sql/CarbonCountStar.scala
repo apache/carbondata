@@ -63,7 +63,7 @@ case class CarbonCountStar(
           sparkSession,
           TableIdentifier(
             carbonTable.getTableName,
-            Some(carbonTable.getDatabaseName))).map(_.asJava).orNull, false),
+            Some(carbonTable.getDatabaseName))).map(_.toList.asJava).orNull, false),
       carbonTable)
 
     if (CarbonProperties.isQueryStageInputEnabled) {

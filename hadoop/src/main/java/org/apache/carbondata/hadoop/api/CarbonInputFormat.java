@@ -404,6 +404,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       return indexJob.executeCountJob(indexInputFormat, configuration);
     } catch (Exception e) {
+      if (CarbonProperties.getInstance().isFallBackDisabled()) {
+        LOG.error("Fallback is disabled");
+        throw e;
+      }
       LOG.error("Failed to get count from index server. Initializing fallback", e);
       IndexJob indexJob = IndexUtil.getEmbeddedJob();
       return indexJob.executeCountJob(indexInputFormat, configuration);
