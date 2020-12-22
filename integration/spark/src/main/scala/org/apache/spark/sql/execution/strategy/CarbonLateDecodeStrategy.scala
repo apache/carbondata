@@ -120,7 +120,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       case CountStarPlan(colAttr, PhysicalOperation(projectList, predicates, l: LogicalRelation))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-        CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
+        CarbonCountStar(colAttr, l, relation.carbonTable,
+          SparkSession.getActiveSession.get, predicates) :: Nil
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
       left, right)
         if isCarbonPlan(left) && CarbonIndexUtil.checkIsIndexTable(right) =>
@@ -287,6 +288,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val segmentUpdateStatusManager = new SegmentUpdateStatusManager(
       relation.carbonRelation.carbonTable)
+    // IUD table not use count start logic
+    if (segmentUpdateStatusManager.getUpdateStatusDetails.length > 0) {
+      return false
+    }
     val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
     val hasNonCarbonSegment =
       segmentUpdateStatusManager.getLoadMetadataDetails.exists(!_.isCarbonFormat)
@@ -309,36 +314,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       filterPredicates: Seq[Expression],
       scanBuilder: (Seq[Attribute], Array[Filter], Seq[PartitionSpec]) => RDD[InternalRow])
   : CodegenSupport = {
-    val names = relation.catalogTable match {
-      case Some(table) => table.partitionColumnNames
-      case _ => Seq.empty
-    }
-    // Get the current partitions from table.
-    var partitions: Seq[PartitionSpec] = null
-    if (names.nonEmpty) {
-      val partitionSet = AttributeSet(names
-        .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
-      val partitionKeyFilters = CarbonToSparkAdapter
-        .getPartitionKeyFilter(partitionSet, filterPredicates)
-      // Update the name with lower case as it is case sensitive while getting partition info.
-      val updatedPartitionFilters = partitionKeyFilters.map { exp =>
-        exp.transform {
-          case attr: AttributeReference =>
-            CarbonToSparkAdapter.createAttributeReference(
-              attr.name.toLowerCase,
-              attr.dataType,
-              attr.nullable,
-              attr.metadata,
-              attr.exprId,
-              attr.qualifier)
-        }
-      }
-      partitions =
-        CarbonFilters.getPartitions(
-          updatedPartitionFilters.toSeq,
-          SparkSession.getActiveSession.get,
-          relation.catalogTable.get.identifier).orNull
-    }
+    val partitions = CarbonFilters.getPrunedPartitions(relation, filterPredicates)
     pruneFilterProjectRaw(
       relation,
       projects,

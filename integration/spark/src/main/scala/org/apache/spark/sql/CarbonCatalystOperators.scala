@@ -22,8 +22,9 @@ import scala.collection.mutable
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Count}
+import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
   def isEmpty: Boolean = attributes.isEmpty
@@ -136,7 +137,7 @@ object CountStarPlan {
   }
 
   /**
-   * check if child
+   * check if child has no filter or just has pure partition prune
    */
   def strictCountStar(groupingExpressions: Seq[Expression],
       partialComputation: Seq[NamedExpression],
@@ -151,8 +152,32 @@ object CountStarPlan {
       return false
     }
     child collect {
-      case cd: Filter => return false
+      case filter: Filter => if (filterWithOnlyPartitionCols(child)) return true else return false
     }
     true
   }
+
+  def filterWithOnlyPartitionCols(child: LogicalPlan): Boolean = {
+    child match {
+      case PhysicalOperation(projectList, predicates, l: LogicalRelation) =>
+        if (l.catalogTable.isDefined) {
+          val partitionColumnNames = l.catalogTable.get.partitionColumnNames.toSet
+          if (partitionColumnNames.size == 0) {
+            return false
+          }
+          val nonPartitionPruningPredicates = predicates.filterNot {
+            _.references.map(_.name).toSet.subsetOf(partitionColumnNames)
+          }
+          if (nonPartitionPruningPredicates.nonEmpty) {
+            false
+          } else {
+            true
+          }
+        } else {
+          false
+        }
+      case _ => false
+    }
+  }
+
 }

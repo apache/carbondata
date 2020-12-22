@@ -27,6 +27,7 @@ import org.apache.spark.sql.{CarbonContainsWith, CarbonEndsWith, _}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonSessionCatalogUtil}
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types._
@@ -519,6 +520,41 @@ object CarbonFilters {
   private def checkIfRightIsASubsetOfLeft(left: Filter, right: Filter): Boolean = {
     left.references.toSeq == right.references.toSeq ||
     right.references.diff(left.references).length == 0
+  }
+
+  def getPrunedPartitions(relation: LogicalRelation,
+                          filterPredicates: Seq[Expression]): Seq[PartitionSpec] = {
+    val names = relation.catalogTable match {
+      case Some(table) => table.partitionColumnNames
+      case _ => Seq.empty
+    }
+    // Get the current partitions from table.
+    var partitions: Seq[PartitionSpec] = null
+    if (names.nonEmpty) {
+      val partitionSet = AttributeSet(names
+        .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
+      val partitionKeyFilters = CarbonToSparkAdapter
+        .getPartitionKeyFilter(partitionSet, filterPredicates)
+      // Update the name with lower case as it is case sensitive while getting partition info.
+      val updatedPartitionFilters = partitionKeyFilters.map { exp =>
+        exp.transform {
+          case attr: AttributeReference =>
+            CarbonToSparkAdapter.createAttributeReference(
+              attr.name.toLowerCase,
+              attr.dataType,
+              attr.nullable,
+              attr.metadata,
+              attr.exprId,
+              attr.qualifier)
+        }
+      }
+      partitions =
+        CarbonFilters.getPartitions(
+          updatedPartitionFilters.toSeq,
+          SparkSession.getActiveSession.get,
+          relation.catalogTable.get.identifier).orNull
+    }
+    partitions
   }
 
   /**

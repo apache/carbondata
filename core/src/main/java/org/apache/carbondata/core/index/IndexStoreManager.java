@@ -70,7 +70,13 @@ public final class IndexStoreManager {
   private Map<String, List<TableIndex>> allIndexes = new ConcurrentHashMap<>();
 
   /**
-   * Contains the table name to the table path mapping.
+   * Contains the list of segment index meta for each table.
+   */
+  private final Map<String, Map<String, SegmentIndexMeta>> segmentIndexes =
+          new ConcurrentHashMap<>();
+
+  /**
+   * Contains the table name to the tablepath mapping.
    */
   private Map<String, String> tablePathMap = new ConcurrentHashMap<>();
 
@@ -81,6 +87,19 @@ public final class IndexStoreManager {
 
   private IndexStoreManager() {
 
+  }
+
+  /**
+   * It gives all segment indexes, a map contains segment file name to SegmentIndexMeta.
+   *
+   * @return
+   */
+  public Map<String, SegmentIndexMeta> getAllSegmentIndexes(String tableId) {
+    if (segmentIndexes.get(tableId) == null) {
+      Map<String, SegmentIndexMeta> segmentIndexMetaMap = new ConcurrentHashMap<>();
+      segmentIndexes.put(tableId, segmentIndexMetaMap);
+    }
+    return segmentIndexes.get(tableId);
   }
 
   /**
