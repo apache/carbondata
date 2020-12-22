@@ -19,6 +19,7 @@ package org.apache.spark.sql
 
 import java.util.concurrent.ConcurrentHashMap
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.config.ConfigEntry
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
@@ -378,14 +379,15 @@ object CarbonEnv {
       isExternal: Boolean,
       isTransactionalTable: Boolean
   )(sparkSession: SparkSession): String = {
-    val path = location.getOrElse(
+    var tmpPath = location.getOrElse(
       CarbonEnv.newTablePath(databaseNameOp, tableName)(sparkSession))
     if (!isExternal && isTransactionalTable && location.isEmpty &&
-        (FileFactory.getCarbonFile(path).exists() || EnvHelper.isLegacy(sparkSession))) {
-      path + "_" + tableId
-    } else {
-      path
+        (FileFactory.getCarbonFile(tmpPath).exists() || EnvHelper.isLegacy(sparkSession))) {
+      tmpPath = tmpPath + "_" + tableId
     }
+    val path = new Path(tmpPath)
+    val fs = path.getFileSystem(sparkSession.sparkContext.hadoopConfiguration)
+    fs.makeQualified(path).toString
   }
 
   def getIdentifier(
