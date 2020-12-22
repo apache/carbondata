@@ -240,6 +240,29 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
+  test("test querying data after adding new column and performing IUD") {
+    sql("drop table if exists altertable")
+    sql(
+      """
+        | CREATE TABLE altertable (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE altertable OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(s"delete from altertable where empno = 13").collect()
+    sql(s"delete from altertable where empno = 14").collect()
+    val ans = sql("SELECT empno FROM altertable").collect()
+    sql(
+      "ALTER TABLE altertable ADD COLUMNS(newField STRING) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='def')")
+    checkAnswer(sql("SELECT empno FROM altertable"), ans)
+    sql("DROP TABLE altertable")
+  }
+
   test("test to check if exception is thrown with wrong char syntax") {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     try {
