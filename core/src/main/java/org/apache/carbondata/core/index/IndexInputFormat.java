@@ -154,8 +154,12 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
         if (indexLevel == null) {
           TableIndex defaultIndex = IndexStoreManager.getInstance()
               .getIndex(table, distributable.getDistributable().getIndexSchema());
-          blocklets = defaultIndex
-              .prune(segmentsToLoad, new IndexFilter(filterResolverIntf), partitions);
+          IndexFilter filter = new IndexFilter(filterResolverIntf);
+          filter.setTable(table);
+          if (filterResolverIntf != null) {
+            filter.setExpression(filterResolverIntf.getFilterExpression());
+          }
+          blocklets = defaultIndex.prune(segmentsToLoad, filter, partitions);
           blocklets = IndexUtil
               .pruneIndexes(table, filterResolverIntf, segmentsToLoad, partitions, blocklets,
                   indexChooser);

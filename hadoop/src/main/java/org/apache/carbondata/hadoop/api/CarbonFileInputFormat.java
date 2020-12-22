@@ -20,21 +20,17 @@ package org.apache.carbondata.hadoop.api;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.index.Segment;
@@ -265,11 +261,18 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   }
 
   private List<String> getAllDeleteDeltaFiles(String path) {
-    List<String> deltaFiles = null;
-    try (Stream<Path> walk = Files.walk(Paths.get(path))) {
-      deltaFiles = walk.map(x -> x.toString())
-          .filter(f -> f.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
-          .collect(Collectors.toList());
+    List<String> deltaFiles = new ArrayList<>();
+    try {
+      FileFactory.getCarbonFile(path).listFiles(true, new CarbonFileFilter() {
+        @Override
+        public boolean accept(CarbonFile file) {
+          if (file.getName().endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)) {
+            deltaFiles.add(file.getAbsolutePath());
+            return true;
+          }
+          return false;
+        }
+      });
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
