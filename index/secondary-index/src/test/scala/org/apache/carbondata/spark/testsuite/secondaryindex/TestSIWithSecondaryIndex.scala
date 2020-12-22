@@ -466,6 +466,19 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintable")
   }
 
+  test("test SI on fact table with columnDrift enabled") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c int,d int) STORED AS carbondata ")
+    sql("insert into maintable values('k','d',2,3)")
+    sql("alter table maintable set tblproperties('sort_columns'='c,d','sort_scope'='local_sort')")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    sql("insert into maintable values('k','x',2,4)")
+    val dataFrame = sql("select * from maintable where b='x'")
+    checkAnswer(dataFrame, Seq(Row("k", "x", 2, 4)))
+    TestSecondaryIndexUtils.isFilterPushedDownToSI(dataFrame.queryExecution.sparkPlan)
+    sql("drop table if exists maintable")
+  }
+
   override def afterAll {
     dropIndexAndTable()
   }
