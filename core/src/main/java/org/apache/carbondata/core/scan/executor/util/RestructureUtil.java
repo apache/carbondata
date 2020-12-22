@@ -67,7 +67,7 @@ public class RestructureUtil {
   public static List<ProjectionDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
       BlockExecutionInfo blockExecutionInfo, ProjectionDimension[] queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension,
-      int measureCount, boolean isTransactionalTable) {
+      int measureCount, boolean isTransactionalTable, QueryModel queryModel) {
     List<ProjectionDimension> presentDimension =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     boolean[] isDimensionExists = new boolean[queryDimensions.length];
@@ -133,6 +133,7 @@ public class RestructureUtil {
         if (!isDimensionExists[dimIndex]) {
           defaultValues[dimIndex] = validateAndGetDefaultValue(queryDimension.getDimension());
           blockExecutionInfo.setRestructuredBlock(true);
+          queryModel.setDirectVectorFill(false);
           // set the flag to say whether a new dictionary column or no dictionary column
           // has been added. This will be useful after restructure for compaction scenarios where
           // newly added columns data need to be filled
@@ -401,7 +402,8 @@ public class RestructureUtil {
    */
   public static List<ProjectionMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
       BlockExecutionInfo blockExecutionInfo, ProjectionMeasure[] queryMeasures,
-      List<CarbonMeasure> currentBlockMeasures, boolean isTransactionalTable) {
+      List<CarbonMeasure> currentBlockMeasures, boolean isTransactionalTable,
+      QueryModel queryModel) {
     MeasureInfo measureInfo = new MeasureInfo();
     List<ProjectionMeasure> presentMeasure = new ArrayList<>(queryMeasures.length);
     int numberOfMeasureInQuery = queryMeasures.length;
@@ -435,6 +437,7 @@ public class RestructureUtil {
             queryMeasure.getMeasure().getDefaultValue());
         measureDataTypes[index] = queryMeasure.getMeasure().getDataType();
         blockExecutionInfo.setRestructuredBlock(true);
+        queryModel.setDirectVectorFill(false);
       }
       index++;
     }

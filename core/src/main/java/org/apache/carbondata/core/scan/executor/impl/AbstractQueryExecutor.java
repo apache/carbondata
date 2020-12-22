@@ -445,7 +445,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             blockExecutionInfo.getActualQueryDimensions(), segmentProperties.getDimensions(),
             segmentProperties.getComplexDimensions(),
             blockExecutionInfo.getActualQueryMeasures().length,
-            queryModel.getTable().getTableInfo().isTransactionalTable());
+            queryModel.getTable().getTableInfo().isTransactionalTable(), queryModel);
     boolean isStandardTable = CarbonUtil.isStandardCarbonTable(queryModel.getTable());
     String blockId = CarbonUtil
         .getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segment.getSegmentNo(),
@@ -461,7 +461,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<ProjectionMeasure> projectionMeasures = RestructureUtil
         .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
             blockExecutionInfo.getActualQueryMeasures(), segmentProperties.getMeasures(),
-            queryModel.getTable().getTableInfo().isTransactionalTable());
+            queryModel.getTable().getTableInfo().isTransactionalTable(), queryModel);
     blockExecutionInfo.setProjectionMeasures(
         projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
     blockExecutionInfo.setDataBlock(blockIndex);

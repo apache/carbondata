@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -31,6 +32,7 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
+import org.apache.carbondata.core.scan.model.QueryModel;
 
 import org.junit.Test;
 
@@ -93,7 +95,8 @@ public class RestructureUtilTest {
     List<ProjectionDimension> result = null;
     result = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo, queryDimensions,
-            tableBlockDimensions, tableComplexDimensions, queryMeasures.size(), true);
+            tableBlockDimensions, tableComplexDimensions, queryMeasures.size(), true,
+            QueryModel.newInstance(new CarbonTable()));
     List<CarbonDimension> resultDimension = new ArrayList<>(result.size());
     for (ProjectionDimension queryDimension : result) {
       resultDimension.add(queryDimension.getDimension());
@@ -129,7 +132,8 @@ public class RestructureUtilTest {
         new ProjectionMeasure[] { queryMeasure1, queryMeasure2, queryMeasure3 };
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     RestructureUtil.createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
-        queryMeasures, currentBlockMeasures, true);
+        queryMeasures, currentBlockMeasures, true,
+        QueryModel.newInstance(new CarbonTable()));
     MeasureInfo measureInfo = blockExecutionInfo.getMeasureInfo();
     boolean[] measuresExist = { true, true, false };
     assertThat(measureInfo.getMeasureExists(), is(equalTo(measuresExist)));
