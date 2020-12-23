@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import mockit.{Mock, MockUp}
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
@@ -24,6 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.locks.AbstractCarbonLock
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -543,6 +545,18 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintable2")
   }
 
+  test("test si with limit with index on all filter column") {
+    createAndInsertDataIntoTable()
+    sql("create index m_indextable on table maintable2(b) AS 'carbondata'")
+    checkAnswer(sql("select * from maintable2 where b='x' limit 1"), Seq(Row("k", "x", 2)))
+    checkAnswer(sql("select a, c from maintable2 where b='x' limit 1"), Seq(Row("k", 2)))
+    sql("insert into maintable2 values('ab','cd',20)")
+    sql("delete from maintable2 where b='x'")
+    checkAnswer(sql("select * from maintable2 where b='cd' limit 1"), Seq(Row("ab", "cd", 20)))
+    checkAnswer(sql("select a, c from maintable2 where b='cd' limit 1"), Seq(Row("ab", 20)))
+    sql("drop table if exists maintable2")
+  }
+
   test("test SI with add column and filter on default value") {
     createAndInsertDataIntoTable()
     sql("alter table maintable2 add columns (stringfield string) " +
@@ -575,6 +589,68 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     }
     mock.tearDown()
     assert(ex.getMessage.contains("Problem loading data while creating secondary index:"))
+  }
+
+  test("test SI with carbon.use.local.dir as false") {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR, "false")
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c string) STORED AS carbondata ")
+    sql("create index m_indextable on table maintable2(b) AS 'carbondata'")
+    sql("insert into maintable2 values('ab','cd','ef')")
+    checkAnswer(sql("select * from maintable2 where b='cd'"), Row("ab", "cd", "ef"))
+    sql("drop table if exists maintable2")
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR,
+          CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR_DEFAULT)
+  }
+
+  test("test SI when segment lock fail") {
+    sql("drop table if exists maintable2")
+    sql("create table maintable2 (a string,b string,c string) STORED AS carbondata ")
+    sql("insert into maintable2 values('ab','cd','ef')")
+    val mock: MockUp[AbstractCarbonLock] = new MockUp[AbstractCarbonLock]() {
+      @Mock
+      def lockWithRetries(retries: Int, retryInterval: Int): Boolean = {
+        if (retries == 1 && retryInterval == 0) {
+          false
+        } else {
+          true
+        }
+      }
+    }
+    sql("create index m_indextable on table maintable2(b,c) AS 'carbondata'")
+    mock.tearDown()
+    checkExistence(sql("show indexes on table maintable2"),
+      true, "m_indextable", "disabled")
+    sql("drop table if exists maintable2")
+  }
+
+  test("test SI creation with different value of si creation thread") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c string) STORED AS carbondata ")
+    sql("insert into maintable values ('aa', 'bb', 'cc')")
+    // number of threads are more than max value
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_SECONDARY_INDEX_CREATION_THREADS, "51")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    checkAnswer(sql("select * from maintable where b='bb'"), Row("aa", "bb", "cc"))
+    sql("drop index if exists indextable on maintable")
+
+    // number of threads are less than default value
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_SECONDARY_INDEX_CREATION_THREADS, "0")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    checkAnswer(sql("select * from maintable where b='bb'"), Row("aa", "bb", "cc"))
+    sql("drop index if exists indextable on maintable")
+
+    // invalid number for number of threads
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_SECONDARY_INDEX_CREATION_THREADS, "invalid")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    checkAnswer(sql("select * from maintable where b='bb'"), Row("aa", "bb", "cc"))
+    sql("drop index if exists indextable on maintable")
+    sql("drop table if exists maintable")
   }
 
   def createAndInsertDataIntoTable(): Unit = {

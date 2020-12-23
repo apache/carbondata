@@ -16,16 +16,22 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.spark.sql.{CarbonEnv, Row}
+import com.google.gson.Gson
+import mockit.{Mock, MockUp}
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.SparkTestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.events.OperationContext
+import org.apache.carbondata.indexserver.DistributedRDDUtils
 
 /**
  * test cases for testing creation of index table with load and compaction
@@ -275,6 +281,8 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
   }
 
   test("test custom compaction on main table which have SI tables") {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     sql("drop table if exists table1")
     sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
     sql("create index idx1 on table table1(c3) as 'carbondata'")
@@ -283,11 +291,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     }
     sql("ALTER TABLE table1 COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (1,2,3)")
 
-    val segments = sql("SHOW SEGMENTS FOR TABLE idx1")
-    val segInfos = segments.collect().map { each =>
-      ((each.toSeq) (0).toString, (each.toSeq) (1).toString)
-    }
-    assert(segInfos.length == 6)
+    val segInfos = checkSegmentList(6)
     assert(segInfos.contains(("0", "Success")))
     assert(segInfos.contains(("1", "Compacted")))
     assert(segInfos.contains(("2", "Compacted")))
@@ -295,7 +299,27 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     assert(segInfos.contains(("1.1", "Success")))
     assert(segInfos.contains(("4", "Success")))
     checkAnswer(sql("select * from table1 where c3='b2'"), Seq(Row(3, "a2", "b2")))
-    sql("drop table if exists table1")
+
+    // after clean files
+    val mock = mockreadSegmentList()
+    sql("CLEAN FILES FOR TABLE table1 options('force'='true')")
+    mock.tearDown()
+    val details = SegmentStatusManager.readLoadMetadata(CarbonEnv
+        .getCarbonTable(Some("default"), "idx1")(sqlContext.sparkSession).getMetadataPath)
+    assert(SegmentStatusManager.countInvisibleSegments(details, 4) == 1)
+    checkSegmentList(4)
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+          CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+  }
+
+  def checkSegmentList(segmentSie: Int): Array[(String, String)] = {
+    val segments = sql("SHOW SEGMENTS FOR TABLE idx1")
+    val segInfos = segments.collect().map { each =>
+      (each.toSeq.head.toString, each.toSeq (1).toString)
+    }
+    assert(segInfos.length == segmentSie)
+    segInfos
   }
 
   test("test minor compaction on table with non-empty segment list" +
@@ -329,7 +353,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
 
     val segments = sql("SHOW SEGMENTS FOR TABLE idx1")
     val segInfos = segments.collect().map { each =>
-      ((each.toSeq) (0).toString, (each.toSeq) (1).toString)
+      (each.toSeq.head.toString, each.toSeq (1).toString)
     }
     assert(segInfos.length == 4)
     checkAnswer(sql("select * from table1 where c3='b2'"), Seq(Row(3, "a2", "b2")))
@@ -348,6 +372,84 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     assert(ex.getMessage.contains("An exception occurred while loading data to SI table"))
     mock.tearDown()
     sql("drop table if exists table1")
+  }
+
+  test("test compaction when pre priming will throw exception") {
+    sql("drop table if exists table1")
+    sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+    sql("create index idx1 on table table1(c3) as 'carbondata' ")
+    sql("create index idx2 on table table1(c2, c3) as 'carbondata' ")
+    for (i <- 0 until 3) {
+      sql(s"insert into table1 values(${i + 1},'a$i','b$i')")
+    }
+    var prePriming = 0
+    val mock: MockUp[DistributedRDDUtils.type ] = new MockUp[DistributedRDDUtils.type]() {
+      @Mock
+      def triggerPrepriming(sparkSession: SparkSession,
+        carbonTable: CarbonTable,
+        invalidSegments: Seq[String],
+        operationContext: OperationContext,
+        conf: Configuration,
+        segmentId: List[String]): Unit = {
+        prePriming += 1
+        if (prePriming > 1) {
+          throw new RuntimeException("An exception occurred while triggering pre priming.")
+        }
+      }
+    }
+    val ex = intercept[Exception] {
+      sql("ALTER TABLE table1 COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (1,2)")
+    }
+    assert(ex.getMessage.contains("An exception occurred while triggering pre priming."))
+    mock.tearDown()
+    checkExistence(sql("show indexes on table table1"), true,
+      "idx1", "idx2", "disabled", "enabled")
+  }
+
+  def mockreadSegmentList(): MockUp[SegmentStatusManager] = {
+    val mock: MockUp[SegmentStatusManager] = new MockUp[SegmentStatusManager]() {
+      @Mock
+      def readTableStatusFile(tableStatusPath: String): Array[LoadMetadataDetails] = {
+        if (tableStatusPath.contains("integration/spark/target/warehouse/idx1/Metadata")) {
+          new Gson().fromJson("[{\"timestamp\":\"1608113216908\",\"loadStatus\":\"Success\"," +
+              "\"loadName\":\"0\",\"dataSize\":\"790\",\"indexSize\":\"514\",\"loadStartTime\"" +
+              ":\"1608113213170\",\"segmentFile\":\"0_1608113213170.segment\"}," +
+              "{\"timestamp\":\"1608113217855\",\"loadStatus\":\"Success\",\"loadName\":\"1\"," +
+              "\"dataSize\":\"791\",\"indexSize\":\"514\",\"modificationOrDeletionTimestamp\"" +
+              ":\"1608113228366\",\"loadStartTime\":\"1608113217188\",\"mergedLoadName\":\"1.1\"," +
+              "\"segmentFile\":\"1_1608113217188.segment\"},{\"timestamp\":\"1608113218341\"," +
+              "\"loadStatus\":\"Compacted\",\"loadName\":\"2\",\"dataSize\":\"791\"," +
+              "\"indexSize\":" +
+              "\"514\",\"modificationOrDeletionTimestamp\":\"1608113228366\",\"loadStartTime\":" +
+              "\"1608113218057\",\"mergedLoadName\":\"1.1\",\"segmentFile\":\"2_1608113218057" +
+              ".segment\"},{\"timestamp\":\"1608113219267\",\"loadStatus\":\"Success\"," +
+              "\"loadName\":\"4\",\"dataSize\":\"791\",\"indexSize\":\"514\",\"loadStartTime\":" +
+              "\"1608113218994\",\"segmentFile\":\"4_1608113218994.segment\"},{\"timestamp\":" +
+              "\"1608113228366\",\"loadStatus\":\"Success\",\"loadName\":\"1.1\",\"dataSize\":" +
+              "\"831\",\"indexSize\":\"526\",\"loadStartTime\":\"1608113219441\",\"segmentFile\":" +
+              "\"1.1_1608113219441.segment\"}]", classOf[Array[LoadMetadataDetails]])
+        } else {
+          new Gson().fromJson("[{\"timestamp\":\"1608113216908\",\"loadStatus\":\"Success\"," +
+              "\"loadName\":\"0\",\"dataSize\":\"790\",\"indexSize\":\"514\",\"loadStartTime\"" +
+              ":\"1608113213170\",\"segmentFile\":\"0_1608113213170.segment\"}," +
+              "{\"timestamp\":\"1608113217855\",\"loadStatus\":\"Compacted\",\"loadName\":\"1\"," +
+              "\"dataSize\":\"791\",\"indexSize\":\"514\",\"modificationOrDeletionTimestamp\"" +
+              ":\"1608113228366\",\"loadStartTime\":\"1608113217188\",\"mergedLoadName\":\"1.1\"," +
+              "\"segmentFile\":\"1_1608113217188.segment\"},{\"timestamp\":\"1608113218341\"," +
+              "\"loadStatus\":\"Compacted\",\"loadName\":\"2\",\"dataSize\":\"791\"," +
+              "\"indexSize\":" +
+              "\"514\",\"modificationOrDeletionTimestamp\":\"1608113228366\",\"loadStartTime\":" +
+              "\"1608113218057\",\"mergedLoadName\":\"1.1\",\"segmentFile\":\"2_1608113218057" +
+              ".segment\"},{\"timestamp\":\"1608113219267\",\"loadStatus\":\"Success\"," +
+              "\"loadName\":\"4\",\"dataSize\":\"791\",\"indexSize\":\"514\",\"loadStartTime\":" +
+              "\"1608113218994\",\"segmentFile\":\"4_1608113218994.segment\"},{\"timestamp\":" +
+              "\"1608113228366\",\"loadStatus\":\"Success\",\"loadName\":\"1.1\",\"dataSize\":" +
+              "\"831\",\"indexSize\":\"526\",\"loadStartTime\":\"1608113219441\",\"segmentFile\":" +
+              "\"1.1_1608113219441.segment\"}]", classOf[Array[LoadMetadataDetails]])
+        }
+      }
+    }
+    mock
   }
 
   override def afterAll: Unit = {

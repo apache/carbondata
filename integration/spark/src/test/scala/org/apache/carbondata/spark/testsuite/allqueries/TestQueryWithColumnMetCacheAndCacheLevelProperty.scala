@@ -18,6 +18,7 @@ package org.apache.carbondata.spark.testsuite.allqueries
 
 import scala.collection.JavaConverters._
 
+import mockit.{Mock, MockUp}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.hive.CarbonRelation
@@ -31,6 +32,7 @@ import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.indexstore.blockletindex.{BlockIndex, BlockletIndex, BlockletIndexRowIndexes}
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.scan.expression.{ColumnExpression, LiteralExpression}
@@ -363,5 +365,15 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty
     sql("CREATE INDEX parallel_index on parallel_index_load(b) AS 'carbondata'")
     checkAnswer(sql("select b from parallel_index"), Seq(Row("bb"), Row("dd"), Row("ff")))
     sql("drop index if exists parallel_index on parallel_index_load")
+    val mock: MockUp[TableInfo] = new MockUp[TableInfo] {
+      @Mock
+      def isSchemaModified(): Boolean = {
+        true
+      }
+    }
+    sql("CREATE INDEX parallel_index on parallel_index_load(b) AS 'carbondata'")
+    checkAnswer(sql("select b from parallel_index"), Seq(Row("bb"), Row("dd"), Row("ff")))
+    sql("drop index if exists parallel_index on parallel_index_load")
+    mock.tearDown()
   }
 }
