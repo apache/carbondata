@@ -70,18 +70,8 @@ class CarbonSITransformationRule(sparkSession: SparkSession)
           condition match {
             case Some(x) =>
               x match {
-                case equalTo: EqualTo =>
-                  if (equalTo.left.isInstanceOf[AttributeReference] &&
-                      equalTo.right.isInstanceOf[AttributeReference] &&
-                      equalTo.left.asInstanceOf[AttributeReference].name.equalsIgnoreCase(
-                        CarbonCommonConstants.POSITION_ID) &&
-                      equalTo.right.asInstanceOf[AttributeReference].name.equalsIgnoreCase(
-                        CarbonCommonConstants.POSITION_REFERENCE)) {
-                    isRuleNeedToBeApplied = false
-                    return isRuleNeedToBeApplied
-                  } else {
-                    return isRuleNeedToBeApplied
-                  }
+                case _: EqualTo =>
+                  return isRuleNeedToBeApplied
                   join
                 case _ =>
                   join

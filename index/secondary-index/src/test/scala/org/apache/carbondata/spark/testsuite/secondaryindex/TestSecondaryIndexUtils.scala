@@ -19,10 +19,8 @@ package org.apache.carbondata.spark.testsuite.secondaryindex
 import java.io.IOException
 import java.util
 
-import scala.collection.JavaConverters._
-
 import mockit.{Mock, MockUp}
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{Row, SparkSession, SQLContext}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.table.CarbonCreateDataSourceTableCommand
 import org.apache.spark.sql.index.CarbonIndexUtil
@@ -33,11 +31,10 @@ import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException
 import org.apache.carbondata.core.locks.AbstractCarbonLock
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events.{Event, OperationContext}
-import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
-import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar
 
 object TestSecondaryIndexUtils {

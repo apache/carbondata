@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.secondaryindex.events
 
-import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -28,7 +26,6 @@ import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.execution.command.Auditable
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.util.CarbonException
 

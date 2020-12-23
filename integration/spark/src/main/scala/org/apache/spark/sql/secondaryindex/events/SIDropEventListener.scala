@@ -102,7 +102,6 @@ class SIDropEventListener extends OperationEventListener with Logging {
                                       tableName
                       // deleting any remaining files.
                       val metadataFilePath = carbonTable.getMetadataPath
-                      val fileType = FileFactory.getFileType(metadataFilePath)
                       if (FileFactory.isFileExist(metadataFilePath)) {
                         val file = FileFactory.getCarbonFile(metadataFilePath)
                         CarbonUtil.deleteFoldersAndFiles(file.getParentFile)

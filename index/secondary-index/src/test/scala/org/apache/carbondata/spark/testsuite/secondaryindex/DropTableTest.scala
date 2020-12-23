@@ -16,11 +16,17 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.spark.sql.Row
+import java.nio.file.{Files, Paths}
+
+import mockit.{Mock, MockUp}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 class DropTableTest extends QueryTest with BeforeAndAfterAll {
 
@@ -87,5 +93,34 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
     sql("drop index helloIndex1 on table testDrop")
     assert(sql("show indexes on testDrop").collect().isEmpty)
     sql("drop table if exists testDrop")
+  }
+
+  test("test index drop when SI table is not deleted while main table is deleted") {
+    sql("drop database if exists test cascade")
+    sql("create database test")
+    sql("use test")
+    try {
+      sql("drop table if exists testDrop")
+      sql("create table testDrop (a string, b string, c string) STORED AS carbondata")
+      sql("create index index11 on table testDrop (c) AS 'carbondata'")
+      sql("insert into testDrop values('ab', 'cd', 'ef')")
+      val indexTablePath = CarbonEnv.getCarbonTable(Some("test"),
+        "index11")(sqlContext.sparkSession).getTablePath
+      val mock: MockUp[CarbonInternalMetastore.type] = new MockUp[CarbonInternalMetastore.type]() {
+        @Mock
+        def deleteIndexSilent(carbonTableIdentifier: TableIdentifier,
+                              storePath: String,
+                              parentCarbonTable: CarbonTable)(sparkSession: SparkSession): Unit = {
+          throw new RuntimeException("An exception occurred while deleting SI table")
+        }
+      }
+      sql("drop table if exists testDrop")
+      mock.tearDown()
+      assert(Files.exists(Paths.get(indexTablePath)))
+      sql("drop table if exists testDrop")
+    } finally {
+      sql("drop database if exists test cascade")
+      sql("use default")
+    }
   }
 }
