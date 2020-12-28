@@ -28,6 +28,7 @@ import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
@@ -133,16 +134,16 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
           val carbonFile = FileFactory
             .getCarbonFile(CarbonTablePath
               .getSegmentPath(indexTable.getTablePath, detail.getLoadName))
+          LOGGER.info(s"Deleting segment folder: ${carbonFile.getName}")
           CarbonUtil.deleteFoldersAndFiles(carbonFile)
         }
         unnecessarySegmentsOfSI.foreach { detail =>
           detail.setSegmentStatus(segToStatusMap(detail.getLoadName))
           detail.setVisibility("false")
         }
-
         SegmentStatusManager.writeLoadDetailsIntoFile(
-          indexTable.getMetadataPath + CarbonTablePath.TABLE_STATUS_FILE,
-          unnecessarySegmentsOfSI.toArray)
+          indexTable.getMetadataPath + CarbonCommonConstants.FILE_SEPARATOR +
+            CarbonTablePath.TABLE_STATUS_FILE, indexTableMetadataDetails.toArray)
       } else {
         LOGGER.error("Unable to get the lock file for main/Index table. Please try again later")
       }
