@@ -30,12 +30,11 @@ class CarbonAntlrParser(sparkParser: ParserInterface) {
       throw new UnsupportedOperationException(
         "Antlr SQL Parser will only deal with Merge Into SQL Command")
     }
-    // Todo DO NOT NEW OBJECTS HERE
     val visitor = new CarbonAntlrSqlVisitor(sparkParser)
     val lexer = new CarbonSqlBaseLexer(CharStreams.fromString(sqlText))
     val tokenStream = new CommonTokenStream(lexer)
     val parser = new CarbonSqlBaseParser(tokenStream)
-    val mergeInto = visitor.visitMergeInto(parser.mergeInto)
+    val mergeInto = visitor.visitMergeIntoCarbonTable(parser.mergeInto)
     // In this place check the mergeInto Map for update *
     CarbonMergeIntoSQLCommand(mergeInto)
   }

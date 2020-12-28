@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
+
 import org.apache.spark.sql.catalyst.expressions.Expression;
 import org.apache.spark.sql.catalyst.parser.ParseException;
 import org.apache.spark.sql.catalyst.parser.ParserInterface;
@@ -51,7 +53,6 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
       return null;
     }
     String res = ctx.getChild(1).getText();
-    System.out.println(res);
     return res;
   }
 
@@ -105,8 +106,6 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
       //INSERT *
       return InsertAction.apply(null, true);
     } else {
-      // INSERT '(' columns=multipartIdentifierList ')'VALUES '(' expression (',' expression)* ')'
-      // todo throw Exception here
       return InsertAction.apply(null, false);
     }
   }
@@ -146,8 +145,12 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     return childCount > 5;
   }
 
-  @Override
-  public CarbonMergeIntoModel visitMergeInto(CarbonSqlBaseParser.MergeIntoContext ctx) {
+  public CarbonMergeIntoModel visitMergeIntoCarbonTable(CarbonSqlBaseParser.MergeIntoContext ctx)
+          throws MalformedCarbonCommandException {
+    // handle the exception msg from base parser
+    if (ctx.exception != null) {
+      throw new MalformedCarbonCommandException("Parse failed!");
+    }
     TableModel targetTable = visitMultipartIdentifier(ctx.target);
     TableModel sourceTable = visitMultipartIdentifier(ctx.source);
 
@@ -180,7 +183,7 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
                     .booleanExpression().getText());
           }
         } catch (ParseException e) {
-          e.printStackTrace();
+          throw new MalformedCarbonCommandException("Parse failed: " + e.getMessage());
         }
         mergeExpressions.add(whenMatchedExpression);
         mergeActions.add(visitMatchedAction(
@@ -198,7 +201,7 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
                     .booleanExpression().getText());
           }
         } catch (ParseException e) {
-          e.printStackTrace();
+          throw new MalformedCarbonCommandException("Parse failed: " + e.getMessage());
         }
         mergeExpressions.add(whenNotMatchedExpression);
         CarbonSqlBaseParser.NotMatchedActionContext notMatchedActionContext =
@@ -209,7 +212,8 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
         } else if (notMatchedActionContext.ASTERISK() == null) {
           if (notMatchedActionContext.columns.multipartIdentifier().size() !=
                   notMatchedActionContext.expression().size()) {
-            // todo throw EX here
+            throw new MalformedCarbonCommandException("Parse failed: size of columns " +
+                    "is not equal to size of expression in not matched action.");
           }
           Map<Column, Column> insertMap = new HashMap<>();
           for (int i = 0; i < notMatchedActionContext.columns.multipartIdentifier().size(); i++) {
@@ -224,7 +228,7 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
               Expression expression = sparkParser.parseExpression(right);
               rightColumn = new Column(expression);
             } catch (Exception ex) {
-              // todo throw EX here
+              throw new MalformedCarbonCommandException("Parse failed: " + ex.getMessage());
             }
             insertMap.put(new Column(left), rightColumn);
           }
@@ -320,14 +324,12 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
   @Override
   public String visitUnquotedIdentifier(CarbonSqlBaseParser.UnquotedIdentifierContext ctx) {
     String res = ctx.getChild(0).getText();
-    System.out.println("ColName; " + res);
     return res;
   }
 
   @Override
   public String visitFromClause(CarbonSqlBaseParser.FromClauseContext ctx) {
     String tableName = visitRelation(ctx.relation(0));
-    System.out.println("SQL table name: " + tableName);
     return tableName;
   }
 
@@ -342,7 +344,6 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
   @Override
   public String visitComparisonOperator(CarbonSqlBaseParser.ComparisonOperatorContext ctx) {
     String res = ctx.getChild(0).getText();
-    System.out.println("ComparisonOperator: " + res);
     return res;
   }
 

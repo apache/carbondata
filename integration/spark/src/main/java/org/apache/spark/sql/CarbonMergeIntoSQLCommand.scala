@@ -40,25 +40,23 @@ case class CarbonMergeIntoSQLCommand(mergeInto: CarbonMergeIntoModel)
     val mergeActions: Seq[MergeAction] = convertMergeActionList(mergeInto.getMergeActions)
 
     // validate the table
+    val sourceDatabaseName =
+      CarbonEnv.getDatabaseName(Option(sourceTable.getDatabase))(sparkSession)
+    val sourceTableName = sourceTable.getTable
+    val targetDatabaseName =
+      CarbonEnv.getDatabaseName(Option(targetTable.getDatabase))(sparkSession)
+    val targetTableName = targetTable.getTable
     TableAPIUtil.validateTableExists(sparkSession,
-      if (sourceTable.getDatabase == null) {
-        "default"
-      } else {
-        sourceTable.getDatabase
-      },
-      sourceTable.getTable)
+      sourceDatabaseName,
+      sourceTableName)
     TableAPIUtil.validateTableExists(sparkSession,
-      if (targetTable.getDatabase == null) {
-        "default"
-      } else {
-        targetTable.getDatabase
-      },
-      targetTable.getTable)
+      targetDatabaseName,
+      targetTableName)
 
-    val srcDf = sparkSession.sql(s"""SELECT * FROM ${ sourceTable.getTable }""")
-    val tgDf = sparkSession.sql(s"""SELECT * FROM ${ targetTable.getTable }""")
+    val srcDf = sparkSession.sql(s"""SELECT * FROM ${sourceDatabaseName}.${sourceTableName}""")
+    val tgDf = sparkSession.sql(s"""SELECT * FROM ${targetDatabaseName}.${targetTableName}""")
 
-    var matches = Seq.empty[MergeMatch]
+    var matches = scala.collection.mutable.ArrayBuffer[MergeMatch]()
     val mergeExpLength: Int = mergeExpression.length
 
     // This for loop will gather the match condition and match action to build the MergeMatch

@@ -49,13 +49,13 @@ class CarbonExtensionSqlParser(
     } catch {
       case ce: MalformedCarbonCommandException =>
         throw ce
-      case _: Throwable =>
+      case ct: Throwable =>
         try {
           antlrParser.parse(sqlText)
         } catch {
           case ce: MalformedCarbonCommandException =>
             throw ce
-          case ex: Throwable =>
+          case at: Throwable =>
             try {
               val parsedPlan = initialParser.parsePlan(sqlText)
               CarbonScalaUtil.cleanParserThreadLocals
@@ -63,14 +63,16 @@ class CarbonExtensionSqlParser(
             } catch {
               case mce: MalformedCarbonCommandException =>
                 throw mce
-              case e: Throwable =>
-                e.printStackTrace(System.err)
+              case st: Throwable =>
+                st.printStackTrace(System.err)
                 CarbonScalaUtil.cleanParserThreadLocals
                 CarbonException.analysisException(
-                  s"""== Parser1: ${ parser.getClass.getName } ==
-                     |${ ex.getMessage }
-                     |== Parser2: ${ initialParser.getClass.getName } ==
-                     |${ e.getMessage }
+                  s"""== Spark Parser: ${initialParser.getClass.getName} ==
+                     |${st.getMessage}
+                     |== Carbon Parser: ${ parser.getClass.getName } ==
+                     |${ct.getMessage}
+                     |== Antlr Parser: ${antlrParser.getClass.getName} ==
+                     |${at.getMessage}
                """.stripMargin.trim)
             }
         }

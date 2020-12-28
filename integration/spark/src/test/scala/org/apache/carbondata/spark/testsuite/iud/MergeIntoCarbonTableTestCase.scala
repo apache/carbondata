@@ -21,6 +21,8 @@ import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+
 class MergeIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   var df: DataFrame = _
 
@@ -173,19 +175,6 @@ class MergeIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
       Seq(Row(1, 100, "MA"), Row(3, 300, "NH"), Row(4, 400, "FL")))
   }
 
-  // This test case would failed, since the merge dataset command do not suppot multiple delete
-  //  test("test merge into delete with condition") {
-  //    sql(
-  //      """MERGE INTO A
-  //        |USING B
-  //        |ON A.ID=B.ID
-  //        |WHEN MATCHED AND B.ID=2 THEN DELETE
-  //        |WHEN MATCHED AND B.ID=3 THEN DELETE""".stripMargin)
-  //
-  //    checkAnswer(sql("select * from A"),
-  //      Seq(Row(1, 100, "MA"), Row(4, 400, "FL")))
-  //  }
-
   test("test merge into update all cols") {
     sql(
       """MERGE INTO A USING B
@@ -290,5 +279,36 @@ class MergeIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
         Row(3, 300, "NH"),
         Row(4, 400, "FL"),
         Row(7, 17, "LO (updated)")))
+  }
+
+  test("test merge into not exist table exception") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      val sqlText = "MERGE INTO A USING C ON A.ID=C.ID WHEN NOT MATCHED " +
+        "AND C.ID=7 THEN INSERT (A" +
+        ".ID,A.PRICE, A.state) VALUES (C.ID,C.PRICE + 10, C.state)"
+      sql(sqlText)
+    }
+    assert(exceptionCaught.getMessage.contains("table default.C not found"))
+  }
+
+  test("test merge into parse exception for size of action columns and expression") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      val sqlText = "MERGE INTO A USING B ON A.ID=B.ID WHEN NOT MATCHED " +
+        "AND B.ID=7 THEN INSERT (A" +
+        ".ID,A.PRICE, A.state) VALUES (B.ID,B.PRICE + 10)"
+      sql(sqlText)
+    }
+    assert(exceptionCaught.getMessage.contains("Parse failed: " +
+      "size of columns is not equal to size of expression in not matched action"))
+  }
+
+  test("test merge into parse exception for tree node parsing") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      val sqlText = "MERGE INTO A USING  ON A.ID=B.ID WHEN NOT MATCHED " +
+        "AND B.ID=7 THEN INSERT (A" +
+        ".ID,A.PRICE, A.state) VALUES (B.ID,B.PRICE + 10, B.state)"
+      sql(sqlText)
+    }
+    assert(exceptionCaught.getMessage.contains("Parse failed"))
   }
 }
