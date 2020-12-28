@@ -26,11 +26,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.exception.ConcurrentOperationException
-import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.index.IndexType
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 
 /**
@@ -73,26 +69,11 @@ extends DataCommand {
       .lookupRelation(Some(databaseName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation].carbonTable
 
-    val tableStatusLock = CarbonLockFactory
-      .getCarbonLockObj(mainCarbonTable.getAbsoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
-      val carbonLoadModel = new CarbonLoadModel
-      carbonLoadModel.setDatabaseName(databaseName)
-      carbonLoadModel.setTableName(tableName)
-      carbonLoadModel.setTablePath(mainCarbonTable.getTablePath)
-    try {
-      if (tableStatusLock.lockWithRetries()) {
-        val tableStatusFilePath = CarbonTablePath
-          .getTableStatusFilePath(mainCarbonTable.getTablePath)
-        carbonLoadModel.setLoadMetadataDetails(SegmentStatusManager
-          .readTableStatusFile(tableStatusFilePath).toList.asJava)
-        carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(mainCarbonTable))
-      } else {
-        throw new ConcurrentOperationException(mainCarbonTable.getDatabaseName,
-          mainCarbonTable.getTableName, "table status read", "reindex command")
-      }
-    } finally {
-      tableStatusLock.unlock()
-    }
+    val carbonLoadModel = new CarbonLoadModel
+    carbonLoadModel.setDatabaseName(databaseName)
+    carbonLoadModel.setTableName(tableName)
+    carbonLoadModel.setTablePath(mainCarbonTable.getTablePath)
+    carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(mainCarbonTable))
     val indexMetadata = mainCarbonTable.getIndexMetadata
     val secondaryIndexProvider = IndexType.SI.getIndexProviderName
     if (null != indexMetadata && null != indexMetadata.getIndexesMap &&
@@ -101,19 +82,11 @@ extends DataCommand {
         .get(secondaryIndexProvider).keySet().asScala
       // if there are no index tables for a given fact table do not perform any action
       if (indexTables.nonEmpty) {
-        val mainTableDetails = if (segments.isEmpty) {
-          carbonLoadModel.getLoadMetadataDetails.asScala.toList
-        } else {
-          // get segments for main table
-          carbonLoadModel.getLoadMetadataDetails.asScala.toList.filter(
-            loadMetaDataDetails => segments.get.contains(loadMetaDataDetails.getLoadName))
-        }
         if (indexTableToRepair.isEmpty) {
           indexTables.foreach {
             indexTableName =>
               CarbonIndexUtil.processSIRepair(indexTableName, mainCarbonTable, carbonLoadModel,
-                indexMetadata, mainTableDetails, secondaryIndexProvider,
-                Integer.MAX_VALUE)(sparkSession)
+                indexMetadata, secondaryIndexProvider, Integer.MAX_VALUE, segments)(sparkSession)
           }
         } else {
           val indexTablesToRepair = indexTables.filter(indexTable => indexTable
@@ -121,8 +94,7 @@ extends DataCommand {
           indexTablesToRepair.foreach {
             indexTableName =>
               CarbonIndexUtil.processSIRepair(indexTableName, mainCarbonTable, carbonLoadModel,
-                indexMetadata, mainTableDetails, secondaryIndexProvider,
-                Integer.MAX_VALUE)(sparkSession)
+                indexMetadata, secondaryIndexProvider, Integer.MAX_VALUE, segments)(sparkSession)
           }
           if (indexTablesToRepair.isEmpty) {
             throw new Exception("Unable to find index table" + indexTableToRepair.get)
