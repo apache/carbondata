@@ -35,11 +35,10 @@ import org.apache.spark.sql.merge.model.CarbonJoinExpression;
 import org.apache.spark.sql.merge.model.CarbonMergeIntoModel;
 import org.apache.spark.sql.merge.model.ColumnModel;
 import org.apache.spark.sql.merge.model.TableModel;
-import org.apache.spark.sql.parser.CarbonSqlBaseBaseVisitor;
 import org.apache.spark.sql.parser.CarbonSqlBaseParser;
 import org.apache.spark.util.SparkUtil;
 
-public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
+public class CarbonAntlrSqlVisitor {
 
   private final ParserInterface sparkParser;
 
@@ -47,7 +46,6 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     this.sparkParser = sparkParser;
   }
 
-  @Override
   public String visitTableAlias(CarbonSqlBaseParser.TableAliasContext ctx) {
     if (null == ctx.children) {
       return null;
@@ -56,8 +54,8 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     return res;
   }
 
-  @Override
-  public MergeAction visitAssignmentList(CarbonSqlBaseParser.AssignmentListContext ctx) {
+  public MergeAction visitCarbonAssignmentList(CarbonSqlBaseParser.AssignmentListContext ctx)
+          throws MalformedCarbonCommandException {
     //  UPDATE SET assignmentList
     Map<Column, Column> map = new HashMap<>();
     for (int currIdx = 0; currIdx < ctx.getChildCount(); currIdx++) {
@@ -72,8 +70,8 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
         try {
           Expression expression = sparkParser.parseExpression(right);
           rightColumn = new Column(expression);
-        } catch (Exception ex) {
-          // todo throw EX here
+        } catch (Exception e) {
+          throw new MalformedCarbonCommandException("Parse failed: " + e.getMessage());
         }
         map.put(new Column(left), rightColumn);
       }
@@ -81,17 +79,17 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     return new UpdateAction(SparkUtil.convertMap(map), false);
   }
 
-  @Override
-  public MergeAction visitMatchedAction(CarbonSqlBaseParser.MatchedActionContext ctx) {
+  public MergeAction visitCarbonMatchedAction(CarbonSqlBaseParser.MatchedActionContext ctx)
+          throws MalformedCarbonCommandException {
     int childCount = ctx.getChildCount();
     if (childCount == 1) {
       // when matched ** delete
       return new DeleteAction();
     } else {
-      if (ctx
-          .getChild(ctx.getChildCount() - 1) instanceof CarbonSqlBaseParser.AssignmentListContext) {
+      if (ctx.getChild(ctx.getChildCount() - 1) instanceof
+              CarbonSqlBaseParser.AssignmentListContext) {
         //UPDATE SET assignmentList
-        return visitAssignmentList(
+        return visitCarbonAssignmentList(
             (CarbonSqlBaseParser.AssignmentListContext) ctx.getChild(ctx.getChildCount() - 1));
       } else {
         //UPDATE SET *
@@ -100,8 +98,7 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     }
   }
 
-  @Override
-  public InsertAction visitNotMatchedAction(CarbonSqlBaseParser.NotMatchedActionContext ctx) {
+  public InsertAction visitCarbonNotMatchedAction(CarbonSqlBaseParser.NotMatchedActionContext ctx) {
     if (ctx.getChildCount() <= 2) {
       //INSERT *
       return InsertAction.apply(null, true);
@@ -110,21 +107,19 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     }
   }
 
-  @Override
-  public MergeAction visitNotMatchedClause(CarbonSqlBaseParser.NotMatchedClauseContext ctx) {
+  public MergeAction visitCarbonNotMatchedClause(CarbonSqlBaseParser.NotMatchedClauseContext ctx) {
     int currIdx = 0;
     for (; currIdx < ctx.getChildCount(); currIdx++) {
       if (ctx.getChild(currIdx) instanceof CarbonSqlBaseParser.NotMatchedActionContext) {
         break;
       }
     }
-    // Throw exception incase of not matched clause
-    return visitNotMatchedAction(
+    return visitCarbonNotMatchedAction(
         (CarbonSqlBaseParser.NotMatchedActionContext) ctx.getChild(currIdx));
   }
 
-  @Override
-  public MergeAction visitMatchedClause(CarbonSqlBaseParser.MatchedClauseContext ctx) {
+  public MergeAction visitCarbonMatchedClause(CarbonSqlBaseParser.MatchedClauseContext ctx)
+          throws MalformedCarbonCommandException {
     //There will be lots of childs at ctx,
     // we need to find the predicate
     int currIdx = 0;
@@ -134,7 +129,8 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
       }
     }
     // Throw Exception in case of no Matched Action
-    return visitMatchedAction((CarbonSqlBaseParser.MatchedActionContext) ctx.getChild(currIdx));
+    return visitCarbonMatchedAction(
+            (CarbonSqlBaseParser.MatchedActionContext) ctx.getChild(currIdx));
   }
 
   public boolean containsWhenMatchedPredicateExpression(int childCount) {
@@ -170,8 +166,8 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
       if (ctx.getChild(currIdx) instanceof CarbonSqlBaseParser.PredicatedContext) {
         //This branch will visit the Join Expression
         ctx.getChild(currIdx).getChildCount();
-        joinExpression =
-            this.visitPredicated((CarbonSqlBaseParser.PredicatedContext) ctx.getChild(currIdx), "");
+        joinExpression = this.visitCarbonPredicated(
+                (CarbonSqlBaseParser.PredicatedContext) ctx.getChild(currIdx));
       } else if (ctx.getChild(currIdx) instanceof CarbonSqlBaseParser.MatchedClauseContext) {
         //This branch will deal with the Matched Clause
         Expression whenMatchedExpression = null;
@@ -186,7 +182,7 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
           throw new MalformedCarbonCommandException("Parse failed: " + e.getMessage());
         }
         mergeExpressions.add(whenMatchedExpression);
-        mergeActions.add(visitMatchedAction(
+        mergeActions.add(visitCarbonMatchedAction(
             (CarbonSqlBaseParser.MatchedActionContext) ctx.getChild(currIdx)
                 .getChild(ctx.getChild(currIdx).getChildCount() - 1)));
       } else if (ctx.getChild(currIdx) instanceof CarbonSqlBaseParser.NotMatchedClauseContext) {
@@ -243,7 +239,6 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
             mergeExpressions, mergeActions);
   }
 
-  @Override
   public CarbonJoinExpression visitComparison(CarbonSqlBaseParser.ComparisonContext ctx) {
     // we need to get left Expression and Right Expression
     // Even get the table name and col name
@@ -265,22 +260,14 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     return expression;
   }
 
-  @Override
-  public Object visitValueExpressionDefault(CarbonSqlBaseParser.ValueExpressionDefaultContext ctx) {
-    ctx.getText();
-    return super.visitValueExpressionDefault(ctx);
-  }
-
-  @Override
   public CarbonJoinExpression visitPredicated(CarbonSqlBaseParser.PredicatedContext ctx) {
     return visitComparison((CarbonSqlBaseParser.ComparisonContext) ctx.getChild(0));
   }
 
-  public Expression visitPredicated(CarbonSqlBaseParser.PredicatedContext ctx, String type) {
+  public Expression visitCarbonPredicated(CarbonSqlBaseParser.PredicatedContext ctx) {
     return visitComparison((CarbonSqlBaseParser.ComparisonContext) ctx.getChild(0), "");
   }
 
-  @Override
   public ColumnModel visitDereference(CarbonSqlBaseParser.DereferenceContext ctx) {
     // In this part, it will return two colunm name
     int count = ctx.getChildCount();
@@ -293,7 +280,6 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     return col;
   }
 
-  @Override
   public TableModel visitMultipartIdentifier(CarbonSqlBaseParser.MultipartIdentifierContext ctx) {
     TableModel table = new TableModel();
     List<CarbonSqlBaseParser.ErrorCapturingIdentifierContext> parts = ctx.parts;
@@ -321,33 +307,16 @@ public class CarbonAntlrSqlVisitor extends CarbonSqlBaseBaseVisitor {
     return column;
   }
 
-  @Override
   public String visitUnquotedIdentifier(CarbonSqlBaseParser.UnquotedIdentifierContext ctx) {
     String res = ctx.getChild(0).getText();
     return res;
   }
 
-  @Override
-  public String visitFromClause(CarbonSqlBaseParser.FromClauseContext ctx) {
-    String tableName = visitRelation(ctx.relation(0));
-    return tableName;
-  }
-
-  @Override
-  public String visitRelation(CarbonSqlBaseParser.RelationContext ctx) {
-    if (ctx.relationPrimary() instanceof CarbonSqlBaseParser.TableNameContext) {
-      return (String) visitTableName((CarbonSqlBaseParser.TableNameContext) ctx.relationPrimary());
-    }
-    return "";
-  }
-
-  @Override
   public String visitComparisonOperator(CarbonSqlBaseParser.ComparisonOperatorContext ctx) {
     String res = ctx.getChild(0).getText();
     return res;
   }
 
-  @Override
   public String visitTableIdentifier(CarbonSqlBaseParser.TableIdentifierContext ctx) {
     return ctx.getChild(0).getText();
   }
