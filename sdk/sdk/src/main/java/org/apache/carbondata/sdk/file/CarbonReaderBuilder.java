@@ -26,7 +26,9 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.index.IndexStoreManager;
@@ -43,6 +45,7 @@ import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
+import org.apache.carbondata.processing.loading.iterator.CarbonOutputIteratorWrapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -54,6 +57,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
+import org.apache.log4j.Logger;
 
 @InterfaceAudience.User
 @InterfaceStability.Evolving
@@ -70,6 +74,9 @@ public class CarbonReaderBuilder {
   private boolean usePaginationReader;
   private List fileLists;
   private Class<? extends CarbonReadSupport> readSupportClass;
+
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(CarbonOutputIteratorWrapper.class.getName());
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -414,7 +421,9 @@ public class CarbonReaderBuilder {
         format = prepareFileInputFormat(job, true, false);
         List<InputSplit> splits =
             format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
-        return new PaginationCarbonReader(splits, this);
+        List<Long> rowCountInSplit = new ArrayList<>(splits.size());
+        totalRowCountInSplits(job, splits, rowCountInSplit);
+        return new PaginationCarbonReader(splits, this, rowCountInSplit);
       }
     } catch (Exception ex) {
       if (format != null) {
@@ -424,6 +433,60 @@ public class CarbonReaderBuilder {
             false);
       }
       throw ex;
+    }
+  }
+
+  private <T> void totalRowCountInSplits(Job job, List<InputSplit> splits,
+      List<Long> rowCountInSplit)
+      throws IOException, InterruptedException {
+    CarbonFileInputFormat format = this.prepareFileInputFormat(job, false, true);
+    long sum = 0;
+    boolean isIUDTable = false;
+    if (!StringUtils.isEmpty(this.tablePath)) {
+      // Check if update or delete happened on the table.
+      CarbonFile emptyMetadataFile = FileFactory.getCarbonFile(this.tablePath +
+          CarbonCommonConstants.FILE_SEPARATOR +
+          CarbonCommonConstants.CARBON_SDK_EMPTY_METADATA_PATH, this.hadoopConf);
+      if (emptyMetadataFile.exists() && emptyMetadataFile.isDirectory()) {
+        isIUDTable = true;
+      }
+    }
+    // if filter exists or IUD happened then read the total number of rows after
+    // building carbon reader else get the row count from the details info of each splits.
+    if (this.filterExpression != null || isIUDTable) {
+      RecordReader reader = null;
+      CarbonReader carbonReader = null;
+      for (InputSplit split : splits) {
+        List<RecordReader<Void, T>> readers = new ArrayList<>();
+        try {
+          reader = this.getRecordReader(job, format, readers, split);
+          readers.add(reader);
+          carbonReader = new CarbonReader<>(readers);
+          while (carbonReader.hasNext()) {
+            try {
+              sum += carbonReader.readNextBatchRow().length;
+            } catch (Exception ex) {
+              LOGGER.error("Exception occured while reading the batch row " + ex.getMessage());
+            }
+          }
+          rowCountInSplit.add(sum);
+        } finally {
+          if (reader != null) {
+            reader.close();
+          }
+          if (carbonReader != null) {
+            carbonReader.close();
+          }
+        }
+      }
+    } else {
+      for (InputSplit split : splits) {
+        // prepare a summation array of row counts in each blocklet,
+        // this is used for pruning with pagination vales.
+        // At current index, it contains sum of rows of all the blocklet from previous + current.
+        sum += ((CarbonInputSplit) split).getDetailInfo().getRowCount();
+        rowCountInSplit.add(sum);
+      }
     }
   }
 

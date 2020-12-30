@@ -33,6 +33,8 @@ import java.util.stream.Stream;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -44,6 +46,7 @@ import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -121,6 +124,18 @@ public class CarbonIUD {
     for (Map.Entry<String, Map<String, Set<String>>> path : this.filterColumnToValueMappingForDelete
         .entrySet()) {
       deleteExecution(path.getKey());
+      createEmptyMetadataFile(path.getKey());
+    }
+  }
+
+  private void createEmptyMetadataFile(String path) throws IOException {
+    if (!StringUtils.isEmpty(path)) {
+      path = path + CarbonCommonConstants.FILE_SEPARATOR +
+          CarbonCommonConstants.CARBON_SDK_EMPTY_METADATA_PATH;
+      CarbonFile emptySDKDirectory = FileFactory.getCarbonFile(path);
+      if (!emptySDKDirectory.exists()) {
+        emptySDKDirectory.mkdirs();
+      }
     }
   }
 
@@ -199,6 +214,7 @@ public class CarbonIUD {
         .entrySet()) {
       if (this.updateColumnToValueMapping.containsKey(path.getKey())) {
         updateExecution(path.getKey());
+        createEmptyMetadataFile(path.getKey());
       }
     }
   }
