@@ -60,22 +60,15 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
    * Call {@link #builder(String)} to construct an instance
    */
 
-  PaginationCarbonReader(List<InputSplit> splits, CarbonReaderBuilder readerBuilder) {
+  PaginationCarbonReader(List<InputSplit> splits, CarbonReaderBuilder readerBuilder,
+      List<Long> rowsInSplits) {
     // Initialize super class with no readers.
     // Based on the splits identified for pagination query, readers will be built for the query.
     super(null);
     this.allBlockletSplits = splits;
     this.readerBuilder = readerBuilder;
     // prepare the mapping.
-    rowCountInSplits = new ArrayList<>(splits.size());
-    long sum = 0;
-    for (InputSplit split : splits) {
-      // prepare a summation array of row counts in each blocklet,
-      // this is used for pruning with pagination vales.
-      // At current index, it contains sum of rows of all the blocklet from previous + current.
-      sum += ((CarbonInputSplit) split).getDetailInfo().getRowCount();
-      rowCountInSplits.add(sum);
-    }
+    rowCountInSplits = rowsInSplits;
   }
 
   /**
@@ -117,6 +110,9 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
   public long getTotalRows() {
     if (isClosed) {
       throw new RuntimeException("Pagination Reader is closed. please build again");
+    }
+    if (rowCountInSplits.size() == 0) {
+      return 0;
     }
     return rowCountInSplits.get(rowCountInSplits.size() - 1);
   }
@@ -173,15 +169,13 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
       } else {
         BlockletDetailInfo detailInfo =
             ((CarbonInputSplit) allBlockletSplits.get(i)).getDetailInfo();
-        int rowCountInBlocklet = detailInfo.getRowCount();
-        Object[] rowsInBlocklet = new Object[rowCountInBlocklet];
+        List<Object> rowsInBlocklet = new ArrayList<>();
         // read the rows from the blocklet
         // TODO: read blocklets in multi-thread if there is a performance requirement.
         readerBuilder.setInputSplit(allBlockletSplits.get(i));
         CarbonReader<Object> carbonReader = readerBuilder.build();
-        int count = 0;
         while (carbonReader.hasNext()) {
-          rowsInBlocklet[count++] = carbonReader.readNextRow();
+          rowsInBlocklet.add(carbonReader.readNextRow());
         }
         carbonReader.close();
         long fromRowId;
@@ -191,7 +185,8 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
           // previous index will contain the sum of rows till previous blocklet.
           fromRowId = rowCountInSplits.get(i - 1) + 1;
         }
-        blockletRows = new BlockletRows(fromRowId, detailInfo.getBlockSize(), rowsInBlocklet);
+        blockletRows = new BlockletRows(fromRowId, detailInfo.getBlockSize(),
+            rowsInBlocklet.toArray());
         // add entry to cache with no expiry time
         // key: unique blocklet id
         // value: BlockletRows
@@ -200,7 +195,7 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
       long fromBlockletRow = blockletRows.getRowIdStartIndex();
       long toBlockletRow = fromBlockletRow + blockletRows.getRowsCount();
       Object[] rowsInBlocklet = blockletRows.getRows();
-      if (toRowNumber > toBlockletRow) {
+      if (toRowNumber >= toBlockletRow) {
         if (fromRowNumber >= fromBlockletRow) {
           // only fromRowNumber lies in this blocklet,
           // read from fromRowNumber to end of the blocklet.

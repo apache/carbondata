@@ -18,11 +18,19 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.Field;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.commons.io.FileUtils;
@@ -218,4 +226,134 @@ public class PaginationCarbonReaderTest {
     FileUtils.deleteDirectory(new File(path));
   }
 
+  @Test
+  public void testSDKPaginationFilter() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("data", DataTypes.VARCHAR);
+    fields[2] = new Field("id", DataTypes.LONG);
+
+
+    String data = RandomStringUtils.randomAlphabetic(1024);
+    // create more than one blocklet
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder()
+          .outputPath(path).withBlockletSize(1).withBlockSize(2).withTableProperty("local_dictionary_enable", "false");
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("TestUtil").build();
+      for (int i = 1; i <= 100000; i++) {
+        writer.write(new String[]{"robot" + i, data, String.valueOf(i)});
+      }
+      writer.close();
+    } catch (Exception ex) {
+      assert (false);
+    }
+
+    // configure cache size = 4 blocklet
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_MAX_PAGINATION_LRU_CACHE_SIZE_IN_MB, "4");
+
+    //filter expression
+    EqualToExpression equalExpression =
+        new EqualToExpression(new ColumnExpression("name", DataTypes.STRING),
+            new LiteralExpression("robot1", DataTypes.STRING));
+
+    CarbonReaderBuilder carbonReaderBuilder = CarbonReader.builder(path, "_temp")
+        .withPaginationSupport().projection(new String[]{"name", "id"}).filter(equalExpression);
+
+    PaginationCarbonReader<Object> paginationCarbonReader =
+        (PaginationCarbonReader<Object>) carbonReaderBuilder.build();
+    assert (paginationCarbonReader.getTotalRows() == 1);
+    paginationCarbonReader.close();
+
+    // Not Equals expression
+    NotEqualsExpression notEqualsExpression =
+        new NotEqualsExpression(new ColumnExpression("name", DataTypes.STRING),
+            new LiteralExpression("robot1", DataTypes.STRING));
+    paginationCarbonReader =
+        (PaginationCarbonReader<Object>) carbonReaderBuilder.filter(notEqualsExpression).build();
+    assert (paginationCarbonReader.getTotalRows() == 99999);
+    paginationCarbonReader.close();
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testSDKPaginationInsertData() throws IOException, InvalidLoadOptionException, InterruptedException {
+    List<String[]> data1 = new ArrayList<String[]>();
+    String[] row1 = {"1", "AAA", "3", "3444345.66", "true", "1979-12-09", "2011-2-10 1:00:20", "Pune", "IT"};
+    String[] row2 = {"2", "BBB", "2", "543124.66", "false", "1987-2-19", "2017-1-1 12:00:20", "Bangalore", "DATA"};
+    String[] row3 = {"3", "CCC", "1", "787878.888", "false", "1982-05-12", "2015-12-1 2:20:20", "Pune", "DATA"};
+    String[] row4 = {"4", "DDD", "1", "99999.24", "true", "1981-04-09", "2000-1-15 7:00:20", "Delhi", "MAINS"};
+    String[] row5 = {"5", "EEE", "3", "545656.99", "true", "1987-12-09", "2017-11-25 04:00:20", "Delhi", "IT"};
+
+    data1.add(row1);
+    data1.add(row2);
+    data1.add(row3);
+    data1.add(row4);
+    data1.add(row5);
+
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+    Field[] fields = new Field[9];
+    fields[0] = new Field("id", DataTypes.INT);
+    fields[1] = new Field("name", DataTypes.STRING);
+    fields[2] = new Field("rank", DataTypes.SHORT);
+    fields[3] = new Field("salary", DataTypes.DOUBLE);
+    fields[4] = new Field("active", DataTypes.BOOLEAN);
+    fields[5] = new Field("dob", DataTypes.DATE);
+    fields[6] = new Field("doj", DataTypes.TIMESTAMP);
+    fields[7] = new Field("city", DataTypes.STRING);
+    fields[8] = new Field("dept", DataTypes.STRING);
+
+    CarbonWriterBuilder builder = CarbonWriter.builder()
+        .outputPath(path).withBlockletSize(1).withBlockSize(2);
+    CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("TestUtil").build();
+    for (int i = 0; i < 5; i++) {
+      writer.write(data1.get(i));
+    }
+    writer.close();
+
+    String[] row = {"222", "Daisy", "3", "334.456", "true", "1956-11-08", "2013-12-10 12:00:20", "Pune", "IT"};
+    writer = CarbonWriter.builder()
+        .outputPath(path).withBlockletSize(1).withBlockSize(2)
+        .withCsvInput(new Schema(fields)).writtenBy("TestUtil").build();
+    writer.write(row);
+    writer.close();
+
+    // configure cache size = 4 blocklet
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_MAX_PAGINATION_LRU_CACHE_SIZE_IN_MB, "4");
+
+    PaginationCarbonReader<Object> paginationCarbonReader =
+        (PaginationCarbonReader<Object>) CarbonReader.builder(path, "_temp")
+            .withPaginationSupport().projection(new String[]
+                {"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept"}).build();
+    assert (paginationCarbonReader.getTotalRows() == 6);
+    Object[] rows = paginationCarbonReader.read(1, 6);
+    assert (rows.length == 6);
+
+    CarbonIUD.getInstance().delete(path, "name", "AAA").commit();
+
+    CarbonReaderBuilder carbonReaderBuilder = CarbonReader.builder(path, "_temp")
+        .withPaginationSupport().projection(new String[]{"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept"});
+    paginationCarbonReader = (PaginationCarbonReader<Object>) carbonReaderBuilder.build();
+
+    assert (paginationCarbonReader.getTotalRows() == 5);
+    rows = paginationCarbonReader.read(1, 5);
+    assert (rows.length == 5);
+    paginationCarbonReader.close();
+
+    CarbonIUD.getInstance().update(path, "name", "AAA", "name", "nihal").commit();
+    paginationCarbonReader =
+        (PaginationCarbonReader<Object>) CarbonReader.builder(path, "_temp")
+            .withPaginationSupport().projection(new String[]
+                {"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept"}).build();
+    assert (paginationCarbonReader.getTotalRows() == 5);
+    rows = paginationCarbonReader.read(1, 5);
+    assert (rows.length == 5);
+    paginationCarbonReader.close();
+    FileUtils.deleteDirectory(new File(path));
+  }
 }
