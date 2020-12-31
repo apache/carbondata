@@ -94,21 +94,9 @@ singleFunctionIdentifier
     : functionIdentifier EOF
     ;
 
-singleDataType
-    : dataType EOF
-    ;
-
-singleTableSchema
-    : colTypeList EOF
-    ;
-
 statement
     : query                                                            #statementDefault
     | ctes? dmlStatementNoWith                                         #dmlStatement
-    ;
-
-configKey
-    : quotedIdentifier
     ;
 
 query
@@ -123,10 +111,6 @@ namedQuery
     : name=errorCapturingIdentifier (columnAliases=identifierList)? AS? '(' query ')'
     ;
 
-tableProvider
-    : USING multipartIdentifier
-    ;
-
 constantList
     : '(' constant (',' constant)* ')'
     ;
@@ -134,12 +118,6 @@ constantList
 nestedConstantList
     : '(' constantList (',' constantList)* ')'
     ;
-
-fileFormat
-    : INPUTFORMAT inFmt=STRING OUTPUTFORMAT outFmt=STRING    #tableFileFormat
-    | identifier                                             #genericFileFormat
-    ;
-
 
 resource
     : identifier STRING
@@ -624,9 +602,6 @@ qualifiedName
     : identifier ('.' identifier)*
     ;
 
-// this rule is used for explicitly capturing wrong identifiers such as test-table, which should actually be `test-table`
-// replace identifier with errorCapturingIdentifier where the immediate follow symbol is not an expression, otherwise
-// valid expressions such as "a-b" can be recognized as an identifier
 errorCapturingIdentifier
     : identifier errorCapturingIdentifierExtra
     ;
@@ -666,16 +641,6 @@ number
     | MINUS? BIGDECIMAL_LITERAL       #bigDecimalLiteral
     ;
 
-// When `SQL_standard_keyword_behavior=true`, there are 2 kinds of keywords in Spark SQL.
-// - Reserved keywords:
-//     Keywords that are reserved and can't be used as identifiers for table, view, column,
-//     function, alias, etc.
-// - Non-reserved keywords:
-//     Keywords that have a special meaning only in particular contexts and can be used as
-//     identifiers in other contexts. For example, `EXPLAIN SELECT ...` is a command, but EXPLAIN
-//     can be used as identifiers in other places.
-// You can find the full keywords list by searching "Start of the keywords list" in this file.
-// The non-reserved keywords are listed below. Keywords not in this list are reserved keywords.
 ansiNonReserved
 //--ANSI-NON-RESERVED-START
     : ADD
@@ -861,15 +826,6 @@ ansiNonReserved
 //--ANSI-NON-RESERVED-END
     ;
 
-// When `SQL_standard_keyword_behavior=false`, there are 2 kinds of keywords in Spark SQL.
-// - Non-reserved keywords:
-//     Same definition as the one when `SQL_standard_keyword_behavior=true`.
-// - Strict-non-reserved keywords:
-//     A strict version of non-reserved keywords, which can not be used as table alias.
-// You can find the full keywords list by searching "Start of the keywords list" in this file.
-// The strict-non-reserved keywords are listed in `strictNonReserved`.
-// The non-reserved keywords are listed in `nonReserved`.
-// These 2 together contain all the keywords.
 strictNonReserved
     : ANTI
     | CROSS
@@ -1126,9 +1082,6 @@ nonReserved
     | ZONE
 //--DEFAULT-NON-RESERVED-END
     ;
-
-// NOTE: If you add a new token in the list below, you should update the list of keywords
-// and reserved tag in `docs/sql-ref-ansi-compliance.md#sql-keywords`.
 
 //============================
 // Start of the keywords list
