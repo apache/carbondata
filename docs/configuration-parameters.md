@@ -96,8 +96,8 @@ This section provides the details of all the configurations required for the Car
 | carbon.binary.decoder | None | Support configurable decode for loading. Two decoders supported: base64 and hex |
 | carbon.local.dictionary.size.threshold.inmb | 4 | size based threshold for local dictionary in MB, maximum allowed size is 16 MB. |
 | carbon.enable.bad.record.handling.for.insert | false | by default, disable the bad record and converter step during "insert into" |
-| carbon.load.si.repair | true | by default, enable loading for failed segments in SI during load/insert command |
-| carbon.si.repair.limit | (none) | Number of failed segments to be loaded in SI when repairing missing segments in SI, by default load all the missing segments. Supports value from 0 to 2147483646 |
+| carbon.load.si.repair | true | by default, enable loading for failed segments in SI during load/insert command. Session level property, can be configured using the set command |
+| carbon.si.repair.limit | (none) | Number of failed segments to be loaded in SI when repairing missing segments in SI, by default load all the missing segments. Supports value from 0 to 2147483646. Session level property, can be configured using the set command |
 
 ## Compaction Configuration
 
