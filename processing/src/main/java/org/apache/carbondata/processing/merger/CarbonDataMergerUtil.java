@@ -1072,7 +1072,7 @@ public final class CarbonDataMergerUtil {
       } else return false;
     }
 
-    CarbonUpdateUtil.updateSegmentStatus(segmentUpdateDetails, table, timestamp, true);
+    CarbonUpdateUtil.updateSegmentStatus(segmentUpdateDetails, table, timestamp, true, false);
 
     // Update the Table Status.
     String metaDataFilepath = table.getMetadataPath();

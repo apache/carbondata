@@ -399,7 +399,7 @@ object DeleteExecution {
 
     // this is delete flow so no need of putting timestamp in the status file.
     if (CarbonUpdateUtil
-          .updateSegmentStatus(blockUpdateDetailsList, carbonTable, timestamp, false) &&
+          .updateSegmentStatus(blockUpdateDetailsList, carbonTable, timestamp, false, false) &&
         CarbonUpdateUtil
           .updateTableMetadataStatus(segmentDetails,
             carbonTable,
