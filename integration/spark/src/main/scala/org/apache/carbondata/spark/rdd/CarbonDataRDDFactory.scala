@@ -740,7 +740,7 @@ object CarbonDataRDDFactory {
         updateModel.get.deletedSegments.asJava)
     }
     done = done && CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
-      overwriteTable, uuid)
+      overwriteTable, uuid, false)
     if (!done) {
       val errorMessage = s"Dataload failed due to failure in table status updation for" +
                          s" ${carbonLoadModel.getTableName}"

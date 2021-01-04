@@ -200,7 +200,7 @@ case class CarbonMergeDataSetCommand(
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(deltaPath))
       if (!CarbonUpdateUtil.updateSegmentStatus(tuple._1.asScala.asJava,
         carbonTable,
-        trxMgr.getLatestTrx.toString, false)) {
+        trxMgr.getLatestTrx.toString, false, false)) {
         LOGGER.error("writing of update status file failed")
         throw new CarbonMergeDataSetException("writing of update status file failed")
       }

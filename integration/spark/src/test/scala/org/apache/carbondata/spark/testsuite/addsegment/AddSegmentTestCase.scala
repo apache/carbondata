@@ -29,6 +29,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -37,7 +38,7 @@ import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
-import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
+import org.apache.carbondata.sdk.file.{CarbonIUD, CarbonReader, CarbonWriter}
 
 class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -80,6 +81,106 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
       .collect()
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
     FileFactory.deleteAllFilesOfDir(new File(newPath))
+  }
+
+  test("Test add segment for the segment having delete delta files") {
+    createCarbonTable()
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(s"delete from addsegment1 where empno = 12").collect()
+    sql(s"delete from addsegment1 where empno = 13").collect()
+    val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
+    val newPath = storeLocation + "/" + "addsegtest"
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    CarbonTestUtil.copy(path, newPath)
+    sql("delete from table addsegment1 where segment.id in (1)")
+    sql("clean files for table addsegment1")
+    sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='carbon')")
+      .collect()
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(16)))
+    checkAnswer(sql("select count(*) from addsegment1 where empno = 12"), Seq(Row(0)))
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    sql("drop table if exists addsegment1")
+  }
+
+  test("Test add segment for the segment having multiple blocks and delete delta files") {
+    sql("drop table if exists addsegment1")
+    sql(
+      """
+        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED AS carbondata TBLPROPERTIES('SORT_COLUMNS'='empno', 'SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"', 'GLOBAL_SORT_PARTITIONS'='5')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"', 'GLOBAL_SORT_PARTITIONS'='5')""".stripMargin)
+    sql(s"delete from addsegment1 where empno = 12").collect()
+    sql(s"delete from addsegment1 where empno = 17").collect()
+    val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
+    val newPath = storeLocation + "/" + "addsegtest"
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    CarbonTestUtil.copy(path, newPath)
+    sql("delete from table addsegment1 where segment.id in (1)")
+    sql("clean files for table addsegment1")
+    sql(s"alter table addsegment1 add segment" +
+      s" options('path'='$newPath', 'format'='carbon')").collect()
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(16)))
+    checkAnswer(sql("select count(*) from addsegment1 where empno = 12"), Seq(Row(0)))
+    checkAnswer(sql("select count(*) from addsegment1 where empno = 17"), Seq(Row(0)))
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    sql("drop table if exists addsegment1")
+  }
+
+  test("Test add segment by carbon written by sdk having delete delta files") {
+    val tableName = "add_segment_test"
+    sql(s"drop table if exists $tableName")
+    sql(
+      s"""
+         | CREATE TABLE $tableName (empno int, empname string, designation String, doj Timestamp,
+         | workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+         | projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+         | utilization int,salary int)
+         | STORED AS carbondata
+         |""".stripMargin)
+
+    val externalSegmentPath = storeLocation + "/" + "external_segment"
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+    // write into external segment folder
+    val schemaFilePath = s"$storeLocation/$tableName/Metadata/schema"
+    val writer = CarbonWriter.builder
+      .outputPath(externalSegmentPath)
+      .withSchemaFile(schemaFilePath)
+      .writtenBy("AddSegmentTestCase")
+      .withCsvInput()
+      .build()
+    val source = Source.fromFile(s"$resourcesPath/data.csv")
+    var count = 0
+    for (line <- source.getLines()) {
+      if (count != 0) {
+        writer.write(line.split(","))
+      }
+      count = count + 1
+    }
+    writer.close()
+    CarbonIUD.getInstance().delete(externalSegmentPath, "empno", "12").commit()
+    CarbonIUD.getInstance().delete(externalSegmentPath, "empno", "13").commit()
+    sql(s"alter table $tableName add segment " +
+      s"options('path'='$externalSegmentPath', 'format'='carbon')").collect()
+    // To clear the indexes from cache, which were cached after delete operation on SDK segments.
+    CacheProvider.getInstance().getCarbonCache.getCacheMap.clear()
+    checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(8)))
+    checkAnswer(sql(s"select count(*) from $tableName where empno = 12"), Seq(Row(0)))
+    checkAnswer(sql(s"select count(*) from $tableName where empno = 13"), Seq(Row(0)))
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+    sql(s"drop table $tableName")
   }
 
   test("Test added segment drop") {

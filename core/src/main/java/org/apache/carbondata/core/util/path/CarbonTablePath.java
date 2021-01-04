@@ -43,7 +43,7 @@ public class CarbonTablePath {
   private static final String FACT_DIR = "Fact";
   public static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
-  private static final String DATA_PART_PREFIX = "part-";
+  public static final String DATA_PART_PREFIX = "part-";
   public static final String BATCH_PREFIX = "_batchno";
   public static final String TRASH_DIR = ".Trash";
   private static final String LOCK_DIR = "LockFiles";

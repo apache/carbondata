@@ -47,6 +47,7 @@ import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.processing.loading.ComplexDelimitersEnum;
@@ -578,7 +579,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
           blockName = CarbonUpdateUtil.getBlockName(
               (tuple.split(CarbonCommonConstants.FILE_SEPARATOR)
                       [TupleIdEnum.BLOCK_ID.getTupleIdIndex()]));
-
+          // formatting blockName to create deleteDelta File of same name as created for
+          // transactional tables
+          String[] blockNameSplits = blockName.split(CarbonCommonConstants.UNDERSCORE);
+          blockName = CarbonTablePath.DATA_PART_PREFIX + blockNameSplits[0] +
+                  CarbonTablePath.BATCH_PREFIX + blockNameSplits[1];
           if (!blockToDeleteDeltaBlockMapping.containsKey(blockName)) {
             blockDetails = new DeleteDeltaBlockDetails(blockName);
             blockToDeleteDeltaBlockMapping.put(blockName, blockDetails);

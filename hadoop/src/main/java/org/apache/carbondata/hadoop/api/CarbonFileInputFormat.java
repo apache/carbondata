@@ -293,10 +293,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
 
     String expectedDeleteDeltaFileName = null;
     if (segmentFileName != null && !segmentFileName.isEmpty()) {
-      int startIndex = segmentFileName.indexOf(CarbonCommonConstants.HYPHEN);
       int endIndex = segmentFileName.indexOf(CarbonCommonConstants.UNDERSCORE);
-      if (startIndex != -1 && endIndex != -1) {
-        expectedDeleteDeltaFileName = segmentFileName.substring(startIndex + 1, endIndex);
+      if (endIndex != -1) {
+        expectedDeleteDeltaFileName = segmentFileName.substring(0, endIndex);
       }
     }
     String deleteDeltaFullFileName = null;

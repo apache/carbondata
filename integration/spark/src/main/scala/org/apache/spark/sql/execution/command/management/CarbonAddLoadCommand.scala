@@ -21,7 +21,7 @@ import java.io.File
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 import org.apache.hadoop.fs.FileStatus
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
@@ -35,6 +35,8 @@ import org.apache.spark.sql.types.StructType
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
@@ -42,7 +44,8 @@ import org.apache.carbondata.core.indexstore.{PartitionSpec => CarbonPartitionSp
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.Field
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, SegmentUpdateDetails}
+import org.apache.carbondata.core.reader.CarbonDeleteDeltaFileReaderImpl
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.view.{MVSchema, MVStatus}
@@ -261,8 +264,68 @@ case class CarbonAddLoadCommand(
     if (!isCarbonFormat) {
       newLoadMetaEntry.setFileFormat(new FileFormat(format))
     }
+    val deltaFiles = FileFactory.getCarbonFile(segmentPath).listFiles(new CarbonFileFilter() {
+      override def accept(file: CarbonFile): Boolean = file.getName
+        .endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    })
+    val updateTimestamp = System.currentTimeMillis().toString
+    var isUpdateStatusRequired = false
+    if (deltaFiles.nonEmpty) {
+      LOGGER.warn("Adding a modified load to the table. If there is any updated segment for this" +
+        "load, please add updated segment also.")
+      val blockNameToDeltaFilesMap =
+        collection.mutable.Map[String, collection.mutable.ListBuffer[(CarbonFile, String)]]()
+      deltaFiles.foreach { deltaFile =>
+        val tmpDeltaFilePath = deltaFile.getAbsolutePath
+          .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
+            CarbonCommonConstants.FILE_SEPARATOR)
+        val deltaFilePathElements = tmpDeltaFilePath.split(CarbonCommonConstants.FILE_SEPARATOR)
+        if (deltaFilePathElements != null && deltaFilePathElements.nonEmpty) {
+          val deltaFileName = deltaFilePathElements(deltaFilePathElements.length - 1)
+          val blockName = CarbonTablePath.DataFileUtil
+            .getBlockNameFromDeleteDeltaFile(deltaFileName)
+          if (blockNameToDeltaFilesMap.contains(blockName)) {
+            blockNameToDeltaFilesMap(blockName) += ((deltaFile, deltaFileName))
+          } else {
+            val deltaFileList = new ListBuffer[(CarbonFile, String)]()
+            deltaFileList += ((deltaFile, deltaFileName))
+            blockNameToDeltaFilesMap.put(blockName, deltaFileList)
+          }
+        }
+      }
+      val segmentUpdateDetails = new util.ArrayList[SegmentUpdateDetails]()
+      val columnCompressor = CompressorFactory.getInstance.getCompressor.getName
+      blockNameToDeltaFilesMap.foreach { entry =>
+        val segmentUpdateDetail = new SegmentUpdateDetails()
+        segmentUpdateDetail.setBlockName(entry._1)
+        segmentUpdateDetail.setActualBlockName(
+          entry._1 + CarbonCommonConstants.POINT + columnCompressor +
+            CarbonCommonConstants.FACT_FILE_EXT)
+        segmentUpdateDetail.setSegmentName(model.getSegmentId)
+        val blockNameElements = entry._1.split(CarbonCommonConstants.HYPHEN)
+        if (blockNameElements != null && blockNameElements.nonEmpty) {
+          val segmentId = blockNameElements(blockNameElements.length - 1)
+          // Segment ID in cases of SDK is null
+          if (segmentId.equals("null")) {
+            readAllDeltaFiles(entry._2, segmentUpdateDetail)
+          } else {
+            setValidDeltaFileAndDeletedRowCount(entry._2, segmentUpdateDetail)
+          }
+        }
+        segmentUpdateDetails.add(segmentUpdateDetail)
+      }
+      CarbonUpdateUtil.updateSegmentStatus(segmentUpdateDetails,
+        carbonTable,
+        updateTimestamp,
+        false,
+        true)
+      isUpdateStatusRequired = true
+      newLoadMetaEntry.setUpdateDeltaStartTimestamp(updateTimestamp)
+      newLoadMetaEntry.setUpdateDeltaEndTimestamp(updateTimestamp)
+    }
 
-    CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetaEntry, model, true, false)
+    CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetaEntry, model, true, false, updateTimestamp,
+      isUpdateStatusRequired)
     val segment = new Segment(
       model.getSegmentId,
       SegmentFileStore.genSegmentFileName(
@@ -367,6 +430,63 @@ case class CarbonAddLoadCommand(
         case t: Throwable => throw new RuntimeException(s"invalid partition path: $path")
       }
     }
+  }
+
+  /**
+   * If there are more than one deleteDelta File present  for a block. Then This method
+   * will pick the deltaFile with highest timestamp, because the default threshold for horizontal
+   * compaction is 1. It is assumed that threshold for horizontal compaction is not changed from
+   * default value. So there will always be only one valid delete delta file present for a block.
+   * It also sets the number of deleted rows for a segment.
+   */
+  def setValidDeltaFileAndDeletedRowCount(
+      deleteDeltaFiles : ListBuffer[(CarbonFile, String)],
+      segmentUpdateDetails : SegmentUpdateDetails) : Unit = {
+    var maxDeltaStamp : Long = -1
+    var deletedRowsCount : Long = 0
+    var validDeltaFile : CarbonFile = null
+    deleteDeltaFiles.foreach { deltaFile =>
+      val currentFileTimestamp = CarbonTablePath.DataFileUtil
+        .getTimeStampFromDeleteDeltaFile(deltaFile._2)
+      if (currentFileTimestamp.toLong > maxDeltaStamp) {
+        maxDeltaStamp = currentFileTimestamp.toLong
+        validDeltaFile = deltaFile._1
+      }
+    }
+    val blockDetails =
+      new CarbonDeleteDeltaFileReaderImpl(validDeltaFile.getAbsolutePath).readJson()
+    blockDetails.getBlockletDetails.asScala.foreach { blocklet =>
+      deletedRowsCount = deletedRowsCount + blocklet.getDeletedRows.size()
+    }
+    segmentUpdateDetails.setDeleteDeltaStartTimestamp(maxDeltaStamp.toString)
+    segmentUpdateDetails.setDeleteDeltaEndTimestamp(maxDeltaStamp.toString)
+    segmentUpdateDetails.setDeletedRowsInBlock(deletedRowsCount.toString)
+  }
+
+  /**
+   * As horizontal compaction not supported for SDK segments. So all delta files are valid
+   */
+  def readAllDeltaFiles(
+      deleteDeltaFiles : ListBuffer[(CarbonFile, String)],
+      segmentUpdateDetails : SegmentUpdateDetails) : Unit = {
+    var minDeltaStamp : Long = System.currentTimeMillis()
+    var maxDeltaStamp : Long = -1
+    var deletedRowsCount : Long = 0
+    deleteDeltaFiles.foreach { deltaFile =>
+      val currentFileTimestamp = CarbonTablePath.DataFileUtil
+        .getTimeStampFromDeleteDeltaFile(deltaFile._2)
+      minDeltaStamp = Math.min(minDeltaStamp, currentFileTimestamp.toLong)
+      maxDeltaStamp = Math.max(maxDeltaStamp, currentFileTimestamp.toLong)
+      segmentUpdateDetails.addDeltaFileStamp(currentFileTimestamp)
+      val blockDetails =
+        new CarbonDeleteDeltaFileReaderImpl(deltaFile._1.getAbsolutePath).readJson()
+      blockDetails.getBlockletDetails.asScala.foreach { blocklet =>
+        deletedRowsCount = deletedRowsCount + blocklet.getDeletedRows.size()
+      }
+    }
+    segmentUpdateDetails.setDeleteDeltaStartTimestamp(minDeltaStamp.toString)
+    segmentUpdateDetails.setDeleteDeltaEndTimestamp(maxDeltaStamp.toString)
+    segmentUpdateDetails.setDeletedRowsInBlock(deletedRowsCount.toString)
   }
 
   override protected def opName: String = "ADD SEGMENT WITH PATH"

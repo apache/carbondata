@@ -152,7 +152,8 @@ public final class CarbonLoaderUtil {
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
       throws IOException {
-    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, "");
+    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, "",
+        false);
   }
 
   /**
@@ -209,15 +210,15 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
-      throws IOException {
+      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid,
+      boolean isUpdateStatusRequired) throws IOException {
     // For Non Transactional tables no need to update the the Table Status file.
     if (!loadModel.isCarbonTransactionalTable()) {
       return true;
     }
 
     return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
-        new ArrayList<Segment>(), new ArrayList<Segment>());
+        new ArrayList<Segment>(), new ArrayList<Segment>(), isUpdateStatusRequired);
   }
 
   /**
@@ -232,7 +233,8 @@ public final class CarbonLoaderUtil {
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid,
-      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated) throws IOException {
+      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated,
+      boolean isUpdateStatusRequired) throws IOException {
     boolean status = false;
     AbsoluteTableIdentifier identifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
@@ -278,6 +280,10 @@ public final class CarbonLoaderUtil {
               }
             }
           } else {
+            if (isUpdateStatusRequired && segmentId.equalsIgnoreCase("0") && !StringUtils
+                .isBlank(uuid)) {
+              newMetaEntry.setUpdateStatusFileName(CarbonUpdateUtil.getUpdateStatusFileName(uuid));
+            }
             newMetaEntry.setLoadName(segmentId);
             loadModel.setSegmentId(segmentId);
           }
@@ -339,6 +345,9 @@ public final class CarbonLoaderUtil {
             detail.setSegmentFile(
                 detail.getLoadName() + "_" + newMetaEntry.getUpdateStatusFileName()
                     + CarbonTablePath.SEGMENT_EXT);
+          } else if (isUpdateStatusRequired && detail.getLoadName().equalsIgnoreCase("0")
+              && !StringUtils.isBlank(uuid)) {
+            detail.setUpdateStatusFileName(CarbonUpdateUtil.getUpdateStatusFileName(uuid));
           }
         }
         SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
@@ -425,7 +434,7 @@ public final class CarbonLoaderUtil {
         .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
 
     boolean entryAdded = CarbonLoaderUtil
-        .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
+        .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid, false);
     if (!entryAdded) {
       throw new IOException("Dataload failed due to failure in table status updation for "
           + model.getTableName());
@@ -453,7 +462,7 @@ public final class CarbonLoaderUtil {
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
     boolean entryAdded = CarbonLoaderUtil.recordNewLoadMetadata(
-        loadMetaEntry, model, false, false, uuid);
+        loadMetaEntry, model, false, false, uuid, false);
     if (!entryAdded) {
       throw new IOException(
           "Failed to update failure entry in table status for " + model.getTableName());

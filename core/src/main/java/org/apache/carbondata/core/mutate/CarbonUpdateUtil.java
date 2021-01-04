@@ -47,6 +47,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -145,9 +146,17 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static boolean updateSegmentStatus(List<SegmentUpdateDetails> updateDetailsList,
-      CarbonTable table, String updateStatusFileIdentifier, boolean isCompaction) {
+      CarbonTable table, String updateStatusFileIdentifier, boolean isCompaction,
+      boolean isForceWrite) {
     boolean status = false;
     SegmentUpdateStatusManager segmentUpdateStatusManager = new SegmentUpdateStatusManager(table);
+    if (isForceWrite && !CollectionUtils.isEmpty(updateDetailsList)) {
+      String segId = String.valueOf(SegmentStatusManager
+          .createNewSegmentId(segmentUpdateStatusManager.getLoadMetadataDetails()));
+      for (SegmentUpdateDetails detail : updateDetailsList) {
+        detail.setSegmentName(segId);
+      }
+    }
     ICarbonLock updateLock = segmentUpdateStatusManager.getTableUpdateStatusLock();
     boolean lockStatus = false;
 
@@ -178,8 +187,14 @@ public class CarbonUpdateUtil {
             updateDetailsValidSeg.add(updateDetails);
           }
         }
-        segmentUpdateStatusManager
-            .writeLoadDetailsIntoFile(updateDetailsValidSeg, updateStatusFileIdentifier);
+        // In case of ForceWrite, write the segmentUpdateDetails to the tableUpdateStatus file
+        // without any validation of segments.
+        if (isForceWrite) {
+          segmentUpdateStatusManager.writeLoadDetailsIntoFile(oldList, updateStatusFileIdentifier);
+        } else {
+          segmentUpdateStatusManager
+              .writeLoadDetailsIntoFile(updateDetailsValidSeg, updateStatusFileIdentifier);
+        }
         status = true;
       } else {
         LOGGER.error("Not able to acquire the segment update lock.");
