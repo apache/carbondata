@@ -90,6 +90,8 @@ class SparkStoreCreatorForPresto extends QueryTest with BeforeAndAfterAll{
     sql("drop table if exists carbon_bloom")
     sql("drop table if exists range_table")
     sql("drop table if exists streaming_table")
+    sql("drop table if exists array_decimal")
+    sql("drop table if exists struct_decimal")
     sql("use default ")
   }
 
@@ -363,6 +365,24 @@ class SparkStoreCreatorForPresto extends QueryTest with BeforeAndAfterAll{
         | TBLPROPERTIES ('streaming' = 'true')
       """.stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO TABLE streaming_table""")
+  }
+
+  test("Test decimal unscaled converter for array") {
+    sql("drop table if exists array_decimal")
+    sql(
+      "CREATE TABLE IF NOT EXISTS array_decimal (salary array<decimal(20,3)>) STORED AS " +
+      "carbondata"
+    )
+    sql("insert into array_decimal select array(922.580, 3.435) ")
+  }
+
+  test("Test decimal unscaled converter for struct") {
+    sql("drop table if exists struct_decimal")
+    sql(
+      "CREATE TABLE IF NOT EXISTS struct_decimal (salary struct<dec:decimal(20,3)> ) STORED AS " +
+      "carbondata"
+    )
+    sql("insert into struct_decimal select named_struct('dec',922.580) ")
   }
 
   private def createFile(fileName: String, line: Int = 10000, start: Int = 0) = {
