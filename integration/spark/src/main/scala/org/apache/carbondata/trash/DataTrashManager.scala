@@ -19,16 +19,19 @@ package org.apache.carbondata.trash
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang.StringUtils
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CleanFilesUtil, TrashUtil}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CleanFilesUtil, DeleteLoadFolders, TrashUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 object DataTrashManager {
@@ -48,7 +51,8 @@ object DataTrashManager {
       carbonTable: CarbonTable,
       isForceDelete: Boolean,
       cleanStaleInProgress: Boolean,
-      partitionSpecs: Option[Seq[PartitionSpec]] = None): Unit = {
+      showStatistics: Boolean,
+      partitionSpecs: Option[Seq[PartitionSpec]] = None) : Long = {
     // if isForceDelete = true need to throw exception if CARBON_CLEAN_FILES_FORCE_ALLOWED is false
     if (isForceDelete && !CarbonProperties.getInstance().isCleanFilesForceAllowed) {
       LOGGER.error("Clean Files with Force option deletes the physical data and it cannot be" +
@@ -72,11 +76,26 @@ object DataTrashManager {
       carbonDeleteSegmentLock = CarbonLockUtil.getLockObject(carbonTable
         .getAbsoluteTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK, deleteSegmentErrorMsg)
       // step 1: check and clean trash folder
-      checkAndCleanTrashFolder(carbonTable, isForceDelete)
+      // trashFolderSizeStats(0) contains the size that is freed/or can be freed and
+      // trashFolderSizeStats(1) contains the size of remaining data in the trash folder
+      val trashFolderSizeStats = checkAndCleanTrashFolder(carbonTable, isForceDelete,
+          isDryRun = false, showStatistics)
       // step 2: move stale segments which are not exists in metadata into .Trash
       moveStaleSegmentsToTrash(carbonTable)
       // step 3: clean expired segments(MARKED_FOR_DELETE, Compacted, In Progress)
-      checkAndCleanExpiredSegments(carbonTable, isForceDelete, cleanStaleInProgress, partitionSpecs)
+      // Since calculating the the size before and after clean files can be a costly operation
+      // have exposed an option where user can change this behaviour.
+      if (showStatistics) {
+        val sizeBeforeCleaning = getSizeSnapshot(carbonTable)
+        checkAndCleanExpiredSegments(carbonTable, isForceDelete,
+          cleanStaleInProgress, partitionSpecs)
+        val sizeAfterCleaning = getSizeSnapshot(carbonTable)
+        sizeBeforeCleaning - sizeAfterCleaning + trashFolderSizeStats._1
+      } else {
+        checkAndCleanExpiredSegments(carbonTable, isForceDelete,
+          cleanStaleInProgress, partitionSpecs)
+        0
+      }
     } finally {
       if (carbonCleanFilesLock != null) {
         CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
@@ -87,13 +106,54 @@ object DataTrashManager {
     }
   }
 
-  private def checkAndCleanTrashFolder(carbonTable: CarbonTable, isForceDelete: Boolean): Unit = {
+  /**
+   * Checks the size of the segment files as well as datafiles, this method is used before and after
+   * clean files operation to check how much space is actually freed, during the operation.
+   */
+  def getSizeSnapshot(carbonTable: CarbonTable): Long = {
+    val metadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    var size: Long = 0
+    val segmentFileLocation = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)
+    if (FileFactory.isFileExist(segmentFileLocation)) {
+      size += FileFactory.getDirectorySize(segmentFileLocation)
+    }
+    metadataDetails.foreach(oneLoad =>
+      if (oneLoad.getVisibility.toBoolean) {
+        size += calculateSegmentSizeForOneLoad(carbonTable, oneLoad, metadataDetails)
+      }
+    )
+    size
+  }
+
+  /**
+   * Method to handle the Clean files dry run operation
+   */
+  def cleanFilesDryRunOperation (
+      carbonTable: CarbonTable,
+      isForceDelete: Boolean,
+      cleanStaleInProgress: Boolean,
+      showStats: Boolean): (Long, Long) = {
+    // get size freed from the trash folder
+    val trashFolderSizeStats = checkAndCleanTrashFolder(carbonTable, isForceDelete,
+        isDryRun = true, showStats)
+    // get size that will be deleted (MFD, COmpacted, Inprogress segments)
+    val expiredSegmentsSizeStats = dryRunOnExpiredSegments(carbonTable, isForceDelete,
+      cleanStaleInProgress)
+    (trashFolderSizeStats._1 + expiredSegmentsSizeStats._1, trashFolderSizeStats._2 +
+        expiredSegmentsSizeStats._2)
+  }
+
+  private def checkAndCleanTrashFolder(carbonTable: CarbonTable, isForceDelete: Boolean,
+      isDryRun: Boolean, showStats: Boolean): (Long, Long) = {
     if (isForceDelete) {
       // empty the trash folder
-      TrashUtil.emptyTrash(carbonTable.getTablePath)
+      val sizeStatistics = TrashUtil.emptyTrash(carbonTable.getTablePath, isDryRun, showStats)
+      (sizeStatistics.head, sizeStatistics(1))
     } else {
       // clear trash based on timestamp
-      TrashUtil.deleteExpiredDataFromTrash(carbonTable.getTablePath)
+      val sizeStatistics = TrashUtil.deleteExpiredDataFromTrash(carbonTable.getTablePath,
+          isDryRun, showStats)
+      (sizeStatistics.head, sizeStatistics(1))
     }
   }
 
@@ -119,6 +179,84 @@ object DataTrashManager {
     if (carbonTable.isHivePartitionTable && partitionSpecsOption.isDefined) {
       SegmentFileStore.cleanSegments(carbonTable, partitionSpecs, isForceDelete)
     }
+  }
+
+  /**
+   * Does Clean files dry run operation on the expired segments. Returns the size freed
+   * during that clean files operation and also shows the remaining trash size, which can be
+   * cleaned after those segments are expired
+   */
+  private def dryRunOnExpiredSegments(
+      carbonTable: CarbonTable,
+      isForceDelete: Boolean,
+      cleanStaleInProgress: Boolean): (Long, Long) = {
+    var sizeFreed: Long = 0
+    var trashSizeRemaining: Long = 0
+    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    if (SegmentStatusManager.isLoadDeletionRequired(loadMetadataDetails)) {
+      loadMetadataDetails.foreach { oneLoad =>
+        if (!oneLoad.getVisibility.equalsIgnoreCase("false")) {
+          val segmentFilePath = CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath,
+              oneLoad.getSegmentFile)
+          if (DeleteLoadFolders.canDeleteThisLoad(oneLoad, isForceDelete, cleanStaleInProgress)) {
+            // No need to consider physical data for external segments, only consider metadata.
+            if (oneLoad.getPath() == null || oneLoad.getPath().equalsIgnoreCase("NA")) {
+              sizeFreed += calculateSegmentSizeForOneLoad(carbonTable, oneLoad, loadMetadataDetails)
+            }
+            if (FileFactory.isFileExist(segmentFilePath)) {
+              sizeFreed += FileFactory.getCarbonFile(segmentFilePath).getSize
+            }
+          } else {
+            if (SegmentStatusManager.isExpiredSegment(oneLoad, carbonTable
+                .getAbsoluteTableIdentifier)) {
+              trashSizeRemaining += calculateSegmentSizeForOneLoad(carbonTable, oneLoad,
+                  loadMetadataDetails)
+              if (FileFactory.isFileExist(segmentFilePath)) {
+                trashSizeRemaining += FileFactory.getCarbonFile(segmentFilePath).getSize
+              }
+            }
+          }
+        }
+      }
+    }
+    (sizeFreed, trashSizeRemaining)
+  }
+
+  /**
+   * calculates the segment size based of a segment
+   */
+  def calculateSegmentSizeForOneLoad( carbonTable: CarbonTable, oneLoad: LoadMetadataDetails,
+        loadMetadataDetails: Array[LoadMetadataDetails]) : Long = {
+    var size : Long = 0
+    if (!StringUtils.isEmpty(oneLoad.getDataSize)) {
+      size += oneLoad.getDataSize.toLong
+    }
+    if (!StringUtils.isEmpty(oneLoad.getIndexSize)) {
+      size += oneLoad.getIndexSize.toLong
+    }
+    if (!oneLoad.getUpdateDeltaStartTimestamp.isEmpty && !oneLoad.getUpdateDeltaEndTimestamp
+        .isEmpty) {
+      size += calculateDeltaFileSize(carbonTable, oneLoad, loadMetadataDetails)
+    }
+    size
+  }
+
+  /**
+   * calculates the size of delta files  for one segment
+   */
+  def calculateDeltaFileSize( carbonTable: CarbonTable, oneLoad: LoadMetadataDetails,
+      loadMetadataDetails: Array[LoadMetadataDetails]) : Long = {
+    var size: Long = 0
+    val segmentUpdateStatusManager = new SegmentUpdateStatusManager(carbonTable,
+        loadMetadataDetails)
+    segmentUpdateStatusManager.getBlockNameFromSegment(oneLoad.getLoadName).asScala.foreach {
+      block =>
+      segmentUpdateStatusManager.getDeleteDeltaFilesList(Segment
+          .toSegment(oneLoad.getLoadName), block).asScala.foreach{ deltaFile =>
+        size += FileFactory.getCarbonFile(deltaFile).getSize
+      }
+    }
+    size
   }
 
   /**

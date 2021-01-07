@@ -65,15 +65,25 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     loadData()
     sql(s"""ALTER TABLE CLEANTEST COMPACT "MINOR" """)
     loadData()
+    var dryRunRes = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('dryrun'='true')").collect()
+    var cleanFilesRes = sql(s"CLEAN FILES FOR TABLE cleantest").collect()
+    assert(cleanFilesRes(0).get(0) == dryRunRes(0).get(0))
     val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
       .getTablePath
     val trashFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.TRASH_DIR
     assert(!FileFactory.isFileExist(trashFolderPath))
     sql(s"""Delete from table cleantest where segment.id in(4)""")
+    dryRunRes = sql(s"CLEAN FILES FOR TABLE cleantest options('dryrun'='true')").collect()
+    cleanFilesRes = sql(s"CLEAN FILES FOR TABLE cleantest").collect()
+    assert(cleanFilesRes(0).get(0) == dryRunRes(0).get(0))
+
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
-    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
+    dryRunRes = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true','dryrun'='true')")
+      .collect()
+    cleanFilesRes = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").collect()
+    assert(cleanFilesRes(0).get(0) == dryRunRes(0).get(0))
     CarbonProperties.getInstance()
       .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     val segmentNumber2 = sql(s"""show segments for table cleantest""").count()
@@ -139,7 +149,9 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
       sqlContext.sparkSession), "2")
 
-    sql(s"CLEAN FILES FOR TABLE CLEANTEST").show()
+    val dryRunRes = sql(s"CLEAN FILES FOR TABLE CLEANTEST OPTIONS('dryrun'='true')").collect()
+    val cleanFilesRes = sql(s"CLEAN FILES FOR TABLE CLEANTEST").collect()
+    assert(cleanFilesRes(0).get(0) == dryRunRes(0).get(0))
     checkAnswer(sql(s"""select count(*) from cleantest"""),
       Seq(Row(2)))
 
@@ -186,7 +198,9 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
       sqlContext.sparkSession), "2")
 
-    sql(s"CLEAN FILES FOR TABLE CLEANTEST").show()
+    val dryRunRes = sql(s"CLEAN FILES FOR TABLE CLEANTEST OPTIONS('dryrun'='true')").collect()
+    val cleanFilesRes = sql(s"CLEAN FILES FOR TABLE CLEANTEST").collect()
+    assert(cleanFilesRes(0).get(0) == dryRunRes(0).get(0))
 
     val timeStamp = getTimestampFolderName(trashFolderPath)
     // test recovery from partition table

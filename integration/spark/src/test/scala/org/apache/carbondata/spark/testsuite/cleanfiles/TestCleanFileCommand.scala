@@ -31,7 +31,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonTestUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil
 
@@ -53,7 +53,11 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
 
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
     assert(segmentNumber1 == 4)
-    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('stale_inprogress'='true')").show
+    val dryRun = sql(s"CLEAN FILES FOR TABLE cleantest " +
+      s"OPTIONS('stale_inprogress'='true','dryrun'='true')").collect()
+    val cleanFiles = sql(s"CLEAN FILES FOR TABLE cleantest" +
+      s" OPTIONS('stale_inprogress'='true')").collect()
+    assert(cleanFiles(0).get(0) == dryRun(0).get(0))
     val segmentNumber2 = sql(s"""show segments for table cleantest""").count()
     assert(4 == segmentNumber2)
     assert(!FileFactory.isFileExist(trashFolderPath))
@@ -76,7 +80,11 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     assert(segmentNumber1 == 4)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
-    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('stale_inprogress'='true','force'='true')").show
+    val dryRun = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS" +
+      s"('stale_inprogress'='true','force'='true','dryrun'='true')").collect()
+    val cleanFiles = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS" +
+      s"('stale_inprogress'='true','force'='true')").collect()
+    assert(cleanFiles(0).get(0) == dryRun(0).get(0))
     CarbonProperties.getInstance()
       .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     val segmentNumber2 = sql(s"""show segments for table cleantest""").count()
@@ -100,10 +108,18 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
     assert(!FileFactory.isFileExist(trashFolderPath))
     sql(s"""Delete from table cleantest where segment.id in(4)""")
+
+    var dryRun = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('dryrun'='true')").collect()
+    var cleanFiles = sql(s"CLEAN FILES FOR TABLE cleantest").collect()
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('statistics'='false')").show()
+    assert(cleanFiles(0).get(0) == dryRun(0).get(0))
+    dryRun = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('dryrun'='true','force'='true')")
+        .collect()
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
-    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
+    cleanFiles = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").collect()
+    assert(cleanFiles(0).get(0) == dryRun(0).get(0))
     CarbonProperties.getInstance()
       .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
     sql(s"""show segments for table cleantest""").show()
@@ -130,7 +146,9 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     removeSegmentEntryFromTableStatusFile(CarbonEnv.getCarbonTable(Some("default"), "cleantest")(
         sqlContext.sparkSession), "4")
     assert(!FileFactory.isFileExist(trashFolderPath))
-    sql(s"CLEAN FILES FOR TABLE cleantest").show()
+    var dryRunRes = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('dryrun'='true')").collect()
+    var cleanFilesRes = sql(s"CLEAN FILES FOR TABLE cleantest").collect()
+    assert(cleanFilesRes(0).get(0) == dryRunRes(0).get(0))
     checkAnswer(sql(s"""select count(*) from cleantest"""),
       Seq(Row(4)))
     count = 0
@@ -149,17 +167,19 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(s"""select count(*) from cleantest"""),
       Seq(Row(5)))
 
-    sql(s"CLEAN FILES FOR TABLE cleantest").show()
+    dryRunRes = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('dryrun'='true')").collect()
+    cleanFilesRes = sql(s"CLEAN FILES FOR TABLE cleantest").collect()
+    assert(cleanFilesRes(0).get(0) == dryRunRes(0).get(0))
     count = 0
     list = getFileCountInTrashFolder(trashFolderPath)
     assert(list == 2)
 
-    intercept[RuntimeException] {
-      sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
-    }
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
-    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
+    dryRunRes = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true', 'dryrun'='true')")
+        .collect()
+    cleanFilesRes = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").collect()
+    assert(cleanFilesRes(0).get(0) == dryRunRes(0).get(0))
     CarbonProperties.getInstance()
       .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
 
@@ -465,6 +485,42 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
         CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
     }
+
+  test("Test clean files after delete command") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql("drop table if exists cleantest")
+    sql(
+      """
+        | CREATE TABLE cleantest (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE cleantest OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    val table = CarbonEnv.getCarbonTable(None, "cleantest") (sqlContext.sparkSession)
+    sql("delete from cleantest where deptno='10'")
+    sql(s"""Delete from table cleantest where segment.id in(0)""")
+    val segmentSize = FileFactory.getDirectorySize(CarbonTablePath.getSegmentPath(table
+        .getTablePath, "0")) + FileFactory.getDirectorySize(CarbonTablePath
+        .getSegmentFilesLocation(table.getTablePath))
+    var dryRun = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('dryrun'='true')").collect()
+    var cleanFiles = sql(s"CLEAN FILES FOR TABLE cleantest").collect()
+    assert(cleanFiles(0).get(0) == dryRun(0).get(0))
+    dryRun = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('dryrun'='true','force'='true')")
+      .collect()
+    cleanFiles = sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").collect()
+    assert(cleanFiles(0).get(0) == dryRun(0).get(0))
+    assert(ByteUtil.convertByteToReadable(segmentSize) == cleanFiles(0).get(0))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+        CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+    sql("drop table if exists cleantest")
+  }
+
 
   def editTableStatusFile(carbonTablePath: String) : Unit = {
     // original table status file

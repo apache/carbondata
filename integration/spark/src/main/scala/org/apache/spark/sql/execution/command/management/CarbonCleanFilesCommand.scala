@@ -19,14 +19,16 @@ package org.apache.spark.sql.execution.command.management
 
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
+import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.ByteUtil
 import org.apache.carbondata.events._
 import org.apache.carbondata.trash.DataTrashManager
 
@@ -41,6 +43,27 @@ case class CarbonCleanFilesCommand(
   extends DataCommand {
 
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  val isDryRun: Boolean = options.getOrElse("dryrun", "false").toBoolean
+  val showStats: Boolean = if (isInternalCleanCall) {
+    false
+  } else {
+    options.getOrElse("statistics", "true").toBoolean
+  }
+
+  override def output: Seq[AttributeReference] = {
+    if (isDryRun) {
+      // dry run operation
+      Seq(
+        AttributeReference("Size To Be Freed", StringType, nullable = false)(),
+        AttributeReference("Trash Data Remaining", StringType, nullable = false)())
+    } else if (showStats) {
+      Seq(
+        AttributeReference("Size Freed", StringType, nullable = false)())
+      // actual clean files operation
+    } else {
+      Seq.empty
+    }
+  }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
@@ -58,18 +81,32 @@ case class CarbonCleanFilesCommand(
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-
-    val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
-    val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
-    withEvents(preEvent, postEvent) {
-      DataTrashManager.cleanGarbageData(
+    var sizeCleaned : Long = 0
+    if (isDryRun) {
+      val result = DataTrashManager.cleanFilesDryRunOperation(
         carbonTable,
         options.getOrElse("force", "false").toBoolean,
         options.getOrElse("stale_inprogress", "false").toBoolean,
-        CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, carbonTable))
+        showStats)
+      Seq(Row(ByteUtil.convertByteToReadable(result._1), ByteUtil
+          .convertByteToReadable(result._2)))
+    } else {
+      val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
+      val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
+      withEvents(preEvent, postEvent) {
+         sizeCleaned = DataTrashManager.cleanGarbageData(
+          carbonTable,
+          options.getOrElse("force", "false").toBoolean,
+          options.getOrElse("stale_inprogress", "false").toBoolean,
+          showStats,
+          CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, carbonTable))
+      }
+      if (showStats) {
+        Seq(Row(ByteUtil.convertByteToReadable(sizeCleaned)))
+      } else {
+        Seq.empty
+      }
     }
-
-    Seq.empty
   }
 
   override protected def opName: String = "CLEAN FILES"

@@ -517,7 +517,7 @@ public class CarbonUpdateUtil {
 
     long minutesElapsed = (difference / (1000 * 60));
 
-    return minutesElapsed > maxTime;
+    return minutesElapsed >= maxTime;
 
   }
 

@@ -1125,17 +1125,23 @@ public class SegmentFileStore {
     List<String> indexOrMergeFiles = fileStore.readIndexFiles(SegmentStatus.SUCCESS, true,
         FileFactory.getConfiguration());
     Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
+    List<String> deletedFiles = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
       FileFactory.deleteFile(entry.getKey());
+      deletedFiles.add(entry.getKey());
       for (String file : entry.getValue()) {
         String[] deltaFilePaths =
             updateStatusManager.getDeleteDeltaFilePath(file, segment.getSegmentNo());
         for (String deltaFilePath : deltaFilePaths) {
           FileFactory.deleteFile(deltaFilePath);
+          deletedFiles.add(deltaFilePath);
         }
         FileFactory.deleteFile(file);
+        deletedFiles.add(file);
       }
     }
+    LOGGER.info("Deleted the files: " + String.join(",", deletedFiles) + " on clean" +
+        " files operation");
     deletePhysicalPartition(partitionSpecs, indexFilesMap, indexOrMergeFiles, tablePath);
   }
 
@@ -1147,16 +1153,19 @@ public class SegmentFileStore {
    */
   private static void deletePhysicalPartition(List<PartitionSpec> partitionSpecs,
       Map<String, List<String>> locationMap, List<String> indexOrMergeFiles, String tablePath) {
+    LOGGER.info("Deleting files: ");
     for (String indexOrMergeFile : indexOrMergeFiles) {
       if (null != partitionSpecs) {
         Path location = new Path(indexOrMergeFile);
         boolean exists = pathExistsInPartitionSpec(partitionSpecs, location);
         if (!exists) {
           FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location.toString()));
+          LOGGER.info(location.toString());
         }
       } else {
         Path location = new Path(indexOrMergeFile);
         FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location.toString()));
+        LOGGER.info(location.toString());
       }
     }
     for (Map.Entry<String, List<String>> entry : locationMap.entrySet()) {
@@ -1199,7 +1208,7 @@ public class SegmentFileStore {
     }
   }
 
-  private static boolean pathExistsInPartitionSpec(List<PartitionSpec> partitionSpecs,
+  public static boolean pathExistsInPartitionSpec(List<PartitionSpec> partitionSpecs,
       Path partitionPath) {
     for (PartitionSpec spec : partitionSpecs) {
       if (spec.getLocation().equals(partitionPath)) {

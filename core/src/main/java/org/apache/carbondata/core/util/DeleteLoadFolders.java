@@ -187,7 +187,7 @@ public final class DeleteLoadFolders {
     return false;
   }
 
-  private static Boolean canDeleteThisLoad(LoadMetadataDetails oneLoad,
+  public static Boolean canDeleteThisLoad(LoadMetadataDetails oneLoad,
       boolean isForceDelete, boolean cleanStaleInProgress) {
     /*
      * if cleanStaleInProgress == false and  isForceDelete == false, clean MFD and Compacted

@@ -983,7 +983,27 @@ public class SegmentStatusManager {
     }
   }
 
-  private static boolean isLoadDeletionRequired(LoadMetadataDetails[] details) {
+  public static boolean isExpiredSegment(LoadMetadataDetails oneLoad, AbsoluteTableIdentifier
+      absoluteTableIdentifier) {
+    boolean isExpiredSegment = false;
+    if (oneLoad.getSegmentStatus() == SegmentStatus.COMPACTED || oneLoad.getSegmentStatus() ==
+        SegmentStatus.MARKED_FOR_DELETE) {
+      isExpiredSegment = true;
+    } else if (oneLoad.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS || oneLoad
+        .getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+      // check if lock can be acquired
+      ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
+          CarbonTablePath.addSegmentPrefix(oneLoad.getLoadName()) + LockUsage.LOCK);
+      try {
+        isExpiredSegment = segmentLock.lockWithRetries();
+      } finally {
+        CarbonLockUtil.fileUnlock(segmentLock, LockUsage.LOCK);
+      }
+    }
+    return isExpiredSegment;
+  }
+
+  public static boolean isLoadDeletionRequired(LoadMetadataDetails[] details) {
     if (details != null && details.length > 0) {
       for (LoadMetadataDetails oneRow : details) {
         if ((SegmentStatus.MARKED_FOR_DELETE == oneRow.getSegmentStatus()
