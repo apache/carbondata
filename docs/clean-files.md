@@ -65,3 +65,40 @@ The stale_inprogress option with force option will delete Marked for delete, Com
   ```
   CLEAN FILES FOR TABLE TABLE_NAME options('stale_inprogress'='true', 'force'='true')
   ```
+### DRY RUN OPTION
+Clean files also support a dry run option which will let the user know how much space will we freed 
+during the actual clean files operation. The dry run operation will not delete any data but will just give
+size based statistics on the data which will be cleaned in clean files. Dry run operation will return two columns where the first will 
+show how much space will be freed by that clean files operation and the second column will show the 
+remaining stale data(data which can be deleted but has not yet expired as per the ```max.query.execution.time``` and ``` carbon.trash.retention.days``` values
+).  By default the value of ```dryrun``` option is ```false```.
+
+Dry Run Operation is supported with four types of commands:
+  ```
+  CLEAN FILES FOR TABLE TABLE_NAME options('dryrun'='true')
+  ```
+  ```
+  CLEAN FILES FOR TABLE TABLE_NAME options('force'='true', 'dryrun'='true')
+  ```
+  ```
+  CLEAN FILES FOR TABLE TABLE_NAME options('stale_inprogress'='true','dryrun'='true')
+  ```
+
+  ```
+  CLEAN FILES FOR TABLE TABLE_NAME options('stale_inprogress'='true', 'force'='true','dryrun'='true')
+  ```
+
+**NOTE**:
+  * Since the dry run operation will calculate size and will access File level API's, the operation can
+  be a costly and a time consuming operation in case of tables with large number of segments.
+  * When dry run is true, the statistics option will not matter.
+  
+### SHOW STATISTICS
+Clean files operation tells how much size is freed during that operation to the user.  By default, the clean files operation
+will show the size freed statistics. Since calculating and showing statistics can be a costly operation and reduce the performance of the
+clean files operation, the user can disable that option by using ```statistics = false``` in the clean files options.
+  
+   ```
+   CLEAN FILES FOR TABLE TABLE_NAME options('statistics'='false')
+   ```
+  

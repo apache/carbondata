@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -150,48 +151,91 @@ public final class TrashUtil {
 
   /**
    * The below method deletes timestamp subdirectories in the trash folder which have expired as
-   * per the user defined retention time
+   * per the user defined retention time. It return an array where the first element has the size
+   * freed from the trash folder and the second element has the remaining size in the trash folder
    */
-  public static void deleteExpiredDataFromTrash(String tablePath) {
+  public static long[] deleteExpiredDataFromTrash(String tablePath, Boolean isDryRun,
+      Boolean showStats) {
     CarbonFile trashFolder = FileFactory.getCarbonFile(CarbonTablePath
         .getTrashFolderPath(tablePath));
+    long sizeFreed = 0;
+    long trashFolderSize = 0;
     // Deleting the timestamp based subdirectories in the trashfolder by the given timestamp.
     try {
       if (trashFolder.isFileExist()) {
+        if (isDryRun || showStats) {
+          trashFolderSize = FileFactory.getDirectorySize(trashFolder.getAbsolutePath());
+        }
         CarbonFile[] timestampFolderList = trashFolder.listFiles();
+        List<CarbonFile> filesToDelete = new ArrayList<>();
         for (CarbonFile timestampFolder : timestampFolderList) {
           // If the timeStamp at which the timeStamp subdirectory has expired as per the user
           // defined value, delete the complete timeStamp subdirectory
           if (timestampFolder.isDirectory() && isTrashRetentionTimeoutExceeded(Long
               .parseLong(timestampFolder.getName()))) {
-            FileFactory.deleteAllCarbonFilesOfDir(timestampFolder);
-            LOGGER.info("Timestamp subfolder from the Trash folder deleted: " + timestampFolder
+            // only calculate size in case of dry run or in case clean files is with show stats
+            if (isDryRun || showStats) {
+              sizeFreed += FileFactory.getDirectorySize(timestampFolder.getAbsolutePath());
+            }
+            filesToDelete.add(timestampFolder);
+          }
+        }
+        if (!isDryRun) {
+          for (CarbonFile carbonFile : filesToDelete) {
+            LOGGER.info("Timestamp subfolder from the Trash folder deleted: " + carbonFile
                 .getAbsolutePath());
+            FileFactory.deleteAllCarbonFilesOfDir(carbonFile);
           }
         }
       }
     } catch (IOException e) {
       LOGGER.error("Error during deleting expired timestamp folder from the trash folder", e);
     }
+    return new long[] {sizeFreed, trashFolderSize - sizeFreed};
   }
 
   /**
    * The below method deletes all the files and folders in the trash folder of a carbon table.
+   * Returns an array in which the first element contains the size freed in case of clean files
+   * operation or size that can be freed in case of dry run and the second element contains the
+   * remaining size.
    */
-  public static void emptyTrash(String tablePath) {
+  public static long[] emptyTrash(String tablePath, Boolean isDryRun, Boolean showStats) {
     CarbonFile trashFolder = FileFactory.getCarbonFile(CarbonTablePath
         .getTrashFolderPath(tablePath));
     // if the trash folder exists delete the contents of the trash folder
+    long sizeFreed = 0;
+    long[] sizeStatistics = new long[]{0, 0};
     try {
       if (trashFolder.isFileExist()) {
         CarbonFile[] carbonFileList = trashFolder.listFiles();
+        List<CarbonFile> filesToDelete = new ArrayList<>();
         for (CarbonFile carbonFile : carbonFileList) {
-          FileFactory.deleteAllCarbonFilesOfDir(carbonFile);
+          //Only calculate size when it is dry run operation or when show statistics is
+          // true with actual operation
+          if (isDryRun || showStats) {
+            sizeFreed += FileFactory.getDirectorySize(carbonFile.getAbsolutePath());
+          }
+          filesToDelete.add(carbonFile);
+        }
+        sizeStatistics[0] = sizeFreed;
+        if (!isDryRun) {
+          for (CarbonFile carbonFile : filesToDelete) {
+            FileFactory.deleteAllCarbonFilesOfDir(carbonFile);
+          }
+          LOGGER.info("Trash Folder has been emptied for table: " + tablePath);
+          if (showStats) {
+            sizeStatistics[1] = FileFactory.getDirectorySize(trashFolder.getAbsolutePath());
+          }
+        } else {
+          sizeStatistics[1] = FileFactory.getDirectorySize(trashFolder.getAbsolutePath()) -
+              sizeFreed;
         }
       }
     } catch (IOException e) {
       LOGGER.error("Error while emptying the trash folder", e);
     }
+    return sizeStatistics;
   }
 
   /**

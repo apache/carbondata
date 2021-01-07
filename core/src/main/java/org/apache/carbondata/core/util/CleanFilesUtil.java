@@ -74,13 +74,19 @@ public class CleanFilesUtil {
               // delete the segment file as well
               FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath(),
                   staleSegmentFile));
+              List<String> deletedFiles = new ArrayList<>();
+              deletedFiles.add(staleSegmentFile);
               for (String duplicateStaleSegmentFile : redundantSegmentFile) {
                 if (DataFileUtil.getSegmentNoFromSegmentFile(duplicateStaleSegmentFile)
                     .equals(segmentNumber)) {
                   FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable
                       .getTablePath(), duplicateStaleSegmentFile));
+                  deletedFiles.add(duplicateStaleSegmentFile);
                 }
               }
+              LOGGER.info("Deleted the Segment :" + segmentPath.getName() + " after"
+                  + " moving it to the trash folder");
+              LOGGER.info("Deleted stale segment files: " + String.join(",", deletedFiles));
             } catch (IOException | InterruptedException e) {
               LOGGER.error("Unable to delete the segment: " + segmentPath + " from after moving" +
                   " it to the trash folder. Please delete them manually : " + e.getMessage(), e);
@@ -122,16 +128,20 @@ public class CleanFilesUtil {
       try {
         for (String file : filesToProcess) {
           FileFactory.deleteFile(file);
+          LOGGER.info("Deleted file :" + file + " after moving it to the trash folder");
         }
         // Delete the segment file too
         FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath(),
             staleSegmentFile));
+        LOGGER.info("Deleted stale segment file after moving it to the trash folder :"
+            + staleSegmentFile);
         // remove duplicate segment files if any
         for (String duplicateStaleSegmentFile : redundantSegmentFile) {
           if (DataFileUtil.getSegmentNoFromSegmentFile(duplicateStaleSegmentFile)
               .equals(segmentNumber)) {
             FileFactory.deleteFile(CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath(),
                 duplicateStaleSegmentFile));
+            LOGGER.info("Deleted redundant segment file :" + duplicateStaleSegmentFile);
           }
         }
       } catch (IOException e) {
