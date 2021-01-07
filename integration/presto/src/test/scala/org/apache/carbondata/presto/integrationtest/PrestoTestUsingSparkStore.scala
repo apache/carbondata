@@ -20,6 +20,7 @@ package org.apache.carbondata.presto.integrationtest
 import java.io.{File}
 import java.util
 
+import io.prestosql.jdbc.PrestoArray
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuiteLike}
 
@@ -287,6 +288,7 @@ class PrestoTestUsingSparkStore
   }
 
   test("Test range columns") {
+    prestoServer.execute("drop table if exists presto_spark_db.range_table")
     prestoServer
       .execute(
         "create table presto_spark_db.range_table(name varchar, id int) with" +
@@ -304,6 +306,7 @@ class PrestoTestUsingSparkStore
   }
 
   test("Test streaming ") {
+    prestoServer.execute("drop table if exists presto_spark_db.streaming_table")
     prestoServer
       .execute(
         "create table presto_spark_db.streaming_table(c1 varchar, c2 int, c3 varchar, c5 varchar)" +
@@ -322,6 +325,38 @@ class PrestoTestUsingSparkStore
              (c2.equals(4) && c5.equals("ddd") || (c2.equals(3) && c5.equals("ccc")) ||
               (c2.equals(5) && c5.equals("eee"))))
     }
+
+  }
+
+  test("Test decimal unscaled converter for array") {
+    prestoServer.execute("drop table if exists presto_spark_db.array_decimal")
+    prestoServer
+      .execute(
+        "create table presto_spark_db.array_decimal(salary array(decimal(20,3)) ) with" +
+        "(format='CARBON') ")
+    copyStoreContents("array_decimal")
+    val result: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM presto_spark_db.array_decimal")
+    assert(result.size == 1)
+    val data = result(0)("salary")
+      .asInstanceOf[PrestoArray]
+      .getArray()
+      .asInstanceOf[Array[Object]]
+    assert(data.sameElements(Array("922.580", "3.435")))
+  }
+
+  test("Test decimal unscaled converter for struct") {
+    prestoServer.execute("drop table if exists presto_spark_db.struct_decimal")
+    prestoServer
+      .execute(
+        "create table presto_spark_db.struct_decimal(salary ROW(dec decimal(20,3))) " +
+        "with (format='CARBON') ")
+    copyStoreContents("struct_decimal")
+    val result: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM presto_spark_db.struct_decimal")
+    assert(result.size == 1)
+    val data = result(0)("salary").asInstanceOf[java.util.Map[String, Any]]
+    assert(data.get("dec") == "922.580")
 
   }
 

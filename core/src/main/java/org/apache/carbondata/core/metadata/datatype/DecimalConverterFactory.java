@@ -132,6 +132,8 @@ public final class DecimalConverterFactory {
       }
       int shortSizeInBytes = DataTypes.SHORT.getSizeInBytes();
       int intSizeInBytes = DataTypes.INT.getSizeInBytes();
+      int longSizeInBytes = DataTypes.LONG.getSizeInBytes();
+      int shortIntSizeInBytes = DataTypes.SHORT_INT.getSizeInBytes();
       int lengthStoredInBytes;
       if (vectorInfo.encodings != null && vectorInfo.encodings.size() > 0 && CarbonUtil
           .hasEncoding(vectorInfo.encodings, Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY)) {
@@ -142,100 +144,57 @@ public final class DecimalConverterFactory {
         lengthStoredInBytes = shortSizeInBytes;
       }
       byte[] data = (byte[]) valuesToBeConverted;
-      if (pageType == DataTypes.BYTE) {
+      if (pageType == DataTypes.BYTE || pageType == DataTypes.SHORT
+          || pageType == DataTypes.SHORT_INT || pageType == DataTypes.INT
+          || pageType == DataTypes.LONG) {
         for (int i = 0; i < size; i++) {
           if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
-            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            BigDecimal value;
+            if (pageType == DataTypes.BYTE) {
+              value = BigDecimal.valueOf(data[i], scale);
+            } else if (pageType == DataTypes.SHORT) {
+              value = BigDecimal
+                  .valueOf(ByteUtil.toShortLittleEndian(data, i * shortSizeInBytes), scale);
+            } else if (pageType == DataTypes.SHORT_INT) {
+              value =
+                  BigDecimal.valueOf(ByteUtil.valueOf3Bytes(data, i * shortIntSizeInBytes), scale);
+            } else if (pageType == DataTypes.INT) {
+              value =
+                  BigDecimal.valueOf(ByteUtil.toIntLittleEndian(data, i * intSizeInBytes), scale);
+            } else {
+              value =
+                  BigDecimal.valueOf(ByteUtil.toLongLittleEndian(data, i * longSizeInBytes), scale);
+            }
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
             }
             vector.putDecimal(i, value, precision);
           }
         }
-      } else if (pageType == DataTypes.SHORT) {
-        for (int i = 0; i < size; i++) {
-          if (nullBitSet.get(i)) {
-            vector.putNull(i);
+      } else if (pageType == DataTypes.BYTE_ARRAY) {
+        // complex primitive decimal dimension
+        int offset = 0;
+        int length;
+        for (int j = 0; j < size; j++) {
+          // here decimal data will be Length[4 byte], scale[1 byte], value[Length byte]
+          if (lengthStoredInBytes == intSizeInBytes) {
+            length = ByteBuffer.wrap(data, offset, lengthStoredInBytes).getInt();
           } else {
-            BigDecimal value = BigDecimal
-                .valueOf(ByteUtil.toShortLittleEndian(data, i * shortSizeInBytes),
-                    scale);
-            if (value.scale() < newMeasureScale) {
-              value = value.setScale(newMeasureScale);
-            }
-            vector.putDecimal(i, value, precision);
+            length = ByteBuffer.wrap(data, offset, lengthStoredInBytes).getShort();
           }
-        }
-      } else if (pageType == DataTypes.SHORT_INT) {
-        int shortIntSizeInBytes = DataTypes.SHORT_INT.getSizeInBytes();
-        for (int i = 0; i < size; i++) {
-          if (nullBitSet.get(i)) {
-            vector.putNull(i);
-          } else {
-            BigDecimal value = BigDecimal
-                .valueOf(ByteUtil.valueOf3Bytes(data, i * shortIntSizeInBytes),
-                    scale);
-            if (value.scale() < newMeasureScale) {
-              value = value.setScale(newMeasureScale);
-            }
-            vector.putDecimal(i, value, precision);
+          offset += lengthStoredInBytes;
+          if (length == 0) {
+            vector.putNull(j);
+            continue;
           }
-        }
-      } else {
-        if (pageType == DataTypes.INT) {
-          for (int i = 0; i < size; i++) {
-            if (nullBitSet.get(i)) {
-              vector.putNull(i);
-            } else {
-              BigDecimal value = BigDecimal
-                  .valueOf(ByteUtil.toIntLittleEndian(data, i * intSizeInBytes),
-                      scale);
-              if (value.scale() < newMeasureScale) {
-                value = value.setScale(newMeasureScale);
-              }
-              vector.putDecimal(i, value, precision);
-            }
+          BigDecimal value = DataTypeUtil.byteToBigDecimal(data, offset, length);
+          if (value.scale() < newMeasureScale) {
+            value = value.setScale(newMeasureScale);
           }
-        } else if (pageType == DataTypes.LONG) {
-          int longSizeInBytes = DataTypes.LONG.getSizeInBytes();
-          for (int i = 0; i < size; i++) {
-            if (nullBitSet.get(i)) {
-              vector.putNull(i);
-            } else {
-              BigDecimal value = BigDecimal
-                  .valueOf(ByteUtil.toLongLittleEndian(data, i * longSizeInBytes),
-                      scale);
-              if (value.scale() < newMeasureScale) {
-                value = value.setScale(newMeasureScale);
-              }
-              vector.putDecimal(i, value, precision);
-            }
-          }
-        } else if (pageType == DataTypes.BYTE_ARRAY) {
-          // complex primitive decimal dimension
-          int offset = 0;
-          int length;
-          for (int j = 0; j < size; j++) {
-            // here decimal data will be Length[4 byte], scale[1 byte], value[Length byte]
-            if (lengthStoredInBytes == intSizeInBytes) {
-              length = ByteBuffer.wrap(data, offset, lengthStoredInBytes).getInt();
-            } else {
-              length = ByteBuffer.wrap(data, offset, lengthStoredInBytes).getShort();
-            }
-            offset += lengthStoredInBytes;
-            if (length == 0) {
-              vector.putNull(j);
-              continue;
-            }
-            BigDecimal value = DataTypeUtil.byteToBigDecimal(data, offset, length);
-            if (value.scale() < newMeasureScale) {
-              value = value.setScale(newMeasureScale);
-            }
-            vector.putDecimal(j, value, precision);
-            offset += length;
-          }
+          vector.putDecimal(j, value, precision);
+          offset += length;
         }
       }
     }
@@ -278,7 +237,7 @@ public final class DecimalConverterFactory {
     }
   }
 
-  public class DecimalUnscaledConverter implements DecimalConverter {
+  public class DecimalUnscaledConverter extends DecimalIntConverter implements DecimalConverter {
 
     private int scale;
 
@@ -287,6 +246,7 @@ public final class DecimalConverterFactory {
     private byte[] decimalBuffer = new byte[minBytesForPrecision[38]];
 
     DecimalUnscaledConverter(int precision, int scale) {
+      super(scale);
       this.scale = scale;
       this.numBytes = minBytesForPrecision[precision];
     }
@@ -327,8 +287,11 @@ public final class DecimalConverterFactory {
     @Override
     public void fillVector(Object valuesToBeConverted, int size,
         ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
+      if (valuesToBeConverted instanceof byte[]) {
+        super.fillVector(valuesToBeConverted, size, vectorInfo, nullBitSet, pageType);
+        return;
+      }
       CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
-      //TODO handle complex child
       int precision = vectorInfo.measure.getMeasure().getPrecision();
       int newMeasureScale = vectorInfo.measure.getMeasure().getScale();
       if (scale < newMeasureScale) {
