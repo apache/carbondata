@@ -29,7 +29,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.log4j.Logger;
 
-class AtomicFileOperationsImpl implements AtomicFileOperations {
+public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
   /**
    * Logger instance

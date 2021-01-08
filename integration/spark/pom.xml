@@ -120,6 +120,17 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-acid</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>hive-exec</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-lucene</artifactId>
       <version>${project.version}</version>
       <exclusions>

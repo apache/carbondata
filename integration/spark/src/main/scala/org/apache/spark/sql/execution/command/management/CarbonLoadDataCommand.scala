@@ -31,12 +31,15 @@ import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRel
 import org.apache.spark.sql.types.{DateType, IntegerType, LongType, StringType, StructType, TimestampType}
 import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 
+import org.apache.carbondata.acid.{FileBasedSegmentStore, SegmentDetailVO, SegmentManager, SegmentStore, SegmentStoreFactory}
+import org.apache.carbondata.acid.transaction.{CarbonTransactionManagerFactory, TableGroupDetail, TransactionOperation}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
@@ -74,6 +77,8 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
 
   var dateFormat: SimpleDateFormat = _
 
+  var tableGroupDetail: TableGroupDetail = _
+
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val (sizeInBytes, table, dbName, logicalPartitionRelation, finalPartition) =
       CommonLoadUtils.processMetadataCommon(sparkSession,
@@ -86,6 +91,21 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
     this.logicalPartitionRelation = logicalPartitionRelation
     this.finalPartition = finalPartition
     setAuditTable(dbName, tableName)
+    val identifiers = new util.ArrayList[AbsoluteTableIdentifier]() {
+      table.getAbsoluteTableIdentifier
+    }
+    tableGroupDetail = new TableGroupDetail(table.getTableGroupId,
+      table.getTransactionLogPath, table.getTransactionFileLockPath, identifiers)
+    if (CarbonTransactionManagerFactory.getInstance()
+      .getCurrentTransaction(tableGroupDetail) == null) {
+      // register as the local transaction
+      val operations = new util.ArrayList[TransactionOperation](1)
+      operations.add(TransactionOperation.LOAD)
+      CarbonTransactionManagerFactory.getInstance()
+        .registerTransaction(false,
+          operations,
+          tableGroupDetail)
+    }
     Seq.empty
   }
 
@@ -195,6 +215,19 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
         } else {
           throw ex
         }
+    }
+    val currentTxn = CarbonTransactionManagerFactory.getInstance()
+      .getCurrentTransaction(tableGroupDetail)
+    if (!currentTxn.isGlobalTransaction) {
+      // TODO: temp begin
+      val baseTxn = CarbonTransactionManagerFactory.getInstance()
+        .getBaseTransaction(tableGroupDetail)
+      val store = SegmentStoreFactory.create(baseTxn, currentTxn)
+      val details = new SegmentDetailVO().setStatus("Success").setSegmentId("1234")
+      store.writeSegment(table.getAbsoluteTableIdentifier, details)
+      // TODO: temp end
+      // commit the current transaction as it is local transaction
+      CarbonTransactionManagerFactory.getInstance().commitTransaction(currentTxn)
     }
     if (loadResultForReturn != null && loadResultForReturn.getLoadName != null) {
       Seq(Row(loadResultForReturn.getLoadName))

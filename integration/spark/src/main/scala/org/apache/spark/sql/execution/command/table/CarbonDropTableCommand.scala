@@ -164,6 +164,10 @@ case class CarbonDropTableCommand(
         val file = FileFactory.getCarbonFile(tableLockPath)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }
+      // clear the transaction file lock
+      val transactionFileLockPath: String = carbonTable.getTransactionFileLockPath
+      val transactionLockFile = FileFactory.getCarbonFile(transactionFileLockPath)
+      CarbonUtil.deleteFoldersAndFilesSilent(transactionLockFile)
       viewDropCommands.foreach(_.processData(sparkSession))
     }
     Seq.empty
