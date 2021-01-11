@@ -47,13 +47,6 @@ public class CarbonLocalMultiBlockSplit {
 
   private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
-  private long length;
-
-  @JsonProperty
-  public long getLength() {
-    return length;
-  }
-
   @JsonProperty
   public String[] getLocations() {
     return locations;

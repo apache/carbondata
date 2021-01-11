@@ -20,7 +20,6 @@ package org.apache.carbondata.presto.integrationtest
 import java.io.{File}
 import java.util
 
-import io.prestosql.jdbc.PrestoArray
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuiteLike}
 
@@ -28,7 +27,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.presto.server.{PrestoServer}
+import org.apache.carbondata.presto.server.{PrestoServer, PrestoTestUtil}
 
 class PrestoTestUsingSparkStore
   extends FunSuiteLike with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -57,8 +56,8 @@ class PrestoTestUsingSparkStore
   override def afterAll(): Unit = {
     prestoServer.stopServer()
     CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(storePath))
-     CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile
-     (s"$sparkStorePath"))
+    CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile
+    (s"$sparkStorePath"))
   }
 
   def copyStoreContents(tableName: String): Any = {
@@ -305,6 +304,71 @@ class PrestoTestUsingSparkStore
     }
   }
 
+  test("Test short vector datatype") {
+    prestoServer.execute("drop table if exists presto_spark_db.array_short")
+    prestoServer
+      .execute(
+        "create table presto_spark_db.array_short(salary array(smallint) ) with" +
+        "(format='CARBON') ")
+    copyStoreContents("array_short")
+    val result: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM presto_spark_db.array_short")
+    assert(result.size == 1)
+    PrestoTestUtil.validateShortData(result)
+  }
+
+  test("Test int vector datatype") {
+    prestoServer.execute("drop table if exists presto_spark_db.array_int")
+    prestoServer
+      .execute(
+        "create table presto_spark_db.array_int(salary array(int) ) with" +
+        "(format='CARBON') ")
+    copyStoreContents("array_int")
+    val result: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM presto_spark_db.array_int")
+    assert(result.size == 2)
+    PrestoTestUtil.validateIntData(result)
+  }
+
+  test("Test double vector datatype") {
+    prestoServer.execute("drop table if exists presto_spark_db.array_double")
+    prestoServer
+      .execute(
+        "create table presto_spark_db.array_double(salary array(double) ) with" +
+        "(format='CARBON') ")
+    copyStoreContents("array_double")
+    val result: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM presto_spark_db.array_double")
+    assert(result.size == 6)
+    PrestoTestUtil.validateDoubleData(result)
+  }
+
+  test("Test long vector datatype") {
+    prestoServer.execute("drop table if exists presto_spark_db.array_long")
+    prestoServer
+      .execute(
+        "create table presto_spark_db.array_long(salary array(bigint) ) with" +
+        "(format='CARBON') ")
+    copyStoreContents("array_long")
+    val result: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM presto_spark_db.array_long")
+    assert(result.size == 3)
+    PrestoTestUtil.validateLongData(result)
+  }
+
+  test("Test timestamp vector datatype") {
+    prestoServer.execute("drop table if exists presto_spark_db.array_timestamp")
+    prestoServer
+      .execute(
+        "create table presto_spark_db.array_timestamp(time array<timestamp>) with" +
+        "(format='CARBON') ")
+    copyStoreContents("array_timestamp")
+    val result: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT * FROM presto_spark_db.array_timestamp")
+    assert(result.size == 2)
+    PrestoTestUtil.validateTimestampData(result)
+  }
+
   test("Test streaming ") {
     prestoServer.execute("drop table if exists presto_spark_db.streaming_table")
     prestoServer
@@ -338,11 +402,7 @@ class PrestoTestUsingSparkStore
     val result: List[Map[String, Any]] = prestoServer
       .executeQuery("SELECT * FROM presto_spark_db.array_decimal")
     assert(result.size == 1)
-    val data = result(0)("salary")
-      .asInstanceOf[PrestoArray]
-      .getArray()
-      .asInstanceOf[Array[Object]]
-    assert(data.sameElements(Array("922.580", "3.435")))
+    PrestoTestUtil.validateDecimalData(result)
   }
 
   test("Test decimal unscaled converter for struct") {

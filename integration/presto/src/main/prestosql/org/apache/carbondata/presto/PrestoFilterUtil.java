@@ -19,21 +19,15 @@ package org.apache.carbondata.presto;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -50,25 +44,18 @@ import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import io.airlift.slice.Slice;
 import io.prestosql.plugin.hive.HiveColumnHandle;
 import io.prestosql.plugin.hive.HiveType;
-import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.predicate.Domain;
 import io.prestosql.spi.predicate.Range;
 import io.prestosql.spi.predicate.TupleDomain;
 import io.prestosql.spi.type.Decimals;
-import io.prestosql.spi.type.Type;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static io.prestosql.spi.StandardErrorCode.NOT_SUPPORTED;
 
 /**
  * PrestoFilterUtil create the carbonData Expression from the presto-domain
  */
 public class PrestoFilterUtil {
-
-  private static Map<Integer, Expression> filterMap = new HashMap<>();
-
-  private static final String HIVE_DEFAULT_DYNAMIC_PARTITION = "__HIVE_DEFAULT_PARTITION__";
 
   /**
    * @param columnHandle
@@ -249,16 +236,5 @@ public class PrestoFilterUtil {
     }
 
     return rawData;
-  }
-
-  /**
-   * get the filters from key
-   */
-  static Expression getFilters(Integer key) {
-    return filterMap.get(key);
-  }
-
-  static void setFilter(Integer tableId, Expression filter) {
-    filterMap.put(tableId, filter);
   }
 }

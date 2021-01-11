@@ -189,4 +189,78 @@ object PrestoTestUtil {
       assert(data2.sameElements(Array("Korea")))
     }
 
+  // this method depends on prestosql jdbc PrestoArray class
+  def validateShortData(result: List[Map[String, Any]]): Unit = {
+    for (i <- 0 to 0) {
+      val data = result(i)("salary")
+        .asInstanceOf[PrestoArray]
+        .getArray()
+        .asInstanceOf[Array[Object]]
+      assert(data.sameElements(Array(4352, 35, 3)))
+    }
+  }
+
+  // this method depends on prestosql jdbc PrestoArray class
+  def validateIntData(result: List[Map[String, Any]]): Unit = {
+    for (i <- 0 to 1) {
+      val data = result(i)("salary")
+        .asInstanceOf[PrestoArray]
+        .getArray()
+        .asInstanceOf[Array[Object]]
+      assert(data.sameElements(Array(21474836, 21474839, 23, 3)) ||
+             data.sameElements(Array(21474836, 21474839)))
+    }
+  }
+
+  // this method depends on prestosql jdbc PrestoArray class
+  def validateDoubleData(result: List[Map[String, Any]]): Unit = {
+    for (i <- 0 to 5) {
+      val data = result(i)("salary")
+        .asInstanceOf[PrestoArray]
+        .getArray()
+        .asInstanceOf[Array[Object]]
+      assert(data.sameElements(Array(2, 3, 4)) ||
+             data.sameElements(Array(242, 35, 43)) ||
+             data.sameElements(Array(32799, 32767)) ||
+             data.sameElements(Array(21546546, 32546546, 43211564)) ||
+             data.sameElements(Array(327.99, 3.2799)) ||
+             data.sameElements(Array(1, 2345, 108787.123)))
+    }
+  }
+
+  // this method depends on prestosql jdbc PrestoArray class
+  def validateLongData(result: List[Map[String, Any]]): Unit = {
+    for (i <- 0 to 2) {
+      val data = result(i)("salary")
+        .asInstanceOf[PrestoArray]
+        .getArray()
+        .asInstanceOf[Array[Object]]
+      assert(data.sameElements(Array(215, 23, 3)) ||
+             data.sameElements(Array(32800, 23, 3)) ||
+             data.sameElements(Array(32800, 214748364, 3))
+      )
+    }
+  }
+
+  // this method depends on prestosql jdbc PrestoArray class
+  def validateTimestampData(result: List[Map[String, Any]]): Unit = {
+    for (i <- 0 to 1) {
+      val data = result(i)("time")
+        .asInstanceOf[PrestoArray]
+        .getArray()
+        .asInstanceOf[Array[Object]]
+      assert(data.sameElements(Array("2020-01-11 12:00:45.000", "2020-01-11 12:01:45.000")) ||
+             data.sameElements(Array("2020-01-10 12:30:45.000", "2015-01-11 12:01:45.000")))
+    }
+  }
+
+  // this method depends on prestosql jdbc PrestoArray class
+  def validateDecimalData(result: List[Map[String, Any]]): Unit = {
+    val data = result(0)("salary")
+      .asInstanceOf[PrestoArray]
+      .getArray()
+      .asInstanceOf[Array[Object]]
+    assert(data.sameElements(Array("922.580", "3.435")))
+  }
+
 }
