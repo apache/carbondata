@@ -47,7 +47,6 @@ public class CarbonLocalInputSplit {
   private String[] deleteDeltaFiles;
   private String blockletId;
   private String detailInfo;
-  private int fileFormatOrdinal;
   private FileFormat fileFormat;
 
   /**
@@ -96,28 +95,12 @@ public class CarbonLocalInputSplit {
   }
 
   @JsonProperty
-  public String getDetailInfo() {
-    return detailInfo;
-  }
-
-  @JsonProperty
   public String getBlockletId() {
     return blockletId;
   }
 
-  @JsonProperty
-  public int getFileFormatOrdinal() {
-    return fileFormatOrdinal;
-  }
-
   public FileFormat getFileFormat() {
     return fileFormat;
-  }
-
-  public void setDetailInfo(BlockletDetailInfo blockletDetailInfo) {
-    Gson gson = new Gson();
-    detailInfo = gson.toJson(blockletDetailInfo);
-
   }
 
   @JsonCreator
@@ -137,12 +120,10 @@ public class CarbonLocalInputSplit {
     this.segmentId = segmentId;
     this.locations = locations;
     this.numberOfBlocklets = numberOfBlocklets;
-    //this.tableBlockInfo = tableBlockInfo;
     this.version = version;
     this.deleteDeltaFiles = deleteDeltaFiles;
     this.blockletId = blockletId;
     this.detailInfo = detailInfo;
-    this.fileFormatOrdinal = fileFormatOrdinal;
     this.fileFormat = FileFormat.getByOrdinal(fileFormatOrdinal);
   }
 

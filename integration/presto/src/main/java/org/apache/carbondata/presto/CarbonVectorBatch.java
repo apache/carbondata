@@ -93,7 +93,7 @@ public class CarbonVectorBatch {
     } else if (field.getDataType().isComplexType()) {
       return new ComplexTypeStreamReader(batchSize, field);
     } else {
-      return new ObjectStreamReader(batchSize, field.getDataType());
+      throw new UnsupportedOperationException("Datatype is invalid");
     }
   }
 

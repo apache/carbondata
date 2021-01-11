@@ -18,7 +18,7 @@
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.io.{File, PrintWriter}
-import java.util.UUID
+import java.util.{TimeZone, UUID}
 
 import scala.util.Random
 
@@ -92,6 +92,11 @@ class SparkStoreCreatorForPresto extends QueryTest with BeforeAndAfterAll{
     sql("drop table if exists streaming_table")
     sql("drop table if exists array_decimal")
     sql("drop table if exists struct_decimal")
+    sql("drop table if exists array_short")
+    sql("drop table if exists array_int")
+    sql("drop table if exists array_long")
+    sql("drop table if exists array_double")
+    sql("drop table if exists array_timestamp")
     sql("use default ")
   }
 
@@ -383,6 +388,85 @@ class SparkStoreCreatorForPresto extends QueryTest with BeforeAndAfterAll{
       "carbondata"
     )
     sql("insert into struct_decimal select named_struct('dec',922.580) ")
+  }
+
+  test("Test short vector datatype") {
+    sql("drop table if exists array_short")
+    sql(
+      "CREATE TABLE IF NOT EXISTS array_short (salary array<short>) STORED AS " +
+      "carbondata"
+    )
+    sql("insert into array_short select array(4352,35,3) ") // page datatype - short, adaptive
+    // integral codec
+  }
+
+  test("Test int vector datatype") {
+    sql("drop table if exists array_int")
+    sql(
+      "CREATE TABLE IF NOT EXISTS array_int (salary array<int>) STORED AS " +
+      "carbondata"
+    )
+    sql("insert into array_int select array(21474836,21474839,23,3) ") // page datatype - int,
+    // adaptive integral codec
+
+    sql("insert into array_int select array(21474836,21474839) ") // page datatype - byte, adaptive
+    // delta integral codec
+
+  }
+
+  test("Test long vector datatype") {
+    sql("drop table if exists array_long")
+    sql(
+      "CREATE TABLE IF NOT EXISTS array_long (salary array<long>) STORED AS " +
+      "carbondata"
+    )
+    // following are for adaptive integral codec
+    sql("insert into array_long select array(215,23,3) ") // page datatype - short
+
+    sql("insert into array_long select array(32800,23,3) ") // page datatype - short_int
+
+    sql("insert into array_long select array(32800,214748364,3) ") // page datatype - int
+
+  }
+
+  test("Test double vector datatype") {
+    sql("drop table if exists array_double")
+    sql(
+      "CREATE TABLE IF NOT EXISTS array_double (salary array<double>) STORED AS " +
+      "carbondata"
+    )
+    // following are for adaptive integral codec
+    sql("insert into array_double select array(2,3,4) ") // page datatype - byte
+
+    sql("insert into array_double select array(242,35,43) ") // page datatype - short
+
+    sql("insert into array_double select array(32799,32767) ") // page datatype - short_int
+
+    sql("insert into array_double select array(21546546,32546546,43211564) ") // page datatype - int
+
+    // following are for adaptive floating codec
+    sql("insert into array_double select array(327.99,3.2799) ") // page datatype - short_int
+
+    sql("insert into array_double select array(1,2345,108787.123) ") // page datatype - int
+
+  }
+
+  test("Test timestamp vector datatype") {
+    val default_timezone = TimeZone.getDefault
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"))
+    sql("drop table if exists array_timestamp")
+    sql(
+      "CREATE TABLE IF NOT EXISTS array_timestamp (time array<timestamp>) STORED AS " +
+      "carbondata"
+    )
+    sql("insert into array_timestamp select array('2020-01-11 12:00:45.0','2020-01-11 12:01:45.0')")
+    // page datatype - short-int, adaptive delta integral codec
+
+    sql("insert into array_timestamp select array('2020-01-10 12:30:45.0','2015-01-11 12:01:45.0')")
+    // page datatype - long, adaptive integral
+
+    // set timezone back to default
+    TimeZone.setDefault(default_timezone)
   }
 
   private def createFile(fileName: String, line: Int = 10000, start: Int = 0) = {
