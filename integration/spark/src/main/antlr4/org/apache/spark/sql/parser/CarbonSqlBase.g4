@@ -13,6 +13,10 @@
  *
  */
 
+/**
+ * Code ported from Apache Spark
+ * spark/sql/catalyst/src/main/antlr4/org/apache/spark/sql/catalyst/parser/SqlBase.g4
+ */
 grammar CarbonSqlBase;
 
 @parser::members {
