@@ -244,8 +244,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
       .getCacheMap
       .keySet()
       .asScala
-      .filter(index => index.startsWith(carbonTablePath))
-    assert(result.exists(index => index.startsWith(
+      .filter(index => index.contains(carbonTablePath))
+    assert(result.exists(index => index.contains(
       carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb")) && result.size == 2)
     assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
     checkAnswer(sql("select * from partitionTable where col3='ee'"), Seq(Row(1, "aa", "ee")))
@@ -255,10 +255,10 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
       .getCacheMap
       .keySet()
       .asScala
-      .filter(index => index.startsWith(carbonTablePath))
+      .filter(index => index.contains(carbonTablePath))
     assert(result.exists(index =>
-      index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb") ||
-      index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=ee") &&
+      index.contains(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb") ||
+      index.contains(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=ee") &&
       result.size == 3))
     assert(showCache(0).get(2).toString.equalsIgnoreCase("3/5 index files cached"))
     sql("drop table if exists partitionTable")
@@ -284,8 +284,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
       .getCacheMap
       .keySet()
       .asScala
-      .filter(index => index.startsWith(carbonTablePath))
-    assert(result.exists(index => index.startsWith(
+      .filter(index => index.contains(carbonTablePath))
+    assert(result.exists(index => index.contains(
       carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb/col4=cc")) &&
            result.size == 1)
     assert(showCache(0).get(2).toString.equalsIgnoreCase("1/5 index files cached"))
@@ -297,11 +297,11 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
       .getCacheMap
       .keySet()
       .asScala
-      .filter(index => index.startsWith(carbonTablePath))
+      .filter(index => index.contains(carbonTablePath))
     assert(result.exists(
-      index => index.startsWith(
+      index => index.contains(
         carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb/col4=cc") ||
-               index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR +
+               index.contains(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR +
                                 "col3=bb/col4=gg")) &&
            result.size == 2)
     assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
@@ -328,8 +328,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
       .getCacheMap
       .keySet()
       .asScala
-      .filter(index => index.startsWith(carbonTablePath))
-    assert(result.exists(index => index.startsWith(
+      .filter(index => index.contains(carbonTablePath))
+    assert(result.exists(index => index.contains(
       carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb")) && result.size == 2)
     assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
     sql("select * from partitionTable").collect()

@@ -726,13 +726,13 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
                  "dm" + CarbonCommonConstants.FILE_SEPARATOR
 
     // Check if table index entries are dropped
-    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
+    assert(droppedCacheKeys.asScala.exists(key => key.contains(tablePath)))
 
     // check if cache does not have any more table index entries
     assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(tablePath)))
 
     // Check if mv index entries are dropped
-    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(mvPath)))
+    assert(droppedCacheKeys.asScala.exists(key => key.contains(mvPath)))
 
     // check if cache does not have any more mv index entries
     assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(mvPath)))

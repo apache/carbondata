@@ -69,7 +69,7 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
       .map(_.getColumnId).toArray
 
     // Check if table index entries are dropped
-    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
+    assert(droppedCacheKeys.asScala.exists(key => key.contains(tablePath)))
 
     // check if cache does not have any more table index entries
     assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(tablePath)))
@@ -113,7 +113,7 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
                     CarbonCommonConstants.FILE_SEPARATOR
 
     // Check if table index entries are dropped
-    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
+    assert(droppedCacheKeys.asScala.exists(key => key.contains(tablePath)))
 
     // check if cache does not have any more table index entries
     assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(tablePath)))

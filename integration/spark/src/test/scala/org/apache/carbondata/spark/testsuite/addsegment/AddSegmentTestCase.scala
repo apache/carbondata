@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.addsegment
 
-import java.io.File
+import java.io.{File, FilenameFilter}
 
 import scala.io.Source
 
@@ -34,10 +34,12 @@ import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFi
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
+import org.apache.carbondata.core.scan.expression.{ColumnExpression, LiteralExpression}
+import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
-import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
+import org.apache.carbondata.sdk.file.{CarbonReader, CarbonSchemaReader, CarbonWriter}
 
 class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -784,6 +786,66 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     expectSameResultBySchema(externalSegmentPath, schemaFilePath, tableName)
     expectSameResultInferSchema(externalSegmentPath, tableName)
 
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+    sql(s"drop table $tableName")
+  }
+
+  test("Test add segment by carbon written by sdk on which read is already performed") {
+    val tableName = "add_segment_test"
+    sql(s"drop table if exists $tableName")
+    sql(
+      s"""
+         | CREATE TABLE $tableName (empno int, empname string, designation String, doj Timestamp,
+         | workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+         | projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+         | utilization int,salary int)
+         | STORED AS carbondata
+         |""".stripMargin)
+
+    val externalSegmentPath = storeLocation + "/" + "external_segment"
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+
+    // write into external segment folder
+    val schemaFilePath = s"$storeLocation/$tableName/Metadata/schema"
+    val writer = CarbonWriter.builder
+      .outputPath(externalSegmentPath)
+      .withSchemaFile(schemaFilePath)
+      .writtenBy("AddSegmentTestCase")
+      .withCsvInput()
+      .build()
+    val source = Source.fromFile(s"$resourcesPath/data.csv")
+    var count = 0
+    for (line <- source.getLines()) {
+      if (count != 0) {
+        writer.write(line.split(","))
+      }
+      count = count + 1
+    }
+    writer.close()
+
+    val dataFiles = new File(externalSegmentPath).listFiles(new FilenameFilter() {
+      override def accept(dir: File, name: String): Boolean = {
+        if (name == null) return false
+        name.endsWith(CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+      }
+    })
+    if (dataFiles == null || dataFiles.length < 1) {
+      throw new RuntimeException("Carbon index file not exists.")
+    }
+    val schema = CarbonSchemaReader.readSchema(dataFiles(0).getAbsolutePath).asOriginOrder
+    val fields = schema.getFields.map {field => field.getFieldName}
+    val columnExpression1 = new ColumnExpression("empno", DataTypes.INT)
+    val lessThanExpression = new LessThanExpression(columnExpression1,
+      new LiteralExpression("13", DataTypes.INT))
+    // This read with filter is performed to cache the indexes before adding the segment
+    val reader = CarbonReader
+      .builder(externalSegmentPath)
+      .filter(lessThanExpression)
+      .projection(fields)
+      .build()
+    sql(s"alter table $tableName add segment " +
+        s"options('path'='$externalSegmentPath', 'format'='carbon')").collect()
+    checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(10)))
     FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
     sql(s"drop table $tableName")
   }

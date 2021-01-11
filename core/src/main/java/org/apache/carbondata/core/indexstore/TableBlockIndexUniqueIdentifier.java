@@ -45,7 +45,8 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
     this.indexFileName = indexFileName;
     this.mergeIndexFileName = mergeIndexFileName;
     this.segmentId = segmentId;
-    this.uniqueName = indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + indexFileName;
+    this.uniqueName = segmentId + CarbonCommonConstants.UNDERSCORE +
+        indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + indexFileName;
   }
 
   public TableBlockIndexUniqueIdentifier(String segmentId) {
