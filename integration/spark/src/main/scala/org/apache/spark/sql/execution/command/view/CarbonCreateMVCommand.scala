@@ -99,6 +99,9 @@ case class CarbonCreateMVCommand(
     val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
     val schema = doCreate(session, identifier, viewManager, viewCatalog)
 
+    // Update the related mv tables property to mv fact tables
+    MVHelper.addOrModifyMVTablesMap(session, schema)
+
     try {
       viewCatalog.registerSchema(schema)
       if (schema.isRefreshOnManual) {

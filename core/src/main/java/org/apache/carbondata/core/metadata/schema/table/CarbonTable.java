@@ -68,6 +68,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
@@ -1244,6 +1245,15 @@ public class CarbonTable implements Serializable, Writable {
       parentTableName = indexMetadata.getParentTableName();
     }
     return parentTableName;
+  }
+
+  public Map<String, List<String>> getMVTablesMap() {
+    String relatedMVDB = this.getTableInfo().getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.RELATED_MV_TABLES_MAP);
+    if (null == relatedMVDB) {
+      return new HashMap<>();
+    }
+    return new Gson().fromJson(relatedMVDB, Map.class);
   }
 
   /**

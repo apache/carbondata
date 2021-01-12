@@ -62,17 +62,8 @@ public abstract class MVManager {
 
   public abstract String getDatabaseLocation(String databaseName);
 
-  public boolean hasSchemaOnTable(CarbonTable table) throws IOException {
-    List<MVSchema> schemas = getSchemas();
-    for (MVSchema schema : schemas) {
-      for (RelationIdentifier relatedTable : schema.getRelatedTables()) {
-        if (relatedTable.getDatabaseName().equalsIgnoreCase(table.getDatabaseName()) &&
-            relatedTable.getTableName().equalsIgnoreCase(table.getTableName())) {
-          return true;
-        }
-      }
-    }
-    return false;
+  public boolean hasSchemaOnTable(CarbonTable table) {
+    return !table.getMVTablesMap().isEmpty();
   }
 
   public boolean isMVInSyncWithParentTables(MVSchema mvSchema) throws IOException {
@@ -85,22 +76,7 @@ public abstract class MVManager {
    */
   public List<MVSchema> getSchemasOnTable(CarbonTable table)
       throws IOException {
-    List<MVSchema> schemasOnTable = new ArrayList<>();
-    List<MVSchema> schemas = getSchemas();
-    for (MVSchema schema : schemas) {
-      boolean isSchemaOnTable = false;
-      for (RelationIdentifier relatedTable : schema.getRelatedTables()) {
-        if (relatedTable.getDatabaseName().equalsIgnoreCase(table.getDatabaseName()) &&
-            relatedTable.getTableName().equalsIgnoreCase(table.getTableName())) {
-          isSchemaOnTable = true;
-          break;
-        }
-      }
-      if (isSchemaOnTable) {
-        schemasOnTable.add(schema);
-      }
-    }
-    return schemasOnTable;
+    return getSchemas(table.getMVTablesMap());
   }
 
   /**
@@ -126,6 +102,32 @@ public abstract class MVManager {
         LOGGER.error("Exception Occurred: Skipping MV schemas from database: " + database);
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug(ex.getMessage());
+        }
+      }
+    }
+    return schemas;
+  }
+
+  /**
+   * It gives all mv schemas from given databases in the store
+   */
+  public List<MVSchema> getSchemas(Map<String, List<String>> mvTablesMap) throws IOException {
+    List<MVSchema> schemas = new ArrayList<>();
+    for (Map.Entry<String, List<String>> databaseEntry : mvTablesMap.entrySet()) {
+      String database = databaseEntry.getKey();
+      List<String> mvTables = databaseEntry.getValue();
+      for (String mvTable : mvTables) {
+        try {
+          schemas.add(this.getSchema(database, mvTable));
+        } catch (IOException ex) {
+          LOGGER.error("Error while fetching MV schema " + mvTable + " from database: " + database);
+          throw ex;
+        } catch (Exception ex) {
+          LOGGER.error(
+              "Exception Occurred: Skipping MV schema " + mvTable + " from database: " + database);
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(ex.getMessage());
+          }
         }
       }
     }
@@ -252,7 +254,6 @@ public abstract class MVManager {
       } catch (IOException ex) {
         throw ex;
       } catch (Exception ex) {
-        LOGGER.error("Exception Occurred: Skipping MV schemas from database: " + database);
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug(ex.getMessage());
         }

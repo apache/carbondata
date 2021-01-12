@@ -28,7 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
-import org.apache.carbondata.view.{MVCatalogInSpark, MVManagerInSpark, UpdateMVPostExecutionEvent, UpdateMVPreExecutionEvent}
+import org.apache.carbondata.view.{MVCatalogInSpark, MVHelper, MVManagerInSpark, UpdateMVPostExecutionEvent, UpdateMVPreExecutionEvent}
 
 /**
  * Drop Materialized View Command implementation
@@ -38,7 +38,8 @@ case class CarbonDropMVCommand(
     databaseNameOption: Option[String],
     name: String,
     ifExistsSet: Boolean,
-    forceDrop: Boolean = false)
+    forceDrop: Boolean = false,
+    isLockAcquiredOnFactTable: String = null)
   extends AtomicRunnableCommand {
 
   private val logger = CarbonDropMVCommand.LOGGER
@@ -89,6 +90,10 @@ case class CarbonDropMVCommand(
             viewCatalog.deregisterSchema(schema.getIdentifier)
           }
         }
+
+        // Update the related mv table's property to mv fact tables
+        MVHelper.addOrModifyMVTablesMap(session, schema, isMVDrop = true,
+          isLockAcquiredOnFactTable = isLockAcquiredOnFactTable)
 
         this.dropTableCommand = dropTableCommand
       } else {

@@ -47,7 +47,6 @@ import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
-import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -292,7 +291,7 @@ public class MVProvider {
       }
     } finally {
       if (locked) {
-        CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.INDEX_STATUS_LOCK);
+        carbonTableStatusLock.unlock();
       }
     }
   }
@@ -569,14 +568,31 @@ public class MVProvider {
         FileFactory.createDirectoryAndSetPermission(this.systemDirectory,
             new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
       }
-      CarbonFile schemaIndexFile = FileFactory.getCarbonFile(this.schemaIndexFilePath);
-      if (schemaIndexFile.exists()) {
-        schemaIndexFile.delete();
+      // two or more JVM process can access this method to update last modified time at same
+      // time causing exception. So take a system level lock on system folder and update
+      // last modified time of schema index file
+      ICarbonLock systemDirLock = CarbonLockFactory
+          .getSystemLevelCarbonLockObj(this.systemDirectory,
+              LockUsage.MATERIALIZED_VIEW_STATUS_LOCK);
+      boolean locked = false;
+      try {
+        locked = systemDirLock.lockWithRetries();
+        if (locked) {
+          CarbonFile schemaIndexFile = FileFactory.getCarbonFile(this.schemaIndexFilePath);
+          if (schemaIndexFile.exists()) {
+            schemaIndexFile.delete();
+          }
+          schemaIndexFile.createNewFile(new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
+          this.lastModifiedTime = schemaIndexFile.getLastModifiedTime();
+        } else {
+          LOG.warn("Unable to get Lock to refresh schema index last modified time");
+        }
+      } finally {
+        if (locked) {
+          systemDirLock.unlock();
+        }
       }
-      schemaIndexFile.createNewFile(new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
-      this.lastModifiedTime = schemaIndexFile.getLastModifiedTime();
     }
-
   }
 
 }

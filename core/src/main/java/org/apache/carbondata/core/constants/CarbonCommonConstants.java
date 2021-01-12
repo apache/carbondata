@@ -1223,6 +1223,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_ENABLE_MV_DEFAULT = "true";
 
   /**
+   * Related mv table's map for a fact table
+   */
+  public static final String RELATED_MV_TABLES_MAP = "relatedmvtablesmap";
+
+  /**
    * ENABLE_QUERY_STATISTICS
    */
   @CarbonProperty

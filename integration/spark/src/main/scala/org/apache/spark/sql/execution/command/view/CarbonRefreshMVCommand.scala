@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.carbondata.common.exceptions.sql.{MalformedMVCommandException, NoSuchMVException}
 import org.apache.carbondata.core.view.MVStatus
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
-import org.apache.carbondata.view.{MVManagerInSpark, MVRefresher, RefreshMVPostExecutionEvent, RefreshMVPreExecutionEvent}
+import org.apache.carbondata.view.{MVHelper, MVManagerInSpark, MVRefresher, RefreshMVPostExecutionEvent, RefreshMVPreExecutionEvent}
 
 /**
  * Refresh Materialized View Command implementation
@@ -46,6 +46,10 @@ case class CarbonRefreshMVCommand(
         throw new MalformedMVCommandException(
           s"Materialized view ${ databaseName }.${ mvName } does not exist")
     }
+
+    // refresh table property of parent table if needed
+    MVHelper.addOrModifyMVTablesMap(session, schema, isRefreshMV = true)
+
     val table = CarbonEnv.getCarbonTable(Option(databaseName), mvName)(session)
     setAuditTable(table)
 

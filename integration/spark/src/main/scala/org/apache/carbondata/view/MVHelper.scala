@@ -24,17 +24,23 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.CarbonToSparkAdapter
+import com.google.gson.Gson
+import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, GetArrayItem, GetMapValue, GetStructField, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.Field
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.view.MVSchema
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, ModularRelation, Select}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -42,6 +48,8 @@ import org.apache.carbondata.spark.util.CommonUtil
  * Utility class for keeping all the utility method for mv
  */
 object MVHelper {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def dropDummyFunction(plan: LogicalPlan): LogicalPlan = {
     plan transform {
@@ -370,6 +378,93 @@ object MVHelper {
       updatedName = updatedName.substring(0, 110) + CarbonCommonConstants.UNDERSCORE + counter
     }
     updatedName
+  }
+
+  /**
+   * Add or modify the MV database and table name to fact table's related mv tables Map
+   * 1. During Create, add the database and mv name to the fact table's map
+   * 2. On drop mv, remove if fact table's map contains mv name
+   * 3. On refresh, add mv name to the fact table's map if it is not present.
+   * If already present, then just return
+   */
+  def addOrModifyMVTablesMap(session: SparkSession,
+      mvSchema: MVSchema,
+      isMVDrop: Boolean = false,
+      isLockAcquiredOnFactTable: String = null,
+      isRefreshMV: Boolean = false): Unit = {
+    val mvDatabaseName = mvSchema.getIdentifier.getDatabaseName
+    val mvName = mvSchema.getIdentifier.getTableName
+    mvSchema.getRelatedTables.asScala.foreach { parentTable =>
+      val parentDbName = parentTable.getDatabaseName
+      val parentTableName = parentTable.getTableName
+      var carbonLock: ICarbonLock = null
+      try {
+        val carbonTable = try {
+          CarbonEnv.getCarbonTable(Some(parentDbName), parentTableName)(session)
+        } catch {
+          case _: Exception =>
+            LOGGER.error(s"Error while getting carbon table for " +
+                         s"${ parentDbName + "." + parentTableName }")
+            null
+        }
+        if (null != carbonTable) {
+          // get the mv tables map from fact table
+          var relatedMVTablesMap = carbonTable.getMVTablesMap
+          if (isRefreshMV && relatedMVTablesMap.containsKey(mvDatabaseName) &&
+              relatedMVTablesMap.get(mvDatabaseName).contains(mvName)) {
+            // in case of refresh mv scenario, if mvName is already present in fact table
+            // properties, then do not update , just return
+            return
+          }
+          // get lock on fact table
+          if (null == isLockAcquiredOnFactTable) {
+            carbonLock = CarbonLockUtil.getLockObject(carbonTable.getAbsoluteTableIdentifier,
+              LockUsage.METADATA_LOCK)
+          } else if (null != isLockAcquiredOnFactTable &&
+                     !isLockAcquiredOnFactTable.equals(parentTableName)) {
+            carbonLock = CarbonLockUtil.getLockObject(carbonTable.getAbsoluteTableIdentifier,
+              LockUsage.METADATA_LOCK)
+          }
+          // get the mv tables map again from fact table after acquiring lock
+          relatedMVTablesMap = carbonTable.getMVTablesMap
+          var needFactTableUpdate = true
+          if (isMVDrop) {
+            //  If database don't have any MV, then remove the database from related tables
+            //  property and update table property of fact table
+            relatedMVTablesMap.get(mvDatabaseName).remove(mvName)
+            if (relatedMVTablesMap.get(mvDatabaseName).isEmpty) {
+              relatedMVTablesMap.remove(mvDatabaseName)
+            }
+          } else {
+            if (!relatedMVTablesMap.containsKey(mvDatabaseName)) {
+              val mvTables = new util.ArrayList[String]()
+              mvTables.add(mvName)
+              relatedMVTablesMap.put(mvDatabaseName, mvTables)
+            } else if (!relatedMVTablesMap.get(mvDatabaseName).contains(mvName)) {
+              relatedMVTablesMap.get(mvDatabaseName).add(mvName)
+            } else {
+              needFactTableUpdate = false
+            }
+          }
+          if (needFactTableUpdate) {
+            CarbonIndexUtil.addOrModifyTableProperty(carbonTable,
+              Map(CarbonCommonConstants.RELATED_MV_TABLES_MAP ->
+                  new Gson().toJson(relatedMVTablesMap)),
+              needLock = false)(session)
+            CarbonHiveIndexMetadataUtil.refreshTable(parentDbName, parentTableName, session)
+          }
+        }
+      } finally {
+        if (null != carbonLock) {
+          val unlock = carbonLock.unlock()
+          if (unlock) {
+            LOGGER.info("Table MetaData Unlocked Successfully")
+          } else {
+            LOGGER.error(s"Unable to unlock metadata lock for table $parentTableName")
+          }
+        }
+      }
+    }
   }
 
 }

@@ -110,7 +110,8 @@ case class CarbonDropTableCommand(
               Option(schema.getIdentifier.getDatabaseName),
               schema.getIdentifier.getTableName,
               ifExistsSet = true,
-              forceDrop = true
+              forceDrop = true,
+              isLockAcquiredOnFactTable = carbonTable.getTableName
             )
         }
         viewDropCommands.foreach(_.processMetadata(sparkSession))
