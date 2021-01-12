@@ -241,6 +241,12 @@ The current information includes:
  | Refresh Mode          | FULL / INCREMENTAL refresh to MV                          |
  | Refresh Trigger Mode  | ON_COMMIT / ON_MANUAL refresh to MV provided by user |
  | Properties              | Table properties of the materialized view                       |
+
+**NOTE**: For materialized views created
+before [CARBONDATA-4107](https://issues.apache.org/jira/browse/CARBONDATA-4107) issue fix, run
+refresh mv command to add mv name to fact table's table properties and to enable it. If refresh
+command is not executed, the mv and fact tables may not be in sync and query won't use mv for
+pruning.
   
 ## Time Series Support
 

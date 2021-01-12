@@ -66,6 +66,9 @@ object MVManagerInSpark {
     }
     val viewManager = MVManagerInSpark.get(sparkSession)
     val viewSchemas = new util.ArrayList[MVSchema]()
+    if (!viewManager.hasSchemaOnTable(carbonTable)) {
+      return
+    }
     for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
       if (viewSchema.isRefreshOnManual) {
         viewSchemas.add(viewSchema)
