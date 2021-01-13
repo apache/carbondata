@@ -288,11 +288,11 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')")
     val exception1 = intercept[MalformedCarbonCommandException](sql(
       """update addsegment1 d  set (d.empname) = ('ravi') where d.empname = 'arvind'""").collect())
-    assertResult("Unsupported update operation on table containing mixed format segments")(
+    assertResult("Unsupported operation on table containing mixed format segments")(
       exception1.getMessage())
     val exception2 = intercept[MalformedCarbonCommandException](sql(
       "delete from addsegment1 where deptno = 10"))
-    assertResult("Unsupported delete operation on table containing mixed format segments")(
+    assertResult("Unsupported operation on table containing mixed format segments")(
       exception2.getMessage())
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }

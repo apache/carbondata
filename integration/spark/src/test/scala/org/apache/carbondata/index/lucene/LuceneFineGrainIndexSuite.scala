@@ -636,12 +636,12 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     val ex5 = intercept[MalformedCarbonCommandException] {
       sql("UPDATE index_test7 d set(d.city)=('luc') where d.name='n10'").collect()
     }
-    assert(ex5.getMessage.contains("update operation is not supported for index"))
+    assert(ex5.getMessage.contains("update/delete operation is not supported for index"))
 
     val ex6 = intercept[MalformedCarbonCommandException] {
       sql("delete from index_test7 where name = 'n10'").collect()
     }
-    assert(ex6.getMessage.contains("delete operation is not supported for index"))
+    assert(ex6.getMessage.contains("update/delete operation is not supported for index"))
 
     val ex7 = intercept[MalformedCarbonCommandException] {
       sql("alter table index_test7 change id test int")

@@ -19,7 +19,6 @@ package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +34,6 @@ import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -223,21 +221,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         throw new IOException(e);
       }
     }
-    String updateTime =
-        context.getConfiguration().get(CarbonTableOutputFormat.UPDATE_TIMESTAMP, uniqueId);
-    String segmentsToBeDeleted =
-        context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
-    List<Segment> segmentDeleteList = Collections.emptyList();
-    if (!segmentsToBeDeleted.trim().isEmpty()) {
-      segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
-    }
-    boolean isUpdateStatusFileUpdateRequired =
-        (context.getConfiguration().get(CarbonTableOutputFormat.UPDATE_TIMESTAMP) != null);
-    if (updateTime != null) {
-      CarbonUpdateUtil.updateTableMetadataStatus(Collections.singleton(loadModel.getSegment()),
-          carbonTable, updateTime, true,
-          isUpdateStatusFileUpdateRequired, segmentDeleteList);
-    }
   }
 
   /**
@@ -302,10 +285,16 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       newMetaEntry.setDataSize(size);
     }
     String uniqueId = null;
+    String updateTime = context.getConfiguration()
+        .get(CarbonTableOutputFormat.UPDATE_TIMESTAMP, uniqueId);
     if (overwriteSet) {
       uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
+    } else if (StringUtils.isNotEmpty(updateTime)) {
+      context.getConfiguration().set("carbon.newMetaEntry",
+          ObjectSerializationUtil.convertObjectToString(newMetaEntry));
     } else {
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry,
+          loadModel, false, false, uuid);
     }
     if (operationContext != null) {
       operationContext

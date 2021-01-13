@@ -293,7 +293,7 @@ object CarbonDataRDDFactory {
     // Check if any load need to be deleted before loading new data
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
-    var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
+
     // accumulator to collect segment metadata
     val segmentMetaDataAccumulator = sqlContext
       .sparkContext
@@ -314,120 +314,116 @@ object CarbonDataRDDFactory {
 
     try {
       if (!carbonLoadModel.isCarbonTransactionalTable || segmentLock.lockWithRetries()) {
-        if (updateModel.isDefined && dataFrame.get.rdd.isEmpty()) {
-          // if the rowToBeUpdated is empty, do nothing
+        status = if (scanResultRdd.isDefined) {
+          val colSchema = carbonLoadModel
+            .getCarbonDataLoadSchema
+            .getCarbonTable
+            .getTableInfo
+            .getFactTable
+            .getListOfColumns
+            .asScala
+            .filterNot(col => col.isInvisible || col.isComplexColumn)
+          val convertedRdd = CommonLoadUtils.getConvertedInternalRow(
+            colSchema,
+            scanResultRdd.get,
+            isGlobalSortPartition = false)
+          if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) &&
+            !carbonLoadModel.isNonSchemaColumnsPresent) {
+            DataLoadProcessBuilderOnSpark.insertDataUsingGlobalSortWithInternalRow(sqlContext
+              .sparkSession,
+              convertedRdd,
+              carbonLoadModel,
+              hadoopConf,
+              segmentMetaDataAccumulator)
+          } else if (sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
+            loadDataFrameForNoSort(sqlContext,
+              None,
+              Some(convertedRdd),
+              carbonLoadModel,
+              segmentMetaDataAccumulator)
+          } else {
+            loadDataFrame(sqlContext,
+              None,
+              Some(convertedRdd),
+              carbonLoadModel,
+              segmentMetaDataAccumulator)
+          }
         } else {
-          status = if (scanResultRdd.isDefined) {
-            val colSchema = carbonLoadModel
-              .getCarbonDataLoadSchema
-              .getCarbonTable
-              .getTableInfo
-              .getFactTable
-              .getListOfColumns
-              .asScala
-              .filterNot(col => col.isInvisible || col.isComplexColumn)
-            val convertedRdd = CommonLoadUtils.getConvertedInternalRow(
-              colSchema,
-              scanResultRdd.get,
-              isGlobalSortPartition = false)
-            if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) &&
-                !carbonLoadModel.isNonSchemaColumnsPresent) {
-              DataLoadProcessBuilderOnSpark.insertDataUsingGlobalSortWithInternalRow(sqlContext
-                .sparkSession,
-                convertedRdd,
+          if (dataFrame.isEmpty && isSortTable &&
+            carbonLoadModel.getRangePartitionColumn != null &&
+            (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
+              sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
+            DataLoadProcessBuilderOnSpark
+              .loadDataUsingRangeSort(sqlContext.sparkSession,
                 carbonLoadModel,
                 hadoopConf,
                 segmentMetaDataAccumulator)
-            } else if (sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
-              loadDataFrameForNoSort(sqlContext,
-                None,
-                Some(convertedRdd),
-                carbonLoadModel,
-                segmentMetaDataAccumulator)
-            } else {
-              loadDataFrame(sqlContext,
-                None,
-                Some(convertedRdd),
-                carbonLoadModel,
-                segmentMetaDataAccumulator)
-            }
+          } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+            DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
+              dataFrame,
+              carbonLoadModel,
+              hadoopConf,
+              segmentMetaDataAccumulator)
+          } else if (dataFrame.isDefined) {
+            loadDataFrame(sqlContext,
+              dataFrame,
+              None,
+              carbonLoadModel,
+              segmentMetaDataAccumulator)
           } else {
-            if (dataFrame.isEmpty && isSortTable &&
-                carbonLoadModel.getRangePartitionColumn != null &&
-                (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
-                 sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
-              DataLoadProcessBuilderOnSpark
-                .loadDataUsingRangeSort(sqlContext.sparkSession,
-                  carbonLoadModel,
-                  hadoopConf,
-                  segmentMetaDataAccumulator)
-            } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
-              DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
-                dataFrame,
-                carbonLoadModel,
-                hadoopConf,
-                segmentMetaDataAccumulator)
-            } else if (dataFrame.isDefined) {
-              loadDataFrame(sqlContext,
-                dataFrame,
-                None,
-                carbonLoadModel,
-                segmentMetaDataAccumulator)
-            } else {
-              loadDataFile(sqlContext, carbonLoadModel, hadoopConf, segmentMetaDataAccumulator)
-            }
+            loadDataFile(sqlContext, carbonLoadModel, hadoopConf, segmentMetaDataAccumulator)
           }
-          val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
-          if (status.nonEmpty) {
-            status.foreach { eachLoadStatus =>
-              val state = newStatusMap.get(eachLoadStatus._1)
-              state match {
-                case Some(SegmentStatus.LOAD_FAILURE) =>
-                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
-                case Some(SegmentStatus.LOAD_PARTIAL_SUCCESS)
-                  if eachLoadStatus._2._1.getSegmentStatus ==
-                     SegmentStatus.SUCCESS =>
-                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
-                case _ =>
-                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
-              }
-            }
-
-            newStatusMap.foreach {
-              case (key, value) =>
-                if (value == SegmentStatus.LOAD_FAILURE) {
-                  loadStatus = SegmentStatus.LOAD_FAILURE
-                } else if (value == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
-                           loadStatus != SegmentStatus.LOAD_FAILURE) {
-                  loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
-                }
-            }
-          } else {
-            // if no value is there in data load, make load status Success
-            // and data load flow executes
-            if ((dataFrame.isDefined || scanResultRdd.isDefined) && updateModel.isEmpty) {
-              if (dataFrame.isDefined) {
-                val rdd = dataFrame.get.rdd
-                if (rdd.partitions == null || rdd.partitions.length == 0) {
-                  LOGGER.warn("DataLoading finished. No data was loaded.")
-                  loadStatus = SegmentStatus.SUCCESS
-                }
-              } else {
-                if (scanResultRdd.get.partitions == null ||
-                    scanResultRdd.get.partitions.length == 0) {
-                  LOGGER.warn("DataLoading finished. No data was loaded.")
-                  loadStatus = SegmentStatus.SUCCESS
-                }
-              }
-            } else {
-              loadStatus = SegmentStatus.LOAD_FAILURE
+        }
+        val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
+        if (status.nonEmpty) {
+          status.foreach { eachLoadStatus =>
+            val state = newStatusMap.get(eachLoadStatus._1)
+            state match {
+              case Some(SegmentStatus.LOAD_FAILURE) =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+              case Some(SegmentStatus.LOAD_PARTIAL_SUCCESS)
+                if eachLoadStatus._2._1.getSegmentStatus ==
+                  SegmentStatus.SUCCESS =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+              case _ =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
             }
           }
 
-          if (loadStatus != SegmentStatus.LOAD_FAILURE &&
-              partitionStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-            loadStatus = partitionStatus
+          newStatusMap.foreach {
+            case (key, value) =>
+              if (value == SegmentStatus.LOAD_FAILURE) {
+                loadStatus = SegmentStatus.LOAD_FAILURE
+              } else if (value == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
+                loadStatus != SegmentStatus.LOAD_FAILURE) {
+                loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
+              }
           }
+        } else {
+          // if no value is there in data load, make load status Success
+          // and data load flow executes
+          if ((dataFrame.isDefined || scanResultRdd.isDefined) && updateModel.isEmpty) {
+            if (dataFrame.isDefined) {
+              val rdd = dataFrame.get.rdd
+              if (rdd.partitions == null || rdd.partitions.length == 0) {
+                LOGGER.warn("DataLoading finished. No data was loaded.")
+                loadStatus = SegmentStatus.SUCCESS
+              }
+            } else {
+              if (scanResultRdd.get.partitions == null ||
+                scanResultRdd.get.partitions.length == 0) {
+                LOGGER.warn("DataLoading finished. No data was loaded.")
+                loadStatus = SegmentStatus.SUCCESS
+              }
+            }
+          } else {
+            loadStatus = SegmentStatus.LOAD_FAILURE
+          }
+        }
+
+        if (loadStatus != SegmentStatus.LOAD_FAILURE &&
+            partitionStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
+          loadStatus = partitionStatus
         }
       }
     } catch {
@@ -471,9 +467,6 @@ object CarbonDataRDDFactory {
           }
           LOGGER.info("********clean up done**********")
           throw new Exception(status(0)._2._2.errorMsg)
-        }
-        if (updateModel.isDefined && dataFrame.get.rdd.isEmpty()) {
-          return null
         }
         // as no record loaded in new segment, new segment should be deleted
         val newEntryLoadStatus =
@@ -563,22 +556,28 @@ object CarbonDataRDDFactory {
       // Release the segment lock, once table status is finally updated
       segmentLock.unlock()
       if (isLoadingCommitted) {
-        triggerEventsAfterLoading(sqlContext, carbonLoadModel, hadoopConf, operationContext)
+        triggerEventsAfterLoading(sqlContext, carbonLoadModel,
+          hadoopConf, operationContext, updateModel)
       }
     }
   }
 
-  private def triggerEventsAfterLoading(
+  def triggerEventsAfterLoading(
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration,
-      operationContext: OperationContext): Unit = {
+      operationContext: OperationContext,
+      carbonUpdateModel: Option[UpdateTableModel]): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     // code to handle Pre-Priming cache for loading
     if (!StringUtils.isEmpty(carbonLoadModel.getSegmentId)) {
       DistributedRDDUtils.triggerPrepriming(sqlContext.sparkSession, carbonTable, Seq(),
         operationContext, hadoopConf, List(carbonLoadModel.getSegmentId))
     }
+    // we skip the compaction in update flow directly for below reasons.
+    // 1) SegmentMerging won't optain the lock in Update Flow.
+    // 2) SegmentMerging make UPDATE operation unable to roll back.
+    if (carbonUpdateModel.isDefined) return
     try {
       // compaction handling
       if (carbonTable.isHivePartitionTable) {
@@ -729,24 +728,20 @@ object CarbonDataRDDFactory {
     var done = true
     // If the updated data should be added as new segment then update the segment information
     if (updateModel.isDefined) {
-      done = done && CarbonUpdateUtil.updateTableMetadataStatus(
-        carbonLoadModel.getLoadMetadataDetails.asScala.map(l =>
-          new Segment(l.getMergedLoadName,
-            l.getSegmentFile)).toSet.asJava,
-        carbonTable,
-        carbonLoadModel.getFactTimeStamp.toString,
-        true,
-        true,
-        updateModel.get.deletedSegments.asJava)
+      metadataDetails.setLoadName(carbonLoadModel.getSegmentId)
+      updateModel.get.addedLoadDetail = Some(metadataDetails)
+      updateModel.get.carbonLoadModel = Some(carbonLoadModel)
+    } else {
+      done = done && CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
+        overwriteTable, uuid)
     }
-    done = done && CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
-      overwriteTable, uuid)
+
     if (!done) {
       val errorMessage = s"Dataload failed due to failure in table status updation for" +
                          s" ${carbonLoadModel.getTableName}"
       LOGGER.error(errorMessage)
       throw new Exception(errorMessage)
-    } else {
+    } else if (CarbonProperties.getInstance().isMVEnabled) {
       MVManagerInSpark.disableMVOnTable(session, carbonTable, overwriteTable)
     }
     (done, metadataDetails)

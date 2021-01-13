@@ -17,21 +17,22 @@
 package org.apache.spark.sql.execution.command.mutation.merge
 
 import java.util
+import java.util.HashSet
 import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.mapreduce.{Job, JobID, TaskAttemptID, TaskID, TaskType}
+import org.apache.hadoop.mapreduce.{JobID, TaskAttemptID, TaskID, TaskType}
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{AnalysisException, CarbonThreadUtil, Column, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, Column, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.avro.AvroFileFormatFactory
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions.{Attribute, EqualTo, Expression, GenericInternalRow, GenericRowWithSchema}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, GenericInternalRow, GenericRowWithSchema}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.{DataCommand, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
@@ -43,12 +44,11 @@ import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.{AccumulatorContext, AccumulatorMetadata, LongAccumulator}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -205,7 +205,7 @@ case class CarbonMergeDataSetCommand(
         throw new CarbonMergeDataSetException("writing of update status file failed")
       }
       Some(UpdateTableModel(isUpdate = true, trxMgr.getLatestTrx,
-        executorErrors, tuple._2, Option.empty))
+        executorErrors, Seq.empty, Option.empty, Option.empty))
     } else {
       None
     }
@@ -223,17 +223,21 @@ case class CarbonMergeDataSetCommand(
       updateTableModel
     ).run(sparkSession)
 
-    if (hasDelAction && count == 0) {
-      val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
-        .getTableStatusFilePath(carbonTable.getTablePath))
-      CarbonUpdateUtil.updateTableMetadataStatus(loadMetaDataDetails.map(loadMetadataDetail =>
-        new Segment(loadMetadataDetail.getMergedLoadName,
-          loadMetadataDetail.getSegmentFile)).toSet.asJava,
-        carbonTable,
-        trxMgr.getLatestTrx.toString,
-        true,
-        true, new util.ArrayList[Segment]())
+    val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
+      .getTableStatusFilePath(carbonTable.getTablePath))
+    var newMetaEntry: LoadMetadataDetails = null
+    if (updateTableModel.get.addedLoadDetail.isDefined) {
+      newMetaEntry = updateTableModel.get.addedLoadDetail.get
     }
+    CarbonUpdateUtil.updateTableMetadataStatus(loadMetaDataDetails.map(loadMetadataDetail =>
+      loadMetadataDetail.getLoadName).toSet.asJava,
+      carbonTable,
+      trxMgr.getLatestTrx.toString,
+      true,
+      true,
+      new util.HashSet(),
+      new util.HashSet(),
+      "", newMetaEntry)
     LOGGER.info(s"Total inserted rows: ${stats.insertedRows.sum}")
     LOGGER.info(s"Total updated rows: ${stats.updatedRows.sum}")
     LOGGER.info(s"Total deleted rows: ${stats.deletedRows.sum}")
@@ -245,7 +249,7 @@ case class CarbonMergeDataSetCommand(
       trxMgr, mutationAction, mergeMatches)
     // Do IUD Compaction.
     HorizontalCompaction.tryHorizontalCompaction(
-      sparkSession, carbonTable)
+      sparkSession, carbonTable, null)
     Seq.empty
   }
 

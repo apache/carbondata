@@ -28,7 +28,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
-import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
@@ -364,14 +363,14 @@ public class SegmentUpdateStatusManager {
    * @param blockName the specified block of the segment
    * @return delete delta file list of the block
    */
-  public List<String> getDeleteDeltaFilesList(final Segment segment, final String blockName) {
+  public List<String> getDeleteDeltaFilesList(final String segment, final String blockName) {
     List<String> deleteDeltaFileList = new ArrayList<>();
     String segmentPath = CarbonTablePath.getSegmentPath(
-        identifier.getTablePath(), segment.getSegmentNo());
+        identifier.getTablePath(), segment);
 
     for (SegmentUpdateDetails block : updateDetails) {
       if ((block.getBlockName().equalsIgnoreCase(blockName)) &&
-          (block.getSegmentName().equalsIgnoreCase(segment.getSegmentNo())) &&
+          (block.getSegmentName().equalsIgnoreCase(segment)) &&
           !CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
         Set<String> deltaFileTimestamps = block.getDeltaFileStamps();
         if (deltaFileTimestamps != null && deltaFileTimestamps.size() > 0) {

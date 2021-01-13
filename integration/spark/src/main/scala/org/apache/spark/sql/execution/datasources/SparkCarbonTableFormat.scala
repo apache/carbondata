@@ -250,6 +250,8 @@ with Serializable {
 case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, isAppend: Boolean)
   extends SQLHadoopMapReduceCommitProtocol(jobId, path, isAppend) {
 
+  var newMetaEntry: String = ""
+
   override def setupTask(taskContext: TaskAttemptContext): Unit = {
     if (isCarbonDataFlow(taskContext.getConfiguration)) {
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(taskContext.getConfiguration)
@@ -322,6 +324,7 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
         }
       }
       super.commitJob(jobContext, newTaskCommits)
+      newMetaEntry = jobContext.getConfiguration.get("carbon.newMetaEntry")
     } else {
       super.commitJob(jobContext, taskCommits)
     }

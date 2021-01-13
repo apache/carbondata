@@ -32,7 +32,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Ascending, AttributeReference, SortOrder}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{LocalRelation, LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.UpdateTableModel
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FindDataSourceTable, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
@@ -1047,7 +1047,18 @@ object CommonLoadUtils {
           overwrite = false,
           ifPartitionNotExists = false)
       SparkUtil.setNullExecutionId(loadParams.sparkSession)
-      Dataset.ofRows(loadParams.sparkSession, convertedPlan).collect()
+      val ds = Dataset.ofRows(loadParams.sparkSession, convertedPlan)
+      ds.collect()
+
+      if (loadParams.updateModel.isDefined) {
+        val serializedNewMetaEntry = ds.logicalPlan.asInstanceOf[LocalRelation].data(0)
+        if (!serializedNewMetaEntry.anyNull) {
+          loadParams.updateModel.get.addedLoadDetail =
+            Some(ObjectSerializationUtil.convertStringToObject(
+              serializedNewMetaEntry.getString(0)).asInstanceOf[LoadMetadataDetails])
+          loadParams.updateModel.get.carbonLoadModel = Some(loadParams.carbonLoadModel)
+        }
+      }
     } catch {
       case ex: Throwable =>
         val (executorMessage, errorMessage) = CarbonScalaUtil.retrieveAndLogErrorMsg(ex, LOGGER)
@@ -1077,35 +1088,16 @@ object CommonLoadUtils {
           case _ =>
         }
       }
+    }
+    // we skip the compaction in update flow directly for below reasons.
+    // 1) SegmentMerging won't optain the lock in Update Flow.
+    // 2) SegmentMerging make UPDATE operation unable to roll back.
+    CarbonDataRDDFactory.triggerEventsAfterLoading(loadParams.sparkSession.sqlContext,
+      loadParams.carbonLoadModel
+        .getCopyWithPartition(loadParams.carbonLoadModel.getCsvHeader,
+          loadParams.carbonLoadModel.getCsvDelimiter),
+      loadParams.hadoopConf, loadParams.operationContext, loadParams.updateModel)
 
-      // Pre-priming for Partition table here
-      if (!StringUtils.isEmpty(loadParams.carbonLoadModel.getSegmentId)) {
-        DistributedRDDUtils.triggerPrepriming(loadParams.sparkSession,
-          table,
-          Seq(),
-          loadParams.operationContext,
-          loadParams.hadoopConf,
-          List(loadParams.carbonLoadModel.getSegmentId))
-      }
-    }
-    try {
-      val compactedSegments = new util.ArrayList[String]()
-      // Trigger auto compaction
-      CarbonDataRDDFactory.handleSegmentMerging(
-        loadParams.sparkSession.sqlContext,
-        loadParams.carbonLoadModel
-          .getCopyWithPartition(loadParams.carbonLoadModel.getCsvHeader,
-            loadParams.carbonLoadModel.getCsvDelimiter),
-        table,
-        compactedSegments,
-        loadParams.operationContext)
-      loadParams.carbonLoadModel.setMergedSegmentIds(compactedSegments)
-    } catch {
-      case e: Exception =>
-        LOGGER.error(
-          "Auto-Compaction has failed. Ignoring this exception because the " +
-          "load is passed.", e)
-    }
     val specs =
       SegmentFileStore.getPartitionSpecs(loadParams.carbonLoadModel.getSegmentId,
         loadParams.carbonLoadModel.getTablePath,
