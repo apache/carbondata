@@ -154,7 +154,7 @@ val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(
    `SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<carbon_store_path>", "<local metastore path>")`.
  - Data storage location can be specified by `<carbon_store_path>`, like `/carbon/data/store`, `hdfs://localhost:9000/carbon/data/store` or `s3a://carbon/data/store`.
 
-###### Option 2: Using SparkSession with CarbonExtensions
+###### Option 2: Using SparkSession with CarbonExtensions(since 2.0)
 
 Start Spark shell by running the following command in the Spark directory:
 
@@ -325,9 +325,17 @@ mv carbondata.tar.gz carbonlib/
 
 
 
-## Query Execution Using CarbonData Thrift Server
+## Query Execution Using the Thrift JDBC/ODBC server
 
-### Starting CarbonData Thrift Server.
+### Option 1: Starting Thrift Server with CarbonExtensions(since 2.0)
+```
+cd $SPARK_HOME
+./sbin/start-thriftserver.sh \
+--conf spark.sql.extensions=org.apache.spark.sql.CarbonExtensions \
+$SPARK_HOME/carbonlib/apache-carbondata-xxx.jar
+```
+
+### Option 2: Starting CarbonData Thrift Server
 
 a. cd `$SPARK_HOME`
 
@@ -391,11 +399,10 @@ $SPARK_HOME/carbonlib/apache-carbondata-xxx.jar
 $SPARK_HOME/carbonlib/apache-carbondata-xxx.jar
 ```
 
-### Connecting to CarbonData Thrift Server Using Beeline.
+### Connecting to Thrift Server Using Beeline.
 
 ```
 cd $SPARK_HOME
-./sbin/start-thriftserver.sh
 ./bin/beeline -u jdbc:hive2://<thriftserver_host>:port
 
 Example
