@@ -47,7 +47,7 @@ CarbonData can be integrated with Spark, Presto, Flink and Hive execution engine
 
 [Installing and Configuring CarbonData on Spark on YARN Cluster](#installing-and-configuring-carbondata-on-spark-on-yarn-cluster)
 
-[Installing and Configuring CarbonData Thrift Server for Query Execution](#query-execution-using-carbondata-thrift-server)
+[Installing and Configuring CarbonData Thrift Server for Query Execution](#query-execution-using-the-thrift-server)
 
 
 #### Presto
@@ -325,7 +325,7 @@ mv carbondata.tar.gz carbonlib/
 
 
 
-## Query Execution Using the Thrift JDBC/ODBC server
+## Query Execution Using the Thrift Server
 
 ### Option 1: Starting Thrift Server with CarbonExtensions(since 2.0)
 ```
