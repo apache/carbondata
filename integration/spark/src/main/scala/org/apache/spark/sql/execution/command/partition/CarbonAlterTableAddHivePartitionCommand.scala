@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{AlterTableMergeIndexEvent, OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
+import org.apache.carbondata.events.{withEvents, AlterTableMergeIndexEvent, OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
@@ -75,18 +75,11 @@ case class CarbonAlterTableAddHivePartitionCommand(
           currParts.exists(p => part.equals(p))
         }.asJava)
       }
-      val operationContext = new OperationContext
-      val preAlterTableHivePartitionCommandEvent = PreAlterTableHivePartitionCommandEvent(
-        sparkSession,
-        table)
-      OperationListenerBus.getInstance()
-        .fireEvent(preAlterTableHivePartitionCommandEvent, operationContext)
-      AlterTableAddPartitionCommand(tableName, partitionSpecsAndLocs, ifNotExists).run(sparkSession)
-      val postAlterTableHivePartitionCommandEvent = PostAlterTableHivePartitionCommandEvent(
-        sparkSession,
-        table)
-      OperationListenerBus.getInstance()
-        .fireEvent(postAlterTableHivePartitionCommandEvent, operationContext)
+      withEvents(PreAlterTableHivePartitionCommandEvent(sparkSession, table),
+        PostAlterTableHivePartitionCommandEvent(sparkSession, table)) {
+        AlterTableAddPartitionCommand(tableName, partitionSpecsAndLocs, ifNotExists).run(
+          sparkSession)
+      }
     } else {
       throw new UnsupportedOperationException(
         "Cannot add partition directly on non partitioned table")

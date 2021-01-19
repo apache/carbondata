@@ -24,7 +24,7 @@ import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.events.{DeleteSegmentByDatePostEvent, DeleteSegmentByDatePreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{withEvents, DeleteSegmentByDatePostEvent, DeleteSegmentByDatePreEvent}
 
 case class CarbonDeleteLoadByLoadDateCommand(
     databaseNameOp: Option[String],
@@ -46,25 +46,14 @@ case class CarbonDeleteLoadByLoadDateCommand(
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
     }
-
-    val operationContext = new OperationContext
-    val deleteSegmentByDatePreEvent: DeleteSegmentByDatePreEvent =
-      DeleteSegmentByDatePreEvent(carbonTable,
+    withEvents(DeleteSegmentByDatePreEvent(carbonTable, loadDate, sparkSession),
+      DeleteSegmentByDatePostEvent(carbonTable, loadDate, sparkSession)) {
+      CarbonStore.deleteLoadByDate(
         loadDate,
-        sparkSession)
-    OperationListenerBus.getInstance.fireEvent(deleteSegmentByDatePreEvent, operationContext)
-
-    CarbonStore.deleteLoadByDate(
-      loadDate,
-      CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
-      tableName,
-      carbonTable)
-    val deleteSegmentPostEvent: DeleteSegmentByDatePostEvent =
-      DeleteSegmentByDatePostEvent(carbonTable,
-        loadDate,
-        sparkSession)
-    OperationListenerBus.getInstance.fireEvent(deleteSegmentPostEvent, operationContext)
-
+        CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
+        tableName,
+        carbonTable)
+    }
     Seq.empty
   }
 

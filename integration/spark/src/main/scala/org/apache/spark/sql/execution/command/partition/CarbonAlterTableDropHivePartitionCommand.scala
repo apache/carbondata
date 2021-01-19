@@ -94,27 +94,21 @@ case class CarbonAlterTableDropHivePartitionCommand(
             partition.location)
         }
         carbonPartitionsTobeDropped = new util.ArrayList[PartitionSpec](carbonPartitions.asJava)
-        val preAlterTableHivePartitionCommandEvent = PreAlterTableHivePartitionCommandEvent(
-          sparkSession,
-          table)
-        OperationListenerBus.getInstance()
-          .fireEvent(preAlterTableHivePartitionCommandEvent, operationContext)
-        val metaEvent =
-          AlterTableDropPartitionMetaEvent(table, specs, ifExists, purge, retainData, sparkSession)
-        OperationListenerBus.getInstance()
-          .fireEvent(metaEvent, operationContext)
-        // Drop the partitions from hive.
-        AlterTableDropPartitionCommand(
-          tableName,
-          specs,
-          ifExists,
-          purge,
-          retainData).run(sparkSession)
-        val postAlterTableHivePartitionCommandEvent = PostAlterTableHivePartitionCommandEvent(
-          sparkSession,
-          table)
-        OperationListenerBus.getInstance()
-          .fireEvent(postAlterTableHivePartitionCommandEvent, operationContext)
+        withEvents(operationContext,
+          PreAlterTableHivePartitionCommandEvent(sparkSession, table),
+          PostAlterTableHivePartitionCommandEvent(sparkSession, table)) {
+          val metaEvent = AlterTableDropPartitionMetaEvent(table, specs, ifExists, purge,
+            retainData, sparkSession)
+          OperationListenerBus.getInstance()
+            .fireEvent(metaEvent, operationContext)
+          // Drop the partitions from hive.
+          AlterTableDropPartitionCommand(
+            tableName,
+            specs,
+            ifExists,
+            purge,
+            retainData).run(sparkSession)
+        }
       } catch {
         case e: Exception =>
           if (!ifExists) {
@@ -173,14 +167,12 @@ case class CarbonAlterTableDropHivePartitionCommand(
           tobeDeletedSegs.add(tobeDeleted.split(",")(0))
         }
       }
-      val preStatusEvent = AlterTableDropPartitionPreStatusEvent(table, sparkSession)
-      OperationListenerBus.getInstance().fireEvent(preStatusEvent, operationContext)
-
-      SegmentFileStore.commitDropPartitions(table, uniqueId, tobeUpdatedSegs, tobeDeletedSegs, uuid)
-
-      val postStatusEvent = AlterTableDropPartitionPostStatusEvent(table)
-      OperationListenerBus.getInstance().fireEvent(postStatusEvent, operationContext)
-
+      withEvents(operationContext,
+        AlterTableDropPartitionPreStatusEvent(table, sparkSession),
+        AlterTableDropPartitionPostStatusEvent(table)) {
+        SegmentFileStore.commitDropPartitions(table, uniqueId, tobeUpdatedSegs, tobeDeletedSegs,
+          uuid)
+      }
       IndexStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
       tobeCleanSegs.addAll(tobeUpdatedSegs)
       tobeCleanSegs.addAll(tobeDeletedSegs)

@@ -34,11 +34,11 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion}
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.withEvents
 
 case class SIRebuildSegmentRunner(
     parentTable: CarbonTable,
@@ -98,52 +98,39 @@ case class SIRebuildSegmentRunner(
       if (lock.lockWithRetries()) {
         LOGGER.info("Acquired the compaction lock for table" +
                     s" ${parentTable.getDatabaseName}.${parentTable.getTableName}")
+        val identifier = indexTable.getCarbonTableIdentifier
+        withEvents(
+          LoadTableSIPreExecutionEvent(sparkSession, identifier, null, indexTable),
+          LoadTableSIPostExecutionEvent(sparkSession, identifier, null, indexTable)) {
+          SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath) collect {
+            case loadDetails if null == segmentList ||
+              segmentList.contains(loadDetails.getLoadName) =>
+              segmentFileNameMap.put(
+                loadDetails.getLoadName, String.valueOf(loadDetails.getLoadStartTime))
+          }
 
-        val operationContext = new OperationContext
-        val loadTableSIPreExecutionEvent: LoadTableSIPreExecutionEvent =
-          LoadTableSIPreExecutionEvent(sparkSession,
-            new CarbonTableIdentifier(indexTable.getDatabaseName, indexTable.getTableName, ""),
-            null,
-            indexTable)
-        OperationListenerBus.getInstance.fireEvent(loadTableSIPreExecutionEvent, operationContext)
+          val loadMetadataDetails = SegmentStatusManager
+            .readLoadMetadata(indexTable.getMetadataPath)
+            .filter(loadMetadataDetail =>
+              (null == segmentList || segmentList.contains(loadMetadataDetail.getLoadName)) &&
+                (loadMetadataDetail.getSegmentStatus == SegmentStatus.SUCCESS ||
+                  loadMetadataDetail.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS))
 
-        SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath) collect {
-          case loadDetails if null == segmentList ||
-                              segmentList.contains(loadDetails.getLoadName) =>
-            segmentFileNameMap.put(
-              loadDetails.getLoadName, String.valueOf(loadDetails.getLoadStartTime))
+          segmentIdToLoadStartTimeMapping = CarbonInternalLoaderUtil
+            .getSegmentToLoadStartTimeMapping(loadMetadataDetails)
+            .asScala
+
+          val carbonLoadModelForMergeDataFiles =
+            SecondaryIndexUtil.getCarbonLoadModel(
+              indexTable,
+              loadMetadataDetails.toList.asJava,
+              System.currentTimeMillis(),
+              CarbonIndexUtil.getCompressorForIndexTable(indexTable, parentTable))
+
+          SecondaryIndexUtil.mergeDataFilesSISegments(segmentIdToLoadStartTimeMapping, indexTable,
+            loadMetadataDetails.toList.asJava, carbonLoadModelForMergeDataFiles,
+            isRebuildCommand = true)(sparkSession.sqlContext)
         }
-
-        val loadMetadataDetails = SegmentStatusManager
-          .readLoadMetadata(indexTable.getMetadataPath)
-          .filter(loadMetadataDetail =>
-            (null == segmentList || segmentList.contains(loadMetadataDetail.getLoadName)) &&
-            (loadMetadataDetail.getSegmentStatus == SegmentStatus.SUCCESS ||
-             loadMetadataDetail.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS))
-
-        segmentIdToLoadStartTimeMapping = CarbonInternalLoaderUtil
-          .getSegmentToLoadStartTimeMapping(loadMetadataDetails)
-          .asScala
-
-        val carbonLoadModelForMergeDataFiles =
-          SecondaryIndexUtil.getCarbonLoadModel(
-            indexTable,
-            loadMetadataDetails.toList.asJava,
-            System.currentTimeMillis(),
-            CarbonIndexUtil.getCompressorForIndexTable(indexTable, parentTable))
-
-        SecondaryIndexUtil.mergeDataFilesSISegments(segmentIdToLoadStartTimeMapping, indexTable,
-          loadMetadataDetails.toList.asJava, carbonLoadModelForMergeDataFiles,
-          isRebuildCommand = true)(sparkSession.sqlContext)
-
-        val loadTableSIPostExecutionEvent: LoadTableSIPostExecutionEvent =
-          LoadTableSIPostExecutionEvent(sparkSession,
-            indexTable.getCarbonTableIdentifier,
-            null,
-            indexTable)
-        OperationListenerBus.getInstance
-          .fireEvent(loadTableSIPostExecutionEvent, operationContext)
-
         LOGGER.info(s"SI segment compaction request completed for table " +
                     s"${indexTable.getDatabaseName}.${indexTable.getTableName}")
       } else {

@@ -21,7 +21,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, EnvHelper, Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.index.DropIndexCommand
@@ -37,7 +36,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICar
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.events._
+import org.apache.carbondata.events.{DropTablePreEvent, _}
 import org.apache.carbondata.view.MVManagerInSpark
 
 case class CarbonDropTableCommand(
@@ -90,42 +89,28 @@ case class CarbonDropTableCommand(
         // streaming table should acquire streaming.lock
         carbonLocks += CarbonLockUtil.getLockObject(identifier, LockUsage.STREAMING_LOCK)
       }
-      val operationContext = new OperationContext
-      val dropTablePreEvent: DropTablePreEvent =
-        DropTablePreEvent(
-          carbonTable,
-          ifExistsSet,
-          sparkSession,
-          isInternalCall)
-      OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
-
-      val viewManager = MVManagerInSpark.get(sparkSession)
-      val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
-      if (!viewSchemas.isEmpty) {
-        viewDropCommands = viewSchemas.asScala.map {
-          schema =>
-            CarbonDropMVCommand(
-              Option(schema.getIdentifier.getDatabaseName),
-              schema.getIdentifier.getTableName,
-              ifExistsSet = true,
-              forceDrop = true,
-              isLockAcquiredOnFactTable = carbonTable.getTableName
-            )
+      withEvents(DropTablePreEvent(carbonTable, ifExistsSet, sparkSession, isInternalCall),
+        DropTablePostEvent(carbonTable, ifExistsSet, sparkSession)) {
+        val viewManager = MVManagerInSpark.get(sparkSession)
+        val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
+        if (!viewSchemas.isEmpty) {
+          viewDropCommands = viewSchemas.asScala.map {
+            schema =>
+              CarbonDropMVCommand(
+                Option(schema.getIdentifier.getDatabaseName),
+                schema.getIdentifier.getTableName,
+                ifExistsSet = true,
+                forceDrop = true,
+                isLockAcquiredOnFactTable = carbonTable.getTableName
+              )
+          }
+          viewDropCommands.foreach(_.processMetadata(sparkSession))
         }
-        viewDropCommands.foreach(_.processMetadata(sparkSession))
+
+        // drop mv and then drop fact table from metastore, to avoid getting NPE,
+        // when trying to access fact table during drop MV operation.
+        CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
       }
-
-      // drop mv and then drop fact table from metastore, to avoid getting NPE,
-      // when trying to access fact table during drop MV operation.
-      CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
-
-      // fires the event after dropping main table
-      val dropTablePostEvent: DropTablePostEvent =
-        DropTablePostEvent(
-          carbonTable,
-          ifExistsSet,
-          sparkSession)
-      OperationListenerBus.getInstance.fireEvent(dropTablePostEvent, operationContext)
       // Remove all invalid entries of carbonTable and corresponding updated timestamp
       // values from the cache. This case is valid when there are 2 JDBCServer and one of them
       // drops the table, the other server would not be able to clear its cache.

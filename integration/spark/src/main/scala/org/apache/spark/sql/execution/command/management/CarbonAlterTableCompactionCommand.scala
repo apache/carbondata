@@ -41,7 +41,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{SegmentStatusManager, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataLoadMetrics}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
@@ -74,7 +74,7 @@ case class CarbonAlterTableCompactionCommand(
       CarbonTable.buildFromTableInfo(tableInfoOp.get)
     } else {
       val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-        .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+        .lookupRelation(Option(dbName), tableName)(sparkSession)
       if (relation == null) {
         throw new NoSuchTableException(dbName, tableName)
       }
@@ -178,33 +178,29 @@ case class CarbonAlterTableCompactionCommand(
 
       var storeLocation = System.getProperty("java.io.tmpdir")
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
-      // trigger event for compaction
-      val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
-        AlterTableCompactionPreEvent(sparkSession, table, null, null)
-      OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
       val compactedSegments: java.util.List[String] = new util.ArrayList[String]()
-      try {
-        alterTableForCompaction(
-          sparkSession.sqlContext,
-          alterTableModel,
-          carbonLoadModel,
-          storeLocation,
-          compactedSegments,
-          operationContext)
-      } catch {
-        case e: Exception =>
-          if (null != e.getMessage) {
-            CarbonException.analysisException(
-              s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
-          } else {
-            CarbonException.analysisException(
-              "Exception in compaction. Please check logs for more info.")
-          }
+      withEvents(operationContext,
+        AlterTableCompactionPreEvent(sparkSession, table, null, null),
+        AlterTableCompactionPostEvent(sparkSession, table, null, compactedSegments)) {
+        try {
+          alterTableForCompaction(
+            sparkSession.sqlContext,
+            alterTableModel,
+            carbonLoadModel,
+            storeLocation,
+            compactedSegments,
+            operationContext)
+        } catch {
+          case e: Exception =>
+            if (null != e.getMessage) {
+              CarbonException.analysisException(
+                s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
+            } else {
+              CarbonException.analysisException(
+                "Exception in compaction. Please check logs for more info.")
+            }
+        }
       }
-      // trigger event for compaction
-      val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
-        AlterTableCompactionPostEvent(sparkSession, table, null, compactedSegments)
-      OperationListenerBus.getInstance.fireEvent(alterTableCompactionPostEvent, operationContext)
       Seq.empty
     }
   }
