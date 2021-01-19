@@ -19,9 +19,12 @@ package org.apache.carbondata
 
 package object events {
   def withEvents(preEvent: Event, postEvent: Event)(func: => Unit): Unit = {
-    val operationContext = new OperationContext
-    OperationListenerBus.getInstance.fireEvent(preEvent, operationContext)
+    withEvents(new OperationContext, preEvent, postEvent)(func)
+  }
+
+  def withEvents(ctx: OperationContext, preEvent: Event, postEvent: Event)(func: => Unit): Unit = {
+    OperationListenerBus.getInstance.fireEvent(preEvent, ctx)
     func
-    OperationListenerBus.getInstance.fireEvent(postEvent, operationContext)
+    OperationListenerBus.getInstance.fireEvent(postEvent, ctx)
   }
 }

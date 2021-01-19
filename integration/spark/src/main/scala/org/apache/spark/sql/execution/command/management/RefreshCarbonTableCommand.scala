@@ -27,7 +27,6 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.datasources.RefreshTable
-import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -41,7 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
+import org.apache.carbondata.events.{withEvents, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
 
 /**
  * Command to register carbon table from existing carbon table data
@@ -155,14 +154,10 @@ case class RefreshCarbonTableCommand(
       tableName: String,
       tableInfo: TableInfo,
       tablePath: String)(sparkSession: SparkSession): Any = {
-    val operationContext = new OperationContext
     var allowCreateTableNonEmptyLocation: String = null
     val allowCreateTableNonEmptyLocationConf =
       "spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation"
     try {
-      val refreshTablePreExecutionEvent: RefreshTablePreExecutionEvent =
-        new RefreshTablePreExecutionEvent(sparkSession,
-          tableInfo.getOrCreateAbsoluteTableIdentifier())
       if (SparkUtil.isSparkVersionXAndAbove("2.4")) {
         // During refresh table, when this option is set to true, creating managed tables with
         // nonempty location is allowed. Otherwise, an analysis exception is thrown.
@@ -171,9 +166,12 @@ case class RefreshCarbonTableCommand(
           .conf.getConfString(allowCreateTableNonEmptyLocationConf)
         sparkSession.sessionState.conf.setConfString(allowCreateTableNonEmptyLocationConf, "true")
       }
-      OperationListenerBus.getInstance.fireEvent(refreshTablePreExecutionEvent, operationContext)
-      CarbonCreateTableCommand(tableInfo, ifNotExistsSet = false, tableLocation = Some(tablePath))
-        .run(sparkSession)
+      val tableIdentifier = tableInfo.getOrCreateAbsoluteTableIdentifier()
+      withEvents(RefreshTablePreExecutionEvent(sparkSession, tableIdentifier),
+        RefreshTablePostExecutionEvent(sparkSession, tableIdentifier)) {
+        CarbonCreateTableCommand(tableInfo, ifNotExistsSet = false, tableLocation = Some(tablePath))
+          .run(sparkSession)
+      }
     } catch {
       case e: AnalysisException => throw e
       case e: Exception => throw e
@@ -184,11 +182,6 @@ case class RefreshCarbonTableCommand(
           .setConfString(allowCreateTableNonEmptyLocationConf, allowCreateTableNonEmptyLocation)
       }
     }
-
-    val refreshTablePostExecutionEvent: RefreshTablePostExecutionEvent =
-      new RefreshTablePostExecutionEvent(sparkSession,
-        tableInfo.getOrCreateAbsoluteTableIdentifier())
-    OperationListenerBus.getInstance.fireEvent(refreshTablePostExecutionEvent, operationContext)
   }
 
   /**

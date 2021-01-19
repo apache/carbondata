@@ -23,7 +23,7 @@ import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.view.MVStatus
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.withEvents
 import org.apache.carbondata.view.{MVHelper, MVManagerInSpark, MVRefresher, RefreshMVPostExecutionEvent, RefreshMVPreExecutionEvent}
 
 /**
@@ -55,14 +55,10 @@ case class CarbonRefreshMVCommand(
 
     // After rebuild successfully enable the MV table.
     val identifier = TableIdentifier(mvName, Option(databaseName))
-    val operationContext = new OperationContext()
-    OperationListenerBus.getInstance().fireEvent(
-      RefreshMVPreExecutionEvent(session, identifier),
-      operationContext)
-    viewManager.setStatus(schema.getIdentifier, MVStatus.ENABLED)
-    OperationListenerBus.getInstance().fireEvent(
-      RefreshMVPostExecutionEvent(session, identifier),
-      operationContext)
+    withEvents(RefreshMVPreExecutionEvent(session, identifier),
+      RefreshMVPostExecutionEvent(session, identifier)) {
+      viewManager.setStatus(schema.getIdentifier, MVStatus.ENABLED)
+    }
     Seq.empty
   }
 

@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.command.view
 
 import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
@@ -46,7 +45,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationId
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.view._
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{withEvents, OperationContext, OperationListenerBus}
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, SimpleModularizer}
 import org.apache.carbondata.mv.plans.util.{BirdcageOptimizer, SQLBuilder}
 import org.apache.carbondata.spark.util.CommonUtil
@@ -90,41 +89,33 @@ case class CarbonCreateMVCommand(
       .getSystemFolderLocationPerDatabase(FileFactory
         .getCarbonFile(databaseLocation)
         .getCanonicalPath)
-    val operationContext: OperationContext = new OperationContext()
-    OperationListenerBus.getInstance().fireEvent(
-      CreateMVPreExecutionEvent(session, systemDirectoryPath, identifier),
-      operationContext)
+    withEvents(CreateMVPreExecutionEvent(session, systemDirectoryPath, identifier),
+      CreateMVPostExecutionEvent(session, systemDirectoryPath, identifier)) {
+      // get mv catalog
+      val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
+      val schema = doCreate(session, identifier, viewManager, viewCatalog)
 
-    // get mv catalog
-    val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
-    val schema = doCreate(session, identifier, viewManager, viewCatalog)
+      // Update the related mv tables property to mv fact tables
+      MVHelper.addOrModifyMVTablesMap(session, schema)
 
-    // Update the related mv tables property to mv fact tables
-    MVHelper.addOrModifyMVTablesMap(session, schema)
-
-    try {
-      viewCatalog.registerSchema(schema)
-      if (schema.isRefreshOnManual) {
-        viewManager.setStatus(schema.getIdentifier, MVStatus.DISABLED)
+      try {
+        viewCatalog.registerSchema(schema)
+        if (schema.isRefreshOnManual) {
+          viewManager.setStatus(schema.getIdentifier, MVStatus.DISABLED)
+        }
+      } catch {
+        case exception: Exception =>
+          val dropTableCommand = CarbonDropTableCommand(
+            ifExistsSet = true,
+            Option(databaseName),
+            name,
+            dropChildTable = true)
+          dropTableCommand.run(session)
+          viewManager.deleteSchema(databaseName, name)
+          throw exception
       }
-    } catch {
-      case exception: Exception =>
-        val dropTableCommand = CarbonDropTableCommand(
-          ifExistsSet = true,
-          Option(databaseName),
-          name,
-          dropChildTable = true)
-        dropTableCommand.run(session)
-        viewManager.deleteSchema(databaseName, name)
-        throw exception
     }
-
-    OperationListenerBus.getInstance().fireEvent(
-      CreateMVPostExecutionEvent(session, systemDirectoryPath, identifier),
-      operationContext)
-
     this.viewSchema = schema
-
     Seq.empty
   }
 
