@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.view
 
 import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
@@ -114,8 +115,8 @@ case class CarbonCreateMVCommand(
           viewManager.deleteSchema(databaseName, name)
           throw exception
       }
+      this.viewSchema = schema
     }
-    this.viewSchema = schema
     Seq.empty
   }
 
