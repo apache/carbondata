@@ -1197,7 +1197,7 @@ public final class CarbonCommonConstants {
   public static final int CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB_MAX = 16;
 
   /**
-  * by default, disable the bad record and converter during "insert into"
+  * by default, disable the bad record and converter during "insert into command"
   */
   public static final String CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT =
       "carbon.enable.bad.record.handling.for.insert";
@@ -1207,6 +1207,7 @@ public final class CarbonCommonConstants {
   //////////////////////////////////////////////////////////////////////////////////////////
   // Query parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////
+
 
   /**
    * set the segment ids to query from the table
