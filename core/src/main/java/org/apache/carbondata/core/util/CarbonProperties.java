@@ -279,6 +279,7 @@ public final class CarbonProperties {
     validateIndexServerSerializationThreshold();
     validateAndGetLocalDictionarySizeThresholdInMB();
     validateTrashFolderRetentionTime();
+    validateSIRewritePlan();
   }
 
   /**
@@ -2185,6 +2186,34 @@ public final class CarbonProperties {
         getInstance().getProperty(CarbonCommonConstants.CARBON_REORDER_FILTER,
         CarbonCommonConstants.CARBON_REORDER_FILTER_DEFAULT)
     );
+  }
+
+  /**
+   * Check whether SI rewrite plan is enabled or not
+   */
+  public boolean isEnabledSIRewritePlan(String dbName, String tableName) {
+    String configuredValue = getSessionPropertyValue(
+        CarbonCommonConstants.CARBON_SI_REWRITE_PLAN + "." + dbName + "." + tableName);
+    if (configuredValue == null) {
+      configuredValue = getProperty(CarbonCommonConstants.CARBON_SI_REWRITE_PLAN);
+    }
+    boolean isEnabledSIRewrite = Boolean.parseBoolean(configuredValue);
+    if (isEnabledSIRewrite) {
+      LOGGER.info("SI Rewrite Plan is enabled for " + dbName + "." + tableName);
+    }
+    return isEnabledSIRewrite;
+  }
+
+  private void validateSIRewritePlan() {
+    String configuredValue =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_SI_REWRITE_PLAN);
+    if (!CarbonUtil.validateBoolean(configuredValue)) {
+      LOGGER.warn(String.format("The secondary index rewrite plan value \"%s\" is invalid. "
+              + "Using the default value \"%s\"", configuredValue,
+          CarbonCommonConstants.CARBON_SI_REWRITE_PLAN_DEFAULT));
+      carbonProperties.setProperty(CarbonCommonConstants.CARBON_SI_REWRITE_PLAN,
+          CarbonCommonConstants.CARBON_SI_REWRITE_PLAN_DEFAULT);
+    }
   }
 
   /**

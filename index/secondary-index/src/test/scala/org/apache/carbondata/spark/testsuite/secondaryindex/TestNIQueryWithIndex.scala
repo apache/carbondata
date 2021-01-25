@@ -148,16 +148,15 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
       sql("set carbon.si.lookup.partialstring=true")
       val ch21 = sql("select * from seccust where c_phone like '25%989-741-2988'")
       // startsWith & endsWith so SI -yes
-      assert(checkSIColumnsSize(ch21, 3)) // size = length, startsWith and EndsWith
+      assert(checkSIColumnsSize(ch21, 2)) // size = startsWith and EndsWith
 
       val ch22 = sql("select count(*) from seccust where c_phone like '%989-741-2988'")
       // endsWith so, SI - Yes
       assert(checkSIColumnsSize(ch22, 1)) // size = EndsWith
 
       val ch23 = sql("select count(*) from seccust where c_phone like '25%989-741%2988'")
-      // Query startsWith & Contains & endsWith so SI - Yes (his is combined with Like, hence SI
-      // - YES)
-      assert(checkSIColumnsSize(ch23, 1))
+      // Like so, SI - No
+      assert(!isIndexTablePresent(ch23))
 
       val ch24 = sql("select * from seccust where c_phone='25-989-741-2988'")
       // Query has EqualTo - So SI = Yes
@@ -174,14 +173,14 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
     try {
       sql("set carbon.si.lookup.partialstring=false")
       val ch11 = sql("select count(*) from seccust where c_phone like '25%989-741-2988'")
-      assert(checkSIColumnsSize(ch11, 2)) // pushed filter = length, startsWith
+      assert(checkSIColumnsSize(ch11, 1)) // pushed filter = startsWith
 
       val ch12 = sql("select count(*) from seccust where c_phone like '%989-741-2988'")
       // endsWith so SI - No
       assert(!isIndexTablePresent(ch12))
 
-      val ch13 = sql("select count(*) from seccust where c_phone like '25%989-741%2988'") //
-      // startsWith & Contains & endsWith so SI - Yes But this is combined with Like So--NO
+      val ch13 = sql("select count(*) from seccust where c_phone like '25%989-741%2988'")
+      // Like so SI - No
       assert(!isIndexTablePresent(ch13))
 
       val ch14 = sql("select count(*) from seccust where c_phone='25-989-741-2988' and c_mktsegment like '%BUILDING'")
@@ -190,7 +189,7 @@ class TestNIQueryWithIndex extends QueryTest with BeforeAndAfterAll{
 
       val ch15 = sql("select count(*) from seccust where c_phone='25-989-741-2988' and c_mktsegment like 'BUI%LDING'")
       // equals on c_phone of I1, I2 & (length & startsWith & endswith) on c_mktsegment of I2 so SI - Yes
-      assert(checkSIColumnsSize(ch15, 3)) // size = EqualTo on c_phone, length, StartsWith
+      assert(checkSIColumnsSize(ch15, 2)) // size = EqualTo on c_phone, StartsWith
 
       val ch16 = sql("select * from seccust where c_phone='25-989-741-2988'")
       // Query has EqualTo so SI - Yes

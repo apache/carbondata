@@ -18,15 +18,19 @@
 package org.apache.spark.sql
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{GetStructField, NamedExpression}
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.expressions.{And => LogicalAnd, AttributeReference, Expression => LogicalExpression, GetStructField, NamedExpression}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.execution.strategy.PushDownHelper
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
+import org.apache.spark.sql.secondaryindex.optimizer.{CarbonCostBasedOptimizer, CarbonSecondaryIndexOptimizer, SIBinaryFilterPushDownOperation, SIFilterPushDownOperation, SIUnaryFilterPushDownOperation}
 import org.apache.spark.sql.sources.{And, BaseRelation, Filter, InsertableRelation, Or}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
@@ -34,11 +38,14 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.IndexFilter
+import org.apache.carbondata.core.index.dev.secondaryindex.SIExpressionTree.CarbonSIExpression
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -69,7 +76,7 @@ case class CarbonDatasourceHadoopRelation(
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
   def buildScan(requiredColumns: Array[String],
-      filterComplex: Seq[org.apache.spark.sql.catalyst.expressions.Expression],
+      filterComplex: Seq[LogicalExpression],
       projects: Seq[NamedExpression],
       filters: Array[Filter],
       partitions: Seq[PartitionSpec]): RDD[InternalRow] = {
@@ -92,6 +99,15 @@ case class CarbonDatasourceHadoopRelation(
     } else {
       requiredColumns.foreach(projection.addColumn)
     }
+    val indexTablesScanTree = if (!CarbonProperties.getInstance()
+      .isEnabledSIRewritePlan(carbonTable.getDatabaseName(), carbonTable.getTableName()) &&
+                                  filterComplex.nonEmpty &&
+                                  carbonTable.getIndexTableNames(IndexType.SI.getIndexProviderName)
+                                    .size() > 0) {
+      buildIndexTableScanTree(filterComplex, carbonTable)
+    } else {
+      null
+    }
 
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     val filter = filterExpression.map(new IndexFilter(carbonTable, _, true)).orNull
@@ -107,7 +123,71 @@ case class CarbonDatasourceHadoopRelation(
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,
       inputMetricsStats,
-      partitions)
+      partitions,
+      indexTablesScanTree = indexTablesScanTree)
+  }
+
+  private def buildIndexTableScanTree(filters: Seq[LogicalExpression],
+      carbonTable: CarbonTable): CarbonSIExpression = {
+    var filterAttributes: Set[String] = Set.empty
+    var matchingIndexTables: Seq[String] = Seq.empty
+    val siOptimizer = new CarbonSecondaryIndexOptimizer(sparkSession)
+
+    // Removed is Not Null filter from all filters and other attributes are selected
+    // isNotNull filter will return all the unique values except null from table,
+    // For High Cardinality columns, this filter is of no use, hence skipping it.
+    filters foreach (siOptimizer.removeIsNotNullAttribute(_, false) collect {
+      case attr: AttributeReference =>
+        filterAttributes = filterAttributes. + (attr.name.toLowerCase)
+    })
+
+    matchingIndexTables = CarbonCostBasedOptimizer
+      .identifyRequiredTables(filterAttributes.asJava,
+        CarbonIndexUtil.getSecondaryIndexesMap(carbonTable).mapValues(_.toList.asJava).asJava)
+      .asScala
+
+    // filter out all the index tables which are disabled
+    val enabledMatchingIndexTables = matchingIndexTables.filter(table => sparkSession.sessionState
+      .catalog
+      .getTableMetadata(TableIdentifier(table, Some(carbonTable.getDatabaseName)))
+      .storage
+      .properties
+      .getOrElse("isSITableEnabled", "true")
+      .equalsIgnoreCase("true"))
+
+    // map for index table name to its column name mapping
+    val indexTableToColumnsMapping: mutable.Map[String, Set[String]] =
+      new mutable.HashMap[String, Set[String]]()
+    // map for index table to logical relation mapping
+    val indexTableToLogicalRelationMapping: mutable.Map[String, LogicalPlan] =
+      new mutable.HashMap[String, LogicalPlan]()
+    // mapping of all the index tables and its columns created on the main table
+    val allIndexTableToColumnMapping = CarbonIndexUtil.getSecondaryIndexesMap(carbonTable)
+
+    enabledMatchingIndexTables.foreach { matchedTable =>
+      // create index table to index column mapping
+      val indexTableColumns = allIndexTableToColumnMapping.getOrElse(matchedTable, Array())
+      indexTableToColumnsMapping.put(matchedTable, indexTableColumns.toSet)
+
+      // create index table to logical plan mapping
+      val indexTableLogicalPlan = siOptimizer.retrievePlan(sparkSession.sessionState
+        .catalog
+        .lookupRelation(TableIdentifier(matchedTable, Some(carbonTable.getDatabaseName))))(
+        sparkSession)
+      indexTableToLogicalRelationMapping.put(matchedTable, indexTableLogicalPlan)
+    }
+
+    val filterTree: SIFilterPushDownOperation = null
+    val (newSIFilterTree, _, _) = siOptimizer.createIndexTableFilterCondition(filterTree,
+      filters.reduceOption(LogicalAnd).get,
+      indexTableToColumnsMapping,
+      indexTableToLogicalRelationMapping,
+      false)
+    newSIFilterTree match {
+      case SIUnaryFilterPushDownOperation(_, _, carbonSIExpression) => carbonSIExpression
+      case SIBinaryFilterPushDownOperation(_, _, _, carbonSIExpression) => carbonSIExpression
+      case _ => null
+    }
   }
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)

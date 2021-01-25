@@ -29,30 +29,49 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.datasources.{FindDataSourceTable, LogicalRelation}
+import org.apache.spark.sql.execution.strategy.CarbonLateDecodeStrategy
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
-import org.apache.spark.sql.secondaryindex.optimizer
-import org.apache.spark.sql.secondaryindex.optimizer.NodeType.NodeType
+import org.apache.spark.sql.optimizer.CarbonFilters
+import org.apache.spark.sql.types.ArrayType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.dev.secondaryindex.SIExpressionTree.{CarbonSIBinaryExpression, CarbonSIUnaryExpression, NodeType}
+import org.apache.carbondata.core.scan.expression.{Expression => CarbonExpression}
+import org.apache.carbondata.core.scan.expression.logical.{AndExpression, OrExpression}
 import org.apache.carbondata.core.util.CarbonProperties
 
 class SIFilterPushDownOperation(nodeType: NodeType)
 
 case class SIBinaryFilterPushDownOperation(nodeType: NodeType,
     leftOperation: SIFilterPushDownOperation,
-    rightOperation: SIFilterPushDownOperation) extends SIFilterPushDownOperation(nodeType)
+    rightOperation: SIFilterPushDownOperation,
+    carbonSIExpression: CarbonSIBinaryExpression) extends SIFilterPushDownOperation(nodeType)
 
-case class SIUnaryFilterPushDownOperation(tableName: String, filterCondition: Expression)
-  extends SIFilterPushDownOperation(nodeType = null)
-
-object NodeType extends Enumeration {
-  type NodeType = Value
-  val Or: optimizer.NodeType.Value = Value("or")
-  val And: optimizer.NodeType.Value = Value("and")
+object SIBinaryFilterPushDownOperation {
+  def apply(nodeType: NodeType,
+      leftOperation: SIFilterPushDownOperation,
+      rightOperation: SIFilterPushDownOperation
+  ): SIBinaryFilterPushDownOperation = {
+    val leftCarbonSIExpression = leftOperation match {
+      case SIUnaryFilterPushDownOperation(_, _, carbonSIExpression) => carbonSIExpression
+      case SIBinaryFilterPushDownOperation(_, _, _, carbonSIExpression) => carbonSIExpression
+    }
+    val rightCarbonSIExpression = rightOperation match {
+      case SIUnaryFilterPushDownOperation(_, _, carbonSIExpression) => carbonSIExpression
+      case SIBinaryFilterPushDownOperation(_, _, _, carbonSIExpression) => carbonSIExpression
+    }
+    SIBinaryFilterPushDownOperation(nodeType,
+      leftOperation,
+      rightOperation,
+      new CarbonSIBinaryExpression(nodeType, leftCarbonSIExpression, rightCarbonSIExpression))
+  }
 }
 
+case class SIUnaryFilterPushDownOperation(tableName: String,
+    filterCondition: Expression,
+    carbonSIExpression: CarbonSIUnaryExpression) extends SIFilterPushDownOperation(nodeType = null)
 /**
  * Carbon Optimizer to add dictionary decoder.
  */
@@ -102,7 +121,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
     matchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
       filterAttributes.asJava,
-      CarbonIndexUtil.getSecondaryIndexes(indexableRelation).mapValues(_.toList.asJava).asJava)
+      CarbonIndexUtil
+        .getSecondaryIndexesMap(indexableRelation.carbonTable)
+        .mapValues(_.toList.asJava)
+        .asJava)
       .asScala
 
     // filter out all the index tables which are disabled
@@ -163,7 +185,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       val indexTableAttributeMap: mutable.Map[String, Map[String, AttributeReference]] =
         new mutable.HashMap[String, Map[String, AttributeReference]]()
       // mapping of all the index tables and its columns created on the main table
-      val allIndexTableToColumnMapping = CarbonIndexUtil.getSecondaryIndexes(indexableRelation)
+      val allIndexTableToColumnMapping = CarbonIndexUtil.getSecondaryIndexesMap(indexableRelation
+        .carbonTable)
 
       enabledMatchingIndexTables.foreach { matchedTable =>
         // create index table to index column mapping
@@ -188,6 +211,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         filterTree,
         filter.copy(filter.condition, filter.child).condition,
         indexTableToColumnsMapping,
+        indexTableToLogicalRelationMapping,
         pushDownNotNullFilter)
       val indexTablesDF: DataFrame = newSIFilterTree._3 match {
         case Some(tableName) =>
@@ -195,7 +219,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           // if it satisfies the limit push down scenario. it will be true only if the complete
           // tree has only one node which is of unary type
           val checkAndApplyLimitLiteral = newSIFilterTree._1 match {
-            case SIUnaryFilterPushDownOperation(tableName, filterCondition) => true
+            case SIUnaryFilterPushDownOperation(tableName, filterCondition, _) => true
             case _ => false
           }
           val dataFrameWithAttributes = createIndexFilterDataFrame(
@@ -269,7 +293,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       Set.empty
     }
     siFilterPushDownTree match {
-      case SIUnaryFilterPushDownOperation(tableName, filterCondition) =>
+      case SIUnaryFilterPushDownOperation(tableName, filterCondition, _) =>
         val attributeMap = indexTableAttributeMap.get(tableName).get
         var filterAttributes = indexJoinedFilterAttributes
         val newFilterCondition = filterCondition transform {
@@ -348,7 +372,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           Aggregate(positionReference, positionReference, indexLogicalPlan))
         // return the data frame
         (indexTableDf, filterAttributes)
-      case SIBinaryFilterPushDownOperation(nodeType, leftOperation, rightOperation) =>
+      case SIBinaryFilterPushDownOperation(nodeType, leftOperation, rightOperation, _) =>
         val (leftOperationDataFrame, indexFilterAttributesLeft) = createIndexFilterDataFrame(
           leftOperation,
           indexTableAttributeMap,
@@ -441,7 +465,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     allIndexTablesDF
   }
 
-  private def removeIsNotNullAttribute(condition: Expression,
+  def removeIsNotNullAttribute(condition: Expression,
       pushDownNotNullFilter: Boolean): Expression = {
     val isPartialStringEnabled = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING,
@@ -558,23 +582,26 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
    * @param indexTableToColumnsMapping
    * @return newSIFilterCondition can be pushed to index table & boolean to join with index table
    */
-  private def createIndexTableFilterCondition(filterTree: SIFilterPushDownOperation,
+  def createIndexTableFilterCondition(filterTree: SIFilterPushDownOperation,
       condition: Expression,
       indexTableToColumnsMapping: mutable.Map[String, Set[String]],
+      indexTableToLogicalRelationMapping: mutable.Map[String, LogicalPlan],
       pushDownNotNullFilter: Boolean):
   (SIFilterPushDownOperation, Expression, Option[String]) = {
     condition match {
       case or@Or(left, right) =>
         val (newSIFilterTreeLeft, newLeft, tableNameLeft) =
-          createIndexTableFilterCondition(
-            filterTree,
+          createIndexTableFilterCondition(filterTree,
             left,
-            indexTableToColumnsMapping, pushDownNotNullFilter)
+            indexTableToColumnsMapping,
+            indexTableToLogicalRelationMapping,
+            pushDownNotNullFilter)
         val (newSIFilterTreeRight, newRight, tableNameRight) =
-          createIndexTableFilterCondition(
-            filterTree,
+          createIndexTableFilterCondition(filterTree,
             right,
-            indexTableToColumnsMapping, pushDownNotNullFilter)
+            indexTableToColumnsMapping,
+            indexTableToLogicalRelationMapping,
+            pushDownNotNullFilter)
 
         (tableNameLeft, tableNameRight) match {
           case (Some(tableLeft), Some(tableRight)) =>
@@ -613,12 +640,14 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
             filterTree,
             left,
             indexTableToColumnsMapping,
+            indexTableToLogicalRelationMapping,
             pushDownNotNullFilter)
         val (newSIFilterTreeRight, newRight, tableNameRight) =
           createIndexTableFilterCondition(
             filterTree,
             right,
             indexTableToColumnsMapping,
+            indexTableToLogicalRelationMapping,
             pushDownNotNullFilter)
         (tableNameLeft, tableNameRight) match {
           case (Some(tableLeft), Some(tableRight)) =>
@@ -652,18 +681,59 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         if (!isPartialStringEnabled) {
           isPartialStringEnabled = conditionsHasStartWith(condition)
         }
-        val tableName = isConditionColumnInIndexTable(condition,
+        var tableName = isConditionColumnInIndexTable(condition,
           indexTableToColumnsMapping,
           isPartialStringEnabled, pushDownNotNullFilter = pushDownNotNullFilter)
         // create a node if condition can be pushed down else return the same filterTree
         val newFilterTree = tableName match {
           case Some(table) =>
-            SIUnaryFilterPushDownOperation(table, condition)
+            getCarbonExpressionForIndexFilter(condition: Expression,
+              indexTableToLogicalRelationMapping(table).asInstanceOf[LogicalRelation]) match {
+              case Some(expression) => SIUnaryFilterPushDownOperation(table,
+                condition,
+                new CarbonSIUnaryExpression(table, expression))
+              case None =>
+                tableName = None
+                filterTree
+            }
           case None =>
             filterTree
         }
         (newFilterTree, condition, tableName)
     }
+  }
+
+  private def getCarbonExpressionForIndexFilter(condition: Expression,
+      logicalRelation: LogicalRelation): Option[CarbonExpression] = {
+    val indexRelation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+    val predicates = condition.map {
+      _ transform {
+        case GetArrayItem(a: AttributeReference, _) =>
+          CarbonToSparkAdapter.createAttributeReference(a.name.toLowerCase,
+            a.dataType.asInstanceOf[ArrayType].elementType,
+            a.nullable,
+            a.metadata,
+            a.exprId,
+            a.qualifier)
+        case a: AttributeReference =>
+          CarbonToSparkAdapter.createAttributeReference(a.name.toLowerCase,
+            a.dataType,
+            a.nullable,
+            a.metadata,
+            a.exprId,
+            a.qualifier)
+      }
+    }.toArray
+
+    CarbonFilters
+      .reorderFilter(predicates.flatMap(e => new CarbonLateDecodeStrategy().translateFilter(e)),
+        indexRelation.carbonTable)
+      .flatMap { filter =>
+        CarbonFilters.createCarbonFilter(indexRelation.tableSchema.get,
+          filter,
+          indexRelation.carbonTable.getTableInfo.getFactTable.getTableProperties.asScala)
+      }
+      .reduceOption(new AndExpression(_, _))
   }
 
   /**
@@ -691,7 +761,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     // flag to check whether there exist a binary node in left or right operation
     var isLeftOrRightOperationBinaryNode = false
     leftOperation match {
-      case SIBinaryFilterPushDownOperation(nodeType, left, right) =>
+      case SIBinaryFilterPushDownOperation(nodeType, left, right, _) =>
         isLeftOrRightOperationBinaryNode = true
       case _ =>
       // don't do anything as flag for checking binary is already false
@@ -699,7 +769,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     // if flag is till false at this point then only check for binary node in right operation
     if (!isLeftOrRightOperationBinaryNode) {
       rightOperation match {
-        case SIBinaryFilterPushDownOperation(nodeType, left, right) =>
+        case SIBinaryFilterPushDownOperation(nodeType, left, right, _) =>
           isLeftOrRightOperationBinaryNode = true
         case _ =>
         // don't do anything as flag for checking binary is already false
@@ -712,7 +782,20 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     } else {
       // If left and right table name is same then merge the 2 conditions
       if (leftNodeTableName == rightNodeTableName) {
-        SIUnaryFilterPushDownOperation(leftNodeTableName, newSIFilterCondition)
+        val leftCarbonExpression = leftOperation match {
+          case SIUnaryFilterPushDownOperation(_, _, carbonSIExp) => carbonSIExp.expression
+        }
+        val rightCarbonExpression = rightOperation match {
+          case SIUnaryFilterPushDownOperation(_, _, carbonSIExp) => carbonSIExp.expression
+        }
+        val newCarbonExpression = if (nodeType == NodeType.And) {
+          new AndExpression(leftCarbonExpression, rightCarbonExpression)
+        } else {
+          new OrExpression(leftCarbonExpression, rightCarbonExpression)
+        }
+        SIUnaryFilterPushDownOperation(leftNodeTableName,
+          newSIFilterCondition,
+          new CarbonSIUnaryExpression(leftNodeTableName, newCarbonExpression))
       } else {
         SIBinaryFilterPushDownOperation(nodeType, leftOperation, rightOperation)
       }
@@ -801,7 +884,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         (limit, transformChild)
       case filter@Filter(condition, _@MatchIndexableRelation(indexableRelation))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
+           CarbonIndexUtil.getSecondaryIndexesMap(indexableRelation.carbonTable).nonEmpty =>
         val reWrittenPlan = rewritePlanForSecondaryIndex(
           filter,
           indexableRelation,
@@ -822,7 +905,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case projection@Project(cols, filter@Filter(condition,
       _@MatchIndexableRelation(indexableRelation)))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
+           CarbonIndexUtil.getSecondaryIndexesMap(indexableRelation.carbonTable).nonEmpty =>
         val reWrittenPlan = rewritePlanForSecondaryIndex(
           filter,
           indexableRelation,
@@ -851,7 +934,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case limit@Limit(literal: Literal,
       filter@Filter(condition, _@MatchIndexableRelation(indexableRelation)))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
+           CarbonIndexUtil.getSecondaryIndexesMap(indexableRelation.carbonTable).nonEmpty =>
         val carbonRelation = filter.child.asInstanceOf[LogicalRelation].relation
           .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
         val uniqueTableName = s"${ carbonRelation.databaseName }.${ carbonRelation.tableName }"
@@ -878,7 +961,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case limit@Limit(literal: Literal, projection@Project(cols, filter@Filter(condition,
       _@MatchIndexableRelation(indexableRelation))))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
+           CarbonIndexUtil.getSecondaryIndexesMap(indexableRelation.carbonTable).nonEmpty =>
         val carbonRelation = filter.child.asInstanceOf[LogicalRelation].relation
           .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
         val uniqueTableName = s"${ carbonRelation.databaseName }.${ carbonRelation.tableName }"
@@ -954,7 +1037,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     val parentTableRelation = parentRelation.get
     val matchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
       filterAttributes.toSet.asJava,
-      CarbonIndexUtil.getSecondaryIndexes(parentTableRelation).mapValues(_.toList.asJava).asJava)
+      CarbonIndexUtil
+        .getSecondaryIndexesMap(parentTableRelation.carbonTable)
+        .mapValues(_.toList.asJava)
+        .asJava)
       .asScala
     val databaseName = parentTableRelation.carbonRelation.databaseName
     // filter out all the index tables which are disabled

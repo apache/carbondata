@@ -175,6 +175,7 @@ object IndexServer extends ServerInterface {
           .invalidateSegmentMapping(request.getCarbonTable.getTableUniqueName,
             request.getInvalidSegments.asScala)
       }
+      DistributedRDDUtils.pruneWithSITables(request)
       val splits = new DistributedPruneRDD(sparkSession, request).collect()
       if (!request.isFallbackJob) {
         DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
@@ -262,8 +263,6 @@ object IndexServer extends ServerInterface {
           server.stop()
         }
       })
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants
-        .CARBON_ENABLE_INDEX_SERVER, "true")
       CarbonProperties.getInstance().addNonSerializableProperty(CarbonCommonConstants
         .IS_DRIVER_INSTANCE, "true")
       // when restart index service clean the tmp folder

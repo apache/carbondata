@@ -93,4 +93,17 @@ public class CarbonRow implements Serializable {
   public void clearData() {
     this.data = null;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    CarbonRow carbonRow = (CarbonRow) o;
+    return Arrays.equals(data, carbonRow.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(data);
+  }
 }

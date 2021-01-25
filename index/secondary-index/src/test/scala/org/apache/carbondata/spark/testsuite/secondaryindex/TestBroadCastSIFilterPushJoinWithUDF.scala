@@ -388,33 +388,21 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
   test("test udf on filter - concat") {
     carbonQuery = sql("select concat_ws(deptname)from udfValidation where concat_ws(deptname) IS NOT NULL or concat_ws(deptname) is null")
     hiveQuery = sql("select concat_ws(deptname)from udfHive where concat_ws(deptname) IS NOT NULL or concat_ws(deptname) is null")
-    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
-      assert(true)
-    } else {
-      assert(false)
-    }
+    assert(!isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan))
     checkAnswer(carbonQuery, hiveQuery)
   }
 
   test("test udf on filter - find_in_set") {
     carbonQuery = sql("select find_in_set(deptname,'o')from udfValidation where find_in_set(deptname,'o') =0 or find_in_set(deptname,'a') is null")
     hiveQuery = sql("select find_in_set(deptname,'o')from udfHive where find_in_set(deptname,'o') =0 or find_in_set(deptname,'a') is null")
-    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
-      assert(true)
-    } else {
-      assert(false)
-    }
+    assert(!isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan))
     checkAnswer(carbonQuery, hiveQuery)
   }
 
   test("test udf on filter - agg") {
     carbonQuery = sql("select max(length(deptname)),min(length(designation)),avg(length(empname)),count(length(empname)),sum(length(deptname)),variance(length(designation)) from udfValidation where length(empname)=6 or length(empname) is NULL")
     hiveQuery = sql("select max(length(deptname)),min(length(designation)),avg(length(empname)),count(length(empname)),sum(length(deptname)),variance(length(designation)) from udfHive where length(empname)=6 or length(empname) is NULL")
-    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
-      assert(true)
-    } else {
-      assert(false)
-    }
+    assert(!isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan))
     checkAnswer(carbonQuery, hiveQuery)
   }
 

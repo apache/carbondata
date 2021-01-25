@@ -45,6 +45,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexFilter, Segment}
+import org.apache.carbondata.core.index.dev.secondaryindex.SIExpressionTree.CarbonSIExpression
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -83,7 +84,8 @@ class CarbonScanRDD[T: ClassTag](
     @transient val partitionNames: Seq[PartitionSpec],
     val dataTypeConverterClz: Class[_ <: DataTypeConverter] = classOf[SparkDataTypeConverterImpl],
     val readSupportClz: Class[_ <: CarbonReadSupport[_]] = SparkReadSupport.readSupportClass,
-    @transient var splits: java.util.List[InputSplit] = null)
+    @transient var splits: java.util.List[InputSplit] = null,
+    val indexTablesScanTree: CarbonSIExpression = null)
   extends CarbonRDDWithTableInfo[T](spark, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -621,6 +623,8 @@ class CarbonScanRDD[T: ClassTag](
     }
 
     CarbonInputFormat.setTransactionalTable(conf, tableInfo.isTransactionalTable)
+    CarbonInputFormat.setIndexTablesScanTree(conf,
+      ObjectSerializationUtil.convertObjectToString(indexTablesScanTree))
     createInputFormat(conf)
   }
 

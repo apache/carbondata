@@ -38,7 +38,7 @@ import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partition
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight}
-import org.apache.spark.sql.hive.MatchLogicalRelation
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, MatchLogicalRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
@@ -274,7 +274,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           f
         }
     }
-    transformedPlan
+    transformedPlan.transform {
+      case filter: LogicalFilter =>
+        LogicalFilter(CarbonHiveIndexMetadataUtil.transformToRemoveNI(filter.condition),
+          filter.child)
+    }
   }
 
   /**

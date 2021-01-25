@@ -2311,6 +2311,11 @@ public final class CarbonCommonConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_ENABLE_INDEX_SERVER = "carbon.enable.index.server";
 
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_SI_REWRITE_PLAN = "carbon.si.rewrite.plan";
+
+  public static final String CARBON_SI_REWRITE_PLAN_DEFAULT = "true";
+
   /**
    * Configured property to enable/disable prepriming in index server
    */

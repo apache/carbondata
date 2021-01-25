@@ -125,10 +125,9 @@ object CarbonIndexUtil {
     indexesTables
   }
 
-  def getSecondaryIndexes(relation: CarbonDatasourceHadoopRelation): scala.collection.mutable
+  def getSecondaryIndexesMap(carbonTable: CarbonTable): scala.collection.mutable
   .Map[String, Array[String]] = {
     val indexes = scala.collection.mutable.Map[String, Array[String]]()
-    val carbonTable = relation.carbonRelation.carbonTable
     val indexInfo = carbonTable.getIndexInfo(IndexType.SI.getIndexProviderName)
     if (null != indexInfo) {
       IndexTableInfo.fromGson(indexInfo).foreach { indexTableInfo =>

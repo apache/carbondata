@@ -144,6 +144,7 @@ public class SessionParams implements Serializable, Cloneable {
       case CARBON_ENABLE_INDEX_SERVER:
       case CARBON_QUERY_STAGE_INPUT:
       case CARBON_ENABLE_MV:
+      case CARBON_SI_REWRITE_PLAN:
         isValid = CarbonUtil.validateBoolean(value);
         if (!isValid) {
           throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);

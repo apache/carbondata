@@ -29,6 +29,7 @@ import org.apache.spark.util.SparkUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.index.IndexType
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 /**
@@ -47,11 +48,12 @@ class CarbonSITransformationRule(sparkSession: SparkSession)
     plan.collect {
       case l: LogicalRelation if (!hasSecondaryIndexTable &&
                                   l.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) =>
-        hasSecondaryIndexTable = l.relation
-                       .asInstanceOf[CarbonDatasourceHadoopRelation]
-                       .carbonTable
-                       .getIndexTableNames(IndexType.SI.getIndexProviderName).size() > 0
-
+        val carbonTable = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
+        if (CarbonProperties.getInstance()
+          .isEnabledSIRewritePlan(carbonTable.getDatabaseName(), carbonTable.getTableName())) {
+          hasSecondaryIndexTable =
+            carbonTable.getIndexTableNames(IndexType.SI.getIndexProviderName).size() > 0
+        }
     }
     if (hasSecondaryIndexTable && checkIfRuleNeedToBeApplied(plan)) {
       secondaryIndexOptimizer.transformFilterToJoin(plan, isProjectionNeeded(plan))
