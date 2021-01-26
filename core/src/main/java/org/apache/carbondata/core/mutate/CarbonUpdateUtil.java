@@ -609,9 +609,7 @@ public class CarbonUpdateUtil {
       SegmentUpdateDetails detail = segmentUpdateStatusManager.getDetailsForABlock(key);
 
       if (null != detail) {
-
         alreadyDeletedCount = Long.parseLong(detail.getDeletedRowsInBlock());
-
       }
 
       RowCountDetailsVO rowCountDetailsVO =
@@ -632,16 +630,7 @@ public class CarbonUpdateUtil {
    */
   public static String getSegmentBlockNameKey(String segID, String blockName,
       boolean isPartitionTable) {
-    String blockNameWithOutPartAndBatchNo = blockName
-        .substring(blockName.indexOf(CarbonCommonConstants.HYPHEN) + 1,
-            blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()))
-        .replace(CarbonTablePath.BATCH_PREFIX, CarbonCommonConstants.UNDERSCORE);
-    // to remove compressor name
-    int index = blockNameWithOutPartAndBatchNo.lastIndexOf(CarbonCommonConstants.POINT);
-    if (index != -1) {
-      blockNameWithOutPartAndBatchNo = blockNameWithOutPartAndBatchNo
-          .replace(blockNameWithOutPartAndBatchNo.substring(index), "");
-    }
+    String blockNameWithOutPartAndBatchNo = CarbonTablePath.getShortBlockId(blockName);
     if (isPartitionTable) {
       return blockNameWithOutPartAndBatchNo;
     } else {

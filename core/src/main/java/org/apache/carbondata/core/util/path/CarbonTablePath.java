@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.locks.LockUsage;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.DASH;
@@ -214,38 +215,6 @@ public class CarbonTablePath {
       return getTableStatusFilePath(tablePath) + CarbonCommonConstants.UNDERSCORE + uuid;
     } else {
       return getTableStatusFilePath(tablePath);
-    }
-  }
-
-  /**
-   * Below method will be used to get the index file present in the segment folder
-   * based on task id
-   *
-   * @param taskId      task id of the file
-   * @param segmentId   segment number
-   * @return full qualified carbon index path
-   */
-  private static String getCarbonIndexFilePath(final String tablePath, final String taskId,
-      final String segmentId, final String bucketNumber) {
-    String segmentDir = getSegmentPath(tablePath, segmentId);
-    CarbonFile carbonFile =
-        FileFactory.getCarbonFile(segmentDir);
-
-    CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override
-      public boolean accept(CarbonFile file) {
-        if (bucketNumber.equals("-1")) {
-          return file.getName().startsWith(taskId) && file.getName().endsWith(INDEX_FILE_EXT);
-        }
-        return file.getName().startsWith(taskId + DASH + bucketNumber) && file.getName()
-            .endsWith(INDEX_FILE_EXT);
-      }
-    });
-    if (files.length > 0) {
-      return files[0].getAbsolutePath();
-    } else {
-      throw new RuntimeException("Missing Carbon index file for Segment[" + segmentId + "], "
-          + "taskId[" + taskId + "]");
     }
   }
 
@@ -638,41 +607,85 @@ public class CarbonTablePath {
   }
 
   /**
+   * Generate the blockId as per the block path
+   *
+   * @param identifier
+   * @param filePath
+   * @param segmentId
+   * @param isPartitionTable
+   * @return blockid, which is the identify of a block
+   */
+  public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
+      String segmentId, boolean isPartitionTable) {
+    String blockName = filePath.substring(filePath.lastIndexOf(
+        CarbonCommonConstants.FILE_SEPARATOR) + 1);
+    String tablePath = identifier.getTablePath();
+
+    String partitionDir = "";
+    // 1. For block of Added Segments, The BlockId consistsof
+    //    <partitionPath><segmentId><blockName>
+    if (!filePath.startsWith(tablePath)) {
+      partitionDir = getPartitionDir(tablePath, filePath, blockName);
+      return partitionDir.replace(CarbonCommonConstants.FILE_SEPARATOR, "#")
+          + CarbonCommonConstants.FILE_SEPARATOR + segmentId
+          + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+    }
+
+    // 2. For block of partitiontable, The BlockId consistsof
+    //    <partitionPath><blockName>
+    if (isPartitionTable) {
+      partitionDir = getPartitionDir(tablePath, filePath, blockName);
+      return partitionDir.replace(CarbonCommonConstants.FILE_SEPARATOR, "#")
+          + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+    }
+
+    // 3. For nonpartitiontable, The BlockId consistsof
+    //    <segmentId><blockName>
+    return segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+  }
+
+  /**
    * This method will remove strings in path and return short block id
    *
    * @param blockId
    * @return shortBlockId
    */
   public static String getShortBlockId(String blockId) {
-    String blockIdWithCompressorName =
-        blockId.replace(PARTITION_PREFIX + "0" + CarbonCommonConstants.FILE_SEPARATOR, "")
-            .replace(SEGMENT_PREFIX, "").replace(BATCH_PREFIX, CarbonCommonConstants.UNDERSCORE)
-            .replace(DATA_PART_PREFIX, "").replace(CARBON_DATA_EXT, "");
-    // to remove compressor name
-    if (!blockId.equalsIgnoreCase(blockIdWithCompressorName)) {
-      int index = blockIdWithCompressorName.lastIndexOf(POINT);
-      int fileSeperatorIndex = blockIdWithCompressorName.lastIndexOf(File.separator);
-      if (index != -1) {
-        String modifiedBlockId;
-        if (index > fileSeperatorIndex) {
-          // Default case when path ends with compressor name.
-          // Example: 0/0-0_0-0-0-1600789595862.snappy
-          modifiedBlockId =
-              blockIdWithCompressorName.replace(blockIdWithCompressorName.substring(index), "");
-        } else {
-          // in case of CACHE_LEVEL = BLOCKLET, blockId path contains both block id and blocklet id
-          // so check for next file seperator and remove compressor name.
-          // Example: 0/0-0_0-0-0-1600789595862.snappy/0
-          modifiedBlockId = blockIdWithCompressorName
-              .replace(blockIdWithCompressorName.substring(index, fileSeperatorIndex), "");
-        }
-        return modifiedBlockId;
-      } else {
-        return blockIdWithCompressorName;
-      }
-    } else {
-      return blockIdWithCompressorName;
+    // 1. If the blockid is already shortblockid, return directly
+    int suffixIndex = blockId.lastIndexOf(CARBON_DATA_EXT);
+    if (suffixIndex < 0) {
+      return blockId;
     }
+    // 2. get the filepath. in the type of part=a/part-0-0_batchno0-0-0-1597409791503.snappy
+    String filePath = blockId.substring(0, suffixIndex);
+
+    // 3. get the compressor name, in the type of '.snappy'/'.zstd'/'.gzip'
+    String compressorName = filePath.substring(filePath.lastIndexOf(POINT));
+
+    // 4. get rid of 'Part0/' 'Segment_' '_batchno' 'part-' '.carbondata' and compressorname
+    return blockId.replace(compressorName, "")
+        .replace(PARTITION_PREFIX + "0" + CarbonCommonConstants.FILE_SEPARATOR, "")
+        .replace(SEGMENT_PREFIX, "")
+        .replace(BATCH_PREFIX, CarbonCommonConstants.UNDERSCORE)
+        .replace(DATA_PART_PREFIX, "")
+        .replace(CARBON_DATA_EXT, "");
+  }
+
+  /**
+   * get the partition path in the block path
+   *
+   * @param tablePath
+   * @param filePath
+   * @param blockName
+   * @return blockid, which is the identify of a block
+   */
+  public static String getPartitionDir(String tablePath, String filePath, String blockName) {
+    // The filepath is consist with <tablePath><partitionPath><blockName>
+    // The partitionPath is the string truncated between tablePath and blockName
+    if (!filePath.startsWith(tablePath)) {
+      return filePath.substring(0, filePath.length() - blockName.length());
+    }
+    return filePath.substring(tablePath.length() + 1, filePath.length() - blockName.length() - 1);
   }
 
   /**

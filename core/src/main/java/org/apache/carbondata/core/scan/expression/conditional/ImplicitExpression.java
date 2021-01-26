@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.expression.conditional;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,7 +59,8 @@ public class ImplicitExpression extends Expression {
   }
 
   private void addBlockEntry(String blockletPath) {
-    String blockId = blockletPath.substring(0, blockletPath.lastIndexOf(File.separator));
+    String blockId = blockletPath.substring(0,
+        blockletPath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
     // Check if blockId contains old tuple id format, and convert it to compatible format.
     // Example for non-partition table:
     //    Old tuple id format: 0/0/0-0_batchno0-0-0-1599806689305.snappy
@@ -71,9 +71,9 @@ public class ImplicitExpression extends Expression {
     if (blockId.contains(CarbonTablePath.BATCH_PREFIX)) {
       blockId = CarbonTablePath.getShortBlockId(blockId);
       // In case of non-partition table, remove index of part prefix (Part0) from blockId.
-      if (!blockId.substring(0, blockId.indexOf(File.separator))
+      if (!blockId.substring(0, blockId.indexOf(CarbonCommonConstants.FILE_SEPARATOR))
           .contains(CarbonCommonConstants.EQUALS)) {
-        blockId = blockId.substring(blockId.indexOf(File.separator) + 1);
+        blockId = blockId.substring(blockId.indexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1);
       }
     }
     Set<Integer> blockletIds = blockIdToBlockletIdMapping.get(blockId);
@@ -82,7 +82,8 @@ public class ImplicitExpression extends Expression {
       blockIdToBlockletIdMapping.put(blockId, blockletIds);
     }
     blockletIds.add(
-        Integer.parseInt(blockletPath.substring(blockletPath.lastIndexOf(File.separator) + 1)));
+        Integer.parseInt(blockletPath.substring(
+            blockletPath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1)));
   }
 
   @Override
