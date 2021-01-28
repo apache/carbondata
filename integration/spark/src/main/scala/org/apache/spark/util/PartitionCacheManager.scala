@@ -23,6 +23,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.commons.httpclient.util.URIUtil
 import org.apache.log4j.Logger
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTablePartition}
 
@@ -96,7 +97,7 @@ object PartitionCacheManager extends Cache[PartitionCacheKey,
     } else if (invalidSegmentMap != null && invalidSegmentMap.nonEmpty) {
       CACHE.remove(identifier.tableId)
     }
-    finalCache.values.flatMap(_._1).toList.asJava
+    finalCache.values.flatMap(_._1).toSet.toList.asJava
   }
 
   override def getAll(keys: util.List[PartitionCacheKey]):
@@ -115,18 +116,20 @@ object PartitionCacheManager extends Cache[PartitionCacheKey,
 
   private def readPartition(identifier: PartitionCacheKey, segmentFilePath: String) = {
     val segmentFile = SegmentFileStore.readSegmentFile(segmentFilePath)
-    val partitionPath = new mutable.StringBuilder()
     var partitionSpec: Map[String, String] = Map()
-    segmentFile.getLocationMap.values().asScala
-      .flatMap(_.getPartitions.asScala).toSet.foreach { uniquePartition: String =>
-      partitionPath.append(CarbonCommonConstants.FILE_SEPARATOR).append(uniquePartition)
-      val partitionSplit = uniquePartition.split("=")
-      partitionSpec = partitionSpec. +(partitionSplit(0) -> partitionSplit(1))
-    }
-    Seq(CatalogTablePartition(partitionSpec,
-      CatalogStorageFormat(
-        Some(new URI(identifier.tablePath + partitionPath)),
-        None, None, None, compressed = false, Map())))
+    segmentFile.getLocationMap.keySet().asScala
+      .map { uniquePartition: String =>
+        val partitionSplit = uniquePartition.substring(1)
+          .split(CarbonCommonConstants.FILE_SEPARATOR)
+        val storageFormat = CatalogStorageFormat(
+          Some(new URI(URIUtil.encodeQuery(identifier.tablePath + uniquePartition))),
+          None, None, None, compressed = false, Map())
+        partitionSplit.foreach(partition => {
+          val partitionArray = partition.split("=")
+          partitionSpec = partitionSpec. + (partitionArray(0) -> partitionArray(1))
+        })
+        CatalogTablePartition(partitionSpec, storageFormat)
+      }.toSeq
   }
 
   override def put(key: PartitionCacheKey,
