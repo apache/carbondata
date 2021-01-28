@@ -303,6 +303,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         int pageSize, ColumnVectorInfo vectorInfo, BitSet nullBits) {
       // get the updated values if it is decode of child vector
       pageSize = ColumnVectorInfo.getUpdatedPageSizeForChildVector(vectorInfo, pageSize);
+
       vector = ColumnarVectorWrapperDirectFactory
           .getDirectVectorWrapperFactory(vectorInfo, vector, null, nullBits, vectorInfo.deletedRows,
               true, false);
