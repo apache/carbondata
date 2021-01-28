@@ -678,9 +678,15 @@ object SecondaryIndexUtil {
       .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
     validSegments.foreach { segment =>
       outputModel.setSegmentId(segment.getSegmentNo)
-      val dataFrame = SparkSQLUtil.createInputDataFrame(
+      // As this dataframe is created to merge the data files of SI segment. So no need to calculate
+      // positionReference column again, as it is already calculated during SI segment load from
+      // main table. Also set the CARBON_INPUT_SEGMENTS property to the current SI segment to be
+      // merged to avoid querying whole table.
+      val dataFrame = SecondaryIndexCreator.dataFrameOfSegments(
         sparkSession,
-        indexCarbonTable)
+        indexCarbonTable,
+        "*",
+        Array(segment.getSegmentNo))
       SecondaryIndexCreator.findCarbonScanRDD(dataFrame.rdd, null)
       val segList : java.util.List[Segment] = new util.ArrayList[Segment]()
       segList.add(segment)

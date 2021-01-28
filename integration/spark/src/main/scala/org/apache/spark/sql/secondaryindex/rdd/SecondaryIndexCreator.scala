@@ -187,10 +187,13 @@ object SecondaryIndexCreator {
                 val explodeColumn = mainTable.getCreateOrderColumn.asScala
                   .filter(x => x.getDataType.isComplexType &&
                                projections.contains(x.getColName))
+                // At this point we are getting SI columns data from main table, so it is required
+                // to calculate positionReference. Because SI has SI columns + positionReference.
                 var dataFrame = dataFrameOfSegments(sc.sparkSession,
                   mainTable,
                   projections.mkString(","),
-                  Array(eachSegment))
+                  Array(eachSegment),
+                  isPositionReferenceRequired = true)
                 // flatten the complex SI
                 if (explodeColumn.nonEmpty) {
                   val columns = dataFrame.schema.map { x =>
@@ -580,7 +583,8 @@ object SecondaryIndexCreator {
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
       projections: String,
-      segments: Array[String]): DataFrame = {
+      segments: Array[String],
+      isPositionReferenceRequired: Boolean = false): DataFrame = {
     try {
       CarbonThreadUtil.threadSet(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS + carbonTable.getDatabaseName +
@@ -588,6 +592,12 @@ object SecondaryIndexCreator {
       val logicalPlan = sparkSession.sql(
         s"select $projections from ${ carbonTable.getDatabaseName }.${
           carbonTable.getTableName}").queryExecution.logical
+      if (!isPositionReferenceRequired) {
+        // While merging the data files of SI segment, there is no need to calculate the value of
+        // PositionReference column again. Because the data of SI segment will already have
+        // the PositionReference calculated during SI segment load from main table.
+        return SparkSQLUtil.execute(logicalPlan, sparkSession)
+      }
       val positionId = UnresolvedAlias(Alias(UnresolvedFunction("getPositionId",
         Seq.empty, isDistinct = false), CarbonCommonConstants.POSITION_ID)())
       val newLogicalPlan = logicalPlan.transform {
