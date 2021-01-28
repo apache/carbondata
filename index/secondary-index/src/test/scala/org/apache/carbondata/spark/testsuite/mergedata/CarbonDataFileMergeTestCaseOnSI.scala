@@ -251,8 +251,11 @@ class CarbonDataFileMergeTestCaseOnSI
       s"'GLOBAL_SORT_PARTITIONS'='100')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
       s"'GLOBAL_SORT_PARTITIONS'='100')")
+    val rows = sql(" select count(*) from nonindexmerge").collect()
     sql("CREATE INDEX nonindexmerge_index1 on table nonindexmerge (name) AS 'carbondata' " +
         "properties('table_blocksize'='1', 'SORT_SCOPE'='GLOBAL_SORT')")
+    // number of rows in main table and SI should be same
+    checkAnswer(sql(" select count(*) from nonindexmerge_index1"), rows)
    val df1 = sql("""Select * from nonindexmerge where name='n16000'""")
      .queryExecution.sparkPlan
     assert(isFilterPushedDownToSI(df1))
@@ -276,9 +279,17 @@ class CarbonDataFileMergeTestCaseOnSI
       s"'GLOBAL_SORT_PARTITIONS'='100')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
       s"'GLOBAL_SORT_PARTITIONS'='100')")
+    val rows = sql(" select count(*) from nonindexmerge").collect()
     sql("CREATE INDEX nonindexmerge_index1 on table nonindexmerge (name) AS 'carbondata' " +
       "properties('table_blocksize'='1', 'SORT_SCOPE'='GLOBAL_SORT')")
+    val result = sql(" select positionReference from nonindexmerge_index1 where name = 'n16010'")
+      .collect()
     sql("REFRESH INDEX nonindexmerge_index1 ON TABLE nonindexmerge").collect()
+    // value of positionReference column should be same before and after merge
+    checkAnswer(sql(" select positionReference from nonindexmerge_index1 where name = 'n16010'"),
+      result)
+    // number of rows in main table and SI should be same
+    checkAnswer(sql(" select count(*) from nonindexmerge_index1"), rows)
     val df1 = sql("""Select * from nonindexmerge where name='n16000'""")
       .queryExecution.sparkPlan
     assert(isFilterPushedDownToSI(df1))
