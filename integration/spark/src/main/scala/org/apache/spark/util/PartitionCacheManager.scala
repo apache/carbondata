@@ -30,9 +30,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.{Cache, Cacheable, CarbonLRUCache}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 object PartitionCacheManager extends Cache[PartitionCacheKey,
@@ -115,18 +114,23 @@ object PartitionCacheManager extends Cache[PartitionCacheKey,
 
   private def readPartition(identifier: PartitionCacheKey, segmentFilePath: String) = {
     val segmentFile = SegmentFileStore.readSegmentFile(segmentFilePath)
-    val partitionPath = new mutable.StringBuilder()
-    var partitionSpec: Map[String, String] = Map()
-    segmentFile.getLocationMap.values().asScala
-      .flatMap(_.getPartitions.asScala).toSet.foreach { uniquePartition: String =>
-      partitionPath.append(CarbonCommonConstants.FILE_SEPARATOR).append(uniquePartition)
-      val partitionSplit = uniquePartition.split("=")
-      partitionSpec = partitionSpec. +(partitionSplit(0) -> partitionSplit(1))
+    var catalogPartitionSeq = Seq[CatalogTablePartition]()
+    segmentFile.getLocationMap.values().asScala.foreach { uniquePartition =>
+      val partitionPath = new mutable.StringBuilder()
+      var partitionSpec: Map[String, String] = Map()
+      // create single partition spec for multiple partition columns
+      uniquePartition.getPartitions.asScala.foreach { partition =>
+        val partitionSplit = partition.split(CarbonCommonConstants.EQUALS)
+        partitionSpec = partitionSpec. +(partitionSplit(0) -> partitionSplit(1))
+        partitionPath.append(CarbonCommonConstants.FILE_SEPARATOR).append(partition)
+      }
+      val storageFormat = CatalogStorageFormat(
+        Some(new URI(identifier.tablePath + CarbonCommonConstants.FILE_SEPARATOR + partitionPath)),
+        None, None, None, compressed = false, Map())
+      catalogPartitionSeq = catalogPartitionSeq :+
+          CatalogTablePartition(partitionSpec, storageFormat)
     }
-    Seq(CatalogTablePartition(partitionSpec,
-      CatalogStorageFormat(
-        Some(new URI(identifier.tablePath + partitionPath)),
-        None, None, None, compressed = false, Map())))
+    catalogPartitionSeq
   }
 
   override def put(key: PartitionCacheKey,
