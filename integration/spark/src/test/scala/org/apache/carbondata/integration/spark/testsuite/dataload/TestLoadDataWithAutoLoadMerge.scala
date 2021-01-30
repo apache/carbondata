@@ -42,7 +42,10 @@ class TestLoadDataWithAutoLoadMerge extends QueryTest with BeforeAndAfterAll {
 
   test("test data loading with auto load merge") {
     val testData = s"$resourcesPath/sample.csv"
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table automerge")
+    checkAnswer(
+      sql(s"LOAD DATA LOCAL INPATH '$testData' into table automerge"),
+      Seq(Row("0"))
+    )
     checkAnswer(
       sql("SELECT COUNT(*) FROM automerge"),
       Seq(Row(6))

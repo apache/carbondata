@@ -63,7 +63,10 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
 
   test("test data loading CSV file") {
     val testData = s"$resourcesPath/sample.csv"
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
+    checkAnswer(
+      sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest"),
+      Seq(Row("0"))
+    )
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
       Seq(Row(6))

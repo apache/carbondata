@@ -70,7 +70,9 @@ case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     ifNotExists: Boolean)
   extends Command {
 
-    override def output: Seq[Attribute] = Seq.empty
+    override def output: Seq[Attribute] = {
+      Seq(AttributeReference("Segment ID", StringType, nullable = false)())
+    }
 
     // This is the expected schema of the table prepared to be inserted into
     // including dynamic partition columns.

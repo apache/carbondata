@@ -95,7 +95,10 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         | PARTITIONED BY (empno int)
         | STORED AS carbondata
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""),
+      Seq(Row("0"))
+    )
 
     validateDataFiles("default_partitionone", "0", 10)
 
@@ -114,7 +117,10 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         | PARTITIONED BY (doj Timestamp, empname String)
         | STORED AS carbondata
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwo OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwo OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""),
+      Seq(Row("0"))
+    )
 
     validateDataFiles("default_partitiontwo", "0", 10)
 
