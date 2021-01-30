@@ -27,9 +27,10 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, NamedE
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
+import org.apache.spark.sql.execution.command.LoadDataCommand
 import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
+import org.apache.spark.sql.execution.strategy.{CarbonPlanHelper, DMLHelper}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -223,6 +224,17 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           statement,
           alias,
           table)
+    }
+  }
+}
+
+case class CarbonLoadDataAnalyzeRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
+  def apply(plan: LogicalPlan): LogicalPlan = {
+    plan.transform {
+      case p: LogicalPlan if !p.childrenResolved => p
+      case loadData: LoadDataCommand
+        if CarbonPlanHelper.isCarbonTable(loadData.table, sparkSession) =>
+        DMLHelper.loadData(loadData)
     }
   }
 }

@@ -1110,12 +1110,12 @@ object CommonLoadUtils {
       SegmentFileStore.getPartitionSpecs(loadParams.carbonLoadModel.getSegmentId,
         loadParams.carbonLoadModel.getTablePath,
         loadParams.carbonLoadModel.getLoadMetadataDetails.asScala.toArray)
-    if (specs != null) {
+    if (specs != null && !specs.isEmpty) {
       specs.asScala.map { spec =>
         Row(spec.getPartitions.asScala.mkString("/"), spec.getLocation.toString, spec.getUuid)
       }
     } else {
-      Seq.empty[Row]
+      Seq(Row(loadParams.carbonLoadModel.getSegmentId))
     }
   }
 

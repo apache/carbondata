@@ -25,6 +25,7 @@ import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataLoadTableFileMapping}
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.types.{DateType, IntegerType, LongType, StringType, StructType, TimestampType}
@@ -106,6 +107,8 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
     dateFormat = df
     var isUpdateTableStatusRequired = false
     val uuid = ""
+    var loadResultForReturn: LoadMetadataDetails = null
+    var rowsForReturn: Seq[Row] = Seq.empty
     try {
       val (tableIndexes, indexOperationContext) =
         CommonLoadUtils.firePreLoadEvents(
@@ -158,6 +161,8 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
         None,
         operationContext)
       val (rows, loadResult) = loadData(loadParams)
+      loadResultForReturn = loadResult
+      rowsForReturn = rows
       val info = CommonLoadUtils.makeAuditInfo(loadResult)
       setAuditInfo(info)
       CommonLoadUtils.firePostLoadEvents(sparkSession,
@@ -191,7 +196,16 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
           throw ex
         }
     }
-    Seq.empty
+    if (loadResultForReturn != null && loadResultForReturn.getLoadName != null) {
+      Seq(Row(loadResultForReturn.getLoadName))
+    } else {
+      // return the segment id in partition table case
+      rowsForReturn
+    }
+  }
+
+  override val output: Seq[Attribute] = {
+    Seq(AttributeReference("Segment ID", StringType, nullable = false)())
   }
 
   def loadData(loadParams: CarbonLoadParams): (Seq[Row], LoadMetadataDetails) = {

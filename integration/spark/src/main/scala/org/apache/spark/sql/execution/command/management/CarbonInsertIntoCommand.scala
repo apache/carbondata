@@ -26,11 +26,11 @@ import scala.collection.mutable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonToSparkAdapter, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, UpdateTableModel}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.util.CausedBy
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -186,6 +186,8 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     }
     var isUpdateTableStatusRequired = false
     val uuid = ""
+    var loadResultForReturn: LoadMetadataDetails = null
+    var rowsForReturn: Seq[Row] = Seq.empty
     try {
       val (tableIndexes, indexOperationContext) =
         CommonLoadUtils.firePreLoadEvents(
@@ -248,6 +250,8 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         operationContext)
       LOGGER.info("Sort Scope : " + carbonLoadModel.getSortScope)
       val (rows, loadResult) = insertData(loadParams)
+      loadResultForReturn = loadResult
+      rowsForReturn = rows
       val info = CommonLoadUtils.makeAuditInfo(loadResult)
       setAuditInfo(info)
       CommonLoadUtils.firePostLoadEvents(sparkSession,
@@ -276,7 +280,16 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         }
         throw ex
     }
-    Seq.empty
+    if (loadResultForReturn != null && loadResultForReturn.getLoadName != null) {
+      Seq(Row(loadResultForReturn.getLoadName))
+    } else {
+      // return the segment id in partition table case
+      rowsForReturn
+    }
+  }
+
+  override val output: Seq[Attribute] = {
+    Seq(AttributeReference("Segment ID", StringType, nullable = false)())
   }
 
   private def isAlteredSchema(tableSchema: TableSchema): Boolean = {
