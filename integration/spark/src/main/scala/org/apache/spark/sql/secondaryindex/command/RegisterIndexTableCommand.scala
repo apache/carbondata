@@ -49,10 +49,6 @@ case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: Str
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val databaseName = CarbonEnv.getDatabaseName(dbName)(sparkSession)
-    val databaseLocation = CarbonEnv.getDatabaseLocation(databaseName, sparkSession)
-    val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + indexTableName
-    val absoluteTableIdentifier = AbsoluteTableIdentifier.from(tablePath, databaseName,
-      indexTableName)
     setAuditTable(databaseName, indexTableName)
     setAuditInfo(Map("Parent TableName" -> parentTable))
     // 1. check if the main and index table exist
@@ -71,16 +67,24 @@ case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: Str
                             s" database [$databaseName]"
       CarbonException.analysisException(message)
     }
+    val indexTable = CarbonEnv.getCarbonTable(dbName, indexTableName)(sparkSession)
+    // get table path from carbon table, instead of creating table path, since the SI table can
+    // be renamed before register index
+    val tablePath = indexTable.getTablePath
+    val absoluteTableIdentifier = AbsoluteTableIdentifier.from(tablePath, databaseName,
+      indexTableName)
     // 2. Read TableInfo
     val tableInfo = SchemaReader.getTableInfo(absoluteTableIdentifier)
     val columns: List[String] = getIndexColumn(tableInfo)
     val secondaryIndex = IndexModel(dbName, parentTable.toLowerCase, columns,
       indexTableName.toLowerCase)
+    val properties = tableInfo.getFactTable.getTableProperties
+    properties.put("tablePath", tablePath)
     // 3. Call the create index command with isCreateSIndex = false
     // (do not create the si table in store path)
     CarbonCreateSecondaryIndexCommand(
       indexModel = secondaryIndex,
-      tableProperties = tableInfo.getFactTable.getTableProperties.asScala,
+      tableProperties = properties.asScala,
       ifNotExists = false,
       isDeferredRefresh = false,
       isCreateSIndex = false).run(sparkSession)
