@@ -342,7 +342,7 @@ object CarbonIndexUtil {
    */
   def addOrModifyTableProperty(carbonTable: CarbonTable,
     properties: Map[String, String],
-    needLock: Boolean = true)
+    needLock: Boolean = true, propertyToBeRemoved: String = null)
     (sparkSession: SparkSession): Unit = {
     val tableName = carbonTable.getTableName
     val dbName = carbonTable.getDatabaseName
@@ -373,6 +373,9 @@ object CarbonIndexUtil {
         if (tblPropertiesMap.get(property._1) != null) {
           tblPropertiesMap.put(property._1, property._2)
         }
+      }
+      if (null != propertyToBeRemoved) {
+        tblPropertiesMap.remove(propertyToBeRemoved)
       }
       val tableIdentifier = AlterTableUtil.updateSchemaInfo(
         carbonTable = carbonTable,

@@ -89,7 +89,11 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
     val dbLocation = CarbonEnv.getDatabaseLocation(databaseName, sparkSession)
     val indexTableName = indexModel.indexName
 
-    val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + indexTableName
+    val tablePath: String = if (isCreateSIndex) {
+      dbLocation + CarbonCommonConstants.FILE_SEPARATOR + indexTableName
+    } else {
+      tableProperties("tablePath")
+    }
     setAuditTable(databaseName, indexTableName)
     setAuditInfo(Map(
       "Column names" -> indexModel.columnNames.toString(),
@@ -164,6 +168,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       val indexTableExistsInCarbon = indexTables.asScala.contains(indexTableName)
       val indexTableExistsInHive = sparkSession.sessionState.catalog
         .tableExists(TableIdentifier(indexTableName, indexModel.dbName))
+      val isRegisterIndex = !isCreateSIndex
       if (indexTableExistsInHive && isCreateSIndex) {
         if (!ifNotExists) {
           LOGGER.error(
@@ -224,6 +229,11 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
           "number of key columns in Source table")
       }
       if (indexModel.columnNames.exists(x => !dimNames.contains(x))) {
+        if (isRegisterIndex) {
+          throw new ErrorMessage(s"Cannot Register Secondary index table $indexTableName, " +
+                                 s"as it has column(s) which does not exists in $tableName. " +
+                                 s"Try Drop and recreate SI.")
+        }
         throw new ErrorMessage(
           s"one or more specified index cols either does not exist or not a key column or complex" +
           s" column in table $databaseName.$tableName")
@@ -238,6 +248,29 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       if (isIndexTable) {
         throw new ErrorMessage(
           s"Table [$tableName] under database [$databaseName] is already an index table")
+      }
+      val absoluteTableIdentifier = AbsoluteTableIdentifier.
+        from(tablePath, databaseName, indexTableName)
+      val indexTablePath = CarbonTablePath
+        .getMetadataPath(absoluteTableIdentifier.getTablePath)
+      val mainTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+      var siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+        SegmentStatusManager.readLoadMetadata(indexTablePath)
+      if (isRegisterIndex) {
+        // check if SI segments are more than main table segments
+        CarbonInternalLoaderUtil
+          .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,
+            siTblLoadMetadataDetails, isRegisterIndex)
+        // check if SI table has undergone any Update or delete operation, which can happen in
+        // case of compatibility scenario. IUD after Refresh SI and before register index
+        val updatedSegmentsCount = siTblLoadMetadataDetails.filter(loadMetaDetail =>
+          !loadMetaDetail.getUpdateStatusFileName.equals(""))
+        if (!updatedSegmentsCount.isEmpty) {
+          throw new ErrorMessage(s"Cannot Register Secondary index table $indexTableName" +
+                                 ", as it has undergone update or delete operation. " +
+                                 "Try Drop and recreate SI.")
+        }
       }
 
       // creation of index on long string or binary columns are not supported
@@ -267,8 +300,6 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
           databaseName, indexTableName,
           indexProperties),
         true)
-      val absoluteTableIdentifier = AbsoluteTableIdentifier.
-        from(tablePath, databaseName, indexTableName)
       var tableInfo: TableInfo = null
       // if Register Index call then read schema file from the metastore
       if (!isCreateSIndex && indexTableExistsInHive) {
@@ -277,6 +308,33 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         tableInfo = prepareTableInfo(
           carbonTable, databaseName,
           tableName, indexTableName, absoluteTableIdentifier)
+      }
+      if (isRegisterIndex && null != tableInfo.getFactTable.getSchemaEvolution &&
+          null != carbonTable.getTableInfo.getFactTable.getSchemaEvolution) {
+        // check if SI table has undergone any alter schema operation before registering it
+        val indexTableSchemaEvolutionEntryList = tableInfo
+          .getFactTable
+          .getSchemaEvolution
+          .getSchemaEvolutionEntryList
+        val mainTableSchemaEvolutionEntryList = carbonTable
+          .getTableInfo
+          .getFactTable
+          .getSchemaEvolution
+          .getSchemaEvolutionEntryList
+        if (indexTableSchemaEvolutionEntryList.size() > mainTableSchemaEvolutionEntryList.size()) {
+          val index = mainTableSchemaEvolutionEntryList.size()
+          for (i <- index until indexTableSchemaEvolutionEntryList.size()) {
+            val schemaEntry = indexTableSchemaEvolutionEntryList.get(i)
+            val isSITableRenamed =
+              (schemaEntry.getAdded == null && schemaEntry.getRemoved == null) ||
+              (schemaEntry.getAdded.isEmpty && schemaEntry.getRemoved.isEmpty)
+            if (!isSITableRenamed) {
+              throw new ErrorMessage(s"Cannot Register Secondary index table $indexTableName" +
+                                     ", as it has undergone column schema addition or deletion. " +
+                                     "Try Drop and recreate SI.")
+            }
+          }
+        }
       }
       if (!isCreateSIndex && !indexTableExistsInHive) {
         LOGGER.error(
@@ -338,6 +396,8 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
                 'parentTableId' = '${carbonTable.getCarbonTableIdentifier.getTableId}')""")
           .collect()
 
+        checkAndRemoveIndexTableExistsProperty(sparkSession, indexTableName)
+
         // Refresh the index table
         CarbonEnv
           .getInstance(sparkSession)
@@ -374,11 +434,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       if (isCreateSIndex) {
         LoadDataForSecondaryIndex(indexModel).run(sparkSession)
       }
-      val indexTablePath = CarbonTablePath
-        .getMetadataPath(tableInfo.getOrCreateAbsoluteTableIdentifier.getTablePath)
-      val mainTblLoadMetadataDetails: Array[LoadMetadataDetails] =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
-      val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+      siTblLoadMetadataDetails =
         SegmentStatusManager.readLoadMetadata(indexTablePath)
       val isMainTableSegEqualToSISegs = CarbonInternalLoaderUtil
         .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,
@@ -396,7 +452,14 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         s"Index created with Database name [$databaseName] and Index name [$indexTableName]")
     } catch {
       case err@(_: ErrorMessage | _: IndexTableExistException) =>
-        sys.error(err.getMessage)
+        if (err.getMessage.contains("Index Table with selected columns already exist") &&
+            !isCreateSIndex) {
+          checkAndRemoveIndexTableExistsProperty(sparkSession, indexTableName)
+          LOGGER.warn(s"Table [$indexTableName] has been already registered as Secondary " +
+                      s"Index table with table [$databaseName.${ indexModel.tableName }].")
+        } else {
+          sys.error(err.getMessage)
+        }
       case ex@(_: IOException | _: ParseException) =>
         LOGGER.error(s"Index creation with Database name [$databaseName] " +
                      s"and Index name [$indexTableName] is failed")
@@ -413,6 +476,18 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       }
     }
     Seq.empty
+  }
+
+  private def checkAndRemoveIndexTableExistsProperty(sparkSession: SparkSession,
+      indexTableName: String): Unit = {
+    // modify the tableProperties of indexTable by removing "indexTableExists" property
+    val indexTable = CarbonEnv.getCarbonTable(indexModel.dbName, indexTableName)(sparkSession)
+    if (indexTable.getTableInfo.getFactTable.getTableProperties.containsKey("indextableexists")) {
+      CarbonIndexUtil
+        .addOrModifyTableProperty(
+          indexTable,
+          Map(), needLock = false, "indextableexists")(sparkSession)
+    }
   }
 
   def prepareTableInfo(carbonTable: CarbonTable,

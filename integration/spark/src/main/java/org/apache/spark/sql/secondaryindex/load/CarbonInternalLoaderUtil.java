@@ -42,6 +42,7 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 import org.apache.log4j.Logger;
 import org.apache.spark.sql.index.CarbonIndexUtil;
+import org.apache.spark.sql.secondaryindex.command.ErrorMessage;
 
 public class CarbonInternalLoaderUtil {
 
@@ -326,12 +327,20 @@ public class CarbonInternalLoaderUtil {
     return tableStatusUpdateStatus;
   }
 
+  public static boolean checkMainTableSegEqualToSISeg(
+      LoadMetadataDetails[] mainTableLoadMetadataDetails,
+      LoadMetadataDetails[] siTableLoadMetadataDetails) throws ErrorMessage {
+    return checkMainTableSegEqualToSISeg(mainTableLoadMetadataDetails, siTableLoadMetadataDetails,
+        false);
+  }
+
   /**
    * Method to check if main table and SI have same number of valid segments or not
    */
   public static boolean checkMainTableSegEqualToSISeg(
       LoadMetadataDetails[] mainTableLoadMetadataDetails,
-      LoadMetadataDetails[] siTableLoadMetadataDetails) {
+      LoadMetadataDetails[] siTableLoadMetadataDetails, boolean isRegisterIndex)
+      throws ErrorMessage {
     List<String> mainTableSegmentsList = getListOfValidSlices(mainTableLoadMetadataDetails);
     List<String> indexList = getListOfValidSlices(siTableLoadMetadataDetails);
     Collections.sort(mainTableSegmentsList);
@@ -341,6 +350,9 @@ public class CarbonInternalLoaderUtil {
     // than SI Segments
     if (indexList.size() < mainTableSegmentsList.size()) {
       return false;
+    } else if ((indexList.size() > mainTableSegmentsList.size()) && isRegisterIndex) {
+      throw new ErrorMessage("Cannot register index, as the number of Secondary index table "
+          + "segments are more than the main table segments. Try Drop and recreate SI.");
     }
     // There can be cases when the number of segments in the main table are less than the index
     // table. In this case mapping all the segments in main table to SI table.
