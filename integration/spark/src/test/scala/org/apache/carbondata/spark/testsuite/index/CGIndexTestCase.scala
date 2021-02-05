@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.testsuite.index
 
 import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -38,6 +39,7 @@ import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexModel, IndexWriter}
 import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -48,6 +50,7 @@ import org.apache.carbondata.core.scan.filter.executer.FilterExecutor
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
@@ -112,8 +115,12 @@ class CGIndexFactory(
 
     val files = file.listFiles()
     files.map { f =>
-      val d: IndexInputSplit = new BlockletIndexInputSplit(f.getCanonicalPath)
-      d
+      val d: BlockletIndexInputSplit = new BlockletIndexInputSplit(f.getCanonicalPath)
+      d.setSegment(segment)
+      d.setIndexSchema(getIndexSchema)
+      d.setSegmentPath(CarbonTablePath.getSegmentPath(identifier.getTablePath,
+        segment.getSegmentNo))
+      new IndexInputSplitWrapper(UUID.randomUUID.toString, d).getDistributable
     }.toList.asJava
   }
 
@@ -351,8 +358,8 @@ class CGIndexWriter(
     outStream.writeObject(maxMin)
     outStream.close()
     val bytes = compressor.compressByte(out.getBytes)
-    stream.write(bytes.array(), 0, bytes.position())
-    stream.writeInt(bytes.position())
+    stream.write(bytes.array(), 0, bytes.limit())
+    stream.writeInt(bytes.limit())
     stream.close()
   }
 
