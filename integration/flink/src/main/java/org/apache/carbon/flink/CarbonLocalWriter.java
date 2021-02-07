@@ -17,7 +17,6 @@
 
 package org.apache.carbon.flink;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
@@ -27,7 +26,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.exception.CarbonFileException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.statusmanager.StageInput;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -36,7 +37,6 @@ import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
 
 import org.apache.carbon.core.metadata.StageManager;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 final class CarbonLocalWriter extends CarbonWriter {
@@ -151,17 +151,20 @@ final class CarbonLocalWriter extends CarbonWriter {
     }
     try {
       String dataPath = CarbonTablePath.getStageDataDir(this.table.getTablePath());
-      tryCreateLocalDirectory(new File(dataPath));
+      tryCreateLocalDirectory(FileFactory.getCarbonFile(dataPath));
       StageInput stageInput = this.uploadSegmentDataFiles(this.writePath, dataPath);
       if (stageInput == null) {
         return;
       }
       try {
         // make it ordered by time in case the files ordered by file name.
-        String stageInputPath = CarbonTablePath.getStageDir(
-            table.getAbsoluteTableIdentifier().getTablePath()) +
-            CarbonCommonConstants.FILE_SEPARATOR + System.currentTimeMillis() + UUID.randomUUID();
-        tryCreateLocalDirectory(new File(stageInputPath));
+        String stageDir =
+            CarbonTablePath.getStageDir(table.getAbsoluteTableIdentifier().getTablePath());
+        tryCreateLocalDirectory(FileFactory.getCarbonFile(stageDir));
+        String stageInputPath =
+            stageDir + CarbonCommonConstants.FILE_SEPARATOR + System.currentTimeMillis() + UUID
+                .randomUUID();
+        FileFactory.createNewFile(stageInputPath);
         StageManager.writeStageInput(stageInputPath, stageInput);
       } catch (Throwable exception) {
         this.deleteSegmentDataFilesQuietly(dataPath);
@@ -169,8 +172,8 @@ final class CarbonLocalWriter extends CarbonWriter {
       }
     } finally {
       try {
-        FileUtils.deleteDirectory(new File(this.writePath));
-      } catch (IOException exception) {
+        FileFactory.getCarbonFile(this.writePath).delete();
+      } catch (CarbonFileException exception) {
         LOGGER.error("Fail to delete write path [" + this.writePath + "].", exception);
       }
     }
@@ -192,8 +195,8 @@ final class CarbonLocalWriter extends CarbonWriter {
       LOGGER.error("Fail to close carbon writer.", exception);
     } finally {
       try {
-        FileUtils.deleteDirectory(new File(this.writePath));
-      } catch (IOException exception) {
+        FileFactory.getCarbonFile(this.writePath).delete();
+      } catch (CarbonFileException exception) {
         LOGGER.error("Fail to delete write path [" + this.writePath + "].", exception);
       }
     }
@@ -218,14 +221,14 @@ final class CarbonLocalWriter extends CarbonWriter {
     }
   }
 
-  private static void tryCreateLocalDirectory(final File file) throws IOException {
+  private static void tryCreateLocalDirectory(final CarbonFile file) throws IOException {
     if (file.exists()) {
       return;
     }
     if (file.getParentFile() != null) {
       tryCreateLocalDirectory(file.getParentFile());
     }
-    if (!file.mkdir() && LOGGER.isDebugEnabled()) {
+    if (!file.mkdirs() && LOGGER.isDebugEnabled()) {
       LOGGER.debug("Directory [" + file.getCanonicalPath() + "] is exist.");
     }
   }

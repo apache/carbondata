@@ -23,7 +23,7 @@ limitations under the License.
 ## Usage scenarios
 
   The CarbonData flink integration module is used to connect Flink and Carbon. The module provides 
-  a set of Flink BulkWriter implementations (CarbonLocalWriter and CarbonS3Writer). The data is processed 
+  a set of Flink BulkWriter implementations (CarbonLocalWriter (for Local and HDFS filesystems) and CarbonS3Writer). The data is processed 
   by the Flink, and finally written into the stage directory of the target table by the CarbonXXXWriter. 
 
   By default, those data in table stage directory, can not be immediately queried, those data can be queried 
@@ -79,6 +79,7 @@ limitations under the License.
     // Set the carbon properties here, such as date format, store location, etc.
      
     // Create carbon bulk writer factory. Two writer types are supported: 'Local' and 'S3'.
+    // Use CarbonWriterFactory.builder("Local") for Local and Hdfs File systems
     val writerFactory = CarbonWriterFactory.builder("Local").build(
       databaseName,
       tableName,
