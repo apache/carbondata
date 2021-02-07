@@ -17,7 +17,7 @@
 
 package org.apache.carbon.flink;
 
-import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +27,8 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.StageInput;
@@ -73,15 +75,16 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
   /**
    * @return when there is no data file uploaded, then return <code>null</code>.
    */
-  protected StageInput uploadSegmentDataFiles(final String localPath, final String remotePath) {
+  protected StageInput uploadSegmentDataFiles(final String localPath, final String remotePath)
+      throws IOException {
     if (!this.table.isHivePartitionTable()) {
-      final File[] files = new File(localPath).listFiles();
-      if (files == null) {
+      final CarbonFile[] files = FileFactory.getCarbonFile(localPath).listFiles();
+      if (files == null || files.length == 0) {
         return null;
       }
       Map<String, Long> fileNameMapLength = new HashMap<>(files.length);
-      for (File file : files) {
-        fileNameMapLength.put(file.getName(), file.length());
+      for (CarbonFile file : files) {
+        fileNameMapLength.put(file.getName(), file.getLength());
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug(
               "Upload file[" + file.getAbsolutePath() + "] to [" + remotePath + "] start.");
@@ -101,7 +104,8 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
     } else {
       final List<StageInput.PartitionLocation> partitionLocationList = new ArrayList<>();
       final List<String> partitions = new ArrayList<>();
-      uploadSegmentDataFiles(new File(localPath), remotePath, partitionLocationList, partitions);
+      uploadSegmentDataFiles(FileFactory.getCarbonFile(localPath), remotePath,
+          partitionLocationList, partitions);
       if (partitionLocationList.isEmpty()) {
         return null;
       } else {
@@ -111,23 +115,23 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
   }
 
   private static void uploadSegmentDataFiles(
-      final File directory, final String remotePath,
+      final CarbonFile directory, final String remotePath,
       final List<StageInput.PartitionLocation> partitionLocationList,
       final List<String> partitions
-  ) {
-    final File[] files = directory.listFiles();
-    if (files == null) {
+  ) throws IOException {
+    final CarbonFile[] files = directory.listFiles();
+    if (files == null || files.length == 0) {
       return;
     }
     Map<String, Long> fileNameMapLength = new HashMap<>();
-    for (File file : files) {
+    for (CarbonFile file : files) {
       if (file.isDirectory()) {
         partitions.add(file.getName());
         uploadSegmentDataFiles(file, remotePath, partitionLocationList, partitions);
         partitions.remove(partitions.size() - 1);
         continue;
       }
-      fileNameMapLength.put(file.getName(), file.length());
+      fileNameMapLength.put(file.getName(), file.getLength());
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Upload file[" + file.getAbsolutePath() + "] to [" + remotePath + "] start.");
       }
