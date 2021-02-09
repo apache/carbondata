@@ -702,6 +702,12 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
   }
 
+  test("test refresh mv which does not exists") {
+    intercept[MalformedMVCommandException] {
+      sql("refresh materialized view does_not_exist")
+    }.getMessage.contains("Materialized view default.does_not_exist does not exist")
+  }
+
   test("drop meta cache on mv materialized view table") {
     defaultConfig()
     sql("drop table IF EXISTS maintable")
