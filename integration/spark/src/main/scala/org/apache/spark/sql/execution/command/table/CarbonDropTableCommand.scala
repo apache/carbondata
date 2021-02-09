@@ -99,8 +99,6 @@ case class CarbonDropTableCommand(
           isInternalCall)
       OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
 
-      CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
-
       val viewManager = MVManagerInSpark.get(sparkSession)
       val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
       if (!viewSchemas.isEmpty) {
@@ -116,6 +114,10 @@ case class CarbonDropTableCommand(
         }
         viewDropCommands.foreach(_.processMetadata(sparkSession))
       }
+
+      // drop mv and then drop fact table from metastore, to avoid getting NPE,
+      // when trying to access fact table during drop MV operation.
+      CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
 
       // fires the event after dropping main table
       val dropTablePostEvent: DropTablePostEvent =
