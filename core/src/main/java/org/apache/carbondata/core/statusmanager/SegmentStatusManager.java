@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -50,6 +51,7 @@ import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
@@ -999,6 +1001,70 @@ public class SegmentStatusManager {
   }
 
   /**
+   * This method will delete all the unnecessary files, like stale carbondata, stale merge
+   * index and stale delta files in success segment.
+   */
+  private static void deleteStaleFilesInSuccessSegments(CarbonTable carbonTable,
+      LoadMetadataDetails[] details) throws IOException {
+    SegmentUpdateStatusManager updateStatusManager =
+        new SegmentUpdateStatusManager(carbonTable, details);
+    if (details != null && details.length > 0 && !carbonTable.isHivePartitionTable() &&
+        !carbonTable.isExternalTable()) {
+      for (LoadMetadataDetails oneRow : details) {
+        if (SegmentStatus.SUCCESS == oneRow.getSegmentStatus() || SegmentStatus
+            .LOAD_PARTIAL_SUCCESS == oneRow.getSegmentStatus()) {
+          // get total number of files in the segment folder of the coresponding segment
+          List<String> actualFilesInSegment = Arrays.stream(FileFactory.getCarbonFile(
+              CarbonTablePath.getSegmentPath(carbonTable.getTablePath(), oneRow.getLoadName()))
+              .listFiles()).map(CarbonFile::getAbsolutePath).collect(Collectors.toList());
+          // get the necessary files
+          List<String> filesInSegment = new ArrayList<>();
+          SegmentFileStore fileStore = new SegmentFileStore(carbonTable.getTablePath(), oneRow
+              .getSegmentFile());
+          List<String> indexOrMergeFiles = fileStore.readIndexFiles(SegmentStatus.SUCCESS, true,
+              FileFactory.getConfiguration());
+          Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
+          for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
+            if (FileFactory.isFileExist(entry.getKey())) {
+              filesInSegment.add(entry.getKey());
+            }
+            for (String file : entry.getValue()) {
+              String[] deltaFilePaths =
+                updateStatusManager.getDeleteDeltaFilePath(file, oneRow.getLoadName());
+              for (String deltaFilePath : deltaFilePaths) {
+                if (FileFactory.isFileExist(deltaFilePath)) {
+                  filesInSegment.add(deltaFilePath);
+                }
+              }
+              if (FileFactory.isFileExist(file)) {
+                filesInSegment.add(file);
+              }
+            }
+          }
+          for (String indexOrMergeFile : indexOrMergeFiles) {
+            if (FileFactory.isFileExist(indexOrMergeFile)) {
+              filesInSegment.add(indexOrMergeFile);
+            }
+          }
+          if (actualFilesInSegment.size() > filesInSegment.size()) {
+            // some extra files which needs to be deleted
+            List<String> distinct = actualFilesInSegment.stream()
+                .filter(aObject -> !filesInSegment.contains(aObject)).collect(Collectors.toList());
+            distinct.forEach(file -> {
+              try {
+                FileFactory.deleteFile(file);
+                LOG.info("Successfully deleted stale file : " + file);
+              } catch (IOException e) {
+                LOG.error("Unable to delete file : " + file, e);
+              }
+            });
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * This will update the old table status details before clean files to the latest table status.
    * @param oldList
    * @param newList
@@ -1041,6 +1107,10 @@ public class SegmentStatusManager {
       boolean isCleanFilesOperation) throws IOException {
     LoadMetadataDetails[] metadataDetails =
         SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+    // delete stale files in success segments
+    if (isForceDeletion) {
+      deleteStaleFilesInSuccessSegments(carbonTable, metadataDetails);
+    }
     // delete the expired segment lock files
     CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
     if (isLoadDeletionRequired(metadataDetails)) {

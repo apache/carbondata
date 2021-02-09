@@ -466,6 +466,31 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
         CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
     }
 
+  test("Test clean files on Success Segments to remove stale files") {
+    createTable()
+    loadData()
+    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
+      .getTablePath
+    val segment0Path = CarbonTablePath.getSegmentPath(path, "0")
+    val segment0Files = FileFactory.getCarbonFile(segment0Path)
+        .listFiles().length
+    val f1 = new File(segment0Path + CarbonCommonConstants.FILE_SEPARATOR + "file1")
+    val f2 = new File(segment0Path + CarbonCommonConstants.FILE_SEPARATOR + "file2")
+    f1.createNewFile()
+    f2.createNewFile()
+    val updatedSegment0Files = FileFactory.getCarbonFile(segment0Path)
+      .listFiles().length
+    assert(segment0Files + 2 == updatedSegment0Files)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
+    val finalSegment0Files = FileFactory.getCarbonFile(segment0Path)
+      .listFiles().length
+    assert(segment0Files == finalSegment0Files)
+  }
+
   def editTableStatusFile(carbonTablePath: String) : Unit = {
     // original table status file
     val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath))
