@@ -257,6 +257,7 @@ public class IndexUtil {
         for (ExtendedBlocklet blocklet : prunedBlocklet) {
           blocklet.getDetailInfo();
           blocklet.setIndexUniqueId(wrapper.getUniqueId());
+          blocklet.setCgIndexPresent(true);
         }
         extendedBlocklets.addAll(prunedBlocklet);
       }

@@ -48,6 +48,8 @@ public class ExtendedBlocklet extends Blocklet {
 
   private String segmentNo;
 
+  private boolean isCgIndexPresent = false;
+
   public ExtendedBlocklet() {
 
   }
@@ -191,7 +193,8 @@ public class ExtendedBlocklet extends Blocklet {
         DataOutputStream dos = new DataOutputStream(ebos);
         inputSplit.setFilePath(null);
         inputSplit.setBucketId(null);
-        if (inputSplit.isBlockCache()) {
+        // serialize detail info when it is blocklet cache or cgIndex is present.
+        if (inputSplit.isBlockCache() && !isCgIndexPresent) {
           inputSplit.updateFooterOffset();
           inputSplit.updateBlockLength();
           inputSplit.setWriteDetailInfo(false);
@@ -246,5 +249,9 @@ public class ExtendedBlocklet extends Blocklet {
       this.inputSplit =
           new CarbonInputSplit(serializeLen, in, getFilePath(), locations, getBlockletId());
     }
+  }
+
+  public void setCgIndexPresent(boolean cgIndexPresent) {
+    isCgIndexPresent = cgIndexPresent;
   }
 }
