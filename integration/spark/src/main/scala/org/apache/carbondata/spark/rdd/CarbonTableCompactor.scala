@@ -92,19 +92,22 @@ class CarbonTableCompactor(
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       val compactedLoad = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
       var segmentLocks: ListBuffer[ICarbonLock] = ListBuffer.empty
+      val validSegments = new java.util.ArrayList[LoadMetadataDetails]
       loadsToMerge.asScala.foreach { segmentId =>
         val segmentLock = CarbonLockFactory
           .getCarbonLockObj(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
             .getAbsoluteTableIdentifier,
             CarbonTablePath.addSegmentPrefix(segmentId.getLoadName) + LockUsage.LOCK)
-        if (!segmentLock.lockWithRetries()) {
-          throw new Exception(s"Failed to acquire lock on segment ${segmentId.getLoadName}," +
-            s" during compaction of table ${compactionModel.carbonTable.getQualifiedName}")
+        if (segmentLock.lockWithRetries()) {
+          validSegments.add(segmentId)
+          segmentLocks += segmentLock
+        } else {
+          LOGGER.warn(s"Failed to acquire lock on segment ${segmentId.getLoadName}, " +
+                      s"during compaction of table ${compactionModel.carbonTable.getQualifiedName}")
         }
-        segmentLocks += segmentLock
       }
       try {
-        scanSegmentsAndSubmitJob(loadsToMerge, compactedSegments, compactedLoad)
+        scanSegmentsAndSubmitJob(validSegments, compactedSegments, compactedLoad)
       } catch {
         case e: Exception =>
           LOGGER.error(s"Exception in compaction thread ${ e.getMessage }", e)
