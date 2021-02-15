@@ -2532,7 +2532,7 @@ public final class CarbonCommonConstants {
    * Default value for loading cache is true
    * Make this false, to load index for the matched segments from filter expression
    */
-  public static final String CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE_DEFAULT = "true";
+  public static final String CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE_DEFAULT = "false";
 
   /**
    * Index properties
