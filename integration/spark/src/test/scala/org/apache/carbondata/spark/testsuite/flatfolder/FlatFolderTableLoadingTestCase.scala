@@ -46,12 +46,10 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  def validateDataFiles(tableUniqueName: String): Unit = {
+  def validateDataFiles(tableUniqueName: String, segmentId: String): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
     val files = FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
-    val factPath = FileFactory.getCarbonFile(CarbonTablePath.getFactDir(carbonTable.getTablePath))
     assert(files.exists(_.getName.endsWith(CarbonTablePath.CARBON_DATA_EXT)))
-    assert(!factPath.exists())
   }
 
   test("data loading for flat folder with global sort") {
@@ -65,7 +63,7 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE flatfolder_gs OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_flatfolder_gs")
+    validateDataFiles("default_flatfolder_gs", "0")
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from flatfolder_gs order by empno"),
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -83,7 +81,7 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE flatfolder OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_flatfolder")
+    validateDataFiles("default_flatfolder", "0")
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from flatfolder order by empno"),
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
