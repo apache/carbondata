@@ -47,8 +47,8 @@ class TestCarbonSegmentUtil extends QueryTest {
     createTable(tableName)
     val dataFrame = sql(s"select * from $tableName")
     val scanRdd = dataFrame.queryExecution.sparkPlan.collect {
-      case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] => b.rdd
-        .asInstanceOf[CarbonScanRDD[InternalRow]]
+      case b: CarbonDataSourceScan if b.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+        b.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
     }.head
     val expected = BroadCastSIFilterPushJoin.getFilteredSegments(scanRdd)
     assert(expected.length == 4)

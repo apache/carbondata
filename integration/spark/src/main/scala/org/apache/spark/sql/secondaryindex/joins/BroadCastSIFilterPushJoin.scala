@@ -83,10 +83,7 @@ case class BroadCastSIFilterPushJoin(
   }
 
   lazy val secondaryIndexRDD: Seq[RDD[InternalRow]] = buildPlan.collect {
-    case batchData: CarbonDataSourceScan =>
-      batchData.rdd
-    case rowData: RowDataSourceScanExec =>
-      rowData.rdd
+    case scan: CarbonDataSourceScan => scan.inputRDDs().head
   }
 
   private lazy val inputCopy: Array[InternalRow] = {
@@ -119,10 +116,7 @@ case class BroadCastSIFilterPushJoin(
   }
 
   val mainTableRDD: Option[RDD[InternalRow]] = carbonScan.collectFirst {
-    case batchData: CarbonDataSourceScan =>
-      batchData.rdd
-    case rowData: RowDataSourceScanExec =>
-      rowData.rdd
+    case scan: CarbonDataSourceScan => scan.inputRDDs().head
   }
 
   override def doExecute(): RDD[InternalRow] = {
@@ -234,7 +228,7 @@ object BroadCastSIFilterPushJoin {
       logger.info("Pushing down filter for broadcast join. Filter size:" + filters(0).length)
       tableScan.get match {
         case scan: CarbonDataSourceScan =>
-          addPushDownToCarbonRDD(scan.rdd,
+          addPushDownToCarbonRDD(scan.inputRDDs().head,
             addPushDownFilters(filterKeys, filters))
         case _ =>
           addPushDownToCarbonRDD(tableScan.get.asInstanceOf[RowDataSourceScanExec].rdd,
@@ -460,13 +454,9 @@ object BroadCastSIFilterPushJoin {
         val collectRDD: Seq[CarbonScanRDD[InternalRow]] = dataFrame.queryExecution.sparkPlan
           .collect {
             case scan: CarbonDataSourceScan
-              if scan.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] &&
-                 isMainTableRDD(scan.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]) =>
-              scan.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
-            case scan: RowDataSourceScanExec
-              if scan.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] &&
-                 isMainTableRDD(scan.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]) =>
-              scan.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
+              if scan.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] &&
+                 isMainTableRDD(scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]) =>
+              scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
           }
         // If collectRDD length is 0 or greater than 1 then throw exception
         if (1 != collectRDD.length) {

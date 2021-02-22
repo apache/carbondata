@@ -27,7 +27,7 @@ import org.apache.carbondata.hadoop.CarbonProjection
 object PushDownHelper {
 
   def pushDownProjection(
-      requiredColumns: Array[String],
+      requiredColumns: Seq[String],
       projects: Seq[NamedExpression],
       projection: CarbonProjection
   ): Unit = {

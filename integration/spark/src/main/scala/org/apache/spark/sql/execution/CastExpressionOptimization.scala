@@ -24,21 +24,24 @@ import java.util.{Locale, TimeZone}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
-import org.apache.spark.sql.CastExpr
-import org.apache.spark.sql.FalseExpr
-import org.apache.spark.sql.catalyst.expressions.{Attribute, EmptyRow, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertToJavaList
+import org.apache.spark.sql.catalyst.expressions.{Attribute, EmptyRow, EqualTo, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
+import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.sources
-import org.apache.spark.sql.sources.Filter
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.optimizer.CarbonFilters.{transformExpression, translateColumn, translateLiteral}
+import org.apache.spark.sql.types.{ArrayType, DateType, DoubleType, IntegerType, ShortType, StringType, TimestampType}
+import org.apache.spark.sql.types.{DataType => SparkDataType}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.scan.expression.Expression
+import org.apache.carbondata.core.scan.expression.conditional.{EqualToExpression, GreaterThanEqualToExpression, GreaterThanExpression, InExpression, LessThanEqualToExpression, LessThanExpression, ListExpression, NotEqualsExpression, NotInExpression}
+import org.apache.carbondata.core.scan.expression.logical.FalseExpression
 import org.apache.carbondata.core.util.CarbonProperties
 
 object CastExpressionOptimization {
 
-  def typeCastStringToLong(v: Any, dataType: DataType): Any = {
+  def typeCastStringToLong(v: Any, dataType: SparkDataType): Any = {
     if (dataType == TimestampType || dataType == DateType) {
       val value = if (dataType == TimestampType) {
         DateTimeUtils.stringToTimestamp(UTF8String.fromString(v.toString))
@@ -60,19 +63,19 @@ object CastExpressionOptimization {
           parser.setTimeZone(TimeZone.getTimeZone("GMT"))
         }
         try {
-          val value = parser.parse(v.toString).getTime() * 1000L
+          val value = parser.parse(v.toString).getTime * 1000L
           value
         } catch {
           case e: ParseException =>
             try {
               val format: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSz")
-              format.parse(v.toString).getTime() * 1000L
+              format.parse(v.toString).getTime * 1000L
             } catch {
               case e: ParseException =>
                 val gmtDay = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
                 gmtDay.setTimeZone(TimeZone.getTimeZone("GMT"))
                 try {
-                  gmtDay.parse(v.toString).getTime() * 1000L
+                  gmtDay.parse(v.toString).getTime * 1000L
                 } catch {
                   case e: ParseException =>
                     v
@@ -92,13 +95,13 @@ object CastExpressionOptimization {
     }
   }
 
-
-  def typeCastStringToLongList(list: Seq[Expression], dataType: DataType): Seq[Expression] = {
-    val tempList = new util.ArrayList[Expression]()
+  def typeCastStringToLongList(list: Seq[SparkExpression],
+      dataType: SparkDataType): Seq[SparkExpression] = {
+    val tempList = new util.ArrayList[SparkExpression]()
     list.foreach { value =>
       val output = typeCastStringToLong(value, dataType)
       if (!output.equals(value)) {
-        tempList.add(output.asInstanceOf[Expression])
+        tempList.add(output.asInstanceOf[SparkExpression])
       }
     }
     if (tempList.size() != list.size) {
@@ -108,12 +111,12 @@ object CastExpressionOptimization {
     }
   }
 
-  def typeCastDoubleToIntList(list: Seq[Expression]): Seq[Expression] = {
-    val tempList = new util.ArrayList[Expression]()
+  def typeCastDoubleToIntList(list: Seq[SparkExpression]): Seq[SparkExpression] = {
+    val tempList = new util.ArrayList[SparkExpression]()
     list.foreach { value =>
       val output = value.asInstanceOf[Double].toInt
       if (value.asInstanceOf[Double].toInt.equals(output)) {
-        tempList.add(output.asInstanceOf[Expression])
+        tempList.add(output.asInstanceOf[SparkExpression])
       }
     }
     if (tempList.size() != list.size) {
@@ -123,12 +126,12 @@ object CastExpressionOptimization {
     }
   }
 
-  def typeCastIntToShortList(list: Seq[Expression]): Seq[Expression] = {
-    val tempList = new util.ArrayList[Expression]()
+  def typeCastIntToShortList(list: Seq[SparkExpression]): Seq[SparkExpression] = {
+    val tempList = new util.ArrayList[SparkExpression]()
     list.foreach { value =>
       val output = value.asInstanceOf[Integer].toShort
       if (value.asInstanceOf[Integer].toShort.equals(output)) {
-        tempList.add(output.asInstanceOf[Expression])
+        tempList.add(output.asInstanceOf[SparkExpression])
       }
     }
     if (tempList.size() != list.size) {
@@ -153,57 +156,75 @@ object CastExpressionOptimization {
    * @param expr
    * @return
    */
-  def checkIfCastCanBeRemove(expr: Expression): Option[sources.Filter] = {
+  def checkIfCastCanBeRemove(expr: SparkExpression): Option[Expression] = {
 
-    def checkBinaryExpression(attributeType: DataType,
+    def checkBinaryExpression(attributeType: SparkDataType,
         value: Any,
-        valueType: DataType,
-        nonEqual: Boolean = true): Option[Filter] = {
+        valueType: SparkDataType,
+        nonEqual: Boolean = true): Option[Expression] = {
       attributeType match {
-        case ts@(_: DateType | _: TimestampType) if valueType.sameType(StringType) =>
-          val filter = updateFilterForTimeStamp(value, expr, ts)
+        case _: DateType | _: TimestampType if valueType.sameType(StringType) =>
+          val filter = updateFilterForTimeStamp(value, expr, attributeType)
           if (nonEqual) {
             updateFilterForNonEqualTimeStamp(value, expr, filter)
           } else {
             filter
           }
         case _: IntegerType if valueType.sameType(DoubleType) =>
-          updateFilterForInt(value, expr)
+          updateFilterForInt(value, expr, attributeType)
         case _: ShortType if valueType.sameType(IntegerType) =>
-          updateFilterForShort(value, expr)
+          updateFilterForShort(value, expr, attributeType)
         case arr: ArrayType if !nonEqual =>
           checkBinaryExpression(arr.elementType, value, valueType, nonEqual)
-        case _ => Some(CastExpr(expr))
+        case _ => Some(transformExpression(expr))
       }
     }
 
     def checkInValueList(attributeName: String,
-        list: Seq[Expression],
-        newList: Seq[Expression],
-        hasNot: Boolean = true): Option[Filter] = {
+        list: Seq[SparkExpression],
+        newList: Seq[SparkExpression],
+        dt: SparkDataType,
+        hasNot: Boolean = true): Option[Expression] = {
       if (!newList.equals(list)) {
         val hSet = list.map(e => e.eval(EmptyRow))
         if (hasNot) {
-          Some(sources.Not(sources.In(attributeName, hSet.toArray)))
+          if (hSet.contains(null)) {
+            Some(new FalseExpression(translateColumn(attributeName, dt)))
+          } else {
+            Some(new NotInExpression(translateColumn(attributeName, dt),
+              new ListExpression(convertToJavaList(
+                hSet.map(f => translateLiteral(f, dt)).toList))))
+          }
         } else {
-          Some(sources.In(attributeName, hSet.toArray))
+          if (hSet.length == 1 && hSet.head == null) {
+            Some(new FalseExpression(translateColumn(attributeName, dt)))
+          } else {
+            Some(new InExpression(translateColumn(attributeName, dt),
+              new ListExpression(convertToJavaList(hSet
+                .filterNot(_ == null)
+                .map(filterValues => translateLiteral(filterValues, dt))
+                .toList))))
+          }
         }
       } else {
-        Some(CastExpr(expr))
+        Some(transformExpression(expr))
       }
     }
 
     def checkInExpression(attribute: Attribute,
-        list: Seq[Expression],
-        hasNot: Boolean = true): Option[Filter] = {
+        list: Seq[SparkExpression],
+        hasNot: Boolean = true): Option[Expression] = {
       attribute.dataType match {
-        case ts@(_: DateType | _: TimestampType) if list.head.dataType.sameType(StringType) =>
-          checkInValueList(attribute.name, list, typeCastStringToLongList(list, ts), hasNot)
+        case _: DateType | _: TimestampType if list.head.dataType.sameType(StringType) =>
+          checkInValueList(attribute.name, list, typeCastStringToLongList(list, attribute.dataType),
+            attribute.dataType, hasNot)
         case _: IntegerType if list.head.dataType.sameType(DoubleType) =>
-          checkInValueList(attribute.name, list, typeCastDoubleToIntList(list), hasNot)
+          checkInValueList(attribute.name, list, typeCastDoubleToIntList(list), attribute.dataType,
+            hasNot)
         case _: ShortType if list.head.dataType.sameType(IntegerType) =>
-          checkInValueList(attribute.name, list, typeCastIntToShortList(list), hasNot)
-        case _ => Some(CastExpr(expr))
+          checkInValueList(attribute.name, list, typeCastIntToShortList(list), attribute.dataType,
+            hasNot)
+        case _ => Some(transformExpression(expr))
       }
     }
 
@@ -246,12 +267,14 @@ object CastExpressionOptimization {
    * @param exp
    * @return
    */
-  def updateFilterForShort(actualValue: Any, exp: Expression): Option[sources.Filter] = {
+  def updateFilterForShort(actualValue: Any,
+      exp: SparkExpression,
+      dt: SparkDataType): Option[Expression] = {
     val newValue = actualValue.asInstanceOf[Integer].toShort
     if (newValue.toInt.equals(actualValue)) {
-      updateFilterBasedOnFilterType(exp, newValue)
+      updateFilterBasedOnFilterType(exp, newValue, dt)
     } else {
-      Some(CastExpr(exp))
+      Some(transformExpression(exp))
     }
   }
 
@@ -262,12 +285,14 @@ object CastExpressionOptimization {
    * @param exp
    * @return
    */
-  def updateFilterForInt(actualValue: Any, exp: Expression): Option[sources.Filter] = {
+  def updateFilterForInt(actualValue: Any,
+      exp: SparkExpression,
+      dt: SparkDataType): Option[Expression] = {
     val newValue = actualValue.asInstanceOf[Double].toInt
     if (newValue.toDouble.equals(actualValue)) {
-      updateFilterBasedOnFilterType(exp, newValue)
+      updateFilterBasedOnFilterType(exp, newValue, dt)
     } else {
-      Some(CastExpr(exp))
+      Some(transformExpression(exp))
     }
   }
 
@@ -278,11 +303,12 @@ object CastExpressionOptimization {
    * @param filter      Filter Expression
    * @return return CastExpression or same Filter
    */
-  def updateFilterForNonEqualTimeStamp(actualValue: Any, exp: Expression, filter: Option[Filter]):
-  Option[sources.Filter] = {
+  def updateFilterForNonEqualTimeStamp(actualValue: Any,
+      exp: SparkExpression,
+      filter: Option[Expression]): Option[Expression] = {
     filter.get match {
-      case FalseExpr() if (validTimeComparisionForSpark(actualValue)) =>
-        Some(CastExpr(exp))
+      case _: FalseExpression if validTimeComparisionForSpark(actualValue) =>
+        Some(transformExpression(exp))
       case _ =>
         filter
     }
@@ -313,17 +339,16 @@ object CastExpressionOptimization {
    * @param exp
    * @return
    */
-  def updateFilterForTimeStamp(actualValue: Any, exp: Expression, dt: DataType):
-  Option[sources.Filter] = {
+  def updateFilterForTimeStamp(actualValue: Any,
+      exp: SparkExpression,
+      dt: SparkDataType): Option[Expression] = {
     val newValue = typeCastStringToLong(actualValue, dt)
     if (!newValue.equals(actualValue)) {
-      updateFilterBasedOnFilterType(exp, newValue)
+      updateFilterBasedOnFilterType(exp, newValue, dt)
     } else {
-      Some(FalseExpr())
+      Some(new FalseExpression(null))
     }
-
   }
-
 
   /**
    * the method removes the cast for the respective filter type
@@ -332,34 +357,47 @@ object CastExpressionOptimization {
    * @param newValue
    * @return
    */
-  def updateFilterBasedOnFilterType(exp: Expression,
-      newValue: Any): Some[Filter with Product with Serializable] = {
+  def updateFilterBasedOnFilterType(exp: SparkExpression,
+      newValue: Any,
+      dataType: SparkDataType): Some[Expression] = {
     exp match {
-      case c@EqualTo(Cast(a: Attribute, _), Literal(v, t)) =>
-        Some(sources.EqualTo(a.name, newValue))
-      case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
-        Some(sources.EqualTo(a.name, newValue))
-      case c@Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
-        Some(sources.Not(sources.EqualTo(a.name, newValue)))
-      case c@Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
-        Some(sources.Not(sources.EqualTo(a.name, newValue)))
-      case GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
-        Some(sources.GreaterThan(a.name, newValue))
-      case GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
-        Some(sources.LessThan(a.name, newValue))
-      case c@LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
-        Some(sources.LessThan(a.name, newValue))
-      case c@LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
-        Some(sources.GreaterThan(a.name, newValue))
-      case c@GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-        Some(sources.GreaterThanOrEqual(a.name, newValue))
-      case c@GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-        Some(sources.LessThanOrEqual(a.name, newValue))
-      case c@LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-        Some(sources.LessThanOrEqual(a.name, newValue))
-      case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-        Some(sources.GreaterThanOrEqual(a.name, newValue))
-      case _ => Some(CastExpr(exp))
+      case EqualTo(Cast(a: Attribute, _), _: Literal) =>
+        Some(new EqualToExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case EqualTo(_: Literal, Cast(a: Attribute, _)) =>
+        Some(new EqualToExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case Not(EqualTo(Cast(a: Attribute, _), _: Literal)) =>
+        Some(new NotEqualsExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case Not(EqualTo(_: Literal, Cast(a: Attribute, _))) =>
+        Some(new NotEqualsExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case GreaterThan(Cast(a: Attribute, _), _: Literal) =>
+        Some(new GreaterThanExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case GreaterThan(_: Literal, Cast(a: Attribute, _)) =>
+        Some(new LessThanExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case LessThan(Cast(a: Attribute, _), _: Literal) =>
+        Some(new LessThanExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case LessThan(_: Literal, Cast(a: Attribute, _)) =>
+        Some(new GreaterThanExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case GreaterThanOrEqual(Cast(a: Attribute, _), _: Literal) =>
+        Some(new GreaterThanEqualToExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case GreaterThanOrEqual(_: Literal, Cast(a: Attribute, _)) =>
+        Some(new LessThanEqualToExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case LessThanOrEqual(Cast(a: Attribute, _), _: Literal) =>
+        Some(new LessThanEqualToExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case LessThanOrEqual(_: Literal, Cast(a: Attribute, _)) =>
+        Some(new GreaterThanEqualToExpression(translateColumn(a.name, dataType),
+          translateLiteral(newValue, dataType)))
+      case _ => Some(transformExpression(exp))
     }
   }
 }

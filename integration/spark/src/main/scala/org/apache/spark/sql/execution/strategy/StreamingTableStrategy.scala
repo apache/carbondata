@@ -17,29 +17,30 @@
 
 package org.apache.spark.sql.execution.strategy
 
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsCommand, AlterTableChangeColumnCommand, AlterTableRenameCommand}
 import org.apache.spark.sql.execution.command.mutation.{CarbonProjectForDeleteCommand, CarbonProjectForUpdateCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 /**
  * Strategy for streaming table, like blocking unsupported operation
  */
-private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends SparkStrategy {
+private[sql] object StreamingTableStrategy extends SparkStrategy {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
-      case CarbonProjectForUpdateCommand(_, databaseNameOp, tableName, columns) =>
+      case CarbonProjectForUpdateCommand(_, databaseNameOp, tableName, _) =>
         rejectIfStreamingTable(
           TableIdentifier(tableName, databaseNameOp),
           "Data update")
         Nil
-      case CarbonProjectForDeleteCommand(_, databaseNameOp, tableName, timestamp) =>
+      case CarbonProjectForDeleteCommand(_, databaseNameOp, tableName, _) =>
         rejectIfStreamingTable(
           TableIdentifier(tableName, databaseNameOp),
           "Data delete")
@@ -93,7 +94,7 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
     var streaming = false
     try {
       streaming = CarbonEnv.getCarbonTable(
-        tableIdentifier.database, tableIdentifier.table)(sparkSession)
+        tableIdentifier.database, tableIdentifier.table)(SparkSQLUtil.getSparkSession)
         .isStreamingSink
     } catch {
       case e: Exception =>
@@ -106,6 +107,6 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
   }
 
   def isCarbonTable(tableIdent: TableIdentifier): Boolean = {
-    CarbonPlanHelper.isCarbonTable(tableIdent, sparkSession)
+    CarbonPlanHelper.isCarbonTable(tableIdent, SparkSQLUtil.getSparkSession)
   }
 }

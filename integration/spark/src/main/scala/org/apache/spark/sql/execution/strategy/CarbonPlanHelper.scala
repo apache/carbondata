@@ -18,19 +18,25 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.{CarbonEnv, InsertIntoCarbonTable, SparkSession}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, CustomDeterministicExpression, InsertIntoCarbonTable, SparkSession, SQLContext}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.{ExecutedCommandExec, RunnableCommand}
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
-import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.types.{AtomicType, StructField}
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
 
 object CarbonPlanHelper {
 
@@ -123,6 +129,10 @@ object CarbonPlanHelper {
     }
   }
 
+  def isCarbonTable(tableIdent: TableIdentifier): Boolean = {
+    isCarbonTable(tableIdent, SparkSQLUtil.getSparkSession)
+  }
+
   def isCarbonTable(tableIdent: TableIdentifier, sparkSession: SparkSession): Boolean = {
     val dbOption = tableIdent.database.map(_.toLowerCase)
     val tableIdentifier = TableIdentifier(tableIdent.table.toLowerCase(), dbOption)
@@ -167,5 +177,88 @@ object CarbonPlanHelper {
     if (!CarbonPlanHelper.isCarbonTable(tableIdentifier, sparkSession)) {
       throw new UnsupportedOperationException(message)
     }
+  }
+
+  /**
+   * get deterministic expression for NamedExpression
+   */
+  private def makeDeterministicExp(exp: NamedExpression): Expression = {
+    exp match {
+      case alias: Alias if alias.child.isInstanceOf[CustomDeterministicExpression] =>
+        alias
+      case _ =>
+        CustomDeterministicExpression(exp)
+    }
+  }
+
+  /**
+   * Convert all Expression to deterministic Expression
+   */
+  def makeDeterministic(plan: LogicalPlan): LogicalPlan = {
+    val transformedPlan = plan transform {
+      case p@Project(projectList: Seq[NamedExpression], cd) =>
+        if (cd.isInstanceOf[org.apache.spark.sql.catalyst.plans.logical.Filter] ||
+          cd.isInstanceOf[LogicalRelation]) {
+          p.transformAllExpressions {
+            case a@Alias(exp, _)
+              if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
+              CarbonToSparkAdapter.createAliasRef(
+                CustomDeterministicExpression(exp),
+                a.name,
+                a.exprId,
+                a.qualifier,
+                a.explicitMetadata,
+                Some(a))
+            case exp: NamedExpression
+              if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
+              makeDeterministicExp(exp)
+          }
+        } else {
+          p
+        }
+      case f@org.apache.spark.sql.catalyst.plans.logical.Filter(condition: Expression, cd) =>
+        if (cd.isInstanceOf[Project] || cd.isInstanceOf[LogicalRelation]) {
+          f.transformAllExpressions {
+            case a@Alias(exp, _)
+              if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
+              CarbonToSparkAdapter.createAliasRef(
+                CustomDeterministicExpression(exp),
+                a.name,
+                a.exprId,
+                a.qualifier,
+                a.explicitMetadata,
+                Some(a))
+            case exp: NamedExpression
+              if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
+              makeDeterministicExp(exp)
+          }
+        } else {
+          f
+        }
+    }
+    transformedPlan
+  }
+
+  def vectorReaderEnabled(): Boolean = {
+    val vectorizedReader =
+      if (SparkSQLUtil.getSparkSession.conf.contains(CarbonCommonConstants.ENABLE_VECTOR_READER)) {
+        SparkSQLUtil.getSparkSession.conf.get(CarbonCommonConstants.ENABLE_VECTOR_READER)
+      } else if (System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER) != null) {
+        System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER)
+      } else {
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+          CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+      }
+    vectorizedReader.toBoolean
+  }
+
+  def supportBatchedDataSource(sqlContext: SQLContext,
+      cols: Seq[Attribute],
+      extraRDD: Option[(RDD[InternalRow], Boolean)]): Boolean = {
+    vectorReaderEnabled() &&
+      extraRDD.getOrElse((null, true))._2 &&
+      sqlContext.conf.wholeStageEnabled &&
+      sqlContext.conf.wholeStageMaxNumFields >= cols.size &&
+      cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }

@@ -63,8 +63,9 @@ class TestImplicitFilterExpression extends QueryTest with BeforeAndAfterAll {
       blockletId: Int): Unit = {
     // from the plan extract the CarbonScanRDD
     val scanRDD = query.queryExecution.sparkPlan.collect {
-      case scan: CarbonDataSourceScan if (scan.rdd.isInstanceOf[CarbonScanRDD[InternalRow]]) =>
-        scan.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
+      case scan: CarbonDataSourceScan
+        if scan.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+        scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
     }.head
     // get carbon relation
     val relation: CarbonRelation = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore

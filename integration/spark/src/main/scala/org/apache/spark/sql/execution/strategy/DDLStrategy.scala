@@ -28,10 +28,12 @@ import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompac
 import org.apache.spark.sql.execution.command.mutation.CarbonTruncateCommand
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDropTableCommand, CarbonShowCreateTableCommand, CarbonShowTablesCommand}
-import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, RefreshResource, RefreshTable}
+import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
+import org.apache.spark.sql.execution.strategy.CarbonPlanHelper.isCarbonTable
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
 import org.apache.spark.sql.secondaryindex.command.CarbonCreateSecondaryIndexCommand
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
@@ -49,21 +51,13 @@ object MatchCreateDataSourceTable {
   }
 }
 
-class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
+object DDLStrategy extends SparkStrategy {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
+    val sparkSession = SparkSQLUtil.getSparkSession
     plan match {
       case _: ReturnAnswer => Nil
-      // load data / insert into
-      case loadData: LoadDataCommand
-        if isCarbonTable(loadData.table) =>
-        ExecutedCommandExec(DMLHelper.loadData(loadData)) :: Nil
-      case insert: InsertIntoCarbonTable =>
-        ExecutedCommandExec(CarbonPlanHelper.insertInto(insert)) :: Nil
-      case insert: InsertIntoHadoopFsRelationCommand
-        if insert.catalogTable.isDefined && isCarbonTable(insert.catalogTable.get.identifier) =>
-        DataWritingCommandExec(DMLHelper.insertInto(insert), planLater(insert.query)) :: Nil
       // alter table
       case renameTable: AlterTableRenameCommand
         if isCarbonTable(renameTable.oldName) =>
@@ -228,10 +222,6 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         }
       case _ => Nil
     }
-  }
-
-  private def isCarbonTable(tableIdent: TableIdentifier): Boolean = {
-    CarbonPlanHelper.isCarbonTable(tableIdent, sparkSession)
   }
 
   private def isCarbonHiveTable(table: CatalogTable): Boolean = {

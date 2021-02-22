@@ -57,10 +57,10 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
       .sparkPlan
     if (df.isInstanceOf[CarbonDataSourceScan]) {
       assert(df.asInstanceOf[CarbonDataSourceScan].metadata
-        .get("PushedFilters").get.contains("CarbonEndsWith"))
+        .get("PushedFilters").get.contains("EndsWith(input[0], nandh)"))
     } else {
       assert(df.children.head.asInstanceOf[CarbonDataSourceScan].metadata
-        .get("PushedFilters").get.contains("CarbonEndsWith"))
+        .get("PushedFilters").get.contains("EndsWith(input[0], nandh)"))
     }
   }
 
@@ -69,10 +69,10 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
       .sparkPlan
     if (df.isInstanceOf[CarbonDataSourceScan]) {
       assert(df.asInstanceOf[CarbonDataSourceScan].metadata
-        .get("PushedFilters").get.contains("CarbonContainsWith"))
+        .get("PushedFilters").get.contains("Contains(input[0], nand)"))
     } else {
       assert(df.children.head.asInstanceOf[CarbonDataSourceScan].metadata
-        .get("PushedFilters").get.contains("CarbonContainsWith"))
+        .get("PushedFilters").get.contains("Contains(input[0], nand)"))
     }
   }
 

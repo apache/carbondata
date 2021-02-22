@@ -44,7 +44,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
-import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -132,6 +132,21 @@ object MixedFormatHandler {
     }
   }
 
+  def extraSegments(identifier: AbsoluteTableIdentifier,
+      readCommittedScope: ReadCommittedScope): Array[LoadMetadataDetails] = {
+    val loadMetadataDetails = readCommittedScope.getSegmentList
+    val segsToAccess = getSegmentsToAccess(identifier)
+    loadMetadataDetails.filter { metaDetail =>
+      metaDetail.getSegmentStatus.equals(SegmentStatus.SUCCESS) ||
+        metaDetail.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS)
+    }.filterNot { currLoad =>
+      currLoad.getFileFormat.equals(FileFormatName.COLUMNAR_V3) ||
+        currLoad.getFileFormat.equals(FileFormatName.ROW_V1)
+    }.filter {
+      l => segsToAccess.isEmpty || segsToAccess.contains(l.getLoadName)
+    }
+  }
+
   /**
    * Generates the RDD for non carbon segments. It uses the spark underlying file formats and
    * generates the RDD in its native format without changing any of its flow to keep the original
@@ -146,16 +161,9 @@ object MixedFormatHandler {
       filters: Seq[Expression],
       readCommittedScope: ReadCommittedScope,
       identifier: AbsoluteTableIdentifier,
+      extraSegments: Array[LoadMetadataDetails],
       supportBatch: Boolean = true): Option[(RDD[InternalRow], Boolean)] = {
-    val loadMetadataDetails = readCommittedScope.getSegmentList
-    val segsToAccess = getSegmentsToAccess(identifier)
-    val rdds = loadMetadataDetails.filter(metaDetail =>
-      (metaDetail.getSegmentStatus.equals(SegmentStatus.SUCCESS) ||
-       metaDetail.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS)))
-      .filterNot(currLoad =>
-        currLoad.getFileFormat.equals(FileFormatName.COLUMNAR_V3) ||
-        currLoad.getFileFormat.equals(FileFormatName.ROW_V1))
-      .filter(l => segsToAccess.isEmpty || segsToAccess.contains(l.getLoadName))
+    val rdds = extraSegments
       .groupBy(_.getFileFormat)
       .map { case (format, details) =>
         // collect paths as input to scan RDD
@@ -189,7 +197,7 @@ object MixedFormatHandler {
         Some(rdds.head)
       } else {
         if (supportBatch && rdds.exists(!_._2)) {
-          extraRDD(l, projects, filters, readCommittedScope, identifier, false)
+          extraRDD(l, projects, filters, readCommittedScope, identifier, extraSegments, false)
         } else {
           var rdd: RDD[InternalRow] = null
           rdds.foreach { r =>

@@ -487,8 +487,9 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       FileUtils.deleteDirectory(folder)
       val dataFrame = sql("select * from smallpartitionfilesread")
       val scanRdd = dataFrame.queryExecution.sparkPlan.collect {
-        case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] => b.rdd
-          .asInstanceOf[CarbonScanRDD[InternalRow]]
+        case b: CarbonDataSourceScan
+          if b.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+          b.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
       }.head
       assert(scanRdd.getPartitions.length < 10)
       assertResult(100)(dataFrame.count)

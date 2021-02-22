@@ -27,9 +27,9 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.{QualifiedTableName, TableIdentifier}
-import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
+import org.apache.spark.sql.execution.strategy.{CarbonSourceStrategy, DDLStrategy, DMLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.hive.client.HiveClient
-import org.apache.spark.sql.internal.{SQLConf, SessionState}
+import org.apache.spark.sql.internal.{SessionState, SQLConf}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
@@ -149,8 +149,8 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
 
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf, sparkSession)
 
-  experimentalMethods.extraStrategies =Seq(new StreamingTableStrategy(sparkSession),
-      new CarbonLateDecodeStrategy, new DDLStrategy(sparkSession))
+  experimentalMethods.extraStrategies =
+    Seq(StreamingTableStrategy, DMLStrategy, DDLStrategy, CarbonSourceStrategy)
   experimentalMethods.extraOptimizations = Seq(new CarbonIUDRule, new CarbonUDFTransformRule)
 
   /**

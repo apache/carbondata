@@ -51,6 +51,17 @@ object CarbonToSparkAdapter {
     })
   }
 
+  def lowerCaseAttribute(expression: Expression): Expression = expression.transform {
+    case attr: AttributeReference =>
+      CarbonToSparkAdapter.createAttributeReference(
+        attr.name.toLowerCase,
+        attr.dataType,
+        attr.nullable,
+        attr.metadata,
+        attr.exprId,
+        attr.qualifier)
+  }
+
   def createAttributeReference(name: String, dataType: DataType, nullable: Boolean,
       metadata: Metadata, exprId: ExprId, qualifier: Option[String],
       attrRef : NamedExpression = null): AttributeReference = {
@@ -123,13 +134,18 @@ object CarbonToSparkAdapter {
    * @param filterPredicates
    * @return
    */
-  def getPartitionKeyFilter(
+  def getPartitionFilter(
       partitionSet: AttributeSet,
-      filterPredicates: Seq[Expression]): ExpressionSet = {
-    ExpressionSet(
-      ExpressionSet(filterPredicates)
-        .filterNot(SubqueryExpression.hasSubquery)
-        .filter(_.references.subsetOf(partitionSet)))
+      filterPredicates: Seq[Expression]): Seq[Expression] = {
+    filterPredicates
+      .filterNot(SubqueryExpression.hasSubquery)
+      .filter { filter =>
+        filter.references.nonEmpty && filter.references.subsetOf(partitionSet)
+      }
+  }
+
+  def getDataFilter(partitionSet: AttributeSet, filter: Seq[Expression]): Seq[Expression] = {
+    filter
   }
 
   // As per SPARK-22520 OptimizeCodegen is removed in 2.3.1

@@ -407,7 +407,7 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     checkExistence(
       sql(s"explain select * from ${tableName} where col1 = 1"),
       true,
-      "FileScan")
+      "Scan")
     checkExistence(
       sql(s"explain update ${tableName} set (col2) = ('4aa') where col1 = 1"),
       true,

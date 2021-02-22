@@ -535,8 +535,9 @@ test("Creation of partition table should fail if the colname in table schema and
   private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan
     val scanRDD = plan collect {
-      case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] => b.rdd
-        .asInstanceOf[CarbonScanRDD[InternalRow]]
+      case b: CarbonDataSourceScan
+        if b.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+        b.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
     }
     assert(scanRDD.nonEmpty)
     assert(!partitionNames.map(f => scanRDD.head.partitionNames.exists(_.getPartitions.contains(f))).exists(!_))
