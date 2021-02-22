@@ -402,8 +402,9 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
       }
       val df = sql("select * from carbon_globalsort")
       val scanRdd = df.queryExecution.sparkPlan.collect {
-        case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] =>
-          b.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
+        case b: CarbonDataSourceScan
+          if b.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+          b.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
       }.head
       assertResult(defaultParallelism)(scanRdd.getPartitions.length)
       assertResult(10)(df.count)

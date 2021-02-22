@@ -48,11 +48,11 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
 
     checkExistence(sql(" explain select * from complex1 where array_contains(arr,'sd')"),
       true,
-      "PushedFilters: [*EqualTo(arr,sd)]")
+      "PushedFilters: [arr = sd]")
 
     checkExistence(sql(" explain select count(*) from complex1 where array_contains(arr,'sd')"),
       true,
-      "PushedFilters: [*EqualTo(arr,sd)]")
+      "PushedFilters: [arr = sd]")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,'sd')"),
       Seq(Row(mutable.WrappedArray.make(Array("sd", "df", "gh"))),
@@ -101,11 +101,11 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
 
     checkExistence(sql(" explain select * from complex1 where array_contains(arr,true)"),
       true,
-      "PushedFilters: [*EqualTo(arr,true)]")
+      "PushedFilters: [arr = true]")
 
     checkExistence(sql(" explain select count(*) from complex1 where array_contains(arr,true)"),
       true,
-      "PushedFilters: [*EqualTo(arr,true)]")
+      "PushedFilters: [arr = true]")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,true)"),
       Seq(Row(mutable.WrappedArray.make(Array(true))),
@@ -127,11 +127,11 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
 
     checkExistence(sql(" explain select * from complex1 where array_contains(arr,31000)"),
       true,
-      "PushedFilters: [*EqualTo(arr,31000)]")
+      "PushedFilters: [arr = 31000]")
 
     checkExistence(sql(" explain select count(*) from complex1 where array_contains(arr,31000)"),
       true,
-      "PushedFilters: [*EqualTo(arr,31000)]")
+      "PushedFilters: [arr = 31000]")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,31000)"),
       Seq(Row(mutable.WrappedArray.make(Array(20, 30, 31000))),
@@ -153,11 +153,11 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
 
     checkExistence(sql(" explain select * from complex1 where array_contains(arr,33000)"),
       true,
-      "PushedFilters: [*EqualTo(arr,33000)]")
+      "PushedFilters: [arr = 33000]")
 
     checkExistence(sql(" explain select count(*) from complex1 where array_contains(arr,33000)"),
       true,
-      "PushedFilters: [*EqualTo(arr,33000)]")
+      "PushedFilters: [arr = 33000]")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,33000)"),
       Seq(Row(mutable.WrappedArray.make(Array(20, 30, 33000))),
@@ -179,11 +179,11 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
 
     checkExistence(sql(" explain select * from complex1 where array_contains(arr,33000)"),
       true,
-      "PushedFilters: [*EqualTo(arr,33000)]")
+      "PushedFilters: [arr = 33000]")
 
     checkExistence(sql(" explain select count(*) from complex1 where array_contains(arr,33000)"),
       true,
-      "PushedFilters: [*EqualTo(arr,33000)]")
+      "PushedFilters: [arr = 33000]")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,33000)"),
       Seq(Row(mutable.WrappedArray.make(Array(20, 30, 33000))),
@@ -204,12 +204,12 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
     checkExistence(
       sql(" explain select * from complex1 where array_contains(arr,cast(2.2 as double))"),
       true,
-      "PushedFilters: [*EqualTo(arr,2.2)]")
+      "PushedFilters: [arr = 2.2]")
 
     checkExistence(
       sql(" explain select count(*) from complex1 where array_contains(arr,cast(2.2 as double))"),
       true,
-      "PushedFilters: [*EqualTo(arr,2.2)]")
+      "PushedFilters: [arr = 2.2]")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,cast(2.2 as double))"),
       Seq(Row(mutable.WrappedArray.make(Array(2.2))),
@@ -231,13 +231,13 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
     checkExistence(
       sql(" explain select * from complex1 where array_contains(arr,cast(2.2 as decimal(5,2)))"),
       true,
-      "PushedFilters: [*EqualTo(arr,2.20)]")
+      "PushedFilters: [arr = 2.20]")
 
     checkExistence(
       sql("explain select count(*) from complex1 " +
           "where array_contains(arr,cast(2.2 as decimal(5,2)))"),
       true,
-      "PushedFilters: [*EqualTo(arr,2.20)]")
+      "PushedFilters: [arr = 2.20]")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,cast(2.2 as decimal(5,2)))"),
       Seq(Row(mutable.WrappedArray.make(Array(java.math.BigDecimal.valueOf(2.20).setScale(2)))),
@@ -263,13 +263,13 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
       sql("explain select * from complex1 " +
           "where array_contains(arr,cast('2018-01-01 00:00:00' as timestamp))"),
       true,
-      "PushedFilters: [*EqualTo(arr,1514793600000000)]")
+      "PushedFilters: [arr = 1514793600000000]")
 
     checkExistence(
       sql("explain select count(*) from complex1 " +
           "where array_contains(arr,cast('2018-01-01 00:00:00' as timestamp))"),
       true,
-      "PushedFilters: [*EqualTo(arr,1514793600000000)]")
+      "PushedFilters: [arr = 1514793600000000]")
 
     checkAnswer(
       sql("select * from complex1 " +
@@ -295,13 +295,13 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
     checkExistence(
       sql("explain select * from complex1 where array_contains(arr,cast('2018-01-01' as date))"),
       true,
-      "PushedFilters: [*EqualTo(arr,17532)]")
+      "PushedFilters: [arr = 17532]")
 
     checkExistence(
       sql("explain select count(*) from complex1 " +
           "where array_contains(arr,cast('2018-01-01' as date))"),
       true,
-      "PushedFilters: [*EqualTo(arr,17532)]")
+      "PushedFilters: [arr = 17532]")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,cast('2018-01-01' as date))"),
       Seq(Row(mutable.WrappedArray.make(

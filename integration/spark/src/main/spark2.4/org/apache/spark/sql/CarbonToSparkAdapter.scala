@@ -86,6 +86,17 @@ object CarbonToSparkAdapter {
       metadata)(exprId, qualifier)
   }
 
+  def lowerCaseAttribute(expression: Expression): Expression = expression.transform {
+    case attr: AttributeReference =>
+      CarbonToSparkAdapter.createAttributeReference(
+        attr.name.toLowerCase,
+        attr.dataType,
+        attr.nullable,
+        attr.metadata,
+        attr.exprId,
+        attr.qualifier)
+  }
+
   def createAttributeReference(attr: AttributeReference,
       attrName: String,
       newSubsume: String): AttributeReference = {
@@ -151,18 +162,23 @@ object CarbonToSparkAdapter {
 
   /**
    * As a part of SPARK-24085 Hive tables supports scala subquery for
-   * parition tables, so Carbon also needs to supports
+   * the partitioned tables,so Carbon also needs to supports
    * @param partitionSet
    * @param filterPredicates
    * @return
    */
-  def getPartitionKeyFilter(
+  def getPartitionFilter(
       partitionSet: AttributeSet,
-      filterPredicates: Seq[Expression]): ExpressionSet = {
-    ExpressionSet(
-      ExpressionSet(filterPredicates)
-        .filterNot(SubqueryExpression.hasSubquery)
-        .filter(_.references.subsetOf(partitionSet)))
+      filterPredicates: Seq[Expression]): Seq[Expression] = {
+    filterPredicates
+      .filterNot(SubqueryExpression.hasSubquery)
+      .filter { filter =>
+        filter.references.nonEmpty && filter.references.subsetOf(partitionSet)
+      }
+  }
+
+  def getDataFilter(partitionSet: AttributeSet, filter: Seq[Expression]): Seq[Expression] = {
+    filter
   }
 
   // As per SPARK-22520 OptimizeCodegen is removed in 2.3.1

@@ -287,16 +287,7 @@ private abstract class MVMatchPattern extends Logging {
    */
   protected def getTransformedCastOrImplicitCastExpression(
       castOrImplicitCastExp: Expression): Expression = {
-    castOrImplicitCastExp.transform {
-      case reference: AttributeReference =>
-        CarbonToSparkAdapter.createAttributeReference(
-          reference.name.toLowerCase,
-          reference.dataType,
-          reference.nullable,
-          reference.metadata,
-          reference.exprId,
-          reference.qualifier)
-    }
+    CarbonToSparkAdapter.lowerCaseAttribute(castOrImplicitCastExp)
   }
 
   def tryMatch(a: modular.Matchable,

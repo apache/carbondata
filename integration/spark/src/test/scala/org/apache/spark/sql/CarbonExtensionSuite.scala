@@ -42,7 +42,7 @@ class CarbonExtensionSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test strategy injection") {
-    assert(session.sessionState.planner.strategies.filter(_.isInstanceOf[DDLStrategy]).length == 1)
+    assert(session.sessionState.planner.strategies.count(_ == DDLStrategy) == 1)
     session.sql("create table if not exists table1 (column1 String) using carbondata ").collect()
   }
 }

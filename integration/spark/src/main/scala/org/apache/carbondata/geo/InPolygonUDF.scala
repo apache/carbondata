@@ -18,7 +18,6 @@
 package org.apache.carbondata.geo
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.sources.Filter
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 
@@ -58,24 +57,4 @@ class InPolygonRangeListUDF extends ((String, String) => Boolean) with Serializa
   override def apply(v1: String, v2: String): Boolean = {
     true // Carbon applies the filter. So, Spark do not have to apply filter.
   }
-}
-
-@InterfaceAudience.Internal
-case class InPolygon(queryString: String) extends Filter {
-  override def references: Array[String] = Array()
-}
-
-@InterfaceAudience.Internal
-case class InPolygonList(polygonListString: String, opType: String) extends Filter {
-  override def references: Array[String] = Array()
-}
-
-@InterfaceAudience.Internal
-case class InPolylineList(polylineListString: String, buffer: String) extends Filter {
-  override def references: Array[String] = Array()
-}
-
-@InterfaceAudience.Internal
-case class InPolygonRangeList(rangeListString: String, opType: String) extends Filter {
-  override def references: Array[String] = Array()
 }

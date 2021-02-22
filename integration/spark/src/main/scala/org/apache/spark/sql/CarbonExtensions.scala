@@ -20,7 +20,7 @@ package org.apache.spark.sql
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
+import org.apache.spark.sql.execution.strategy.{CarbonSourceStrategy, DDLStrategy, DMLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonLoadDataAnalyzeRule, CarbonPreInsertionCasts}
 import org.apache.spark.sql.parser.CarbonExtensionSqlParser
 
@@ -49,11 +49,13 @@ class CarbonExtensions extends (SparkSessionExtensions => Unit) {
 
     // carbon planner strategies
     extensions
-      .injectPlannerStrategy((session: SparkSession) => new StreamingTableStrategy(session))
+      .injectPlannerStrategy(_ => StreamingTableStrategy)
     extensions
-      .injectPlannerStrategy((_: SparkSession) => new CarbonLateDecodeStrategy)
+      .injectPlannerStrategy(_ => DMLStrategy)
     extensions
-      .injectPlannerStrategy((session: SparkSession) => new DDLStrategy(session))
+      .injectPlannerStrategy(_ => DDLStrategy)
+    extensions
+      .injectPlannerStrategy(_ => CarbonSourceStrategy)
 
     // init CarbonEnv
     CarbonEnv.init()
