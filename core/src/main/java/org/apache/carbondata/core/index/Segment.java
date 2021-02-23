@@ -79,7 +79,7 @@ public class Segment implements Serializable, Writable {
   /**
    * Path of segment where it exists
    */
-  private String segmentPath;
+  private transient String segmentPath;
 
   /**
    * Properties of the segment.
@@ -162,7 +162,6 @@ public class Segment implements Serializable, Writable {
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = readCommittedScope;
     this.loadMetadataDetails = loadMetadataDetails;
-    this.segmentPath = loadMetadataDetails.getPath();
     if (loadMetadataDetails.getIndexSize() != null) {
       this.indexSize = Long.parseLong(loadMetadataDetails.getIndexSize());
     }
@@ -378,12 +377,6 @@ public class Segment implements Serializable, Writable {
       out.writeUTF(segmentString);
     }
     out.writeLong(indexSize);
-    if (segmentPath == null) {
-      out.writeBoolean(false);
-    } else {
-      out.writeBoolean(true);
-      out.writeUTF(segmentPath);
-    }
   }
 
   @Override
@@ -401,9 +394,6 @@ public class Segment implements Serializable, Writable {
       this.segmentString = in.readUTF();
     }
     this.indexSize = in.readLong();
-    if (in.readBoolean()) {
-      this.segmentPath = in.readUTF();
-    }
   }
 
   public SegmentMetaDataInfo getSegmentMetaDataInfo() {

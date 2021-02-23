@@ -31,9 +31,6 @@ public class SegmentWrapperContainer implements Writable {
 
   private SegmentWrapper[] segmentWrappers;
 
-  public SegmentWrapperContainer() {
-  }
-
   public SegmentWrapperContainer(SegmentWrapper[] segmentWrappers) {
     this.segmentWrappers = segmentWrappers;
   }

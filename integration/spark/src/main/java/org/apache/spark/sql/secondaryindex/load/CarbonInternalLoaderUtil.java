@@ -52,8 +52,7 @@ public class CarbonInternalLoaderUtil {
   public static List<String> getListOfValidSlices(LoadMetadataDetails[] details) {
     List<String> activeSlices = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (LoadMetadataDetails oneLoad : details) {
-      // External added segments are not loaded to SI
-      if (oneLoad.getPath() == null && SegmentStatus.SUCCESS.equals(oneLoad.getSegmentStatus())
+      if (SegmentStatus.SUCCESS.equals(oneLoad.getSegmentStatus())
           || SegmentStatus.LOAD_PARTIAL_SUCCESS.equals(oneLoad.getSegmentStatus())
           || SegmentStatus.MARKED_FOR_UPDATE.equals(oneLoad.getSegmentStatus())) {
         activeSlices.add(oneLoad.getLoadName());
