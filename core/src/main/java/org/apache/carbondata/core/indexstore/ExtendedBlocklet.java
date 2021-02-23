@@ -20,13 +20,10 @@ package org.apache.carbondata.core.indexstore;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexRowIndexes;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
@@ -200,6 +197,7 @@ public class ExtendedBlocklet extends Blocklet {
           inputSplit.setWriteDetailInfo(false);
         }
         inputSplit.serializeFields(dos, uniqueLocation);
+        out.writeBoolean(inputSplit.getSegment().isExternalSegment());
         out.writeInt(ebos.size());
         out.write(ebos.getBuffer(), 0, ebos.size());
       }
@@ -225,25 +223,15 @@ public class ExtendedBlocklet extends Blocklet {
     if (in.readBoolean()) {
       indexUniqueId = in.readUTF();
     }
-    String filePath = getPath();
-    boolean isLocalFile = FileFactory.getCarbonFile(filePath) instanceof LocalCarbonFile;
-
-    // For external segment, table path need not be appended to filePath as contains has full path
-    // Example filepath for ext segment:
-    //  1. /home/user/carbondata/integration/spark/newsegmentpath
-    //  2. hdfs://hacluster/opt/newsegmentpath/
-    // Example filepath for loaded segment: /Fact/Part/Segment0
-    // To identify a filePath as ext segment path,
-    // for other storage systems (hdfs,s3): filePath doesn't start with File separator.
-    // for ubuntu storage: it starts with File separator, so check if given path exists or not.
-    if ((!isLocalFile && filePath.startsWith(File.separator)) || (isLocalFile && !FileFactory
-        .isFileExist(filePath))) {
-      setFilePath(tablePath + filePath);
-    } else {
-      setFilePath(filePath);
-    }
     boolean isSplitPresent = in.readBoolean();
     if (isSplitPresent) {
+      String filePath = getPath();
+      boolean isExternalSegment = in.readBoolean();
+      if (!isExternalSegment) {
+        setFilePath(tablePath + filePath);
+      } else {
+        setFilePath(filePath);
+      }
       // getting the length of the data
       final int serializeLen = in.readInt();
       this.inputSplit =

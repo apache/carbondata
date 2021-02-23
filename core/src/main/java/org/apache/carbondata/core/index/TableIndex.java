@@ -210,7 +210,7 @@ public final class TableIndex extends OperationEventListener {
           indexes.get(segment) == null || indexes.get(segment).isEmpty()) {
         continue;
       }
-      boolean isExternalSegment = segment.getSegmentPath() != null;
+      boolean isExternalSegment = segment.isExternalSegment();
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       SegmentProperties segmentProperties =
           segmentPropertiesFetcher.getSegmentProperties(segment, partitionLocations);

@@ -79,7 +79,12 @@ public class Segment implements Serializable, Writable {
   /**
    * Path of segment where it exists
    */
-  private String segmentPath;
+  private transient String segmentPath;
+
+  /**
+   * To identify if it is an externally added segment or not.
+   */
+  private boolean isExternalSegment = false;
 
   /**
    * Properties of the segment.
@@ -162,7 +167,9 @@ public class Segment implements Serializable, Writable {
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = readCommittedScope;
     this.loadMetadataDetails = loadMetadataDetails;
-    this.segmentPath = loadMetadataDetails.getPath();
+    if (loadMetadataDetails.getPath() != null) {
+      this.isExternalSegment = true;
+    }
     if (loadMetadataDetails.getIndexSize() != null) {
       this.indexSize = Long.parseLong(loadMetadataDetails.getIndexSize());
     }
@@ -378,12 +385,7 @@ public class Segment implements Serializable, Writable {
       out.writeUTF(segmentString);
     }
     out.writeLong(indexSize);
-    if (segmentPath == null) {
-      out.writeBoolean(false);
-    } else {
-      out.writeBoolean(true);
-      out.writeUTF(segmentPath);
-    }
+    out.writeBoolean(isExternalSegment);
   }
 
   @Override
@@ -401,9 +403,7 @@ public class Segment implements Serializable, Writable {
       this.segmentString = in.readUTF();
     }
     this.indexSize = in.readLong();
-    if (in.readBoolean()) {
-      this.segmentPath = in.readUTF();
-    }
+    this.isExternalSegment = in.readBoolean();
   }
 
   public SegmentMetaDataInfo getSegmentMetaDataInfo() {
@@ -412,5 +412,9 @@ public class Segment implements Serializable, Writable {
 
   public void setSegmentMetaDataInfo(SegmentMetaDataInfo segmentMetaDataInfo) {
     this.segmentMetaDataInfo = segmentMetaDataInfo;
+  }
+
+  public boolean isExternalSegment() {
+    return isExternalSegment;
   }
 }

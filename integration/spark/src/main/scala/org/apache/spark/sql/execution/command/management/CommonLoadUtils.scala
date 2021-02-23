@@ -1077,16 +1077,15 @@ object CommonLoadUtils {
           case _ =>
         }
       }
-
-      // Pre-priming for Partition table here
-      if (!StringUtils.isEmpty(loadParams.carbonLoadModel.getSegmentId)) {
-        DistributedRDDUtils.triggerPrepriming(loadParams.sparkSession,
-          table,
-          Seq(),
-          loadParams.operationContext,
-          loadParams.hadoopConf,
-          List(loadParams.carbonLoadModel.getSegmentId))
-      }
+    }
+    // Pre-priming for Partition table here
+    if (!StringUtils.isEmpty(loadParams.carbonLoadModel.getSegmentId)) {
+      DistributedRDDUtils.triggerPrepriming(loadParams.sparkSession,
+        table,
+        Seq(),
+        loadParams.operationContext,
+        loadParams.hadoopConf,
+        List(loadParams.carbonLoadModel.getSegmentId))
     }
     try {
       val compactedSegments = new util.ArrayList[String]()
