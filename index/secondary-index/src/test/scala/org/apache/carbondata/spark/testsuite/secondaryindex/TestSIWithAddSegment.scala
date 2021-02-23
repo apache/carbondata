@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -61,13 +61,18 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test if the query hits SI after adding a segment to the main table") {
-    val d = sql("select * from maintable where c = 'm'")
-    assert(d.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
+    val extSegmentQuery = sql("select * from maintable where c = 'm'")
+    val loadedSegmentQuery = sql("select * from maintable where c = 'k'")
+    checkAnswer(extSegmentQuery, Row("m", 3, "m"))
+    checkAnswer(loadedSegmentQuery, Row("k", 1, "k"))
+    assert(extSegmentQuery.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
+    assert(loadedSegmentQuery.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
   }
 
   test("compare results of SI and NI after adding segments") {
     val siResult = sql("select * from maintable where c = 'm'")
     val niResult = sql("select * from maintable where ni(c = 'm')")
+    assert(siResult.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
     assert(!niResult.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
     checkAnswer(siResult, niResult)
   }
@@ -86,10 +91,11 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
     sql(s"alter table maintable1 add segment options('path'='${ newSegmentPath }', " +
         s"'format'='carbon')")
     sql("CREATE INDEX maintable1_si  on table maintable1 (c) as 'carbondata'")
-    assert(sql("show segments for table maintable1_si").collect().length ==
-           sql("show segments for table maintable1").collect().length)
+    assert(sql("show segments for table maintable1_si").collect().length == 2)
+    assert(sql("show segments for table maintable1").collect().length == 3)
     val siResult = sql("select * from maintable1 where c = 'm'")
     val niResult = sql("select * from maintable1 where ni(c = 'm')")
+    assert(siResult.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
     assert(!niResult.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
     checkAnswer(siResult, niResult)
   }
@@ -110,6 +116,7 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
         s"'format'='carbon')")
     val siResult = sql("select * from maintable1 where c = 'm'")
     val niResult = sql("select * from maintable1 where ni(c = 'm')")
+    assert(siResult.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
     checkAnswer(siResult, niResult)
   }
 }

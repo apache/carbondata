@@ -20,7 +20,6 @@ package org.apache.carbondata.core.indexstore;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -198,6 +197,7 @@ public class ExtendedBlocklet extends Blocklet {
           inputSplit.setWriteDetailInfo(false);
         }
         inputSplit.serializeFields(dos, uniqueLocation);
+        out.writeBoolean(inputSplit.getSegment().isExternalSegment());
         out.writeInt(ebos.size());
         out.write(ebos.getBuffer(), 0, ebos.size());
       }
@@ -223,14 +223,15 @@ public class ExtendedBlocklet extends Blocklet {
     if (in.readBoolean()) {
       indexUniqueId = in.readUTF();
     }
-    String filePath = getPath();
-    if (filePath.startsWith(File.separator)) {
-      setFilePath(tablePath + filePath);
-    } else {
-      setFilePath(filePath);
-    }
     boolean isSplitPresent = in.readBoolean();
     if (isSplitPresent) {
+      String filePath = getPath();
+      boolean isExternalSegment = in.readBoolean();
+      if (!isExternalSegment) {
+        setFilePath(tablePath + filePath);
+      } else {
+        setFilePath(filePath);
+      }
       // getting the length of the data
       final int serializeLen = in.readInt();
       this.inputSplit =
