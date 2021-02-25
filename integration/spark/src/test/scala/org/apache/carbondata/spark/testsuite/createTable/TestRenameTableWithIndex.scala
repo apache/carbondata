@@ -38,7 +38,9 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
   }
 
-  test("Creating a bloomfilter, SI indexSchema,then table rename") {
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
+  test("Creating a bloomfilter indexSchema,then table rename", true) {
     sql(
       s"""
          | CREATE TABLE carbon_table(

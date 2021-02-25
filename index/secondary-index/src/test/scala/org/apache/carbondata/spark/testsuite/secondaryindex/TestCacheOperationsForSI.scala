@@ -86,7 +86,8 @@ class TestCacheOperationsForSI extends QueryTest with BeforeAndAfterAll {
     sql(s"DROP TABLE $tableName")
   }
 
-  test("Test SI for Show Cache") {
+  // Exclude when running with index server, as show cache rows count varies.
+  test("Test SI for Show Cache", true) {
     val tableName = "t2"
     val indexName = "index1"
 

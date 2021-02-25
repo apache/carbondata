@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.indexserver
 
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.security.PrivilegedAction
 import java.util.UUID
@@ -39,7 +40,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.{IndexInputFormat, IndexStoreManager}
 import org.apache.carbondata.core.indexstore.{ExtendedBlockletWrapperContainer, SegmentWrapperContainer}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.events.{IndexServerEvent, OperationContext, OperationListenerBus}
 
 @ProtocolInfo(protocolName = "org.apache.carbondata.indexserver.ServerInterface",
@@ -50,6 +51,7 @@ trait ServerInterface {
   /**
    * Used to prune and cache the index for the table.
    */
+  @throws(classOf[IOException])
   def getSplits(request: IndexInputFormat): ExtendedBlockletWrapperContainer
 
   /**
@@ -111,6 +113,9 @@ object IndexServer extends ServerInterface {
    */
   private def doAs[T](f: => T): T = {
     UserGroupInformation.getLoginUser.doAs(new PrivilegedAction[T] {
+      if (System.getProperty("useIndexServer") != null) {
+        ThreadLocalSessionInfo.getCarbonSessionInfo.getSessionParams.getAddedProps.clear()
+      }
       override def run(): T = {
         f
       }
@@ -161,6 +166,7 @@ object IndexServer extends ServerInterface {
     }
   }
 
+  @throws(classOf[IOException])
   def getSplits(request: IndexInputFormat): ExtendedBlockletWrapperContainer = {
     doAs {
       val sparkSession = SparkSQLUtil.getSparkSession

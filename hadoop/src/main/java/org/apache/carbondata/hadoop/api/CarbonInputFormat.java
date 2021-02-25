@@ -442,13 +442,14 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       List<Segment> invalidSegments, List<String> segmentsToBeRefreshed,
       Configuration configuration) {
     return getDistributedSplit(table, null, partitionNames, validSegments, invalidSegments,
-        segmentsToBeRefreshed, true, configuration);
+        segmentsToBeRefreshed, true, configuration, null);
   }
 
-  private List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
+  public List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
       FilterResolverIntf filterResolverIntf, List<PartitionSpec> partitionNames,
       List<Segment> validSegments, List<Segment> invalidSegments,
-      List<String> segmentsToBeRefreshed, boolean isCountJob, Configuration configuration) {
+      List<String> segmentsToBeRefreshed, boolean isCountJob, Configuration configuration,
+      Set<String> missingSISegments) {
     boolean isSIPruningEnabled = isSecondaryIndexPruningEnabled(configuration);
     try {
       IndexJob indexJob = (IndexJob) IndexUtil.createIndexJob(IndexUtil.DISTRIBUTED_JOB_NAME);
@@ -458,7 +459,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       return IndexUtil
           .executeIndexJob(table, filterResolverIntf, indexJob, partitionNames, validSegments,
               invalidSegments, null, false, segmentsToBeRefreshed, isCountJob, isSIPruningEnabled,
-              configuration);
+              configuration, missingSISegments);
     } catch (Exception e) {
       // Check if fallback is disabled for testing purposes then directly throw exception.
       if (CarbonProperties.getInstance().isFallBackDisabled()) {
@@ -469,7 +470,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       return IndexUtil
           .executeIndexJob(table, filterResolverIntf, IndexUtil.getEmbeddedJob(), partitionNames,
               validSegments, invalidSegments, null, true, segmentsToBeRefreshed, isCountJob,
-              isSIPruningEnabled, configuration);
+              isSIPruningEnabled, configuration, missingSISegments);
     }
   }
 
@@ -561,7 +562,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       try {
         prunedBlocklets =
             getDistributedSplit(carbonTable, filter.getResolver(), partitionsToPrune, validSegments,
-                invalidSegments, segmentsToBeRefreshed, false, job.getConfiguration());
+                invalidSegments, segmentsToBeRefreshed, false, job.getConfiguration(),
+                filter.getMissingSISegments());
       } catch (Exception e) {
         // Check if fallback is disabled then directly throw exception otherwise try driver
         // pruning.

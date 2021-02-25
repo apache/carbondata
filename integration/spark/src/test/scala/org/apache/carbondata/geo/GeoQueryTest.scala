@@ -139,7 +139,9 @@ class GeoQueryTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterE
     checkAnswer(df, Seq(Row(64, 79, "1"), Row(39, 37, "2")))
   }
 
-  test("test block pruning with polygon join query") {
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
+  test("test block pruning with polygon join query", true) {
     createTable()
     sql(s"insert into $geoTable select 855280799612,1,2,116285807,40084087")
     sql(s"insert into $geoTable select 855283635086,1,2,116372142,40129503")
@@ -223,7 +225,10 @@ class GeoQueryTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterE
     ).getMessage.contains("Join condition having left column polygon is not GeoId column")
   }
 
-  test("test block pruning on spatial and polygon table with in_polygon_join_range_list udf") {
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
+  test("test block pruning on spatial and polygon table with in_polygon_join_range_list udf",
+    true) {
    createTable()
     sql(s"insert into $geoTable select 855280799612,1,2,116285807,40084087")
     sql(s"insert into $geoTable select 855283635086,1,2,116372142,40129503")

@@ -693,7 +693,9 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
           "where smallIntField = 2 and charField is not null order by floatField"))
   }
 
-  test("bloom filter") {
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
+  test("bloom filter", true) {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val tableName = "alter_sc_bloom"

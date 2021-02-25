@@ -365,7 +365,8 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
       result)
   }
 
-  test("test block pruning for polygon query") {
+  // Exclude when running with index server as it uses UNKNOWN expression to prune.
+  test("test block pruning for polygon query", true) {
     createTable()
     sql(s"insert into $table1 select 855280799612,1575428400000,116285807,40084087")
     sql(s"insert into $table1 select 855283635086,1575428400000,116372142,40129503")

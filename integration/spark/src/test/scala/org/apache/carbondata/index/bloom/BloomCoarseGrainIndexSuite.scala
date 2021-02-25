@@ -392,8 +392,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     sql(s"DROP TABLE IF EXISTS $bloomSampleTable")
   }
 
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
   test("test bloom index: " +
-       "multiple indexes with each on one column vs one index on multiple columns") {
+       "multiple indexes with each on one column vs one index on multiple columns", true) {
     val iterations = 1
     // 500000 lines will result to 3 blocklets and bloomfilter index will prune 2 blocklets.
     val index11 = "index11"
@@ -642,7 +644,9 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       "BloomFilter does not support binary datatype column: cust_id"  ))
   }
 
-  test("test create bloom index on newly added column") {
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
+  test("test create bloom index on newly added column", true) {
     // Fix the loading cores to ensure number of buckets.
     CarbonProperties.getInstance().addProperty("carbon.number.of.cores.while.loading", "1")
 
