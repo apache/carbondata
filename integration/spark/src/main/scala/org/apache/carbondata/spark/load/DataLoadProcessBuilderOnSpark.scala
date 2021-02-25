@@ -145,6 +145,8 @@ object DataLoadProcessBuilderOnSpark {
       configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
     if (numPartitions <= 0) {
       numPartitions = convertRDD.partitions.length
+    } else if (System.getProperty("useIndexServer") != null) {
+      convertRDD.partitions
     }
 
     // Because if the number of partitions greater than 1, there will be action operator(sample) in

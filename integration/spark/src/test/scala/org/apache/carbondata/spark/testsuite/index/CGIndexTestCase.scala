@@ -418,7 +418,9 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select * from normal_test where name='n502670' and city='c2670'"))
   }
 
-  test("test invisible index during query") {
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
+  test("test invisible index during query", true) {
     val tableName = "index_test"
     val indexName1 = "index1"
     val indexName2 = "index2"

@@ -36,7 +36,8 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists parquet")
   }
 
-  test("test if matched segment is only loaded to cache") {
+  // Exclude when running with index server, as show cache result varies.
+  test("test if matched segment is only loaded to cache", true) {
     createTablesAndLoadData
     checkAnswer(sql("select * from carbon where a=1"), sql("select * from parquet where a=1"))
     val showCache = sql("show metacache on table carbon").collect()
@@ -58,7 +59,8 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
     // scalastyle:on lineLength
   }
 
-  test("test if matched segment is only loaded to cache after drop column") {
+  // Exclude when running with index server, as show cache result varies.
+  test("test if matched segment is only loaded to cache after drop column", true) {
     createTablesAndLoadData
     checkAnswer(sql("select * from carbon where a=1"), sql("select * from parquet where a=1"))
     checkAnswer(sql("select * from carbon where a=2"), sql("select * from parquet where a=2"))
@@ -78,7 +80,8 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
     drop
   }
 
-  test("test if matched segment is only loaded to cache after add column") {
+  // Exclude when running with index server, as show cache result varies.
+  test("test if matched segment is only loaded to cache after add column", true) {
     createTablesAndLoadData
     sql("alter table carbon add columns(g decimal(3,2))")
     sql("insert into carbon values" +
@@ -92,7 +95,8 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
     drop
   }
 
-  test("test segment pruning after update operation") {
+  // Exclude when running with index server, as show cache result varies.
+  test("test segment pruning after update operation", true) {
     createTablesAndLoadData
     checkAnswer(sql("select a from carbon where a=1"), Seq(Row(1)))
     var showCache = sql("show metacache on table carbon").collect()
@@ -108,7 +112,8 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
     drop
   }
 
-  test("alter set/unset sort column properties") {
+  // Exclude when running with index server, as show cache result varies.
+  test("alter set/unset sort column properties", true) {
     createTablesAndLoadData
     sql(s"alter table carbon set tblproperties('sort_scope'='local_sort', 'sort_columns'='a')")
     sql("insert into carbon values" +

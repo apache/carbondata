@@ -550,7 +550,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index dm on table index_test_overwrite")
   }
 
-  test("explain query with lucene index") {
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
+  test("explain query with lucene index", true) {
     sql("drop table if exists main")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE, "8")
     sql(

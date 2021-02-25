@@ -259,7 +259,8 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("Test alter add for arrays enabling local dictionary") {
+  // Exclude when running with index server as the returned rows order may vary
+  test("Test alter add for arrays enabling local dictionary", true) {
     import scala.collection.mutable.WrappedArray.make
     createTableForComplexTypes("LOCAL_DICTIONARY_INCLUDE", "ARRAY")
     // For the previous segments the default value for newly added array column is null

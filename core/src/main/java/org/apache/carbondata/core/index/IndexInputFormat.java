@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -98,6 +100,8 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
 
   private boolean isSIPruningEnabled;
 
+  private Set<String> missingSISegments;
+
   IndexInputFormat() {
 
   }
@@ -158,6 +162,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
               .getIndex(table, distributable.getDistributable().getIndexSchema());
           IndexFilter filter = new IndexFilter(filterResolverIntf);
           filter.setTable(table);
+          filter.setMissingSISegments(missingSISegments);
           if (filterResolverIntf != null) {
             filter.setExpression(filterResolverIntf.getFilterExpression());
           }
@@ -261,6 +266,15 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     out.writeBoolean(isCountStarJob);
     out.writeBoolean(isAsyncCall);
     out.writeBoolean(isSIPruningEnabled);
+    if (missingSISegments == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeInt(missingSISegments.size());
+      for (String segment : missingSISegments) {
+        out.writeUTF(segment);
+      }
+    }
   }
 
   @Override
@@ -309,6 +323,13 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     this.isCountStarJob = in.readBoolean();
     this.isAsyncCall = in.readBoolean();
     this.isSIPruningEnabled = in.readBoolean();
+    if (in.readBoolean()) {
+      int numMissingSISegments = in.readInt();
+      missingSISegments = new HashSet<>(numMissingSISegments);
+      for (int i = 0; i < numMissingSISegments; i++) {
+        missingSISegments.add(in.readUTF());
+      }
+    }
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -458,5 +479,9 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
 
   public ReadCommittedScope getReadCommittedScope() {
     return readCommittedScope;
+  }
+
+  public void setMissingSISegments(Set<String> missingSISegments) {
+    this.missingSISegments = missingSISegments;
   }
 }

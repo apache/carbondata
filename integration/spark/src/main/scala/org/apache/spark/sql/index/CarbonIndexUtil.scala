@@ -620,10 +620,10 @@ object CarbonIndexUtil {
 
           try {
             if (!failedLoadMetadataDetails.isEmpty) {
-              // in the case when in SI table a segment is deleted and it's entry is
-              // deleted from the tablestatus file, the corresponding .segment file from
+              // in the case when in SI table it's entry is deleted from the tablestatus file,
+              // the corresponding segment folder and .segment file from
               // the metadata folder should also be deleted as it contains the
-              // mergefilename which does not exist anymore as the segment is deleted.
+              // mergefilename which may not exist or is not valid.
               deleteStaleSegmentFileIfPresent(carbonLoadModel,
                 indexTable,
                 failedLoadMetadataDetails)
@@ -689,11 +689,18 @@ object CarbonIndexUtil {
     failedLoadMetaDataDetails.asScala.map(failedLoadMetaData => {
       carbonLoadModel.getLoadMetadataDetails.asScala.map(loadMetaData => {
         if (failedLoadMetaData.getLoadName == loadMetaData.getLoadName) {
-          val segmentFilePath = CarbonTablePath.getSegmentFilesLocation(indexTable.getTablePath) +
+          val segmentMetadataFilePath =
+            CarbonTablePath.getSegmentFilesLocation(indexTable.getTablePath) +
             CarbonCommonConstants.FILE_SEPARATOR + loadMetaData.getSegmentFile
-          if (FileFactory.isFileExist(segmentFilePath)) {
+          val segmentPath = CarbonTablePath.getSegmentPath(indexTable.getTablePath,
+            loadMetaData.getLoadName)
+          if (FileFactory.isFileExist(segmentPath)) {
+            // delete the segment folder if it exists as it may contain stale index and data files.
+            FileFactory.deleteFile(segmentPath)
+          }
+          if (FileFactory.isFileExist(segmentMetadataFilePath)) {
             // delete the file if it exists
-            FileFactory.deleteFile(segmentFilePath)
+            FileFactory.deleteFile(segmentMetadataFilePath)
           }
         }
       })
