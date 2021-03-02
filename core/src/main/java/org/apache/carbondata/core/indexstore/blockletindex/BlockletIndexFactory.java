@@ -452,8 +452,12 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       BlockletIndexInputSplit distributable = new BlockletIndexInputSplit();
       distributable.setSegment(segment);
       distributable.setIndexSchema(INDEX_SCHEMA);
-      distributable.setSegmentPath(CarbonTablePath.getSegmentPath(identifier.getTablePath(),
-          segment.getSegmentNo()));
+      if (!(getCarbonTable().isTransactionalTable())) {
+        distributable.setSegmentPath(identifier.getTablePath());
+      } else {
+        distributable.setSegmentPath(
+            CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo()));
+      }
       distributableList.add(new IndexInputSplitWrapper(UUID.randomUUID().toString(),
           distributable).getDistributable());
     } catch (Exception e) {
