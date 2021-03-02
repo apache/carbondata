@@ -20,6 +20,7 @@ package org.apache.carbondata.core.index;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +37,10 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
+import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.BlockletIndexUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -112,15 +116,31 @@ public class IndexUtil {
    */
   private static void executeClearIndexJob(IndexJob indexJob,
       CarbonTable carbonTable, String indexToClear) throws IOException {
-    SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
-            getValidAndInvalidSegments(carbonTable, FileFactory.getConfiguration());
-    List<String> invalidSegment = new ArrayList<>();
-    for (Segment segment : validAndInvalidSegmentsInfo.getInvalidSegments()) {
-      invalidSegment.add(segment.getSegmentNo());
+    IndexInputFormat indexInputFormat;
+    if (!carbonTable.isTransactionalTable()) {
+      ReadCommittedScope readCommittedScope =
+          new LatestFilesReadCommittedScope(carbonTable.getTablePath(),
+              FileFactory.getConfiguration());
+      LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
+      List<Segment> listOfValidSegments = new ArrayList<>(loadMetadataDetails.length);
+      Arrays.stream(loadMetadataDetails).forEach(segment -> {
+        Segment seg = new Segment(segment.getLoadName(), segment.getSegmentFile());
+        seg.setLoadMetadataDetails(segment);
+        listOfValidSegments.add(seg);
+      });
+      indexInputFormat =
+          new IndexInputFormat(carbonTable, listOfValidSegments, new ArrayList<>(0), true,
+              indexToClear);
+    } else {
+      SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
+          getValidAndInvalidSegments(carbonTable, FileFactory.getConfiguration());
+      List<String> invalidSegment = new ArrayList<>();
+      validAndInvalidSegmentsInfo.getInvalidSegments()
+          .forEach(segment -> invalidSegment.add(segment.getSegmentNo()));
+      indexInputFormat =
+          new IndexInputFormat(carbonTable, validAndInvalidSegmentsInfo.getValidSegments(),
+              invalidSegment, true, indexToClear);
     }
-    IndexInputFormat indexInputFormat =
-        new IndexInputFormat(carbonTable, validAndInvalidSegmentsInfo.getValidSegments(),
-            invalidSegment, true, indexToClear);
     try {
       indexJob.execute(indexInputFormat, null);
     } catch (Exception e) {
