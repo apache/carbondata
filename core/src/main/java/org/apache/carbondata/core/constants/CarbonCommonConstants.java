@@ -2603,6 +2603,11 @@ public final class CarbonCommonConstants {
   public static final String FILE_HEADER = "fileHeader";
 
   @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_OPTIMIZE_FILTER = "carbon.optimize.filter";
+
+  public static final String CARBON_OPTIMIZE_FILTER_DEFAULT = "true";
+
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_REORDER_FILTER = "carbon.reorder.filter";
 
   public static final String CARBON_REORDER_FILTER_DEFAULT = "true";

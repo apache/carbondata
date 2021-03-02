@@ -2180,6 +2180,13 @@ public final class CarbonProperties {
     return Boolean.parseBoolean(configuredValue);
   }
 
+  public static boolean isFilterOptimizeEnabled() {
+    return Boolean.parseBoolean(
+        getInstance().getProperty(CarbonCommonConstants.CARBON_OPTIMIZE_FILTER,
+            CarbonCommonConstants.CARBON_OPTIMIZE_FILTER_DEFAULT)
+    );
+  }
+
   public static boolean isFilterReorderingEnabled() {
     return Boolean.parseBoolean(
         getInstance().getProperty(CarbonCommonConstants.CARBON_REORDER_FILTER,
