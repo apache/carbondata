@@ -194,20 +194,26 @@ object DataTrashManager {
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     if (SegmentStatusManager.isLoadDeletionRequired(loadMetadataDetails)) {
       loadMetadataDetails.foreach { oneLoad =>
-        val segmentFilePath = CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath,
-          oneLoad.getSegmentFile)
-        if (DeleteLoadFolders.canDeleteThisLoad(oneLoad, isForceDelete, cleanStaleInProgress)) {
-          // No need to consider physical data for external segments, only consider metadata.
-          if (oneLoad.getPath() == null || oneLoad.getPath().equalsIgnoreCase("NA")) {
-            sizeFreed += calculateSegmentSizeForOneLoad(carbonTable, oneLoad, loadMetadataDetails)
-          }
-          sizeFreed += FileFactory.getCarbonFile(segmentFilePath).getSize
-        } else {
-          if (SegmentStatusManager.isExpiredSegment(oneLoad, carbonTable
-              .getAbsoluteTableIdentifier)) {
-            trashSizeRemaining += calculateSegmentSizeForOneLoad(carbonTable, oneLoad,
-                loadMetadataDetails)
-            trashSizeRemaining += FileFactory.getCarbonFile(segmentFilePath).getSize
+        if (!oneLoad.getVisibility.equalsIgnoreCase("false")) {
+          val segmentFilePath = CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath,
+              oneLoad.getSegmentFile)
+          if (DeleteLoadFolders.canDeleteThisLoad(oneLoad, isForceDelete, cleanStaleInProgress)) {
+            // No need to consider physical data for external segments, only consider metadata.
+            if (oneLoad.getPath() == null || oneLoad.getPath().equalsIgnoreCase("NA")) {
+              sizeFreed += calculateSegmentSizeForOneLoad(carbonTable, oneLoad, loadMetadataDetails)
+            }
+            if (FileFactory.isFileExist(segmentFilePath)) {
+              sizeFreed += FileFactory.getCarbonFile(segmentFilePath).getSize
+            }
+          } else {
+            if (SegmentStatusManager.isExpiredSegment(oneLoad, carbonTable
+                .getAbsoluteTableIdentifier)) {
+              trashSizeRemaining += calculateSegmentSizeForOneLoad(carbonTable, oneLoad,
+                  loadMetadataDetails)
+              if (FileFactory.isFileExist(segmentFilePath)) {
+                trashSizeRemaining += FileFactory.getCarbonFile(segmentFilePath).getSize
+              }
+            }
           }
         }
       }
