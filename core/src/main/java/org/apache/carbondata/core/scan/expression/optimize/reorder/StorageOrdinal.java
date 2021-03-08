@@ -15,23 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.expression.optimize;
+package org.apache.carbondata.core.scan.expression.optimize.reorder;
+
+import java.util.Map;
 
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 
-public class AndMultiExpression extends MultiExpression {
+/**
+ *
+ */
+public abstract class StorageOrdinal implements Comparable {
+
+  protected int minOrdinal;
+
+  public abstract void updateMinOrdinal(Map<String, Integer> columnMapOrdinal);
 
   @Override
-  public boolean canMerge(Expression child) {
-    return child instanceof AndExpression;
+  public int compareTo(Object o) {
+    return Integer.compare(minOrdinal, ((StorageOrdinal) o).minOrdinal);
   }
 
-  @Override
-  public Expression toBinaryExpression() {
-    return children.stream()
-        .map(StorageOrdinal::toExpression)
-        .reduce(AndExpression::new)
-        .orElse(null);
-  }
+  public abstract Expression toExpression();
 }

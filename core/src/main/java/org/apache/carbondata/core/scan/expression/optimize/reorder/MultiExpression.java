@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.expression.optimize;
+package org.apache.carbondata.core.scan.expression.optimize.reorder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +28,9 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 
+/**
+ * new Expression with multiple children (maybe more than two children).
+ */
 public abstract class MultiExpression extends StorageOrdinal {
 
   public MultiExpression() {
@@ -126,7 +129,4 @@ public abstract class MultiExpression extends StorageOrdinal {
       }
     }
   }
-
-  public abstract Expression toBinaryExpression();
-
 }

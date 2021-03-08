@@ -17,26 +17,11 @@
 
 package org.apache.carbondata.core.scan.expression.optimize;
 
-import java.util.Map;
-
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 
-public abstract class StorageOrdinal implements Comparable {
+public abstract class OptimizeRule {
 
-  protected int minOrdinal;
+  public abstract Expression optimize(CarbonTable table, Expression expression);
 
-  public abstract void updateMinOrdinal(Map<String, Integer> columnMapOrdinal);
-
-  @Override
-  public int compareTo(Object o) {
-    return Integer.compare(minOrdinal, ((StorageOrdinal) o).minOrdinal);
-  }
-
-  public Expression toExpression() {
-    if (this instanceof MultiExpression) {
-      return ((MultiExpression) this).toBinaryExpression();
-    } else {
-      return ((ExpressionWithOrdinal) this).expression;
-    }
-  }
 }

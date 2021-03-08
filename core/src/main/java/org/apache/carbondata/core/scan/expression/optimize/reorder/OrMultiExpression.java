@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.expression.optimize;
+package org.apache.carbondata.core.scan.expression.optimize.reorder;
 
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 
+/**
+ * new Or expression with multiple children (maybe more than two children).
+ */
 public class OrMultiExpression extends MultiExpression {
   @Override
   public boolean canMerge(Expression child) {
@@ -27,7 +30,7 @@ public class OrMultiExpression extends MultiExpression {
   }
 
   @Override
-  public Expression toBinaryExpression() {
+  public Expression toExpression() {
     return children.stream()
         .map(StorageOrdinal::toExpression)
         .reduce(OrExpression::new)

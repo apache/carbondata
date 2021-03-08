@@ -15,28 +15,34 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.expression.optimize;
+package org.apache.carbondata.core.scan.expression.optimize.reorder;
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.expression.optimize.reorder.ExpressionReorder;
+import org.apache.carbondata.core.scan.expression.optimize.OptimizeRule;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-public class ExpressionOptimizer {
+/**
+ * reorder Expression by storage order
+ */
+public class ExpressionReorder extends OptimizeRule {
 
-  private final OptimizeRule[] rules = { new ExpressionReorder() };
-
-  public static Expression optimize(CarbonTable table, Expression expression) {
-    if (!CarbonProperties.isFilterOptimizeEnabled()) {
+  @Override
+  public Expression optimize(CarbonTable table, Expression expression) {
+    if (!CarbonProperties.isFilterReorderingEnabled()) {
       return expression;
     }
-    for (OptimizeRule rule : ExpressionOptimizerHandler.INSTANCE.rules) {
-      expression = rule.optimize(table, expression);
+    MultiExpression multiExpression = MultiExpression.build(expression);
+    // unsupported expression
+    if (multiExpression == null) {
+      return expression;
     }
-    return expression;
-  }
-
-  private static class ExpressionOptimizerHandler {
-    private static final ExpressionOptimizer INSTANCE = new ExpressionOptimizer();
+    // remove redundancy filter
+    multiExpression.removeRedundant();
+    // combine multiple filters to single filter
+    multiExpression.combine();
+    // reorder Expression by storage ordinal of columns
+    multiExpression.reorder(table);
+    return multiExpression.toExpression();
   }
 }

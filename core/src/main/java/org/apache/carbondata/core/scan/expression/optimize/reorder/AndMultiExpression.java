@@ -15,28 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.expression.optimize;
+package org.apache.carbondata.core.scan.expression.optimize.reorder;
 
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.expression.optimize.reorder.ExpressionReorder;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 
-public class ExpressionOptimizer {
+/**
+ * new And expression with multiple children (maybe more than two children).
+ */
+public class AndMultiExpression extends MultiExpression {
 
-  private final OptimizeRule[] rules = { new ExpressionReorder() };
-
-  public static Expression optimize(CarbonTable table, Expression expression) {
-    if (!CarbonProperties.isFilterOptimizeEnabled()) {
-      return expression;
-    }
-    for (OptimizeRule rule : ExpressionOptimizerHandler.INSTANCE.rules) {
-      expression = rule.optimize(table, expression);
-    }
-    return expression;
+  @Override
+  public boolean canMerge(Expression child) {
+    return child instanceof AndExpression;
   }
 
-  private static class ExpressionOptimizerHandler {
-    private static final ExpressionOptimizer INSTANCE = new ExpressionOptimizer();
+  @Override
+  public Expression toExpression() {
+    return children.stream()
+        .map(StorageOrdinal::toExpression)
+        .reduce(AndExpression::new)
+        .orElse(null);
   }
 }
