@@ -22,6 +22,9 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.optimize.reorder.ExpressionReorder;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+/**
+ * optimize Carbon Expression
+ */
 public class ExpressionOptimizer {
 
   private final OptimizeRule[] rules = { new ExpressionReorder() };

@@ -20,6 +20,9 @@ package org.apache.carbondata.core.scan.expression.optimize;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 
+/**
+ * the base rule of ExpressionOptimizer
+ */
 public abstract class OptimizeRule {
 
   public abstract Expression optimize(CarbonTable table, Expression expression);

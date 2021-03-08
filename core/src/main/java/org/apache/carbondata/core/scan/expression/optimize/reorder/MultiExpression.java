@@ -18,12 +18,9 @@
 package org.apache.carbondata.core.scan.expression.optimize.reorder;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
@@ -39,41 +36,6 @@ public abstract class MultiExpression extends StorageOrdinal {
 
   protected List<StorageOrdinal> children = new ArrayList<>();
 
-  public static MultiExpression build(Expression expression) {
-    MultiExpression multiExpression = null;
-    if (expression instanceof AndExpression) {
-      multiExpression = new AndMultiExpression();
-    }
-    if (expression instanceof OrExpression) {
-      multiExpression = new OrMultiExpression();
-    }
-    if (multiExpression == null) {
-      return null;
-    }
-    for (Expression child : expression.getChildren()) {
-      buildChild(child, multiExpression);
-    }
-    return multiExpression;
-  }
-
-  private static void buildChild(Expression expression, MultiExpression parent) {
-    if (parent.canMerge(expression)) {
-      // multiple and(or) can be merge into same MultiExpression
-      for (Expression child : expression.getChildren()) {
-        buildChild(child, parent);
-      }
-    } else {
-      MultiExpression multiExpression = build(expression);
-      if (multiExpression == null) {
-        // it is not and/or expression
-        parent.addChild(expression);
-      } else {
-        // it is and, or expression
-        parent.addChild(multiExpression);
-      }
-    }
-  }
-
   public abstract boolean canMerge(Expression child);
 
   private void addChild(Expression child) {
@@ -84,20 +46,6 @@ public abstract class MultiExpression extends StorageOrdinal {
     children.add(storageOrdinal);
   }
 
-  private Map<String, Integer> columnMapOrdinal(CarbonTable table) {
-    List<CarbonColumn> createOrderColumns = table.getCreateOrderColumn();
-    Map<String, Integer> nameMapOrdinal = new HashMap<>(createOrderColumns.size());
-    int dimensionCount = table.getAllDimensions().size();
-    for (CarbonColumn column : createOrderColumns) {
-      if (column.isDimension()) {
-        nameMapOrdinal.put(column.getColName(), column.getOrdinal());
-      } else {
-        nameMapOrdinal.put(column.getColName(), dimensionCount + column.getOrdinal());
-      }
-    }
-    return nameMapOrdinal;
-  }
-
   public void removeRedundant() {
     // TODO remove redundancy filter if exists
   }
@@ -106,9 +54,14 @@ public abstract class MultiExpression extends StorageOrdinal {
     // TODO combine multiple filters to single filter if needed
   }
 
-  public void reorder(CarbonTable table) {
-    updateMinOrdinal(columnMapOrdinal(table));
-    sortChildrenByOrdinal();
+  @Override
+  public void updateMinOrdinal(Map<String, Integer> columnMapOrdinal) {
+    for (StorageOrdinal child : children) {
+      child.updateMinOrdinal(columnMapOrdinal);
+      if (child.minOrdinal < this.minOrdinal) {
+        this.minOrdinal = child.minOrdinal;
+      }
+    }
   }
 
   public void sortChildrenByOrdinal() {
@@ -120,12 +73,43 @@ public abstract class MultiExpression extends StorageOrdinal {
     }
   }
 
-  @Override
-  public void updateMinOrdinal(Map<String, Integer> columnMapOrdinal) {
-    for (StorageOrdinal child : children) {
-      child.updateMinOrdinal(columnMapOrdinal);
-      if (child.minOrdinal < this.minOrdinal) {
-        this.minOrdinal = child.minOrdinal;
+  public static MultiExpression build(Expression expression) {
+    return new Builder().build(expression);
+  }
+
+  private static class Builder {
+    public MultiExpression build(Expression expression) {
+      MultiExpression multiExpression = null;
+      if (expression instanceof AndExpression) {
+        multiExpression = new AndMultiExpression();
+      }
+      if (expression instanceof OrExpression) {
+        multiExpression = new OrMultiExpression();
+      }
+      if (multiExpression == null) {
+        return null;
+      }
+      for (Expression child : expression.getChildren()) {
+        buildChild(child, multiExpression);
+      }
+      return multiExpression;
+    }
+
+    private void buildChild(Expression expression, MultiExpression parent) {
+      if (parent.canMerge(expression)) {
+        // multiple and(or) can be merge into same MultiExpression
+        for (Expression child : expression.getChildren()) {
+          buildChild(child, parent);
+        }
+      } else {
+        MultiExpression multiExpression = build(expression);
+        if (multiExpression == null) {
+          // it is not and/or expression
+          parent.addChild(expression);
+        } else {
+          // it is and, or expression
+          parent.addChild(multiExpression);
+        }
       }
     }
   }

@@ -17,7 +17,12 @@
 
 package org.apache.carbondata.core.scan.expression.optimize.reorder;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.optimize.OptimizeRule;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -42,7 +47,22 @@ public class ExpressionReorder extends OptimizeRule {
     // combine multiple filters to single filter
     multiExpression.combine();
     // reorder Expression by storage ordinal of columns
-    multiExpression.reorder(table);
+    multiExpression.updateMinOrdinal(columnMapOrdinal(table));
+    multiExpression.sortChildrenByOrdinal();
     return multiExpression.toExpression();
+  }
+
+  private Map<String, Integer> columnMapOrdinal(CarbonTable table) {
+    List<CarbonColumn> createOrderColumns = table.getCreateOrderColumn();
+    Map<String, Integer> nameMapOrdinal = new HashMap<>(createOrderColumns.size());
+    int dimensionCount = table.getAllDimensions().size();
+    for (CarbonColumn column : createOrderColumns) {
+      if (column.isDimension()) {
+        nameMapOrdinal.put(column.getColName(), column.getOrdinal());
+      } else {
+        nameMapOrdinal.put(column.getColName(), dimensionCount + column.getOrdinal());
+      }
+    }
+    return nameMapOrdinal;
   }
 }
