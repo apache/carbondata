@@ -54,7 +54,7 @@ case class CarbonCleanFilesCommand(
     if (isDryRun) {
       // dry run operation
       Seq(
-        AttributeReference("Size Freed", StringType, nullable = false)(),
+        AttributeReference("Size To Be Freed", StringType, nullable = false)(),
         AttributeReference("Trash Data Remaining", StringType, nullable = false)())
     } else if (showStats) {
       Seq(

@@ -147,12 +147,13 @@ object DataTrashManager {
       isDryRun: Boolean, showStats: Boolean): (Long, Long) = {
     if (isForceDelete) {
       // empty the trash folder
-      val a = TrashUtil.emptyTrash(carbonTable.getTablePath, isDryRun, showStats)
-      (a.head, a(1))
+      val sizeStatistics = TrashUtil.emptyTrash(carbonTable.getTablePath, isDryRun, showStats)
+      (sizeStatistics.head, sizeStatistics(1))
     } else {
       // clear trash based on timestamp
-      val a = TrashUtil.deleteExpiredDataFromTrash(carbonTable.getTablePath, isDryRun, showStats)
-      (a.head, a(1))
+      val sizeStatistics = TrashUtil.deleteExpiredDataFromTrash(carbonTable.getTablePath,
+          isDryRun, showStats)
+      (sizeStatistics.head, sizeStatistics(1))
     }
   }
 
