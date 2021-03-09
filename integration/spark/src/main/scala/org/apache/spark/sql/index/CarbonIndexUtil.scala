@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
@@ -38,7 +38,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
@@ -396,6 +398,88 @@ object CarbonIndexUtil {
     }
   }
 
+  def updateIndexStatusInBatch(carbonTable: CarbonTable,
+      indexTables: List[CarbonTable],
+      indexType: IndexType,
+      status: IndexStatus,
+      sparkSession: SparkSession): Unit = {
+    val dbName = carbonTable.getDatabaseName
+    val tableName = carbonTable.getTableName
+    val metadataLock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+      LockUsage.METADATA_LOCK)
+    try {
+      if (metadataLock.lockWithRetries()) {
+        CarbonMetadata.getInstance.removeTable(dbName, tableName)
+        val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+        val indexTableInfos = IndexTableInfo.fromGson(table.getIndexInfo)
+        val indexMetadata = table.getIndexMetadata
+        indexTables.foreach { indexTable =>
+          IndexTableInfo.setIndexStatus(indexTableInfos, indexTable.getTableName, status)
+          indexMetadata.updateIndexStatus(indexType.getIndexProviderName,
+            indexTable.getTableName,
+            status.name())
+        }
+        table.getTableInfo
+          .getFactTable
+          .getTableProperties
+          .put(table.getCarbonTableIdentifier.getTableId, indexMetadata.serialize)
+        sparkSession.sql(s"""ALTER TABLE $dbName.$tableName SET SERDEPROPERTIES ('indexInfo' = '${
+          IndexTableInfo.toGson(indexTableInfos)
+        }')""".stripMargin).collect()
+        CarbonHiveIndexMetadataUtil.refreshTable(dbName, tableName, sparkSession)
+        CarbonMetadata.getInstance.removeTable(dbName, tableName)
+        CarbonMetadata.getInstance.loadTableMetadata(table.getTableInfo)
+      }
+    } finally {
+      metadataLock.unlock()
+    }
+  }
+
+  def updateIndexStatus(carbonTable: CarbonTable,
+      indexName: String,
+      indexType: IndexType,
+      status: IndexStatus,
+      needLock: Boolean = true,
+      sparkSession: SparkSession): Unit = {
+    val dbName = carbonTable.getDatabaseName
+    val tableName = carbonTable.getTableName
+    val locks: java.util.List[ICarbonLock] = new java.util.ArrayList[ICarbonLock]
+    try {
+      try {
+        if (needLock) {
+          locks.add(CarbonLockUtil.getLockObject(carbonTable.getAbsoluteTableIdentifier,
+            LockUsage.METADATA_LOCK,
+            "Failed to acquire metadata lock for table: %s".format(carbonTable
+              .getAbsoluteTableIdentifier)))
+        }
+      } catch {
+        case e: Exception =>
+          throw e
+      }
+      CarbonMetadata.getInstance.removeTable(dbName, tableName)
+      val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      val indexInfo = IndexTableInfo.setIndexStatus(table.getIndexInfo, indexName, status)
+      val indexMetadata = table.getIndexMetadata
+      indexMetadata.updateIndexStatus(indexType.getIndexProviderName, indexName, status.name())
+      table.getTableInfo
+        .getFactTable
+        .getTableProperties
+        .put(table.getCarbonTableIdentifier.getTableId, indexMetadata.serialize)
+      sparkSession.sql(
+        s"""ALTER TABLE $dbName.$tableName SET SERDEPROPERTIES ('indexInfo' =
+           |'$indexInfo')"""
+          .stripMargin).collect()
+      CarbonHiveIndexMetadataUtil.refreshTable(dbName, tableName, sparkSession)
+      CarbonMetadata.getInstance.removeTable(dbName, tableName)
+      CarbonMetadata.getInstance.loadTableMetadata(table.getTableInfo)
+    } catch {
+      case e: Exception =>
+        LOGGER.error("Failed to update index status for %s".format(indexName))
+    } finally {
+      AlterTableUtil.releaseLocks(locks.asScala.toList)
+    }
+  }
+
   def processSIRepair(indexTableName: String, carbonTable: CarbonTable,
       carbonLoadModel: CarbonLoadModel, indexMetadata: IndexMetadata,
       secondaryIndexProvider: String, repairLimit: Int,
@@ -572,6 +656,12 @@ object CarbonIndexUtil {
               sparkSession.sql(
                 s"""ALTER TABLE ${ carbonLoadModel.getDatabaseName }.$indexTableName SET
                    |SERDEPROPERTIES ('isSITableEnabled' = 'true')""".stripMargin).collect()
+              CarbonIndexUtil.updateIndexStatus(carbonTable,
+                indexTableName,
+                IndexType.SI,
+                IndexStatus.ENABLED,
+                true,
+                sparkSession)
             }
           } catch {
             case ex: Exception =>

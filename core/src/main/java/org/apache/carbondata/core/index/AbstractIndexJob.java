@@ -37,8 +37,18 @@ public abstract class AbstractIndexJob implements IndexJob {
   }
 
   @Override
+  public Object[] execute(String sql) {
+    return new Object[0];
+  }
+
+  @Override
   public List<ExtendedBlocklet> execute(IndexInputFormat indexInputFormat,
       Configuration configuration) {
     return null;
+  }
+
+  @Override
+  public Long executeCountJob(IndexInputFormat indexInputFormat, Configuration configuration) {
+    return 0L;
   }
 }

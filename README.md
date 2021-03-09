@@ -76,6 +76,7 @@ Some features are marked as experimental because the syntax/implementation might
 2. Accelerating performance using MV on parquet/orc.
 3. Merge API for Spark DataFrame.
 4. Hive write for non-transactional table.
+5. Secondary Index as a Coarse Grain Index in query processing
 
 ##  Integration
 * [Hive](https://github.com/apache/carbondata/blob/master/docs/hive-guide.md)

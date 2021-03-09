@@ -201,6 +201,12 @@ public class IndexUtil {
     }
   }
 
+  public static Object[] getPositionReferences(String sql) {
+    IndexJob indexJob = (IndexJob) createIndexJob(
+        "org.apache.spark.sql.secondaryindex.jobs.StringProjectionQueryJob");
+    return indexJob.execute(sql);
+  }
+
   private static FileInputFormat createIndexJob(CarbonTable carbonTable,
       IndexExprWrapper indexExprWrapper, List<Segment> validSegments, String clsName) {
     try {
@@ -276,8 +282,7 @@ public class IndexUtil {
       List<Segment> validSegments, List<Segment> invalidSegments, IndexLevel level,
       List<String> segmentsToBeRefreshed, Configuration configuration) {
     return executeIndexJob(carbonTable, resolver, indexJob, partitionsToPrune, validSegments,
-        invalidSegments, level, false, segmentsToBeRefreshed, false,
-        configuration);
+        invalidSegments, level, false, segmentsToBeRefreshed, false, false, configuration);
   }
 
   /**
@@ -289,7 +294,7 @@ public class IndexUtil {
       FilterResolverIntf resolver, IndexJob indexJob, List<PartitionSpec> partitionsToPrune,
       List<Segment> validSegments, List<Segment> invalidSegments, IndexLevel level,
       Boolean isFallbackJob, List<String> segmentsToBeRefreshed, boolean isCountJob,
-      Configuration configuration) {
+      boolean isSIPruningEnabled, Configuration configuration) {
     List<String> invalidSegmentNo = new ArrayList<>();
     for (Segment segment : invalidSegments) {
       invalidSegmentNo.add(segment.getSegmentNo());
@@ -302,6 +307,7 @@ public class IndexUtil {
       indexInputFormat.setCountStarJob();
       indexInputFormat.setIsWriteToFile(false);
     }
+    indexInputFormat.setSIPruningEnabled(isSIPruningEnabled);
     return indexJob.execute(indexInputFormat, configuration);
   }
 

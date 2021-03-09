@@ -54,7 +54,8 @@ case class CarbonDataSourceScan(
     @transient pushedDownFilters: Seq[Expression],
     directScanSupport: Boolean,
     @transient extraRDD: Option[(RDD[InternalRow], Boolean)] = None,
-    tableIdentifier: Option[TableIdentifier] = None)
+    tableIdentifier: Option[TableIdentifier] = None,
+    segmentIds: Option[String] = None)
   extends DataSourceScanExec with ColumnarBatchScan {
 
   override lazy val supportsBatch: Boolean = {
@@ -129,7 +130,8 @@ case class CarbonDataSourceScan(
       relation.carbonTable.getTableInfo.serialize(),
       relation.carbonTable.getTableInfo,
       new CarbonInputMetrics,
-      selectedPartitions)
+      selectedPartitions,
+      segmentIds = segmentIds)
     carbonRdd.setVectorReaderSupport(supportsBatch)
     carbonRdd.setDirectScanSupport(supportsBatch && directScanSupport)
     extraRDD.map(_._1.union(carbonRdd)).getOrElse(carbonRdd)

@@ -151,6 +151,15 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       }
       (tuple4._1, tuple4._2, tuple4._3)
     }
+    val inSegmentUDF = allPredicates.filter(e =>
+      e.isInstanceOf[ScalaUDF] &&
+      e.asInstanceOf[ScalaUDF].udfName.get.equalsIgnoreCase("insegment"))
+    val segmentIds: Option[String] = if (!inSegmentUDF.isEmpty) {
+      val inSegment = inSegmentUDF.head.asInstanceOf[ScalaUDF]
+      Option(inSegment.children.head.asInstanceOf[Literal].value.toString)
+    } else {
+      None
+    }
     // scan
     val scan = CarbonDataSourceScan(
       table,
@@ -162,7 +171,9 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       pushedFilters,
       directScanSupport,
       extraRDD,
-      Some(TableIdentifier(table.identifier.getTableName, Option(table.identifier.getDatabaseName)))
+      Some(TableIdentifier(table.identifier.getTableName,
+        Option(table.identifier.getDatabaseName))),
+      segmentIds
     )
     // filter
     val filterOption = if (directScanSupport && scan.supportsBatch) {

@@ -146,6 +146,9 @@ public class CarbondataSplitManager extends HiveSplitManager {
         new HdfsEnvironment.HdfsContext(session, schemaTableName.getSchemaName(),
             schemaTableName.getTableName()), new Path(location));
     configuration = carbonTableReader.updateS3Properties(configuration);
+    for (Map.Entry<String, String> entry : table.getStorage().getSerdeParameters().entrySet()) {
+      configuration.set(entry.getKey(), entry.getValue());
+    }
     // set the hadoop configuration to thread local, so that FileFactory can use it.
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     CarbonTableCacheModel cache =

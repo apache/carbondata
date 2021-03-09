@@ -95,6 +95,9 @@ class CarbonEnv {
     // TODO: move it to proper place, it should be registered by indexSchema implementation
     sparkSession.udf.register("text_match", new TextMatchUDF)
     sparkSession.udf.register("text_match_with_limit", new TextMatchMaxDocUDF)
+    sparkSession.udf.register("insegment", new (String => Boolean) with Serializable {
+      override def apply(v1: String): Boolean = true
+    })
 
     // register udf for spatial index filters of querying
     GeoUdfRegister.registerQueryFilterUdf(sparkSession)

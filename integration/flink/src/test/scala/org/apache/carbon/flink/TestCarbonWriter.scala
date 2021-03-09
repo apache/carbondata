@@ -214,7 +214,7 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
         """
           |Table Scan on test_flink
           | - total: 1 blocks, 1 blocklets
-          | - filter: (intfield <> null and intfield = 99)
+          | - filter: (intfield is not null and intfield = 99)
           | - pruned by Main Index
           |    - skipped: 0 blocks, 0 blocklets
           | - pruned by CG Index

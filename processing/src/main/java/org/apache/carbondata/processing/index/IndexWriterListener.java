@@ -34,6 +34,7 @@ import org.apache.carbondata.core.index.TableIndex;
 import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.index.dev.IndexWriter;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.index.IndexType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.store.TablePage;
@@ -73,9 +74,10 @@ public class IndexWriterListener {
     }
     tblIdentifier = carbonTable.getCarbonTableIdentifier();
     for (TableIndex tableIndex : tableIndices) {
-      // register it only if it is not lazy index, for lazy index, user
+      // register it only if it is not lazy index and not secondary index. For lazy index, user
       // will rebuild the index manually
-      if (!tableIndex.getIndexSchema().isLazy()) {
+      if (!tableIndex.getIndexSchema().isLazy() && !tableIndex.getIndexSchema().getProviderName()
+          .equals(IndexType.SI.getIndexProviderName())) {
         IndexFactory factory = tableIndex.getIndexFactory();
         register(factory, segmentId, taskNo, segmentProperties);
       }

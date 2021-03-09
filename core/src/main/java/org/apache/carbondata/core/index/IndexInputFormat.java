@@ -96,6 +96,8 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   // Whether AsyncCall to the Index Server(true in the case of pre-priming)
   private boolean isAsyncCall;
 
+  private boolean isSIPruningEnabled;
+
   IndexInputFormat() {
 
   }
@@ -258,6 +260,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     out.writeBoolean(isWriteToFile);
     out.writeBoolean(isCountStarJob);
     out.writeBoolean(isAsyncCall);
+    out.writeBoolean(isSIPruningEnabled);
   }
 
   @Override
@@ -305,6 +308,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     this.isWriteToFile = in.readBoolean();
     this.isCountStarJob = in.readBoolean();
     this.isAsyncCall = in.readBoolean();
+    this.isSIPruningEnabled = in.readBoolean();
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -340,6 +344,14 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
    */
   public boolean isJobToClearIndexes() {
     return isJobToClearIndexes;
+  }
+
+  public boolean isSIPruningEnabled() {
+    return isSIPruningEnabled;
+  }
+
+  public void setSIPruningEnabled(boolean SIPruningEnabled) {
+    isSIPruningEnabled = SIPruningEnabled;
   }
 
   public String getTaskGroupId() {
@@ -428,7 +440,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
 
   public void createIndexChooser() throws IOException {
     if (null != filterResolverIntf) {
-      this.indexChooser = new IndexChooser(table);
+      this.indexChooser = new IndexChooser(table, isSIPruningEnabled);
     }
   }
 

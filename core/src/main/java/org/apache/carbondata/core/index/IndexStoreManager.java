@@ -37,7 +37,6 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.index.IndexType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -95,13 +94,10 @@ public final class IndexStoreManager {
         .getIndexesMap().entrySet()) {
       for (Map.Entry<String, Map<String, String>> indexEntry : providerEntry.getValue()
           .entrySet()) {
-        if (!indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER)
-            .equalsIgnoreCase(IndexType.SI.getIndexProviderName())) {
-          IndexSchema indexSchema = new IndexSchema(indexEntry.getKey(),
-              indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER));
-          indexSchema.setProperties(indexEntry.getValue());
-          indexes.add(getIndex(carbonTable, indexSchema));
-        }
+        IndexSchema indexSchema = new IndexSchema(indexEntry.getKey(),
+            indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER));
+        indexSchema.setProperties(indexEntry.getValue());
+        indexes.add(getIndex(carbonTable, indexSchema));
       }
     }
     return indexes;

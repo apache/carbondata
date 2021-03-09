@@ -2188,6 +2188,34 @@ public final class CarbonProperties {
   }
 
   /**
+   * Check whether coarse grain secondary index is enabled or not. If property is not configured,
+   * default value {@link CarbonCommonConstants#CARBON_COARSE_GRAIN_SECONDARY_INDEX_DEFAULT} is
+   * returned
+   */
+  public boolean isCoarseGrainSecondaryIndex(String dbName, String tableName) {
+    return isCoarseGrainSecondaryIndex(dbName, tableName,
+        CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX_DEFAULT);
+  }
+
+  /**
+   * Check whether coarse grain secondary index is enabled or not. If property is not configured,
+   * input default value is returned
+   */
+  public boolean isCoarseGrainSecondaryIndex(String dbName, String tableName, String defaultValue) {
+    String configuredValue = getProperty(
+        CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX + "." + dbName + "." + tableName);
+    if (configuredValue == null) {
+      configuredValue =
+          getProperty(CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX, defaultValue);
+    }
+    boolean isCoarseGrainSecondaryIndex = Boolean.parseBoolean(configuredValue);
+    if (isCoarseGrainSecondaryIndex) {
+      LOGGER.info("Coarse grain secondary index is enabled for " + dbName + "." + tableName);
+    }
+    return isCoarseGrainSecondaryIndex;
+  }
+
+  /**
    * for test to print current configuration
    */
   @Override

@@ -32,6 +32,7 @@ import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.ICarbonLock
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -161,6 +162,11 @@ object Compactor {
                  | SET SERDEPROPERTIES ('isSITableEnabled' = 'false')
                """.stripMargin).collect()
           }
+          CarbonIndexUtil.updateIndexStatusInBatch(carbonMainTable,
+            siCompactionIndexList,
+            IndexType.SI,
+            IndexStatus.DISABLED,
+            sparkSession)
           throw ex
       } finally {
         // once compaction is success, release the segment locks

@@ -72,7 +72,7 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession,
                 .getCarbonTable
                 .getTableUniqueName
             } else {
-              index.getIndexSchema.getRelationIdentifier.getDatabaseName + "_" + index
+              index.getTable.getAbsoluteTableIdentifier.getDatabaseName + "_" + index
                 .getIndexSchema.getIndexName
             }
             if (executorCache) {

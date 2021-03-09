@@ -102,6 +102,6 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
 
   @Override
   public String getStatement() {
-    return left.getStatement() + " <> " + right.getStatement();
+    return left.getStatement() + (isNotNull ? " is not " : " <> ") + right.getStatement();
   }
 }

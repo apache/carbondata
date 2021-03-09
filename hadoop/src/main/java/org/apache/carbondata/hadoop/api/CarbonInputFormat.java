@@ -43,6 +43,7 @@ import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.index.TableIndex;
 import org.apache.carbondata.core.index.dev.expr.IndexExprWrapper;
 import org.apache.carbondata.core.index.dev.expr.IndexWrapperSimpleInfo;
+import org.apache.carbondata.core.index.secondaryindex.CarbonCostBasedOptimizer;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -52,6 +53,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -116,6 +118,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
   private static final String FG_INDEX_PRUNING = "mapreduce.input.carboninputformat.fgindex";
+  private static final String SECONDARY_INDEX_PRUNING =
+      "mapreduce.input.carboninputformat.secondaryindex.pruning";
   private static final String READ_COMMITTED_SCOPE =
       "mapreduce.input.carboninputformat.read.committed.scope";
   private static final String READ_ONLY_DELTA = "readDeltaOnly";
@@ -269,6 +273,26 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     // if FD_INDEX_PRUNING is not set, by default we will use FG Index
     return (enable == null) || enable.equalsIgnoreCase("true");
+  }
+
+  public static void checkAndSetSecondaryIndexPruning(TableInfo tableInfo, Expression expression,
+      Configuration configuration) {
+    if (expression != null) {
+      List<String> matchingIndexTables = CarbonCostBasedOptimizer
+          .identifyRequiredTables(IndexFilter.extractColumnExpressions(expression), tableInfo);
+      if (!matchingIndexTables.isEmpty()) {
+        configuration.set(SECONDARY_INDEX_PRUNING, "true");
+      }
+    }
+  }
+
+  public static void setSecondaryIndexPruning(Configuration configuration, boolean status) {
+    configuration.set(SECONDARY_INDEX_PRUNING, Boolean.toString(status));
+  }
+
+  public static boolean isSecondaryIndexPruningEnabled(Configuration configuration) {
+    String enable = configuration.get(SECONDARY_INDEX_PRUNING);
+    return enable != null && enable.equalsIgnoreCase("true");
   }
 
   /**
@@ -425,6 +449,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       FilterResolverIntf filterResolverIntf, List<PartitionSpec> partitionNames,
       List<Segment> validSegments, List<Segment> invalidSegments,
       List<String> segmentsToBeRefreshed, boolean isCountJob, Configuration configuration) {
+    boolean isSIPruningEnabled = isSecondaryIndexPruningEnabled(configuration);
     try {
       IndexJob indexJob = (IndexJob) IndexUtil.createIndexJob(IndexUtil.DISTRIBUTED_JOB_NAME);
       if (indexJob == null) {
@@ -432,7 +457,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       return IndexUtil
           .executeIndexJob(table, filterResolverIntf, indexJob, partitionNames, validSegments,
-              invalidSegments, null, false, segmentsToBeRefreshed, isCountJob, configuration);
+              invalidSegments, null, false, segmentsToBeRefreshed, isCountJob, isSIPruningEnabled,
+              configuration);
     } catch (Exception e) {
       // Check if fallback is disabled for testing purposes then directly throw exception.
       if (CarbonProperties.getInstance().isFallBackDisabled()) {
@@ -443,7 +469,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       return IndexUtil
           .executeIndexJob(table, filterResolverIntf, IndexUtil.getEmbeddedJob(), partitionNames,
               validSegments, invalidSegments, null, true, segmentsToBeRefreshed, isCountJob,
-              configuration);
+              isSIPruningEnabled, configuration);
     }
   }
 
@@ -510,7 +536,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * Prune the blocklets using the filter expression with available index.
    * First pruned with default blocklet index, then pruned with CG and FG index
    */
-  private List<ExtendedBlocklet> getPrunedBlocklets(JobContext job, CarbonTable carbonTable,
+  public List<ExtendedBlocklet> getPrunedBlocklets(JobContext job, CarbonTable carbonTable,
       IndexFilter filter, List<Segment> validSegments, List<Segment> invalidSegments,
       List<String> segmentsToBeRefreshed) throws IOException {
     ExplainCollector.addPruningInfo(carbonTable.getTableName());
@@ -529,7 +555,9 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     LOG.info("Started block pruning ...");
     boolean isDistributedPruningEnabled = CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName());
-    if (isDistributedPruningEnabled) {
+    boolean isIndexServerContext =
+        job.getConfiguration().get("isIndexServerContext", "false").equals("true");
+    if (isDistributedPruningEnabled && !isIndexServerContext) {
       try {
         prunedBlocklets =
             getDistributedSplit(carbonTable, filter.getResolver(), partitionsToPrune, validSegments,
@@ -558,7 +586,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         return prunedBlocklets;
       }
 
-      IndexChooser chooser = new IndexChooser(getOrCreateCarbonTable(job.getConfiguration()));
+      IndexChooser chooser = new IndexChooser(getOrCreateCarbonTable(job.getConfiguration()),
+          isSecondaryIndexPruningEnabled(job.getConfiguration()));
 
       // Get the available CG indexes and prune further.
       IndexExprWrapper cgIndexExprWrapper = chooser.chooseCGIndex(filter.getResolver());
@@ -585,6 +614,13 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         // If isCGPruneFallback = true, it means that CG index pruning failed,
         // hence no need to do intersect and simply pass the prunedBlocklets from default index
         if (!isCGPruneFallback) {
+          if (isIndexServerContext) {
+            // For all blocklets initialize the detail info so that it can be serialized to driver
+            for (ExtendedBlocklet blocklet : cgPrunedBlocklets) {
+              blocklet.getDetailInfo();
+              blocklet.setCgIndexPresent(true);
+            }
+          }
           // since index index prune in segment scope,
           // the result need to intersect with previous pruned result
           prunedBlocklets =

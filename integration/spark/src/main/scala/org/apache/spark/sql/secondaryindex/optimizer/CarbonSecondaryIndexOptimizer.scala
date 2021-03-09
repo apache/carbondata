@@ -36,6 +36,7 @@ import org.apache.spark.sql.secondaryindex.optimizer.NodeType.NodeType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.secondaryindex.CarbonCostBasedOptimizer
 import org.apache.carbondata.core.util.CarbonProperties
 
 class SIFilterPushDownOperation(nodeType: NodeType)

@@ -32,6 +32,7 @@ import org.apache.carbondata.core.index.dev.expr.IndexExprWrapper;
 import org.apache.carbondata.core.index.dev.expr.IndexExprWrapperImpl;
 import org.apache.carbondata.core.index.dev.expr.OrIndexExprWrapper;
 import org.apache.carbondata.core.index.status.IndexStatus;
+import org.apache.carbondata.core.metadata.index.IndexType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -65,7 +66,8 @@ public class IndexChooser {
   private List<TableIndex> cgIndexes;
   private List<TableIndex> fgIndexes;
 
-  public IndexChooser(CarbonTable carbonTable) throws IOException {
+  public IndexChooser(CarbonTable carbonTable, boolean isIncludeSecondaryIndexes)
+      throws IOException {
     this.carbonTable = carbonTable;
     // read all indexes for this table and populate CG and FG index list
     List<TableIndex> visibleIndexes = carbonTable.getAllVisibleIndexes();
@@ -76,7 +78,11 @@ public class IndexChooser {
           != null && visibleIndex.getIndexSchema().getProperties()
           .get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(IndexStatus.ENABLED.name())) {
         IndexLevel level = visibleIndex.getIndexFactory().getIndexLevel();
+        String provider = visibleIndex.getIndexSchema().getProviderName();
         if (level == IndexLevel.CG) {
+          if (!isIncludeSecondaryIndexes && provider.equals(IndexType.SI.getIndexProviderName())) {
+            continue;
+          }
           cgIndexes.add(visibleIndex);
         } else {
           fgIndexes.add(visibleIndex);
@@ -331,6 +337,15 @@ public class IndexChooser {
 
     @Override
     public int compareTo(IndexTuple o) {
+      boolean isSecondaryIndex =
+          index.getIndexSchema().getProviderName().equals(IndexType.SI.getIndexProviderName());
+      boolean isOtherSecondaryIndex =
+          o.index.getIndexSchema().getProviderName().equals(IndexType.SI.getIndexProviderName());
+      if (isSecondaryIndex && !isOtherSecondaryIndex) {
+        return -1;
+      } else if (!isSecondaryIndex && isOtherSecondaryIndex) {
+        return 1;
+      }
       return order - o.order;
     }
 

@@ -38,8 +38,10 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, SegmentFileStore}
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
@@ -484,6 +486,12 @@ object SecondaryIndexCreator {
               .getDatabaseName
           }.${ secondaryIndexModel.secondaryIndex.indexName } SET
              |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin).collect()
+        CarbonIndexUtil.updateIndexStatus(secondaryIndexModel.carbonTable,
+          secondaryIndexModel.secondaryIndex.indexName,
+          IndexType.SI,
+          IndexStatus.DISABLED,
+          true,
+          secondaryIndexModel.sqlContext.sparkSession)
       }
       // close the executor service
       if (null != executorService) {

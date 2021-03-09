@@ -20,6 +20,7 @@ package org.apache.carbondata.presto.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +36,16 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.index.IndexStoreManager;
+import org.apache.carbondata.core.index.status.IndexStatus;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.index.IndexType;
+import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
+import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.reader.ThriftReader;
@@ -218,6 +223,7 @@ public class CarbonTableReader {
         CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
         CarbonTable carbonTable = Objects.requireNonNull(CarbonMetadata.getInstance()
             .getCarbonTable(table.getSchemaName(), table.getTableName()), "carbontable is null");
+        refreshIndexInfo(carbonTable, config);
         cache = new CarbonTableCacheModel(modifiedTime, carbonTable);
         // cache the table
         carbonCache.get().put(table, cache);
@@ -226,6 +232,51 @@ public class CarbonTableReader {
       return cache;
     } catch (Exception ex) {
       throw new RuntimeException(ex);
+    }
+  }
+
+  private void refreshIndexInfo(CarbonTable carbonTable, Configuration config) {
+    Map<String, Map<String, Map<String, String>>> indexTableMap = new ConcurrentHashMap<>();
+    String indexInfo = config.get("indexInfo", IndexTableInfo.toGson(new IndexTableInfo[0]));
+    String parentTableName = config.get("parentTableName", "");
+    String parentTableId = config.get("parentTableId", "");
+    String parentTablePath = config.get("parentTablePath", "");
+    boolean isIndexTable = Boolean.getBoolean(config.get("isIndexTable", "false"));
+    IndexTableInfo[] indexTableInfos = IndexTableInfo.fromGson(indexInfo);
+    for (IndexTableInfo indexTableInfo : indexTableInfos) {
+      Map<String, String> indexProperties = indexTableInfo.getIndexProperties();
+      String indexProvider;
+      if (indexProperties != null) {
+        indexProvider = indexProperties.get(CarbonCommonConstants.INDEX_PROVIDER);
+      } else {
+        // in case if SI table has been created before the change CARBONDATA-3765,
+        // indexProperties variable will not be present. On direct upgrade of SI store,
+        // indexProperties will be null, in that case, create indexProperties from indexCols
+        // For details, refer
+        // {@link org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore#refreshIndexInfo}
+        indexProperties = new HashMap<>();
+        indexProperties.put(CarbonCommonConstants.INDEX_COLUMNS,
+            String.join(",", indexTableInfo.getIndexCols()));
+        indexProvider = IndexType.SI.getIndexProviderName();
+        indexProperties.put(CarbonCommonConstants.INDEX_PROVIDER, indexProvider);
+        indexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.DISABLED.name());
+      }
+      if (indexTableMap.get(indexProvider) == null) {
+        Map<String, Map<String, String>> indexTableInfoMap = new HashMap<>();
+        indexTableInfoMap.put(indexTableInfo.getTableName(), indexProperties);
+        indexTableMap.put(indexProvider, indexTableInfoMap);
+      } else {
+        indexTableMap.get(indexProvider).put(indexTableInfo.getTableName(), indexProperties);
+      }
+    }
+    IndexMetadata indexMetadata =
+        new IndexMetadata(indexTableMap, parentTableName, isIndexTable, parentTablePath,
+            parentTableId);
+    try {
+      carbonTable.getTableInfo().getFactTable().getTableProperties()
+          .put(carbonTable.getCarbonTableIdentifier().getTableId(), indexMetadata.serialize());
+    } catch (IOException e) {
+      LOGGER.error("Error serializing index metadata", e);
     }
   }
 
@@ -265,6 +316,11 @@ public class CarbonTableReader {
     config.set("query.id", queryId);
     CarbonInputFormat.setTransactionalTable(config, carbonTable.isTransactionalTable());
     CarbonInputFormat.setTableInfo(config, carbonTable.getTableInfo());
+    if (CarbonProperties.getInstance().isCoarseGrainSecondaryIndex(tableInfo.getDatabaseName(),
+        tableInfo.getFactTable().getTableName(), "true")) {
+      CarbonInputFormat
+          .checkAndSetSecondaryIndexPruning(carbonTable.getTableInfo(), filters, config);
+    }
 
     JobConf jobConf = new JobConf(config);
     try {

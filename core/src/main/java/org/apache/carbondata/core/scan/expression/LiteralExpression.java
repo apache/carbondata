@@ -17,9 +17,12 @@
 
 package org.apache.carbondata.core.scan.expression;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 public class LiteralExpression extends LeafExpression {
 
@@ -58,7 +61,19 @@ public class LiteralExpression extends LeafExpression {
 
   @Override
   public String getStatement() {
-    return value == null ? null : value.toString();
+    boolean quoteString = false;
+    Object val = value;
+    if (val != null) {
+      if (dataType == DataTypes.STRING || val instanceof String) {
+        quoteString = true;
+      } else if (dataType == DataTypes.TIMESTAMP || dataType == DataTypes.DATE) {
+        val = CarbonUtil.getFormattedDateOrTimestamp(dataType == DataTypes.TIMESTAMP ?
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT :
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT, dataType, value, true);
+        quoteString = true;
+      }
+    }
+    return val == null ? null : quoteString ? "'" + val.toString() + "'" : val.toString();
   }
 
   /**

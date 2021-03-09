@@ -2317,6 +2317,34 @@ public final class CarbonCommonConstants {
   public static final String CARBON_ENABLE_INDEX_SERVER = "carbon.enable.index.server";
 
   /**
+   * This property is used to support Secondary Index as a Coarse Grain Index.
+   * 1. The default value of this property is false for the spark session. By default, Spark queries
+   * continue to use secondary indexes in the query pruning via spark query plan rewrite. If
+   * user want to use secondary index as a Coarse Grain Index in spark query pruning, need to
+   * explicitly configure this property to true. Setting this configuration to true also avoids the
+   * query plan rewrite.
+   * 2. The default value of this property is true for Presto. By default, Presto queries use
+   * secondary index as a Coarse Grain Index in spark query pruning. If user do not wish to use the
+   * secondary indexes in the query pruning, need to explicitly configure this property to false.
+   *
+   * Property is supported at both session level and carbon level. It can be configured in 2
+   * variants as show below:
+   * 1. Global - carbon.coarse.grain.secondary.index
+   * 2. For a particular table - carbon.coarse.grain.secondary.index.<dbname>.<tablename>
+   * Property when specified along with database name and table name ensures that Secondary Index
+   * as Coarse Grain Index can be enabled/disable for queries on a particular table. Property with
+   * database name and table name has higher precedence over global.
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_COARSE_GRAIN_SECONDARY_INDEX =
+      "carbon.coarse.grain.secondary.index";
+
+  /**
+   * This default value false is applicable only for the spark session
+   */
+  public static final String CARBON_COARSE_GRAIN_SECONDARY_INDEX_DEFAULT = "false";
+
+  /**
    * Configured property to enable/disable prepriming in index server
    */
   public static final String CARBON_INDEXSEVER_ENABLE_PREPRIMING =
