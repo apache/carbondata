@@ -61,6 +61,7 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
   test("test if matched segment is only loaded to cache after drop column") {
     createTablesAndLoadData
     checkAnswer(sql("select * from carbon where a=1"), sql("select * from parquet where a=1"))
+    checkAnswer(sql("select * from carbon where a=2"), sql("select * from parquet where a=2"))
     var showCache = sql("show metacache on table carbon").collect()
     assert(showCache(0).get(2).toString.equalsIgnoreCase("1/3 index files cached"))
     checkAnswer(sql("select * from carbon where a=5"), sql("select * from parquet where a=5"))
