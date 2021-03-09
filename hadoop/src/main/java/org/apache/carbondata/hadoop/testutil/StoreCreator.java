@@ -51,6 +51,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfoStats;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -357,6 +358,8 @@ public class StoreCreator {
     writeLoadMetadata(
         loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<>());
+    SegmentMetaDataInfoStats.getInstance()
+        .clear(loadModel.getTableName(), loadModel.getSegmentId());
   }
 
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
