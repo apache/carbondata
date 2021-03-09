@@ -34,6 +34,8 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -44,6 +46,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -67,6 +70,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.locks.ICarbonLock;
@@ -1624,6 +1628,36 @@ public final class CarbonUtil {
     } else {
       return null;
     }
+  }
+
+  /**
+   * Get formatted date/timestamp string
+   * @param format Expected format
+   * @param dataType Data type(date or timestamp)
+   * @param value value
+   * @param isLiteral isLiteral
+   * @return
+   */
+  public static String getFormattedDateOrTimestamp(String format, DataType dataType, Object value,
+      boolean isLiteral) {
+    SimpleDateFormat parser = new SimpleDateFormat(format);
+    if (dataType == DataTypes.DATE) {
+      parser.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
+    if (value instanceof Timestamp) {
+      return parser.format((Timestamp) value);
+    } else if (value instanceof java.sql.Date) {
+      return parser.format((java.sql.Date) value);
+    } else if (value instanceof Long) {
+      if (isLiteral) {
+        return parser.format(new Timestamp((long) value / 1000));
+      }
+      return parser.format(new Timestamp((long) value));
+    } else if (value instanceof Integer) {
+      long date = ((int) value) * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
+      return parser.format(new java.sql.Date(date));
+    }
+    return value.toString();
   }
 
   /**

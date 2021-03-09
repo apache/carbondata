@@ -733,7 +733,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       """
         |Table Scan on carbon_bloom
         | - total: 3 blocks, 3 blocklets
-        | - filter: (num1 <> null and num1 = 1)
+        | - filter: (num1 is not null and num1 = 1)
         | - pruned by Main Index
         |    - skipped: 1 blocks, 1 blocklets
         | - pruned by CG Index
@@ -752,7 +752,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       """
         |Table Scan on carbon_bloom
         | - total: 3 blocks, 3 blocklets
-        | - filter: (dictstring <> null and dictstring = S21)
+        | - filter: (dictstring is not null and dictstring = 'S21')
         | - pruned by Main Index
         |    - skipped: 1 blocks, 1 blocklets
         | - pruned by CG Index

@@ -143,6 +143,7 @@ public class SessionParams implements Serializable, Cloneable {
       case CARBON_ENABLE_INDEX_SERVER:
       case CARBON_QUERY_STAGE_INPUT:
       case CARBON_ENABLE_MV:
+      case CARBON_COARSE_GRAIN_SECONDARY_INDEX:
         isValid = CarbonUtil.validateBoolean(value);
         if (!isValid) {
           throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
@@ -216,7 +217,10 @@ public class SessionParams implements Serializable, Cloneable {
           }
         } else if (key.startsWith(CarbonCommonConstants.CARBON_INDEX_VISIBLE)) {
           isValid = true;
-        } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL)) {
+        } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL) || (
+            key.startsWith(CARBON_COARSE_GRAIN_SECONDARY_INDEX) && key.split("\\.").length == 7)) {
+          // validate the value field when property key is with database name and table name.
+          // Like, carbon.coarse.grain.secondary.index.<dbname>.<tablename>
           isValid = CarbonUtil.validateBoolean(value);
           if (!isValid) {
             throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);

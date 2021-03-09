@@ -115,7 +115,9 @@ case class CarbonRefreshIndexCommand(
         LOGGER.info(s"Acquired the metadata lock for table " +
                     s"${ parentTable.getDatabaseName}.${ parentTable.getTableName }")
         val oldIndexInfo = parentTable.getIndexInfo
-        val updatedIndexInfo = IndexTableInfo.enableIndex(oldIndexInfo, indexName)
+        val updatedIndexInfo = IndexTableInfo.setIndexStatus(oldIndexInfo,
+          indexName,
+          IndexStatus.ENABLED)
 
         // set index information in parent table
         val parentIndexMetadata = parentTable.getIndexMetadata

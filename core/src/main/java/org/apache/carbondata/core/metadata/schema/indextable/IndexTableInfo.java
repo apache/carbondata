@@ -157,15 +157,18 @@ public class IndexTableInfo implements Serializable {
     return toGson(indexTableInfos);
   }
 
-  public static String enableIndex(String oldIndexIno, String indexName) {
-    IndexTableInfo[] indexTableInfos = fromGson(oldIndexIno);
+  public static void setIndexStatus(IndexTableInfo[] indexTableInfos, String indexName,
+      IndexStatus status) {
     for (IndexTableInfo indexTableInfo : indexTableInfos) {
       if (indexTableInfo.tableName.equalsIgnoreCase(indexName)) {
-        Map<String, String> oldIndexProperties = indexTableInfo.indexProperties;
-        oldIndexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.ENABLED.name());
-        indexTableInfo.setIndexProperties(oldIndexProperties);
+        indexTableInfo.indexProperties.put(CarbonCommonConstants.INDEX_STATUS, status.name());
       }
     }
+  }
+
+  public static String setIndexStatus(String oldIndexInfo, String indexName, IndexStatus status) {
+    IndexTableInfo[] indexTableInfos = fromGson(oldIndexInfo);
+    setIndexStatus(indexTableInfos, indexName, status);
     return toGson(indexTableInfos);
   }
 

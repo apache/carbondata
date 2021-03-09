@@ -39,6 +39,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
@@ -294,6 +295,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       indexProperties.put(CarbonCommonConstants.INDEX_COLUMNS, indexTableCols.asScala.mkString(","))
       indexProperties.put(CarbonCommonConstants.INDEX_PROVIDER,
         IndexType.SI.getIndexProviderName)
+      indexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.DISABLED.name())
       val indexInfo = IndexTableUtil.checkAndAddIndexTable(
         oldIndexInfo,
         new IndexTableInfo(
@@ -444,6 +446,12 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         sparkSession.sql(
           s"""ALTER TABLE $databaseName.$indexTableName SET
              |SERDEPROPERTIES ('isSITableEnabled' = 'true')""".stripMargin).collect()
+        CarbonIndexUtil.updateIndexStatus(carbonTable,
+          indexModel.indexName,
+          IndexType.SI,
+          IndexStatus.ENABLED,
+          false,
+          sparkSession)
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
         CreateTablePostExecutionEvent(sparkSession, tableIdentifier)

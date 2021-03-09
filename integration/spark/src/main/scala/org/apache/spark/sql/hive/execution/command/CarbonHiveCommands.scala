@@ -130,7 +130,8 @@ object CarbonSetCommand {
       if (keySplits.length == 6 || keySplits.length == 4) {
         sessionParams.addProperty(key.toString, value)
       }
-    } else if (key.equalsIgnoreCase(CarbonCommonConstants.CARBON_REORDER_FILTER)) {
+    } else if (key.equalsIgnoreCase(CarbonCommonConstants.CARBON_REORDER_FILTER) ||
+               key.startsWith(CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX)) {
       sessionParams.addProperty(key, value)
     } else if (isCarbonProperty) {
       sessionParams.addProperty(key, value)

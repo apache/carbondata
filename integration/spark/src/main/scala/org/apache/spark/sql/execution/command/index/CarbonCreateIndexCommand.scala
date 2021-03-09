@@ -225,7 +225,9 @@ case class CarbonCreateIndexCommand(
               new IndexTableInfo(parentTable.getDatabaseName, indexModel.indexName,
                 indexSchema.getProperties),
               false)
-            val enabledIndexInfo = IndexTableInfo.enableIndex(indexInfo, indexModel.indexName)
+            val enabledIndexInfo = IndexTableInfo.setIndexStatus(indexInfo,
+              indexModel.indexName,
+              IndexStatus.ENABLED)
 
             // set index information in parent table. Create it if it is null.
             val parentIndexMetadata = if (

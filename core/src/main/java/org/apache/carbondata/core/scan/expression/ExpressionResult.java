@@ -24,10 +24,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -172,25 +170,9 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     try {
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
-        String format = CarbonUtil.getFormatFromProperty(this.getDataType());
-        SimpleDateFormat parser = new SimpleDateFormat(format);
-        if (this.getDataType() == DataTypes.DATE) {
-          parser.setTimeZone(TimeZone.getTimeZone("GMT"));
-        }
-        if (value instanceof Timestamp) {
-          return parser.format((Timestamp) value);
-        } else if (value instanceof java.sql.Date) {
-          return parser.format((java.sql.Date) value);
-        } else if (value instanceof Long) {
-          if (isLiteral) {
-            return parser.format(new Timestamp((long) value / 1000));
-          }
-          return parser.format(new Timestamp((long) value));
-        } else if (value instanceof Integer) {
-          long date = ((int) value) * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
-          return parser.format(new java.sql.Date(date));
-        }
-        return value.toString();
+        return CarbonUtil
+            .getFormattedDateOrTimestamp(CarbonUtil.getFormatFromProperty(dataType), dataType,
+                value, isLiteral);
       } else {
         return value.toString();
       }

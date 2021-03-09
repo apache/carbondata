@@ -18,6 +18,7 @@
 package org.apache.carbondata.presto;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -82,6 +83,9 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
         new HdfsEnvironment.HdfsContext(session, carbonSplit.getDatabase(), carbonSplit.getTable()),
         new Path(carbonSplit.getSchema().getProperty("tablePath")));
     configuration = carbonTableReader.updateS3Properties(configuration);
+    for (Map.Entry<Object, Object> entry : carbonSplit.getSchema().entrySet()) {
+      configuration.set(entry.getKey().toString(), entry.getValue().toString());
+    }
     CarbonTable carbonTable = getCarbonTable(carbonSplit, configuration);
     boolean isDirectVectorFill = carbonTableReader.config.getPushRowFilter() == null ||
         carbonTableReader.config.getPushRowFilter().equalsIgnoreCase("false");

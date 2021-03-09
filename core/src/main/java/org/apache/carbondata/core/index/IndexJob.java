@@ -35,6 +35,8 @@ public interface IndexJob extends Serializable {
 
   void execute(CarbonTable carbonTable, FileInputFormat<Void, BlockletIndexWrapper> format);
 
+  Object[] execute(String sql);
+
   List<ExtendedBlocklet> execute(IndexInputFormat indexInputFormat, Configuration configuration);
 
   Long executeCountJob(IndexInputFormat indexInputFormat, Configuration configuration);

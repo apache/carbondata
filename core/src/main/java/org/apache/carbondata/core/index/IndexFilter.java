@@ -134,7 +134,7 @@ public class IndexFilter implements Serializable {
     }
   }
 
-  private Set<String> extractColumnExpressions(Expression expression) {
+  public static Set<String> extractColumnExpressions(Expression expression) {
     Set<String> columnExpressionList = new HashSet<>();
     for (Expression expressions: expression.getChildren()) {
       if (expressions != null && expressions.getChildren() != null

@@ -83,7 +83,8 @@ class CarbonScanRDD[T: ClassTag](
     @transient val partitionNames: Seq[PartitionSpec],
     val dataTypeConverterClz: Class[_ <: DataTypeConverter] = classOf[SparkDataTypeConverterImpl],
     val readSupportClz: Class[_ <: CarbonReadSupport[_]] = SparkReadSupport.readSupportClass,
-    @transient var splits: java.util.List[InputSplit] = null)
+    @transient var splits: java.util.List[InputSplit] = null,
+    val segmentIds: Option[String] = None)
   extends CarbonRDDWithTableInfo[T](spark, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -127,6 +128,16 @@ class CarbonScanRDD[T: ClassTag](
         prepareFileInputFormatForDriver(job.getConfiguration)
       } else {
         prepareInputFormatForDriver(job.getConfiguration)
+      }
+      if (segmentIds.isDefined) {
+        CarbonInputFormat.setQuerySegment(job.getConfiguration, segmentIds.get)
+      }
+      if (indexFilter != null && CarbonProperties.getInstance()
+        .isCoarseGrainSecondaryIndex(tableInfo.getDatabaseName,
+          tableInfo.getFactTable.getTableName)) {
+        CarbonInputFormat.checkAndSetSecondaryIndexPruning(tableInfo,
+          indexFilter.getExpression,
+          job.getConfiguration)
       }
       // initialise query_id for job
       job.getConfiguration.set("query.id", queryId)

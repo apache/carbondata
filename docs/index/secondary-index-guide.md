@@ -217,3 +217,32 @@ Note: This command is not supported with other concurrent operations.
 ## Complex DataType support on SI
 Currently, only complex Array types are supported for creating secondary indexes. Nested Array
 support and other complex types support will be supported in the future.
+
+## Secondary Index as a Coarse Grain Index in query processing (Experimental)
+Secondary Indexes are used in main table query pruning by rewriting the Spark plan during course of 
+query execution. It is not possible to use Secondary Indexes in the query pruning when the query is 
+fired from engines other than Spark (i.e., Presto, Hive etc). To address this issue, 
+Secondary Index is implemented as a Coarse Grain Index similar to Bloom. Coarse Grain Index pruning 
+happens right after default pruning of the table being queried. A new property is introduced at 
+session level and carbon level to support Secondary Index as a Coarse Grain Index. It can be 
+configured in two variants as show below:
+1. Configure globally - ```carbon.coarse.grain.secondary.index```
+2. Configure for a particular table - ```carbon.coarse.grain.secondary.index.<dbname>.<tablename>```
+
+Property when specified along with database name and table name ensures that Secondary Index as 
+Coarse Grain Index can be enabled/disable for query pruning on a particular table. It has higher 
+precedence over global configuration.
+
+The default value of the property is ```false``` for the Spark session. By default, Spark 
+queries continue to use Secondary Indexes in the query pruning via spark query plan rewrite. If 
+user want to use Secondary Index as a Coarse Grain Index in spark query pruning, need to explicitly 
+configure the property to ```true```. Setting the configuration to ```true``` also avoids the 
+query plan rewrite. Since the feature is newly introduced, unless existing queries are working with 
+Coarse Grain Secondary Index, and the performance improvement is evident, It is recommended to 
+avoid using this property for the existing customers using the Secondary Indexes with Spark queries. 
+
+The default value of this property is ```true``` for Presto. By default, Presto queries use 
+Secondary Index as a Coarse Grain Index in spark query pruning. If user do not wish to use the 
+Secondary Indexes in the query pruning, need to explicitly configure this property to ```false```.
+
+Note: This feature is not supported with the Secondary Index tables created on the older versions.

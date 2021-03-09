@@ -26,15 +26,18 @@ import org.apache.spark.Partition
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.index.{IndexInputSplit, IndexStoreManager, Segment}
+import org.apache.carbondata.core.index.{IndexFilter, IndexInputFormat, IndexInputSplit, IndexStoreManager, Segment}
 import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
+import org.apache.carbondata.core.indexstore.ExtendedBlockletWrapper
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.readcommitter.{LatestFilesReadCommittedScope, TableStatusReadCommittedScope}
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 object DistributedRDDUtils {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -393,5 +396,37 @@ object DistributedRDDUtils {
                     s" in the cache")
       }
     }
+  }
+
+  def pruneOnDriver(request: IndexInputFormat): ExtendedBlockletWrapper = {
+    val job = CarbonSparkUtil.createHadoopJob()
+    val conf = job.getConfiguration
+    val tableInfo = request.getCarbonTable.getTableInfo
+    val identifier = request.getCarbonTable.getAbsoluteTableIdentifier
+    val indexFilter = new IndexFilter(request.getCarbonTable,
+      request.getFilterResolverIntf.getFilterExpression)
+    CarbonInputFormat.setTableInfo(conf, tableInfo)
+    CarbonInputFormat.setFilterPredicates(conf, indexFilter)
+    CarbonInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
+    CarbonInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)
+    CarbonInputFormat.setPartitionsToPrune(conf, request.getPartitions)
+    CarbonInputFormat.setTransactionalTable(conf, tableInfo.isTransactionalTable)
+    CarbonInputFormat.setTablePath(conf,
+      identifier.appendWithLocalPrefix(identifier.getTablePath))
+    CarbonInputFormat.setQuerySegment(conf, identifier)
+    CarbonInputFormat.setColumnProjection(conf, Array("positionId"))
+    CarbonInputFormat.setReadCommittedScope(conf, request.getReadCommittedScope)
+    CarbonInputFormat.setSegmentsToAccess(conf, request.getValidSegments)
+    CarbonInputFormat.setValidateSegmentsToAccess(conf, false)
+    CarbonInputFormat.setSecondaryIndexPruning(conf, request.isSIPruningEnabled)
+    conf.set("isIndexServerContext", "true")
+    val blocklets = new CarbonTableInputFormat[Object].getPrunedBlocklets(job,
+      request.getCarbonTable,
+      indexFilter,
+      request.getValidSegments,
+      new java.util.ArrayList(),
+      new java.util.ArrayList())
+    new ExtendedBlockletWrapper(blocklets, request.getCarbonTable.getTablePath, request.getQueryId,
+      request.isWriteToFile, request.isCountStarJob)
   }
 }

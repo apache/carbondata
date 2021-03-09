@@ -20,7 +20,7 @@ package org.apache.carbondata.core.metadata.index;
 public enum IndexType {
   LUCENE("org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory", "lucene"),
   BLOOMFILTER("org.apache.carbondata.index.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
-  SI("", "si");
+  SI("org.apache.carbondata.index.secondary.SecondaryIndexFactory", "si");
 
 
   /**
@@ -57,6 +57,8 @@ public enum IndexType {
       return LUCENE;
     } else if (BLOOMFILTER.isEqual(indexProviderName)) {
       return BLOOMFILTER;
+    } else if (SI.isEqual(indexProviderName)) {
+      return SI;
     } else {
       throw new UnsupportedOperationException("Unknown index provider" + indexProviderName);
     }

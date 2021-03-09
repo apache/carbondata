@@ -48,11 +48,11 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
 
     checkExistence(sql(" explain select * from complex1 where array_contains(arr,'sd')"),
       true,
-      "PushedFilters: [arr = sd]")
+      "PushedFilters: [arr = 'sd']")
 
     checkExistence(sql(" explain select count(*) from complex1 where array_contains(arr,'sd')"),
       true,
-      "PushedFilters: [arr = sd]")
+      "PushedFilters: [arr = 'sd']")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,'sd')"),
       Seq(Row(mutable.WrappedArray.make(Array("sd", "df", "gh"))),
@@ -263,13 +263,13 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
       sql("explain select * from complex1 " +
           "where array_contains(arr,cast('2018-01-01 00:00:00' as timestamp))"),
       true,
-      "PushedFilters: [arr = 1514793600000000]")
+      "PushedFilters: [arr = '2018-01-01 00:00:00']")
 
     checkExistence(
       sql("explain select count(*) from complex1 " +
           "where array_contains(arr,cast('2018-01-01 00:00:00' as timestamp))"),
       true,
-      "PushedFilters: [arr = 1514793600000000]")
+      "PushedFilters: [arr = '2018-01-01 00:00:00']")
 
     checkAnswer(
       sql("select * from complex1 " +
@@ -295,13 +295,13 @@ class TestArrayContainsPushDown extends QueryTest with BeforeAndAfterAll {
     checkExistence(
       sql("explain select * from complex1 where array_contains(arr,cast('2018-01-01' as date))"),
       true,
-      "PushedFilters: [arr = 17532]")
+      "PushedFilters: [arr = '2018-01-01']")
 
     checkExistence(
       sql("explain select count(*) from complex1 " +
           "where array_contains(arr,cast('2018-01-01' as date))"),
       true,
-      "PushedFilters: [arr = 17532]")
+      "PushedFilters: [arr = '2018-01-01']")
 
     checkAnswer(sql(" select * from complex1 where array_contains(arr,cast('2018-01-01' as date))"),
       Seq(Row(mutable.WrappedArray.make(
