@@ -30,6 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.ObjectSerializationUtil
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
 object MergeIndexUtil {
@@ -43,11 +44,36 @@ object MergeIndexUtil {
     val sparkSession = compactionCallableModel.sqlContext.sparkSession
     if (!carbonTable.isStreamingSink) {
       val mergedSegmentIds = getMergedSegmentIds(mergedLoads)
+      val carbonLoadModel = compactionCallableModel.carbonLoadModel
+      val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
+      var partitionInfo: java.util.List[String] = null
+      var tempFolderPath: String = null
+      var currPartitionSpec: Option[String] = None
+
+      mergedSegmentIds.foreach{ mergedSegmentId =>
+       segmentFileNameMap.put(mergedSegmentId, String.valueOf(carbonLoadModel.getFactTimeStamp))
+      }
+
+      if (carbonTable.isHivePartitionTable) {
+        tempFolderPath = carbonLoadModel.getFactTimeStamp.toString + ".tmp"
+        if (compactionCallableModel.compactedPartitions != null) {
+          val partitionSpecs = compactionCallableModel.compactedPartitions.getOrElse(List.empty)
+          currPartitionSpec = Some(ObjectSerializationUtil.convertObjectToString(
+            new util.ArrayList(partitionSpecs.asJava)))
+          partitionInfo = partitionSpecs.map(_.getLocation.toString).asJava
+        }
+      }
+
       CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
         mergedSegmentIds,
-        SegmentStatusManager.mapSegmentToStartTime(carbonTable),
+        segmentFileNameMap,
         carbonTable.getTablePath,
-        carbonTable, false)
+        carbonTable,
+        false,
+        partitionInfo,
+        tempFolderPath,
+        false,
+        currPartitionSpec)
     }
   }
 
