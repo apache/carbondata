@@ -215,7 +215,7 @@ class CarbonSIRebuildRDD[K, V](
 
         // add task completion listener to clean up the resources
         context.addTaskCompletionListener { _ =>
-          close(splitList)
+          close()
         }
         try {
           // fire a query and get the results.
@@ -271,7 +271,7 @@ class CarbonSIRebuildRDD[K, V](
           throw e
       }
 
-      private def close(splits: util.List[CarbonInputSplit]): Unit = {
+      private def close(): Unit = {
         deleteLocalDataFolders()
         // close all the query executor service and clean up memory acquired during query processing
         if (null != exec) {
@@ -283,12 +283,6 @@ class CarbonSIRebuildRDD[K, V](
         if (null != processor) {
           LOGGER.info("Closing compaction processor instance to clean up loading resources")
           processor.close()
-        }
-
-        // delete all the old data files which are used for merging
-        splits.asScala.foreach { split =>
-          val carbonFile = FileFactory.getCarbonFile(split.getFilePath)
-          carbonFile.delete()
         }
       }
 
