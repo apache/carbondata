@@ -460,6 +460,9 @@ object SecondaryIndexCreator {
     } catch {
       case ex: Exception =>
         LOGGER.error("Load to SI table failed", ex)
+        if (isCompactionCall) {
+          segmentLocks.foreach(segmentLock => segmentLock.unlock())
+        }
         FileInternalUtil
           .updateTableStatus(validSegmentList,
             secondaryIndexModel.carbonLoadModel.getDatabaseName,

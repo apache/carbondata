@@ -93,6 +93,11 @@ object Compactor {
             segmentToSegmentTimestampMap, null,
             forceAccessSegment, isCompactionCall = true,
             isLoadToFailedSISegments = false)
+        if (segmentLocks.isEmpty) {
+          LOGGER.error(s"Not able to acquire segment lock on the specific segment. " +
+            s"Load the compacted segment ${validSegments.head} into SI table failed");
+          return
+        }
         allSegmentsLock ++= segmentLocks
         CarbonInternalLoaderUtil.updateLoadMetadataWithMergeStatus(
           indexCarbonTable,
