@@ -107,6 +107,9 @@ class CarbonTableCompactor(
         }
       }
       try {
+        // need to be cleared for multiple compactions.
+        // only contains the segmentIds which have to be compacted.
+        compactedSegments.clear()
         scanSegmentsAndSubmitJob(validSegments, compactedSegments, compactedLoad)
       } catch {
         case e: Exception =>
@@ -296,26 +299,50 @@ class CarbonTableCompactor(
 
     if (finalMergeStatus) {
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
-      var segmentFilesForIUDCompact = new util.ArrayList[Segment]()
       var segmentFileName: String = null
+
+      val mergeIndex = CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean
+
+      if (compactionType != CompactionType.IUD_DELETE_DELTA && mergeIndex) {
+        MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
+      }
+
       if (carbonTable.isHivePartitionTable) {
-        val readPath =
-          CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
-          CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
-        // Merge all partition files into a single file.
-        segmentFileName =
-          mergedLoadNumber + "_" + carbonLoadModel.getFactTimeStamp
-        val segmentFile = SegmentFileStore
-          .mergeSegmentFiles(readPath,
-            segmentFileName,
-            CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath))
-        if (segmentFile != null) {
-          SegmentFileStore
-            .moveFromTempFolder(segmentFile,
-              carbonLoadModel.getFactTimeStamp + ".tmp",
-              carbonLoadModel.getTablePath)
+        if (mergeIndex) {
+          val segmentTmpFileName = carbonLoadModel.getFactTimeStamp + CarbonTablePath.SEGMENT_EXT
+          segmentFileName = mergedLoadNumber + "_" + segmentTmpFileName
+          val segmentTmpFile = FileFactory.getCarbonFile(
+            CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath, segmentTmpFileName))
+          if (!segmentTmpFile.renameForce(
+            CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath, segmentFileName))) {
+            throw new Exception(s"Rename segment file from ${segmentTmpFileName} " +
+              s"to ${segmentFileName} failed.")
+          }
+          val tmpPath =
+            CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
+              CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
+          FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(tmpPath))
+        } else {
+          val readPath =
+            CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
+              CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
+          // Merge all partition files into a single file.
+          segmentFileName =
+            mergedLoadNumber + "_" + carbonLoadModel.getFactTimeStamp
+          val segmentFile = SegmentFileStore
+            .mergeSegmentFiles(readPath,
+              segmentFileName,
+              CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath))
+          if (segmentFile != null) {
+            SegmentFileStore
+              .moveFromTempFolder(segmentFile,
+                carbonLoadModel.getFactTimeStamp + ".tmp",
+                carbonLoadModel.getTablePath)
+          }
+          segmentFileName = segmentFileName + CarbonTablePath.SEGMENT_EXT
         }
-        segmentFileName = segmentFileName + CarbonTablePath.SEGMENT_EXT
       } else {
         // Get the segment files each updated segment in case of IUD compaction
         val segmentMetaDataInfo = CommonLoadUtils.getSegmentMetaDataInfoFromAccumulator(
@@ -360,10 +387,6 @@ class CarbonTableCompactor(
         throw new Exception(s"Compaction failed to update metadata for table" +
                             s" ${ carbonLoadModel.getDatabaseName }." +
                             s"${ carbonLoadModel.getTableName }")
-      }
-
-      if (compactionType != CompactionType.IUD_DELETE_DELTA) {
-        MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
       }
 
       val compactionLoadStatusPostEvent = AlterTableCompactionPostStatusUpdateEvent(sc.sparkSession,
