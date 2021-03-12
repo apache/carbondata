@@ -750,6 +750,22 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("drop table if exists partitionone")
   }
 
+  test("test partition on MV with sort column") {
+    sql("drop table if exists partitionone")
+    sql("create table if not exists partitionone (ts timestamp, " +
+        "metric STRING, tags_id STRING, value DOUBLE) partitioned by (ts1 timestamp,ts2 timestamp) stored as carbondata TBLPROPERTIES ('SORT_COLUMNS'='metric,ts2')")
+    sql("insert into partitionone values ('2020-09-25 05:38:00','abc','xyz-e01',392.235,'2020-09-25 05:30:00','2020-09-28 05:38:00')")
+    val mvQuery = "select tags_id ,metric ,ts1, ts2, timeseries(ts,'thirty_minute') as ts,sum(value),avg(value)," +
+                  "min(value),max(value) from partitionone group by metric, tags_id, timeseries(ts,'thirty_minute') ,ts1, ts2"
+    val result = sql(mvQuery)
+    sql("drop materialized view if exists dm1")
+    sql(s"create materialized view dm1  as $mvQuery")
+    val df = sql(mvQuery)
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "dm1"))
+    checkAnswer(result, df)
+    sql("drop table if exists partitionone")
+  }
+
   test("test partition on timeseries column") {
     sql("drop table if exists partitionone")
     sql("create table partitionone(a int,b int) partitioned by (c timestamp,d timestamp) STORED AS carbondata")

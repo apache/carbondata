@@ -163,7 +163,9 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         null
       }
     val convertedStaticPartition = getConvertedStaticPartitionMap(partitionColumnSchema)
-    val (reArrangedIndex, selectedColumnSchema) = getReArrangedIndexAndSelectedSchema(tableInfo,
+    val (reArrangedIndex, reArrangedMVIndex, selectedColumnSchema) =
+      getReArrangedIndexAndSelectedSchema(
+      tableInfo,
       partitionColumnSchema,
       carbonLoadModel)
     val newLogicalPlan = getReArrangedLogicalPlan(
@@ -181,7 +183,19 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
       if (isNotReArranged) {
         // Re-arrange the catalog table schema and output for partition relation
         logicalPartitionRelation =
-          getReArrangedSchemaLogicalRelation(reArrangedIndex, logicalPartitionRelation)
+          if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isMV) {
+            // Re-arrange non-partition columns in the catalog table schema based on rearranged
+            // mv index order. Example: MV columns: c1,c2(partition_column),c3(sort_column),c4.
+            // Based on this order, rearranged index will be like (2,0,3,1). Catalog table schema
+            // order will be (c1,c3,c4,c2) where the partition column will be always at last. If we
+            // rearrange the logical relation based on above order, catalog table schema will be
+            // changed to (c4,c1,c2,c3), which will be wrong. Hence, Reorder MV create column
+            // order to (c1,c3,c4,c2) and use rearranged mv index (1,0,2,3) to rearrange
+            // logical relation schema.
+            getReArrangedSchemaLogicalRelation(reArrangedMVIndex, logicalPartitionRelation)
+          } else {
+            getReArrangedSchemaLogicalRelation(reArrangedIndex, logicalPartitionRelation)
+          }
       }
     }
     var isUpdateTableStatusRequired = false
@@ -488,10 +502,12 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
   def getReArrangedIndexAndSelectedSchema(
       tableInfo: TableInfo,
       partitionColumnSchema: mutable.Buffer[ColumnSchema],
-      carbonLoadModel: CarbonLoadModel): (Seq[Int], Seq[ColumnSchema]) = {
+      carbonLoadModel: CarbonLoadModel): (Seq[Int], Seq[Int], Seq[ColumnSchema]) = {
     var reArrangedIndex: Seq[Int] = Seq()
+    var reArrangedMVIndex: Seq[Int] = Seq()
     var selectedColumnSchema: Seq[ColumnSchema] = Seq()
     var partitionIndex: Seq[Int] = Seq()
+    var partitionMVIndex: Seq[Int] = Seq()
     val properties = tableInfo.getFactTable.getTableProperties.asScala
     val spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
     // internal order ColumnSchema (non-flat structure)
@@ -503,7 +519,10 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
       null
     }
     var createOrderColumns = table.getCreateOrderColumn.asScala
+    var createOrderMVColumns = table.getCreateOrderColumn.asScala
     val createOrderMap = mutable.Map[String, Int]()
+    val createOrderMVTableMap = mutable.Map[String, Int]()
+    val isMV = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isMV
     if (partitionColumnNames != null && isAlteredSchema(tableInfo.getFactTable)) {
       // For alter table drop/add column scenarios, partition column may not be in the end.
       // Need to keep it in the end.
@@ -511,9 +530,19 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         partitionColumnNames.contains(col.getColumnSchema.getColumnName)) ++
                            createOrderColumns.filter(col =>
                              partitionColumnNames.contains(col.getColumnSchema.getColumnName))
+    } else if (partitionColumnNames != null && isMV) {
+      // For mv as partition table scenarios, partition column may not be in the end.
+      // Need to keep it in the end.
+      createOrderMVColumns = createOrderMVColumns.filterNot(col =>
+        partitionColumnNames.contains(col.getColumnSchema.getColumnName)) ++
+                             createOrderMVColumns.filter(col =>
+                               partitionColumnNames.contains(col.getColumnSchema.getColumnName))
     }
     createOrderColumns.zipWithIndex.map {
       case (col, index) => createOrderMap.put(col.getColName, index)
+    }
+    createOrderMVColumns.zipWithIndex.map {
+      case (col, index) => createOrderMVTableMap.put(col.getColName, index)
     }
     columnSchema.foreach {
       col =>
@@ -525,9 +554,11 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         if (partitionColumnNames != null &&
             partitionColumnNames.contains(col.getColumnName)) {
           partitionIndex = partitionIndex :+ createOrderMap(col.getColumnName)
+          partitionMVIndex = partitionMVIndex :+ createOrderMVTableMap(col.getColumnName)
           skipPartitionColumn = true
         } else {
           reArrangedIndex = reArrangedIndex :+ createOrderMap(col.getColumnName)
+          reArrangedMVIndex = reArrangedMVIndex :+ createOrderMVTableMap(col.getColumnName)
         }
         if (!skipPartitionColumn) {
           selectedColumnSchema = selectedColumnSchema :+ col
@@ -540,8 +571,9 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     if (partitionIndex.nonEmpty) {
       // keep partition columns in the end and in the original create order
       reArrangedIndex = reArrangedIndex ++ partitionIndex.sortBy(x => x)
+      reArrangedMVIndex = reArrangedMVIndex ++ partitionMVIndex.sortBy(x => x)
     }
-    (reArrangedIndex, selectedColumnSchema)
+    (reArrangedIndex, reArrangedMVIndex, selectedColumnSchema)
   }
 
 }
