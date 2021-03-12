@@ -896,19 +896,19 @@ public final class CarbonLoaderUtil {
       Collections.sort(inputNode2Blocks);
     }
 
-    Map<String, Integer> executor2Idx = new HashMap<>();
+    Map<String, Integer> node2Idx = new HashMap<>();
     for (NodeMultiBlockRelation nodeMultiBlockRelation : inputNode2Blocks) {
       String nodeName = nodeMultiBlockRelation.getNode();
       // assign the block to the node only if the node is active
-      String activeExecutor = nodeName;
+      String activeNode = nodeName;
       if (null != activeNodes) {
-        activeExecutor = getActiveExecutor(activeNodes, nodeName);
-        if (null == activeExecutor) {
+        activeNode = getActiveNode(activeNodes, nodeName);
+        if (null == activeNode) {
           continue;
         }
       }
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("First Assignment iteration: assign for executor: " + activeExecutor);
+        LOGGER.debug("First Assignment iteration: assign for executor: " + activeNode);
       }
 
       List<Distributable> blocksInThisNode = nodeMultiBlockRelation.getBlocks();
@@ -925,17 +925,17 @@ public final class CarbonLoaderUtil {
           continue;
         }
         // this is the first time to add block to this node, initialize it
-        if (!executor2Idx.containsKey(activeExecutor)) {
-          Integer idx = executor2Idx.size();
-          outputNode2Blocks.add(idx, new NodeMultiBlockRelation(activeExecutor,
+        if (!node2Idx.containsKey(activeNode)) {
+          Integer idx = node2Idx.size();
+          outputNode2Blocks.add(idx, new NodeMultiBlockRelation(activeNode,
               new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE)));
-          executor2Idx.put(activeExecutor, idx);
+          node2Idx.put(activeNode, idx);
         }
 
         // assign this block to this node if node has capacity left
         if (BlockAssignmentStrategy.BLOCK_NUM_FIRST == blockAssignmentStrategy) {
           if (nodeCapacity < expectedSizePerNode) {
-            Integer idx = executor2Idx.get(activeExecutor);
+            Integer idx = node2Idx.get(activeNode);
             List<Distributable> infos = outputNode2Blocks.get(idx).getBlocks();
             infos.add(block);
             nodeCapacity++;
@@ -943,7 +943,7 @@ public final class CarbonLoaderUtil {
               try {
                 LOGGER.debug("First Assignment iteration: block("
                     + StringUtils.join(block.getLocations(), ", ")
-                    + ")-->" + activeExecutor);
+                    + ")-->" + activeNode);
               } catch (IOException e) {
                 LOGGER.error(e.getMessage(), e);
               }
@@ -960,14 +960,14 @@ public final class CarbonLoaderUtil {
           // be assigned in the last RoundRobin iteration.
           if (nodeCapacity == 0 || nodeCapacity < expectedSizePerNode) {
             if (nodeCapacity == 0 || nodeCapacity + thisBlockSize <= expectedSizePerNode * 1.05D) {
-              Integer idx = executor2Idx.get(activeExecutor);
+              Integer idx = node2Idx.get(activeNode);
               List<Distributable> blocks = outputNode2Blocks.get(idx).getBlocks();
               blocks.add(block);
               nodeCapacity += thisBlockSize;
               if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
                     "First Assignment iteration: " + ((TableBlockInfo) block).getFilePath() + '-'
-                        + ((TableBlockInfo) block).getBlockLength() + "-->" + activeExecutor);
+                        + ((TableBlockInfo) block).getBlockLength() + "-->" + activeNode);
               }
               remainingBlocks.remove(block);
             }
@@ -1038,34 +1038,30 @@ public final class CarbonLoaderUtil {
    *
    * @param activeNode
    * @param nodeName
-   * @return returns true if active else false.
+   * @return hostName or hostAddress if node is active
    */
-  private static String getActiveExecutor(List activeNode, String nodeName) {
-    boolean isActiveNode = activeNode.contains(nodeName);
-    if (isActiveNode) {
-      return nodeName;
-    }
-    //if localhost then retrieve the localhost name then do the check
-    else if (nodeName.equals("localhost")) {
-      try {
+  private static String getActiveNode(List<String> activeNode, String nodeName) {
+    try {
+      boolean isActiveNode = activeNode.contains(nodeName);
+      if (isActiveNode) {
+        return nodeName;
+      }
+      //if localhost then retrieve the localhost name then do the check
+      else if (nodeName.equals("localhost")) {
         String hostName = InetAddress.getLocalHost().getHostName();
         isActiveNode = activeNode.contains(hostName);
         if (isActiveNode) {
           return hostName;
         }
-      } catch (UnknownHostException ue) {
-        isActiveNode = false;
-      }
-    } else {
-      try {
+      } else {
         String hostAddress = InetAddress.getByName(nodeName).getHostAddress();
         isActiveNode = activeNode.contains(hostAddress);
         if (isActiveNode) {
           return hostAddress;
         }
-      } catch (UnknownHostException ue) {
-        isActiveNode = false;
       }
+    } catch (UnknownHostException ue) {
+      return null;
     }
     return null;
   }

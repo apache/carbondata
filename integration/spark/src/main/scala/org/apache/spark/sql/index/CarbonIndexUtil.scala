@@ -502,7 +502,7 @@ object CarbonIndexUtil {
                 if (null == detail || detail.length == 0) {
                   val newDetails = new LoadMetadataDetails
                   newDetails.setLoadName(metadataDetail)
-                  LOGGER.error(
+                  LOGGER.info(
                     "Added in SILoadFailedSegment " + newDetails.getLoadName + " for SI" +
                     " table " + indexTableName + "." + carbonTable.getTableName)
                   failedLoadMetadataDetails.add(newDetails)
@@ -524,7 +524,7 @@ object CarbonIndexUtil {
                         LockUsage.LOCK)
                     if (segmentLockOfProbableOnCompactionSeg.lockWithRetries()) {
                       segmentLocks += segmentLockOfProbableOnCompactionSeg
-                      LOGGER.error(
+                      LOGGER.info(
                         "Added in SILoadFailedSegment " + detail(0).getLoadName + " for SI "
                         + "table " + indexTableName + "." + carbonTable.getTableName)
                       failedLoadMetadataDetails.add(detail(0))
