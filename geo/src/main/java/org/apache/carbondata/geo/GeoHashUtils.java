@@ -277,6 +277,21 @@ public class GeoHashUtils {
     return str.trim().split("\\s+");
   }
 
+  public static String getRangeListAsString(List<Long[]> rangeList) {
+    StringBuilder rangeString = null;
+    for (Long[] range : rangeList) {
+      if (rangeString != null) {
+        rangeString.append(",");
+      }
+      if (rangeString == null) {
+        rangeString = new StringBuilder(StringUtils.join(range, " "));
+      } else {
+        rangeString.append(StringUtils.join(range, " "));
+      }
+    }
+    return rangeString.toString();
+  }
+
   public static void validateRangeList(List<Long[]> ranges) {
     for (Long[] range : ranges) {
       if (range.length != 2) {

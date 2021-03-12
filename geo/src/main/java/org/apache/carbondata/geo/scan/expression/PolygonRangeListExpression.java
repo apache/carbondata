@@ -40,22 +40,41 @@ public class PolygonRangeListExpression extends PolygonExpression {
 
   private String opType;
 
+  /**
+   * If range start's with RANGELIST_REG_EXPRESSION or not
+   */
+  private boolean hasPattern = true;
+
+  private List<String> polygonRangeLists = new ArrayList<>();
+
   public PolygonRangeListExpression(String polygonRangeList, String opType, String columnName,
       CustomIndex indexInstance) {
     super(polygonRangeList, columnName, indexInstance);
     this.opType = opType;
   }
 
+  public PolygonRangeListExpression(String polygonRangeList, String opType, String columnName,
+      CustomIndex indexInstance, boolean hasPattern, List<String> polygonRangeLists) {
+    super(polygonRangeList, columnName, indexInstance);
+    this.opType = opType;
+    this.hasPattern = hasPattern;
+    this.polygonRangeLists = polygonRangeLists;
+  }
+
   @Override
   public void processExpression() {
     // 1. parse the range list string
     List<String> rangeLists = new ArrayList<>();
-    Pattern pattern =
-        Pattern.compile(GeoConstants.RANGELIST_REG_EXPRESSION, Pattern.CASE_INSENSITIVE);
-    Matcher matcher = pattern.matcher(polygon);
-    while (matcher.find()) {
-      String matchedStr = matcher.group();
-      rangeLists.add(matchedStr);
+    if (hasPattern) {
+      Pattern pattern =
+          Pattern.compile(GeoConstants.RANGELIST_REG_EXPRESSION, Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(polygon);
+      while (matcher.find()) {
+        String matchedStr = matcher.group();
+        rangeLists.add(matchedStr);
+      }
+    } else {
+      rangeLists.addAll(polygonRangeLists);
     }
     // 2. process the range lists
     if (rangeLists.size() > 0) {
@@ -73,7 +92,7 @@ public class PolygonRangeListExpression extends PolygonExpression {
     }
   }
 
-  private void sortRange(List<Long[]> rangeList) {
+  public static void sortRange(List<Long[]> rangeList) {
     rangeList.sort(new Comparator<Long[]>() {
       @Override
       public int compare(Long[] x, Long[] y) {
@@ -82,7 +101,7 @@ public class PolygonRangeListExpression extends PolygonExpression {
     });
   }
 
-  private void combineRange(List<Long[]> rangeList) {
+  public static void combineRange(List<Long[]> rangeList) {
     for (int i = 0, j = i + 1; i < rangeList.size() - 1; i++, j++) {
       long previousEnd = rangeList.get(i)[1];
       long nextStart = rangeList.get(j)[0];
@@ -97,7 +116,7 @@ public class PolygonRangeListExpression extends PolygonExpression {
     rangeList.removeIf(item -> item[0] == null && item[1] == null);
   }
 
-  private List<Long[]> getRangeListFromString(String rangeListString) {
+  public static List<Long[]> getRangeListFromString(String rangeListString) {
     String[] rangeStringList = rangeListString.trim().split(GeoConstants.DEFAULT_DELIMITER);
     List<Long[]> rangeList = new ArrayList<>();
     for (String rangeString : rangeStringList) {

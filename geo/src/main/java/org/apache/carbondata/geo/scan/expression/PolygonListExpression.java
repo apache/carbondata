@@ -55,7 +55,9 @@ public class PolygonListExpression extends PolygonExpression {
       Matcher matcher = pattern.matcher(polygon);
       while (matcher.find()) {
         String matchedStr = matcher.group();
-        polygons.add(matchedStr);
+        if (!(matchedStr == null || matchedStr.isEmpty())) {
+          polygons.add(matchedStr);
+        }
       }
       if (polygons.size() < 2) {
         throw new RuntimeException("polygon list need at least 2 polygons, really has " +

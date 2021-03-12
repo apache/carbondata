@@ -19,25 +19,34 @@ package org.apache.spark.sql.execution.strategy
 
 import java.util.Locale
 
+import scala.collection.mutable
+
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, CountStarPlan, InsertIntoCarbonTable, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Descending, Expression, IntegerLiteral, NamedExpression, SortOrder}
+import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, CarbonToSparkAdapter, CountStarPlan, InsertIntoCarbonTable, SparkSession}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.analysis.UnresolvedAlias
+import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Cast, Descending, Expression, IntegerLiteral, Literal, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
-import org.apache.spark.sql.catalyst.plans.{Inner, LeftSemi}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
-import org.apache.spark.sql.execution.{CarbonTakeOrderedAndProjectExec, FilterExec, ProjectExec, SparkPlan, SparkStrategy}
+import org.apache.spark.sql.catalyst.plans.{Inner, JoinType, LeftSemi}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
+import org.apache.spark.sql.execution.{CarbonTakeOrderedAndProjectExec, FilterExec, PlanLater, ProjectExec, SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command.{DataWritingCommandExec, ExecutedCommandExec, LoadDataCommand}
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, LogicalRelation}
-import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight}
+import org.apache.spark.sql.execution.joins.{BroadCastPolygonFilterPushJoin, BuildLeft, BuildRight}
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper.isCarbonTable
 import org.apache.spark.sql.hive.MatchLogicalRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
+import org.apache.spark.sql.types.{DataType, DoubleType, IntegerType, StringType}
+import org.apache.spark.sql.util.SparkSQLUtil
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.geo.{InPolygonJoinRangeListUDF, InPolygonJoinUDF, ToRangeListAsStringUDF}
+import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 object DMLStrategy extends SparkStrategy {
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getName)
@@ -56,6 +65,104 @@ object DMLStrategy extends SparkStrategy {
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
         CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
+      case Join(left, right, joinType, condition)
+        if condition.isDefined && condition.get.isInstanceOf[ScalaUDF] &&
+           isPolygonUdfFilter(condition) =>
+        if (joinType != Inner) {
+          throw new UnsupportedOperationException("Unsupported query")
+        }
+        val carbon = CarbonSourceStrategy.apply(left).head
+        val leftKeys = Seq(condition.get.asInstanceOf[ScalaUDF].children.head)
+        val rightKeys = Seq(condition.get.asInstanceOf[ScalaUDF].children.last)
+        if (condition.get.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonJoinUDF]) {
+          // If join condition is IN_POLYGON_JOIN udf, then add a implicit projection to the
+          // polygon table logical plan
+          val tableInfo = carbon.collectFirst {
+            case scan: CarbonDataSourceScan => scan.inputRDDs().head
+          }.get.asInstanceOf[CarbonScanRDD[InternalRow]].getTableInfo
+          // create ToRangeListAsString udf as implicit projection with the required fields
+          val toRangeListUDF = new ToRangeListAsStringUDF
+          val dataType = StringType
+          var children: Seq[Expression] = mutable.Seq.empty
+          val geoHashColumn = condition.get.children.head match {
+            case Cast(attr: AttributeReference, _, _) =>
+              attr
+            case attr: AttributeReference =>
+              attr
+          }
+          // get origin Latitude and gridSize from spatial table properties
+          val commonKey = CarbonCommonConstants.SPATIAL_INDEX +
+                          CarbonCommonConstants.POINT +
+                          geoHashColumn.name +
+                          CarbonCommonConstants.POINT
+          val originLatitude = tableInfo.getFactTable
+            .getTableProperties
+            .get(commonKey + "originlatitude")
+          val gridSize = tableInfo.getFactTable.getTableProperties.get(commonKey + "gridsize")
+          if (originLatitude == null || gridSize == null) {
+            throw new UnsupportedOperationException(
+              s"Join condition having left column ${ geoHashColumn.name } is not GeoId column")
+          }
+          // join condition right side will be the polygon column
+          children = children :+ condition.get.children.last
+          children = children :+ Literal(originLatitude.toDouble)
+          children = children :+ Literal(gridSize.toInt)
+
+          var inputTypes: Seq[DataType] = Seq.empty
+          inputTypes = inputTypes :+ StringType
+          inputTypes = inputTypes :+ DoubleType
+          inputTypes = inputTypes :+ IntegerType
+          val rangeListScalaUdf = CarbonToSparkAdapter.createRangeListScalaUDF(toRangeListUDF,
+            dataType, children, inputTypes)
+          // add ToRangeListAsString udf column to the polygon table plan projection list
+          val rightSide = right transform {
+            case Project(projectList, child) =>
+              val positionId = UnresolvedAlias(rangeListScalaUdf)
+              val newProjectList = projectList :+ positionId
+              Project(newProjectList, child)
+          }
+          val sparkSession = SparkSQLUtil.getSparkSession
+          lazy val analyzer = sparkSession.sessionState.analyzer
+          lazy val optimizer = sparkSession.sessionState.optimizer
+          val analyzedPlan = CarbonReflectionUtils.invokeAnalyzerExecute(
+            analyzer, rightSide)
+          val polygonTablePlan = optimizer.execute(analyzedPlan)
+          // transform join condition by replacing polygon column with ToRangeListAsString udf
+          // column output
+          val newCondition = condition.get transform {
+            case scalaUdf: ScalaUDF if scalaUdf.function.isInstanceOf[InPolygonJoinUDF] =>
+              var udfChildren: Seq[Expression] = Seq.empty
+              udfChildren = udfChildren :+ scalaUdf.children.head
+              udfChildren = udfChildren :+ polygonTablePlan.output.last
+              val types = scalaUdf.inputTypes :+ scalaUdf.inputTypes.head
+              val polygonJoinUdf = new InPolygonJoinUDF
+              CarbonToSparkAdapter.getTransformedPolygonJoinUdf(scalaUdf,
+                udfChildren, types, polygonJoinUdf)
+          }
+          // push down in_polygon join filter to carbon
+          val pushedDownJoin = BroadCastPolygonFilterPushJoin(
+            leftKeys,
+            rightKeys,
+            joinType,
+            BuildRight,
+            Some(newCondition),
+            carbon,
+            PlanLater(polygonTablePlan)
+          )
+          Some(newCondition).map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+        } else {
+          // push down in_polygon join filter to carbon
+          val pushedDownJoin = BroadCastPolygonFilterPushJoin(
+            leftKeys,
+            rightKeys,
+            joinType,
+            BuildRight,
+            condition,
+            carbon,
+            PlanLater(right)
+          )
+          condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+        }
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
       left, right)
         if isCarbonPlan(left) && CarbonIndexUtil.checkIsIndexTable(right) =>
@@ -126,6 +233,11 @@ object DMLStrategy extends SparkStrategy {
         carbonTakeOrderedAndProjectExec :: Nil
       case _ => Nil
     }
+  }
+
+  private def isPolygonUdfFilter(condition: Option[Expression]) = {
+    condition.get.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonJoinUDF] ||
+    condition.get.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonJoinRangeListUDF]
   }
 
   /**

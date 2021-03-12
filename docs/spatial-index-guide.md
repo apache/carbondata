@@ -1,3 +1,4 @@
+
 <!--
     Licensed to the Apache Software Foundation (ASF) under one or more 
     contributor license agreements.  See the NOTICE file distributed with
@@ -106,16 +107,50 @@ Query with Polygon List UDF predicate
 select * from source_index where IN_POLYGON_LIST('POLYGON ((116.137676 40.163503, 116.137676 39.935276, 116.560993 39.935276, 116.137676 40.163503)), POLYGON ((116.560993 39.935276, 116.560993 40.163503, 116.137676 40.163503, 116.560993 39.935276))', 'OR')
 ```
 
+or
+
+```
+select * from source_index where IN_POLYGON_LIST('select polygon from polyon_table', 'OR')
+```
+
 Query with Polyline List UDF predicate
 
 ```
 select * from source_index where IN_POLYLINE_LIST('LINESTRING (116.137676 40.163503, 116.137676 39.935276, 116.260993 39.935276), LINESTRING (116.260993 39.935276, 116.560993 39.935276, 116.560993 40.163503)', 65)
 ```
 
+or
+
+```
+select * from source_index where IN_POLYLINE_LIST('select polyLine from polyon_table', 65)
+```
+
 Query with Polygon Range List UDF predicate
 
 ```
 select * from source_index where IN_POLYGON_RANGE_LIST('RANGELIST (855279368848 855279368850, 855280799610 855280799612, 855282156300 855282157400), RANGELIST (855279368852 855279368854, 855280799613 855280799615, 855282156200 855282157500)', 'OR')
+```
+
+Query having Join on Spatial and Polygon table with Polygon Join UDF predicate
+
+```
+select sum(t1.col1), t2.poiId
+from spatial_table t1
+inner join
+(select polygon, poiId from polygon_table) t2
+on IN_POLYGON_JOIN(t1.mygeohash, t2.polygon)
+group by t2.poiId
+```
+
+Query having Join on Spatial and Polygon table with Polygon Join RangeList UDF predicate
+
+```
+select sum(t1.col1), t2.poiId
+from spatial_table t1
+inner join
+(select polygonRanges, poiId from polygon_table) t2
+on IN_POLYGON_JOIN_RANGE_LIST(t1.mygeohash, t2.polygonRanges)
+group by t2.poiId
 ```
 
 Convert spatial index to spatial grid x, y
