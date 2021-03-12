@@ -30,6 +30,7 @@ object GeoUtilUDFs {
     sparkSession.udf.register("LatLngToGeoId", new LatLngToGeoIdUDF)
     sparkSession.udf.register("ToUpperLayerGeoId", new ToUpperLayerGeoIdUDF)
     sparkSession.udf.register("ToRangeList", new ToRangeListUDF)
+    sparkSession.udf.register("ToRangeListAsString", new ToRangeListAsStringUDF)
   }
 }
 
@@ -67,5 +68,21 @@ class ToRangeListUDF extends ((java.lang.String, java.lang.Double, java.lang.Int
   override def apply(polygon: java.lang.String, oriLatitude: java.lang.Double,
       gridSize: java.lang.Integer): mutable.Buffer[Array[Long]] = {
     GeoHashUtils.getRangeList(polygon, oriLatitude, gridSize).asScala.map(_.map(Long2long))
+  }
+}
+
+class ToRangeListAsStringUDF
+  extends ((java.lang.String, java.lang.Double, java.lang.Integer) => String) with Serializable {
+  override def apply(polygon: java.lang.String, oriLatitude: java.lang.Double,
+      gridSize: java.lang.Integer): String = {
+    // parse and get the polygon
+    val range: String = GeoHashUtils.getRange(GeoConstants.POLYGON_REG_EXPRESSION, polygon)
+    if (range == null || range.equalsIgnoreCase("null")) {
+      return null
+    }
+    // get geoID range list for the input polygon
+    val buffer = GeoHashUtils.getRangeList(range, oriLatitude, gridSize)
+    // convert to string
+    GeoHashUtils.getRangeListAsString(buffer)
   }
 }

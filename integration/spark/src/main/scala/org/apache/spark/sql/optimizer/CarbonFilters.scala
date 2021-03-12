@@ -22,16 +22,22 @@ import java.util.ArrayList
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-import org.apache.spark.sql.{CarbonBoundReference, CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession, SparkUnknownExpression}
+import org.apache.spark.sql.{CarbonBoundReference, CarbonDatasourceHadoopRelation, CarbonEnv,
+  Dataset, SparkSession, SparkUnknownExpression}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
-import org.apache.spark.sql.catalyst.expressions.{And, ArrayContains, Attribute, AttributeReference, Cast, Contains, EmptyRow, EndsWith, EqualTo, GreaterThan, GreaterThanOrEqual, In, InSet, IsNotNull, IsNull, LessThan, LessThanOrEqual, Literal, Not, Or, ScalaUDF, StartsWith, StringTrim}
+import org.apache.spark.sql.catalyst.expressions.{And, ArrayContains, Attribute,
+  AttributeReference, Cast, Contains, EmptyRow, EndsWith, EqualTo, GreaterThan,
+  GreaterThanOrEqual, In, InSet, IsNotNull, IsNull, LessThan, LessThanOrEqual, Literal, Not, Or,
+  ScalaUDF, StartsWith, StringTrim}
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
 import org.apache.spark.sql.execution.CastExpressionOptimization
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonSessionCatalogUtil}
-import org.apache.spark.sql.types.{ArrayType, BooleanType, DecimalType, DoubleType, FloatType, IntegerType, LongType, MapType, StringType, StructType, TimestampType}
+import org.apache.spark.sql.types.{ArrayType, BooleanType, DecimalType, DoubleType, FloatType,
+  IntegerType, LongType, MapType, StringType, StructType, TimestampType}
 import org.apache.spark.sql.types.{DataType => SparkDataType}
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -39,13 +45,20 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.scan.expression.{ColumnExpression, Expression, LiteralExpression, MatchExpression}
-import org.apache.carbondata.core.scan.expression.conditional.{EqualToExpression, GreaterThanEqualToExpression, GreaterThanExpression, ImplicitExpression, InExpression, LessThanEqualToExpression, LessThanExpression, ListExpression, NotEqualsExpression, NotInExpression, StartsWithExpression}
-import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
+import org.apache.carbondata.core.scan.expression.{ColumnExpression, Expression,
+  LiteralExpression, MatchExpression}
+import org.apache.carbondata.core.scan.expression.conditional.{EqualToExpression,
+  GreaterThanEqualToExpression, GreaterThanExpression, ImplicitExpression, InExpression,
+  LessThanEqualToExpression, LessThanExpression, ListExpression, NotEqualsExpression,
+  NotInExpression, StartsWithExpression}
+import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression,
+  OrExpression}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.geo.{GeoUtils, InPolygonListUDF, InPolygonRangeListUDF, InPolygonUDF, InPolylineListUDF}
-import org.apache.carbondata.geo.scan.expression.{PolygonExpression, PolygonListExpression, PolygonRangeListExpression, PolylineListExpression}
+import org.apache.carbondata.geo.{GeoUtils, InPolygonListUDF, InPolygonRangeListUDF,
+  InPolygonUDF, InPolylineListUDF}
+import org.apache.carbondata.geo.scan.expression.{PolygonExpression, PolygonListExpression,
+  PolygonRangeListExpression, PolylineListExpression}
 import org.apache.carbondata.index.{TextMatchMaxDocUDF, TextMatchUDF}
 
 /**
@@ -235,12 +248,26 @@ object CarbonFilters {
         if (children.size != 2) {
           throw new MalformedCarbonCommandException("Expect two string in polygon list")
         }
+        var polyGonStr = children.head.toString()
+        // check if the expression is polygon list or select query
+        val isPolyGonQuery = polyGonStr.toLowerCase().startsWith("select")
+        if (isPolyGonQuery) {
+          // collect the polygon list by executing query
+          polyGonStr = getPolygonOrPolyLine(polyGonStr)
+        }
         val (columnName, instance) = getGeoHashHandler(relation.carbonTable)
-        Some(new PolygonListExpression(children.head.toString(), children.last.toString(),
+        Some(new PolygonListExpression(polyGonStr, children.last.toString(),
           columnName, instance))
       case _: InPolylineListUDF =>
         if (children.size != 2) {
           throw new MalformedCarbonCommandException("Expect two string in polyline list")
+        }
+        var polyLineStr = children.head.toString()
+        // check if the expression is PolyLine list or select query
+        val isPolyGonQuery = polyLineStr.toLowerCase().startsWith("select")
+        if (isPolyGonQuery) {
+          // collect the polyline linestring by executing query
+          polyLineStr = getPolygonOrPolyLine(polyLineStr, isLineString = true)
         }
         val (columnName, instance) = getGeoHashHandler(relation.carbonTable)
         if (scala.util.Try(children.last.toString().toFloat).isFailure) {
@@ -250,7 +277,7 @@ object CarbonFilters {
         if (bufferSize <= 0) {
           throw new MalformedCarbonCommandException("Expect buffer size to be a positive value")
         }
-        Some(new PolylineListExpression(children.head.toString(),
+        Some(new PolylineListExpression(polyLineStr,
           children.last.toString().toFloat, columnName, instance))
       case _: InPolygonRangeListUDF =>
         if (children.size != 2) {
@@ -266,6 +293,24 @@ object CarbonFilters {
   private def getGeoHashHandler(carbonTable: CarbonTable) = {
     val tableProperties = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
     GeoUtils.getGeoHashHandler(tableProperties)
+  }
+
+  def getPolygonOrPolyLine(query: String, isLineString: Boolean = false): String = {
+    val dataFrame = SparkSQLUtil.getSparkSession.sql(query)
+    // check if more than one column present in query projection
+    if (dataFrame.columns.length != 1) {
+      val udf = if (isLineString) {
+        "PolyLine"
+      } else {
+        "Polygon"
+      }
+      throw new UnsupportedOperationException(
+        s"More than one column exists in the query for $udf List Udf")
+    }
+    dataFrame.collect()
+      .mkString(",")
+      .replace("[", "")
+      .replace("]", "")
   }
 
   def translateOr(

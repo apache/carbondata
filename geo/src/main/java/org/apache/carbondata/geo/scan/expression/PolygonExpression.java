@@ -118,13 +118,14 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
     out.writeObject(polygon);
     out.writeObject(instance);
     out.writeObject(column);
+    out.writeObject(ranges);
   }
 
   private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
     polygon = (String) in.readObject();
     instance = (CustomIndex<List<Long[]>>) in.readObject();
     column = (ColumnExpression) in.readObject();
-    ranges = new ArrayList<Long[]>();
+    ranges = (List<Long[]>) in.readObject();
   }
 
   @Override

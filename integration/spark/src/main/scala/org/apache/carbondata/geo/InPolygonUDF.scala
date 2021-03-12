@@ -28,6 +28,8 @@ object GeoFilterUDFs {
     sparkSession.udf.register("in_polygon_list", new InPolygonListUDF)
     sparkSession.udf.register("in_polyline_list", new InPolylineListUDF)
     sparkSession.udf.register("in_polygon_range_list", new InPolygonRangeListUDF)
+    sparkSession.udf.register("in_polygon_join", new InPolygonJoinUDF)
+    sparkSession.udf.register("in_polygon_join_range_list", new InPolygonJoinRangeListUDF)
   }
 }
 
@@ -35,6 +37,21 @@ object GeoFilterUDFs {
 class InPolygonUDF extends (String => Boolean) with Serializable {
   override def apply(v1: String): Boolean = {
     true // Carbon applies the filter. So, Spark do not have to apply filter.
+  }
+}
+
+@InterfaceAudience.Internal
+class InPolygonJoinRangeListUDF extends ((String, String) => Boolean) with Serializable {
+  override def apply(geoId: String, polygonRanges: String): Boolean = {
+    GeoHashUtils.performRangeSearch(GeoHashUtils.getRange(GeoConstants.RANGELIST_REG_EXPRESSION,
+      polygonRanges), geoId)
+  }
+}
+
+@InterfaceAudience.Internal
+class InPolygonJoinUDF extends ((String, String) => Boolean) with Serializable {
+  override def apply(geoId: String, polygonRanges: String): Boolean = {
+    GeoHashUtils.performRangeSearch(polygonRanges, geoId)
   }
 }
 

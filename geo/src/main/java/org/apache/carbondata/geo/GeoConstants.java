@@ -41,6 +41,8 @@ public class GeoConstants {
 
   public static final String GRID_SIZE = "gridSize";
 
+  public static final String RANGE_LIST = "rangelist";
+
   // delimiter of input points or ranges
   public static final String DEFAULT_DELIMITER = ",";
 

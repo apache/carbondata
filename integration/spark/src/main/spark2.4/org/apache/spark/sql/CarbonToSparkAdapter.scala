@@ -23,7 +23,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener, SessionCatalog}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
@@ -33,9 +33,10 @@ import org.apache.spark.sql.execution.command.ExplainCommand
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
-import org.apache.spark.sql.types.{DataType, Metadata}
+import org.apache.spark.sql.types.{DataType, Metadata, StringType}
 
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
+import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
 
 object CarbonToSparkAdapter {
 
@@ -107,6 +108,31 @@ object CarbonToSparkAdapter {
 
   def createScalaUDF(s: ScalaUDF, reference: AttributeReference): ScalaUDF = {
     ScalaUDF(s.function, s.dataType, Seq(reference), s.inputsNullSafe, s.inputTypes)
+  }
+
+  def createRangeListScalaUDF(toRangeListUDF: ToRangeListAsStringUDF,
+      dataType: StringType.type,
+      children: Seq[Expression],
+      inputTypes: Seq[DataType]): ScalaUDF = {
+    val inputsNullSafe: Seq[Boolean] = Seq(true, true, true)
+    ScalaUDF(toRangeListUDF,
+      dataType,
+      children,
+      inputsNullSafe,
+      inputTypes,
+      Some("ToRangeListAsString"))
+  }
+
+  def getTransformedPolygonJoinUdf(scalaUdf: ScalaUDF,
+      udfChildren: Seq[Expression],
+      types: Seq[DataType],
+      polygonJoinUdf: InPolygonJoinUDF): ScalaUDF = {
+    ScalaUDF(polygonJoinUdf,
+      scalaUdf.dataType,
+      udfChildren,
+      scalaUdf.inputsNullSafe,
+      types,
+      scalaUdf.udfName)
   }
 
   def createExprCode(code: String, isNull: String, value: String, dataType: DataType): ExprCode = {
