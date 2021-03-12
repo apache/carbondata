@@ -69,7 +69,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
       CarbonTablePath.getMetadataPath(carbonTable.getTablePath))
     val segLoad = details.find(_.getLoadName.equals(segmentId)).get
     val seg = new SegmentFileStore(carbonTable.getTablePath, segLoad.getSegmentFile)
-    assert(seg.getIndexOrMergeFiles.size == indexes)
+    assert(seg.getIndexAndMergeFiles.size == indexes)
   }
 
   test("clean up partition table for int partition column") {

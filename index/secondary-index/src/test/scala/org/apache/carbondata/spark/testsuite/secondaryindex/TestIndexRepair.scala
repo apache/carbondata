@@ -119,6 +119,19 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintable")
   }
 
+  test("reindex command with stale files") {
+    sql("drop table if exists maintable")
+    sql("CREATE TABLE maintable(a INT, b STRING, c STRING) stored as carbondata")
+    sql("CREATE INDEX indextable1 on table maintable(c) as 'carbondata'")
+    sql("INSERT INTO maintable SELECT 1,'string1', 'string2'")
+    sql("INSERT INTO maintable SELECT 1,'string1', 'string2'")
+    sql("INSERT INTO maintable SELECT 1,'string1', 'string2'")
+    sql("DELETE FROM TABLE INDEXTABLE1 WHERE SEGMENT.ID IN(0,1,2)")
+    sql("REINDEX INDEX TABLE indextable1 ON MAINTABLE WHERE SEGMENT.ID IN (0,1)")
+    assert(sql("select * from maintable where c = 'string2'").count() == 2)
+    sql("drop table if exists maintable")
+  }
+
   test("insert command after deleting segments from SI table") {
     sql("drop table if exists maintable")
     sql("CREATE TABLE maintable(a INT, b STRING, c STRING) stored as carbondata")

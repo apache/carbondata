@@ -831,8 +831,8 @@ public class SegmentFileStore {
    * Gets all index files from this segment
    * @return
    */
-  public Map<String, String> getIndexFiles() {
-    Map<String, String> indexFiles = new HashMap<>();
+  public Set<String> getIndexFiles() {
+    Set<String> indexFiles = new HashSet<>();
     if (segmentFile != null) {
       for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
         String location = entry.getKey();
@@ -841,8 +841,7 @@ public class SegmentFileStore {
         }
         if (entry.getValue().status.equals(SegmentStatus.SUCCESS.getMessage())) {
           for (String indexFile : entry.getValue().getFiles()) {
-            indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile,
-                entry.getValue().mergeFileName);
+            indexFiles.add(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile);
           }
         }
       }
@@ -854,7 +853,7 @@ public class SegmentFileStore {
    * Gets all index files from this segment
    * @return
    */
-  public Map<String, String> getIndexOrMergeFiles() throws IOException {
+  public Map<String, String> getIndexAndMergeFiles() throws IOException {
     Map<String, String> indexFiles = new HashMap<>();
     if (segmentFile != null) {
       for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
@@ -898,17 +897,9 @@ public class SegmentFileStore {
    * @return
    */
   public List<CarbonFile> getIndexCarbonFiles() {
-    Map<String, String> indexFiles = getIndexFiles();
-    Set<String> files = new HashSet<>();
-    for (Map.Entry<String, String> entry: indexFiles.entrySet()) {
-      Path path = new Path(entry.getKey());
-      files.add(entry.getKey());
-      if (entry.getValue() != null) {
-        files.add(new Path(path.getParent(), entry.getValue()).toString());
-      }
-    }
+    Set<String> indexFiles = getIndexFiles();
     List<CarbonFile> carbonFiles = new ArrayList<>();
-    for (String indexFile : files) {
+    for (String indexFile : indexFiles) {
       CarbonFile carbonFile = FileFactory.getCarbonFile(indexFile);
       if (carbonFile.exists()) {
         carbonFiles.add(carbonFile);
@@ -1348,7 +1339,7 @@ public class SegmentFileStore {
     } else {
       SegmentFileStore segmentFileStore =
           new SegmentFileStore(tablePath, segment.getSegmentFileName());
-      indexFiles = segmentFileStore.getIndexOrMergeFiles().keySet();
+      indexFiles = segmentFileStore.getIndexAndMergeFiles().keySet();
     }
     return indexFiles;
   }
