@@ -76,6 +76,11 @@ public class PartitionSpec implements Serializable, Writable {
     return locationPath;
   }
 
+  public void setLocation(String location) {
+    locationPath = new Path(location);
+    this.location = location;
+  }
+
   public String getUuid() {
     return uuid;
   }

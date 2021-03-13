@@ -26,6 +26,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.sdk.file.CarbonWriter
 
 /**
  * Test class for MV to verify partition scenarios
@@ -769,6 +771,34 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
       .isHivePartitionTable)
     assert(sql("select timeseries(b,'day'),c from partitionone group by timeseries(b,'day'),c").collect().length == 1)
     sql("drop table if exists partitionone")
+  }
+
+  test("test mv with add partition based on location on partition table") {
+    sql("drop table if exists partition_table")
+    sql("create table partition_table (id int,name String) " +
+        "partitioned by(email string) stored as carbondata")
+    sql("drop materialized view if exists partitiontable_mv")
+    sql("CREATE materialized view partitiontable_mv as select name from partition_table")
+    sql("insert into partition_table select 1,'blue','abc'")
+    val schemaFile =
+      CarbonTablePath.getSchemaFilePath(
+        CarbonEnv.getCarbonTable(None, "partition_table")(sqlContext.sparkSession).getTablePath)
+    val sdkWritePath = target + "/" + "def"
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
+    val writer = CarbonWriter.builder()
+      .outputPath(sdkWritePath)
+      .writtenBy("test")
+      .withSchemaFile(schemaFile)
+      .withCsvInput()
+      .build()
+    writer.write(Seq("2", "red", "def").toArray)
+    writer.write(Seq("3", "black", "def").toArray)
+    writer.close()
+    sql(s"alter table partition_table add partition (email='def') location '$sdkWritePath'")
+    val extSegmentQuery = sql("select name from partition_table")
+    assert(TestUtil.verifyMVHit(extSegmentQuery.queryExecution.optimizedPlan, "partitiontable_mv"))
+    checkAnswer(extSegmentQuery, Seq(Row("blue"), Row("red"), Row("black")))
+    sql("drop table if exists partition_table")
   }
   // scalastyle:on lineLength
 }
