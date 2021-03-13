@@ -19,16 +19,19 @@ package org.apache.carbondata.spark.rdd
 
 import java.util
 import java.util.{Collections, List}
-import java.util.concurrent.ExecutorService
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.spark.sql.{CarbonThreadUtil, SparkSession, SQLContext}
-import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
+import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
+import org.apache.spark.sql.execution.datasources.PartitioningUtils
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CollectionAccumulator, MergeIndexUtil}
 
@@ -36,6 +39,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -247,6 +251,7 @@ class CarbonTableCompactor(
       .sparkContext
       .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
 
+    val updatePartitionSpecs : List[PartitionSpec] = new util.ArrayList[PartitionSpec]
     var mergeRDD: CarbonMergerRDD[String, Boolean] = null
     if (carbonTable.isHivePartitionTable) {
       // collect related partitions
@@ -263,6 +268,19 @@ class CarbonTableCompactor(
       if (partitionSpecs != null && partitionSpecs.nonEmpty) {
         compactionCallableModel.compactedPartitions = Some(partitionSpecs)
       }
+      partitionSpecs.foreach(partitionSpec => {
+        breakable {
+          carbonLoadModel.getLoadMetadataDetails.asScala.foreach(loadMetaDetail => {
+            if (loadMetaDetail.getPath != null &&
+                loadMetaDetail.getPath.split(",").contains(partitionSpec.getLocation.toString)) {
+              // if partition spec added is external path,
+              // after compaction location path to be updated with table path.
+              updatePartitionSpecs.add(partitionSpec)
+              break()
+            }
+          })
+        }
+      })
     }
 
     val mergeStatus =
@@ -276,7 +294,26 @@ class CarbonTableCompactor(
           segmentMetaDataAccumulator)
       } else {
         if (mergeRDD != null) {
-          mergeRDD.collect
+          val result = mergeRDD.collect
+          if (!updatePartitionSpecs.isEmpty) {
+            val tableIdentifier = new TableIdentifier(carbonTable.getTableName,
+              Some(carbonTable.getDatabaseName))
+            val partitionSpecs = updatePartitionSpecs.asScala.map {
+              partitionSpec =>
+                // replaces old partitionSpec with updated partitionSpec
+                mergeRDD.checkAndUpdatePartitionLocation(partitionSpec)
+                PartitioningUtils.parsePathFragment(
+                  String.join(CarbonCommonConstants.FILE_SEPARATOR, partitionSpec.getPartitions))
+            }
+            // To update partitionSpec in hive metastore, drop and add with latest path.
+            AlterTableDropPartitionCommand(
+              tableIdentifier,
+              partitionSpecs,
+              true, false, true).run(sqlContext.sparkSession)
+            AlterTableAddPartitionCommand(tableIdentifier,
+              partitionSpecs.map(p => (p, None)), false).run(sqlContext.sparkSession)
+          }
+          result
         } else {
           new CarbonMergerRDD(
             sc.sparkSession,

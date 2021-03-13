@@ -687,6 +687,16 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
+   * This method will get the store location for the given path, partition spec
+   *
+   * @return data directory path
+   */
+  public static String createCarbonStoreLocationForPartition(CarbonTable carbonTable,
+      String partition) {
+    return carbonTable.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + partition;
+  }
+
+  /**
    * initialise data type for measures for their storage format
    */
   public static DataType[] initDataType(CarbonTable carbonTable, String tableName,
