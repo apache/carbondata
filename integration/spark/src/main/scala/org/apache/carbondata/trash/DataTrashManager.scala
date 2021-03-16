@@ -86,11 +86,13 @@ object DataTrashManager {
       // Since calculating the the size before and after clean files can be a costly operation
       // have exposed an option where user can change this behaviour.
       if (showStatistics) {
-        val sizeBeforeCleaning = getSizeSnapshot(carbonTable)
+        val metadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+        val sizeBeforeCleaning = getPreOpSizeSnapshot(carbonTable, metadataDetails)
         checkAndCleanExpiredSegments(carbonTable, isForceDelete,
           cleanStaleInProgress, partitionSpecs)
-        val sizeAfterCleaning = getSizeSnapshot(carbonTable)
-        sizeBeforeCleaning - sizeAfterCleaning + trashFolderSizeStats._1
+        val sizeAfterCleaning = getPostOpSizeSnapshot(carbonTable, metadataDetails
+            .map(a => a.getLoadName).toSet)
+        (sizeBeforeCleaning - sizeAfterCleaning + trashFolderSizeStats._1).abs
       } else {
         checkAndCleanExpiredSegments(carbonTable, isForceDelete,
           cleanStaleInProgress, partitionSpecs)
@@ -107,11 +109,11 @@ object DataTrashManager {
   }
 
   /**
-   * Checks the size of the segment files as well as datafiles, this method is used before and after
-   * clean files operation to check how much space is actually freed, during the operation.
+   * Checks the size of the segment files as well as datafiles and index files, this method
+   * is used before clean files operation.
    */
-  def getSizeSnapshot(carbonTable: CarbonTable): Long = {
-    val metadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+  def getPreOpSizeSnapshot(carbonTable: CarbonTable, metadataDetails:
+      Array[LoadMetadataDetails]): Long = {
     var size: Long = 0
     val segmentFileLocation = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)
     if (FileFactory.isFileExist(segmentFileLocation)) {
@@ -124,6 +126,26 @@ object DataTrashManager {
     )
     size
   }
+
+  /**
+   * Checks the size of the segment files as well as datafiles, this method is used after
+   * clean files operation.
+   */
+  def getPostOpSizeSnapshot(carbonTable: CarbonTable, metadataDetails: Set[String]): Long = {
+    val finalMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    var size: Long = 0
+    val segmentFileLocation = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)
+    if (FileFactory.isFileExist(segmentFileLocation)) {
+      size += FileFactory.getDirectorySize(segmentFileLocation)
+    }
+    finalMetadataDetails.foreach(oneLoad =>
+      if (metadataDetails.contains(oneLoad.getLoadName) && oneLoad.getVisibility.toBoolean) {
+        size += calculateSegmentSizeForOneLoad(carbonTable, oneLoad, finalMetadataDetails)
+      }
+    )
+    size
+  }
+
 
   /**
    * Method to handle the Clean files dry run operation
@@ -198,7 +220,8 @@ object DataTrashManager {
         if (!oneLoad.getVisibility.equalsIgnoreCase("false")) {
           val segmentFilePath = CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath,
               oneLoad.getSegmentFile)
-          if (DeleteLoadFolders.canDeleteThisLoad(oneLoad, isForceDelete, cleanStaleInProgress)) {
+          if (DeleteLoadFolders.canDeleteThisLoad(oneLoad, isForceDelete, cleanStaleInProgress,
+              carbonTable.getAbsoluteTableIdentifier)) {
             // No need to consider physical data for external segments, only consider metadata.
             if (oneLoad.getPath() == null || oneLoad.getPath().equalsIgnoreCase("NA")) {
               sizeFreed += calculateSegmentSizeForOneLoad(carbonTable, oneLoad, loadMetadataDetails)

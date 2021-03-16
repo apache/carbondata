@@ -27,11 +27,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -1039,10 +1035,10 @@ public class SegmentStatusManager {
 
   private static class ReturnTuple {
     LoadMetadataDetails[] details;
-    boolean isUpdateRequired;
-    ReturnTuple(LoadMetadataDetails[] details, boolean isUpdateRequired) {
+    Set<String> loadsToDelete;
+    ReturnTuple(LoadMetadataDetails[] details, Set<String> loadsToDelete) {
       this.details = details;
-      this.isUpdateRequired = isUpdateRequired;
+      this.loadsToDelete = loadsToDelete;
     }
   }
 
@@ -1050,10 +1046,10 @@ public class SegmentStatusManager {
       AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] details,
       boolean cleanStaleInProgress) {
     // Delete marked loads
-    boolean isUpdateRequired = DeleteLoadFolders
+    Set<String> loadsToDelete = DeleteLoadFolders
         .deleteLoadFoldersFromFileSystem(absoluteTableIdentifier, isForceDeletion, details,
             carbonTable.getMetadataPath(), cleanStaleInProgress);
-    return new ReturnTuple(details, isUpdateRequired);
+    return new ReturnTuple(details, loadsToDelete);
   }
 
   public static void deleteLoadsAndUpdateMetadata(CarbonTable carbonTable, boolean isForceDeletion,
@@ -1066,11 +1062,12 @@ public class SegmentStatusManager {
     if (isLoadDeletionRequired(metadataDetails)) {
       AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
       boolean updateCompletionStatus = false;
+      Set<String> loadsToDelete = new HashSet<>();
       LoadMetadataDetails[] newAddedLoadHistoryList = null;
       ReturnTuple tuple =
           isUpdateRequired(isForceDeletion, carbonTable, identifier, metadataDetails,
               cleanStaleInprogress);
-      if (tuple.isUpdateRequired) {
+      if (!tuple.loadsToDelete.isEmpty()) {
         ICarbonLock carbonTableStatusLock =
             CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
         boolean locked = false;
@@ -1091,7 +1088,7 @@ public class SegmentStatusManager {
             ReturnTuple tuple2 =
                 isUpdateRequired(isForceDeletion, carbonTable,
                     identifier, details, cleanStaleInprogress);
-            if (!tuple2.isUpdateRequired) {
+            if (tuple2.loadsToDelete.isEmpty()) {
               return;
             }
             // read latest table status again.
@@ -1130,6 +1127,7 @@ public class SegmentStatusManager {
                   latestStatus.toArray(new LoadMetadataDetails[0]));
             }
             updateCompletionStatus = true;
+            loadsToDelete = tuple2.loadsToDelete;
           } else {
             String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
             String tableName = identifier.getCarbonTableIdentifier().getTableName();
@@ -1147,7 +1145,7 @@ public class SegmentStatusManager {
           if (updateCompletionStatus) {
             DeleteLoadFolders
                 .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
-                  isForceDeletion, partitionSpecs, cleanStaleInprogress);
+                  isForceDeletion, partitionSpecs, cleanStaleInprogress, loadsToDelete);
           }
         }
       }
