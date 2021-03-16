@@ -653,6 +653,22 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintable")
   }
 
+  test("test SI with donot push down not equal to filter with Cast") {
+    sql("drop table if exists maintable")
+    sql("create table maintable (a string,b string,c string) STORED AS carbondata ")
+    sql("insert into maintable values ('aa', '3', 'cc')")
+    sql("create index indextable on table maintable(b) AS 'carbondata'")
+    val df1 = sql("select * from maintable where b!=2")
+    val df2 = sql("select * from maintable where b!='2'")
+    if (isFilterPushedDownToSI(df1.queryExecution.sparkPlan) &&
+        isFilterPushedDownToSI(df2.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    sql("drop table if exists maintable")
+  }
+
   def createAndInsertDataIntoTable(): Unit = {
     sql("drop table if exists maintable2")
     sql("create table maintable2 (a string,b string,c int) STORED AS carbondata ")
