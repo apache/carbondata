@@ -121,8 +121,7 @@ public final class DeleteLoadFolders {
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(carbonTable, currLoadDetails);
     for (final LoadMetadataDetails oneLoad : loadDetails) {
-      if (loadsToDelete.contains(oneLoad.getLoadName()) && canDeleteThisLoad(oneLoad,
-          isForceDelete, cleanStaleInProgress, carbonTable.getAbsoluteTableIdentifier())) {
+      if (loadsToDelete.contains(oneLoad.getLoadName())) {
         try {
           if (oneLoad.getSegmentFile() != null) {
             String tablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
@@ -223,8 +222,8 @@ public final class DeleteLoadFolders {
         return canDelete;
       case INSERT_IN_PROGRESS:
       case INSERT_OVERWRITE_IN_PROGRESS:
-        return canSegmentLockBeAcquired(oneLoad, absoluteTableIdentifier) && canDelete &&
-            cleanStaleInProgress;
+        return canDelete && cleanStaleInProgress && canSegmentLockBeAcquired(oneLoad,
+            absoluteTableIdentifier);
       default:
         return false;
     }
@@ -257,12 +256,12 @@ public final class DeleteLoadFolders {
                 isForceDelete, cleanStaleInProgress, absoluteTableIdentifier)) {
               oneLoad.setVisibility("false");
               loadsToDelete.add(oneLoad.getLoadName());
-              LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
+              LOGGER.info("Deleted the load " + oneLoad.getLoadName());
             }
           } else {
             oneLoad.setVisibility("false");
             loadsToDelete.add(oneLoad.getLoadName());
-            LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
+            LOGGER.info("Deleted the load " + oneLoad.getLoadName());
           }
         }
       }
@@ -275,10 +274,10 @@ public final class DeleteLoadFolders {
     ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
         CarbonTablePath.addSegmentPrefix(oneLoad.getLoadName()) + LockUsage.LOCK);
     if (segmentLock.lockWithRetries()) {
-      LOGGER.info("INFO: Segment Lock on segment: " + oneLoad.getLoadName() + "can be acquired.");
+      LOGGER.info("Segment Lock on segment: " + oneLoad.getLoadName() + "can be acquired.");
       return segmentLock.unlock();
     } else {
-      LOGGER.info("INFO: Segment Lock on segment: " + oneLoad.getLoadName() + "can not be" +
+      LOGGER.info("Segment Lock on segment: " + oneLoad.getLoadName() + "can not be" +
           " acquired. Load going on for that load");
     }
     return false;
