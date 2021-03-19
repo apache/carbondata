@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.exception.SliceMergerException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.sort.CarbonPriorityQueue;
@@ -185,7 +186,12 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         if (isDataPresent) {
           this.dataHandler.closeHandler();
         }
-        if (partitionSpec != null) {
+        boolean isMergeIndex = Boolean.parseBoolean(CarbonProperties.getInstance().getProperty(
+            CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+            CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
+        // mergeIndex is true, the segment file not need to be written
+        // and will be written during merging index
+        if (partitionSpec != null && !isMergeIndex) {
           SegmentFileStore.writeSegmentFile(loadModel.getTablePath(), loadModel.getTaskNo(),
               partitionSpec.getLocation().toString(), loadModel.getFactTimeStamp() + "",
               partitionSpec.getPartitions());

@@ -301,18 +301,18 @@ class CarbonTableCompactor(
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
       var segmentFileName: String = null
 
-      val mergeIndex = CarbonProperties.getInstance().getProperty(
+      val isMergeIndex = CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
         CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean
 
-      if (compactionType != CompactionType.IUD_DELETE_DELTA && mergeIndex) {
+      if (compactionType != CompactionType.IUD_DELETE_DELTA && isMergeIndex) {
         MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
       }
 
       if (carbonTable.isHivePartitionTable) {
-        if (mergeIndex) {
+        if (isMergeIndex) {
           val segmentTmpFileName = carbonLoadModel.getFactTimeStamp + CarbonTablePath.SEGMENT_EXT
-          segmentFileName = mergedLoadNumber + "_" + segmentTmpFileName
+          segmentFileName = mergedLoadNumber + CarbonCommonConstants.UNDERSCORE + segmentTmpFileName
           val segmentTmpFile = FileFactory.getCarbonFile(
             CarbonTablePath.getSegmentFilePath(carbonTable.getTablePath, segmentTmpFileName))
           if (!segmentTmpFile.renameForce(
@@ -320,24 +320,20 @@ class CarbonTableCompactor(
             throw new Exception(s"Rename segment file from ${segmentTmpFileName} " +
               s"to ${segmentFileName} failed.")
           }
-          val tmpPath =
-            CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
-              CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
-          FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(tmpPath))
         } else {
           val readPath =
             CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
               CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
           // Merge all partition files into a single file.
           segmentFileName =
-            mergedLoadNumber + "_" + carbonLoadModel.getFactTimeStamp
-          val segmentFile = SegmentFileStore
+            mergedLoadNumber + CarbonCommonConstants.UNDERSCORE + carbonLoadModel.getFactTimeStamp
+          val mergedSegmetFile = SegmentFileStore
             .mergeSegmentFiles(readPath,
               segmentFileName,
               CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath))
-          if (segmentFile != null) {
+          if (mergedSegmetFile != null) {
             SegmentFileStore
-              .moveFromTempFolder(segmentFile,
+              .moveFromTempFolder(mergedSegmetFile,
                 carbonLoadModel.getFactTimeStamp + ".tmp",
                 carbonLoadModel.getTablePath)
           }

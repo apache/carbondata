@@ -190,7 +190,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       LOGGER.error(e.getLocalizedMessage(), e);
       throw e;
     } finally {
-      if (partitionSpec != null) {
+      boolean isMergeIndex = Boolean.parseBoolean(CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
+      // mergeIndex is true, the segment file not need to be written
+      // and will be written during merging index
+      if (partitionSpec != null && !isMergeIndex) {
         try {
           SegmentFileStore
               .writeSegmentFile(carbonLoadModel.getTablePath(), carbonLoadModel.getTaskNo(),
