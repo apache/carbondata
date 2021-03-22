@@ -708,6 +708,22 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("Materialized view default.does_not_exist does not exist")
   }
 
+  test("test create table like maintable having mv") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
+    sql("drop materialized view if exists mv_table ")
+    sql("create materialized view mv_table  as select name, sum(price) from maintable group by name")
+    sql("drop table if exists new_Table")
+    sql("create table new_Table like maintable")
+    sql("insert into table new_Table select 'abc',21,2000")
+    checkAnswer(sql("select * from new_Table"), Seq(Row("abc", 21, 2000)))
+    intercept[MalformedCarbonCommandException] {
+      sql("create table new_Table1 like mv_table")
+    }.getMessage.contains("Unsupported operation on SI table or MV.")
+    sql("drop table if exists new_Table")
+    sql("drop table IF EXISTS maintable")
+  }
+
   test("drop meta cache on mv materialized view table") {
     defaultConfig()
     sql("drop table IF EXISTS maintable")
