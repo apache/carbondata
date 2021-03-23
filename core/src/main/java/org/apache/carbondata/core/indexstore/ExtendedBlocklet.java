@@ -167,7 +167,8 @@ public class ExtendedBlocklet extends Blocklet {
    * @param uniqueLocation
    * @throws IOException
    */
-  public void serializeData(DataOutput out, Map<String, Short> uniqueLocation, boolean isCountJob)
+  public void serializeData(DataOutput out, Map<String, Short> uniqueLocation, boolean isCountJob,
+      boolean isExternalPath)
       throws IOException {
     super.write(out);
     if (isCountJob) {
@@ -197,7 +198,7 @@ public class ExtendedBlocklet extends Blocklet {
           inputSplit.setWriteDetailInfo(false);
         }
         inputSplit.serializeFields(dos, uniqueLocation);
-        out.writeBoolean(inputSplit.getSegment().isExternalSegment());
+        out.writeBoolean(isExternalPath);
         out.writeInt(ebos.size());
         out.write(ebos.getBuffer(), 0, ebos.size());
       }
@@ -226,8 +227,8 @@ public class ExtendedBlocklet extends Blocklet {
     boolean isSplitPresent = in.readBoolean();
     if (isSplitPresent) {
       String filePath = getPath();
-      boolean isExternalSegment = in.readBoolean();
-      if (!isExternalSegment) {
+      boolean isExternalPath = in.readBoolean();
+      if (!isExternalPath) {
         setFilePath(tablePath + filePath);
       } else {
         setFilePath(filePath);

@@ -272,16 +272,10 @@ class CarbonTableCompactor(
         compactionCallableModel.compactedPartitions = Some(partitionSpecs)
       }
       partitionSpecs.foreach(partitionSpec => {
-        breakable {
-          carbonLoadModel.getLoadMetadataDetails.asScala.foreach(loadMetaDetail => {
-            if (loadMetaDetail.getPath != null &&
-                loadMetaDetail.getPath.split(",").contains(partitionSpec.getLocation.toString)) {
-              // if partition spec added is external path,
-              // after compaction location path to be updated with table path.
-              updatePartitionSpecs.add(partitionSpec)
-              break()
-            }
-          })
+        if (!partitionSpec.getLocation.toString.startsWith(carbonLoadModel.getTablePath)) {
+          // if partition spec added is external path,
+          // after compaction location path to be updated with table path.
+          updatePartitionSpecs.add(partitionSpec)
         }
       })
     }

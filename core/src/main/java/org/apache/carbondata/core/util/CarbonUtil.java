@@ -2797,6 +2797,10 @@ public final class CarbonUtil {
         }
       }
     } else {
+      if (isPartitionTable) {
+        // segment id can be null for external added partition path, so get id from blockname.
+        segmentId = CarbonTablePath.DataFileUtil.getSegmentNo(blockName);
+      }
       blockId = filePath.substring(0, filePath.length() - blockName.length()).replace("/", "#")
           + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
           + CarbonCommonConstants.FILE_SEPARATOR + blockName;

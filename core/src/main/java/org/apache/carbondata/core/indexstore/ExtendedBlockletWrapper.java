@@ -121,8 +121,9 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     DataOutputStream stream = new DataOutputStream(bos);
     try {
       for (ExtendedBlocklet extendedBlocklet : extendedBlockletList) {
+        boolean isExternalPath = !extendedBlocklet.getFilePath().startsWith(tablePath);
         extendedBlocklet.setFilePath(extendedBlocklet.getFilePath().replace(tablePath, ""));
-        extendedBlocklet.serializeData(stream, uniqueLocations, isCountJob);
+        extendedBlocklet.serializeData(stream, uniqueLocations, isCountJob, isExternalPath);
       }
       byte[] input = bos.toByteArray();
       return new SnappyCompressor().compressByte(input, input.length);

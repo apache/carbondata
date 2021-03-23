@@ -102,19 +102,13 @@ class CarbonMergerRDD[K, V](
   // checks for added partition specs with external path.
   // after compaction, location path to be updated with table path.
   def checkAndUpdatePartitionLocation(partitionSpec: PartitionSpec) : PartitionSpec = {
-    breakable {
-      if (partitionSpec != null) {
-        carbonLoadModel.getLoadMetadataDetails.asScala.foreach(loadMetaDetail => {
-          if (loadMetaDetail.getPath != null &&
-              loadMetaDetail.getPath.split(",").contains(partitionSpec.getLocation.toString)) {
-            val updatedPartitionLocation = CarbonDataProcessorUtil
-              .createCarbonStoreLocationForPartition(
-                carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-                partitionSpec.getPartitions.toArray.mkString(File.separator))
-            partitionSpec.setLocation(updatedPartitionLocation)
-            break()
-          }
-        })
+    if (partitionSpec != null) {
+      if (!partitionSpec.getLocation.toString.startsWith(carbonLoadModel.getTablePath)) {
+        val updatedPartitionLocation = CarbonDataProcessorUtil
+          .createCarbonStoreLocationForPartition(
+            carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+            partitionSpec.getPartitions.toArray.mkString(File.separator))
+        partitionSpec.setLocation(updatedPartitionLocation)
       }
     }
     partitionSpec
