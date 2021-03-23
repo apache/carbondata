@@ -405,15 +405,23 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
     writer.write(Seq("3", "black", "def").toArray)
     writer.close()
     sql(s"alter table partition_table add partition (email='def') location '$sdkWritePath'")
+    sql("insert into partition_table select 4,'red','def'")
     var extSegmentQuery = sql("select * from partition_table where name = 'red'")
-    checkAnswer(extSegmentQuery, Row(2, "red", "def"))
+    checkAnswer(extSegmentQuery, Seq(Row(2, "red", "def"), Row(4, "red", "def")))
+    val location = target + "/" + "def2"
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location))
+    // add new partition with empty location
+    sql(s"alter table partition_table add partition (email='def2') location '$location'")
+    sql("insert into partition_table select 3,'red','def2'")
     sql("insert into partition_table select 4,'grey','bcd'")
     sql("insert into partition_table select 5,'red','abc'")
     sql("alter table partition_table compact 'minor'")
     extSegmentQuery = sql("select * from partition_table where name = 'red'")
-    checkAnswer(extSegmentQuery, Seq(Row(2, "red", "def"), Row(5, "red", "abc")))
+    checkAnswer(extSegmentQuery, Seq(Row(2, "red", "def"), Row(4, "red", "def"),
+      Row(3, "red", "def2"), Row(5, "red", "abc")))
     assert(extSegmentQuery.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
     sql("drop table if exists partition_table")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
   }
 
   test("test si with add multiple partitions based on location on partition table") {
@@ -450,16 +458,63 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
     sql(
       s"alter table partition_table add partition (email='def', age='25') location " +
       s"'$sdkWritePath1' partition (email='def2', age ='22') location '$sdkWritePath2'")
+    sql("insert into partition_table select 4,'red','def',25")
     var extSegmentQuery = sql("select * from partition_table where name = 'red'")
-      checkAnswer(extSegmentQuery, Seq(Row(2, "red", "def", 25), Row(2, "red", "def2", 22)))
+    checkAnswer(extSegmentQuery, Seq(Row(2, "red", "def", 25), Row(4, "red", "def", 25),
+      Row(2, "red", "def2", 22)))
+    val location1 = target + "/" + "xyz"
+    val location2 = target + "/" + "xyz2"
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location1))
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location2))
+    // add new partitions with empty location
+    sql(
+      s"alter table partition_table add partition (email='xyz', age='25') location " +
+      s"'$location1' partition (email='xyz2', age ='22') location '$location2'")
+    sql("insert into partition_table select 2,'red','xyz',25")
+    sql("insert into partition_table select 3,'red','xyz2',22")
     sql("insert into partition_table select 4,'grey','bcd',23")
     sql("insert into partition_table select 5,'red','abc',22")
     sql("alter table partition_table compact 'minor'")
     extSegmentQuery = sql("select * from partition_table where name = 'red'")
-    checkAnswer(extSegmentQuery, Seq(Row(2, "red", "def", 25),
-      Row(2, "red", "def2", 22), Row(5, "red", "abc", 22)))
+    checkAnswer(extSegmentQuery, Seq(Row(2, "red", "def", 25), Row(4, "red", "def", 25),
+      Row(2, "red", "def2", 22), Row(2, "red", "xyz", 25), Row(3, "red", "xyz2", 22),
+      Row(5, "red", "abc", 22)))
     assert(extSegmentQuery.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
     sql("drop table if exists partition_table")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath1))
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath2))
+  }
+
+  test("test add and drop partition on partition table") {
+    sql("drop table if exists partition_table")
+    sql("create table partition_table (id int,name String) " +
+        "partitioned by(email string) stored as carbondata")
+    sql("insert into partition_table select 1,'blue','abc'")
+    sql("CREATE INDEX partitionTable_si  on table partition_table (name) as 'carbondata'")
+    val schemaFile =
+      CarbonTablePath.getSchemaFilePath(
+        CarbonEnv.getCarbonTable(None, "partition_table")(sqlContext.sparkSession).getTablePath)
+    val sdkWritePath = target + "/" + "def"
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
+    val writer = CarbonWriter.builder()
+      .outputPath(sdkWritePath)
+      .writtenBy("test")
+      .withSchemaFile(schemaFile)
+      .withCsvInput()
+      .build()
+    writer.write(Seq("2", "red", "def").toArray)
+    writer.write(Seq("3", "black", "def").toArray)
+    writer.close()
+    sql(s"alter table partition_table add partition (email='def') location '$sdkWritePath'")
+    sql("insert into partition_table select 4,'red','def'")
+    sql("alter table partition_table drop partition (email='def')")
+    var extSegmentQuery = sql("select count(*) from partition_table where name = 'red'")
+    checkAnswer(extSegmentQuery, Row(0))
+    sql("insert into partition_table select 5,'red','def'")
+    extSegmentQuery = sql("select count(*) from partition_table where name = 'red'")
+    checkAnswer(extSegmentQuery, Row(1))
+    sql("drop table if exists partition_table")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
   }
 
   override protected def afterAll(): Unit = {
