@@ -43,6 +43,10 @@ CarbonData DDL statements are documented here,which includes:
   * [External Table on non-transactional table location](#create-external-table-on-non-transactional-table-data-location)
 * [CREATE DATABASE](#create-database)
 * [TABLE MANAGEMENT](#table-management)
+  * [DESCRIBE COMMAND](#describe-command)
+    * [DESCRIBE TABLE](#describe-table)
+    * [DESCRIBE COLUMN](#describe-column)
+    * [DESCRIBE COLUMN SHORT](#describe-column-short)
   * [SHOW TABLE](#show-table)
   * [ALTER TABLE](#alter-table)
     * [RENAME TABLE](#rename-table)
@@ -645,6 +649,78 @@ CarbonData DDL statements are documented here,which includes:
   ```
 
 ## TABLE MANAGEMENT  
+
+### DESCRIBE COMMAND
+
+- #### DESCRIBE TABLE
+  Describe table displays the metadata information of a table. Using extended or formatted in the syntax will display the detailed information of a table.
+
+  ```
+  [DESC | DESCRIBE] [TABLE] [EXTENDED | Formatted ] [db_name.]table_name
+  ```
+
+- #### DESCRIBE COLUMN
+  The column definitions for complex types will be long in DESCRIBE table command, and it becomes difficult to read in nested format.
+  The DESCRIBE COLUMN command uses special formatting for complex type columns to make the output readable.
+  
+  ```
+  [DESCRIBE | DESC] COLUMN fieldname[.nestedFieldNames] ON [TABLE] [db_name.]table_name;
+  ```
+  Examples: 
+  ```
+    DESCRIBE COLUMN locationinfo on complexcarbontable;
+    
+    +------------------------------+----------------------------------------------------------------------------------------------+-------------------+
+    |col_name                      |data_type                                                                                     |comment            |
+    +------------------------------+----------------------------------------------------------------------------------------------+-------------------+
+    |locationinfo                  |array                                                                                         |this is an array   |
+    |## Children of locationinfo:  |                                                                                              |                   |
+    |item                          |struct<activeprovince:string,activecity:map<string,string>,activestreet:array<string>>        |null               |
+    +------------------------------+----------------------------------------------------------------------------------------------+-------------------+
+    
+    DESCRIBE COLUMN locationinfo.item on complexcarbontable
+    
+    +-----------------------------------+------------------+-------+
+    |col_name                           |data_type         |comment|
+    +-----------------------------------+------------------+-------+
+    |locationinfo.item                  |struct            |null   |
+    |## Children of locationinfo.item:  |                  |       |
+    |activeprovince                     |string            |null   |
+    |activecity                         |map<string,string>|null   |
+    |activestreet                       |array<string>     |null   |
+    +-----------------------------------+------------------+-------+
+
+    DESCRIBE COLUMN locationinfo.item.activecity on complexcarbontable
+    
+    +----------------------------------------------+---------+-------+
+    |col_name                                      |data_type|comment|
+    +----------------------------------------------+---------+-------+
+    |locationinfo.item.activecity                  |map      |null   |
+    |## Children of locationinfo.item.activecity:  |         |       |
+    |key                                           |string   |null   |
+    |value                                         |string   |null   |
+    +----------------------------------------------+---------+-------+
+  ```
+- #### DESCRIBE COLUMN SHORT
+
+    This command is used to display short version of table complex columns.
+  ```
+  [DESCRIBE | DESC] SHORT [db_name.]table_name;
+  ```
+  Example: 
+  ```
+    DESCRIBE SHORT complexcarbontable;
+    
+    +-------------------+----------+----------------+
+    |           col_name| data_type|         comment|
+    +-------------------+----------+----------------+
+    |deviceinformationid|   integer|            null|
+    |         channelsid|   map<..>|            null|
+    |             mobile|struct<..>|            null|
+    |       locationinfo| array<..>|            null|
+    |        gamepointid|    double|            null|
+    +-------------------+----------+----------------+
+  ```
 
 ### SHOW TABLE
 

@@ -72,14 +72,8 @@ case class CarbonAddLoadCommand(
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val relation = CarbonEnv
-      .getInstance(sparkSession)
-      .carbonMetaStore
-      .lookupRelation(databaseNameOp, tableName)(sparkSession)
-      .asInstanceOf[CarbonRelation]
-    val tableSchema = StructType.fromAttributes(relation.output)
-    val carbonTable = relation.carbonTable
+    val (tableSchema, carbonTable) = Checker.getSchemaAndTable(sparkSession, databaseNameOp,
+      tableName)
     setAuditTable(carbonTable)
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")

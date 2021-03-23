@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.parser
 
+import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.collection.mutable
 import scala.language.implicitConversions
 
@@ -33,7 +34,7 @@ import org.apache.spark.sql.execution.command.index.{CarbonCreateIndexCommand, C
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnCommand
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
-import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
+import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDescribeColumnCommand, CarbonDescribeShortCommand}
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
 import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
 import org.apache.spark.sql.types.StructField
@@ -73,7 +74,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val startCommand: Parser[LogicalPlan] =
     segmentManagement | alterTable | restructure | updateTable | deleteRecords |
     alterTableFinishStreaming | stream | cli |
-    cacheManagement | insertStageData | indexCommands | mvCommands
+    cacheManagement | insertStageData | indexCommands | mvCommands | describeCommands
 
   protected lazy val segmentManagement: Parser[LogicalPlan] =
     deleteSegmentByID | deleteSegmentByLoadDate | deleteStage | cleanFiles | addSegment |
@@ -98,6 +99,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     createIndex | dropIndex | showIndexes | registerIndexes | refreshIndex | repairIndex |
       repairIndexDatabase
 
+  protected lazy val describeCommands: Parser[LogicalPlan] = describeColumn | describeShort
+
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) ~
       (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",") <~ ")").? <~
@@ -106,6 +109,25 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         val alterTableModel = AlterTableModel(CarbonParserUtil.convertDbNameToLowerCase(dbName),
           table, None, compactType, Some(System.currentTimeMillis()), segs)
         CarbonAlterTableCompactionCommand(alterTableModel)
+    }
+
+  /**
+   * describe complex column of table
+   */
+  protected lazy val describeColumn: Parser[LogicalPlan] =
+    (DESCRIBE | DESC) ~> COLUMN ~> repsep(ident, ".") ~ ontable <~ opt(";") ^^ {
+      case fields ~ table =>
+        CarbonDescribeColumnCommand(
+          table.database, table.table, fields.asJava)
+    }
+
+  /**
+   * describe short version of table complex columns
+   */
+  protected lazy val describeShort: Parser[LogicalPlan] =
+    (DESCRIBE | DESC) ~> SHORT ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+      case dbName ~ table =>
+        CarbonDescribeShortCommand(dbName, table)
     }
 
   /**
