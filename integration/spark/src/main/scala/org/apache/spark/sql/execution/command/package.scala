@@ -23,6 +23,9 @@ import scala.language.implicitConversions
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -41,6 +44,17 @@ object Checker {
       LogServiceFactory.getLogService(this.getClass.getName).error(err)
       throw new NoSuchTableException(database, tableName)
     }
+  }
+
+  def getSchemaAndTable(sparkSession: SparkSession, databaseNameOp: Option[String],
+      tableName: String) : (StructType, CarbonTable) = {
+    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    val relation = CarbonEnv
+      .getInstance(sparkSession)
+      .carbonMetaStore
+      .lookupRelation(databaseNameOp, tableName)(sparkSession)
+      .asInstanceOf[CarbonRelation]
+    (StructType.fromAttributes(relation.output), relation.carbonTable)
   }
 }
 

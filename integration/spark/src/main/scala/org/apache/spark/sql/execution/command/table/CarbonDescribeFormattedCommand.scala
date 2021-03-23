@@ -20,17 +20,21 @@ package org.apache.spark.sql.execution.command.table
 import java.util.Date
 
 import scala.collection.JavaConverters._
+import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.spark.sql.{CarbonEnv, EnvHelper, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.command.Checker
 import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.types.{ArrayType, MapType, MetadataBuilder, StringType, StructField, StructType}
 
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
@@ -369,4 +373,150 @@ private[sql] case class CarbonDescribeFormattedCommand(
   }
 
   override protected def opName: String = "DESC FORMATTED"
+}
+
+case class CarbonDescribeColumnCommand(
+    databaseNameOp: Option[String],
+    tableName: String,
+    inputFieldNames: java.util.List[String])
+  extends MetadataCommand {
+
+  override val output: Seq[Attribute] = Seq(
+    // Column names are based on Hive.
+    AttributeReference("col_name", StringType, nullable = false,
+      new MetadataBuilder().putString("comment", "name of the column").build())(),
+    AttributeReference("data_type", StringType, nullable = false,
+      new MetadataBuilder().putString("comment", "data type of the column").build())(),
+    AttributeReference("comment", StringType, nullable = true,
+      new MetadataBuilder().putString("comment", "comment of the column").build())()
+  )
+
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    val (tableSchema, carbonTable) = Checker.getSchemaAndTable(sparkSession, databaseNameOp,
+      tableName)
+    val inputField = tableSchema.find(_.name.equalsIgnoreCase(inputFieldNames.get(0)))
+    if (inputField.isEmpty) {
+      throw new MalformedCarbonCommandException(
+        s"Column ${ inputFieldNames.get(0) } does not exists in the table " +
+        s"${ carbonTable.getDatabaseName }.$tableName")
+    }
+    setAuditTable(carbonTable)
+    var results = Seq[(String, String, String)]()
+    var currField = inputField.get
+    val inputFieldsIterator = inputFieldNames.iterator()
+    var inputColumn = inputFieldsIterator.next()
+    while (results.isEmpty) {
+      breakable {
+        if (currField.dataType.typeName.equalsIgnoreCase(CarbonCommonConstants.ARRAY)) {
+          if (inputFieldsIterator.hasNext) {
+            val nextField = inputFieldsIterator.next()
+            // child of an array can be only 'item'
+            if (!nextField.equalsIgnoreCase("item")) {
+              throw handleException(nextField, currField.name, carbonTable.getTableName)
+            }
+            // make the child type as current field to describe further nested types.
+            currField = StructField("item", currField.dataType.asInstanceOf[ArrayType].elementType)
+            inputColumn += "." + currField.name
+            break()
+          }
+          // if no further nested column given, display field information and its children.
+          results = Seq((inputColumn,
+            currField.dataType.typeName, currField.getComment().getOrElse("null")),
+            ("## Children of " + inputColumn + ":  ", "", ""))
+          results ++= Seq(("item", currField.dataType.asInstanceOf[ArrayType]
+            .elementType.simpleString, "null"))
+        }
+        else if (currField.dataType.typeName.equalsIgnoreCase(CarbonCommonConstants.STRUCT)) {
+          if (inputFieldsIterator.hasNext) {
+            val nextField = inputFieldsIterator.next()
+            val nextCurrField = currField.dataType.asInstanceOf[StructType].fields
+              .find(_.name.equalsIgnoreCase(nextField))
+            // verify if the input child name exists in the schema
+            if (!nextCurrField.isDefined) {
+              throw handleException(nextField, currField.name, carbonTable.getTableName)
+            }
+            // make the child type as current field to describe further nested types.
+            currField = nextCurrField.get
+            inputColumn += "." + currField.name
+            break()
+          }
+          // if no further nested column given, display field information and its children.
+          results = Seq((inputColumn,
+            currField.dataType.typeName, currField.getComment().getOrElse("null")),
+            ("## Children of " + inputColumn + ":  ", "", ""))
+          results ++= currField.dataType.asInstanceOf[StructType].fields.map(child => {
+            (child.name, child.dataType.simpleString, "null")
+          })
+        } else if (currField.dataType.typeName.equalsIgnoreCase(CarbonCommonConstants.MAP)) {
+          val children = currField.dataType.asInstanceOf[MapType]
+          if (inputFieldsIterator.hasNext) {
+            val nextField = inputFieldsIterator.next().toLowerCase()
+            // children of map can be only 'key' and 'value'
+            val nextCurrField = nextField match {
+              case "key" => StructField("key", children.keyType)
+              case "value" => StructField("value", children.valueType)
+              case _ => throw handleException(nextField, currField.name, carbonTable.getTableName)
+            }
+            // make the child type as current field to describe further nested types.
+            currField = nextCurrField
+            inputColumn += "." + currField.name
+            break()
+          }
+          // if no further nested column given, display field information and its children.
+          results = Seq((inputColumn,
+            currField.dataType.typeName, currField.getComment().getOrElse("null")),
+            ("## Children of " + inputColumn + ":  ", "", ""))
+          results ++= Seq(("key", children.keyType.simpleString, "null"),
+            ("value", children.valueType.simpleString, "null"))
+        } else {
+          results = Seq((inputColumn,
+            currField.dataType.typeName, currField.getComment().getOrElse("null")))
+        }
+      }
+    }
+    results.map { case (c1, c2, c3) => Row(c1, c2, c3) }
+  }
+
+  def handleException(nextField: String, currField: String, tableName: String): Throwable = {
+    new MalformedCarbonCommandException(
+      s"$nextField is invalid child name for column $currField " +
+      s"of table: $tableName")
+  }
+
+  override protected def opName: String = "DESC COLUMN"
+}
+
+case class CarbonDescribeShortCommand(
+    databaseNameOp: Option[String],
+    tableName: String)
+  extends MetadataCommand {
+
+  override val output: Seq[Attribute] = Seq(
+    // Column names are based on Hive.
+    AttributeReference("col_name", StringType, nullable = false,
+      new MetadataBuilder().putString("comment", "name of the column").build())(),
+    AttributeReference("data_type", StringType, nullable = false,
+      new MetadataBuilder().putString("comment", "data type of the column").build())(),
+    AttributeReference("comment", StringType, nullable = true,
+      new MetadataBuilder().putString("comment", "comment of the column").build())()
+  )
+
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    val (tableSchema, carbonTable) = Checker.getSchemaAndTable(sparkSession, databaseNameOp,
+      tableName)
+    setAuditTable(carbonTable)
+    var results = Seq[(String, String, String)]()
+    results = tableSchema.map { field =>
+      val colComment = field.getComment().getOrElse("null")
+      var datatypeName = field.dataType.typeName
+      if (field.dataType.isInstanceOf[ArrayType] || field.dataType.isInstanceOf[StructType] ||
+         field.dataType.isInstanceOf[MapType]) {
+        datatypeName += "<..>"
+      }
+      (field.name, datatypeName, colComment)
+    }
+    results.map { case (c1, c2, c3) => Row(c1, c2, c3) }
+  }
+
+  override protected def opName: String = "DESC SHORT"
 }
