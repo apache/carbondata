@@ -25,10 +25,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.{Job, JobContext}
+import org.apache.hadoop.mapreduce.JobContext
 import org.apache.log4j.Logger
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
@@ -50,7 +48,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -94,10 +92,17 @@ case class BroadCastSIFilterPushJoin(
             .readLoadMetadata(CarbonTablePath.getMetadataPath(value
               .getTableInfo
               .getTablePath))
+              .filter(loadMetadataDetail =>
+                loadMetadataDetail.getSegmentStatus == SegmentStatus.SUCCESS
+                  || loadMetadataDetail.getSegmentStatus == SegmentStatus.MARKED_FOR_UPDATE
+                    || loadMetadataDetail.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS)
             .map(_.getLoadName)
             .toList
           value.setSegmentsToAccess(partitions.filter(segment => siSegments.contains(segment
             .getSegmentNo)))
+          partitions.filter(segment => !siSegments.contains(segment
+              .getSegmentNo)).foreach(segment => BroadCastSIFilterPushJoin
+              .missingSISegments.add(segment.getSegmentNo))
         case _ =>
       }
     }
@@ -134,6 +139,8 @@ case class BroadCastSIFilterPushJoin(
 object BroadCastSIFilterPushJoin {
 
   val logger: Logger = LogServiceFactory.getLogService(this.getClass.getName)
+
+  val missingSISegments: util.Set[String] = new util.HashSet[String]()
 
   def addInFilterToPlan(buildPlan: SparkPlan,
       carbonScan: SparkPlan,
@@ -486,6 +493,9 @@ object BroadCastSIFilterPushJoin {
           if (null != expressionVal) {
             value.setFilterExpression(expressionVal)
           }
+        }
+        if (value.indexFilter != null) {
+          value.indexFilter.setMissingSISegments(missingSISegments)
         }
       case _ =>
     }

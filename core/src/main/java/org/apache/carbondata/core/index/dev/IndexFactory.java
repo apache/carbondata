@@ -202,4 +202,5 @@ public abstract class IndexFactory<T extends Index> {
   public String getCacheSize() {
     return null;
   }
+
 }

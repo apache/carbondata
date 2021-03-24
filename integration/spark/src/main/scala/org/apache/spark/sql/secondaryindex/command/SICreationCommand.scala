@@ -295,7 +295,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       indexProperties.put(CarbonCommonConstants.INDEX_COLUMNS, indexTableCols.asScala.mkString(","))
       indexProperties.put(CarbonCommonConstants.INDEX_PROVIDER,
         IndexType.SI.getIndexProviderName)
-      indexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.DISABLED.name())
+      indexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.ENABLED.name())
       val indexInfo = IndexTableUtil.checkAndAddIndexTable(
         oldIndexInfo,
         new IndexTableInfo(
@@ -378,8 +378,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
                |USING carbondata OPTIONS (tableName "$indexTableName",
                |dbName "$databaseName", tablePath "$tablePath", path "$tablePath",
                |parentTablePath "${ carbonTable.getTablePath }", isIndexTable "true",
-               |isSITableEnabled "false", parentTableId
-               |"${ carbonTable.getCarbonTableIdentifier.getTableId }",
+               |parentTableId "${ carbonTable.getCarbonTableIdentifier.getTableId }",
                |parentTableName "$tableName"$carbonSchemaString) """.stripMargin)
             .collect()
         } catch {
@@ -393,8 +392,8 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       } else {
         sparkSession.sql(
           s"""ALTER TABLE $databaseName.$indexTableName SET SERDEPROPERTIES (
-                'parentTableName'='$tableName', 'isIndexTable' = 'true', 'isSITableEnabled' =
-                'false', 'parentTablePath' = '${carbonTable.getTablePath}',
+                'parentTableName'='$tableName', 'isIndexTable' = 'true', 'parentTablePath' =
+                '${carbonTable.getTablePath}',
                 'parentTableId' = '${carbonTable.getCarbonTableIdentifier.getTableId}')""")
           .collect()
 
@@ -435,23 +434,6 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       // load data for secondary index
       if (isCreateSIndex) {
         LoadDataForSecondaryIndex(indexModel).run(sparkSession)
-      }
-      siTblLoadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(indexTablePath)
-      val isMainTableSegEqualToSISegs = CarbonInternalLoaderUtil
-        .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,
-          siTblLoadMetadataDetails)
-      if (isMainTableSegEqualToSISegs) {
-        // enable the SI table
-        sparkSession.sql(
-          s"""ALTER TABLE $databaseName.$indexTableName SET
-             |SERDEPROPERTIES ('isSITableEnabled' = 'true')""".stripMargin).collect()
-        CarbonIndexUtil.updateIndexStatus(carbonTable,
-          indexModel.indexName,
-          IndexType.SI,
-          IndexStatus.ENABLED,
-          false,
-          sparkSession)
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
         CreateTablePostExecutionEvent(sparkSession, tableIdentifier)

@@ -79,29 +79,9 @@ case class ShowIndexesCommand(
           val siIterator = secondaryIndex.get.entrySet().iterator()
           while (siIterator.hasNext) {
             val indexInfo = siIterator.next()
-            try {
-              val isSITableEnabled = sparkSession.sessionState.catalog
-                .getTableMetadata(TableIdentifier(indexInfo.getKey, dbNameOp)).storage.properties
-                .getOrElse("isSITableEnabled", "true").equalsIgnoreCase("true")
-              if (isSITableEnabled) {
-                finalIndexList = finalIndexList :+
-                                 (indexInfo.getKey, "carbondata", indexInfo.getValue
-                                   .get(CarbonCommonConstants.INDEX_COLUMNS), "NA", "enabled", "NA")
-              } else {
-                finalIndexList = finalIndexList :+
-                                 (indexInfo.getKey, "carbondata", indexInfo.getValue
-                                   .get(CarbonCommonConstants
-                                     .INDEX_COLUMNS), "NA", "disabled", "NA")
-              }
-            } catch {
-              case ex: Exception =>
-                LOGGER.error(s"Access storage properties from hive failed for index table: ${
-                  indexInfo.getKey
-                }")
-                finalIndexList = finalIndexList :+
-                                 (indexInfo.getKey, "carbondata", indexInfo.getValue
-                                   .get(CarbonCommonConstants.INDEX_COLUMNS), "NA", "UNKNOWN", "NA")
-            }
+            finalIndexList = finalIndexList :+
+                (indexInfo.getKey, "carbondata", indexInfo.getValue
+                    .get(CarbonCommonConstants.INDEX_COLUMNS), "NA", "enabled", "NA")
           }
         }
 

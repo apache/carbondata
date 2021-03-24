@@ -87,7 +87,6 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       sortNodeForPushDown: Sort = null, pushDownNotNullFilter: Boolean = false): LogicalPlan = {
     var originalFilterAttributes: Set[String] = Set.empty
     var filterAttributes: Set[String] = Set.empty
-    var matchingIndexTables: Seq[String] = Seq.empty
     // all filter attributes are retrieved
     filter.condition collect {
       case attr: AttributeReference =>
@@ -101,16 +100,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         filterAttributes = filterAttributes. +(attr.name.toLowerCase)
     }
 
-    matchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
+    val enabledMatchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
       filterAttributes.asJava,
-      CarbonIndexUtil.getSecondaryIndexes(indexableRelation).mapValues(_.toList.asJava).asJava)
-      .asScala
-
-    // filter out all the index tables which are disabled
-    val enabledMatchingIndexTables = matchingIndexTables
-      .filter(table => sparkSession.sessionState.catalog
-        .getTableMetadata(TableIdentifier(table, Some(dbName))).storage.properties
-        .getOrElse("isSITableEnabled", "true").equalsIgnoreCase("true"))
+      CarbonIndexUtil.getSecondaryIndexes(indexableRelation).mapValues(_.toList.asJava)
+          .asJava).asScala
 
     if (enabledMatchingIndexTables.isEmpty) {
       filter
@@ -955,20 +948,11 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       return false
     }
     val parentTableRelation = parentRelation.get
-    val matchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
-      filterAttributes.toSet.asJava,
-      CarbonIndexUtil.getSecondaryIndexes(parentTableRelation).mapValues(_.toList.asJava).asJava)
-      .asScala
     val databaseName = parentTableRelation.carbonRelation.databaseName
-    // filter out all the index tables which are disabled
-    val enabledMatchingIndexTables = matchingIndexTables
-      .filter(table => {
-        sparkSession.sessionState.catalog
-          .getTableMetadata(TableIdentifier(table,
-            Some(databaseName))).storage
-          .properties
-          .getOrElse("isSITableEnabled", "true").equalsIgnoreCase("true")
-      })
+    val enabledMatchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
+      filterAttributes.toSet.asJava,
+      CarbonIndexUtil.getSecondaryIndexes(parentTableRelation).mapValues(_.toList.asJava)
+          .asJava).asScala
     // 1. check if only one SI matches for the filter columns
     if (enabledMatchingIndexTables.nonEmpty && enabledMatchingIndexTables.size == 1) {
       // 2. check if all the sort columns is in SI

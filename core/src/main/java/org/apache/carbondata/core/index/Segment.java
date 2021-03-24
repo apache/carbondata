@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
@@ -95,6 +96,8 @@ public class Segment implements Serializable, Writable {
    * Segment metadata info
    */
   private SegmentMetaDataInfo segmentMetaDataInfo;
+
+  private List<ExtendedBlocklet> defaultIndexPrunedBlocklets;
 
   public Segment() {
 
@@ -416,5 +419,13 @@ public class Segment implements Serializable, Writable {
 
   public boolean isExternalSegment() {
     return isExternalSegment;
+  }
+
+  public void setDefaultIndexPrunedBlocklets(List<ExtendedBlocklet> prunedBlocklets) {
+    defaultIndexPrunedBlocklets = prunedBlocklets;
+  }
+
+  public List<ExtendedBlocklet> getDefaultIndexPrunedBlocklets() {
+    return defaultIndexPrunedBlocklets;
   }
 }

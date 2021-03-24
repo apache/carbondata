@@ -101,6 +101,9 @@ public class SecondaryIndexFactory extends CoarseGrainIndexFactory {
     secondaryIndex.init(
         new SecondaryIndexModel(getIndexSchema().getIndexName(), segment.getSegmentNo(),
             allSegmentIds, positionReferenceInfo, segment.getConfiguration()));
+    secondaryIndex.setDefaultIndexPrunedBlocklet(segment.getDefaultIndexPrunedBlocklets());
+    secondaryIndex.validateSegmentList(getCarbonTable().getTablePath()
+        .replace(getCarbonTable().getTableName(), getIndexSchema().getIndexName()));
     indexes.add(secondaryIndex);
     return indexes;
   }

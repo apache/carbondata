@@ -83,6 +83,42 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
+  test("test add segment with SI when parent and SI segments are not in sunc") {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    try {
+      createCarbonTable()
+      sql(
+        s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1
+           | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+      val table = CarbonEnv.getCarbonTable(None, "addsegment1")(sqlContext.sparkSession)
+      val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
+      val newPath = storeLocation + "/" + "addsegtest"
+      FileFactory.deleteAllFilesOfDir(new File(newPath))
+      CarbonTestUtil.copy(path, newPath)
+      sql("delete from table addsegment1 where segment.id in (0)")
+      sql("clean files for table addsegment1 options('force'='true')")
+      sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='carbon')")
+          .collect()
+      sql("DROP INDEX IF EXISTS addsegment_si on addsegment1")
+      sql("create index addsegment_si on addsegment1(workgroupcategoryname) as 'carbondata'")
+      assert(sql("show segments on addsegment_si").collect().length == 1)
+      checkAnswer(sql("select count(*) from addsegment1 where workgroupcategoryname='developer'"),
+        Seq(Row(10)))
+      sql("delete from table addsegment_si where segment.id in (1)")
+      sql("clean files for table addsegment_si options('force'='true')")
+      assert(sql("show segments on addsegment_si").collect().length == 0)
+      checkAnswer(sql("select count(*) from addsegment1 where workgroupcategoryname='developer'"),
+        Seq(Row(10)))
+      sql("drop table if exists addsegment1")
+    }
+    finally {
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+            CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+    }
+  }
+
   test("Test add segment for the segment having delete delta files") {
     createCarbonTable()
     sql(

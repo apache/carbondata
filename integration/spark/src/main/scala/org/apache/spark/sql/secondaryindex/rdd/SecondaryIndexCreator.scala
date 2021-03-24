@@ -465,24 +465,6 @@ object SecondaryIndexCreator {
             sc.sparkSession)
         throw ex
     } finally {
-      // if some segments are skipped, disable the SI table so that
-      // SILoadEventListenerForFailedSegments will take care to load to these segments in next
-      // consecutive load to main table.
-      if (!skippedSegments.isEmpty) {
-        secondaryIndexModel.sqlContext.sparkSession.sql(
-          s"""ALTER TABLE ${
-            secondaryIndexModel
-              .carbonLoadModel
-              .getDatabaseName
-          }.${ secondaryIndexModel.secondaryIndex.indexName } SET
-             |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin).collect()
-        CarbonIndexUtil.updateIndexStatus(secondaryIndexModel.carbonTable,
-          secondaryIndexModel.secondaryIndex.indexName,
-          IndexType.SI,
-          IndexStatus.DISABLED,
-          true,
-          secondaryIndexModel.sqlContext.sparkSession)
-      }
       // close the executor service
       if (null != executorService) {
         executorService.shutdownNow()

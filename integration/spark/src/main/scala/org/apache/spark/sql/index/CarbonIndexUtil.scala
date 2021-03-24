@@ -635,34 +635,6 @@ object CarbonIndexUtil {
                   indexModel,
                   carbonTable, indexTable, false, failedLoadMetadataDetails)
             }
-
-            // get updated main table segments and si table segments
-            val mainTblLoadMetadataDetails: Array[LoadMetadataDetails] =
-              SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
-            val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
-              SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
-
-            // check if main table has load in progress and SI table has no load
-            // in progress entry, then no need to enable the SI table
-            // Only if the valid segments of maintable match the valid segments of SI
-            // table then we can enable the SI for query
-            if (CarbonInternalLoaderUtil
-                  .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,
-                    siTblLoadMetadataDetails)
-                && CarbonInternalLoaderUtil.checkInProgLoadInMainTableAndSI(carbonTable,
-              mainTblLoadMetadataDetails, siTblLoadMetadataDetails)) {
-              // enable the SI table if it was disabled earlier due to failure during SI
-              // creation time
-              sparkSession.sql(
-                s"""ALTER TABLE ${ carbonLoadModel.getDatabaseName }.$indexTableName SET
-                   |SERDEPROPERTIES ('isSITableEnabled' = 'true')""".stripMargin).collect()
-              CarbonIndexUtil.updateIndexStatus(carbonTable,
-                indexTableName,
-                IndexType.SI,
-                IndexStatus.ENABLED,
-                true,
-                sparkSession)
-            }
           } catch {
             case ex: Exception =>
               // in case of SI load only for for failed segments, catch the exception, but

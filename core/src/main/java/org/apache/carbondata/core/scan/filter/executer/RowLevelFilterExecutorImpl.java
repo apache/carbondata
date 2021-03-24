@@ -585,7 +585,9 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
         }
       } else {
         GenericQueryType complexType = complexDimensionInfoMap.get(dimensionChunkIndex[i]);
-        complexType.fillRequiredBlockData(rawBlockletColumnChunks);
+        if (complexType != null) {
+          complexType.fillRequiredBlockData(rawBlockletColumnChunks);
+        }
       }
     }
 

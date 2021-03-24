@@ -32,6 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.indexserver.DistributedRDDUtils
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 /**
  * test cases for testing creation of index table with load and compaction
@@ -403,7 +404,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     assert(ex.getMessage.contains("An exception occurred while triggering pre priming."))
     mock.tearDown()
     checkExistence(sql("show indexes on table table1"), true,
-      "idx1", "idx2", "disabled", "enabled")
+      "idx1", "idx2", "enabled")
   }
 
   def mockreadSegmentList(): MockUp[SegmentStatusManager] = {
@@ -450,6 +451,35 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
       }
     }
     mock
+  }
+
+  test("test SI with compaction when parent and child table seg are not in sync") {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    try {
+      sql("drop table if exists table1")
+      sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+      sql("create index idx1 on table table1(c3) as 'carbondata'")
+      for (i <- 0 until 5) {
+        sql(s"insert into table1 values(${i + 1},'a$i','b')")
+      }
+      sql("delete from table idx1 where segment.ID in (1,2)")
+      sql("clean files for table idx1 options('force'='true')")
+      assert(sql("show segments on idx1").collect().length == 3)
+      sql("alter table table1 compact 'minor'")
+      sql("clean files for table idx1 options('force' = 'true')")
+      assert(sql("show segments on idx1").collect().length == 2)
+      assert(sql("select * from table1 where c3='b'").collect().length == 5)
+      checkExistence(sql("show indexes on table1"),
+        true, "idx1", "enabled")
+      val df = sql("select * from table1 where c3='b'").queryExecution.sparkPlan
+      assert(isFilterPushedDownToSI(df))
+      sql("drop table if exists table1")
+    } finally {
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+            CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+    }
   }
 
   override def afterAll: Unit = {

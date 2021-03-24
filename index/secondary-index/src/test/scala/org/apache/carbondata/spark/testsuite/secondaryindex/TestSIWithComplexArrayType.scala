@@ -16,11 +16,13 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import scala.collection.mutable
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
@@ -53,8 +55,11 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql(
       "ALTER TABLE complextable ADD COLUMNS(arr2 array<string>)")
     sql("insert into complextable select 3,array('china'), 'f',array('hello','world')")
-    sql("insert into complextable select 4,array('india'),'g',array('iron','man','jarvis')")
+    sql("insert into complextable select 4,array('India'),'g',array('iron','man','jarvis')")
 
+    checkAnswer(sql("select * from complextable where array_contains(arr2,'iron')"),
+      Seq(Row("4", mutable.WrappedArray.make(Array("India")), "g",
+        mutable.WrappedArray.make(Array("iron", "man", "jarvis")))))
     val result1 = sql("select * from complextable where array_contains(arr2,'iron')")
     val result2 = sql("select * from complextable where arr2[0]='iron'")
     sql("create index index_11 on table complextable(arr2) as 'carbondata'")
