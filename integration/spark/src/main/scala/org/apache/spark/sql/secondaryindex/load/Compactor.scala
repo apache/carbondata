@@ -159,20 +159,6 @@ object Compactor {
       } catch {
         case ex: Exception =>
           LOGGER.error(s"Compaction failed for SI table ${secondaryIndex.indexName}", ex)
-          // If any compaction is failed then make all SI disabled which are success.
-          // They will be enabled in next load
-          siCompactionIndexList.foreach { indexCarbonTable =>
-            sparkSession.sql(
-              s"""
-                 | ALTER TABLE ${carbonLoadModel.getDatabaseName}.${indexCarbonTable.getTableName}
-                 | SET SERDEPROPERTIES ('isSITableEnabled' = 'false')
-               """.stripMargin).collect()
-          }
-          CarbonIndexUtil.updateIndexStatusInBatch(carbonMainTable,
-            siCompactionIndexList,
-            IndexType.SI,
-            IndexStatus.DISABLED,
-            sparkSession)
           throw ex
       } finally {
         // once compaction is success, release the segment locks

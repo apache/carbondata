@@ -45,10 +45,8 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     val preDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     sql("DELETE FROM TABLE INDEXTABLE1 WHERE SEGMENT.ID IN(0,1)")
     sql("CLEAN FILES FOR TABLE INDEXTABLE1 options('force'='true')")
-    sql(s"""ALTER TABLE default.indextable1 SET
-           |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     val df1 = sql("select * from maintable where c = 'string2'").queryExecution.sparkPlan
-    assert(!isFilterPushedDownToSI(df1))
+    assert(isFilterPushedDownToSI(df1))
     val postDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     assert(preDeleteSegments!=postDeleteSegments)
     sql("REINDEX INDEX TABLE indextable1 ON MAINTABLE")
@@ -73,10 +71,8 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     val preDeleteSegments = sql("SHOW SEGMENTS FOR TABLE test.INDEXTABLE1").count()
     sql("DELETE FROM TABLE test.INDEXTABLE1 WHERE SEGMENT.ID IN(0,1,2)")
     sql("CLEAN FILES FOR TABLE test.INDEXTABLE1 options('force'='true')")
-    sql(s"""ALTER TABLE test.indextable1 SET
-           |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     val df1 = sql("select * from test.maintable where c = 'string2'").queryExecution.sparkPlan
-    assert(!isFilterPushedDownToSI(df1))
+    assert(isFilterPushedDownToSI(df1))
     val postDeleteSegments = sql("SHOW SEGMENTS FOR TABLE test.INDEXTABLE1").count()
     assert(preDeleteSegments!=postDeleteSegments)
     sql("REINDEX INDEX TABLE indextable1 ON test.MAINTABLE")
@@ -102,15 +98,13 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     sql("CLEAN FILES FOR TABLE INDEXTABLE1 options('force'='true')")
     val postDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     assert(preDeleteSegments!=postDeleteSegments)
-    sql(s"""ALTER TABLE default.indextable1 SET
-           |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     val df1 = sql("select * from maintable where c = 'string2'").queryExecution.sparkPlan
-    assert(!isFilterPushedDownToSI(df1))
+    assert(isFilterPushedDownToSI(df1))
     sql("REINDEX INDEX TABLE indextable1 ON MAINTABLE WHERE SEGMENT.ID IN (0,1)")
     val postFirstRepair = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     assert(postDeleteSegments + 2 == postFirstRepair)
     val df2 = sql("select * from maintable where c = 'string2'").queryExecution.sparkPlan
-    assert(!isFilterPushedDownToSI(df2))
+    assert(isFilterPushedDownToSI(df2))
     sql("REINDEX INDEX TABLE indextable1 ON MAINTABLE WHERE SEGMENT.ID IN (2)")
     val postRepairSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     assert(preDeleteSegments == postRepairSegments)
@@ -128,7 +122,7 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     sql("INSERT INTO maintable SELECT 1,'string1', 'string2'")
     sql("DELETE FROM TABLE INDEXTABLE1 WHERE SEGMENT.ID IN(0,1,2)")
     sql("REINDEX INDEX TABLE indextable1 ON MAINTABLE WHERE SEGMENT.ID IN (0,1)")
-    assert(sql("select * from maintable where c = 'string2'").count() == 2)
+    assert(sql("select * from maintable where c = 'string2'").count() == 3)
     sql("drop table if exists maintable")
   }
 
@@ -146,10 +140,8 @@ class TestIndexRepair extends QueryTest with BeforeAndAfterAll {
     sql("CLEAN FILES FOR TABLE INDEXTABLE1 options('force'='true')")
     val postDeleteSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     assert(preDeleteSegments!=postDeleteSegments)
-    sql(s"""ALTER TABLE default.indextable1 SET
-           |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     val df1 = sql("select * from maintable where c = 'string2'").queryExecution.sparkPlan
-    assert(!isFilterPushedDownToSI(df1))
+    assert(isFilterPushedDownToSI(df1))
     sql("INSERT INTO maintable SELECT 1,'string1', 'string2'")
     val postLoadSegments = sql("SHOW SEGMENTS FOR TABLE INDEXTABLE1").count()
     assert(preDeleteSegments + 1 == postLoadSegments)

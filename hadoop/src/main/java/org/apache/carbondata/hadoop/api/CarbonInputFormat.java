@@ -596,6 +596,21 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         // Prune segments from already pruned blocklets
         IndexUtil.pruneSegments(validSegments, prunedBlocklets);
         List<ExtendedBlocklet> cgPrunedBlocklets = new ArrayList<>();
+
+        // If SI present in cgIndexExprWrapper then set the list of
+        // blocklet in segment which are pruned by default index,
+        // and this list will be return from SI prune method if segment is not present in SI.
+        Map<String, List<ExtendedBlocklet>> segmentsToBlocklet = new HashMap<>();
+        for (ExtendedBlocklet extendedBlocklet : prunedBlocklets) {
+          List<ExtendedBlocklet> extendedBlockletList = segmentsToBlocklet
+              .getOrDefault(extendedBlocklet.getSegmentId(), new ArrayList<>());
+          extendedBlockletList.add(extendedBlocklet);
+          segmentsToBlocklet.put(extendedBlocklet.getSegmentId(), extendedBlockletList);
+        }
+        for (Segment seg : validSegments) {
+          seg.setDefaultIndexPrunedBlocklets(segmentsToBlocklet.get(seg.getSegmentNo()));
+        }
+
         boolean isCGPruneFallback = false;
         // Again prune with CG index.
         try {

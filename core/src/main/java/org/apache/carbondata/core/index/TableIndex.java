@@ -205,18 +205,20 @@ public final class TableIndex extends OperationEventListener {
   private List<ExtendedBlocklet> pruneWithFilter(List<Segment> segments, IndexFilter filter,
       Set<Path> partitionLocations, List<ExtendedBlocklet> blocklets,
       Map<Segment, List<Index>> indexes) throws IOException {
+    Set<String> missingSISegments = filter.getMissingSISegments();
     for (Segment segment : segments) {
       if (segment == null ||
           indexes.get(segment) == null || indexes.get(segment).isEmpty()) {
         continue;
       }
-      boolean isExternalSegment = segment.isExternalSegment();
+      boolean isExternalOrMissingSISegment = segment.isExternalSegment() ||
+          (missingSISegments != null && missingSISegments.contains(segment.getSegmentNo()));
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       SegmentProperties segmentProperties =
           segmentPropertiesFetcher.getSegmentProperties(segment, partitionLocations);
       if (filter.isResolvedOnSegment(segmentProperties)) {
         FilterExecutor filterExecutor;
-        if (!isExternalSegment) {
+        if (!isExternalOrMissingSISegment) {
           filterExecutor = FilterUtil
               .getFilterExecutorTree(filter.getResolver(), segmentProperties, null,
                   table.getMinMaxCacheColumns(segmentProperties), false);
@@ -226,7 +228,7 @@ public final class TableIndex extends OperationEventListener {
                   table.getMinMaxCacheColumns(segmentProperties), false);
         }
         for (Index index : indexes.get(segment)) {
-          if (!isExternalSegment) {
+          if (!isExternalOrMissingSISegment) {
             pruneBlocklets.addAll(index
                 .prune(filter.getResolver(), segmentProperties, filterExecutor, this.table));
           } else {
@@ -238,7 +240,7 @@ public final class TableIndex extends OperationEventListener {
       } else {
         FilterExecutor filterExecutor;
         Expression expression = filter.getExpression();
-        if (!isExternalSegment) {
+        if (!isExternalOrMissingSISegment) {
           filterExecutor = FilterUtil.getFilterExecutorTree(
               new IndexFilter(segmentProperties, table, expression).getResolver(),
               segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
@@ -248,7 +250,7 @@ public final class TableIndex extends OperationEventListener {
               segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
         }
         for (Index index : indexes.get(segment)) {
-          if (!isExternalSegment) {
+          if (!isExternalOrMissingSISegment) {
             pruneBlocklets.addAll(index.prune(
                 filter.getExpression(), segmentProperties, table, filterExecutor));
           } else {
@@ -299,6 +301,7 @@ public final class TableIndex extends OperationEventListener {
     List<List<SegmentIndexGroup>> indexListForEachThread =
         new ArrayList<>(numOfThreadsForPruning);
     List<SegmentIndexGroup> segmentIndexGroupList = new ArrayList<>();
+    Set<String> missingSISegments = filter.getMissingSISegments();
     for (Segment segment : segments) {
       List<Index> eachSegmentIndexList = indexes.get(segment);
       prev = 0;
@@ -362,10 +365,11 @@ public final class TableIndex extends OperationEventListener {
             SegmentProperties segmentProperties =
                 segmentPropertiesFetcher.getSegmentPropertiesFromIndex(indexList.get(0));
             Segment segment = segmentIndexGroup.getSegment();
-            boolean isExternalSegment = segment.getSegmentPath() != null;
+            boolean isExternalOrMissingSISegment = segment.getSegmentPath() != null ||
+                (missingSISegments != null && missingSISegments.contains(segment.getSegmentNo()));
             if (filter.isResolvedOnSegment(segmentProperties)) {
               FilterExecutor filterExecutor;
-              if (!isExternalSegment) {
+              if (!isExternalOrMissingSISegment) {
                 filterExecutor = FilterUtil
                     .getFilterExecutorTree(filter.getResolver(), segmentProperties, null,
                         table.getMinMaxCacheColumns(segmentProperties), false);
@@ -377,7 +381,7 @@ public final class TableIndex extends OperationEventListener {
               for (int i = segmentIndexGroup.getFromIndex();
                    i <= segmentIndexGroup.getToIndex(); i++) {
                 List<Blocklet> dmPruneBlocklets;
-                if (!isExternalSegment) {
+                if (!isExternalOrMissingSISegment) {
                   dmPruneBlocklets = indexList.get(i)
                       .prune(filter.getResolver(), segmentProperties, filterExecutor, table);
                 } else {
@@ -392,7 +396,7 @@ public final class TableIndex extends OperationEventListener {
             } else {
               Expression filterExpression = filter.getNewCopyOfExpression();
               FilterExecutor filterExecutor;
-              if (!isExternalSegment) {
+              if (!isExternalOrMissingSISegment) {
                 filterExecutor = FilterUtil.getFilterExecutorTree(
                     new IndexFilter(segmentProperties, table, filterExpression).getResolver(),
                     segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
@@ -405,7 +409,7 @@ public final class TableIndex extends OperationEventListener {
               for (int i = segmentIndexGroup.getFromIndex();
                    i <= segmentIndexGroup.getToIndex(); i++) {
                 List<Blocklet> dmPruneBlocklets;
-                if (!isExternalSegment) {
+                if (!isExternalOrMissingSISegment) {
                   dmPruneBlocklets = indexList.get(i)
                       .prune(filterExpression, segmentProperties, table, filterExecutor);
                 } else {

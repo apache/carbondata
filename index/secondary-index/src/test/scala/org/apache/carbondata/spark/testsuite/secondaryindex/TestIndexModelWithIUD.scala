@@ -27,6 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 /**
  * test cases for IUD data retention on SI tables
@@ -427,6 +428,35 @@ class TestIndexModelWithIUD extends QueryTest with BeforeAndAfterAll {
     }
     assert(ex.getMessage.contains("Update is not permitted on Index Table"))
     sql("drop table if exists test")
+  }
+
+  test("test SI with delete operation when parent and child table segments are not in sync") {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    try {
+      sql("drop table if exists test")
+      sql("create table test (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
+      sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table test""")
+      sql("create index index_test on table test (c3) AS 'carbondata'")
+      sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table test""")
+      sql("delete from table index_test where segment.ID in(1)")
+      sql("clean files for table index_test options('force'='true')")
+      assert(sql("show segments on index_test").collect().length == 1)
+      sql("delete from test where c3='bbb'")
+      val df = sql("select * from test where c3='dd'").queryExecution.sparkPlan
+      assert(isFilterPushedDownToSI(df))
+      assert(sql("show segments on index_test").collect().length == 2)
+      checkAnswer(sql("select * from test where c3='dd'"),
+        Seq(Row("d", 4, "dd", "ddd"), Row("d", 4, "dd", "ddd")))
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+            CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+      sql("drop table if exists test")
+    } finally {
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+            CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+    }
   }
 
 

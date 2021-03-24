@@ -291,17 +291,13 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .removeProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED)
 
-    sql(s"""ALTER TABLE default.ud_index1 SET
-           |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE uniqdata " +
         "OPTIONS('DELIMITER'=',','BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')")
     val count1 = sql("select * from uniqdata where workgroupcategoryname = 'developer'").count()
     val df1 = sql("select * from uniqdata where workgroupcategoryname = 'developer'")
       .queryExecution.sparkPlan
-    sql(s"""ALTER TABLE default.ud_index1 SET
-           |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
-    val count2 = sql("select * from uniqdata where workgroupcategoryname = 'developer'").count()
-    val df2 = sql("select * from uniqdata where workgroupcategoryname = 'developer'")
+    val count2 = sql("select * from uniqdata where NI(workgroupcategoryname = 'developer')").count()
+    val df2 = sql("select * from uniqdata where NI(workgroupcategoryname = 'developer')")
       .queryExecution.sparkPlan
     sql(s"""set carbon.si.repair.limit = 1""")
     assert(count1 == count2)
@@ -579,6 +575,95 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintable2")
   }
 
+  test("test SI to prune when parent and child table" +
+      " segments are not in sync with spark plan rewrite") {
+    createTableWithIndexAndLoadData("false")
+    val df = sql("select * from maintable where b='cd'").queryExecution.sparkPlan
+    assert(isFilterPushedDownToSI(df))
+    sql("drop table if exists maintable")
+  }
+
+  def createTableWithIndexAndLoadData(coarseGrainIndex: String): Unit = {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+        .addProperty(CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX, coarseGrainIndex)
+    try {
+      sql("drop table if exists maintable")
+      sql("create table maintable (a string,b string,c string) STORED AS carbondata ")
+      sql("create index m_indextable on table maintable(b,c) AS 'carbondata'")
+      sql("insert into maintable values('ab','cd','ef')")
+      sql("insert into maintable values('bc','cedfd','fg')")
+      sql("insert into maintable values('bcde','cd','fgh')")
+      sql("DELETE FROM TABLE m_indextable WHERE SEGMENT.ID IN(0,1)")
+      sql("clean files for table m_indextable options('force'='true')")
+      assert(sql("show segments on m_indextable").collect().length == 1)
+      checkExistence(sql("show indexes on maintable"),
+        true, "m_indextable", "enabled")
+      checkAnswer(sql("select * from maintable where b='cd'"),
+        Seq(Row("ab", "cd", "ef"), Row("bcde", "cd", "fgh")))
+    } finally {
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+            CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+          .addProperty(CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX,
+            CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX_DEFAULT)
+    }
+  }
+
+  test("test SI to prune when parent and child table" +
+      " segments are not in sync with SI as datamap") {
+    createTableWithIndexAndLoadData("true")
+    sql("drop table if exists maintable")
+  }
+
+  test("test multiple SI to prune with non-default database " +
+      "when parent and child table segments are not in sync with SI plan rewrite") {
+    tableWithMultipleSIAndSegmentMissmatch("false");
+    val df = sql("select * from test.table1 where c2='a1' and c3='b'").queryExecution.sparkPlan
+    assert(isFilterPushedDownToSI(df))
+    sql("drop database if exists test cascade")
+  }
+
+  test("test multiple SI to prune with non-default database " +
+      "when parent and child table segments are not in sync with SI as datamap") {
+    tableWithMultipleSIAndSegmentMissmatch("true");
+    sql("drop database if exists test cascade")
+  }
+
+  def tableWithMultipleSIAndSegmentMissmatch(coarseGrainIndex: String): Unit = {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+        .addProperty(CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX, coarseGrainIndex)
+    sql("drop database if exists test cascade")
+    sql("create database test")
+    sql("use test")
+    try {
+      sql("drop table if exists table1")
+      sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+      for (i <- 0 until 5) {
+        sql(s"insert into table1 values(${i + 1},'a$i','b')")
+      }
+      sql("update table1 set (c2) = ('a1') where c1=3")
+      sql("create index idx1 on table table1(c3) as 'carbondata'")
+      sql("create index idx2 on table table1(c2) as 'carbondata'")
+      sql("DELETE FROM TABLE idx1 WHERE SEGMENT.ID IN(0,1)")
+      sql("DELETE FROM TABLE idx2 WHERE SEGMENT.ID IN(3,4,0)")
+      sql("clean files for table idx1 options('force'='true')")
+      sql("clean files for table idx2 options('force'='true')")
+      assert(sql("show segments on idx1").collect().length == 3)
+      assert(sql("show segments on idx2").collect().length == 2)
+      checkAnswer(sql("select * from table1 where c2='a1' and c3='b'"),
+        Seq(Row(2, "a1", "b"), Row(3, "a1", "b")))
+    } finally {
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+            CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+          .addProperty(CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX,
+            CarbonCommonConstants.CARBON_COARSE_GRAIN_SECONDARY_INDEX_DEFAULT)
+      sql("use default")
+    }
+  }
+
   test("test SI when carbon data handler will through exception") {
     sql("drop table if exists maintable2")
     sql("create table maintable2 (a string,b string,c string) STORED AS carbondata ")
@@ -622,7 +707,8 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("create index m_indextable on table maintable2(b,c) AS 'carbondata'")
     mock.tearDown()
     checkExistence(sql("show indexes on table maintable2"),
-      true, "m_indextable", "disabled")
+      true, "m_indextable", "enabled")
+    assert(sql("show segments on m_indextable").collect().isEmpty)
     sql("drop table if exists maintable2")
   }
 

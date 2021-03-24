@@ -66,6 +66,8 @@ public class IndexFilter implements Serializable {
   // limit value used for row scanning, collected when carbon.mapOrderPushDown is enabled
   private int limit = -1;
 
+  private Set<String> missingSISegments;
+
   public IndexFilter(CarbonTable table, Expression expression) {
     this(table, expression, false);
   }
@@ -282,5 +284,13 @@ public class IndexFilter implements Serializable {
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }
+  }
+
+  public void setMissingSISegments(Set<String> missingSISegments) {
+    this.missingSISegments = missingSISegments;
+  }
+
+  public Set<String> getMissingSISegments() {
+    return missingSISegments;
   }
 }
