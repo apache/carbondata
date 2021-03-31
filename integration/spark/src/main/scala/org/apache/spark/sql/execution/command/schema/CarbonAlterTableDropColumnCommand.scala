@@ -27,6 +27,7 @@ import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -120,11 +121,6 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
                 dictionaryColumns ++= Seq(tableColumn.getColumnSchema)
               }
             }
-            // Check if column to be dropped is of complex dataType
-            if (tableColumn.getDataType.isComplexType) {
-              val errMsg = "Complex column cannot be dropped"
-              throw new MalformedCarbonCommandException(errMsg)
-            }
             columnExist = true
           }
         }
@@ -145,21 +141,34 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       // read the latest schema file
       val tableInfo: org.apache.carbondata.format.TableInfo =
         metastore.getThriftTableInfo(carbonTable)
-      // maintain the deleted columns for schema evolution history
+      // deletedColumnSchema contains parent column schema and child also in case of complex and
+      // deletedTableColumns contains only parent columns in case of complex to add in
+      // schemaEvolution entry
       var deletedColumnSchema = ListBuffer[org.apache.carbondata.format.ColumnSchema]()
+      var deletedTableColumns = ListBuffer[org.apache.carbondata.format.ColumnSchema]()
       val columnSchemaList = tableInfo.fact_table.table_columns.asScala
       alterTableDropColumnModel.columns.foreach { column =>
         columnSchemaList.foreach { columnSchema =>
-          if (!columnSchema.invisible && column.equalsIgnoreCase(columnSchema.column_name)) {
-            deletedColumnSchema += columnSchema.deepCopy
-            columnSchema.invisible = true
+          if (!columnSchema.invisible) {
+            if (column.equalsIgnoreCase(columnSchema.column_name)) {
+              val columnSchemaCopy = columnSchema.deepCopy
+              deletedTableColumns += columnSchemaCopy
+              deletedColumnSchema += columnSchemaCopy
+              columnSchema.invisible = true
+            } else if (columnSchema.column_name.toLowerCase
+              .startsWith(column + CarbonCommonConstants.POINT)) {
+              // if the column to be dropped is of complex type then its children are prefixed
+              // with -> parent_name + '.'
+              deletedColumnSchema += columnSchema.deepCopy
+              columnSchema.invisible = true
+            }
           }
         }
       }
       // add deleted columns to schema evolution history and update the schema
       timeStamp = System.currentTimeMillis
       val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
-      schemaEvolutionEntry.setRemoved(deletedColumnSchema.toList.asJava)
+      schemaEvolutionEntry.setRemoved(deletedTableColumns.toList.asJava)
       val schemaConverter = new ThriftWrapperSchemaConverterImpl
       val delCols = deletedColumnSchema.map { deleteCols =>
         schemaConverter.fromExternalToWrapperColumnSchema(deleteCols)

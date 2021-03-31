@@ -62,27 +62,33 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test ("test alter drop all columns of the SI table") {
-    sql("create table table_drop_columns (" +
-        "name string, id string, country string) stored as carbondata")
-    sql("insert into table_drop_columns select 'xx', '1', 'china'")
-    sql("create index tdc_index_1 on table table_drop_columns(id, country) as 'carbondata'")
-    // alter table to drop all the columns used in index
-    sql("alter table table_drop_columns drop columns(id, country)")
-    sql("insert into table_drop_columns select 'xy'")
-    assert(sql("show indexes on table_drop_columns").collect().isEmpty)
-  }
-
-  test ("test alter drop few columns of the SI table") {
+  test("test alter drop columns of the SI table") {
     sql("create table table_drop_columns_fail (" +
         "name string, id string, country string) stored as carbondata")
-    sql("insert into table_drop_columns_fail select 'xx', '1', 'china'")
-    sql("create index tdcf_index_1 on table table_drop_columns_fail(id, country) as 'carbondata'")
-    // alter table to drop few columns used in index. This should fail as we are not dropping all
-    // the index columns
-    assert(intercept[ProcessMetaDataException](sql(
-      "alter table table_drop_columns_fail drop columns(id)")).getMessage
-      .contains("Alter table drop column operation failed:"))
+    sql("ALTER TABLE table_drop_columns_fail ADD COLUMNS(arr1 array<string>)")
+    sql("insert into table_drop_columns_fail values( 'xx', '1', 'china', array('hello', 'world') )")
+    sql("drop index if exists tdcf_index_1 on table_drop_columns_fail")
+    sql("create index tdcf_index_1 on table table_drop_columns_fail(arr1,country) as 'carbondata'")
+    sql("drop index if exists tdcf_index_2 on table_drop_columns_fail")
+    sql("create index tdcf_index_2 on table table_drop_columns_fail(id,name) as 'carbondata'")
+    val exception1 = intercept[Exception] {
+      sql("ALTER TABLE table_drop_columns_fail DROP COLUMNS(arr1) ")
+    }
+    val exceptionMessage1 =
+      "operation failed for default.table_drop_columns_fail: Alter table drop column operation " +
+      "failed: The provided column(s) are present in index table. Please drop the index table " +
+      "[tdcf_index_1] first and then retry the drop column operation"
+    assert(exception1.getMessage.contains(exceptionMessage1))
+    val exception2 = intercept[Exception] {
+      sql("ALTER TABLE table_drop_columns_fail DROP COLUMNS(id,name) ")
+    }
+    val exceptionMessage2 =
+      "operation failed for default.table_drop_columns_fail: Alter table drop column operation " +
+      "failed: The provided column(s) are present in index table. Please drop the index table " +
+      "[tdcf_index_2] first and then retry the drop column operation"
+    assert(exception2.getMessage.contains(exceptionMessage2))
+    val columns = sql("desc table table_drop_columns_fail").collect()
+    assert(columns.size == 4)
   }
 
   test("test create secondary index global sort after insert") {

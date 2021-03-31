@@ -48,19 +48,18 @@ class AlterTableDropColumnEventListener extends OperationEventListener {
         val tablePath = carbonTable.getTablePath
         val sparkSession = alterTableDropColumnPreEvent.sparkSession
         val alterTableDropColumnModel = alterTableDropColumnPreEvent.alterTableDropColumnModel
-        dropApplicableSITables(dbName,
+        checkIfDropColumnExistsInSI(dbName,
           tableName,
           tablePath,
           alterTableDropColumnModel)(sparkSession)
     }
   }
 
-  private def dropApplicableSITables(dbName: String,
+  private def checkIfDropColumnExistsInSI(dbName: String,
       tableName: String,
       tablePath: String,
       alterTableDropColumnModel: AlterTableDropColumnModel)
     (sparkSession: SparkSession) {
-    var indexTableToDrop: Seq[String] = Seq.empty
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val parentCarbonTable = catalog.lookupRelation(Some(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation].carbonTable
@@ -74,23 +73,11 @@ class AlterTableDropColumnEventListener extends OperationEventListener {
       val indexColumns = indexTable._2.asScala(CarbonCommonConstants.INDEX_COLUMNS).split(",")
       val colSize = alterTableDropColumnModel.columns.intersect(indexColumns).size
       if (colSize > 0) {
-        if (colSize == indexColumns.size) {
-          indexTableToDrop ++= Seq(indexTable._1)
-        } else {
-          sys
-            .error(s"Index Table [${
-              indexTable._1
-            }] exists with combination of provided drop column(s) and other columns, drop " +
-                   s"index table & retry")
-        }
+        sys
+          .error(s"The provided column(s) are present in index table. Please drop the " +
+                 s"index table [${ indexTable._1 }] first and then retry the drop column operation")
+
       }
     })
-    indexTableToDrop.foreach { indexTable =>
-      DropIndexCommand(ifExistsSet = true,
-        Some(dbName),
-        tableName,
-        indexTable.toLowerCase,
-        needLock = false).run(sparkSession)
-    }
   }
 }
