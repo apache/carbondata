@@ -248,16 +248,6 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test adding complex datatype column") {
-    try {
-      sql("alter table restructure add columns(arr array<string>)")
-      assert(false, "Exception should be thrown for complex column add")
-    } catch {
-      case e: Exception =>
-        println(e.getMessage)
-    }
-  }
-
   test("test drop and add same column with different datatype and default value") {
     sql("alter table restructure drop columns(empname)")
     sql(

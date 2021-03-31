@@ -85,6 +85,8 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
       timeStamp = System.currentTimeMillis
       val schemaEvolutionEntry = new org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
       schemaEvolutionEntry.setTimeStamp(timeStamp)
+      // filter out complex children columns
+      newCols = newCols.filter(x => !x.isComplexColumn)
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)

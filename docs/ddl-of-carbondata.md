@@ -770,8 +770,11 @@ CarbonData DDL statements are documented here,which includes:
      ```
      ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DEFAULT.VALUE.a1'='10')
      ```
-      **NOTE:** Add Complex datatype columns is not supported.
-
+      **NOTE:** Adding of only single-level Complex datatype columns(only array and struct) is supported.
+      Example - 
+      ```
+      ALTER TABLE <table-name> ADD COLUMNS(arrField array<array<int>>, structField struct<id1:string,name1:string>)
+      ```
 Users can specify which columns to include and exclude for local dictionary generation after adding new columns. These will be appended with the already existing local dictionary include and exclude columns of main table respectively.
      
      ```
