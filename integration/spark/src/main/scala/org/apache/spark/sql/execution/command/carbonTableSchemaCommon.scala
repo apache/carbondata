@@ -29,6 +29,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.util.CarbonException
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.Segment
@@ -235,6 +236,26 @@ class AlterTableColumnSchemaGenerator(
     dataType.toString.equals("STRUCT")
   }
 
+  private def createChildSchema(childField: Field, currentSchemaOrdinal: Int): ColumnSchema = {
+    // TODO: should support adding multi-level complex columns: CARBONDATA-4164
+    if (!childField.children.contains(null)) {
+      throw new UnsupportedOperationException(
+        "Alter add columns with nested complex types is not allowed")
+    }
+
+    TableNewProcessor.createColumnSchema(
+      childField,
+      new java.util.ArrayList[Encoding](),
+      isDimensionCol = true,
+      childField.precision,
+      childField.scale,
+      childField.schemaOrdinal + currentSchemaOrdinal,
+      alterTableModel.highCardinalityDims,
+      alterTableModel.databaseName.getOrElse(dbName),
+      isSortColumn(childField.name.getOrElse(childField.column)),
+      isVarcharColumn(childField.name.getOrElse(childField.column)))
+  }
+
   def process: Seq[ColumnSchema] = {
     val tableSchema = tableInfo.getFactTable
     val tableCols = tableSchema.getListOfColumns.asScala
@@ -244,8 +265,8 @@ class AlterTableColumnSchemaGenerator(
     // get all original dimension columns
     // but exclude complex type columns and long string columns
     var allColumns = tableCols.filter(x =>
-      (x.isDimensionColumn && !x.getDataType.isComplexType()
-          && x.getSchemaOrdinal != -1 && (x.getDataType != DataTypes.VARCHAR)))
+      (x.isDimensionColumn && !x.getDataType.isComplexType() && !x.isComplexColumn()
+       && x.getSchemaOrdinal != -1 && (x.getDataType != DataTypes.VARCHAR)))
     var newCols = Seq[ColumnSchema]()
     val invertedIndexCols: Array[String] = alterTableModel
       .tableProperties
@@ -255,6 +276,10 @@ class AlterTableColumnSchemaGenerator(
 
     // add new dimension columns
     alterTableModel.dimCols.foreach(field => {
+      if (field.dataType.get.toLowerCase().equals(CarbonCommonConstants.MAP)) {
+        throw new MalformedCarbonCommandException(
+          s"Add column is unsupported for map datatype column: ${ field.column }")
+      }
       val encoders = new java.util.ArrayList[Encoding]()
       val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
         field,
@@ -275,6 +300,34 @@ class AlterTableColumnSchemaGenerator(
         allColumns ++= Seq(columnSchema)
       }
       newCols ++= Seq(columnSchema)
+      if (DataTypes.isArrayType(columnSchema.getDataType)) {
+        columnSchema.setNumberOfChild(field.children.size)
+        val childField = field.children.get(0)
+        val childSchema: ColumnSchema = createChildSchema(childField, currentSchemaOrdinal)
+        if (childSchema.getDataType == DataTypes.VARCHAR) {
+          // put the new long string columns in 'longStringCols'
+          // and add them after old long string columns
+          longStringCols ++= Seq(childSchema)
+        } else {
+          allColumns ++= Seq(childSchema)
+        }
+        newCols ++= Seq(childSchema)
+      } else if (DataTypes.isStructType(columnSchema.getDataType)) {
+        val noOfChildren = field.children.get.size
+        columnSchema.setNumberOfChild(noOfChildren)
+        for (i <- 0 to noOfChildren - 1) {
+          val childField = field.children.get(i)
+          val childSchema: ColumnSchema = createChildSchema(childField, currentSchemaOrdinal)
+          if (childSchema.getDataType == DataTypes.VARCHAR) {
+            // put the new long string columns in 'longStringCols'
+            // and add them after old long string columns
+            longStringCols ++= Seq(childSchema)
+          } else {
+            allColumns ++= Seq(childSchema)
+          }
+          newCols ++= Seq(childSchema)
+        }
+      }
     })
     // put the old long string columns
     allColumns ++= tableCols.filter(x =>
@@ -283,7 +336,8 @@ class AlterTableColumnSchemaGenerator(
     allColumns ++= longStringCols
     // put complex type columns at the end of dimension columns
     allColumns ++= tableCols.filter(x =>
-      (x.isDimensionColumn && (x.getDataType.isComplexType() || x.getSchemaOrdinal == -1)))
+      (x.isDimensionColumn &&
+       (x.getDataType.isComplexType() || x.isComplexColumn() || x.getSchemaOrdinal == -1)))
     // original measure columns
     allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
     // add new measure columns
@@ -318,10 +372,6 @@ class AlterTableColumnSchemaGenerator(
         val name = f._1
         sys.error(s"Duplicate column found with name: $name")
       })
-
-    if (newCols.exists(_.getDataType.isComplexType)) {
-      sys.error(s"Complex column cannot be added")
-    }
 
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
@@ -473,6 +523,11 @@ class AlterTableColumnSchemaGenerator(
       for (elem <- alterTableModel.tableProperties) {
         if (elem._1.toLowerCase.startsWith(defaultValueString)) {
           if (col.getColumnName.equalsIgnoreCase(elem._1.substring(defaultValueString.length))) {
+            if (DataTypes.isArrayType(col.getDataType) || DataTypes.isStructType(col.getDataType) ||
+                DataTypes.isMapType(col.getDataType)) {
+              throw new UnsupportedOperationException(
+                "Cannot add a default value in case of complex columns.")
+            }
             rawData = elem._2
             val data = DataTypeUtil.convertDataToBytesBasedOnDataType(elem._2, col)
             if (null != data) {
@@ -534,10 +589,11 @@ object TableNewProcessor {
     if (highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataTypes.DATE) {
-      encoders.add(Encoding.DICTIONARY)
-      encoders.add(Encoding.DIRECT_DICTIONARY)
-    } else if (dataType == DataTypes.TIMESTAMP && !highCardinalityDims.contains(colName)) {
+    // complex children does not require encoding
+    if (!colName.contains(CarbonCommonConstants.POINT) && (dataType == DataTypes.DATE ||
+                                                           dataType == DataTypes.TIMESTAMP &&
+                                                           !highCardinalityDims.contains(colName)
+      )) {
       encoders.add(Encoding.DICTIONARY)
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }

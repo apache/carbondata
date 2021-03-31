@@ -17,13 +17,18 @@
 
 package org.apache.carbondata.spark.testsuite.alterTable
 
+import java.sql.{Date, Timestamp}
+
+import scala.collection.JavaConverters
 import scala.collection.mutable
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonProperties
 
 class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
@@ -136,14 +141,280 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql(s"""DROP TABLE IF EXISTS ${ tableName }""")
   }
 
+  def addedColumnsInSchemaEvolutionEntry(tableName: String): Seq[ColumnSchema] = {
+    val carbonTable = CarbonEnv.getCarbonTable(None, tableName)(sqlContext.sparkSession)
+    val schemaEvolutionList = carbonTable.getTableInfo
+      .getFactTable
+      .getSchemaEvolution()
+      .getSchemaEvolutionEntryList()
+    var addedColumns = Seq[ColumnSchema]()
+    for (i <- 0 until schemaEvolutionList.size()) {
+      addedColumns ++=
+      JavaConverters
+        .asScalaIteratorConverter(schemaEvolutionList.get(i).getAdded.iterator())
+        .asScala
+        .toSeq
+    }
+    addedColumns
+  }
+
+  test("Test adding of array of all primitive datatypes") {
+    import scala.collection.mutable.WrappedArray.make
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql("CREATE TABLE alter_com(intfield int) STORED AS carbondata")
+    sql(
+      "ALTER TABLE alter_com ADD COLUMNS(arr1 array<short>, arr2 array<int>, arr3 " +
+      "array<long>, arr4 array<double>, arr5 array<decimal(8,2)>, arr6 array<string>, arr7 " +
+      "array<char(5)>, arr8 array<varchar(50)>, arr9 array<boolean>, arr10 array<date>, arr11 " +
+      "array<timestamp> )")
+    val columns = sql("desc table alter_com").collect()
+    assert(columns.size.equals(12))
+    sql(
+      "insert into alter_com values(1,array(1,5),array(1,2),array(1,2,3),array(1.2d,2.3d),array" +
+      "(4.5,6.7),array('hello','world'),array('a','bcd'),array('abcd','efg'),array(true,false)," +
+      "array('2017-02-01','2018-09-11'),array('2017-02-01 00:01:00','2018-02-01 02:21:00') )")
+    checkAnswer(sql(
+      "select * from alter_com"),
+      Seq(Row(1,
+        make(Array(1, 5)),
+        make(Array(1, 2)),
+        make(Array(1, 2, 3)),
+        make(Array(1.2, 2.3)),
+        make(Array(java.math.BigDecimal.valueOf(4.5).setScale(2),
+          java.math.BigDecimal.valueOf(6.7).setScale(2))),
+        make(Array("hello", "world")),
+        make(Array("a", "bcd")),
+        make(Array("abcd", "efg")),
+        make(Array(true, false)),
+        make(Array(Date.valueOf("2017-02-01"),
+          Date.valueOf("2018-09-11"))),
+        make(Array(Timestamp.valueOf("2017-02-01 00:01:00"),
+          Timestamp.valueOf("2018-02-01 02:21:00")))
+      )))
+
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 11)
+    sql("DROP TABLE IF EXISTS alter_com")
+  }
+
+  test("Test adding of struct of all primitive datatypes") {
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql("CREATE TABLE alter_com(intField INT) STORED AS " +
+      "carbondata")
+    sql("ALTER TABLE alter_com ADD COLUMNS(structField struct<a:short,b:int,c:long,d:double, " +
+      "e:decimal(8,2),f:string,g:char(5),h:varchar(50),i:boolean,j:date,k:timestamp>)")
+    sql("insert into alter_com values(1, named_struct('a',1,'b',2,'c',3,'d',1.23,'e',2.34,'f'," +
+      "'hello','g','abc','h','def','i',true,'j','2017-02-01','k','2018-02-01 02:00:00.0') ) ")
+    checkAnswer(sql("select structField from alter_com"),
+      Seq(Row(Row(1, 2, 3, 1.23, java.math.BigDecimal.valueOf(2.34).setScale(2), "hello", "abc",
+        "def", true, Date.valueOf("2017-02-01"), Timestamp.valueOf("2018-02-01 02:00:00.0")))))
+
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 1)
+    sql("DROP TABLE IF EXISTS alter_com")
+  }
+
+  def insertIntoTableForArrayType(): Unit = {
+    sql("insert into alter_com values(4,array(2),array(1,2,3,4),array('abc','def'))")
+    sql("insert into alter_com values(5,array(1,2),array(1), array('Hulk','Thor'))")
+    sql(
+      "insert into alter_com values(6,array(1,2,3),array(1234,8,33333),array('Iron','Man'," +
+      "'Jarvis'))")
+  }
+
+  def checkRestulForArrayType(): Unit = {
+    val totalRows = sql("select * from alter_com").collect()
+    val a = sql("select * from alter_com where array_contains(arr2,2)").collect
+    val b = sql("select * from alter_com where array_contains(arr3,'Thor')").collect
+    val c = sql("select * from alter_com where intField = 1").collect
+    assert(totalRows.size == 6)
+    assert(a.size == 1)
+    assert(b.size == 1)
+    // check default value for newly added array column that is index - 3 and 4
+    assert(c(0)(2) == null && c(0)(3) == null)
+  }
+
+  def createTableForComplexTypes(dictionary: String, complexType: String): Unit = {
+    if (complexType.equals("ARRAY")) {
+      sql("DROP TABLE IF EXISTS alter_com")
+      sql("CREATE TABLE alter_com(intField INT, arr1 array<int>) STORED AS carbondata")
+      sql("insert into alter_com values(1,array(1) )")
+      sql("insert into alter_com values(2,array(9,0) )")
+      sql("insert into alter_com values(3,array(11,12,13) )")
+      sql(s"ALTER TABLE alter_com ADD COLUMNS(arr2 array<int>, arr3 array<string>) TBLPROPERTIES" +
+          s"('$dictionary'='arr3')")
+      val schema = sql("describe alter_com").collect()
+      assert(schema.size == 4)
+    } else if (complexType.equals("STRUCT")) {
+      sql("DROP TABLE IF EXISTS alter_struct")
+      sql(
+        "create table alter_struct(roll int, department struct<id1:string,name1:string>) STORED " +
+        "AS carbondata")
+      sql("insert into alter_struct values(1, named_struct('id1', 'id1','name1','name1'))")
+      sql("ALTER TABLE alter_struct ADD COLUMNS(struct1 struct<a:string,b:string>, temp string," +
+          " intField int, struct2 struct<c:string,d:string,e:int>, arr array<int>) TBLPROPERTIES " +
+          "('LOCAL_DICTIONARY_INCLUDE'='struct1, struct2')")
+      val schema = sql("describe alter_struct").collect()
+      assert(schema.size == 7)
+    }
+  }
+
+  test("Test alter add for arrays enabling local dictionary") {
+    import scala.collection.mutable.WrappedArray.make
+    createTableForComplexTypes("LOCAL_DICTIONARY_INCLUDE", "ARRAY")
+    // For the previous segments the default value for newly added array column is null
+    insertIntoTableForArrayType
+    checkRestulForArrayType
+    sql(s"ALTER TABLE alter_com ADD COLUMNS(arr4 array<int>) ")
+    sql(s"ALTER TABLE alter_com ADD COLUMNS(arr5 array<int>, str struct<a:int,b:string>) ")
+    sql(
+      "insert into alter_com values(2,array(9,0),array(1,2,3),array('hello','world'),array(6,7)," +
+      "array(8,9), named_struct('a',1,'b','abcde') )")
+    val rows = sql("select * from alter_com").collect()
+    assert(rows(6)(0) == 2)
+    assert(rows(6)(1) == make(Array(9, 0)))
+    assert(rows(6)(2) == make(Array(1, 2, 3)))
+    assert(rows(6)(3) == make(Array("hello", "world")))
+    assert(rows(6)(4) == make(Array(6, 7)))
+    assert(rows(6)(5) == make(Array(8, 9)))
+    assert(rows(6)(6) == Row(1, "abcde"))
+    assert(rows.size == 7)
+
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 5)
+    sql("DROP TABLE IF EXISTS alter_com")
+  }
+
+  test("Test alter add for arrays disabling local dictionary") {
+    createTableForComplexTypes("LOCAL_DICTIONARY_EXCLUDE", "ARRAY")
+    // For the previous segments the default value for newly added array column is null
+    insertIntoTableForArrayType
+    checkRestulForArrayType
+    sql("DROP TABLE IF EXISTS alter_com")
+  }
+
+  def insertIntoTableForStructType(): Unit = {
+    sql("insert into alter_struct values(2, named_struct('id1', 'id2','name1','name2'), " +
+      "named_struct('a','id2','b', 'abc2'), 'hello world', 5, named_struct('c','id3'," +
+      "'d', 'abc3','e', 22), array(1,2,3)  )")
+    sql("insert into alter_struct values(3, named_struct('id1', 'id3','name1','name3'), " +
+      "named_struct('a','id2.1','b', 'abc2.1'), 'India', 5, named_struct('c','id3.1'," +
+      "'d', 'abc3.1','e', 25), array(4,5)  )")
+  }
+
+  def checkResultForStructType(): Unit = {
+    val totalRows = sql("select * from alter_struct").collect()
+    val a = sql("select * from alter_struct where struct1.a = 'id2' ").collect()
+    val b = sql(
+      "select * from alter_struct where struct1.a = 'id2' or struct2.c = 'id3.1' or " +
+      "array_contains(arr,5) ")
+      .collect()
+    val c = sql("select * from alter_struct where roll = 1").collect()
+
+    assert(totalRows.size == 3)
+    assert(a.size == 1)
+    assert(b.size == 2)
+    // check default value for newly added struct column
+    assert(c(0)(2) == null)
+  }
+
+  test("Test alter add for structs enabling local dictionary") {
+    createTableForComplexTypes("LOCAL_DICTIONARY_INCLUDE", "STRUCT")
+    // For the previous segments the default value for newly added struct column is null
+    insertIntoTableForStructType
+    checkResultForStructType
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_struct")
+    assert(addedColumns.size == 5)
+    sql("DROP TABLE IF EXISTS alter_struct")
+  }
+
+  test("Test alter add for structs, disabling local dictionary") {
+    createTableForComplexTypes("LOCAL_DICTIONARY_EXCLUDE", "STRUCT")
+    // For the previous segments the default value for newly added struct column is null
+    insertIntoTableForStructType
+    checkResultForStructType
+    sql("DROP TABLE IF EXISTS alter_struct")
+  }
+
+  test("Validate alter add multi-level complex column") {
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql("CREATE TABLE alter_com(intField INT, arr array<int>) " +
+      "STORED AS carbondata ")
+    var exception = intercept[Exception] {
+      sql("ALTER TABLE alter_com ADD COLUMNS(arr1 array<array<int>>) ")
+    }
+    val exceptionMessage =
+      "operation failed for default.alter_com: Alter table add operation failed: Alter add " +
+      "columns with nested complex types is not allowed"
+    assert(exception.getMessage.contains(exceptionMessage))
+
+    exception = intercept[Exception] {
+      sql("ALTER TABLE alter_com ADD COLUMNS(struct1 struct<arr: array<int>>) ")
+    }
+    assert(exception.getMessage.contains(exceptionMessage))
+    sql("DROP TABLE IF EXISTS alter_com")
+  }
+
+  test("Validate default values of complex columns added by alter command") {
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql("CREATE TABLE alter_com(doubleField double, arr1 array<long> ) STORED AS carbondata")
+    sql("insert into alter_com values(1.1,array(77))")
+    sql("ALTER TABLE alter_com ADD COLUMNS(arr2 array<int>)")
+    val exception = intercept[Exception] {
+      sql(
+        "ALTER TABLE alter_com ADD COLUMNS(arr3 array<int>) TBLPROPERTIES('DEFAULT.VALUE.arr3'= " +
+        "'array(77)')")
+    }
+    val exceptionMessage =
+      "operation failed for default.alter_com: Alter table add operation failed: Cannot add a " +
+      "default value in case of complex columns."
+    assert(exception.getMessage.contains(exceptionMessage))
+  }
+
+  test("Validate adding of map types through alter command") {
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql(
+      "CREATE TABLE alter_com(doubleField double, arr1 array<long>, m map<int, string> ) STORED " +
+      "AS carbondata")
+    sql("insert into alter_com values(1.1,array(77),map(1,'abc'))")
+    val exception = intercept[Exception] {
+      sql("ALTER TABLE alter_com ADD COLUMNS(mapField map<int, string>)")
+    }
+    val exceptionMessage =
+      "operation failed for default.alter_com: Alter table add operation failed: Add column is " +
+      "unsupported for map datatype column: mapfield"
+    assert(exception.getMessage.contains(exceptionMessage))
+  }
+
+  test("alter table add complex columns with comment") {
+    sql("""create table test_add_column_with_comment(
+          | col1 string comment 'col1 comment',
+          | col2 string)
+          | stored as carbondata""".stripMargin)
+    sql("""alter table test_add_column_with_comment add columns(
+          | col3 array<int> comment "col3 comment",
+          | col4 struct<a:int,b:string> comment "col4 comment",
+          | col5 array<string> comment "",
+          | col6 array<string> )""".stripMargin)
+    val describe = sql("describe test_add_column_with_comment")
+    var count = describe.filter("col_name='col3' and comment = 'col3 comment'").count()
+    assertResult(1)(count)
+    count = describe.filter("col_name='col4' and comment = 'col4 comment'").count()
+    assertResult(1)(count)
+    count = describe.filter("col_name='col5' and comment = ''").count()
+    assertResult(1)(count)
+    count = describe.filter("col_name='col6' and comment is null").count()
+    assertResult(1)(count)
+    sql("DROP TABLE IF EXISTS test_add_column_with_comment")
+  }
+
   test("alter table add columns with comment") {
     sql("""create table test_add_column_with_comment(
         | col1 string comment 'col1 comment',
         | col2 int,
         | col3 string)
         | stored as carbondata""".stripMargin)
-    sql(
-      """alter table test_add_column_with_comment add columns(
+    sql("""alter table test_add_column_with_comment add columns(
         | col4 string comment "col4 comment",
         | col5 int,
         | col6 string comment "")""".stripMargin)
@@ -154,6 +425,38 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     assertResult(1)(count)
     count = describe.filter("col_name='col6' and comment = ''").count()
     assertResult(1)(count)
+  }
+
+  test("Validate datatypes and column names of added complex columns") {
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql(
+      """create table alter_com(
+        | col1 array<string>)
+        | stored as carbondata""".stripMargin)
+    sql(
+      """alter table alter_com add columns(
+        | col2 array<string>,
+        | col3 struct<a:int,b:long>,
+        | col4 string,
+        | col5 array<long>,
+        | col6 int,
+        | col7 struct<a:string> )""".stripMargin)
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 6)
+    for (i <- 0 until addedColumns.size) {
+      val column = addedColumns(i)
+      assert((column.getColumnName.equals("col2") && DataTypes.isArrayType(column.getDataType) &&
+              column.getNumberOfChild.equals(1)) ||
+             (column.getColumnName.equals("col3") && DataTypes.isStructType(column.getDataType) &&
+              column.getNumberOfChild.equals(2)) ||
+             (column.getColumnName.equals("col5") && DataTypes.isArrayType(column.getDataType) &&
+              column.getNumberOfChild.equals(1)) ||
+             (column.getColumnName.equals("col7") && DataTypes.isStructType(column.getDataType) &&
+              column.getNumberOfChild.equals(1)) ||
+             column.getColumnName.equals("col4") || column.getColumnName.equals("col6")
+      )
+    }
+    sql("DROP TABLE IF EXISTS alter_com")
   }
 
   test("[CARBONDATA-3596] Fix exception when execute load data command or " +

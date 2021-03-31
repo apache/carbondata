@@ -280,6 +280,11 @@ public class QueryUtil {
 
   private static void fillParentDetails(Map<Integer, Integer> dimensionToBlockIndexMap,
       CarbonDimension dimension, Map<Integer, GenericQueryType> complexTypeMap) {
+    // If the dimension is added via alter add command then it doesn't exist in any
+    // of the blocks as it is not yet updated. Hence return
+    if (!dimensionToBlockIndexMap.containsKey(dimension.getOrdinal())) {
+      return;
+    }
     int parentBlockIndex = dimensionToBlockIndexMap.get(dimension.getOrdinal());
     GenericQueryType parentQueryType;
     if (DataTypes.isArrayType(dimension.getDataType())) {

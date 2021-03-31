@@ -43,6 +43,43 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("drop table if exists complextable5")
   }
 
+  test("Test alter add array column before creating SI") {
+    sql("drop table if exists complextable")
+    sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
+    sql("insert into complextable select 1,array('china', 'us'), 'b'")
+    sql("insert into complextable select 2,array('pak'), 'v'")
+
+    sql("drop index if exists index_11 on complextable")
+    sql(
+      "ALTER TABLE complextable ADD COLUMNS(arr2 array<string>)")
+    sql("insert into complextable select 3,array('china'), 'f',array('hello','world')")
+    sql("insert into complextable select 4,array('india'),'g',array('iron','man','jarvis')")
+
+    val result1 = sql("select * from complextable where array_contains(arr2,'iron')")
+    val result2 = sql("select * from complextable where arr2[0]='iron'")
+    sql("create index index_11 on table complextable(arr2) as 'carbondata'")
+    val df1 = sql(" select * from complextable where array_contains(arr2,'iron')")
+    val df2 = sql(" select * from complextable where arr2[0]='iron'")
+    if (!isFilterPushedDownToSI(df1.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    if (!isFilterPushedDownToSI(df2.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    val doNotHitSIDf = sql(" select * from complextable where array_contains(arr2,'iron') and array_contains(arr2,'man')")
+    if (isFilterPushedDownToSI(doNotHitSIDf.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result1, df1)
+    checkAnswer(result2, df2)
+  }
+
   test("test array<string> on secondary index") {
     sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
     sql("insert into complextable select 1,array('china', 'us'), 'b'")

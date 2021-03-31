@@ -683,12 +683,6 @@ object CarbonSparkSqlParserUtil {
       fields: List[Field],
       tblProp: Option[List[(String, String)]]
   ): CarbonAlterTableAddColumnCommand = {
-    fields.foreach { f =>
-      if (CarbonParserUtil.isComplexType(f.dataType.get)) {
-        throw new MalformedCarbonCommandException(
-          s"Add column is unsupported for complex datatype column: ${ f.column }")
-      }
-    }
     val tableProps = if (tblProp.isDefined) {
       tblProp.get.groupBy(_._1.toLowerCase).foreach(f =>
         if (f._2.size > 1) {
