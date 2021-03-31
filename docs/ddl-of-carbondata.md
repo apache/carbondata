@@ -799,7 +799,11 @@ Users can specify which columns to include and exclude for local dictionary gene
      ALTER TABLE carbon DROP COLUMNS (c1,d1)
      ```
 
-     **NOTE:** Drop Complex child column is not supported.
+     **NOTE:** 
+     1. Drop Complex child column is not supported.
+     
+     2. If a column to be dropped has any Secondary index table created on them, drop column operation fails and the user will 
+     be asked to drop the corresponding SI table first before going for actual drop.
 
    - #### CHANGE COLUMN NAME/TYPE/COMMENT
    
