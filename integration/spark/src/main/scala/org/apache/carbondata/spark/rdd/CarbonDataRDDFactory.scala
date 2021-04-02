@@ -848,6 +848,31 @@ object CarbonDataRDDFactory {
       hadoopConf: Configuration,
       segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+    val nodeBlockMapping = getNodeBlockMapping(sqlContext, hadoopConf, carbonLoadModel)
+    val blocksGroupBy: Array[(String, Array[BlockDetails])] = nodeBlockMapping.map { entry =>
+      val blockDetailsList =
+        entry._2.asScala.map(distributable => {
+          val tableBlock = distributable.asInstanceOf[TableBlockInfo]
+          new BlockDetails(new Path(tableBlock.getFilePath),
+            tableBlock.getBlockOffset, tableBlock.getBlockLength, tableBlock.getLocations
+          )
+        }).toArray
+      (entry._1, blockDetailsList)
+    }.toArray
+
+    new NewCarbonDataLoadRDD(
+      sqlContext.sparkSession,
+      new DataLoadResultImpl(),
+      carbonLoadModel,
+      blocksGroupBy,
+      segmentMetaDataAccumulator
+    ).collect()
+  }
+
+  def getNodeBlockMapping(
+      sqlContext: SQLContext,
+      hadoopConf: Configuration,
+      carbonLoadModel: CarbonLoadModel): Seq[(String, util.List[Distributable])] = {
     /*
      * when data load handle by node partition
      * 1)clone the hadoop configuration,and set the file path to the configuration
@@ -881,10 +906,10 @@ object CarbonDataRDDFactory {
     val activeNodes = DistributionUtil
       .ensureExecutorsAndGetNodeList(blockList, sqlContext.sparkContext)
     val skewedDataOptimization = CarbonProperties.getInstance()
-      .isLoadSkewedDataOptimizationEnabled()
+      .isLoadSkewedDataOptimizationEnabled
     // get user ddl input the node loads the smallest amount of data
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    var loadMinSize = carbonLoadModel.getLoadMinSize()
+    var loadMinSize = carbonLoadModel.getLoadMinSize
     if (loadMinSize.equalsIgnoreCase(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)) {
       loadMinSize = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
         .getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
@@ -906,13 +931,13 @@ object CarbonDataRDDFactory {
     val timeElapsed: Long = System.currentTimeMillis - startTime
     LOGGER.info("Total Time taken in block allocation: " + timeElapsed)
     LOGGER.info(s"Total no of blocks: ${ blockList.length }, " +
-                s"No.of Nodes: ${nodeBlockMapping.size}")
+                s"No.of Nodes: ${ nodeBlockMapping.size }")
     var str = ""
     nodeBlockMapping.foreach { entry =>
       val tableBlock = entry._2
       val totalSize = tableBlock.asScala.map(_.asInstanceOf[TableBlockInfo].getBlockLength).sum
       str = str + "#Node: " + entry._1 + ", no.of.blocks: " + tableBlock.size() +
-            f", totalsize.of.blocks: ${totalSize * 0.1 * 10 / 1024 /1024}%.2fMB"
+            f", totalsize.of.blocks: ${ totalSize * 0.1 * 10 / 1024 / 1024 }%.2fMB"
       tableBlock.asScala.foreach(tableBlockInfo =>
         if (!tableBlockInfo.getLocations.exists(hostEntry =>
           hostEntry.equalsIgnoreCase(entry._1)
@@ -924,24 +949,7 @@ object CarbonDataRDDFactory {
       str = str + "\n"
     }
     LOGGER.info(str)
-    val blocksGroupBy: Array[(String, Array[BlockDetails])] = nodeBlockMapping.map { entry =>
-      val blockDetailsList =
-        entry._2.asScala.map(distributable => {
-          val tableBlock = distributable.asInstanceOf[TableBlockInfo]
-          new BlockDetails(new Path(tableBlock.getFilePath),
-            tableBlock.getBlockOffset, tableBlock.getBlockLength, tableBlock.getLocations
-          )
-        }).toArray
-      (entry._1, blockDetailsList)
-    }.toArray
-
-    new NewCarbonDataLoadRDD(
-      sqlContext.sparkSession,
-      new DataLoadResultImpl(),
-      carbonLoadModel,
-      blocksGroupBy,
-      segmentMetaDataAccumulator
-    ).collect()
+    nodeBlockMapping
   }
 
 }

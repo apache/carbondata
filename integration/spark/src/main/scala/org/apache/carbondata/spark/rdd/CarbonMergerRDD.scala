@@ -359,8 +359,12 @@ class CarbonMergerRDD[K, V](
         .map(_.asInstanceOf[CarbonInputSplit])
         .filter { split => FileFormat.COLUMNAR_V3.equals(split.getFileFormat) }.toList.asJava
     }
+    var hasExternalSegment = false
     val filteredSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter { inputSplit =>
       val segmentId = Segment.toSegment(inputSplit.getSegmentId).getSegmentNo
+      if (inputSplit.getSegment.isExternalSegment) {
+        hasExternalSegment = true
+      }
       val blockInfo = new TableBlockInfo(inputSplit.getFilePath,
         inputSplit.getStart, inputSplit.getSegmentId,
         inputSplit.getLocations, inputSplit.getLength, inputSplit.getVersion,
@@ -434,6 +438,12 @@ class CarbonMergerRDD[K, V](
     }
 
     val partitionTaskMap = new util.HashMap[PartitionSpec, String]()
+    val partitionTaskMapBasedOnId = new util.HashMap[PartitionSpec, util.HashMap[String, Int]]()
+    val isPartitionBasedOnTask = CarbonProperties
+      .getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL,
+        CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL_DEFAULT)
+      .toBoolean
     val counter = new AtomicInteger()
     var indexOfRangeColumn = -1
     // As we are already handling null values in the filter expression separately so we
@@ -472,7 +482,11 @@ class CarbonMergerRDD[K, V](
       carbonInputSplits.foreach { split =>
         var dataFileFooter: DataFileFooter = null
         if (null == rangeColumn) {
-          val taskNo = getTaskNo(split, partitionTaskMap, counter)
+          val taskNo = if (isPartitionBasedOnTask && !hasExternalSegment) {
+            getTaskNumberBasedOnID(split, partitionTaskMapBasedOnId, counter)
+          } else {
+            getTaskNo(split, partitionTaskMap, counter)
+          }
           val splitList = taskIdMapping.get(taskNo)
           noOfBlocks += 1
           if (null == splitList) {
@@ -590,12 +604,15 @@ class CarbonMergerRDD[K, V](
                 splitListForRange,
                 Array(nodeName))
             }
+            val partitionSpec = getPartitionNamesFromTask(taskInfo.getTaskId,
+              partitionTaskMap,
+              partitionTaskMapBasedOnId)
             result.add(
               new CarbonSparkPartition(
                 id,
                 taskPartitionNo,
                 multiBlockSplit,
-                getPartitionNamesFromTask(taskInfo.getTaskId, partitionTaskMap)))
+                partitionSpec))
             taskPartitionNo += 1
           }
         }
@@ -700,7 +717,7 @@ class CarbonMergerRDD[K, V](
         case Some(part) => part
         case None =>
           throw new UnsupportedOperationException("Cannot do compaction on dropped partition")
-      }
+        }
       var task = partitionTaskMap.get(partTask)
       if (task == null) {
         task = counter.incrementAndGet().toString
@@ -712,10 +729,59 @@ class CarbonMergerRDD[K, V](
     }
   }
 
-  private def getPartitionNamesFromTask(taskId: String,
-      partitionTaskMap: util.Map[PartitionSpec, String]): Option[PartitionSpec] = {
+  /**
+   * Group the data files based on task Id per partition
+   */
+  private def getTaskNumberBasedOnID(
+      split: CarbonInputSplit,
+      partitionTaskMap: util.Map[PartitionSpec, util.HashMap[String, Int]],
+      counter: AtomicInteger): String = {
     if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
-      Some(partitionTaskMap.asScala.find(f => f._2.equals(taskId)).get._1)
+      val path = split.getPath.getParent
+      val partTask =
+        carbonMergerMapping.currentPartitions.get.find(p => p.getLocation.equals(path)) match {
+          case Some(part) => part
+          case None =>
+            throw new UnsupportedOperationException("Cannot do compaction on dropped partition")
+        }
+      var task: String = null
+      val partitionTaskId = CarbonScalaUtil.getTaskIdFromUniqueNumber(split.taskId)
+      if (partitionTaskMap.isEmpty || partitionTaskMap.get(partTask) == null) {
+        if (partitionTaskMap.isEmpty) {
+          task = counter.toString
+        } else {
+          task = counter.incrementAndGet().toString
+        }
+        val partitionTaskList = new util.HashMap[String, Int]()
+        partitionTaskList.put(task, partitionTaskId)
+        partitionTaskMap.put(partTask, partitionTaskList)
+      } else {
+        val taskMap = partitionTaskMap.get(partTask)
+        if (taskMap.containsValue(partitionTaskId)) {
+          task = taskMap.asScala.find(_._2.equals(partitionTaskId)).get._1
+        } else {
+          task = counter.incrementAndGet().toString
+          taskMap.put(task, partitionTaskId)
+        }
+        partitionTaskMap.put(partTask, taskMap)
+      }
+      task
+    } else {
+      split.taskId
+    }
+  }
+
+  private def getPartitionNamesFromTask(taskId: String,
+      partitionTaskMap: util.Map[PartitionSpec, String],
+      partitionTaskMapBasedOnId: util.Map[PartitionSpec, util.HashMap[String, Int]])
+  : Option[PartitionSpec] = {
+    if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+      if (!partitionTaskMapBasedOnId.isEmpty) {
+        Some(partitionTaskMapBasedOnId.asScala
+          .find(f => f._2.asScala.exists(_._1.equals(taskId))).get._1)
+      } else {
+        Some(partitionTaskMap.asScala.find(f => f._2.equals(taskId)).get._1)
+      }
     } else {
       None
     }

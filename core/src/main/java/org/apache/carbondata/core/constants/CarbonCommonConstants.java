@@ -975,6 +975,18 @@ public final class CarbonCommonConstants {
   public static final String LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT = "0";
 
   /**
+   * When enabled, tasks launched for Local sort partition load will be based on one node one task.
+   * Compaction will be performed based on task level for a partition. Load performance might be
+   * degraded, because, the number of tasks launched is equal to num of nodes in case of local sort.
+   * Improves memory consumption for load and compaction.
+   */
+  @CarbonProperty
+  public static final String CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL =
+      "carbon.partition.data.on.tasklevel";
+
+  public static final String CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL_DEFAULT = "false";
+
+  /**
    * whether to prefetch data while loading.
    */
   @CarbonProperty
