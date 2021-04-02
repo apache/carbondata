@@ -996,10 +996,23 @@ object CommonLoadUtils {
         }
       } else {
         val columnCount = loadParams.carbonLoadModel.getCsvHeaderColumns.length
-        val rdd = CsvRDDHelper.csvFileScanRDD(
-          loadParams.sparkSession,
-          model = loadParams.carbonLoadModel,
-          loadParams.hadoopConf).map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
+        val partitionBasedOnLocality = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL,
+            CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL_DEFAULT).toBoolean
+        val rdd =
+          if (sortScope == SortScopeOptions.SortScope.LOCAL_SORT && partitionBasedOnLocality) {
+            CsvRDDHelper.csvFileScanRDDForLocalSort(
+              loadParams.sparkSession,
+              model = loadParams.carbonLoadModel,
+              loadParams.hadoopConf)
+              .map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
+          } else {
+            CsvRDDHelper.csvFileScanRDD(
+              loadParams.sparkSession,
+              model = loadParams.carbonLoadModel,
+              loadParams.hadoopConf)
+              .map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
+          }
         val (transformedPlan, partitions, persistedRDDLocal) =
           transformQueryWithRow(
             rdd.asInstanceOf[RDD[Row]],

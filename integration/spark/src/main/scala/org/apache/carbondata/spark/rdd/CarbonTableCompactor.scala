@@ -267,7 +267,7 @@ class CarbonTableCompactor(
       )
       val partitionSpecs = mergeRDD.getPartitions.map { partition =>
         partition.asInstanceOf[CarbonSparkPartition].partitionSpec.get
-      }
+      }.distinct
       if (partitionSpecs != null && partitionSpecs.nonEmpty) {
         compactionCallableModel.compactedPartitions = Some(partitionSpecs)
       }

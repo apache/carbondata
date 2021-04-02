@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.load
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
@@ -29,16 +30,22 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.execution.datasources.{FilePartition, FileScanRDD, PartitionedFile}
+import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
-import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
+import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.adapter.CarbonToSparkAdapter
+import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.{getNodeBlockMapping, LOGGER}
 import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil}
 
 object CsvRDDHelper {
@@ -108,8 +115,49 @@ object CsvRDDHelper {
     closePartition()
 
     // 2. read function
-    val serializableConfiguration = SparkSQLUtil.getSerializableConfigurableInstance(hadoopConf)
-    val readFunction = new (PartitionedFile => Iterator[InternalRow]) with Serializable {
+    val readFunction = getReadFunction(hadoopConf)
+    new FileScanRDD(spark, readFunction, partitions)
+  }
+
+  /**
+   * create a RDD that does reading of multiple CSV files based on data locality
+   */
+  def csvFileScanRDDForLocalSort(
+      spark: SparkSession,
+      model: CarbonLoadModel,
+      hadoopConf: Configuration
+  ): RDD[InternalRow] = {
+    CommonUtil.configureCSVInputFormat(hadoopConf, model)
+    // divide the blocks among the nodes as per the data locality
+    val nodeBlockMapping = getNodeBlockMapping(spark.sqlContext, hadoopConf, model)
+    val partitions = new ArrayBuffer[FilePartition]
+    // create file partition
+    nodeBlockMapping.map { entry =>
+      val files = entry._2.asScala.map(distributable => {
+        val tableBlock = distributable.asInstanceOf[TableBlockInfo]
+        PartitionedFile(
+          InternalRow.empty,
+          tableBlock.getFilePath,
+          tableBlock.getBlockOffset,
+          tableBlock.getBlockLength,
+          tableBlock.getLocations)
+      }).toArray
+      val newPartition =
+        CarbonToSparkAdapter.createFilePartition(
+          partitions.size,
+          collection.mutable.ArrayBuffer(files: _*))
+      partitions += newPartition
+    }
+
+    // 2. read function
+    val readFunction = getReadFunction(hadoopConf)
+    new FileScanRDD(spark, readFunction, partitions)
+  }
+
+  private def getReadFunction(configuration: Configuration): (PartitionedFile =>
+    Iterator[InternalRow]) = {
+    val serializableConfiguration = SparkSQLUtil.getSerializableConfigurableInstance(configuration)
+    new (PartitionedFile => Iterator[InternalRow]) with Serializable {
       override def apply(file: PartitionedFile): Iterator[InternalRow] = {
         new Iterator[InternalRow] {
           ThreadLocalSessionInfo.setConfigurationToCurrentThread(serializableConfiguration.value)
@@ -149,7 +197,6 @@ object CsvRDDHelper {
         }
       }
     }
-    new FileScanRDD(spark, readFunction, partitions)
   }
 
 }

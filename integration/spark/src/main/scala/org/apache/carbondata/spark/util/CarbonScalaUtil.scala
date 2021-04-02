@@ -483,6 +483,15 @@ object CarbonScalaUtil {
   }
 
   /**
+   * Get the task id from unique number
+   */
+  def getTaskIdFromUniqueNumber(uniqueNumber: String): Int = {
+    // Unique number is a combination of segment id(3 digits), task id (6 digits) and
+    // partition number (6 digits).
+    uniqueNumber.substring(3, 9).toInt - Math.pow(10, 5).toInt
+  }
+
+  /**
    * Use reflection to clean the parser objects which are set in thread local to avoid memory issue
    */
   def cleanParserThreadLocals(): Unit = {
