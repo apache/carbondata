@@ -446,7 +446,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       // _ in like means any single character wild card check.
       case IsNotNull(child: AttributeReference) => Literal(!pushDownNotNullFilter)
       case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => Literal(true)
-      case Like(left: AttributeReference, right: Literal) if (!isPartialStringEnabled) => Literal(
+      case _: Like if (!isPartialStringEnabled) => Literal(
         true)
       case EndsWith(left: AttributeReference,
       right: Literal) if (!isPartialStringEnabled) => Literal(true)
@@ -475,7 +475,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
   private def hasStartsWith(condition: Expression): Boolean = {
     condition match {
-      case Like(left: AttributeReference, right: Literal) => false
+      case _: Like => false
       case EndsWith(left: AttributeReference, right: Literal) => false
       case Contains(left: AttributeReference, right: Literal) => false
       case _ => true
@@ -509,12 +509,12 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case Not(EqualTo(left: AttributeReference, right: Literal)) => true
       case Not(EqualTo(left: Cast, right: Literal))
         if left.child.isInstanceOf[AttributeReference] => true
-      case Not(Like(left: AttributeReference, right: Literal)) => true
+      case Not(like) if like.isInstanceOf[Like] => true
       case Not(In(left: AttributeReference, right: Seq[Expression])) => true
       case Not(Contains(left: AttributeReference, right: Literal)) => true
       case Not(EndsWith(left: AttributeReference, right: Literal)) => true
       case Not(StartsWith(left: AttributeReference, right: Literal)) => true
-      case Like(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
+      case _: Like if (!pushDownRequired) => true
       case EndsWith(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case Contains(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => true
@@ -602,6 +602,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
             (filterTree, condition, None)
         }
       case And(ArrayContains(_, _), ArrayContains(_, _)) =>
+        (filterTree, condition, None)
+      case And(And(IsNotNull(_), ArrayContains(_, _)), ArrayContains(_, _)) =>
         (filterTree, condition, None)
       case and@And(left, right) =>
         val (newSIFilterTreeLeft, newLeft, tableNameLeft) =
@@ -749,7 +751,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     // but for orderby limit push down, push down notNull filter also. Else we get wrong results.
     var pushDownNotNullFilter: Boolean = false
     val transformedPlan = transformPlan(plan, {
-      case union@Union(_) =>
+      case union: Union =>
         // In case of Union, Extra Project has to be added to the Plan. Because if left table is
         // pushed to SI and right table is not pushed, then Output Attribute mismatch will happen
         addProjection = true

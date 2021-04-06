@@ -20,6 +20,7 @@ package org.apache.spark.sql.parser
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.command.management.RefreshCarbonTableCommand
 
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
@@ -27,7 +28,8 @@ import org.apache.spark.sql.catalyst.plans.logical._
 class CarbonExtensionSpark2SqlParser extends CarbonSpark2SqlParser {
 
   override protected lazy val extendedSparkSyntax: Parser[LogicalPlan] =
-    loadDataNew | alterTableAddColumns | explainPlan
+    loadDataNew | alterTableAddColumns | explainPlan | refreshTable |
+    alterTableColumnRenameAndModifyDataType
 
   /**
    * alter table add columns with TBLPROPERTIES
@@ -55,5 +57,15 @@ class CarbonExtensionSpark2SqlParser extends CarbonSpark2SqlParser {
         }
         CarbonSparkSqlParserUtil.loadDataNew(
           databaseNameOp, tableName, Option(optionsList), partitions, filePath, isOverwrite)
+    }
+
+
+  /**
+   * REFRESH MATERIALIZED VIEW mv_name
+   */
+  private lazy val refreshTable: Parser[LogicalPlan] =
+    REFRESH ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+      case databaseName ~ name =>
+        RefreshCarbonTableCommand(databaseName, name)
     }
 }

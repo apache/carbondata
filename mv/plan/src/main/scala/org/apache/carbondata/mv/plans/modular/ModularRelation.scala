@@ -42,11 +42,11 @@ case class ModularRelation(
     tableName: String,
     outputList: Seq[NamedExpression],
     flags: FlagSet,
-    rest: Seq[Seq[Any]]) extends LeafNode {
+    rest: Seq[Seq[Any]]) extends getVerboseString {
   protected override def computeStats(spark: SparkSession): Statistics = {
     val plan = spark.table(s"${ databaseName }.${ tableName }").queryExecution.optimizedPlan
     val stats = plan.stats
-    SparkSQLUtil.getStatisticsObj(outputList, plan, stats)
+    ExpressionHelper.getStatisticsObj(outputList, plan, stats)
   }
 
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
@@ -102,16 +102,16 @@ object HarmonizedRelation {
               alias.child.isInstanceOf[Literal] ||
               alias.child.isInstanceOf[Expression] ||
               (alias.child match {
-                case AggregateExpression(First(_, _), _, _, _) => true
-                case AggregateExpression(Last(_, _), _, _, _) => true
+                case expr: AggregateExpression if expr.aggregateFunction.isInstanceOf[First] => true
+                case expr: AggregateExpression if expr.aggregateFunction.isInstanceOf[Last] => true
                 case _ => false
               })
             case col =>
               col.isInstanceOf[AttributeReference] ||
               col.isInstanceOf[Literal] ||
               (col.asInstanceOf[Expression] match {
-                case AggregateExpression(First(_, _), _, _, _) => true
-                case AggregateExpression(Last(_, _), _, _, _) => true
+                case expr: AggregateExpression if expr.aggregateFunction.isInstanceOf[First] => true
+                case expr: AggregateExpression if expr.aggregateFunction.isInstanceOf[Last] => true
                 case _ => false
               })
         }
@@ -126,7 +126,7 @@ object HarmonizedRelation {
 }
 
 // support harmonization for dimension table
-case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
+case class HarmonizedRelation(source: ModularPlan) extends getVerboseString {
   require(HarmonizedRelation.canHarmonize(source), "invalid plan for harmonized relation")
   lazy val tableName = source.asInstanceOf[GroupBy].child.children(0).asInstanceOf[ModularRelation]
     .tableName
@@ -150,13 +150,17 @@ case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
       .outputList.map(_.toAttribute)
     val aliasMap = AttributeMap(
       source.asInstanceOf[GroupBy].outputList.collect {
-        case a@Alias(ar: Attribute, _) => (ar, a.toAttribute)
-        case a@Alias(AggregateExpression(First(ar: Attribute, _), _, _, _), _) =>
-          (ar, a.toAttribute)
-        case a@Alias(AggregateExpression(Last(ar: Attribute, _), _, _, _), _) =>
-          (ar, a.toAttribute)
-      })
-    SparkSQLUtil.getStatisticsObj(output, plan, stats, Option(aliasMap))
+      case a@Alias(ar: Attribute, _) => (ar, a.toAttribute)
+      case a@Alias(expr: AggregateExpression, _) if expr.aggregateFunction.isInstanceOf[First] =>
+        val ar = expr.aggregateFunction.asInstanceOf[First].child.asInstanceOf[NamedExpression].
+          toAttribute
+        (ar, a.toAttribute)
+      case a@Alias(expr: AggregateExpression, _) if expr.aggregateFunction.isInstanceOf[Last] =>
+        val ar = expr.aggregateFunction.asInstanceOf[Last].child.asInstanceOf[NamedExpression].
+          toAttribute
+        (ar, a.toAttribute)
+    })
+    ExpressionHelper.getStatisticsObj(output, plan, stats, Option(aliasMap))
   }
 
   override def output: Seq[Attribute] = source.output
@@ -196,28 +200,5 @@ case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
       case Some(_) => true
       case None => false
     }
-  }
-
-}
-
-object SparkSQLUtil {
-  def getStatisticsObj(outputList: Seq[NamedExpression],
-      plan: LogicalPlan, stats: Statistics,
-      aliasMap: Option[AttributeMap[Attribute]] = None)
-  : Statistics = {
-    val output = outputList.map(_.toAttribute)
-    val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
-      table => AttributeMap(table.output.zip(output))
-    }
-    val rewrites = mapSeq.head
-    val attributes : AttributeMap[ColumnStat] = stats.attributeStats
-    var attributeStats = AttributeMap(attributes.iterator
-      .map { pair => (rewrites(pair._1), pair._2) }.toSeq)
-    if (aliasMap.isDefined) {
-      attributeStats = AttributeMap(
-        attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
-    }
-    val hints = stats.hints
-    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, hints)
   }
 }

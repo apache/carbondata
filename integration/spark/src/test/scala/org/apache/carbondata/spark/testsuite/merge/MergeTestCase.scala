@@ -842,7 +842,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       Row("d", "3")
     ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
 
-    initframe.write
+    initframe.repartition(1).write
       .format("carbondata")
       .option("tableName", "target")
       .option("partitionColumns", "value")

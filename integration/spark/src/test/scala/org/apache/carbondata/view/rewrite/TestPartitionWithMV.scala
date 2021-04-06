@@ -589,9 +589,9 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("drop materialized view ag4")
     sql("drop materialized view ag5")
     sql("alter table partitiontable drop partition(email='def')")
-    assert(intercept[Exception] {
+    intercept[Exception] {
       sql("alter table partitiontable drop partition(email='def')")
-    }.getMessage.contains("No partition is dropped. One partition spec 'Map(email -> def)' does not exist in table 'partitiontable' database 'partition_mv'"))
+    }
     sql("drop table if exists partitiontable")
   }
 

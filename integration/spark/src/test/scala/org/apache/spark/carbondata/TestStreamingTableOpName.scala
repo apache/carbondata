@@ -30,7 +30,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
+import org.apache.spark.sql.streaming.StreamingQuery
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -2014,7 +2014,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
           // repartition to simulate an empty partition when readSocketDF has only one row
           qry = readSocketDF.repartition(2).writeStream
             .format("carbondata")
-            .trigger(ProcessingTime(s"$intervalSecond seconds"))
+            .trigger(CarbonToSparkAdapter.getProcessingTime(s"$intervalSecond seconds"))
             .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
             .option("bad_records_action", badRecordAction)
             .option("BAD_RECORD_PATH", badRecordsPath)
@@ -2156,7 +2156,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
           // Write data from socket stream to carbondata file
           qry = readSocketDF.writeStream
             .format("carbondata")
-            .trigger(ProcessingTime(s"${ intervalSecond } seconds"))
+            .trigger(CarbonToSparkAdapter.getProcessingTime(s"${ intervalSecond } seconds"))
             .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)

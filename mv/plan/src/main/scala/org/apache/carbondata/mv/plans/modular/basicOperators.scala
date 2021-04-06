@@ -37,7 +37,7 @@ case class GroupBy(
     child: ModularPlan,
     flags: FlagSet,
     flagSpec: Seq[Seq[Any]],
-    modularPlan: Option[ModularPlan] = None) extends UnaryNode with Matchable {
+    modularPlan: Option[ModularPlan] = None) extends groupByUnaryNode with Matchable {
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
 
   override def makeCopy(newArgs: Array[AnyRef]): GroupBy = {
@@ -45,6 +45,7 @@ case class GroupBy(
     if (rewritten) groupBy.setRewritten()
     groupBy
   }
+
 }
 
 case class Select(
@@ -57,7 +58,7 @@ case class Select(
     flags: FlagSet,
     flagSpec: Seq[Seq[Any]],
     windowSpec: Seq[Seq[Any]],
-    modularPlan: Option[ModularPlan] = None) extends ModularPlan with Matchable {
+    modularPlan: Option[ModularPlan] = None) extends selectModularPlan with Matchable {
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
 
   override def adjacencyList: scala.collection.immutable.Map[Int, Seq[(Int, JoinType)]] = {
@@ -89,10 +90,10 @@ case class Select(
 }
 
 case class Union(children: Seq[ModularPlan], flags: FlagSet, flagSpec: Seq[Seq[Any]])
-  extends ModularPlan {
+  extends unionModularPlan {
   override def output: Seq[Attribute] = children.head.output
 }
 
-case object OneRowTable extends LeafNode {
+case object OneRowTable extends oneRowTableLeafNode {
   override def output: Seq[Attribute] = Nil
 }

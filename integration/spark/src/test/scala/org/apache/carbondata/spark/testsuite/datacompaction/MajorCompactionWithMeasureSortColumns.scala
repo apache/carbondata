@@ -16,6 +16,9 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
+import java.sql.Date
+
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -89,7 +92,18 @@ class MajorCompactionWithMeasureSortColumns extends QueryTest with BeforeAndAfte
     sql("ALTER TABLE store COMPACT 'MAJOR'")
 
     val answer = sql("select * from store ").orderBy("code1")
-    assert(answer.except(csvRows).count() == 0)
+    assert(csvRows.count() == answer.distinct().count())
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      checkAnswer(answer.distinct(),
+        Seq(Row("51job, Inc.", "21695-534", "FR", 610, 60, Date.valueOf("2017-11-27"), 4483, 0,
+          510), Row("Intercontinental Exchange Inc.", "22100-020", "TH", 87, 4,
+            Date.valueOf("2017-10-16"), 2, 647, 69630)))
+    } else {
+      checkAnswer(answer.distinct(),
+        Seq(Row("Intercontinental Exchange Inc.", "22100-020", "TH", 87, 4,
+          Date.valueOf("2017-10-16"), 2, 647, 69630), Row("51job, Inc.", "21695-534", "FR", 610,
+          60, Date.valueOf("2017-11-27"), 4483, 0, 510)))
+    }
     sql("drop table store")
   }
 

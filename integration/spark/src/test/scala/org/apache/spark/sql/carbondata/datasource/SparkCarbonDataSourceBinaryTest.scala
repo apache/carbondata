@@ -647,12 +647,14 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
     var exception = intercept[Exception] {
       sql("UPDATE carbon_table SET binaryField = 'binary2' WHERE id = 1").collect()
     }
-    assert(exception.getMessage.contains("mismatched input 'UPDATE' expecting"))
+    assert(exception.getMessage.contains("mismatched input 'UPDATE' expecting")
+    || exception.getMessage.contains("UPDATE TABLE is not supported temporarily."))
 
     exception = intercept[Exception] {
       sql("DELETE FROM carbon_table WHERE id = 1").collect()
     }
-    assert(exception.getMessage.contains("only CarbonData table support delete operation"))
+    assert(exception.getMessage.contains("only CarbonData table support delete operation")
+    || exception.getMessage.contains("DELETE TABLE is not supported temporarily."))
   }
 
   test("test array of binary data type with sparkfileformat ") {

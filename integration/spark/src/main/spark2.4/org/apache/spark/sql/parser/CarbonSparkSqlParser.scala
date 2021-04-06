@@ -19,13 +19,12 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.apache.spark.sql.{CarbonSession, CarbonThreadUtil, SparkSession}
+import org.apache.spark.sql.{CarbonThreadUtil, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkSqlAstBuilder, SparkSqlParser}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
-import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.needToConvertToLowerCase
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
@@ -111,7 +110,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       query,
       provider) = createTableTuple
 
-    val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
+    val (tableIdent, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
+    val tableIdentifier = CarbonToSparkAdapter.getTableIdentifier(tableIdent)
     val cols: Seq[StructField] = Option(columns).toSeq.flatMap(visitColTypeList)
     val colNames: Seq[String] = CarbonSparkSqlParserUtil
       .validateCreateTableReqAndGetColumns(tableHeader,
@@ -129,17 +129,11 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
 
     val tableProperties = mutable.Map[String, String]()
     val properties: Map[String, String] = getPropertyKeyValues(tablePropertyList)
+    properties.foreach{property => tableProperties.put(property._1, property._2)}
 
-    properties.foreach { property =>
-      if (needToConvertToLowerCase(property._1)) {
-        tableProperties.put(property._1.toLowerCase, property._2.toLowerCase)
-      } else {
-        tableProperties.put(property._1.toLowerCase, property._2)
-      }
-    }
     // validate partition clause
     val partitionByStructFields = Option(partitionColumns).toSeq.flatMap(visitColTypeList)
-    val partitionFields = CarbonSparkSqlParserUtil.
+    val partitionFields = CarbonToSparkAdapter.
       validatePartitionFields(partitionColumns, colNames, tableProperties,
       partitionByStructFields)
 
@@ -148,8 +142,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     val extraTableTuple = (cols, external, tableIdentifier, ifNotExists, colNames, tablePath,
       tableProperties, properties, partitionByStructFields, partitionFields,
       parser, sparkSession, selectQuery)
-    CarbonSparkSqlParserUtil
-      .createCarbonTable(createTableTuple, extraTableTuple)
+    CarbonToSparkAdapter.createCarbonTable(createTableTuple, extraTableTuple)
   }
 }
 

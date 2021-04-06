@@ -100,6 +100,7 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
   test("clean up table and test trash folder with Marked For Delete and Compacted segments") {
     // do not send MFD folders to trash
     createTable()
+    sql(s"""Show Tables """).show()
     loadData()
     sql(s"""ALTER TABLE CLEANTEST COMPACT "MINOR" """)
     loadData()

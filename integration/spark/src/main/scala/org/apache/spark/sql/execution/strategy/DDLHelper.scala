@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.CarbonToSparkAdapter.RefreshTables
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogUtils}
@@ -28,10 +29,10 @@ import org.apache.spark.sql.execution.command.management.RefreshCarbonTableComma
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableRenameCommand, CarbonAlterTableSetCommand, CarbonAlterTableUnsetCommand}
 import org.apache.spark.sql.execution.command.table._
-import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResource, RefreshTable}
+import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResource}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
-import org.apache.spark.sql.types.{DecimalType}
+import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
@@ -269,7 +270,7 @@ object DDLHelper {
     }
   }
 
-  def refreshTable(refreshTable: RefreshTable): RefreshCarbonTableCommand = {
+  def refreshTable(refreshTable: RefreshTables): RefreshCarbonTableCommand = {
     RefreshCarbonTableCommand(
       refreshTable.tableIdent.database,
       refreshTable.tableIdent.table)

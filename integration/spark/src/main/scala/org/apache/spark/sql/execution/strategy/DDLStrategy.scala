@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.CarbonToSparkAdapter.RefreshTables
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
@@ -28,7 +29,7 @@ import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompac
 import org.apache.spark.sql.execution.command.mutation.CarbonTruncateCommand
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDropTableCommand, CarbonShowCreateTableCommand, CarbonShowTablesCommand}
-import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
+import org.apache.spark.sql.execution.datasources.RefreshResource
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper.isCarbonTable
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
@@ -67,6 +68,8 @@ object DDLStrategy extends SparkStrategy {
       case changeColumn: AlterTableChangeColumnCommand
         if isCarbonTable(changeColumn.tableName) =>
         ExecutedCommandExec(DDLHelper.changeColumn(changeColumn, sparkSession)) :: Nil
+      case changeColumn: CarbonAlterTableColRenameDataTypeChangeCommand =>
+        ExecutedCommandExec(changeColumn) :: Nil
       case colRenameDataTypeChange: CarbonAlterTableColRenameDataTypeChangeCommand =>
         CarbonPlanHelper.changeColumn(colRenameDataTypeChange, sparkSession)
       case addColumns: AlterTableAddColumnsCommand
@@ -174,7 +177,7 @@ object DDLStrategy extends SparkStrategy {
           CarbonDropTableCommand(ifNotExists, identifier.database, identifier.table.toLowerCase)
         ) :: Nil
       // refresh
-      case refreshTable: RefreshTable =>
+      case refreshTable: RefreshTables =>
         ExecutedCommandExec(DDLHelper.refreshTable(refreshTable)) :: Nil
       case refreshResource: RefreshResource =>
         DDLHelper.refreshResource(refreshResource)

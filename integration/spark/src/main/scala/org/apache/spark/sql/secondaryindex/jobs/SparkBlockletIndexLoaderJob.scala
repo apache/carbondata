@@ -27,7 +27,7 @@ import org.apache.hadoop.mapreduce.{InputSplit, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, TaskContext, TaskKilledException}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
@@ -160,9 +160,7 @@ class IndexLoaderRDD(
     val reader = indexFormat.createRecordReader(inputSplit, attemptContext)
     val iter = new Iterator[(TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema)] {
       // in case of success, failure or cancellation clear memory and stop execution
-      context.addTaskCompletionListener { _ =>
-        reader.close()
-      }
+      CarbonToSparkAdapter.addTaskCompletionListener(reader.close())
       reader.initialize(inputSplit, attemptContext)
 
       private var havePair = false

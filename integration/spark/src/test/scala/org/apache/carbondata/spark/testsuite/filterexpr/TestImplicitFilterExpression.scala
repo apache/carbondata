@@ -18,7 +18,7 @@ package org.apache.carbondata.spark.testsuite.filterexpr
 
 import java.util
 
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
+import org.apache.spark.sql.{CarbonEnv, DataFrame}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.hive.CarbonRelation
@@ -61,12 +61,6 @@ class TestImplicitFilterExpression extends QueryTest with BeforeAndAfterAll {
   private def verifyResultWithImplicitFilter(query: DataFrame,
       expectedResultCount: Int,
       blockletId: Int): Unit = {
-    // from the plan extract the CarbonScanRDD
-    val scanRDD = query.queryExecution.sparkPlan.collect {
-      case scan: CarbonDataSourceScan
-        if scan.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
-        scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
-    }.head
     // get carbon relation
     val relation: CarbonRelation = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore
       .lookupRelation(Some("default"), "implicit_test")(sqlContext.sparkSession)
@@ -102,15 +96,23 @@ class TestImplicitFilterExpression extends QueryTest with BeforeAndAfterAll {
     // add blocklet Id 0 to the list
     blockletList.add(blockletId)
     blockToBlockletMap.put(carbondataFileShortName, blockletList)
-    // create a new AND expression with True expression as right child
-    val filterExpression = new AndExpression(scanRDD.indexFilter.getExpression,
-      new TrueExpression(null))
-    // create implicit expression which will replace the right child (True expression)
-    FilterUtil.createImplicitExpressionAndSetAsRightChild(filterExpression, blockToBlockletMap)
-    // update the filter expression
-    scanRDD.indexFilter = new IndexFilter(carbonTable, filterExpression)
+    // from the plan extract the CarbonScanRDD
+    val scanRDD1 = query.queryExecution.sparkPlan.collect {
+      case scan: CarbonDataSourceScan
+        if scan.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+        val scanRDD = scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
+        // create a new AND expression with True expression as right child
+        val filterExpression = new AndExpression(scanRDD.indexFilter.getExpression,
+          new TrueExpression(null))
+        // create implicit expression which will replace the right child (True expression)
+        FilterUtil.createImplicitExpressionAndSetAsRightChild(filterExpression, blockToBlockletMap)
+        // update the filter expression
+        scanRDD.indexFilter = new IndexFilter(carbonTable, filterExpression)
+        scanRDD.setVectorReaderSupport(false)
+        scanRDD
+    }.head
     // execute the query and get the result count
-    checkAnswer(query.toDF(), Seq(Row(expectedResultCount)))
+    assert(scanRDD1.count() == expectedResultCount)
   }
 
   override def afterAll(): Unit = {

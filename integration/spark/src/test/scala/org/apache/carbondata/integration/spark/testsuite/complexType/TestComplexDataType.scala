@@ -873,7 +873,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
           | PARTITIONED BY (area array<string>)
           | STORED AS carbondata
         """.stripMargin))
-    assertResult("Cannot use array<string> for partition column;")(arrayException.getMessage)
+    assert(arrayException.getMessage().contains("Cannot use array<string> for partition column"))
     sql("DROP TABLE IF EXISTS test")
     val structException = intercept[AnalysisException](
       sql("""
@@ -890,7 +890,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
             | STORED AS carbondata
           """.stripMargin)
     )
-    assertResult("Cannot use struct<b:int> for partition column;")(structException.getMessage)
+    assert(structException.getMessage().contains("Cannot use struct<b:int> for partition column"))
   }
 
   test("test complex datatype double for encoding") {

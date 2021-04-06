@@ -109,7 +109,9 @@ public class RowParserImpl implements RowParser {
       return new String[numberOfColumns];
     }
     // If number of columns are less in a row then create new array with same size of header.
-    if (row.length < numberOfColumns) {
+    if (row.length == 1 && row.length != numberOfColumns && row[0].equals("")) {
+      row = new String[numberOfColumns];
+    } else if (row.length < numberOfColumns) {
       String[] temp = new String[numberOfColumns];
       System.arraycopy(row, 0, temp, 0, row.length);
       row = temp;

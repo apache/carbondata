@@ -17,7 +17,7 @@
 
 package org.apache.spark.carbondata.vectorreader
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonToSparkAdapter, Row}
 import org.apache.spark.sql.execution.RowDataSourceScanExec
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.test.util.QueryTest
@@ -57,7 +57,8 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
       """select * from vectorreader""".stripMargin).queryExecution.executedPlan
     var rowReader = false
     plan.collect {
-      case scan: CarbonDataSourceScan => rowReader = !scan.supportsBatch
+      case scan: CarbonDataSourceScan => rowReader = !CarbonToSparkAdapter
+        .supportsBatchOrColumnar(scan)
     }
     assert(rowReader, "row reader should exist by default")
   }

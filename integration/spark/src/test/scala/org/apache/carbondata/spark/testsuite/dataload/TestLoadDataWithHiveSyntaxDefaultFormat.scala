@@ -27,6 +27,7 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.testsuite.dataload.EscapeCharTest.createParquetTable
 
 /**
  * Test Class for data loading with hive syntax and old syntax
@@ -459,8 +460,9 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       """
     )
     checkAnswer(sql("select count(*) from escapechar2"), Seq(Row(21)))
+    val parquetTable = createParquetTable("\\")
     checkAnswer(sql("select specialchar from escapechar2 where imei = '1AA44'"),
-      Seq(Row("escapeesc")))
+      sql(s"select specialchar from $parquetTable where imei = '1AA44'"))
     sql("DROP TABLE IF EXISTS escapechar2")
   }
 
@@ -481,9 +483,9 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       """
     )
     checkAnswer(sql("select count(*) from escapechar3"), Seq(Row(21)))
-    checkAnswer(sql("select specialchar from escapechar3 where imei in ('1232','12323')"), Seq(Row
-    ("ayush@b.com"), Row("ayushb.com")
-    )
+    val parquetTable = createParquetTable("@")
+    checkAnswer(sql("select specialchar from escapechar3 where imei in ('1232','12323')"),
+      sql(s"select specialchar from $parquetTable where imei in ('1232','12323')")
     )
     sql("DROP TABLE IF EXISTS escapechar3")
   }

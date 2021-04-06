@@ -102,14 +102,15 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     // check rename column present in mv materialized view table
     intercept[ProcessMetaDataException] {
       sql("alter table maintable change name name1 string")
-    }.getMessage.contains("Column name exists in a MV materialized view. Drop MV materialized view to continue")
+    }.getMessage.contains(
+      "Column name exists in a MV materialized view. Drop MV materialized view to continue")
   }
 
   test("test alter rename column on MV table") {
     intercept[ProcessMetaDataException] {
       sql("alter table dm1 change sum_price sum_cost int")
     }.getMessage.contains("Cannot change data type or rename column for columns " +
-                          "present in mv materialized view table default.dm1")
+      "present in mv materialized view table default.dm1")
   }
 
   test("test alter rename table") {

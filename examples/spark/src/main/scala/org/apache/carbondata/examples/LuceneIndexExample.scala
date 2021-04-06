@@ -30,7 +30,7 @@ object LuceneIndexExample {
 
   def main(args: Array[String]) {
     val spark = ExampleUtils.createSparkSession("LuceneIndexExample")
-    exampleBody(spark)
+      exampleBody(spark)
     spark.close()
   }
 
@@ -61,37 +61,37 @@ object LuceneIndexExample {
       """.stripMargin)
 
     // 1. Compare the performance:
+    // TODO: Revert this after SPARK 3.1 fix
 
-    def time(code: => Unit): Double = {
-      val start = System.currentTimeMillis()
-      code
-      // return time in second
-      (System.currentTimeMillis() - start).toDouble / 1000
-    }
-
-    val timeWithoutLuceneIndex = time {
-
-      spark.sql(
-        s"""
-           | SELECT count(*)
-           | FROM personTable where id like '% test1 %'
-      """.stripMargin).show()
-
-    }
-
-    val timeWithLuceneIndex = time {
-
-      spark.sql(
-        s"""
-           | SELECT count(*)
-           | FROM personTable where TEXT_MATCH('id:test1')
-      """.stripMargin).show()
-
-    }
+    //    def time(code: => Unit): Double = {
+    //      val start = System.currentTimeMillis()
+    //      code
+    //      // return time in second
+    //      (System.currentTimeMillis() - start).toDouble / 1000
+    //    }
+    //    val timeWithoutLuceneIndex = time {
+    //
+    //      spark.sql(
+    //        s"""
+    //           | SELECT count(*)
+    //           | FROM personTable where id like '% test1 %'
+    //      """.stripMargin).show()
+    //
+    //    }
+    //
+    //    val timeWithLuceneIndex = time {
+    //
+    //      spark.sql(
+    //        s"""
+    //           | SELECT count(*)
+    //           | FROM personTable where TEXT_MATCH('id:test1')
+    //      """.stripMargin).show()
+    //
+    //    }
 
     // scalastyle:off
-    println("time for query on table with lucene index table:" + timeWithLuceneIndex.toString)
-    println("time for query on table without lucene index table:" + timeWithoutLuceneIndex.toString)
+//    println("time for query on table with lucene index table:" + timeWithLuceneIndex.toString)
+//    println("time for query on table without lucene index table:" + timeWithoutLuceneIndex.toString)
     // scalastyle:on
 
     // 2. Search for word "test1" and not "good" in the id field

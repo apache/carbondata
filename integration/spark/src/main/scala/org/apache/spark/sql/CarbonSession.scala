@@ -23,12 +23,12 @@ import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession.Builder
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.execution.command.mutation.merge.MergeDataSetBuilder
-import org.apache.spark.sql.internal.{SessionState, SharedState, StaticSQLConf}
+import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.profiler.{Profiler, SQLStart}
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
@@ -69,12 +69,12 @@ class CarbonSession(@transient val sc: SparkContext,
       case Some(_) =>
         val ss = existingSharedState.get
         if (ss == null) {
-          new SharedState(sparkContext)
+          CarbonToSparkAdapter.createSharedState(sparkContext)
         } else {
           ss
         }
       case None =>
-        new SharedState(sparkContext)
+        CarbonToSparkAdapter.createSharedState(sparkContext)
     }
   }
 
@@ -89,7 +89,7 @@ class CarbonSession(@transient val sc: SparkContext,
     withProfiler(
       sqlText,
       (qe, sse) => {
-          new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
+          CarbonToSparkAdapter.createDataset(SparkSQLUtil.getSparkSession, qe)
       }
     )
   }
@@ -111,7 +111,7 @@ class CarbonSession(@transient val sc: SparkContext,
   def sparkSql(sqlText: String): DataFrame = {
     withProfiler(
       sqlText,
-      (qe, sse) => new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
+      (qe, sse) => CarbonToSparkAdapter.createDataset(SparkSQLUtil.getSparkSession, qe)
     )
   }
 
@@ -130,7 +130,7 @@ class CarbonSession(@transient val sc: SparkContext,
       qe.assertAnalyzed()
       sse.isCommand = qe.analyzed match {
         case c: Command => true
-        case u @ Union(children) if children.forall(_.isInstanceOf[Command]) => true
+        case u: Union if u.children.forall(_.isInstanceOf[Command]) => true
         case _ => false
       }
       sse.analyzerEnd = System.currentTimeMillis()

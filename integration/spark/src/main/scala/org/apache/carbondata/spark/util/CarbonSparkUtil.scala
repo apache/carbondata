@@ -31,6 +31,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types._
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -181,7 +182,7 @@ object CarbonSparkUtil {
    */
   def createHadoopJob(conf: Configuration = FileFactory.getConfiguration): Job = {
     val jobConf = new JobConf(conf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
+    SparkUtil.addCredentials(jobConf)
     Job.getInstance(jobConf)
   }
 }

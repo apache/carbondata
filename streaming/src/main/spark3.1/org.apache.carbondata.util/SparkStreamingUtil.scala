@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.adapter
+package org.apache.carbondata.util
 
-import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 
-import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
+object SparkStreamingUtil {
 
-object CarbonToSparkAdapter {
-  def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]) = {
-    FilePartition(index, files.toArray.toSeq)
+  def convertInternalRowToRow(expressionEncoder: ExpressionEncoder[Row]): InternalRow => Row = {
+    expressionEncoder.createDeserializer().apply
   }
 }

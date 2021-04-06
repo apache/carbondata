@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Partition, TaskContext}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.execution.command.CarbonMergerMapping
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.spark.sql.util.CarbonException
@@ -214,9 +214,7 @@ class CarbonSIRebuildRDD[K, V](
           new SparkDataTypeConverterImpl)
 
         // add task completion listener to clean up the resources
-        context.addTaskCompletionListener { _ =>
-          close()
-        }
+        CarbonToSparkAdapter.addTaskCompletionListener(close())
         try {
           // fire a query and get the results.
           rawResultIteratorMap = exec.processTableBlocks(FileFactory.getConfiguration, null)

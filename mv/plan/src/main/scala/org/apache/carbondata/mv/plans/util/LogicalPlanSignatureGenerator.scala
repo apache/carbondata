@@ -29,8 +29,8 @@ object CheckSPJG {
     subplan match {
       case a: Aggregate =>
         a.child.collect {
-          case Join(_, _, _, _) | Project(_, _) | Filter(_, _) |
-               HiveTableRelation(_, _, _) => true
+          case _: Join | Project(_, _) | Filter(_, _) |
+               _: HiveTableRelation => true
           case  l: LogicalRelation => true
           case _ => false
         }.forall(identity)
@@ -59,9 +59,11 @@ object LogicalPlanRule extends SignatureRule[LogicalPlan] {
       case l: LogicalRelation =>
         // TODO: implement this (link to BaseRelation)
         None
-      case HiveTableRelation(tableMeta, _, _) =>
+      case tableRelation: HiveTableRelation =>
         Some(Signature(false,
-          Set(Seq(tableMeta.database, tableMeta.identifier.table).mkString("."))))
+          Set(
+            Seq(tableRelation.tableMeta.database,
+            tableRelation.tableMeta.identifier.table).mkString("."))))
       case l : LocalRelation =>
         // LocalRelation is for unit test cases
         Some(Signature(groupby = false, Set(l.toString())))
@@ -79,7 +81,7 @@ object LogicalPlanRule extends SignatureRule[LogicalPlan] {
         } else {
           None
         }
-      case Join(_, _, _, _) =>
+      case _: Join =>
         if ( childSignatures.length == 2 &&
              !childSignatures(0).getOrElse(Signature()).groupby &&
              !childSignatures(1).getOrElse(Signature()).groupby ) {

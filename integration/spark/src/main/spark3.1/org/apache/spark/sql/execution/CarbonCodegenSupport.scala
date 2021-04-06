@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.adapter
+package org.apache.spark.sql.execution
 
-import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
+import org.apache.spark.sql.execution.joins.HashJoin
 
-import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
+trait CarbonCodegenSupport extends SparkPlan with HashJoin {
 
-object CarbonToSparkAdapter {
-  def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]): FilePartition = {
-    FilePartition(index, files.toArray)
-  }
+  // TODO: Spark has started supporting Codegen for Join, Carbon needs to implement the same.
+  override def supportCodegen: Boolean = false
+
+  protected def prepareRelation(ctx: CodegenContext): Null = null
 }
