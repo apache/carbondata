@@ -574,7 +574,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
               <excludes>
-                <exclude>src/main/spark2.4</exclude>
+                <exclude>src/main/spark2.4plus</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -629,7 +629,45 @@
                 </goals>
                 <configuration>
                   <sources>
-                    <source>src/main/spark2.4</source>
+                    <source>src/main/spark2.4plus</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>spark-3.0</id>
+      <properties>
+        <spark.binary.version>3.0</spark.binary.version>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>src/main/spark2.3</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+              <execution>
+                <id>add-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/main/spark2.4plus</source>
                   </sources>
                 </configuration>
               </execution>
