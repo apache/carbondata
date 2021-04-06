@@ -52,7 +52,7 @@ case class CarbonCreateTableAsSelectCommand(
     }
     val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)
     setAuditTable(dbName, tableName)
-    setAuditInfo(Map("query" -> query.simpleString))
+    setAuditInfo(Map("query" -> query.prettyJson))
     // check if table already exists
     if (sparkSession.sessionState.catalog
       .tableExists(TableIdentifier(tableName, Some(dbName)))) {

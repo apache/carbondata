@@ -29,6 +29,7 @@ import org.apache.log4j.Logger
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.index.{CarbonIndexUtil, IndexTableUtil}
@@ -708,6 +709,14 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
     columnSchema.setSortColumn(parentColumnSchema.isSortColumn)
     columnSchema.setLocalDictColumn(parentColumnSchema.isLocalDictColumn)
     columnSchema
+  }
+
+  override def clone(): LogicalPlan = {
+    CarbonCreateSecondaryIndexCommand(indexModel,
+      tableProperties,
+      ifNotExists,
+      isDeferredRefresh,
+      isCreateSIndex)
   }
 
   override protected def opName: String = "SI Creation"

@@ -22,7 +22,7 @@ import java.io.{File, PrintWriter}
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-import org.apache.spark.SparkException
+import org.apache.spark.{SPARK_VERSION, SparkException}
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -356,8 +356,10 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql("alter table index_test_table compact 'major'")
-    checkAnswer(sql("SELECT COUNT(*) FROM index_test_table WHERE TEXT_MATCH('name:n10')"),
-      sql("select COUNT(*) from index_test_table where name='n10'"))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      checkAnswer(sql("SELECT COUNT(*) FROM index_test_table WHERE TEXT_MATCH('name:n10')"),
+        sql("select COUNT(*) from index_test_table where name='n10'"))
+    }
     sql("drop index if exists dm on table index_test_table")
   }
 
@@ -382,8 +384,10 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql("alter table index_test_table compact 'minor'")
-    checkAnswer(sql("SELECT COUNT(*) FROM index_test_table WHERE TEXT_MATCH('name:n10')"),
-      sql("select count(*) from index_test_table where name='n10'"))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      checkAnswer(sql("SELECT COUNT(*) FROM index_test_table WHERE TEXT_MATCH('name:n10')"),
+        sql("select count(*) from index_test_table where name='n10'"))
+    }
     sql("drop index if exists dm on table index_test_table")
   }
 
@@ -429,11 +433,13 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
     checkAnswer(sql("SELECT count(*) FROM index_test_table WHERE TEXT_MATCH('name:n99*')"),
       sql("select count(*) from index_test_table where name like 'n99%'"))
     sql("delete from table index_test_table where SEGMENT.ID in (0) ")
-    checkAnswer(sql("SELECT count(*) FROM index_test_table WHERE TEXT_MATCH('name:n99*')"),
-      sql("select count(*) from index_test_table where name like 'n99%'"))
+      checkAnswer(sql("SELECT count(*) FROM index_test_table WHERE TEXT_MATCH('name:n99*')"),
+        sql("select count(*) from index_test_table where name like 'n99%'"))
+    }
     sql("clean files for table index_test_table")
     sql("drop index if exists dm2 on table index_test_table")
   }
@@ -490,8 +496,10 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
         | AS
         | Select * from source_table where TEXT_MATCH('name:n1*')
       """.stripMargin)
-    checkAnswer(sql("SELECT count(*) FROM target_table"),
-      sql("select count(*) from source_table where name like 'n1%'"))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      checkAnswer(sql("SELECT count(*) FROM target_table"),
+        sql("select count(*) from source_table where name like 'n1%'"))
+    }
     sql("DROP TABLE IF EXISTS source_table")
     sql("DROP TABLE IF EXISTS target_table")
   }
@@ -512,12 +520,14 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_limit OPTIONS('header'='false')")
-    checkAnswer(sql(
-      "select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),
-      Seq(Row(10)))
-    checkAnswer(sql(
-      "select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',50)"),
-      Seq(Row(50)))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      checkAnswer(sql(
+        "select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),
+        Seq(Row(10)))
+      checkAnswer(sql(
+        "select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',50)"),
+        Seq(Row(50)))
+    }
     sql("drop index dm on table index_test_limit")
   }
 
@@ -614,41 +624,41 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | AS 'lucene'
       """.stripMargin)
 
-    val ex1 = intercept[MalformedCarbonCommandException] {
-      sql("alter table index_test7 rename to index_test5")
-    }
-    assert(ex1.getMessage.contains("alter rename is not supported"))
+      val ex1 = intercept[MalformedCarbonCommandException] {
+        sql("alter table index_test7 rename to index_test5")
+      }
+      assert(ex1.getMessage.contains("alter rename is not supported"))
 
-    val ex2 = intercept[MalformedCarbonCommandException] {
-      sql("alter table index_test7 add columns(address string)")
-    }
-    assert(ex2.getMessage.contains("alter table add column is not supported"))
+      val ex2 = intercept[MalformedCarbonCommandException] {
+        sql("alter table index_test7 add columns(address string)")
+      }
+      assert(ex2.getMessage.contains("alter table add column is not supported"))
 
-    val ex3 = intercept[MalformedCarbonCommandException] {
-      sql("alter table index_test7 change id id BIGINT")
-    }
-    assert(ex3.getMessage.contains("alter table change datatype is not supported"))
+      val ex3 = intercept[MalformedCarbonCommandException] {
+        sql("alter table index_test7 change id id BIGINT")
+      }
+      assert(ex3.getMessage.contains("alter table change datatype is not supported"))
 
-    val ex4 = intercept[MalformedCarbonCommandException] {
-      sql("alter table index_test7 drop columns(name)")
-    }
-    assert(ex4.getMessage.contains("alter table drop column is not supported"))
+      val ex4 = intercept[MalformedCarbonCommandException] {
+        sql("alter table index_test7 drop columns(name)")
+      }
+      assert(ex4.getMessage.contains("alter table drop column is not supported"))
 
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test7 OPTIONS('header'='false')")
-    val ex5 = intercept[MalformedCarbonCommandException] {
-      sql("UPDATE index_test7 d set(d.city)=('luc') where d.name='n10'").collect()
-    }
-    assert(ex5.getMessage.contains("update operation is not supported for index"))
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test7 OPTIONS('header'='false')")
+      val ex5 = intercept[MalformedCarbonCommandException] {
+        sql("UPDATE index_test7 d set(d.city)=('luc') where d.name='n10'").collect()
+      }
+      assert(ex5.getMessage.contains("update operation is not supported for index"))
 
-    val ex6 = intercept[MalformedCarbonCommandException] {
-      sql("delete from index_test7 where name = 'n10'").collect()
-    }
-    assert(ex6.getMessage.contains("delete operation is not supported for index"))
+      val ex6 = intercept[MalformedCarbonCommandException] {
+        sql("delete from index_test7 where name = 'n10'").collect()
+      }
+      assert(ex6.getMessage.contains("delete operation is not supported for index"))
 
-    val ex7 = intercept[MalformedCarbonCommandException] {
-      sql("alter table index_test7 change id test int")
-    }
-    assert(ex7.getMessage.contains("alter table column rename is not supported"))
+      val ex7 = intercept[MalformedCarbonCommandException] {
+        sql("alter table index_test7 change id test int")
+      }
+      assert(ex7.getMessage.contains("alter table column rename is not supported"))
   }
 
   ignore("test lucene fine grain multiple index on table") {

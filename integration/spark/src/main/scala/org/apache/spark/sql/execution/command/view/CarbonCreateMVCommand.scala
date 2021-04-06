@@ -588,7 +588,7 @@ case class CarbonCreateMVCommand(
     }
     // TODO:- Remove this case when incremental data loading is supported for multiple tables
     logicalPlan.transformDown {
-      case join@Join(_, _, _, _) =>
+      case join: Join =>
         needFullRefresh = true
         join
     }

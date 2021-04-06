@@ -65,7 +65,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val ESCAPECHAR = carbonKeyWord("ESCAPECHAR")
   protected val EXCLUDE = carbonKeyWord("EXCLUDE")
   protected val EXPLAIN = carbonKeyWord("EXPLAIN")
-  protected val EXTENDED = carbonKeyWord("EXTENDED")
+  // TODO : Add Support for CODEGEN, COST AND FORMATTED below in case of Explain query
+  // JIRA: https://issues.apache.org/jira/browse/CARBONDATA-4201
+  protected val MODE = carbonKeyWord("EXTENDED")
+  //                   carbonKeyWord("CODEGEN") |
+  //                   carbonKeyWord("COST") |
+  //                   carbonKeyWord("FORMATTED")
   protected val FORMATTED = carbonKeyWord("FORMATTED")
   protected val FACT = carbonKeyWord("FACT")
   protected val FIELDS = carbonKeyWord("FIELDS")
@@ -161,6 +166,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val MAP = carbonKeyWord("MAP")
   protected val SMALLINT = carbonKeyWord("SMALLINT")
   protected val CHANGE = carbonKeyWord("CHANGE")
+  protected val COMMENT = carbonKeyWord("COMMENT")
   protected val TBLPROPERTIES = carbonKeyWord("TBLPROPERTIES")
   protected val ID = carbonKeyWord("ID")
   protected val ON = carbonKeyWord("ON")

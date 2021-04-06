@@ -45,6 +45,9 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     dropTable
 
+    for (i <- 0 until 10) {
+      FileFactory.deleteAllFilesOfDir(new File(storeLocation + "/" + "addsegtest" + i))
+    }
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance()
@@ -311,6 +314,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     for (i <- 0 until 10) {
       FileFactory.deleteAllFilesOfDir(new File(newPath + i))
     }
+    dropTable
   }
 
 
@@ -372,7 +376,6 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assert(ex.getMessage.contains("Schema is not same"))
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
-
 
   test("Test added segment with different format") {
     createCarbonTable()
@@ -823,9 +826,9 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
         "value int, name string, age int) using parquet partitioned by (name)")
     sql("create table carbon_table(" +
         "value int) partitioned by (name string, age int) stored as carbondata")
-    sql("insert into parquet_table values (30, 'amy', 12), (40, 'bob', 13)")
-    sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
-    sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
+    sql("insert into parquet_table values (30, 12, 'amy'), (40, 13, 'bob')")
+    sql("insert into parquet_table values (30, 20, 'amy'), (10, 13, 'bob')")
+    sql("insert into parquet_table values (30, 12, 'cat'), (40, 13, 'dog')")
     sql("select * from parquet_table").collect()
     val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("parquet_table")).location

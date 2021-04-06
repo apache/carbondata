@@ -14,7 +14,6 @@
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
-    <dep.jackson.version>2.6.5</dep.jackson.version>
   </properties>
 
   <dependencies>

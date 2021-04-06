@@ -84,22 +84,32 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       case _: ToRangeListUDF =>
         val inputNames = List("polygon", "oriLatitude", "gridSize")
         for (i <- s.children.indices) {
-          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+          GeoHashUtils.validateUDFInputValue(s.children(i),
+            inputNames(i),
+            CarbonToSparkAdapter.getTypeName(s.inputTypes(i)))
         }
       case _: LatLngToGeoIdUDF =>
         val inputNames = List("latitude", "longitude", "oriLatitude", "gridSize")
         for (i <- s.children.indices) {
-          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+          GeoHashUtils.validateUDFInputValue(s.children(i),
+            inputNames(i),
+            CarbonToSparkAdapter.getTypeName(s.inputTypes(i)))
         }
       case _: GeoIdToGridXyUDF =>
-        GeoHashUtils.validateUDFInputValue(s.children.head, "geoId", s.inputTypes.head.typeName)
+        GeoHashUtils.validateUDFInputValue(s.children.head,
+          "geoId",
+          CarbonToSparkAdapter.getTypeName(s.inputTypes.head))
       case _: GeoIdToLatLngUDF =>
         val inputNames = List("geoId", "oriLatitude", "gridSize")
         for (i <- s.children.indices) {
-          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+          GeoHashUtils.validateUDFInputValue(s.children(i),
+            inputNames(i),
+            CarbonToSparkAdapter.getTypeName(s.inputTypes(i)))
         }
       case _: ToUpperLayerGeoIdUDF =>
-        GeoHashUtils.validateUDFInputValue(s.children.head, "geoId", s.inputTypes.head.typeName)
+        GeoHashUtils.validateUDFInputValue(s.children.head,
+          "geoId",
+          CarbonToSparkAdapter.getTypeName(s.inputTypes.head))
       case _ =>
     }
     true
@@ -132,7 +142,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
   private def pruneFilterProject(
       relation: LogicalRelation,
       rawProjects: Seq[NamedExpression],
-      allPredicates: Seq[Expression]): CodegenSupport = {
+      allPredicates: Seq[Expression]): SparkPlan = {
     val partitionsFilter = getPartitionFilter(relation, allPredicates)
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val projects = rawProjects.map {p =>
@@ -215,7 +225,8 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       segmentIds
     )
     // filter
-    val filterOption = if (directScanSupport && scan.supportsBatch) {
+    val filterOption = if (directScanSupport && CarbonToSparkAdapter
+        .supportsBatchOrColumnar(scan)) {
       allPredicates.reduceLeftOption(expressions.And)
     } else if (extraSegments.nonEmpty) {
       allPredicates.reduceLeftOption(expressions.And)
@@ -294,7 +305,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     val supportBatch = CarbonPlanHelper.supportBatchedDataSource(relation.relation.sqlContext,
       updateRequestedColumns, extraRDD)
     if (directScanSupport && !supportBatch && filterSet.nonEmpty &&
-      !filterSet.baseSet.exists(_.a.dataType.isInstanceOf[ArrayType])) {
+      !filterSet.toSeq.exists(_.dataType.isInstanceOf[ArrayType])) {
       // revert for row scan
       updateRequestedColumns = requiredColumns
     }

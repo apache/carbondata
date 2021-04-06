@@ -102,7 +102,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     // check rename column present in mv materialized view table
     intercept[ProcessMetaDataException] {
       sql("alter table maintable change name name1 string")
-    }.getMessage.contains("Column name exists in a MV materialized view. Drop MV materialized view to continue")
+    }.getMessage.contains(
+      "Column name exists in a MV materialized view. Drop MV materialized view to continue")
   }
 
   test("test alter rename column on MV table") {

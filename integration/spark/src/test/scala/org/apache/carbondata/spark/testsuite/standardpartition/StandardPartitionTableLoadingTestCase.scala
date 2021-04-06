@@ -23,6 +23,7 @@ import java.util.concurrent.{Callable, Executors, ExecutorService}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
@@ -430,6 +431,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
   }
 
   test("Partition LOAD with small files") {
+    sql("set spark.sql.hive.manageFilesourcePartitions=false")
     sql("DROP TABLE IF EXISTS smallpartitionfiles")
     sql(
       """
@@ -457,6 +459,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     specs.get.foreach{s =>
       assert(new File(s.getLocation.toString).listFiles().length < 10)
     }
+    sql("set spark.sql.hive.manageFilesourcePartitions=true")
   }
 
   test("verify partition read with small files") {
@@ -491,7 +494,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
           if b.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
           b.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
       }.head
-      assert(scanRdd.getPartitions.length < 10)
+      assert(scanRdd.getPartitions.length <= 10)
       assertResult(100)(dataFrame.count)
     } finally {
       CarbonProperties.getInstance()
@@ -596,7 +599,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
           | STORED AS carbondata
       """.stripMargin)
     }
-    assert(ex.getMessage().equalsIgnoreCase("Cannot use all columns for partition columns;"))
+    assert(ex.getMessage().contains("Cannot use all columns for partition columns"))
   }
 
   test("test partition without merge index files for segment") {

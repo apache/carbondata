@@ -104,7 +104,9 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
     TableLevelCompactionOptionExample.exampleBody(spark)
   }
 
-  test("LuceneIndexExample") {
+  // Below test case ignored due to the Deadlock in spark code
+  // TODO: To be fixed when spark removes deadlock in opensource code.
+  ignore("LuceneIndexExample") {
     LuceneIndexExample.exampleBody(spark)
   }
 

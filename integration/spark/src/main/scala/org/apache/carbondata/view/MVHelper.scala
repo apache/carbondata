@@ -187,7 +187,7 @@ object MVHelper {
         alias.child.isInstanceOf[GetArrayItem]) {
       throw new UnsupportedOperationException(
         s"MV is not supported for complex datatype child columns and complex datatype " +
-        s"return types of function :" + alias.child.simpleString)
+        s"return types of function :" + alias.child.toString())
     }
   }
 

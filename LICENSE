@@ -211,3 +211,5 @@
    ------------
 
    com.github.luben:zstd-jni
+
+   com.github.paul-hammant:paranamer

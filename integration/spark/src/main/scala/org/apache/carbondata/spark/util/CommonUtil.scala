@@ -789,7 +789,7 @@ object CommonUtil {
           pass = true
         }
       } catch {
-        case _ =>
+        case _: Exception =>
       }
       if (!pass) {
         throw new MalformedCarbonCommandException(

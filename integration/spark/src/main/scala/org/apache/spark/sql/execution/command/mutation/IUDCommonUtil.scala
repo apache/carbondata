@@ -44,7 +44,8 @@ object IUDCommonUtil {
       case unresolvedRelation: UnresolvedRelation =>
         val dbAndTb =
           sparkSession.sessionState.catalog.asInstanceOf[HiveSessionCatalog].getCurrentDatabase +
-          "." + unresolvedRelation.tableIdentifier.table
+          CarbonCommonConstants.POINT + CarbonToSparkAdapter.getTableIdentifier(unresolvedRelation)
+            .get.table
         val segmentProperties = carbonProperties
           .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbAndTb, "")
         if (!(segmentProperties.equals("") || segmentProperties.trim.equals("*"))) {

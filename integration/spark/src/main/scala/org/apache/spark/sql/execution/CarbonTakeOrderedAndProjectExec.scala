@@ -19,12 +19,11 @@ package org.apache.spark.sql.execution
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.serializer.Serializer
+import org.apache.spark.sql.{CarbonTakeOrderedAndProjectExecHelper, CarbonToSparkAdapter}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, NamedExpression, SortOrder, UnsafeProjection}
 import org.apache.spark.sql.catalyst.expressions.codegen.LazilyGeneratedOrdering
 import org.apache.spark.sql.catalyst.plans.physical.{Partitioning, SinglePartition}
-import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
-import org.apache.spark.util.Utils
 
 // To skip the order at map task
 case class CarbonTakeOrderedAndProjectExec(
@@ -33,7 +32,8 @@ case class CarbonTakeOrderedAndProjectExec(
     projectList: Seq[NamedExpression],
     child: SparkPlan,
     skipMapOrder: Boolean = false,
-    readFromHead: Boolean = true) extends UnaryExecNode {
+    readFromHead: Boolean = true) extends CarbonTakeOrderedAndProjectExecHelper(sortOrder,
+      limit, skipMapOrder, readFromHead) {
 
   private val serializer: Serializer = new UnsafeRowSerializer(child.output.size)
 
@@ -79,14 +79,6 @@ case class CarbonTakeOrderedAndProjectExec(
 
   override def outputPartitioning: Partitioning = SinglePartition
 
-  override def simpleString: String = {
-    val orderByString = Utils.truncatedString(sortOrder, "[", ",", "]")
-    val outputString = Utils.truncatedString(output, "[", ",", "]")
-
-    s"CarbonTakeOrderedAndProjectExec(limit=$limit, orderBy=$orderByString, " +
-    s"skipMapOrder=$skipMapOrder, readFromHead=$readFromHead, output=$outputString)"
-  }
-
   override def output: Seq[Attribute] = {
     projectList.map(_.toAttribute)
   }
@@ -108,9 +100,8 @@ case class CarbonTakeOrderedAndProjectExec(
       }
     }
     // update with modified RDD (localTopK)
-    val shuffled = new ShuffledRowRDD(
-      ShuffleExchangeExec.prepareShuffleDependency(
-        localTopK, child.output, SinglePartition, serializer))
+    val shuffled =
+      CarbonToSparkAdapter.createShuffledRowRDD(sparkContext, localTopK, child, serializer)
     shuffled.mapPartitions { iter =>
       val topK = org.apache.spark.util.collection.Utils.takeOrdered(iter.map(_.copy()), limit)(ord)
       if (projectList != child.output) {

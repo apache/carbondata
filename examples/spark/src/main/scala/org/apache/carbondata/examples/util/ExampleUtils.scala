@@ -85,6 +85,7 @@ object ExampleUtils {
     } else {
       "local[" + workThreadNum.toString() + "]"
     }
+    // TODO: Analyse the legacy configs and add test cases for non legacy ones
     val spark = SparkSession
       .builder()
       .master(masterUrl)
@@ -93,6 +94,7 @@ object ExampleUtils {
       .config("spark.driver.host", "localhost")
       .config("spark.sql.crossJoin.enabled", "true")
       .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .config("spark.sql.legacy.timeParserPolicy", "LEGACY")
       .enableHiveSupport()
       .getOrCreate()
     CarbonEnv.getInstance(spark)

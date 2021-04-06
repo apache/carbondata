@@ -37,8 +37,9 @@ import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnC
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDescribeColumnCommand, CarbonDescribeShortCommand}
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
+import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
-import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.types.{DataType, DataTypes, StructField}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -317,7 +318,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           }
           if (!isJoinWithMainTable) {
             // Should go as value update, not as join update. So execute the sub query.
-            val analyzedPlan = CarbonReflectionUtils.invokeAnalyzerExecute(session
+            val analyzedPlan = CarbonToSparkAdapter.invokeAnalyzerExecute(session
               .sessionState
               .analyzer, subQueryUnresolvedLogicalPlan)
             val subQueryLogicalPlan = session.sessionState.optimizer.execute(analyzedPlan)
@@ -374,7 +375,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           case None => UpdateTable(relation,
             finalColumns,
             selectStmt,
-            Some(tab._1.tableIdentifier.table),
+            Some(CarbonToSparkAdapter.getTableIdentifier(tab._1).get.table),
             where)
         }
         rel
@@ -570,12 +571,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val explainPlan: Parser[LogicalPlan] =
-    (EXPLAIN ~> opt(EXTENDED)) ~ start ^^ {
-      case isExtended ~ logicalPlan =>
+    (EXPLAIN ~> opt(MODE)) ~ start ^^ {
+      case mode ~ logicalPlan =>
         logicalPlan match {
           case _: CarbonCreateTableCommand =>
-            ExplainCommand(logicalPlan, extended = isExtended.isDefined)
-          case _ => CarbonToSparkAdapter.getExplainCommandObj()
+            CarbonToSparkAdapter.getExplainCommandObj(logicalPlan, mode)
+          case _ => CarbonToSparkAdapter.getExplainCommandObj(mode)
         }
     }
 
@@ -630,11 +631,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
 
   protected lazy val alterTableColumnRenameAndModifyDataType: Parser[LogicalPlan] =
-    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~
-    ident ~ opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
-      case dbName ~ table ~ change ~ columnName ~ columnNameCopy ~ dataType ~ values =>
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (CHANGE ~> ident) ~ ident ~ ident ~
+      opt("(" ~> rep1sep(valueOptions, ",") <~ ")") ~ opt(COMMENT ~> restInput) <~ opt(";") ^^ {
+      case dbName ~ table ~ columnName ~ columnNameCopy ~ dataType ~ values ~
+           comment if CarbonPlanHelper.isCarbonTable(TableIdentifier(table, dbName)) =>
         CarbonSparkSqlParserUtil.alterTableColumnRenameAndModifyDataType(
-          dbName, table, columnName, columnNameCopy, dataType, values)
+          dbName, table, columnName, columnNameCopy, dataType, values, comment)
     }
 
   protected lazy val alterTableAddColumns: Parser[LogicalPlan] =
@@ -772,58 +774,63 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   def getFields(schema: Seq[StructField], isExternal: Boolean = false): Seq[Field] = {
-    def getScannerInput(col: StructField,
-        columnComment: String,
-        columnName: String) = {
-      if (col.dataType.catalogString == "float" && !isExternal) {
-        '`' + columnName + '`' + " double" + columnComment
+    schema.map { col =>
+      // TODO: Spark has started supporting CharType/VarChar types in Spark 3.1 but both are
+      //  marked as experimental. Adding a hack to change to string for now.
+      // Refer: https://issues.apache.org/jira/browse/CARBONDATA-4226
+      if (CarbonToSparkAdapter.isCharType(col.dataType) || CarbonToSparkAdapter
+          .isVarCharType(col.dataType)) {
+        getFields(col.getComment(), col.name, DataTypes.StringType, isExternal)
       } else {
-        '`' + columnName + '`' + ' ' + col.dataType.catalogString +
-        columnComment
+        getFields(col.getComment(), col.name, col.dataType, isExternal)
       }
     }
+  }
 
-    schema.map { col =>
+  def getFields(comment: Option[String],
+                name: String,
+                dataType: DataType,
+                isExternal: Boolean): Field = {
       var columnComment: String = ""
       var plainComment: String = ""
-      if (col.getComment().isDefined) {
-        columnComment = " comment '" + col.getComment().get + "'"
-        plainComment = col.getComment().get
+      if (comment.isDefined) {
+        columnComment = " comment '" + comment.get + "'"
+        plainComment = comment.get
       }
-      val indexesToReplace = col.name.toCharArray.zipWithIndex.map {
+      val indexesToReplace = name.toCharArray.zipWithIndex.map {
         case (ch, index) => if (ch.equals('`')) index }.filter(_ != ())
       // external table use float data type
       // normal table use double data type instead of float
-      var scannerInput = if (col.name.contains("`")) {
+      var scannerInput = if (name.contains("`")) {
         // If the column name contains the character like `, then parsing fails, as ` char is used
         // to tokenize and it wont be able to differentiate between whether its actual character or
         // token character. So just for parsing temporarily replace with !, then once field is
         // prepared, just replace the original name.
-        getScannerInput(col, columnComment, col.name.replaceAll("`", "!"))
+        getScannerInput(dataType, columnComment, name.replaceAll("`", "!"), isExternal)
       } else {
-        getScannerInput(col, columnComment, col.name)
+        getScannerInput(dataType, columnComment, name, isExternal)
       }
       var field: Field = anyFieldDef(new lexical.Scanner(scannerInput.toLowerCase))
       match {
         case Success(field, _) =>
-          if (col.dataType.catalogString == "float" && isExternal) {
+          if (dataType.catalogString == "float" && isExternal) {
             field.dataType = Some("float")
           }
           field.asInstanceOf[Field]
         case failureOrError => throw new MalformedCarbonCommandException(
-          s"Unsupported data type: ${ col.dataType }")
+          s"Unsupported data type: ${ dataType }")
       }
-      if (col.name.contains("`")) {
+      if (name.contains("`")) {
         val actualName = indexesToReplace.foldLeft(field.column)((s, i) => s.updated(i
           .asInstanceOf[Int], '`'))
         field = field.copy(column = actualName, name = Some(actualName))
-        scannerInput = getScannerInput(col, columnComment, col.name)
+        scannerInput = getScannerInput(dataType, columnComment, name, isExternal)
       }
       // the data type of the decimal type will be like decimal(10,0)
       // so checking the start of the string and taking the precision and scale.
       // resetting the data type with decimal
       if (field.dataType.getOrElse("").startsWith("decimal")) {
-        val (precision, scale) = CommonUtil.getScaleAndPrecision(col.dataType.catalogString)
+        val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType.catalogString)
         field.precision = precision
         field.scale = scale
         field.dataType = Some("decimal")
@@ -835,10 +842,21 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         field.dataType = Some("double")
       }
       field.rawSchema = scannerInput
-      if (col.getComment().isDefined) {
+      if (comment.isDefined) {
         field.columnComment = plainComment
       }
       field
+  }
+
+  def getScannerInput(dataType: DataType,
+      columnComment: String,
+      columnName: String,
+      isExternal: Boolean): String = {
+    if (dataType.catalogString == "float" && !isExternal) {
+      '`' + columnName + '`' + " double" + columnComment
+    } else {
+      '`' + columnName + '`' + ' ' + dataType.catalogString +
+        columnComment
     }
   }
 

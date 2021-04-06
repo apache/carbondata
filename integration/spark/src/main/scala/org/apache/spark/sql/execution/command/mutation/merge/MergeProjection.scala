@@ -37,8 +37,11 @@ case class MergeProjection(
 
   private val cutOffDate = Integer.MAX_VALUE >> 1
 
-  val isUpdate = mergeAction.isInstanceOf[UpdateAction]
-  val isDelete = mergeAction.isInstanceOf[DeleteAction]
+  val isUpdate: Boolean = mergeAction.isInstanceOf[UpdateAction]
+  val isDelete: Boolean = mergeAction.isInstanceOf[DeleteAction]
+
+  val (expressions, inputSchema) = generateProjection
+  lazy val projection = new InterpretedMutableProjection(expressions, inputSchema)
 
   def apply(row: GenericRowWithSchema): InternalRow = {
     // TODO we can avoid these multiple conversions if this is added as a SparkPlan node.
@@ -54,9 +57,7 @@ case class MergeProjection(
     projection(new GenericInternalRow(values)).asInstanceOf[GenericInternalRow]
   }
 
-  val (projection, output) = generateProjection
-
-  private def generateProjection: (Projection, Array[Expression]) = {
+  private def generateProjection: (Array[Expression], Seq[Attribute]) = {
     val existingDsOutput = rltn.carbonRelation.schema.toAttributes
     val colsMap = mergeAction match {
       case UpdateAction(updateMap, isStar: Boolean) => updateMap
@@ -82,10 +83,10 @@ case class MergeProjection(
       if (output.contains(null)) {
         throw new CarbonMergeDataSetException(s"Not all columns are mapped")
       }
-      (new InterpretedMutableProjection(output ++ Seq(
+      (output ++ Seq(
         ds.queryExecution.analyzed.resolveQuoted(statusCol,
           sparkSession.sessionState.analyzer.resolver).get),
-        ds.queryExecution.analyzed.output), expectOutput)
+        ds.queryExecution.analyzed.output)
     } else {
       (null, null)
     }

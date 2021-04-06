@@ -149,7 +149,8 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
         select.outputList.collect {
           case alias: Alias if alias.child.isInstanceOf[Attribute] =>
             val childName = alias.child.asInstanceOf[Attribute].name
-            if (childName.startsWith("UDF:timeseries")) {
+            // from spark 3.1, udf name will not be prefixed with "UDF:"
+            if (childName.startsWith("UDF:timeseries") || childName.startsWith("timeseries(")) {
               outputColumn = childName
             }
         }

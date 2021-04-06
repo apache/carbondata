@@ -237,7 +237,7 @@ object SQLBuilder {
   }
 
   def collectDuplicateNames(s: AttributeSet): immutable.Iterable[String] = {
-    s.baseSet.map(_.a).groupBy(_.name).collect { case (x, ys) if ys.size > 1 => x }
+    s.toSeq.groupBy(_.name).collect { case (x, ys) if ys.size > 1 => x }
   }
 
   def subqueryPreprocess(plan: ModularPlan, nextScalarSubqueryId: AtomicLong): ModularPlan = {

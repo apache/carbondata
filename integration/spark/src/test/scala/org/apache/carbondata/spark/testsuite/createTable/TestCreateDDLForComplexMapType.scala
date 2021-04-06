@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 
 import au.com.bytecode.opencsv.CSVWriter
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -50,6 +51,9 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
     createCSVFile()
     sql("DROP TABLE IF EXISTS carbon")
     sql("DROP TABLE IF EXISTS carbon1")
+    if (SPARK_VERSION.startsWith("3.")) {
+      sql("set spark.sql.mapKeyDedupPolicy=LAST_WIN")
+    }
   }
 
   override def afterAll(): Unit = {
@@ -239,7 +243,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
            | """
           .stripMargin)
     )
-    assertResult("Cannot use map<int,string> for partition column;")(exception.getMessage())
+    assert(exception.getMessage().contains("Cannot use map<int,string> for partition column"))
   }
 
   test("Test IUD in map columns") {

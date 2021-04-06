@@ -264,11 +264,12 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
         assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
-      sql("ALTER TABLE carbon_table drop COLUMNS (a1 INT, b1 STRING) ")
+      sql("ALTER TABLE carbon_table drop COLUMNS (a1, b1) ")
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting"))
+        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting") ||
+               e.getMessage.contains("Only carbondata table support drop column"))
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet")
       sql("DROP TABLE IF EXISTS carbon_table")
@@ -418,7 +419,8 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting"))
+        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting")
+        || e.getMessage.contains("mismatched input 'INT' expecting"))
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet2")
     }
@@ -529,7 +531,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test write using subfolder") {
-    if (!sqlContext.sparkContext.version.startsWith("2.1")) {
+    if (true) {
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
       import sqlContext.sparkSession.implicits._
       val df = sqlContext.sparkContext.parallelize(1 to 10)
@@ -541,7 +543,11 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       df.write.format("carbon").save(warehouse + "/test_folder/" + System.nanoTime())
       df.write.format("carbon").save(warehouse + "/test_folder/" + System.nanoTime())
 
-      val frame = sqlContext.sparkSession.read.format("carbon").load(warehouse + "/test_folder")
+      val frame = sqlContext.sparkSession
+        .read
+        .format("carbon")
+        .option("recursiveFileLookup", "true")
+        .load(warehouse + "/test_folder")
       assert(frame.where("c1='a1'").count() == 3)
 
       val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
@@ -1285,14 +1291,20 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test double boundary") {
+
     sql("drop table if exists par")
     sql("drop table if exists car")
 
     sql("create table par (c1 string, c2 double, n int) using parquet")
     sql("create table car (c1 string, c2 double, n int) using carbon")
-    sql("insert into par select 'a', 1.7986931348623157E308, 215565665556")
-    sql("insert into car select 'a', 1.7986931348623157E308, 215565665556")
-
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      sql("insert into par select 'a', 1.7986931348623157E308, 215565665556")
+      sql("insert into car select 'a', 1.7986931348623157E308, 215565665556")
+    } else {
+      // double range reduced in spark 3.1, the above insert fails in SparkSqlParser
+      sql("insert into par select 'a', 1.7976931348623157E308, 215565665556")
+      sql("insert into car select 'a', 1.7976931348623157E308, 215565665556")
+    }
     checkAnswer(sql("select * from car"), sql("select * from par"))
     sql("drop table if exists par")
     sql("drop table if exists car")
@@ -1336,7 +1348,6 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test write using multi subfolder") {
-    if (!sqlContext.sparkContext.version.startsWith("2.1")) {
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
       import sqlContext.sparkSession.implicits._
       val df = sqlContext.sparkContext.parallelize(1 to 10)
@@ -1348,7 +1359,11 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       df.write.format("carbon").save(warehouse + "/test_folder/2/" + System.nanoTime())
       df.write.format("carbon").save(warehouse + "/test_folder/3/" + System.nanoTime())
 
-      val frame = sqlContext.sparkSession.read.format("carbon").load(warehouse + "/test_folder")
+      val frame = sqlContext.sparkSession
+        .read
+        .format("carbon")
+        .option("recursiveFileLookup", "true")
+        .load(warehouse + "/test_folder")
       assert(frame.count() == 30)
       assert(frame.where("c1='a1'").count() == 3)
       val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
@@ -1356,7 +1371,6 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
         .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/test_folder"))
       assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
-    }
   }
 
   test("test read using old data") {
@@ -1373,7 +1387,6 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   test("test read using different sort order data") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "test")
-    if (!sqlContext.sparkContext.version.startsWith("2.1")) {
       sql("drop table if exists old_comp")
       FileFactory.deleteAllFilesOfDir(new File(warehouse + "/testdb"))
       val store = new StoreCreator(warehouse, s"$projectPath/hadoop/src/test/resources/data.csv")
@@ -1409,13 +1422,13 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       assert(sql("select * from old_comp ").count() == 4000)
       sql("drop table if exists old_comp")
 
-      sql(s"create table old_comp1 using carbon options" +
-          s"(path='$warehouse/testdb/testtable/Fact/Part0/')")
+    sql(s"create table old_comp1(id int, date string, country string, name string, phonetype " +
+      s"string, serialname string, salary int) using carbon options" +
+      s"(path='$warehouse/testdb/testtable/Fact/Part0/')")
       assert(sql("select * from old_comp1 where country='china'").count() == 3396)
       assert(sql("select * from old_comp1 ").count() == 4000)
       sql("drop table if exists old_comp1")
       FileFactory.deleteAllFilesOfDir(new File(warehouse + "/testdb"))
-    }
   }
 
 
@@ -1594,6 +1607,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     }
     checkAnswer(sql("select * from complextable limit 1"), Seq(Row("name0", Row(0
       .asInstanceOf[Byte], 0.012.asInstanceOf[Float]))))
+    val df1 = sql("select * from complextable where structfield.bytefield > 9")
     checkAnswer(sql("select * from complextable where structfield.bytefield > 9"), Seq(Row
     ("name10", Row(10.asInstanceOf[Byte], 10.1012.asInstanceOf[Float]))))
     checkAnswer(sql("select * from complextable where structfield.bytefield > 9"), Seq(Row

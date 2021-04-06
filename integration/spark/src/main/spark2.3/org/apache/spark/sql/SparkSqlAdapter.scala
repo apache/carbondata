@@ -47,13 +47,4 @@ object SparkSqlAdapter {
       dataFilters,
       tableIdentifier)
   }
-
-  def addSparkSessionListener(sparkSession: SparkSession): Unit = {
-    sparkSession.sparkContext.addSparkListener(new SparkListener {
-      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
-        CarbonEnv.carbonEnvMap.remove(sparkSession)
-        ThreadLocalSessionInfo.unsetAll()
-      }
-    })
-  }
 }

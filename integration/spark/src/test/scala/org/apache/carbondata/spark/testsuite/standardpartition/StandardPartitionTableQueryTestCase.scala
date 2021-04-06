@@ -553,6 +553,7 @@ test("Creation of partition table should fail if the colname in table schema and
   }
 
   private def dropTable = {
+    sql("drop table if exists partitionxxx")
     sql("drop table if exists originTable")
     sql("drop table if exists originMultiLoads")
     sql("drop table if exists partitionone")

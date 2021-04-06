@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -64,8 +65,14 @@ class TestLoadOptions extends QueryTest with BeforeAndAfterAll {
   test("test load data with with valid escape sequence in escapechar option") {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention11.csv' INTO TABLE " +
         s"TestLoadTableOptions OPTIONS('ESCAPECHAR'='\\n')")
-    checkAnswer(sql("select * from TestLoadTableOptions where serialname='ASD69643a'"),
-      Row(1, "2015/7/23", "ind", "aaa1", "phone197", "ASD69643a", 15000))
+    if(SPARK_VERSION.startsWith("3")) {
+      val parquetTable = EscapeCharTest.createParquetTable("\n", "dataretention11.csv")
+      checkAnswer(sql("select * from TestLoadTableOptions where serialname='ASD69643a'"),
+        sql(s"select * from $parquetTable where serialname='ASD69643a'"))
+    } else {
+      checkAnswer(sql("select * from TestLoadTableOptions where serialname='ASD69643a'"),
+        Row(1, "2015/7/23", "ind", "aaa1", "phone197", "ASD69643a", 15000))
+    }
   }
 
   test("test load data with different line separator option value") {

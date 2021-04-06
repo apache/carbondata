@@ -23,8 +23,8 @@ import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
+import org.apache.carbondata.mv.plans.modular.{JoinEdge, MatchJoin}
 import org.apache.carbondata.mv.plans.modular.Flags._
-import org.apache.carbondata.mv.plans.modular.JoinEdge
 
 
 
@@ -93,7 +93,7 @@ object ExtractSelectModule extends PredicateHelper {
           flags.setFlag(SORT)
         }, Seq(Seq(order)) ++ fspecs, wspecs)
 
-      case Join(left, right, joinType, condition) =>
+      case MatchJoin(left, right, joinType, condition, hint) =>
         val (loutputs, linputs, lpredicates, ljoinedges, lchildren, _, laliases, lflags, lfspecs,
         lwspecs) = collectProjectsFiltersJoinsAndSort(left)
         val (routputs, rinputs, rpredicates, rjoinedges, rchildren, _, raliases, rflags, rfspecs,
@@ -329,7 +329,7 @@ object ExtractUnionModule extends PredicateHelper {
 
   private def collectUnionChildren(plan: LogicalPlan): List[LogicalPlan] = {
     plan match {
-      case Union(children) => children.toList match {
+      case union: Union => union.children.toList match {
         case head :: Nil => collectUnionChildren(head)
         case head :: tail => collectUnionChildren(head) ++ collectUnionChildren(Union(tail))
         case Nil => Nil

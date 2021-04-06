@@ -44,8 +44,7 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
       sql(s"CREATE INDEX index1 ON indextest (a) AS '$newClass'")
     }.getMessage
       .contains(
-        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource': wrong number of" +
-        " arguments"))
+        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource'"))
   }
 
   test("test index create with properties: don't support using non-exist class") {
@@ -53,8 +52,7 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
       sql(s"CREATE INDEX index2 ON indextest (a) AS '$newClass' PROPERTIES('key'='value')")
     }.getMessage
       .contains(
-        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource': wrong number of" +
-        " arguments"))
+        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource'"))
   }
 
   test("test index create with existing name: don't support using non-exist class") {
@@ -63,8 +61,7 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
         s"CREATE INDEX index2 ON indextest (a) AS '$newClass' PROPERTIES('key'='value')")
     }.getMessage
       .contains(
-        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource': wrong number of" +
-        " arguments"))
+        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource'"))
   }
 
   test("test show indexes with no index") {

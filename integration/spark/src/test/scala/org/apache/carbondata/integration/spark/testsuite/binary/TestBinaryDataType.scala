@@ -29,6 +29,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 /**
@@ -1460,7 +1461,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                | STORED AS carbondata
                | TBLPROPERTIES('SORT_COLUMNS'='')
              """.stripMargin)
-        val e = intercept[Exception] {
+        val e = intercept[CarbonDataLoadingException] {
             sql(
                 s"""
                    | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
@@ -1551,26 +1552,28 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             sql("insert into hive_table select 'a','b','1'");
         }
 
-        val e2 = intercept[SparkException] {
-            sql("insert into hive_table2 select 'a','b','binary'");
-        }
+        if (!SparkUtil.isSparkVersionXAndAbove("3")) {
+            val e2 = intercept[SparkException] {
+                sql("insert into hive_table2 select 'a','b','binary'");
+            }
 
-        assert(e2.getMessage.contains(
-            "Dynamic partition strict mode requires at least one static partition column"))
+            assert(e2.getMessage.contains(
+                "Dynamic partition strict mode requires at least one static partition column"))
 
-        val eInt2 = intercept[Exception] {
-            sql("insert into hive_table2 select 'a','b','1'");
-        }
+            val eInt2 = intercept[Exception] {
+                sql("insert into hive_table2 select 'a','b','1'");
+            }
 
-        val e3 = intercept[SparkException] {
-            sql("insert into parquet_table select 'a','b','binary'");
-        }
+            val e3 = intercept[SparkException] {
+                sql("insert into parquet_table select 'a','b','binary'");
+            }
 
-        assert(e3.getMessage.contains(
-            "Dynamic partition strict mode requires at least one static partition column"))
+            assert(e3.getMessage.contains(
+                "Dynamic partition strict mode requires at least one static partition column"))
 
-        val eInt3 = intercept[Exception] {
-            sql("insert into parquet_table select 'a','b','1'");
+            val eInt3 = intercept[Exception] {
+                sql("insert into parquet_table select 'a','b','1'");
+            }
         }
 
         sql("insert into carbon_partition_table select 'a','b','binary'");
@@ -1584,31 +1587,31 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         // set hive.exec.dynamic.partition.mode=nonstrict
         sql("set hive.exec.dynamic.partition.mode=nonstrict")
         sql("insert into hive_table select 'a','b','binary'");
-        val eInt11 = intercept[AnalysisException] {
-            sql("insert into hive_table select 'a','b',1");
-        }
-        assert(eInt11.getMessage.contains(
-            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
-
         checkAnswer(sql("select cast(photo as string) from hive_table"),
             Seq(Row("binary"), Row("1"), Row("binary")))
 
         sql("insert into hive_table2 select 'a','b','binary'");
-        val eInt22 = intercept[AnalysisException] {
-            sql("insert into hive_table2 select 'a','b',1");
-        }
-        assert(eInt22.getMessage.contains(
-            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
-
         checkAnswer(sql("select cast(photo as string) from hive_table2"),
             Seq(Row("binary"), Row("1"), Row("binary")))
 
         sql("insert into parquet_table select 'a','b','binary'");
-        val eInt32 = intercept[AnalysisException] {
-            sql("insert into parquet_table select 'a','b',1");
+        if (!SparkUtil.isSparkVersionXAndAbove("3")) {
+            val eInt11 = intercept[AnalysisException] {
+                sql("insert into hive_table select 'a','b',1");
+            }
+            assert(eInt11.getMessage.contains(
+                "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+            val eInt22 = intercept[AnalysisException] {
+                sql("insert into hive_table2 select 'a','b',1");
+            }
+            assert(eInt22.getMessage.contains(
+                "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+            val eInt32 = intercept[AnalysisException] {
+                sql("insert into parquet_table select 'a','b',1");
+            }
+            assert(eInt32.getMessage.contains(
+                "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
         }
-        assert(eInt32.getMessage.contains(
-            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
 
         // TODO: is it bug in parquet?
         // checkAnswer(sql("select cast(photo as string) from parquet_table"),
@@ -1695,15 +1698,22 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         // Exceptions are specific to spark versions
         val message_2_3 = "cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"
         val message_2_4 = "cannot resolve 'avg(substring(default.uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not binary"
+        var message_3 = "cannot resolve 'avg(substr(spark_catalog.default.uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not binary;"
         if(SparkUtil.isSparkVersionEqualTo("2.3")) {
             assert(e1.getMessage.contains(message_2_3))
             assert(e2.getMessage.contains(message_2_3))
             assert(e3.getMessage.contains(message_2_3))
         }
-        else if (SparkUtil.isSparkVersionXAndAbove("2.4")) {
+        else if (SparkUtil.isSparkVersionXAndAbove("2.4") &&
+                 !SparkUtil.isSparkVersionXAndAbove("3")) {
             assert(e1.getMessage.contains(message_2_4))
             assert(e2.getMessage.contains(message_2_4))
             assert(e3.getMessage.contains(message_2_4))
+        } else {
+            assert(e1.getMessage.contains(message_3))
+            assert(e2.getMessage.contains(message_3))
+            message_3 = "cannot resolve 'avg(substring(spark_catalog.default.uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not binary;"
+            assert(e3.getMessage.contains(message_3))
         }
     }
 
@@ -1715,12 +1725,14 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    binaryField binary)
                | STORED AS carbondata
                      """.stripMargin)
-        val exception = intercept[AnalysisException] {
-            sql("insert into binaryTable select 1")
+        if(!SparkUtil.isSparkVersionXAndAbove("3")) {
+            val exception = intercept[AnalysisException] {
+                sql("insert into binaryTable select 1")
+            }
+            assert(exception.getMessage()
+              .contains(
+                  "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: "))
         }
-        assert(exception.getMessage()
-          .contains(
-              "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: "))
         sql("DROP TABLE binaryTable")
     }
 

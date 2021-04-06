@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.carbondata.execution.datasources
 
+import java.io.FileNotFoundException
 import java.net.URI
 import java.util.UUID
 
@@ -86,6 +87,10 @@ class SparkCarbonFileFormat extends FileFormat
       options: Map[String, String],
       files: Seq[FileStatus]): Option[StructType] = {
     val conf = sparkSession.sessionState.newHadoopConf()
+    if (options.isEmpty && files.isEmpty) {
+      throw new UnsupportedOperationException("CarbonData file is not present in the table" +
+        " location or Path of carbondata table is not available.")
+    }
     val tablePath = options.get("path") match {
       case Some(path) =>
         FileFactory.checkAndAppendDefaultFs(path, conf)

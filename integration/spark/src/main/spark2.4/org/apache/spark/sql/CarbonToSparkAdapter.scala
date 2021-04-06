@@ -19,17 +19,22 @@ package org.apache.spark.sql
 
 import java.net.URI
 
-import org.apache.spark.SparkContext
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
+import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener, SessionCatalog}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, SubqueryAlias}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.ExplainCommand
+import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
@@ -38,7 +43,11 @@ import org.apache.spark.sql.types.{DataType, Metadata, StringType}
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
 
-object CarbonToSparkAdapter {
+object CarbonToSparkAdapter extends SparkVersionAdapter {
+
+  def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]): FilePartition = {
+    FilePartition(index, files.toArray)
+  }
 
   def addSparkSessionListener(sparkSession: SparkSession): Unit = {
     sparkSession.sparkContext.addSparkListener(new SparkListener {
@@ -125,13 +134,12 @@ object CarbonToSparkAdapter {
 
   def getTransformedPolygonJoinUdf(scalaUdf: ScalaUDF,
       udfChildren: Seq[Expression],
-      types: Seq[DataType],
       polygonJoinUdf: InPolygonJoinUDF): ScalaUDF = {
     ScalaUDF(polygonJoinUdf,
       scalaUdf.dataType,
       udfChildren,
       scalaUdf.inputsNullSafe,
-      types,
+      scalaUdf.inputTypes :+ scalaUdf.inputTypes.head,
       scalaUdf.udfName)
   }
 
@@ -147,8 +155,7 @@ object CarbonToSparkAdapter {
       name: String,
       exprId: ExprId = NamedExpression.newExprId,
       qualifier: Seq[String] = Seq.empty,
-      explicitMetadata: Option[Metadata] = None,
-      namedExpr: Option[NamedExpression] = None) : Alias = {
+      explicitMetadata: Option[Metadata] = None) : Alias = {
     Alias(child, name)(exprId, qualifier, explicitMetadata)
   }
 
@@ -182,9 +189,6 @@ object CarbonToSparkAdapter {
     attribute.qualifier.reverse.head
   }
 
-  def getExplainCommandObj() : ExplainCommand = {
-    ExplainCommand(OneRowRelation())
-  }
 
   /**
    * As a part of SPARK-24085 Hive tables supports scala subquery for

@@ -207,8 +207,7 @@ object CarbonPlanHelper {
                 a.name,
                 a.exprId,
                 a.qualifier,
-                a.explicitMetadata,
-                Some(a))
+                a.explicitMetadata)
             case exp: NamedExpression
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
               makeDeterministicExp(exp)
@@ -226,8 +225,7 @@ object CarbonPlanHelper {
                 a.name,
                 a.exprId,
                 a.qualifier,
-                a.explicitMetadata,
-                Some(a))
+                a.explicitMetadata)
             case exp: NamedExpression
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
               makeDeterministicExp(exp)

@@ -18,12 +18,12 @@
 package org.apache.spark.sql.execution.joins
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{BindReferences, Expression, JoinedRow, Literal, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, BindReferences, Expression, JoinedRow, Literal, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.plans.physical.BroadcastMode
 import org.apache.spark.sql.execution.{BinaryExecNode, ProjectExec, RowDataSourceScanExec, SparkPlan}
@@ -31,12 +31,10 @@ import org.apache.spark.sql.execution.exchange.{BroadcastExchangeExec, ReusedExc
 import org.apache.spark.sql.execution.joins.BroadCastPolygonFilterPushJoin.addPolygonRangeListFilterToPlan
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
-import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
-import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.{IndexFilter, Segment}
+import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.geo.{GeoConstants, GeoUtils}
@@ -47,16 +45,13 @@ case class BroadCastPolygonFilterPushJoin(
     leftKeys: Seq[Expression],
     rightKeys: Seq[Expression],
     joinType: JoinType,
-    buildSide: BuildSide,
     condition: Option[Expression],
     left: SparkPlan,
     right: SparkPlan
-) extends BinaryExecNode with HashJoin {
+) extends BinaryExecNode {
 
-  override protected lazy val (buildPlan, streamedPlan) = buildSide match {
-    case BuildLeft => (left, right)
-    case BuildRight => (right, left)
-  }
+  // BuildSide will be BuildRight
+  protected lazy val (buildPlan, streamedPlan) = (right, left)
 
   override lazy val metrics = Map(
     "numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"))
@@ -69,7 +64,7 @@ case class BroadCastPolygonFilterPushJoin(
   @transient private lazy val boundCondition: InternalRow => Boolean = {
     // get the join condition
     if (condition.isDefined) {
-      newPredicate(condition.get, streamedPlan.output ++ buildPlan.output).eval _
+      CarbonToSparkAdapter.getPredicate(streamedPlan.output ++ buildPlan.output, condition)
     } else {
       (_: InternalRow) => true
     }
@@ -115,6 +110,8 @@ case class BroadCastPolygonFilterPushJoin(
       }
     }
   }
+
+  override def output: Seq[Attribute] = left.output ++ right.output
 }
 
 object BroadCastPolygonFilterPushJoin {

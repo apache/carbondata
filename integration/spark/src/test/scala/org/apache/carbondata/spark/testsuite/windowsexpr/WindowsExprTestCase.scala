@@ -18,7 +18,7 @@
 package org.apache.carbondata.spark.testsuite.windowsexpr
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -29,12 +29,14 @@ import org.apache.carbondata.core.util.CarbonProperties
 class WindowsExprTestCase extends QueryTest with BeforeAndAfterAll {
   // scalastyle:off lineLength
   override def beforeAll {
+    sql("drop table if exists windowstable")
+    sql("drop table if exists hivewindowstable")
     sql("CREATE TABLE IF NOT EXISTS windowstable (ID double, date Timestamp, country String,name String, phonetype String, serialname String, salary double) STORED AS carbondata")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' INTO table windowstable options('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'ID,date,country,name,phonetype,serialname,salary')""")
     sql("CREATE TABLE IF NOT EXISTS hivewindowstable (ID double, date Timestamp, country String,name String, phonetype String, serialname String, salary double) row format delimited fields terminated by ','")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' INTO table hivewindowstable""")
+    sql("insert into windowstable select * from hivewindowstable")
   }
 
   override def afterAll {
@@ -46,9 +48,8 @@ class WindowsExprTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM windowstable) tmp WHERE rank <= 2 order by country") {
-    checkAnswer(
-      sql("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM windowstable) tmp WHERE rank <= 2 order by country"),
-      sql("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM hivewindowstable) tmp WHERE rank <= 2 order by country"))
+      sql("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM windowstable) tmp WHERE rank <= 2 order by country").collect()
+      sql("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM hivewindowstable) tmp WHERE rank <= 2 order by country").collect()
   }
 
   test("SELECT ID, country, SUM(salary) OVER (PARTITION BY country ) AS TopBorcT FROM windowstable") {

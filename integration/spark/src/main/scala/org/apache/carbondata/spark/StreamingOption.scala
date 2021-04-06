@@ -19,7 +19,7 @@ package org.apache.carbondata.spark
 
 import scala.collection.mutable
 
-import org.apache.spark.sql.streaming.{ProcessingTime, Trigger}
+import org.apache.spark.sql.streaming.Trigger
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
@@ -34,7 +34,7 @@ class StreamingOption(val userInputMap: Map[String, String]) {
     val interval = userInputMap.getOrElse(
       "interval", throw new MalformedCarbonCommandException("interval must be specified"))
     trigger match {
-      case "ProcessingTime" => ProcessingTime(interval)
+      case "ProcessingTime" => Trigger.ProcessingTime(interval)
       case others => throw new MalformedCarbonCommandException("invalid trigger: " + trigger)
     }
   }

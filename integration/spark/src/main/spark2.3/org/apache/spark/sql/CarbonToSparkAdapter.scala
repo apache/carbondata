@@ -19,6 +19,8 @@ package org.apache.spark.sql
 
 import java.net.URI
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
@@ -26,20 +28,30 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, SessionCatal
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.ExprCode
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, SubqueryAlias}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.ExplainCommand
+import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.types.{DataType, Metadata, StringType}
 
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
 
-object CarbonToSparkAdapter {
+object CarbonToSparkAdapter extends SparkVersionAdapter {
+
+  def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]): FilePartition = {
+    FilePartition(index, files.toArray.toSeq)
+  }
 
   def addSparkSessionListener(sparkSession: SparkSession): Unit = {
-    SparkSqlAdapter.addSparkSessionListener(sparkSession)
+    sparkSession.sparkContext.addSparkListener(new SparkListener {
+      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+        CarbonEnv.carbonEnvMap.remove(sparkSession)
+        ThreadLocalSessionInfo.unsetAll()
+      }
+    })
   }
 
   def addSparkListener(sparkContext: SparkContext): Unit = {
@@ -104,12 +116,11 @@ object CarbonToSparkAdapter {
 
   def getTransformedPolygonJoinUdf(scalaUdf: ScalaUDF,
       udfChildren: Seq[Expression],
-      types: Seq[DataType],
       polygonJoinUdf: InPolygonJoinUDF): ScalaUDF = {
     ScalaUDF(polygonJoinUdf,
       scalaUdf.dataType,
       udfChildren,
-      types,
+      scalaUdf.inputTypes :+ scalaUdf.inputTypes.head,
       scalaUdf.udfName,
       scalaUdf.nullable,
       scalaUdf.udfDeterministic)
@@ -124,8 +135,7 @@ object CarbonToSparkAdapter {
       name: String,
       exprId: ExprId = NamedExpression.newExprId,
       qualifier: Option[String] = None,
-      explicitMetadata: Option[Metadata] = None,
-      namedExpr : Option[NamedExpression] = None ) : Alias = {
+      explicitMetadata: Option[Metadata] = None) : Alias = {
 
     Alias(child, name)(exprId, qualifier, explicitMetadata)
   }
@@ -144,10 +154,6 @@ object CarbonToSparkAdapter {
           }
       }
     }
-  }
-
-  def getExplainCommandObj() : ExplainCommand = {
-    ExplainCommand(OneRowRelation())
   }
 
   /**
@@ -186,7 +192,6 @@ object CarbonToSparkAdapter {
     sparkSession.sessionState.catalog.externalCatalog.asInstanceOf[HiveExternalCatalog]
   }
 }
-
 
 class CarbonOptimizer(
     session: SparkSession,
