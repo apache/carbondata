@@ -27,6 +27,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.util.CustomIndex;
 import org.apache.carbondata.geo.GeoConstants;
 import org.apache.carbondata.geo.GeoHashUtils;
+import org.apache.carbondata.geo.GeoOperationType;
 
 /**
  * InPolygonRangeList expression processor. It inputs the InPolygonRangeList string to
@@ -49,7 +50,8 @@ public class PolygonRangeListExpression extends PolygonExpression {
   public void processExpression() {
     // 1. parse the range list string
     List<String> rangeLists = new ArrayList<>();
-    Pattern pattern = Pattern.compile(GeoConstants.RANGELIST_REG_EXPRESSION);
+    Pattern pattern =
+        Pattern.compile(GeoConstants.RANGELIST_REG_EXPRESSION, Pattern.CASE_INSENSITIVE);
     Matcher matcher = pattern.matcher(polygon);
     while (matcher.find()) {
       String matchedStr = matcher.group();
@@ -57,11 +59,15 @@ public class PolygonRangeListExpression extends PolygonExpression {
     }
     // 2. process the range lists
     if (rangeLists.size() > 0) {
+      GeoOperationType operationType = GeoOperationType.getEnum(opType);
+      if (operationType == null) {
+        throw new RuntimeException("Unsupported operation type " + opType);
+      }
       List<Long[]> processedRangeList = getRangeListFromString(rangeLists.get(0));
       for (int i = 1; i < rangeLists.size(); i++) {
         List<Long[]> tempRangeList = getRangeListFromString(rangeLists.get(i));
         processedRangeList = GeoHashUtils.processRangeList(
-            processedRangeList, tempRangeList, opType);
+            processedRangeList, tempRangeList, operationType);
       }
       ranges = processedRangeList;
     }

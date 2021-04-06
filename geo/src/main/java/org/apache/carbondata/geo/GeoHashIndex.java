@@ -136,18 +136,10 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
     }
     String GRID_SIZE = commonKey + "gridsize";
     String gridSize = properties.get(GRID_SIZE);
-    if (StringUtils.isEmpty(gridSize)) {
-      throw new MalformedCarbonCommandException(
-              String.format("%s property is invalid. %s property must be specified.",
-                      CarbonCommonConstants.SPATIAL_INDEX, GRID_SIZE));
-    }
+    GeoHashUtils.validateGeoProperty(gridSize, GRID_SIZE);
     String CONVERSION_RATIO = commonKey + "conversionratio";
     String conversionRatio = properties.get(CONVERSION_RATIO);
-    if (StringUtils.isEmpty(conversionRatio)) {
-      throw new MalformedCarbonCommandException(
-              String.format("%s property is invalid. %s property must be specified.",
-                      CarbonCommonConstants.SPATIAL_INDEX, CONVERSION_RATIO));
-    }
+    GeoHashUtils.validateGeoProperty(conversionRatio, CONVERSION_RATIO);
 
     // Fill the values to the instance fields
     this.oriLatitude = Double.valueOf(originLatitude);

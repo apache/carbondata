@@ -61,7 +61,8 @@ public class PolylineListExpression extends PolygonExpression {
       // 1. parse the polyline list string and get polygon from each polyline
       List<Geometry> polygonList = new ArrayList<>();
       WKTReader wktReader = new WKTReader();
-      Pattern pattern = Pattern.compile(GeoConstants.POLYLINE_REG_EXPRESSION);
+      Pattern pattern =
+          Pattern.compile(GeoConstants.POLYLINE_REG_EXPRESSION, Pattern.CASE_INSENSITIVE);
       Matcher matcher = pattern.matcher(polygon);
       while (matcher.find()) {
         String matchedStr = matcher.group();
@@ -80,7 +81,7 @@ public class PolylineListExpression extends PolygonExpression {
           List<Long[]> tempRangeList = instance.query(tempPointList);
           GeoHashUtils.validateRangeList(tempRangeList);
           processedRangeList = GeoHashUtils.processRangeList(
-            processedRangeList, tempRangeList, GeoOperationType.OR.toString());
+            processedRangeList, tempRangeList, GeoOperationType.OR);
         }
         ranges = processedRangeList;
       }

@@ -23,6 +23,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
+
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
+import static org.apache.carbondata.geo.GeoConstants.POSITIVE_INTEGER_REGEX;
+
+import org.apache.commons.lang3.StringUtils;
 
 public class GeoHashUtils {
 
@@ -81,6 +89,28 @@ public class GeoHashUtils {
     long latitudeByRatio = latitude * GeoConstants.CONVERSION_FACTOR_FOR_ACCURACY;
     int[] ij = lonLat2ColRow(longtitudeByRatio, latitudeByRatio, oriLatitude, gridSize);
     return colRow2GeoID(ij[0], ij[1]);
+  }
+
+  public static void validateUDFInputValue(Object input, String inputName, String datatype)
+      throws MalformedCarbonCommandException {
+    if (inputName.equalsIgnoreCase(GeoConstants.GRID_SIZE) && (input == null
+        || !Pattern.compile(POSITIVE_INTEGER_REGEX).matcher(input.toString()).find())) {
+      throw new MalformedCarbonCommandException("Expect grid size to be a positive value");
+    } else if (input == null) {
+      throw new MalformedCarbonCommandException(
+          "Expect " + inputName + " to be of " + datatype + " type");
+    }
+  }
+
+  public static void validateGeoProperty(String propertyValue, String propertyName)
+      throws MalformedCarbonCommandException {
+    if (StringUtils.isEmpty(propertyValue) ||
+        !Pattern.compile(POSITIVE_INTEGER_REGEX).matcher(propertyValue).find()) {
+      throw new MalformedCarbonCommandException(
+          String.format("%s property is invalid. %s property must be specified, "
+                  + "and the value must be positive integer.",
+              CarbonCommonConstants.SPATIAL_INDEX, propertyName));
+    }
   }
 
   /**
@@ -264,12 +294,8 @@ public class GeoHashUtils {
    * @return geoId range list of processed set
    */
   public static List<Long[]> processRangeList(List<Long[]> rangeListA, List<Long[]> rangeListB,
-      String opType) {
+      GeoOperationType operationType) {
     List<Long[]> processedRangeList;
-    GeoOperationType operationType = GeoOperationType.getEnum(opType);
-    if (operationType == null) {
-      throw new RuntimeException("Unsupported operation type " + opType);
-    }
     switch (operationType) {
       case OR:
         processedRangeList = getPolygonUnion(rangeListA, rangeListB);
@@ -278,7 +304,7 @@ public class GeoHashUtils {
         processedRangeList = getPolygonIntersection(rangeListA, rangeListB);
         break;
       default:
-        throw new RuntimeException("Unsupported operation type " + opType);
+        throw new RuntimeException("Unsupported operation type " + operationType.toString());
     }
     return processedRangeList;
   }

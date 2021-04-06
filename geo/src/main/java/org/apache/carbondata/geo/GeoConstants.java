@@ -27,6 +27,9 @@ public class GeoConstants {
   // GeoHash type Spatial Index
   public static final String GEOHASH = "geohash";
 
+  // Regular expression to validate whether the input value is positive integer
+  public static final String POSITIVE_INTEGER_REGEX = "^[+]?\\d*[1-9]\\d*$";
+
   // Regular expression to parse input polygons for IN_POLYGON_LIST
   public static final String POLYGON_REG_EXPRESSION = "(?<=POLYGON \\(\\()(.*?)(?=(\\)\\)))";
 
@@ -35,6 +38,8 @@ public class GeoConstants {
 
   // Regular expression to parse input rangelists for IN_POLYGON_RANGE_LIST
   public static final String RANGELIST_REG_EXPRESSION = "(?<=RANGELIST \\()(.*?)(?=\\))";
+
+  public static final String GRID_SIZE = "gridSize";
 
   // delimiter of input points or ranges
   public static final String DEFAULT_DELIMITER = ",";

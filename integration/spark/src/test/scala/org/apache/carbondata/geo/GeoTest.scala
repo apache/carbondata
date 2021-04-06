@@ -19,6 +19,7 @@ package org.apache.carbondata.geo
 
 import scala.collection.mutable
 
+import org.apache.spark.SparkException
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -147,6 +148,56 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     assert(exception.getMessage.contains(
       s"mygeohash is a spatial index column and is not allowed for " +
       s"the option(s): column_meta_cache"))
+  }
+
+  test("test UDF's with invalid values") {
+    createTable()
+    val exception1 = intercept[RuntimeException](sql(
+      s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
+      s"'RANGELIST (855279368848 855279368850, 855279368849 855279368852)', 45)").collect())
+    assert(exception1.getMessage.contains("Unsupported operation type 45"))
+
+    var exception2 = intercept[MalformedCarbonCommandException](
+      sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
+          s"'linestring (120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464, " +
+          s"120.190359 30.315388)', 'x')").collect())
+    assert(exception2.getMessage.contains("Expect buffer size to be of float type"))
+
+    exception2 = intercept[MalformedCarbonCommandException](
+      sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
+          s"'linestring (120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464, " +
+          s"120.190359 30.315388)', -1)").collect())
+    assert(exception2.getMessage.contains("Expect buffer size to be a positive value"))
+
+    // Expect grid size to be a positive value
+    intercept[SparkException](
+      sql(s"select LatLngToGeoId(39930753, 116302895, 39.832277, -50) as geoId").collect())
+
+    // Expect grid size to be a positive value
+    intercept[SparkException](
+      sql(s"select GeoIdToLatLng(855279270226, 39.832277, -50) as LatitudeAndLongitude").collect())
+
+    // Expect grid size to be a positive value
+    intercept[SparkException](
+      sql(s"select ToRangeList('116.321011 40.123503, 116.320311 40.122503,116.321111 40.121503, " +
+          s"116.321011 40.123503', 39.832277, 0) as rangeList")
+        .collect())
+
+    // Expect geoId to be of Long type
+    intercept[SparkException](
+      sql(s"select GeoIdToGridXy('X') as GridXY").collect())
+
+    // Expect latitude to be of Long type
+    intercept[SparkException](
+      sql(s"select LatLngToGeoId('X', 'X', 'X', 'X') as geoId").collect())
+
+    // Expect geoId to be of Long type
+    intercept[SparkException](
+      sql(s"select GeoIdToLatLng('X', 'X', 'X') as LatitudeAndLongitude").collect())
+
+    // Expect geoId to be of Long type
+    intercept[SparkException](
+      sql(s"select ToUpperLayerGeoId('X') as upperLayerGeoId").collect())
   }
 
   test("test materialized view with spatial column") {
@@ -502,7 +553,7 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
         Row(120196020, 30321651)))
     checkAnswer(
       sql(s"select longitude, latitude from $table1 where IN_POLYGON_LIST(" +
-        s"'POLYGON ((120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
+        s"'polygon ((120.176433 30.327431,120.171283 30.322245,120.181411 30.314540," +
         s"120.190509 30.321653,120.185188 30.329358,120.176433 30.327431)), " +
         s"POLYGON ((120.191603 30.328946,120.184179 30.327465,120.181819 30.321464," +
         s"120.190359 30.315388,120.199242 30.324464,120.191603 30.328946))', " +
@@ -605,8 +656,8 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
         Row(120198638, 30323540)))
     checkAnswer(
       sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
-        s"'LINESTRING (120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464), " +
-        s"LINESTRING (120.199242 30.324464, 120.190359 30.315388)', 65)"),
+        s"'linestring (120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464), " +
+        s"linestring (120.199242 30.324464, 120.190359 30.315388)', 65)"),
       Seq(Row(120184976, 30327105),
         Row(120197093, 30325985),
         Row(120196020, 30321651),
@@ -660,7 +711,7 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
         Row(855282157702L, 116325378, 39963129)))
     checkAnswer(
       sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
-        s"'RANGELIST (855279368850 855279368852, 855280799610 855280799612, " +
+        s"'rangelist (855279368850 855279368852, 855280799610 855280799612, " +
         s"855282156300 855282157400), " +
         s"RANGELIST (855279368848 855279368850, 855280799613 855280799615, " +
         s"855282156301 855282157800)', " +
@@ -838,7 +889,8 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
            | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
            | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
            | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
-           | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
+           | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000',
+           | 'SPATIAL_INDEX.mygeohash.class'='org.apache.carbondata.geo.GeoHashIndex')
        """.stripMargin)
   }
 

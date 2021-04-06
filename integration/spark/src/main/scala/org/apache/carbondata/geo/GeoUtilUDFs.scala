@@ -33,34 +33,51 @@ object GeoUtilUDFs {
   }
 }
 
-class GeoIdToGridXyUDF extends (Long => Array[Int]) with Serializable {
-  override def apply(geoId: Long): Array[Int] = {
+class GeoIdToGridXyUDF extends (java.lang.Long => Array[Int]) with Serializable {
+  override def apply(geoId: java.lang.Long): Array[Int] = {
+    GeoHashUtils.validateUDFInputValue(geoId, "geoId", "Long")
     GeoHashUtils.geoID2ColRow(geoId)
   }
 }
 
-class GeoIdToLatLngUDF extends ((Long, Double, Int) => Array[Double]) with Serializable {
-  override def apply(geoId: Long, oriLatitude: Double, gridSize: Int): Array[Double] = {
+class GeoIdToLatLngUDF
+  extends ((java.lang.Long, java.lang.Double, java.lang.Integer) => Array[Double]) with
+    Serializable {
+  override def apply(geoId: java.lang.Long, oriLatitude: java.lang.Double,
+      gridSize: java.lang.Integer): Array[Double] = {
+    GeoHashUtils.validateUDFInputValue(geoId, "geoId", "Long")
+    GeoHashUtils.validateUDFInputValue(oriLatitude, "oriLatitude", "Double")
+    GeoHashUtils.validateUDFInputValue(gridSize, "gridSize", "Integer")
     GeoHashUtils.geoID2LatLng(geoId, oriLatitude, gridSize)
   }
 }
 
-class LatLngToGeoIdUDF extends ((Long, Long, Double, Int) => Long) with Serializable {
-  override def apply(latitude: Long, longitude: Long, oriLatitude: Double, gridSize: Int): Long = {
+class LatLngToGeoIdUDF extends ((java.lang.Long, java.lang.Long,
+  java.lang.Double, java.lang.Integer) => Long) with Serializable {
+  override def apply(latitude: java.lang.Long, longitude: java.lang.Long,
+      oriLatitude: java.lang.Double, gridSize: java.lang.Integer): Long = {
+    GeoHashUtils.validateUDFInputValue(latitude, "latitude", "Long")
+    GeoHashUtils.validateUDFInputValue(longitude, "longitude", "Long")
+    GeoHashUtils.validateUDFInputValue(oriLatitude, "oriLatitude", "Double")
+    GeoHashUtils.validateUDFInputValue(gridSize, "gridSize", "Integer")
     GeoHashUtils.lonLat2GeoID(longitude, latitude, oriLatitude, gridSize)
   }
 }
 
-class ToUpperLayerGeoIdUDF extends (Long => Long) with Serializable {
-  override def apply(geoId: Long): Long = {
+class ToUpperLayerGeoIdUDF extends (java.lang.Long => Long) with Serializable {
+  override def apply(geoId: java.lang.Long): Long = {
+    GeoHashUtils.validateUDFInputValue(geoId, "geoId", "Long")
     GeoHashUtils.convertToUpperLayerGeoId(geoId)
   }
 }
 
-class ToRangeListUDF extends ((String, Double, Int) => mutable.Buffer[Array[Long]])
-  with Serializable {
-  override def apply(polygon: String, oriLatitude: Double,
-                     gridSize: Int): mutable.Buffer[Array[Long]] = {
+class ToRangeListUDF extends ((java.lang.String, java.lang.Double, java.lang.Integer) =>
+  mutable.Buffer[Array[Long]]) with Serializable {
+  override def apply(polygon: java.lang.String, oriLatitude: java.lang.Double,
+      gridSize: java.lang.Integer): mutable.Buffer[Array[Long]] = {
+    GeoHashUtils.validateUDFInputValue(polygon, "polygon", "String")
+    GeoHashUtils.validateUDFInputValue(oriLatitude, "oriLatitude", "Double")
+    GeoHashUtils.validateUDFInputValue(gridSize, "gridSize", "Integer")
     GeoHashUtils.getRangeList(polygon, oriLatitude, gridSize).asScala.map(_.map(Long2long))
   }
 }
