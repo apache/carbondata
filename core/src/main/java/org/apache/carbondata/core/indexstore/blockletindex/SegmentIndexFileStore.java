@@ -197,12 +197,11 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readAllIIndexOfSegment(CarbonFile[] carbonFiles) throws IOException {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(carbonFiles);
-    for (CarbonFile carbonIndexFile : carbonIndexFiles) {
-      if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFile.getCanonicalPath());
-      } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        readIndexFile(carbonIndexFile);
+    for (CarbonFile carbonFile : carbonFiles) {
+      if (carbonFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        readMergeFile(carbonFile.getCanonicalPath());
+      } else if (carbonFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        readIndexFile(carbonFile);
       }
     }
   }
@@ -388,23 +387,6 @@ public class SegmentIndexFileStore {
    */
   public static CarbonFile[] getCarbonIndexFiles(String segmentPath, Configuration configuration) {
     return getCarbonIndexFiles(segmentPath, configuration, null);
-  }
-
-  /**
-   * List all the index files of the segment.
-   *
-   * @param carbonFiles
-   * @return
-   */
-  public static CarbonFile[] getCarbonIndexFiles(CarbonFile[] carbonFiles) {
-    List<CarbonFile> indexFiles = new ArrayList<>();
-    for (CarbonFile file: carbonFiles) {
-      if (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
-          file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        indexFiles.add(file);
-      }
-    }
-    return indexFiles.toArray(new CarbonFile[indexFiles.size()]);
   }
 
   /**

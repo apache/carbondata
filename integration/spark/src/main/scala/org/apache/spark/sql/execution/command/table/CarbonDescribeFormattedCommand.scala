@@ -78,6 +78,18 @@ private[sql] case class CarbonDescribeFormattedCommand(
               tblProps(s"${ CarbonCommonConstants.SPATIAL_INDEX }.$index.datatype"), ""),
             ("Sources Columns",
               tblProps(s"${ CarbonCommonConstants.SPATIAL_INDEX }.$index.sourcecolumns"), ""))
+          if (tblProps.contains(s"${CarbonCommonConstants.SPATIAL_INDEX}.$index.originlatitude")) {
+            results ++= Seq(("Origin Latitude",
+              tblProps(s"${CarbonCommonConstants.SPATIAL_INDEX}.$index.originlatitude"), ""))
+          }
+          if (tblProps.contains(s"${CarbonCommonConstants.SPATIAL_INDEX}.$index.gridsize")) {
+            results ++= Seq(("Grid Size",
+              tblProps(s"${CarbonCommonConstants.SPATIAL_INDEX}.$index.gridsize"), ""))
+          }
+          if (tblProps.contains(s"${CarbonCommonConstants.SPATIAL_INDEX}.$index.conversionratio")) {
+            results ++= Seq(("Conversion Ratio",
+              tblProps(s"${CarbonCommonConstants.SPATIAL_INDEX}.$index.conversionratio"), ""))
+          }
           if (indexList.length != count) {
             results ++= Seq(("", "", ""))
           }

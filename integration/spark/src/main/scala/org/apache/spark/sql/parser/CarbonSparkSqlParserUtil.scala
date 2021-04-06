@@ -564,7 +564,7 @@ object CarbonSparkSqlParserUtil {
   def needToConvertToLowerCase(key: String): Boolean = {
     var noConvertList = Array(CarbonCommonConstants.COMPRESSOR, "PATH", "bad_record_path",
       "timestampformat", "dateformat")
-    if (key.startsWith(CarbonCommonConstants.SPATIAL_INDEX) && key.endsWith(".class")) {
+    if (key.toLowerCase.startsWith(CarbonCommonConstants.SPATIAL_INDEX) && key.endsWith(".class")) {
       noConvertList = noConvertList ++ Array(key)
     }
     !noConvertList.exists(x => x.equalsIgnoreCase(key))

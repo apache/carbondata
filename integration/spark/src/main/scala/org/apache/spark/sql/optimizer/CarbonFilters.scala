@@ -243,6 +243,13 @@ object CarbonFilters {
           throw new MalformedCarbonCommandException("Expect two string in polyline list")
         }
         val (columnName, instance) = getGeoHashHandler(relation.carbonTable)
+        if (scala.util.Try(children.last.toString().toFloat).isFailure) {
+          throw new MalformedCarbonCommandException("Expect buffer size to be of float type")
+        }
+        val bufferSize = children.last.toString().toFloat
+        if (bufferSize <= 0) {
+          throw new MalformedCarbonCommandException("Expect buffer size to be a positive value")
+        }
         Some(new PolylineListExpression(children.head.toString(),
           children.last.toString().toFloat, columnName, instance))
       case _: InPolygonRangeListUDF =>

@@ -200,13 +200,12 @@ public class CarbonIndexFileMergeWriter {
       if (readBasedOnUUID) {
         indexFiles = SegmentIndexFileStore
             .getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration(), uuid);
-        fileStore.readAllIIndexOfSegment(segmentPath, uuid);
       } else {
         // The uuid can be different, when we add load from external path.
         indexFiles =
             SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
-        fileStore.readAllIIndexOfSegment(segmentPath);
       }
+      fileStore.readAllIIndexOfSegment(indexFiles);
     }
     Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
     Map<String, List<String>> mergeToIndexFileMap = fileStore.getCarbonMergeFileToIndexFilesMap();

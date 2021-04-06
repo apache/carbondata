@@ -46,8 +46,8 @@ class InPolygonListUDF extends ((String, String) => Boolean) with Serializable {
 }
 
 @InterfaceAudience.Internal
-class InPolylineListUDF extends ((String, Float) => Boolean) with Serializable {
-  override def apply(v1: String, v2: Float): Boolean = {
+class InPolylineListUDF extends ((String, java.lang.Float) => Boolean) with Serializable {
+  override def apply(v1: String, v2: java.lang.Float): Boolean = {
     true // Carbon applies the filter. So, Spark do not have to apply filter.
   }
 }
