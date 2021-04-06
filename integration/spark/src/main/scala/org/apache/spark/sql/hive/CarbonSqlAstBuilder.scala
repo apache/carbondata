@@ -39,7 +39,8 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSes
         fileStorage.equalsIgnoreCase("'org.apache.carbondata.format'")) {
       val createTableTuple = (ctx.createTableHeader, ctx.skewSpec(0),
         ctx.bucketSpec(0), ctx.partitionColumns, ctx.columns, ctx.tablePropertyList(0),
-        ctx.locationSpec(0), Option(ctx.STRING(0)).map(string), ctx.AS, ctx.query, fileStorage)
+        ctx.locationSpec(0), Option(ctx.commentSpec().get(0).toString), ctx.AS, ctx.query,
+        fileStorage)
       helper.createCarbonTable(createTableTuple)
     } else {
       super.visitCreateHiveTable(ctx)

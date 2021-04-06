@@ -43,7 +43,8 @@ class ExtractJoinConditionsSuite extends ModularPlanTest {
       case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
       MatchLocalRelation(tbl2, _),
       Inner,
-      Some(cond2)) =>
+      Some(cond2),
+      _) =>
         Seq(cond2)
     }
 
@@ -66,7 +67,8 @@ class ExtractJoinConditionsSuite extends ModularPlanTest {
       case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
       logical.Filter(cond2, MatchLocalRelation(tbl2, _)),
       Inner,
-      Some(cond3)) =>
+      Some(cond3),
+      _) =>
         Seq(cond3)
     }
 

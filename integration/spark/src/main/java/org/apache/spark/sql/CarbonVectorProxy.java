@@ -392,7 +392,7 @@ public class CarbonVectorProxy {
     }
 
     @Override
-    protected ColumnVector getChild(int i) {
+    public ColumnVector getChild(int i) {
       return vector.getChild(i);
     }
 
@@ -526,7 +526,7 @@ public class CarbonVectorProxy {
     }
 
     @Override
-    protected ColumnVector getChild(int i) {
+    public ColumnVector getChild(int i) {
       checkPageLoaded();
       return vector.getChild(i);
     }

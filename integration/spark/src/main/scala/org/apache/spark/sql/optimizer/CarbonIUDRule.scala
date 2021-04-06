@@ -64,8 +64,9 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
             }
             Project(dest, child)
         }
+        val completeName = table.tableName.split(".")
         CarbonProjectForUpdateCommand(
-          newPlan, table.tableIdentifier.database, table.tableIdentifier.table, cols)
+          newPlan, Option(completeName(0)), completeName(1), cols)
     }
   }
 }

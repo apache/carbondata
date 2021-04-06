@@ -27,9 +27,8 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference,
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
-import org.apache.spark.sql.execution.{ColumnarBatchScan, DataSourceScanExec, WholeStageCodegenExec}
+import org.apache.spark.sql.execution.{DataSourceScanExec, WholeStageCodegenExec}
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.types.AtomicType
 
 import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -55,10 +54,14 @@ case class CarbonDataSourceScan(
     directScanSupport: Boolean,
     @transient extraRDD: Option[(RDD[InternalRow], Boolean)] = None,
     tableIdentifier: Option[TableIdentifier] = None)
-  extends DataSourceScanExec with ColumnarBatchScan {
+  extends DataSourceScanExec {
 
-  override lazy val supportsBatch: Boolean = {
+  override lazy val supportsColumnar: Boolean = {
     CarbonPlanHelper.supportBatchedDataSource(sqlContext, output, extraRDD)
+  }
+
+  lazy val needsUnsafeRowConversion: Boolean = {
+    true
   }
 
   override lazy val (outputPartitioning, outputOrdering): (Partitioning, Seq[SortOrder]) = {
@@ -93,8 +96,8 @@ case class CarbonDataSourceScan(
     val metadata =
       Map(
         "ReadSchema" -> seqToString(pushedDownProjection.getAllColumns),
-        "Batched" -> supportsBatch.toString,
-        "DirectScan" -> (supportsBatch && directScanSupport).toString,
+        "Batched" -> supportsColumnar.toString,
+        "DirectScan" -> (supportsColumnar && directScanSupport).toString,
         "PushedFilters" -> seqToString(pushedDownFilters.map(_.getStatement)))
     if (relation.carbonTable.isHivePartitionTable) {
       metadata + ("PartitionFilters" -> seqToString(partitionFilters)) +
@@ -130,34 +133,26 @@ case class CarbonDataSourceScan(
       relation.carbonTable.getTableInfo,
       new CarbonInputMetrics,
       selectedPartitions)
-    carbonRdd.setVectorReaderSupport(supportsBatch)
-    carbonRdd.setDirectScanSupport(supportsBatch && directScanSupport)
+    carbonRdd.setVectorReaderSupport(supportsColumnar)
+    carbonRdd.setDirectScanSupport(supportsColumnar && directScanSupport)
     extraRDD.map(_._1.union(carbonRdd)).getOrElse(carbonRdd)
   }
 
   override def inputRDDs(): Seq[RDD[InternalRow]] = inputRDD :: Nil
 
   override protected def doExecute(): RDD[InternalRow] = {
-    if (supportsBatch) {
-      // in the case of fallback, this batched scan should never fail because of:
-      // 1) only primitive types are supported
-      // 2) the number of columns should be smaller than spark.sql.codegen.maxFields
-      WholeStageCodegenExec(this)(codegenStageId = 0).execute()
-    } else {
-      val unsafeRows = {
-        val scan = inputRDD
-        if (needsUnsafeRowConversion) {
-          scan.mapPartitionsWithIndexInternal { (index, iter) =>
-            val proj = UnsafeProjection.create(schema)
-            proj.initialize(index)
-            iter.map(proj)
-          }
-        } else {
-          scan
+    val numOutputRows = longMetric("numOutputRows")
+    if (needsUnsafeRowConversion) {
+      inputRDD.mapPartitionsWithIndexInternal { (index, iter) =>
+        val toUnsafe = UnsafeProjection.create(schema)
+        toUnsafe.initialize(index)
+        iter.map { row =>
+          numOutputRows += 1
+          toUnsafe(row)
         }
       }
-      val numOutputRows = longMetric("numOutputRows")
-      unsafeRows.map { r =>
+    } else {
+      inputRDD.map { r =>
         numOutputRows += 1
         r
       }
@@ -167,7 +162,7 @@ case class CarbonDataSourceScan(
   override protected def doCanonicalize(): CarbonDataSourceScan = {
     CarbonDataSourceScan(
       relation,
-      output.map(QueryPlan.normalizeExprId(_, output)),
+      output.map(QueryPlan.normalizeExpressions(_, output)),
       QueryPlan.normalizePredicates(partitionFilters, output),
       QueryPlan.normalizePredicates(dataFilters, output),
       null,
@@ -177,4 +172,8 @@ case class CarbonDataSourceScan(
       extraRDD,
       tableIdentifier)
   }
+
+  override def simpleStringWithNodeId(): String = "CarbonDataSOurceScan"
+
+  override def verboseString(maxFields: Int): String = "CarbonDataSOurceScan"
 }

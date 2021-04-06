@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution
 
 import java.text.{ParseException, SimpleDateFormat}
+import java.time.ZoneId
 import java.util
 import java.util.{Locale, TimeZone}
 
@@ -44,7 +45,7 @@ object CastExpressionOptimization {
   def typeCastStringToLong(v: Any, dataType: SparkDataType): Any = {
     if (dataType == TimestampType || dataType == DateType) {
       val value = if (dataType == TimestampType) {
-        DateTimeUtils.stringToTimestamp(UTF8String.fromString(v.toString))
+        DateTimeUtils.stringToTimestamp(UTF8String.fromString(v.toString), ZoneId.systemDefault())
       } else {
         None
       }

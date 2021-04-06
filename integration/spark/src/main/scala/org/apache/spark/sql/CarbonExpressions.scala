@@ -92,7 +92,8 @@ object CarbonExpressions {
     def unapply(plan: LogicalPlan): Option[(TableIdentifier)] = {
       plan match {
         case u: UnresolvedRelation =>
-          Some(u.tableIdentifier)
+          val tableName = u.tableName.split(".")
+          Some(TableIdentifier(tableName(1), Option(tableName(0))))
         case _ => None
       }
     }

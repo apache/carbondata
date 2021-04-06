@@ -52,7 +52,7 @@ case class CarbonCreateTableAsSelectCommand(
     }
     val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)
     setAuditTable(dbName, tableName)
-    setAuditInfo(Map("query" -> query.simpleString))
+    setAuditInfo(Map("query" -> query.simpleString(1000)))
     // check if table already exists
     if (sparkSession.sessionState.catalog
       .tableExists(TableIdentifier(tableName, Some(dbName)))) {
@@ -112,4 +112,8 @@ case class CarbonCreateTableAsSelectCommand(
   }
 
   override protected def opName: String = "CREATE TABLE AS SELECT"
+
+  override def simpleStringWithNodeId(): String = opName
+
+  override def verboseString(maxFields: Int): String = opName
 }

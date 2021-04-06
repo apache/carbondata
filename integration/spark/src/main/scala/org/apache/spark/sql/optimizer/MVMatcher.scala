@@ -307,7 +307,7 @@ private abstract class MVMatchPattern extends Logging {
       alias_m: AttributeMap[Alias]): Option[modular.Matchable] = {
     var matchable = true
     val matched = operator_q.transformExpressions {
-      case cnt_q@AggregateExpression(Count(exprs_q), _, false, _) =>
+      case cnt_q@AggregateExpression(Count(exprs_q), _, false, _, _) =>
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -341,10 +341,11 @@ private abstract class MVMatchPattern extends Logging {
           Sum(cnt.toAttribute),
           cnt_q.mode,
           isDistinct = false,
+          None,
           cnt_q.resultId)
         }.getOrElse { matchable = false; cnt_q }
 
-      case sum_q@AggregateExpression(Sum(expr_q), _, false, _) =>
+      case sum_q@AggregateExpression(Sum(expr_q), _, false, _, _) =>
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -375,10 +376,11 @@ private abstract class MVMatchPattern extends Logging {
           Sum(sum.toAttribute),
           sum_q.mode,
           isDistinct = false,
+          None,
           sum_q.resultId)
         }.getOrElse { matchable = false; sum_q }
 
-      case max_q@AggregateExpression(Max(expr_q), _, false, _) =>
+      case max_q@AggregateExpression(Max(expr_q), _, false, _, _) =>
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -409,10 +411,11 @@ private abstract class MVMatchPattern extends Logging {
           Max(max.toAttribute),
           max_q.mode,
           isDistinct = false,
+          None,
           max_q.resultId)
         }.getOrElse { matchable = false; max_q }
 
-      case min_q@AggregateExpression(Min(expr_q), _, false, _) =>
+      case min_q@AggregateExpression(Min(expr_q), _, false, _, _) =>
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -441,11 +444,12 @@ private abstract class MVMatchPattern extends Logging {
           Min(min.toAttribute),
           min_q.mode,
           isDistinct = false,
+          None,
           min_q.resultId)
         }.getOrElse { matchable = false; min_q }
 
 
-      case avg_q@AggregateExpression(Average(expr_q), _, false, _) =>
+      case avg_q@AggregateExpression(Average(expr_q), _, false, _, _) =>
         val cnt_q = operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -570,6 +574,7 @@ private abstract class MVMatchPattern extends Logging {
             Average(avg.toAttribute),
             avg_q.mode,
             isDistinct = false,
+            None,
             avg_q.resultId)
           }.getOrElse { matchable = false; avg_q }
         } else {
@@ -1426,12 +1431,12 @@ private object SelectSelectGroupbyChildDelta
           // aggregation of same column name on join tables like sum(t1.column), sum(t2.column),
           // in that case, compare alias name with column id, as alias name will be same for
           // both output(sum(t1))
-          val projectName = output.simpleString
+          val projectName = output.simpleString(1000)
           outputName = projectName.substring(0, projectName.indexOf(" AS"))
         }
         if (!distinctOList.exists(distinctOutput =>
           if (distinctOutput.isInstanceOf[Alias]) {
-            val projectName = distinctOutput.simpleString
+            val projectName = distinctOutput.simpleString(1000)
             val aliasName = projectName.substring(0, projectName.indexOf(" AS"))
             aliasName.equalsIgnoreCase(outputName)
           } else {

@@ -34,7 +34,7 @@ case class CarbonExplainCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val explainCommand = child.asInstanceOf[ExplainCommand]
-    setAuditInfo(Map("query" -> explainCommand.logicalPlan.simpleString))
+    setAuditInfo(Map("query" -> explainCommand.logicalPlan.simpleString(1000)))
     val isCommand = SparkSQLUtil.isCommand(explainCommand.logicalPlan)
     if (explainCommand.logicalPlan.isStreaming || isCommand) {
       explainCommand.run(sparkSession)
@@ -45,6 +45,10 @@ case class CarbonExplainCommand(
   }
 
   override protected def opName: String = "EXPLAIN"
+
+  override def simpleStringWithNodeId(): String = opName
+
+  override def verboseString(maxFields: Int): String = opName
 }
 
 case class CarbonInternalExplainCommand(
@@ -59,6 +63,10 @@ case class CarbonInternalExplainCommand(
   }
 
   override protected def opName: String = "Carbon EXPLAIN"
+
+  override def simpleStringWithNodeId(): String = "CARBON EXPLAIN"
+
+  override def verboseString(maxFields: Int): String = "CARBON EXPLAIN"
 }
 
 object CarbonExplainCommand {

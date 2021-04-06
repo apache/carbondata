@@ -160,7 +160,7 @@ class IndexLoaderRDD(
     val reader = indexFormat.createRecordReader(inputSplit, attemptContext)
     val iter = new Iterator[(TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema)] {
       // in case of success, failure or cancellation clear memory and stop execution
-      context.addTaskCompletionListener { _ =>
+      context.addTaskCompletionListener[Unit] { _ =>
         reader.close()
       }
       reader.initialize(inputSplit, attemptContext)

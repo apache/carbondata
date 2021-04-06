@@ -66,7 +66,7 @@ class CarbonSITransformationRule(sparkSession: SparkSession)
     val isCreateAsSelect = isCreateTableAsSelect(plan)
     if (relations.nonEmpty && !isCreateAsSelect) {
       plan.collect {
-        case join@Join(_, _, _, condition) =>
+        case join@Join(_, _, _, condition, _) =>
           condition match {
             case Some(x) =>
               x match {

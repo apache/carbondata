@@ -214,7 +214,7 @@ class CarbonSIRebuildRDD[K, V](
           new SparkDataTypeConverterImpl)
 
         // add task completion listener to clean up the resources
-        context.addTaskCompletionListener { _ =>
+        context.addTaskCompletionListener[Unit] { _ =>
           close()
         }
         try {

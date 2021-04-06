@@ -17,9 +17,8 @@
 
 package org.apache.spark.sql.optimizer
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, PredicateHelper,
-ScalaUDF}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, PredicateHelper, ScalaUDF}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, JoinHint, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StringType
@@ -34,7 +33,8 @@ class CarbonUDFTransformRule extends Rule[LogicalPlan] with PredicateHelper {
   private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
     val output = plan.transform {
       case proj@Project(cols, Join(
-      left, right, joinType: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
+      left, right, joinType: org.apache.spark.sql.catalyst.plans.JoinType, condition, JoinHint
+        .NONE)) =>
         var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
         var udfExists = false
         val newCols = cols.map {
@@ -56,7 +56,7 @@ class CarbonUDFTransformRule extends Rule[LogicalPlan] with PredicateHelper {
               Project(relation.output ++ projectionToBeAdded, relation)
             case other => other
           }
-          Project(newCols, Join(newLeft, right, joinType, condition))
+          Project(newCols, Join(newLeft, right, joinType, condition, JoinHint.NONE))
         } else {
           proj
         }

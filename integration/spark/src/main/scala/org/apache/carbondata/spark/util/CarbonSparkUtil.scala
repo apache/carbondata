@@ -24,8 +24,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.CarbonDatasourceHadoopRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -181,7 +181,8 @@ object CarbonSparkUtil {
    */
   def createHadoopJob(conf: Configuration = FileFactory.getConfiguration): Job = {
     val jobConf = new JobConf(conf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
+    val jobCreds = jobConf.getCredentials
+    jobCreds.mergeAll(UserGroupInformation.getCurrentUser.getCredentials)
     Job.getInstance(jobConf)
   }
 }

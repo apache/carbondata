@@ -72,7 +72,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
-    setAuditInfo(Map("plan" -> plan.simpleString))
+    setAuditInfo(Map("plan" -> plan.simpleString(1000)))
     // Do not allow spatial index and its source columns to be updated.
     AlterTableUtil.validateColumnsWithSpatialIndexProperties(carbonTable, columns)
     columns.foreach { col =>
@@ -365,4 +365,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
   }
 
   override protected def opName: String = "UPDATE DATA"
+
+  override def simpleStringWithNodeId(): String = ""
+
+  override def verboseString(maxFields: Int): String = ""
 }

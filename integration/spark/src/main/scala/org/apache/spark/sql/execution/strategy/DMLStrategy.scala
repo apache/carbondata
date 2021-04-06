@@ -24,7 +24,7 @@ import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, Co
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Descending, Expression, IntegerLiteral, NamedExpression, SortOrder}
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
 import org.apache.spark.sql.catalyst.plans.{Inner, LeftSemi}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, JoinHint, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
 import org.apache.spark.sql.execution.{CarbonTakeOrderedAndProjectExec, FilterExec, ProjectExec, SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command.{DataWritingCommandExec, ExecutedCommandExec, LoadDataCommand}
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, LogicalRelation}
@@ -57,7 +57,7 @@ object DMLStrategy extends SparkStrategy {
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
         CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
-      left, right)
+      left, right, JoinHint.NONE)
         if isCarbonPlan(left) && CarbonIndexUtil.checkIsIndexTable(right) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
         val carbon = CarbonSourceStrategy.apply(left).head
@@ -94,7 +94,7 @@ object DMLStrategy extends SparkStrategy {
           condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
-      right)
+      right, JoinHint.NONE)
         if isCarbonPlan(right) && CarbonIndexUtil.checkIsIndexTable(left) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
         val carbon = CarbonSourceStrategy.apply(right).head
@@ -109,7 +109,7 @@ object DMLStrategy extends SparkStrategy {
             condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
       case ExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition,
-      left, right)
+      left, right, JoinHint.NONE)
         if isLeftSemiExistPushDownEnabled &&
           isAllCarbonPlan(left) && isAllCarbonPlan(right) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeysLeftSemiExist:right")

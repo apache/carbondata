@@ -340,7 +340,7 @@ object MixedFormatHandler {
     } else {
       ProjectExec(projects, withFilter)
     }
-    (withProjections.inputRDDs().head, fileFormat.supportBatch(sparkSession, outputSchema))
+    (withProjections.execute(), fileFormat.supportBatch(sparkSession, outputSchema))
   }
 
   // This function is used to get the unique columns based on expression Id from

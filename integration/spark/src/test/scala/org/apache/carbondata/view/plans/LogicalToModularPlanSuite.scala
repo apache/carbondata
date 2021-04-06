@@ -97,7 +97,8 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
       MatchLocalRelation(tbl2, _),
       Inner,
-      Some(cond2)) =>
+      Some(cond2),
+      _) =>
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
           tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, Inner))
@@ -118,7 +119,8 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
       MatchLocalRelation(tbl2, _),
       LeftOuter,
-      Some(cond2)) =>
+      Some(cond2),
+      _) =>
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
           tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, LeftOuter))
@@ -139,7 +141,8 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
       MatchLocalRelation(tbl2, _),
       RightOuter,
-      Some(cond2)) =>
+      Some(cond2),
+      _) =>
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
           tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, RightOuter))
@@ -158,7 +161,8 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
       MatchLocalRelation(tbl2, _),
       Inner,
-      Some(cond2)) =>
+      Some(cond2),
+      _) =>
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
           tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, Inner))
@@ -182,9 +186,11 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       logical.Join(logical.Filter(cond2, MatchLocalRelation(tbl2, _)),
       MatchLocalRelation(tbl3, _),
       Inner,
-      Some(cond3)),
+      Some(cond3),
+      _),
       Inner,
-      Some(cond4)) =>
+      Some(cond4),
+      _) =>
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl3, NoFlags, Seq.empty)).select(tbl1 ++ tbl2 ++ tbl3: _*)(
@@ -214,7 +220,8 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       logical.Join(logical.Filter(cond2, MatchLocalRelation(tbl1, _)),
       logical.Filter(cond3, MatchLocalRelation(tbl2, _)),
       Inner,
-      Some(cond4)))))) =>
+      Some(cond4),
+      _))))) =>
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
           tbl1 ++ tbl2: _*)(Seq(cond2, cond3, cond4): _*)(Map.empty)(JoinEdge(0, 1, Inner))

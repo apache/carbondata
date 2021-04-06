@@ -21,6 +21,7 @@ import java.{lang, util}
 import java.io.IOException
 import java.lang.ref.Reference
 import java.text.SimpleDateFormat
+import java.time.ZoneId
 import java.util.Date
 
 import scala.collection.mutable
@@ -32,9 +33,10 @@ import org.apache.spark.SparkException
 import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.catalyst.util.{DateTimeUtils, TimestampFormatter}
 import org.apache.spark.sql.execution.command.{Field, UpdateTableModel}
 import org.apache.spark.sql.types._
+import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
@@ -108,13 +110,15 @@ object CarbonScalaUtil {
           if (defaultValue) {
             timeStampFormat.format(new Date())
           } else {
-            timeStampFormat.format(DateTimeUtils.stringToTime(value))
+            timeStampFormat.format(DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String
+              .fromString(value), ZoneId.systemDefault()).get).getTime.toString)
           }
         case DateType if dateFormat != null =>
           if (defaultValue) {
             dateFormat.format(new Date())
           } else {
-            dateFormat.format(DateTimeUtils.stringToTime(value))
+            dateFormat.format(DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String
+              .fromString(value), ZoneId.systemDefault()).get).getTime.toString)
           }
         case _ =>
           val convertedValue =
@@ -162,7 +166,8 @@ object CarbonScalaUtil {
             if (defaultValue) {
               timeStampFormat.format(new Date())
             } else {
-              timeStampFormat.format(DateTimeUtils.stringToTime(value))
+              timeStampFormat.format(DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String
+                .fromString(value), ZoneId.systemDefault()).get).getTime.toString)
             }
           val convertedValue =
             DataTypeUtil
@@ -174,7 +179,8 @@ object CarbonScalaUtil {
             if (defaultValue) {
               dateFormat.format(new Date())
             } else {
-              dateFormat.format(DateTimeUtils.stringToTime(value))
+              dateFormat.format(DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String
+                .fromString(value), ZoneId.systemDefault()).get).getTime.toString)
             }
           val convertedValue =
             DataTypeUtil
@@ -236,7 +242,8 @@ object CarbonScalaUtil {
     try {
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
-          DateTimeUtils.timestampToString(value.toLong * 1000)
+          DateTimeUtils.timestampToString(TimestampFormatter.apply(ZoneId.systemDefault()), value
+            .toLong * 1000)
         case CarbonDataTypes.DATE =>
           val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
@@ -245,7 +252,7 @@ object CarbonScalaUtil {
           if (date == null) {
             null
           } else {
-            DateTimeUtils.dateToString(date.toString.toInt)
+            DateTimeUtils.daysToMillis(date.toString.toInt).toString
           }
         case _ => value
       }
@@ -281,9 +288,11 @@ object CarbonScalaUtil {
       }
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
-          DateTimeUtils.stringToTime(value).getTime.toString
+          DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String.fromString(value), ZoneId
+            .systemDefault()).get).getTime.toString
         case CarbonDataTypes.DATE =>
-          DateTimeUtils.stringToTime(value).getTime.toString
+          DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String.fromString(value), ZoneId
+            .systemDefault()).get).getTime.toString
         case _ => value
       }
     } catch {

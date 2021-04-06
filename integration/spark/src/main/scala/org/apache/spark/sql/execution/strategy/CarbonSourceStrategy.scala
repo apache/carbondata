@@ -93,7 +93,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
   private def pruneFilterProject(
       relation: LogicalRelation,
       rawProjects: Seq[NamedExpression],
-      allPredicates: Seq[Expression]): CodegenSupport = {
+      allPredicates: Seq[Expression]): SparkPlan = {
     val partitionsFilter = getPartitionFilter(relation, allPredicates)
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val projects = rawProjects.map {p =>
@@ -165,7 +165,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       Some(TableIdentifier(table.identifier.getTableName, Option(table.identifier.getDatabaseName)))
     )
     // filter
-    val filterOption = if (directScanSupport && scan.supportsBatch) {
+    val filterOption = if (directScanSupport && scan.supportsColumnar) {
       allPredicates.reduceLeftOption(expressions.And)
     } else if (extraSegments.nonEmpty) {
       allPredicates.reduceLeftOption(expressions.And)

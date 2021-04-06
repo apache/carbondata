@@ -253,7 +253,7 @@ object CarbonAppendableStreamSink {
     )
 
     // run write data file job
-    SQLExecution.withNewExecutionId(sparkSession, queryExecution) {
+    SQLExecution.withNewExecutionId( queryExecution) {
       var result: Array[(TaskCommitMessage, StreamFileIndex)] = null
       try {
         committer.setupJob(job)

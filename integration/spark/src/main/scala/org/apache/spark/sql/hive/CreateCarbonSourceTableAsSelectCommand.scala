@@ -21,6 +21,7 @@ import java.net.URI
 
 import org.apache.spark.sql.{AnalysisException, Dataset, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType, CatalogUtils}
+import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AlterTableRecoverPartitionsCommand, AtomicRunnableCommand}
 import org.apache.spark.sql.execution.datasources.{DataSource, HadoopFsRelation}
@@ -41,8 +42,6 @@ case class CreateCarbonSourceTableAsSelectCommand(
     mode: SaveMode,
     query: LogicalPlan)
   extends AtomicRunnableCommand {
-
-  override protected def innerChildren: Seq[LogicalPlan] = Seq(query)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     Seq.empty
@@ -132,4 +131,8 @@ case class CreateCarbonSourceTableAsSelectCommand(
   }
 
   override protected def opName: String = "CREATE TABLE AS SELECT"
+
+  override def simpleStringWithNodeId(): String = opName
+
+  override def verboseString(maxFields: Int): String = opName
 }

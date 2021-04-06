@@ -38,9 +38,11 @@ case class ProjectForUpdate(
     columns: List[String],
     children: Seq[LogicalPlan]) extends LogicalPlan {
   override def output: Seq[Attribute] = Seq.empty
+  override def simpleStringWithNodeId(): String = ""
+  override def verboseString(maxFields: Int): String = ""
 }
 
-case class UpdateTable(
+case class UpdateTables(
     table: UnresolvedRelation,
     columns: List[String],
     selectStmt: String,
@@ -48,6 +50,8 @@ case class UpdateTable(
     filer: String) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[Attribute] = Seq.empty
+  override def simpleStringWithNodeId(): String = ""
+  override def verboseString(maxFields: Int): String = ""
 }
 
 case class DeleteRecords(
@@ -56,6 +60,8 @@ case class DeleteRecords(
     table: UnresolvedRelation) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[AttributeReference] = Seq.empty
+  override def simpleStringWithNodeId(): String = ""
+  override def verboseString(maxFields: Int): String = ""
 }
 
 /**
@@ -63,11 +69,11 @@ case class DeleteRecords(
  * This plan ignores nullability of ArrayType, MapType, StructType unlike InsertIntoTable
  * because Hive Table doesn't have nullability for ARRAY, MAP,STRUCT types.
  */
-case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
-    partition: Map[String, Option[String]],
-    child: LogicalPlan,
-    overwrite: Boolean,
-    ifNotExists: Boolean)
+case class InsertIntoCarbonTable(table: CarbonDatasourceHadoopRelation,
+                                          partition: Map[String, Option[String]],
+                                          child: LogicalPlan,
+                                          overwrite: Boolean,
+                                          ifNotExists: Boolean)
   extends Command {
 
     override def output: Seq[Attribute] = {
@@ -77,6 +83,10 @@ case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     // This is the expected schema of the table prepared to be inserted into
     // including dynamic partition columns.
     val tableOutput = table.carbonRelation.output
+
+  override def simpleStringWithNodeId(): String = ""
+
+  override def verboseString(maxFields: Int): String = ""
 }
 
 /**

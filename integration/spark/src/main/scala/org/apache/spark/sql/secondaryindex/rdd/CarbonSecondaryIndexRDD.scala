@@ -146,7 +146,7 @@ class CarbonSecondaryIndexRDD[K, V](
               segmentId,
               indexCarbonTable,
               factToIndexColumnMapping)
-        context.addTaskCompletionListener { context =>
+        context.addTaskCompletionListener[Unit] { context =>
           if (null != secondaryIndexQueryResultProcessor) {
             secondaryIndexQueryResultProcessor.close()
           }

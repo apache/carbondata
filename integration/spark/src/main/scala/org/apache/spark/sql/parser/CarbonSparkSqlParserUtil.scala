@@ -148,7 +148,7 @@ object CarbonSparkSqlParserUtil {
   def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
     BucketSpecContext, ColTypeListContext, ColTypeListContext, TablePropertyListContext,
     LocationSpecContext, Option[String], TerminalNode, QueryContext, String),
-      extraTableTuple: (Seq[StructField], Boolean, TableIdentifier, Boolean, Seq[String],
+      extraTableTuple: (Seq[StructField], Boolean, Seq[String], Boolean, Seq[String],
         Option[String], mutable.Map[String, String], Map[String, String], Seq[StructField],
         Seq[PartitionerField], CarbonSpark2SqlParser, SparkSession,
         Option[LogicalPlan])): LogicalPlan = {
@@ -224,8 +224,8 @@ object CarbonSparkSqlParserUtil {
       // external table also must convert table name to lower case
       val identifier = AbsoluteTableIdentifier.from(
         tablePath.get,
-        CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession).toLowerCase(),
-        tableIdentifier.table.toLowerCase())
+        CarbonEnv.getDatabaseName(Option(tableIdentifier(0)))(sparkSession).toLowerCase(),
+        tableIdentifier(1).toLowerCase())
       val table = try {
         val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
         if (!FileFactory.isFileExist(schemaPath)) {
@@ -278,8 +278,8 @@ object CarbonSparkSqlParserUtil {
       // prepare table model of the collected tokens
       val tableModel: TableModel = CarbonParserUtil.prepareTableModel(
         ifNotExists,
-        convertDbNameToLowerCase(tableIdentifier.database),
-        tableIdentifier.table.toLowerCase,
+        convertDbNameToLowerCase(Option(tableIdentifier(0))),
+        tableIdentifier(1).toLowerCase,
         fields,
         partitionFields,
         tableProperties,
@@ -589,7 +589,7 @@ object CarbonSparkSqlParserUtil {
       bucketSpecContext: BucketSpecContext,
       columns: ColTypeListContext,
       cols: Seq[StructField],
-      tableIdentifier: TableIdentifier,
+      tableIdentifier: Seq[String],
       isTempTable: Boolean): Seq[String] = {
     // TODO: implement temporary tables
     if (isTempTable) {
@@ -611,14 +611,15 @@ object CarbonSparkSqlParserUtil {
   }
 
   private def checkIfDuplicateColumnExists(columns: ColTypeListContext,
-      tableIdentifier: TableIdentifier,
+      tableIdentifier: Seq[String],
       colNames: Seq[String]): Unit = {
     if (colNames.length != colNames.distinct.length) {
       val duplicateColumns = colNames.groupBy(identity).collect {
         case (x, ys) if ys.length > 1 => "\"" + x + "\""
       }
       val errorMessage = s"Duplicated column names found in table definition of " +
-                         s"$tableIdentifier: ${ duplicateColumns.mkString("[", ",", "]") }"
+                         s"${tableIdentifier.mkString(".")}: ${ duplicateColumns
+                           .mkString("[", ",", "]") }"
       // In case of create table as select, ColTypeListContext will be null. Check if
       // duplicateColumns present in column names list, If yes, throw exception
       if (null != columns) {

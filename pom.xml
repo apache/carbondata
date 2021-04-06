@@ -426,6 +426,7 @@
           </execution>
         </executions>
         <configuration>
+          <skip>true</skip>
           <verbose>false</verbose>
           <failOnViolation>true</failOnViolation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
@@ -443,6 +444,7 @@
         <artifactId>findbugs-maven-plugin</artifactId>
         <version>3.0.4</version>
         <configuration>
+          <skip>true</skip>
           <excludeFilterFile>${dev.path}/findbugs-exclude.xml</excludeFilterFile>
           <failOnError>true</failOnError>
           <findbugsXmlOutput>true</findbugsXmlOutput>
@@ -548,9 +550,6 @@
     </profile>
     <profile>
       <id>spark-2.3</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.binary.version>2.3</spark.binary.version>
         <spark.version>2.3.4</spark.version>
@@ -676,7 +675,7 @@
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark/src/main/spark2.4plus</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/spark2.4</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
@@ -695,6 +694,9 @@
     </profile>
     <profile>
       <id>spark-3.0</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.binary.version>3.0</spark.binary.version>
         <spark.version>3.0.0</spark.version>
@@ -748,7 +750,7 @@
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark/src/main/spark2.4plus</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/spark3.0</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>

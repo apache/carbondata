@@ -59,7 +59,7 @@ object SparkSQLUtil {
 
   def invokeQueryPlanNormalizeExprId(r: NamedExpression, input: AttributeSeq)
       : NamedExpression = {
-    QueryPlan.normalizeExprId(r, input)
+    QueryPlan.normalizeExpressions(r, input)
   }
 
   def getStatisticsObj(outputList: Seq[NamedExpression],
@@ -78,8 +78,7 @@ object SparkSQLUtil {
       attributeStats = AttributeMap(
         attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
     }
-    val hints = stats.hints
-    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, hints)
+    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats)
   }
 
   def getEliminateViewObj(): Rule[LogicalPlan] = {

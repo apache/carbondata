@@ -452,8 +452,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       // _ in like means any single character wild card check.
       case IsNotNull(child: AttributeReference) => Literal(!pushDownNotNullFilter)
       case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => Literal(true)
-      case Like(left: AttributeReference, right: Literal) if (!isPartialStringEnabled) => Literal(
-        true)
+      case Like(left: AttributeReference, right: Literal, '\\') if (!isPartialStringEnabled) =>
+        Literal(true)
       case EndsWith(left: AttributeReference,
       right: Literal) if (!isPartialStringEnabled) => Literal(true)
       case Contains(left: AttributeReference,
@@ -481,7 +481,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
   private def hasStartsWith(condition: Expression): Boolean = {
     condition match {
-      case Like(left: AttributeReference, right: Literal) => false
+      case Like(left: AttributeReference, right: Literal, '\\') => false
       case EndsWith(left: AttributeReference, right: Literal) => false
       case Contains(left: AttributeReference, right: Literal) => false
       case _ => true
@@ -515,12 +515,12 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case Not(EqualTo(left: AttributeReference, right: Literal)) => true
       case Not(EqualTo(left: Cast, right: Literal))
         if left.child.isInstanceOf[AttributeReference] => true
-      case Not(Like(left: AttributeReference, right: Literal)) => true
+      case Not(Like(left: AttributeReference, right: Literal, '\\')) => true
       case Not(In(left: AttributeReference, right: Seq[Expression])) => true
       case Not(Contains(left: AttributeReference, right: Literal)) => true
       case Not(EndsWith(left: AttributeReference, right: Literal)) => true
       case Not(StartsWith(left: AttributeReference, right: Literal)) => true
-      case Like(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
+      case Like(left: AttributeReference, right: Literal, '\\') if (!pushDownRequired) => true
       case EndsWith(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case Contains(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => true

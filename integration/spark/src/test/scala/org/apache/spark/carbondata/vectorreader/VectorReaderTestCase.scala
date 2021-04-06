@@ -57,7 +57,7 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
       """select * from vectorreader""".stripMargin).queryExecution.executedPlan
     var rowReader = false
     plan.collect {
-      case scan: CarbonDataSourceScan => rowReader = !scan.supportsBatch
+      case scan: CarbonDataSourceScan => rowReader = !scan.supportsColumnar
     }
     assert(rowReader, "row reader should exist by default")
   }
