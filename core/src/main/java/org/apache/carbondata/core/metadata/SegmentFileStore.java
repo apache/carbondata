@@ -100,6 +100,15 @@ public class SegmentFileStore {
   }
 
   /**
+   * Write segment information to the segment folder with index file name and
+   * corresponding partitions.
+   */
+  public static void writeSegmentFile(String tablePath, final String taskNo, String location,
+      String timeStamp, List<String> partitionNames) throws IOException {
+    writeSegmentFile(tablePath, taskNo, location, timeStamp, partitionNames, false);
+  }
+
+  /**
    * Method to create and write the segment file, removes the temporary directories from all the
    * respective partition directories. This method is invoked only when {@link
    * CarbonCommonConstants#CARBON_MERGE_INDEX_IN_SEGMENT} is disabled.
@@ -154,15 +163,23 @@ public class SegmentFileStore {
    * corresponding partitions.
    */
   public static void writeSegmentFile(String tablePath, final String taskNo, String location,
-      String timeStamp, List<String> partitionNames) throws IOException {
+      String timeStamp, List<String> partitionNames, boolean isMergeIndexFlow) throws IOException {
     String tempFolderLoc = timeStamp + ".tmp";
     String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath) + "/" + tempFolderLoc;
     CarbonFile carbonFile = FileFactory.getCarbonFile(writePath);
     if (!carbonFile.exists()) {
       carbonFile.mkdirs();
     }
-    CarbonFile tempFolder = FileFactory.getCarbonFile(location);
-    if (tempFolder.exists() && partitionNames.size() > 0) {
+    CarbonFile tempFolder;
+    if (isMergeIndexFlow) {
+      tempFolder = FileFactory.getCarbonFile(location);
+    } else {
+      tempFolder = FileFactory
+          .getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + tempFolderLoc);
+    }
+
+    if ((tempFolder.exists() && partitionNames.size() > 0) || (isMergeIndexFlow
+        && partitionNames.size() > 0)) {
       CarbonFile[] carbonFiles = tempFolder.listFiles(new CarbonFileFilter() {
         @Override
         public boolean accept(CarbonFile file) {
@@ -184,7 +201,15 @@ public class SegmentFileStore {
         folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
         setIndexFileNamesToFolderDetails(folderDetails, carbonFiles);
         segmentFile.addPath(location, folderDetails);
-        String path = writePath + "/" + CarbonUtil.generateUUID() + CarbonTablePath.SEGMENT_EXT;
+        String path = null;
+        if (isMergeIndexFlow) {
+          // in case of merge index flow, tasks are launched per partition and all the tasks
+          // will be written to the same tmp folder, in that case taskNo is not unique.
+          // To generate a unique fileName UUID is used
+          path = writePath + "/" + CarbonUtil.generateUUID() + CarbonTablePath.SEGMENT_EXT;
+        } else {
+          path = writePath + "/" + taskNo + CarbonTablePath.SEGMENT_EXT;
+        }
         // write segment info to new file.
         writeSegmentFile(segmentFile, path);
       }

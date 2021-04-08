@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -189,6 +190,21 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       LOGGER.error(e.getLocalizedMessage(), e);
       throw e;
     } finally {
+      boolean isMergeIndex = Boolean.parseBoolean(CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
+      // mergeIndex is true, the segment file not need to be written
+      // and will be written during merging index
+      if (partitionSpec != null && !isMergeIndex) {
+        try {
+          SegmentFileStore
+              .writeSegmentFile(carbonLoadModel.getTablePath(), carbonLoadModel.getTaskNo(),
+                  partitionSpec.getLocation().toString(), carbonLoadModel.getFactTimeStamp() + "",
+                  partitionSpec.getPartitions());
+        } catch (IOException e) {
+          throw e;
+        }
+      }
       // clear temp files and folders created during compaction
       deleteTempStoreLocation();
     }

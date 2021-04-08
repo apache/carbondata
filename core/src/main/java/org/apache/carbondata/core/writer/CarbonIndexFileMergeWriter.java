@@ -267,7 +267,7 @@ public class CarbonIndexFileMergeWriter {
             try {
               SegmentFileStore.writeSegmentFile(table.getTablePath(), mergeIndexFile, partitionPath,
                   segmentId + CarbonCommonConstants.UNDERSCORE + uuid + "",
-                  partitionSpec.getPartitions());
+                  partitionSpec.getPartitions(), true);
             } catch (Exception ex) {
               // delete merge index file if created,
               // keep only index files as segment file writing is failed

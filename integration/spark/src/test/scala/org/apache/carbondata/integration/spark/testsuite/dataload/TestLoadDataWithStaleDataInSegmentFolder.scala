@@ -94,8 +94,6 @@ class TestLoadDataWithStaleDataInSegmentFolder extends QueryTest with BeforeAndA
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table $tableName")
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table $tableName")
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table $tableName")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     sql(s"ALTER TABLE $tableName COMPACT 'MINOR'")
     checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(24)))
     sql(s"clean files for table $tableName")
