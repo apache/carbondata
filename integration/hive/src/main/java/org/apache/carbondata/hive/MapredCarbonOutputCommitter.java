@@ -131,9 +131,9 @@ public class MapredCarbonOutputCommitter extends OutputCommitter {
       CarbonLoadModel carbonLoadModel = MapredCarbonOutputFormat.getLoadModel(configuration);
       ThreadLocalSessionInfo.unsetAll();
       CarbonTable carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
-      String tablePath = carbonTable.getTablePath();
-      new CarbonIndexFileMergeWriter(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable())
-          .mergeCarbonIndexFilesOfSegment(carbonLoadModel.getSegmentId(), tablePath, false,
+      new CarbonIndexFileMergeWriter(carbonTable)
+          .mergeCarbonIndexFilesOfSegment(carbonLoadModel.getSegmentId(),
+              carbonTable.getTablePath(), false,
               String.valueOf(carbonLoadModel.getFactTimeStamp()));
       SegmentFileStore.writeSegmentFile(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
           carbonLoadModel.getSegmentId(), String.valueOf(carbonLoadModel.getFactTimeStamp()));

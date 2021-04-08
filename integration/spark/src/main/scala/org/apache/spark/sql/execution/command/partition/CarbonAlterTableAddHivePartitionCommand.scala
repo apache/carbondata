@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command.partition
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -31,6 +32,8 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -114,6 +117,26 @@ case class CarbonAlterTableAddHivePartitionCommand(
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
         // create operationContext to fire load events
         val operationContext: OperationContext = new OperationContext
+        var hasIndexFiles = false
+        breakable {
+          partitionSpecsAndLocsTobeAdded.asScala.foreach(partitionSpecAndLocs => {
+            val location = partitionSpecAndLocs.getLocation.toString
+            val carbonFile = FileFactory.getCarbonFile(location)
+            val listFiles: Array[CarbonFile] = carbonFile.listFiles(new CarbonFileFilter() {
+              override def accept(file: CarbonFile): Boolean = {
+                file.getName.endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
+                file.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)
+              }
+            })
+            if (listFiles != null && listFiles.length > 0) {
+              hasIndexFiles = true
+              break()
+            }
+          })
+       }
+      // only if the partition path has some index files,
+      // make entry in table status and trigger merge index event.
+      if (hasIndexFiles) {
         // Create new entry in tablestatus file
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, false)
         // Normally, application will use Carbon SDK to write files into a partition folder, then
@@ -154,48 +177,51 @@ case class CarbonAlterTableAddHivePartitionCommand(
         val segmentsLoc = CarbonTablePath.getSegmentFilesLocation(table.getTablePath)
         CarbonUtil.checkAndCreateFolderWithPermission(segmentsLoc)
         val segmentPath = segmentsLoc + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName
-      val segmentFile = SegmentFileStore.getSegmentFileForPhysicalDataPartitions(table.getTablePath,
-        partitionSpecsAndLocsTobeAdded)
-      if (segmentFile != null) {
-        val indexToSchemas = SegmentFileStore.getSchemaFiles(segmentFile, table.getTablePath)
-        val tableColumns = table.getTableInfo.getFactTable.getListOfColumns.asScala
-        val isSameSchema = indexToSchemas.asScala.exists{ case(key, columnSchemas) =>
-          columnSchemas.asScala.exists { col =>
-            tableColumns.exists(p => p.getColumnUniqueId.equals(col.getColumnUniqueId))
-          } && columnSchemas.size() == tableColumns.length
+        val segmentFile = SegmentFileStore.getSegmentFileForPhysicalDataPartitions(table
+          .getTablePath,
+          partitionSpecsAndLocsTobeAdded)
+        if (segmentFile != null) {
+          val indexToSchemas = SegmentFileStore.getSchemaFiles(segmentFile, table.getTablePath)
+          val tableColumns = table.getTableInfo.getFactTable.getListOfColumns.asScala
+          val isSameSchema = indexToSchemas.asScala.exists { case (key, columnSchemas) =>
+            columnSchemas.asScala.exists { col =>
+              tableColumns.exists(p => p.getColumnUniqueId.equals(col.getColumnUniqueId))
+            } && columnSchemas.size() == tableColumns.length
+          }
+          if (!isSameSchema) {
+            throw new UnsupportedOperationException(
+              "Schema of index files located in location is not matching with current table schema")
+          }
+          val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(
+            sparkSession = sparkSession,
+            carbonLoadModel = loadModel,
+            uuid = "",
+            factPath = "",
+            new util.HashMap[String, String](),
+            new util.HashMap[String, String](),
+            isOverwriteTable = false,
+            isDataFrame = false,
+            updateModel = None,
+            operationContext = operationContext)
+          SegmentFileStore.writeSegmentFile(segmentFile, segmentPath)
+          CarbonLoaderUtil.populateNewLoadMetaEntry(
+            newMetaEntry,
+            SegmentStatus.SUCCESS,
+            loadModel.getFactTimeStamp,
+            true)
+          // Add size to the entry
+          CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry,
+            loadModel.getSegmentId, table)
+          // Make the load as success in table status
+          CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false)
+          // fire event to load data to materialized views
+          CommonLoadUtils.firePostLoadEvents(sparkSession,
+            loadModel,
+            tableIndexes,
+            indexOperationContext,
+            table,
+            operationContext)
         }
-        if (!isSameSchema) {
-          throw new UnsupportedOperationException(
-            "Schema of index files located in location is not matching with current table schema")
-        }
-        val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(
-          sparkSession = sparkSession,
-          carbonLoadModel = loadModel,
-          uuid = "",
-          factPath = "",
-          new util.HashMap[String, String](),
-          new util.HashMap[String, String](),
-          isOverwriteTable = false,
-          isDataFrame = false,
-          updateModel = None,
-          operationContext = operationContext)
-        SegmentFileStore.writeSegmentFile(segmentFile, segmentPath)
-        CarbonLoaderUtil.populateNewLoadMetaEntry(
-          newMetaEntry,
-          SegmentStatus.SUCCESS,
-          loadModel.getFactTimeStamp,
-          true)
-        // Add size to the entry
-        CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId, table)
-        // Make the load as success in table status
-        CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false)
-        // fire event to load data to materialized views
-        CommonLoadUtils.firePostLoadEvents(sparkSession,
-          loadModel,
-          tableIndexes,
-          indexOperationContext,
-          table,
-          operationContext)
       }
     }
     Seq.empty[Row]

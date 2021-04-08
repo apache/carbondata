@@ -1145,8 +1145,6 @@ public final class CarbonLoaderUtil {
    * @param table
    * @param segmentId
    * @param uuid
-   * @paran partitionPath
-   * @param isOldStoreIndexFilesPresent
    * @return
    */
   public static String mergeIndexFilesInPartitionedSegment(CarbonTable table, String segmentId,
@@ -1166,7 +1164,10 @@ public final class CarbonLoaderUtil {
             tempFolderPath, currPartitionSpec);
   }
 
-  public static String mergeIndexFilesInTempSegment(CarbonTable table, String segmentId,
+  /**
+   * Merge index files of segment with external path.
+   */
+  public static String mergeIndexFilesInAddLoadSegment(CarbonTable table, String segmentId,
       String segmentPath, String uuid) {
     try {
       return new CarbonIndexFileMergeWriter(table)

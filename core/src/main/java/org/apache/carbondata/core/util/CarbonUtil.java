@@ -2441,7 +2441,9 @@ public final class CarbonUtil {
         if (fs.exists(path)) {
           FileStatus[] fileStatuses = fs.listStatus(path);
           if (null != fileStatuses) {
-            for (FileStatus dataAndIndexStatus : fileStatuses) {
+            FileStatus[] validDataAndIndexStatus =
+                (FileStatus[]) SegmentFileStore.getValidCarbonIndexFiles(fileStatuses);
+            for (FileStatus dataAndIndexStatus : validDataAndIndexStatus) {
               String pathName = dataAndIndexStatus.getPath().getName();
               if (pathName.endsWith(CarbonTablePath.getCarbonIndexExtension()) || pathName
                   .endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
@@ -2458,9 +2460,9 @@ public final class CarbonUtil {
         segmentPath = FileFactory.getUpdatedFilePath(segmentPath);
         CarbonFile[] dataAndIndexFiles = FileFactory.getCarbonFile(segmentPath).listFiles();
         if (null != dataAndIndexFiles) {
-          CarbonFile[] validIndexFiles =
-              SegmentFileStore.getValidCarbonIndexFiles(dataAndIndexFiles);
-          for (CarbonFile dataAndIndexFile : validIndexFiles) {
+          CarbonFile[] validDataAndIndexFiles =
+              (CarbonFile[]) SegmentFileStore.getValidCarbonIndexFiles(dataAndIndexFiles);
+          for (CarbonFile dataAndIndexFile : validDataAndIndexFiles) {
             if (dataAndIndexFile.getCanonicalPath()
                 .endsWith(CarbonTablePath.getCarbonIndexExtension()) || dataAndIndexFile
                 .getCanonicalPath().endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {

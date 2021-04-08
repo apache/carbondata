@@ -111,7 +111,7 @@ public class CarbonIndexFileMergeWriter {
       } else {
         return writeMergeIndexFileBasedOnSegmentFile(segmentId, indexFileNamesTobeAdded,
             isOldStoreIndexFilesPresent, sfs,
-            indexFiles.toArray(new CarbonFile[indexFiles.size()]), uuid, partitionPath);
+            indexFiles.toArray(new CarbonFile[0]), uuid, partitionPath);
       }
     } catch (Exception e) {
       String message = "Failed to merge index files in path: " + tablePath + ": " + e.getMessage();
@@ -265,9 +265,10 @@ public class CarbonIndexFileMergeWriter {
         for (PartitionSpec partitionSpec : partitionSpecs) {
           if (partitionSpec.getLocation().toString().equals(partitionPath)) {
             try {
-              SegmentFileStore.writeSegmentFile(table.getTablePath(), mergeIndexFile, partitionPath,
-                  segmentId + CarbonCommonConstants.UNDERSCORE + uuid + "",
-                  partitionSpec.getPartitions(), true);
+              SegmentFileStore
+                  .writeSegmentFileForPartitionTable(table.getTablePath(), mergeIndexFile,
+                      partitionPath, segmentId + CarbonCommonConstants.UNDERSCORE + uuid + "",
+                      partitionSpec.getPartitions(), true);
             } catch (Exception ex) {
               // delete merge index file if created,
               // keep only index files as segment file writing is failed

@@ -48,11 +48,6 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
           val loadTablePostStatusUpdateEvent = event.asInstanceOf[LoadTablePostStatusUpdateEvent]
           val carbonLoadModel = loadTablePostStatusUpdateEvent.getCarbonLoadModel
           val sparkSession = SparkSession.getActiveSession.get
-          // Avoid loading segment to SI for add load command
-          if (operationContext.getProperty("isAddLoad") != null &&
-            operationContext.getProperty("isAddLoad").toString.toBoolean) {
-            return
-          }
           if (CarbonProperties.getInstance().isSIRepairEnabled(carbonLoadModel.getDatabaseName,
             carbonLoadModel.getTableName)) {
           // when Si creation and load to main table are parallel, get the carbonTable from the

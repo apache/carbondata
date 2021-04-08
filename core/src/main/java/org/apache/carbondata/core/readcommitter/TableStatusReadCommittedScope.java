@@ -19,7 +19,7 @@ package org.apache.carbondata.core.readcommitter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -90,14 +90,16 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
       String path =
           CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
       indexFiles = new SegmentIndexFileStore().getMergeOrIndexFilesFromSegment(path);
-      List<String> indexFileList = new ArrayList<>(indexFiles.keySet());
-      Set<String> mergedIndexFiles = SegmentFileStore.getInvalidAndMergedIndexFiles(indexFileList);
-      for (String indexFile : indexFileList) {
-        if (mergedIndexFiles.contains(indexFile)) {
-          // do not include already merged index files details.
-          indexFiles.remove(indexFile);
-        }
+      Set<String> mergedIndexFiles =
+          SegmentFileStore.getInvalidAndMergedIndexFiles(new ArrayList<>(indexFiles.keySet()));
+      Map<String, String> filteredIndexFiles = indexFiles;
+      if (mergedIndexFiles.size() > 0) {
+        // do not include already merged index files details.
+        filteredIndexFiles = indexFiles.entrySet().stream()
+            .filter(indexFile -> !mergedIndexFiles.contains(indexFile.getKey()))
+            .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
       }
+      return filteredIndexFiles;
     } else {
       indexFiles = fileStore.getIndexAndMergeFiles();
       if (fileStore.getSegmentFile() != null) {
@@ -112,7 +114,10 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     long segmentFileTimeStamp = 0L;
     String segmentFileName = segment.getSegmentFileName();
     if (null != segmentFileName) {
-      // get timestamp value from segment file name.
+      // Do not use getLastModifiedTime API on segment file carbon file object as it will slow down
+      // operation in Object stores like S3. Now the segment file is always written for operations
+      // which was overwriting earlier, so this timestamp can be checked always to check whether
+      // to refresh the cache or not
       segmentFileTimeStamp = Long.parseLong(segmentFileName
           .substring(segmentFileName.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
               segmentFileName.lastIndexOf(CarbonCommonConstants.POINT)));

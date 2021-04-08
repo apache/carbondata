@@ -145,16 +145,18 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     }
     Set<String> mergedIndexFiles =
         SegmentFileStore.getInvalidAndMergedIndexFiles(indexFiles);
+    List<String> filteredIndexFiles = indexFiles;
     if (!mergedIndexFiles.isEmpty()) {
       // do not include already merged indexFiles files details.
-      indexFiles = indexFiles.stream().filter(
+      filteredIndexFiles = indexFiles.stream().filter(
           file -> !mergedIndexFiles.contains(file))
           .collect(Collectors.toList());
     }
-    for (String indexFile : indexFiles) {
+    for (String indexFile : filteredIndexFiles) {
       if (indexFile.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         indexFileStore
             .put(indexFile, indexFile.substring(indexFile.lastIndexOf(File.separator) + 1));
+        break;
       } else {
         indexFileStore.put(indexFile, null);
       }

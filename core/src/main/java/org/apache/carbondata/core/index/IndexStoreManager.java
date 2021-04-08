@@ -512,7 +512,10 @@ public final class IndexStoreManager {
         String segmentFileName = segment.getSegmentFileName();
         if ((updateVO != null && updateVO.getLatestUpdateTimestamp() != null)
             || segmentFileName != null) {
-          // get timestamp value from segment file name.
+          // Do not use getLastModifiedTime API on segment file carbon file object as it will
+          // slow down operation in Object stores like S3. Now the segment file is always written
+          // for operations which was overwriting earlier, so this timestamp can be checked always
+          // to check whether to refresh the cache or not.
           long segmentFileTimeStamp = Long.parseLong(segmentFileName
               .substring(segmentFileName.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
                   segmentFileName.lastIndexOf(CarbonCommonConstants.POINT)));

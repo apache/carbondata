@@ -184,6 +184,7 @@ object CarbonMergeFilesRDD {
         val readPath: String = CarbonTablePath.getSegmentFilesLocation(tablePath) +
                                CarbonCommonConstants.FILE_SEPARATOR + segmentId + "_" +
                                segmentFileNameToSegmentIdMap.get(segmentId) + ".tmp"
+        // Generate new timestamp for segment file writing instead of overwriting existing one.
         val uuid = String.valueOf(System.currentTimeMillis)
         val newSegmentFileName = SegmentFileStore.genSegmentFileName(segmentId, uuid)
         // Merge all partition files into a single file.

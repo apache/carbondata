@@ -329,7 +329,7 @@ case class CarbonAddLoadCommand(
       new util.HashMap[String, String](options.asJava))
     // This event will trigger merge index job, only trigger it if it is carbon file
     if (isCarbonFormat) {
-      CarbonLoaderUtil.mergeIndexFilesInTempSegment(carbonTable,
+      CarbonLoaderUtil.mergeIndexFilesInAddLoadSegment(carbonTable,
         model.getSegmentId,
         segmentPath,
         model.getFactTimeStamp.toString)

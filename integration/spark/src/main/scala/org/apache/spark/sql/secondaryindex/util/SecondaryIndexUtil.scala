@@ -45,6 +45,7 @@ import org.apache.carbondata.core.datastore.block.{TableBlockInfo, TaskBlockInfo
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.datatype.{DataType, StructField, StructType}
@@ -216,15 +217,16 @@ object SecondaryIndexUtil {
       }
       if (finalMergeStatus) {
         if (null != mergeStatus && mergeStatus.length != 0) {
-          // Segment file is not yet written during SI load, then we can delete old index
+          // Segment file is not yet written during SI load, in such case we can delete old index
           // files immediately. If segment file is already present and SI refresh is triggered, then
           // do not delete immediately to avoid failures during parallel queries.
           val validSegmentsToUse = validSegments.asScala
             .filter(segment => {
-              val sfs: SegmentFileStore = new SegmentFileStore(indexCarbonTable.getTablePath,
-                segment.getSegmentFileName)
+              val segmentFilePath = CarbonTablePath.getSegmentFilesLocation(tablePath) +
+                                    CarbonCommonConstants.FILE_SEPARATOR +
+                                    segment.getSegmentFileName
               mergeStatus.map(_._2).toSet.contains(segment.getSegmentNo) &&
-              sfs.getSegmentFile == null
+              !FileFactory.isFileExist(segmentFilePath)
             })
           deleteOldIndexOrMergeIndexFiles(
             carbonLoadModel.getFactTimeStamp,
@@ -330,7 +332,7 @@ object SecondaryIndexUtil {
       indexCarbonTable: CarbonTable): Unit = {
     // delete the index/merge index carbonFile of old data files
     validSegments.asScala.foreach { segment =>
-      SegmentFileStore.getIndexFilesListForSegment(segment, indexCarbonTable.getTablePath)
+      getIndexFilesListForSegment(segment, indexCarbonTable.getTablePath)
         .asScala
         .foreach { indexFile =>
           if (DataFileUtil.getTimeStampFromFileName(indexFile).toLong < factTimeStamp) {
@@ -338,6 +340,25 @@ object SecondaryIndexUtil {
           }
         }
     }
+  }
+
+  /**
+   * This method returns the list of index/merge index files for a segment in carbonTable.
+   */
+  @throws[IOException]
+  private def getIndexFilesListForSegment(segment: Segment, tablePath: String): util.Set[String] = {
+    var indexFiles : util.Set[String] = new util.HashSet[String]
+    val segmentFileStore = new SegmentFileStore(tablePath,
+      segment.getSegmentFileName)
+    val segmentPath = CarbonTablePath.getSegmentPath(tablePath, segment.getSegmentNo)
+    if (segmentFileStore.getSegmentFile == null)  {
+      indexFiles = new SegmentIndexFileStore()
+        .getMergeOrIndexFilesFromSegment(segmentPath).keySet
+    }
+    else {
+      indexFiles = segmentFileStore.getIndexAndMergeFiles.keySet
+    }
+    indexFiles
   }
 
   /**

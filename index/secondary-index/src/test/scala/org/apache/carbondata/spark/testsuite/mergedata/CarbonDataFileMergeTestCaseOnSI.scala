@@ -320,8 +320,9 @@ class CarbonDataFileMergeTestCaseOnSI
     assert(isFilterPushedDownToSI(df1))
     assert(getDataFileCount("nonindexmerge_index1", "0") > 15)
     assert(getDataFileCount("nonindexmerge_index1", "1") > 15)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE,
-      CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE_DEFAULT)
+    checkAnswer(sql(" select count(*) from nonindexmerge_index1"), rows)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
+        .CARBON_SI_SEGMENT_MERGE, "true")
   }
 
   private def getDataFileCount(tableName: String, segment: String): Int = {

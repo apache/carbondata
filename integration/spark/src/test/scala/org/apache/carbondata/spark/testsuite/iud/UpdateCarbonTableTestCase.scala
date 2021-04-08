@@ -31,7 +31,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTestUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
@@ -84,13 +84,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     )
     sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'e'""").collect()
     sql("clean files for table iud.zerorows options('force'='true')")
-    val carbonTable = CarbonEnv.getCarbonTable(Some("iud"), "zerorows")(sqlContext.sparkSession)
-    val segmentPath = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(carbonTable
-      .getTablePath, "2"))
-    assert(!segmentPath.exists())
-    val segmentFileLocation = FileFactory.getCarbonFile(CarbonTablePath.getSegmentFilesLocation(
-      carbonTable.getTablePath))
-    assert(segmentFileLocation.listFiles().length == 3)
+    assert(CarbonTestUtil.getSegmentFileCount("iud_zerorows") == 3)
     CarbonProperties.getInstance().addProperty("carbon.clean.file.force.allowed", "true")
     sql("""drop table iud.zerorows""")
   }
