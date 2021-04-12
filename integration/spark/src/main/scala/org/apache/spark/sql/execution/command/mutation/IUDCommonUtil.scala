@@ -22,10 +22,10 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.HiveSessionCatalog
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.util.CarbonScalaUtilHelper
 
 /**
  * Util for IUD common function
@@ -44,7 +44,7 @@ object IUDCommonUtil {
       case unresolvedRelation: UnresolvedRelation =>
         val dbAndTb =
           sparkSession.sessionState.catalog.asInstanceOf[HiveSessionCatalog].getCurrentDatabase +
-          "." + unresolvedRelation.tableName.split(".")(1)
+          "." + CarbonScalaUtilHelper.getTableNameFromUnresolvedRelation(unresolvedRelation)
         val segmentProperties = carbonProperties
           .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbAndTb, "")
         if (!(segmentProperties.equals("") || segmentProperties.trim.equals("*"))) {

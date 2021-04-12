@@ -27,14 +27,13 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.EliminateView
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSeq, NamedExpression}
 import org.apache.spark.sql.catalyst.optimizer.{CheckCartesianProducts, EliminateOuterJoin, NullPropagation, PullupCorrelatedPredicates, RemoveRedundantAliases, ReorderJoin}
-import org.apache.spark.sql.catalyst.plans.{logical, QueryPlan}
+import org.apache.spark.sql.catalyst.plans.{QueryPlan, logical}
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Command, LogicalPlan, Statistics, Union}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.LogicalRDD
-import org.apache.spark.sql.internal.{SessionState, SQLConf}
+import org.apache.spark.sql.internal.{SQLConf, SessionState}
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.util.SerializableConfiguration
-
+import org.apache.spark.util.{GeneralUtil, SerializableConfiguration}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.DataLoadMetrics
 
@@ -59,7 +58,7 @@ object SparkSQLUtil {
 
   def invokeQueryPlanNormalizeExprId(r: NamedExpression, input: AttributeSeq)
       : NamedExpression = {
-    QueryPlan.normalizeExpressions(r, input)
+    GeneralUtil.invokeQueryPlanNormalizeExprId(r, input)
   }
 
   def getStatisticsObj(outputList: Seq[NamedExpression],

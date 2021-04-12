@@ -22,14 +22,12 @@ import java.util
 import java.util.Collections
 
 import scala.collection.JavaConverters._
-
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.CarbonMergerMapping
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.spark.sql.util.CarbonException
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.SortScopeOptions
@@ -49,6 +47,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonSparkPartition}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, CommonUtil}
+import org.apache.spark.util.GeneralUtil
 
 
 /**
@@ -214,9 +213,7 @@ class CarbonSIRebuildRDD[K, V](
           new SparkDataTypeConverterImpl)
 
         // add task completion listener to clean up the resources
-        context.addTaskCompletionListener[Unit] { _ =>
-          close()
-        }
+        GeneralUtil.closeReader(context, f)
         try {
           // fire a query and get the results.
           rawResultIteratorMap = exec.processTableBlocks(FileFactory.getConfiguration, null)
@@ -296,6 +293,10 @@ class CarbonSIRebuildRDD[K, V](
           case e: Exception =>
             LOGGER.error(e)
         }
+      }
+
+      def f() {
+        close()
       }
 
       var finished = false

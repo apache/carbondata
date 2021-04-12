@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import org.apache.carbondata.spark.util.CarbonScalaUtilHelper
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -92,8 +93,7 @@ object CarbonExpressions {
     def unapply(plan: LogicalPlan): Option[(TableIdentifier)] = {
       plan match {
         case u: UnresolvedRelation =>
-          val tableName = u.tableName.split(".")
-          Some(TableIdentifier(tableName(1), Option(tableName(0))))
+          CarbonScalaUtilHelper.getTableIden(u)
         case _ => None
       }
     }

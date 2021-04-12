@@ -19,7 +19,7 @@ package org.apache.carbondata.api
 
 import java.time.ZoneId
 
-import org.apache.spark.TaskContex
+import org.apache.spark.TaskContext
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.unsafe.types.UTF8String
 

@@ -23,7 +23,6 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.rdd.RDD
@@ -42,7 +41,6 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.{CarbonReflectionUtils, CollectionAccumulator, SparkUtil}
-
 import org.apache.carbondata.common.{Maps, Strings}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
@@ -68,7 +66,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.load.{CsvRDDHelper, DataLoadProcessorStepOnSpark, GlobalSortHelper}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonScalaUtilHelper}
 
 object CommonLoadUtils {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -881,7 +879,7 @@ object CommonLoadUtils {
       loadParams.finalPartition.filter(_._2.nonEmpty).map { case (col, value) =>
         catalogTable.schema.find(_.name.equalsIgnoreCase(col)) match {
           case Some(c) =>
-            CarbonScalaUtil.convertToDateAndTimeFormats(
+            CarbonScalaUtilHelper.convertToDateAndTimeFormats(
               value.get,
               c.dataType,
               loadParams.timeStampFormat,

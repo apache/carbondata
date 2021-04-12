@@ -18,12 +18,13 @@
 package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.parser.ParserUtils.string
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext, CreateHiveTableContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
+
+import org.apache.carbondata.spark.util.CarbonScalaUtilHelper
 
 class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSession: SparkSession)
   extends SparkSqlAstBuilder(conf) with SqlAstBuilderHelper {
@@ -39,7 +40,7 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSes
         fileStorage.equalsIgnoreCase("'org.apache.carbondata.format'")) {
       val createTableTuple = (ctx.createTableHeader, ctx.skewSpec(0),
         ctx.bucketSpec(0), ctx.partitionColumns, ctx.columns, ctx.tablePropertyList(0),
-        ctx.locationSpec(0), Option(ctx.commentSpec().get(0).toString), ctx.AS, ctx.query,
+        ctx.locationSpec(0), CarbonScalaUtilHelper.getComments(ctx), ctx.AS, ctx.query,
         fileStorage)
       helper.createCarbonTable(createTableTuple)
     } else {

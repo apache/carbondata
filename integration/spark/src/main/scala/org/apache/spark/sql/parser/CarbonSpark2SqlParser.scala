@@ -21,7 +21,7 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.{CarbonToSparkAdapter, Dataset, DeleteRecords, SparkSession, UpdateTables}
+import org.apache.spark.sql.{CarbonToSparkAdapter, Dataset, DeleteRecords, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
@@ -35,7 +35,6 @@ import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnC
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
-import org.apache.spark.sql.execution.ExplainMode
 import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
@@ -327,14 +326,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           } else {
             (sel, updateRelation(tab._1, tab._2, tab._4, tab._3))
           }
-        val rel = tab._3 match {
-          case Some(a) => UpdateTables(relation, columns, selectStmt, Some(tab._3.get), where)
-          case None => UpdateTables(relation,
-            columns,
-            selectStmt,
-            Some(tab._1.tableName.split(".")(1)),
-            where)
-        }
+        val rel = ParserUtil.checkUpdateTable(tab, relation, columns, selectStmt, where)
         rel
     }
 
@@ -527,11 +519,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       case isExtended ~ logicalPlan =>
         logicalPlan match {
           case _: CarbonCreateTableCommand =>
-            if ( isExtended.isDefined) {
-              ExplainCommand(logicalPlan, ExplainMode.fromString("extended"))
-            } else {
-              ExplainCommand(logicalPlan, ExplainMode.fromString("simple"))
-            }
+            ParserUtil.explainCommand(isExtended, logicalPlan)
           case _ => CarbonToSparkAdapter.getExplainCommandObj()
         }
     }

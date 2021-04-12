@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import com.google.gson.Gson
 import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
@@ -35,14 +34,13 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.types.DataType
-
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.view.MVSchema
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, ModularRelation, Select}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtilHelper, CommonUtil}
 
 /**
  * Utility class for keeping all the utility method for mv
@@ -181,7 +179,7 @@ object MVHelper {
     fieldsMap
   }
 
-  private def checkComplexDataType(alias: Alias): Unit = {
+  def checkComplexDataType(alias: Alias): Unit = {
     if (alias.child.isInstanceOf[GetMapValue] ||
         alias.child.isInstanceOf[GetStructField] ||
         alias.child.isInstanceOf[GetArrayItem]) {
@@ -252,7 +250,7 @@ object MVHelper {
         }
 
       case alias@Alias(agg: AggregateExpression, _) =>
-        checkComplexDataType(alias)
+        CarbonScalaUtilHelper.checkComplexDataType(alias)
         val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
           new ArrayBuffer[RelatedFieldWrapper]()
         val columns = new util.ArrayList[String]()
@@ -280,7 +278,7 @@ object MVHelper {
         )
 
       case alias@Alias(_, _) =>
-        checkComplexDataType(alias)
+        CarbonScalaUtilHelper.checkComplexDataType(alias)
         val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
           new ArrayBuffer[RelatedFieldWrapper]()
         val columns = new util.ArrayList[String]()

@@ -24,8 +24,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, LogicalRelation}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
-import org.apache.spark.util.SparkUtil
-
+import org.apache.spark.util.{GeneralUtil, SparkUtil}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.index.IndexType
@@ -53,37 +52,11 @@ class CarbonSITransformationRule(sparkSession: SparkSession)
                        .getIndexTableNames(IndexType.SI.getIndexProviderName).size() > 0
 
     }
-    if (hasSecondaryIndexTable && checkIfRuleNeedToBeApplied(plan)) {
+    if (hasSecondaryIndexTable && GeneralUtil.checkIfRuleNeedToBeApplied(plan)) {
       secondaryIndexOptimizer.transformFilterToJoin(plan, isProjectionNeeded(plan))
     } else {
       plan
     }
-  }
-
-  private def checkIfRuleNeedToBeApplied(plan: LogicalPlan): Boolean = {
-    var isRuleNeedToBeApplied = false
-    val relations = CarbonSparkUtil.collectCarbonRelation(plan)
-    val isCreateAsSelect = isCreateTableAsSelect(plan)
-    if (relations.nonEmpty && !isCreateAsSelect) {
-      plan.collect {
-        case join@Join(_, _, _, condition, _) =>
-          condition match {
-            case Some(x) =>
-              x match {
-                case _: EqualTo =>
-                  return isRuleNeedToBeApplied
-                  join
-                case _ =>
-                  join
-              }
-            case _ =>
-          }
-        case _ =>
-          isRuleNeedToBeApplied = true
-          plan
-      }
-    }
-    isRuleNeedToBeApplied
   }
 
   /**
@@ -113,21 +86,5 @@ class CarbonSITransformationRule(sparkSession: SparkSession)
       }
     }
     needProjection
-  }
-
-  private def isCreateTableAsSelect(plan: LogicalPlan): Boolean = {
-    var isCreateTableAsSelectFlow = false
-    if (SparkUtil.isSparkVersionXAndAbove("2.3")) {
-      plan collect {
-        case CreateHiveTableAsSelectCommand(_, _, _, _) =>
-          isCreateTableAsSelectFlow = true
-        case CreateDataSourceTableAsSelectCommand(_, _, _, _) =>
-          isCreateTableAsSelectFlow = true
-        case create: LogicalPlan if (create.getClass.getSimpleName
-          .equals("OptimizedCreateHiveTableAsSelectCommand")) =>
-          isCreateTableAsSelectFlow = true
-      }
-    }
-    isCreateTableAsSelectFlow
   }
 }

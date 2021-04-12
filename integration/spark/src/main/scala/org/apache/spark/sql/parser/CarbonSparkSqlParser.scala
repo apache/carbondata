@@ -112,7 +112,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
 
     val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
     val cols: Seq[StructField] = Option(columns).toSeq.flatMap(visitColTypeList)
-    val colNames: Seq[String] = CarbonSparkSqlParserUtil
+    val colNames: Seq[String] = ParserUtil
       .validateCreateTableReqAndGetColumns(tableHeader,
         skewSpecContext,
         bucketSpecContext,
@@ -141,7 +141,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     val extraTableTuple = (cols, external, tableIdentifier, ifNotExists, colNames, tablePath,
       tableProperties, properties, partitionByStructFields, partitionFields,
       parser, sparkSession, selectQuery)
-    CarbonSparkSqlParserUtil
+    ParserUtil
       .createCarbonTable(createTableTuple, extraTableTuple)
   }
 }

@@ -20,7 +20,6 @@ package org.apache.spark.sql.secondaryindex.optimizer
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
-
 import org.apache.spark.sql.{Dataset, _}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation
@@ -33,10 +32,10 @@ import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.optimizer
 import org.apache.spark.sql.secondaryindex.optimizer.NodeType.NodeType
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.parser.ParserUtil
 
 class SIFilterPushDownOperation(nodeType: NodeType)
 
@@ -95,7 +94,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     // Removed is Not Null filter from all filters and other attributes are selected
     // isNotNull filter will return all the unique values except null from table,
     // For High Cardinality columns, this filter is of no use, hence skipping it.
-    removeIsNotNullAttribute(filter.condition, pushDownNotNullFilter) collect {
+    ParserUtil.removeIsNotNullAttribute(filter.condition, pushDownNotNullFilter) collect {
       case attr: AttributeReference =>
         filterAttributes = filterAttributes. +(attr.name.toLowerCase)
     }
@@ -441,26 +440,6 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     allIndexTablesDF
   }
 
-  private def removeIsNotNullAttribute(condition: Expression,
-      pushDownNotNullFilter: Boolean): Expression = {
-    val isPartialStringEnabled = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING,
-        CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT)
-      .equalsIgnoreCase("true")
-    condition transform {
-      // Like is possible only if user provides _ in between the string
-      // _ in like means any single character wild card check.
-      case IsNotNull(child: AttributeReference) => Literal(!pushDownNotNullFilter)
-      case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => Literal(true)
-      case Like(left: AttributeReference, right: Literal, '\\') if (!isPartialStringEnabled) =>
-        Literal(true)
-      case EndsWith(left: AttributeReference,
-      right: Literal) if (!isPartialStringEnabled) => Literal(true)
-      case Contains(left: AttributeReference,
-      right: Literal) if (!isPartialStringEnabled) => Literal(true)
-    }
-  }
-
   private def conditionsHasStartWith(condition: Expression): Boolean = {
     condition match {
       case or@Or(left, right) =>
@@ -475,76 +454,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
         isIndexColumnUsedInLeft || isIndexColumnUsedInRight
 
-      case _ => hasStartsWith(condition)
+      case _ => ParserUtil.hasStartsWith(condition)
     }
-  }
-
-  private def hasStartsWith(condition: Expression): Boolean = {
-    condition match {
-      case Like(left: AttributeReference, right: Literal, '\\') => false
-      case EndsWith(left: AttributeReference, right: Literal) => false
-      case Contains(left: AttributeReference, right: Literal) => false
-      case _ => true
-    }
-  }
-
-  /**
-   * This method will check whether the condition is valid for SI push down. If yes then return the
-   * tableName which contains this condition
-   *
-   * @param condition
-   * @param indexTableColumnsToTableMapping
-   * @param pushDownRequired
-   * @return
-   */
-  private def isConditionColumnInIndexTable(condition: Expression,
-      indexTableColumnsToTableMapping: mutable.Map[String, Set[String]],
-      pushDownRequired: Boolean, pushDownNotNullFilter: Boolean): Option[String] = {
-    // In case of Like Filter in OR, both the conditions should not be transformed
-    // In case of like filter in And, only like filter should be removed and
-    // other filter should be transformed with index table
-
-    // In case NI condition with and, eg., NI(col1 = 'a') && col1 = 'b',
-    // only col1 = 'b' should be pushed to index table.
-    // In case NI condition with or, eg., NI(col1 = 'a') || col1 = 'b',
-    // both the condition should not be pushed to index table.
-
-    var tableName: Option[String] = None
-    val doNotPushToSI = condition match {
-      case IsNotNull(child: AttributeReference) => !pushDownNotNullFilter
-      case Not(EqualTo(left: AttributeReference, right: Literal)) => true
-      case Not(EqualTo(left: Cast, right: Literal))
-        if left.child.isInstanceOf[AttributeReference] => true
-      case Not(Like(left: AttributeReference, right: Literal, '\\')) => true
-      case Not(In(left: AttributeReference, right: Seq[Expression])) => true
-      case Not(Contains(left: AttributeReference, right: Literal)) => true
-      case Not(EndsWith(left: AttributeReference, right: Literal)) => true
-      case Not(StartsWith(left: AttributeReference, right: Literal)) => true
-      case Like(left: AttributeReference, right: Literal, '\\') if (!pushDownRequired) => true
-      case EndsWith(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
-      case Contains(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
-      case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => true
-      case _ => false
-    }
-    if (!doNotPushToSI) {
-      val attributes = condition collect {
-        case attributeRef: AttributeReference => attributeRef
-      }
-      var isColumnExistsInSITable = false
-      breakable {
-        indexTableColumnsToTableMapping.foreach { tableAndIndexColumn =>
-          isColumnExistsInSITable = attributes
-            .forall { attributeRef => tableAndIndexColumn._2
-              .contains(attributeRef.name.toLowerCase)
-            }
-          if (isColumnExistsInSITable) {
-            tableName = Some(tableAndIndexColumn._1)
-            break
-          }
-        }
-      }
-    }
-    tableName
   }
 
   /**
@@ -654,7 +565,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         if (!isPartialStringEnabled) {
           isPartialStringEnabled = conditionsHasStartWith(condition)
         }
-        val tableName = isConditionColumnInIndexTable(condition,
+        val tableName = ParserUtil.isConditionColumnInIndexTable(condition,
           indexTableToColumnsMapping,
           isPartialStringEnabled, pushDownNotNullFilter = pushDownNotNullFilter)
         // create a node if condition can be pushed down else return the same filterTree

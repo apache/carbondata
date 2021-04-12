@@ -180,9 +180,6 @@ object CarbonSparkUtil {
    * create Hadoop Job by using the specified Configuration
    */
   def createHadoopJob(conf: Configuration = FileFactory.getConfiguration): Job = {
-    val jobConf = new JobConf(conf)
-    val jobCreds = jobConf.getCredentials
-    jobCreds.mergeAll(UserGroupInformation.getCurrentUser.getCredentials)
-    Job.getInstance(jobConf)
+    CarbonScalaUtilHelper.createHadoopJob(conf)
   }
 }

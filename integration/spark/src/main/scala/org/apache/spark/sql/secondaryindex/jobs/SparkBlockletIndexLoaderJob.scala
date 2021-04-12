@@ -18,10 +18,9 @@
 package org.apache.spark.sql.secondaryindex.jobs
 
 import java.{lang, util}
-import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
+import java.util.concurrent.{Callable, ExecutorService, Executors, TimeUnit}
 
 import scala.collection.JavaConverters._
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{InputSplit, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
@@ -29,7 +28,6 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, TaskContext, TaskKilledException}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.SparkSQLUtil
-
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.index.{AbstractIndexJob, IndexInputFormat, IndexStoreManager}
 import org.apache.carbondata.core.index.dev.CacheableIndex
@@ -40,6 +38,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.rdd.CarbonRDD
 import org.apache.carbondata.spark.util.CarbonSparkUtil
+import org.apache.spark.util.GeneralUtil
 
 class SparkBlockletIndexLoaderJob extends AbstractIndexJob {
   override def execute(carbonTable: CarbonTable,
@@ -160,14 +159,15 @@ class IndexLoaderRDD(
     val reader = indexFormat.createRecordReader(inputSplit, attemptContext)
     val iter = new Iterator[(TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema)] {
       // in case of success, failure or cancellation clear memory and stop execution
-      context.addTaskCompletionListener[Unit] { _ =>
-        reader.close()
-      }
+      GeneralUtil.closeReader(context, f)
       reader.initialize(inputSplit, attemptContext)
 
       private var havePair = false
       private var finished = false
 
+      def f() {
+        reader.close()
+      }
 
       override def hasNext: Boolean = {
         if (context.isInterrupted) {

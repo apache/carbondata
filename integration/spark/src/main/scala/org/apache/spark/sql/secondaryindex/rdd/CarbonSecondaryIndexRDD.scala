@@ -23,7 +23,6 @@ import java.util.Collections
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Random
-
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
@@ -34,7 +33,6 @@ import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.secondaryindex.query.{CarbonSecondaryIndexExecutor, SecondaryIndexQueryResultProcessor}
 import org.apache.spark.sql.secondaryindex.util.{SecondaryIndexCreationResult, SecondaryIndexUtil}
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -51,6 +49,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonSparkPartition}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
+import org.apache.spark.util.GeneralUtil
 
 
 class CarbonSecondaryIndexRDD[K, V](
@@ -146,11 +145,7 @@ class CarbonSecondaryIndexRDD[K, V](
               segmentId,
               indexCarbonTable,
               factToIndexColumnMapping)
-        context.addTaskCompletionListener[Unit] { context =>
-          if (null != secondaryIndexQueryResultProcessor) {
-            secondaryIndexQueryResultProcessor.close()
-          }
-        }
+        GeneralUtil.closeReaders(context, secondaryIndexQueryResultProcessor)
         secondaryIndexQueryResultProcessor.processQueryResult(queryResultIterators)
         secondaryIndexCreationStatus = true
       } catch {
@@ -308,4 +303,5 @@ class CarbonSecondaryIndexRDD[K, V](
       new Array[Partition](0)
     }
   }
+
 }

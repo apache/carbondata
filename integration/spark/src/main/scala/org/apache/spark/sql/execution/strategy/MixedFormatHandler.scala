@@ -21,7 +21,6 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path, PathFilter}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SparkSession, SparkSqlAdapter}
@@ -38,15 +37,15 @@ import org.apache.spark.sql.execution.datasources.text.TextFileFormat
 import org.apache.spark.sql.hive.orc.OrcFileFormat
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.SparkSQLUtil
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
-import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager, FileFormat => FileFormatName}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.spark.util.CarbonScalaUtilHelper
 
 object MixedFormatHandler {
 
@@ -340,7 +339,8 @@ object MixedFormatHandler {
     } else {
       ProjectExec(projects, withFilter)
     }
-    (withProjections.execute(), fileFormat.supportBatch(sparkSession, outputSchema))
+    (CarbonScalaUtilHelper.getInternalRow(withProjections), fileFormat
+        .supportBatch(sparkSession, outputSchema))
   }
 
   // This function is used to get the unique columns based on expression Id from

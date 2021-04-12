@@ -22,7 +22,6 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
-
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
@@ -35,7 +34,6 @@ import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, C
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.MVQueryParser
 import org.apache.spark.sql.types.{ArrayType, DateType, MapType, StructType}
-
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -46,10 +44,10 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationId
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.view._
-import org.apache.carbondata.events.{withEvents, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus, withEvents}
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, SimpleModularizer}
 import org.apache.carbondata.mv.plans.util.{BirdcageOptimizer, SQLBuilder}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtilHelper, CommonUtil}
 import org.apache.carbondata.view._
 
 /**
@@ -587,11 +585,7 @@ case class CarbonCreateMVCommand(
         expression
     }
     // TODO:- Remove this case when incremental data loading is supported for multiple tables
-    logicalPlan.transformDown {
-      case join@Join(_, _, _, _, _) =>
-        needFullRefresh = true
-        join
-    }
+    needFullRefresh = CarbonScalaUtilHelper.joinOp(needFullRefresh, logicalPlan)
     needFullRefresh
   }
 

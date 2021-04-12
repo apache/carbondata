@@ -98,7 +98,7 @@ case class CarbonFileIndex(
       val hadoopConf = sparkSession.sessionState.newHadoopConf()
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(hadoopConf)
       // convert t sparks source filter
-      val filters = dataFilters.flatMap(expr => DataSourceStrategy.translateFilter(expr, false))
+      val filters = CarbonFileIndexUtil.getFilters(dataFilters)
       val dataTypeMap = dataSchema.map(f => f.name -> f.dataType).toMap
       // convert to carbon filter expressions
       val filter: Option[CarbonExpression] = filters.filterNot{ ref =>

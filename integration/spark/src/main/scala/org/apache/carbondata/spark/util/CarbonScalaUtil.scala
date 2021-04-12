@@ -21,8 +21,6 @@ import java.{lang, util}
 import java.io.IOException
 import java.lang.ref.Reference
 import java.text.SimpleDateFormat
-import java.time.ZoneId
-import java.util.Date
 
 import scala.collection.mutable
 import scala.util.Try
@@ -31,24 +29,18 @@ import com.univocity.parsers.common.TextParsingException
 import org.apache.log4j.Logger
 import org.apache.spark.SparkException
 import org.apache.spark.sql._
-import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
-import org.apache.spark.sql.catalyst.util.{DateTimeUtils, TimestampFormatter}
 import org.apache.spark.sql.execution.command.{Field, UpdateTableModel}
 import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
-import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
-import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil}
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
@@ -89,134 +81,6 @@ object CarbonScalaUtil {
     }
   }
 
-  /**
-   * Converts incoming value to String after converting data as per the data type.
-   *
-   * @param value           Input value to convert
-   * @param dataType        Datatype to convert and then convert to String
-   * @param timeStampFormat Timestamp format to convert in case of timestamp data types
-   * @param dateFormat      DataFormat to convert in case of DateType datatype
-   * @return converted String
-   */
-  def convertToDateAndTimeFormats(
-      value: String,
-      dataType: DataType,
-      timeStampFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat): String = {
-    val defaultValue = value != null && value.equalsIgnoreCase(hiveDefaultPartition)
-    try {
-      dataType match {
-        case TimestampType if timeStampFormat != null =>
-          if (defaultValue) {
-            timeStampFormat.format(new Date())
-          } else {
-            timeStampFormat.format(DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String
-              .fromString(value), ZoneId.systemDefault()).get).getTime.toString)
-          }
-        case DateType if dateFormat != null =>
-          if (defaultValue) {
-            dateFormat.format(new Date())
-          } else {
-            dateFormat.format(DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String
-              .fromString(value), ZoneId.systemDefault()).get).getTime.toString)
-          }
-        case _ =>
-          val convertedValue =
-            DataTypeUtil
-              .getDataBasedOnDataType(value,
-                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType))
-          if (convertedValue == null) {
-            if (defaultValue) {
-              return dataType match {
-                case BooleanType => "false"
-                case _ => "0"
-              }
-            }
-            throw new MalformedCarbonCommandException(
-              s"Value $value with datatype $dataType on static partition is not correct")
-          }
-          value
-      }
-    } catch {
-      case e: Exception =>
-        throw new MalformedCarbonCommandException(
-          s"Value $value with datatype $dataType on static partition is not correct")
-    }
-  }
-
-  /**
-   * Converts incoming value to String after converting data as per the data type.
-   *
-   * @param value           Input value to convert
-   * @param dataType        Datatype to convert and then convert to String
-   * @param timeStampFormat Timestamp format to convert in case of timestamp data types
-   * @param dateFormat      DataFormat to convert in case of DateType datatype
-   * @return converted String
-   */
-  def convertStaticPartitionToValues(
-      value: String,
-      dataType: DataType,
-      timeStampFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat): AnyRef = {
-    val defaultValue = value != null && value.equalsIgnoreCase(hiveDefaultPartition)
-    try {
-      dataType match {
-        case TimestampType if timeStampFormat != null =>
-          val formattedString =
-            if (defaultValue) {
-              timeStampFormat.format(new Date())
-            } else {
-              timeStampFormat.format(DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String
-                .fromString(value), ZoneId.systemDefault()).get).getTime.toString)
-            }
-          val convertedValue =
-            DataTypeUtil
-              .getDataBasedOnDataType(formattedString,
-                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(TimestampType))
-          convertedValue
-        case DateType if dateFormat != null =>
-          val formattedString =
-            if (defaultValue) {
-              dateFormat.format(new Date())
-            } else {
-              dateFormat.format(DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String
-                .fromString(value), ZoneId.systemDefault()).get).getTime.toString)
-            }
-          val convertedValue =
-            DataTypeUtil
-              .getDataBasedOnDataType(formattedString,
-                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(TimestampType))
-          val date = generateDictionaryKey(convertedValue.asInstanceOf[Long])
-          date.asInstanceOf[AnyRef]
-        case BinaryType =>
-          // TODO: decode required ? currently it is working
-          ByteUtil.toBytes(value)
-        case _ =>
-          val convertedValue =
-            DataTypeUtil
-              .getDataBasedOnDataType(value,
-                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType))
-          if (convertedValue == null) {
-            if (defaultValue) {
-              dataType match {
-                case BooleanType =>
-                  return false.asInstanceOf[AnyRef]
-                case _ =>
-                  return 0.asInstanceOf[AnyRef]
-              }
-            }
-            throw new MalformedCarbonCommandException(
-              s"Value $value with datatype $dataType on static partition is not correct")
-          }
-          convertedValue
-      }
-    } catch {
-      case e: Exception =>
-        throw new MalformedCarbonCommandException(
-          s"Value $value with datatype $dataType on static partition is not correct")
-    }
-  }
-
   def generateDictionaryKey(timeValue: Long): Int = {
     if (timeValue < DateDirectDictionaryGenerator.MIN_VALUE ||
         timeValue > DateDirectDictionaryGenerator.MAX_VALUE) {
@@ -227,78 +91,6 @@ object CarbonScalaUtil {
     }
     Math.floor(timeValue.toDouble / DateDirectDictionaryGenerator.MILLIS_PER_DAY).toInt +
      DateDirectDictionaryGenerator.cutOffDate
-  }
-
-  /**
-   * Converts incoming value to String after converting data as per the data type.
-   *
-   * @param value  Input value to convert
-   * @param column column which it value belongs to
-   * @return converted String
-   */
-  def convertToCarbonFormat(
-      value: String,
-      column: CarbonColumn): String = {
-    try {
-      column.getDataType match {
-        case CarbonDataTypes.TIMESTAMP =>
-          DateTimeUtils.timestampToString(TimestampFormatter.apply(ZoneId.systemDefault()), value
-            .toLong * 1000)
-        case CarbonDataTypes.DATE =>
-          val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
-            column.getDataType,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
-          ).getValueFromSurrogate(value.toInt)
-          if (date == null) {
-            null
-          } else {
-            DateTimeUtils.daysToMillis(date.toString.toInt).toString
-          }
-        case _ => value
-      }
-    } catch {
-      case e: Exception =>
-        value
-    }
-  }
-
-  /**
-   * Converts incoming value to String after converting data as per the data type.
-   *
-   * @param value  Input value to convert
-   * @param column column which it value belongs to
-   * @return converted String
-   */
-  def convertStaticPartitions(
-      value: String,
-      column: ColumnSchema): String = {
-    try {
-      if (column.getDataType.equals(CarbonDataTypes.DATE)) {
-        if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
-          return DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
-            column.getDataType,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-          ).generateDirectSurrogateKey(value).toString
-        } else if (column.getDataType.equals(CarbonDataTypes.DATE)) {
-          return DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
-            column.getDataType,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
-          ).generateDirectSurrogateKey(value).toString
-        }
-      }
-      column.getDataType match {
-        case CarbonDataTypes.TIMESTAMP =>
-          DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String.fromString(value), ZoneId
-            .systemDefault()).get).getTime.toString
-        case CarbonDataTypes.DATE =>
-          DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String.fromString(value), ZoneId
-            .systemDefault()).get).getTime.toString
-        case _ => value
-      }
-    } catch {
-      case e: Exception =>
-        value
-    }
   }
 
   private val hiveDefaultPartition = "__HIVE_DEFAULT_PARTITION__"
@@ -324,7 +116,7 @@ object CarbonScalaUtil {
         if (value.equals(hiveDefaultPartition)) {
           (col.toLowerCase, value)
         } else {
-          val convertedString = convertToCarbonFormat(value, carbonColumn)
+          val convertedString = CarbonScalaUtilHelper.convertToCarbonFormat(value, carbonColumn)
           if (convertedString == null) {
             (col.toLowerCase, hiveDefaultPartition)
           } else {

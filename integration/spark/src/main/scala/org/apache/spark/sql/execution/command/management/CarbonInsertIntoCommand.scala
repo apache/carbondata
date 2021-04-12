@@ -22,7 +22,6 @@ import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonToSparkAdapter, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
@@ -32,7 +31,6 @@ import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, UpdateTabl
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.util.CausedBy
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -50,7 +48,7 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonScalaUtilHelper}
 
 /*
 * insert into without df, by just using logical plan
@@ -429,7 +427,7 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
       for (col <- partitionColumnSchema) {
         if (partition(col.getColumnName.toLowerCase).isDefined) {
           convertedStaticPartition(col.getColumnName.toLowerCase) =
-            CarbonScalaUtil.convertStaticPartitionToValues(
+            CarbonScalaUtilHelper.convertStaticPartitionToValues(
               partition(col.getColumnName.toLowerCase).get,
               SparkDataTypeConverterImpl.convertCarbonToSparkDataType(col.getDataType),
               timeStampFormat,
