@@ -51,17 +51,6 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
     assert(batchReader, "batch reader should exist when carbon.enable.vector.reader is true")
   }
 
-  test("test without vector reader") {
-    sqlContext.setConf("carbon.enable.vector.reader", "false")
-    val plan = sql(
-      """select * from vectorreader""".stripMargin).queryExecution.executedPlan
-    var rowReader = false
-    plan.collect {
-      case scan: CarbonDataSourceScan => rowReader = !scan.supportsColumnar
-    }
-    assert(rowReader, "row reader should exist by default")
-  }
-
   test("test vector reader for random measure selection") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     checkAnswer(sql("""select salary, ID from vectorreader where ID = 94""".stripMargin),

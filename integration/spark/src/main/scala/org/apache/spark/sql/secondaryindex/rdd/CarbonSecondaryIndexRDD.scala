@@ -23,24 +23,22 @@ import java.util.Collections
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Random
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.Job
+
 import org.apache.spark._
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.execution.command.NodeInfo
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.secondaryindex.query.{CarbonSecondaryIndexExecutor, SecondaryIndexQueryResultProcessor}
 import org.apache.spark.sql.secondaryindex.util.{SecondaryIndexCreationResult, SecondaryIndexUtil}
+import org.apache.spark.util.GeneralUtil
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo, TaskBlockInfo}
+import org.apache.carbondata.core.datastore.block.{Distributable, TaskBlockInfo}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -49,7 +47,6 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonSparkPartition}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
-import org.apache.spark.util.GeneralUtil
 
 
 class CarbonSecondaryIndexRDD[K, V](
