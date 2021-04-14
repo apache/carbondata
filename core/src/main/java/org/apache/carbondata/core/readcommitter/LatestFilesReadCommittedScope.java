@@ -147,7 +147,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
         SegmentFileStore.getInvalidAndMergedIndexFiles(indexFiles);
     List<String> filteredIndexFiles = indexFiles;
     if (!mergedIndexFiles.isEmpty()) {
-      // do not include already merged indexFiles files details.
+      // do not include already merged index files details.
       filteredIndexFiles = indexFiles.stream().filter(
           file -> !mergedIndexFiles.contains(file))
           .collect(Collectors.toList());

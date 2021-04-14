@@ -196,11 +196,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       // mergeIndex is true, the segment file not need to be written
       // and will be written during merging index
       if (partitionSpec != null && !isMergeIndex) {
+        // By default carbon.merge.index.in.segment is true and this code will be used for
+        // developer debugging purpose.
         try {
-          SegmentFileStore
-              .writeSegmentFile(carbonLoadModel.getTablePath(), carbonLoadModel.getTaskNo(),
-                  partitionSpec.getLocation().toString(), carbonLoadModel.getFactTimeStamp() + "",
-                  partitionSpec.getPartitions());
+          SegmentFileStore.writeSegmentFileForPartitionTable(carbonLoadModel.getTablePath(),
+              carbonLoadModel.getTaskNo(), partitionSpec.getLocation().toString(),
+              carbonLoadModel.getFactTimeStamp() + "", partitionSpec.getPartitions());
         } catch (IOException e) {
           throw e;
         }

@@ -141,20 +141,18 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                   .get
                   .filterNot(streamingSegment.contains(_))
               }
-            validSegments.foreach { segment =>
-              if (segmentsToMerge.contains(segment.getSegmentNo)) {
-                val segmentFile = segment.getSegmentFileName
-                val sfs = new SegmentFileStore(carbonMainTable.getTablePath, segmentFile)
-                if (sfs.getSegmentFile != null) {
-                  val indexFiles = sfs.getIndexCarbonFiles
-                  val segmentPath = CarbonTablePath
-                    .getSegmentPath(carbonMainTable.getTablePath, segment.getSegmentNo)
-                  if (indexFiles.size() == 0) {
-                    LOGGER.warn("No index files present in path: " + segmentPath + " to merge")
-                    // call merge if segments have index files
-                    segmentsToMerge = segmentsToMerge.toStream
-                      .filterNot(s => s.equals(segment.getSegmentNo)).toList
-                  }
+            validSegments.filter(x => segmentsToMerge.contains(x.getSegmentNo)).foreach { segment =>
+              val segmentFile = segment.getSegmentFileName
+              val sfs = new SegmentFileStore(carbonMainTable.getTablePath, segmentFile)
+              if (sfs.getSegmentFile != null) {
+                val indexFiles = sfs.getIndexCarbonFiles
+                val segmentPath = CarbonTablePath
+                  .getSegmentPath(carbonMainTable.getTablePath, segment.getSegmentNo)
+                if (indexFiles.size() == 0) {
+                  LOGGER.warn(s"No index files present in path: $segmentPath to merge")
+                  // call merge if segments have index files
+                  segmentsToMerge = segmentsToMerge.toStream
+                    .filterNot(s => s.equals(segment.getSegmentNo)).toList
                 }
               }
             }

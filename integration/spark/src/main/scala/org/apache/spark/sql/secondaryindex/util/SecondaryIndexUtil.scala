@@ -256,7 +256,7 @@ object SecondaryIndexUtil {
             } catch {
               case e: IOException =>
                 val message =
-                  "Failed to merge index files in path: " + segmentPath + ": " + e.getMessage()
+                  s"Failed to merge index files in path: $segmentPath. ${ e.getMessage() } "
                 LOGGER.error(message)
                 throw new RuntimeException(message, e)
             }
@@ -354,8 +354,7 @@ object SecondaryIndexUtil {
     if (segmentFileStore.getSegmentFile == null)  {
       indexFiles = new SegmentIndexFileStore()
         .getMergeOrIndexFilesFromSegment(segmentPath).keySet
-    }
-    else {
+    } else {
       indexFiles = segmentFileStore.getIndexAndMergeFiles.keySet
     }
     indexFiles
@@ -371,8 +370,8 @@ object SecondaryIndexUtil {
     val splitList = partition.split.value.getAllSplits
     splitList.asScala.foreach { split =>
       if (validSegmentsToUse.contains(split.getSegment)) {
-        val carbonFile = FileFactory.getCarbonFile(split.getFilePath)
-        carbonFile.delete()
+        val mergedCarbonDataFile = FileFactory.getCarbonFile(split.getFilePath)
+        mergedCarbonDataFile.delete()
       }
     }
   }

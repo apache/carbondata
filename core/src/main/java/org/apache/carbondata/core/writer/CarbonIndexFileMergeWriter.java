@@ -80,9 +80,9 @@ public class CarbonIndexFileMergeWriter {
   private String mergeCarbonIndexFilesOfSegment(String segmentId, String tablePath,
       List<String> indexFileNamesTobeAdded, boolean isOldStoreIndexFilesPresent, String uuid,
       String partitionPath) {
+    Segment segment = Segment.getSegment(segmentId, tablePath);
+    String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     try {
-      Segment segment = Segment.getSegment(segmentId, tablePath);
-      String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
       List<CarbonFile> indexFiles = new ArrayList<>();
       SegmentFileStore sfs = null;
       if (segment != null && segment.getSegmentFileName() != null) {
@@ -114,7 +114,8 @@ public class CarbonIndexFileMergeWriter {
             indexFiles.toArray(new CarbonFile[0]), uuid, partitionPath);
       }
     } catch (Exception e) {
-      String message = "Failed to merge index files in path: " + tablePath + ": " + e.getMessage();
+      String message =
+          "Failed to merge index files in path: " + segmentPath + ". " + e.getMessage();
       LOGGER.error(message);
       throw new RuntimeException(message, e);
     }

@@ -94,7 +94,7 @@ class AlterTableMergeIndexSIEventListener
                     val segmentPath = CarbonTablePath
                       .getSegmentPath(indexCarbonTable.getTablePath, segment.getSegmentNo)
                     if (indexFiles.size() == 0) {
-                      LOGGER.warn("No index files present in path: " + segmentPath + " to merge")
+                      LOGGER.warn(s"No index files present in path: $segmentPath to merge")
                     } else {
                       // call merge only if segments having index files
                       validSegmentIds += segment.getSegmentNo

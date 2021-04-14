@@ -1175,7 +1175,7 @@ public final class CarbonLoaderUtil {
               false);
     } catch (IOException e) {
       String message =
-          "Failed to merge index files in path: " + segmentPath + ": " + e.getMessage();
+          "Failed to merge index files in path: " + segmentPath + ". " + e.getMessage();
       LOGGER.error(message);
       throw new RuntimeException(message, e);
     }

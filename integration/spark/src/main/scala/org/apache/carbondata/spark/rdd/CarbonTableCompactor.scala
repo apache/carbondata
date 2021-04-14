@@ -352,6 +352,8 @@ class CarbonTableCompactor(
               s"to ${segmentFileName} failed.")
           }
         } else {
+          // By default carbon.merge.index.in.segment is true and this code will be used for
+          // developer debugging purpose.
           val readPath =
             CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
               CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"

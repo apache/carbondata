@@ -103,8 +103,8 @@ public class SegmentFileStore {
    * Write segment information to the segment folder with index file name and
    * corresponding partitions.
    */
-  public static void writeSegmentFile(String tablePath, final String taskNo, String location,
-      String timeStamp, List<String> partitionNames) throws IOException {
+  public static void writeSegmentFileForPartitionTable(String tablePath, final String taskNo,
+      String location, String timeStamp, List<String> partitionNames) throws IOException {
     writeSegmentFileForPartitionTable(tablePath, taskNo, location, timeStamp, partitionNames,
         false);
   }
@@ -471,7 +471,7 @@ public class SegmentFileStore {
     // If both index and merge index files are present, read the valid merge index file and add its
     // mapped index files to the excluding list.
     // Example: We have xxx.index and xxx.mergeindex files in a segment directory.
-    // Here the merged index file (xxx.index) is considered invalid.
+    // Here the index file (xxx.index) is considered invalid.
     if (isIndexFilesPresent && validMergeIndexFile != null) {
       indexFileStore.readMergeFile(validMergeIndexFile);
       Map<String, List<String>> carbonMergeFileToIndexFilesMap =
