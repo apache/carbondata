@@ -17,8 +17,12 @@
 
 package org.apache.carbondata.mv.plans.modular
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, ExprId, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, ExprId, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, LogicalPlan, Statistics, Subquery}
+import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.types.{DataType, Metadata}
+
+import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
 
 object ExpressionHelper {
 
@@ -47,4 +51,26 @@ object ExpressionHelper {
     reference.qualifier.reverse.head
   }
 
+  def getStatisticsObj(outputList: Seq[NamedExpression],
+      plan: LogicalPlan, stats: Statistics,
+      aliasMap: Option[AttributeMap[Attribute]] = None): Statistics = {
+    val output = outputList.map(_.toAttribute)
+    val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
+      table => AttributeMap(table.output.zip(output))
+    }
+    val rewrites = mapSeq.head
+    val attributes: AttributeMap[ColumnStat] = stats.attributeStats
+    var attributeStats = AttributeMap(attributes.iterator
+      .map { pair => (rewrites(pair._1), pair._2) }.toSeq)
+    if (aliasMap.isDefined) {
+      attributeStats = AttributeMap(
+        attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
+    }
+    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, stats.hints)
+  }
+
+  def getOptimizedPlan(s: SubqueryExpression): LogicalPlan = {
+    val Subquery(newPlan) = BirdcageOptimizer.execute(s.plan)
+    newPlan
+  }
 }

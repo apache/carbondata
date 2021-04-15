@@ -75,82 +75,92 @@ trait AggregatePushDown { // self: ModularPlan =>
       map: scala.collection.mutable.Map[Int, (NamedExpression, Seq[NamedExpression])],
       aliasInfo: Option[(String, ExprId)]) = {
     aggregate match {
-      case cnt@AggregateExpression(Count(exprs), _, false, _) if (exprs.length == 1 && exprs(0)
-        .isInstanceOf[Attribute]) =>
-        val tAttr = selAliasMap.get(exprs(0).asInstanceOf[Attribute]).getOrElse(exprs(0))
+      case cnt: AggregateExpression if cnt.aggregateFunction.isInstanceOf[Count] &&
+        cnt.aggregateFunction.children.length == 1 && cnt.aggregateFunction.children.head.isInstanceOf[Attribute] =>
+        val exprs = cnt.aggregateFunction.children
+        val tAttr = selAliasMap.get(exprs.head.asInstanceOf[Attribute]).getOrElse(exprs.head)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val cnt1 = AggregateExpression(Count(tAttr), cnt.mode, false)
+          val cnt1 = AggregateExpression(Count(tAttr), cnt.mode, isDistinct = false)
           val alias = Alias(cnt1, cnt1.toString)()
-          val tSum = AggregateExpression(Sum(alias.toAttribute), cnt.mode, false, cnt.resultId)
+          val tSum = cnt.copy(Sum(alias.toAttribute), cnt.mode, isDistinct = false, resultId = cnt.resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case cnt@AggregateExpression(Count(exprs), _, false, _) if (exprs.length == 1 && exprs(0)
-        .isInstanceOf[Literal]) =>
-        val cnt1 = AggregateExpression(Count(exprs(0)), cnt.mode, false)
+      case cnt: AggregateExpression if cnt.aggregateFunction.isInstanceOf[Count] &&
+        cnt.aggregateFunction.children.length == 1 && cnt.aggregateFunction.children.head.isInstanceOf[Literal] =>
+        val cnt1 = cnt.copy(Count(cnt.aggregateFunction.children.head), cnt.mode, isDistinct = false)
         val alias = Alias(cnt1, cnt1.toString)()
-        val tSum = AggregateExpression(Sum(alias.toAttribute), cnt.mode, false, cnt.resultId)
+        val tSum = cnt.copy(Sum(alias.toAttribute), cnt.mode, false, resultId = cnt.resultId)
         val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
         map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
-      case sum@AggregateExpression(Sum(expr), _, false, _) if (expr.isInstanceOf[Attribute]) =>
+      case sum: AggregateExpression if sum.aggregateFunction.isInstanceOf[Sum] &&
+        sum.aggregateFunction.children.head.isInstanceOf[Attribute] =>
+        val expr = sum.aggregateFunction.children.head
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val sum1 = AggregateExpression(Sum(tAttr), sum.mode, false)
+          val sum1 = AggregateExpression(Sum(tAttr), sum.mode, isDistinct = false)
           val alias = Alias(sum1, sum1.toString)()
-          val tSum = AggregateExpression(Sum(alias.toAttribute), sum.mode, false, sum.resultId)
+          val tSum = sum.copy(Sum(alias.toAttribute), sum.mode, isDistinct = false, resultId = sum.resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case sum@AggregateExpression(Sum(cast@MatchCast(expr, dataType)), _, false, _) =>
+      case sum: AggregateExpression if sum.aggregateFunction.isInstanceOf[Sum] &&
+        checkMatchCast(sum.aggregateFunction.asInstanceOf[Sum].child) =>
+        val expr = sum.aggregateFunction.children.head
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val sum1 = AggregateExpression(Sum(cast), sum.mode, false)
-          val alias = Alias(sum1, sum1.toString)()
-          val tSum = AggregateExpression(Sum(alias.toAttribute), sum.mode, false, sum.resultId)
+          val alias = Alias(sum, sum.toString)()
+          val tSum = sum.copy(Sum(alias.toAttribute), mode = sum.mode, isDistinct = false, resultId = sum.resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case sum@AggregateExpression(Sum(expr), _, false, _) if (expr.isInstanceOf[Literal]) =>
-        val sum1 = AggregateExpression(Sum(expr), sum.mode, false)
+      case sum: AggregateExpression if sum.aggregateFunction.isInstanceOf[Sum] &&
+        sum.aggregateFunction.children.head.isInstanceOf[Literal] =>
+        val sum1 = AggregateExpression(Sum(sum.aggregateFunction.children.head), sum.mode, isDistinct = false)
         val alias = Alias(sum1, sum1.toString)()
-        val tSum = AggregateExpression(Sum(alias.toAttribute), sum.mode, false, sum.resultId)
+        val tSum = sum.copy(Sum(alias.toAttribute), sum.mode, isDistinct = false, resultId = sum.resultId)
         val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
         map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
-      case max@AggregateExpression(Max(expr), _, false, _) if (expr.isInstanceOf[Attribute]) =>
+      case max: AggregateExpression if max.aggregateFunction.isInstanceOf[Max] &&
+        max.aggregateFunction.children.head.isInstanceOf[Attribute] =>
+        val expr = max.aggregateFunction.children.head
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
           val max1 = AggregateExpression(Sum(tAttr), max.mode, false)
           val alias = Alias(max1, max1.toString)()
-          val tMax = AggregateExpression(Max(alias.toAttribute), max.mode, false, max.resultId)
+          val tMax = max.copy(Max(alias.toAttribute), max.mode, isDistinct = false, resultId = max.resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tMax, name)(exprId = id), Seq(alias)))
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case min@AggregateExpression(Min(expr), _, false, _) if (expr.isInstanceOf[Attribute]) =>
+      case min: AggregateExpression if min.aggregateFunction.isInstanceOf[Min] &&
+        min.aggregateFunction.children.head.isInstanceOf[Attribute] =>
+        val expr = min.aggregateFunction.children.head
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
           val min1 = AggregateExpression(Min(tAttr), min.mode, false)
           val alias = Alias(min1, min1.toString)()
-          val tMin = AggregateExpression(Max(alias.toAttribute), min.mode, false, min.resultId)
+          val tMin = min.copy(Max(alias.toAttribute), min.mode, false, resultId = min.resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tMin, name)(exprId = id), Seq(alias)))
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case avg@AggregateExpression(Average(expr), _, false, _) if (expr
-        .isInstanceOf[Attribute]) =>
+      case avg: AggregateExpression if (avg.aggregateFunction.isInstanceOf[Average] &&
+        avg.aggregateFunction.children.head.isInstanceOf[Attribute]) =>
+        val expr = avg.aggregateFunction.children.head
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
@@ -167,7 +177,16 @@ trait AggregatePushDown { // self: ModularPlan =>
       case _ => Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
     }
   }
+
+  private def checkMatchCast(expr: Expression): Boolean = {
+    expr match {
+      case MatchCast(expr, _) => true
+      case _ => false
+    }
+  }
+
 }
+
 
 /**
  * unapply method of Cast class.
@@ -183,7 +202,7 @@ object MatchCast {
 }
 
 /**
- * unapply method of Cast class with expression.
+ * unapply method of Cast cexprlass with expression.
  */
 object MatchCastExpression {
   def unapply(expr: Expression): Option[(Expression, DataType)] = {

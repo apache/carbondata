@@ -196,7 +196,7 @@
     </dependency>
     <dependency>
       <groupId>com.databricks</groupId>
-      <artifactId>spark-avro_${scala.binary.version}</artifactId>
+      <artifactId>spark-avro_2.11</artifactId>
       <version>4.0.0</version>
       <exclusions>
         <exclusion>
@@ -574,7 +574,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
               <excludes>
-                <exclude>src/main/spark2.4plus</exclude>
+                <exclude>src/main/spark2.4</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -629,7 +629,7 @@
                 </goals>
                 <configuration>
                   <sources>
-                    <source>src/main/spark2.4plus</source>
+                    <source>src/main/spark2.4</source>
                   </sources>
                 </configuration>
               </execution>
@@ -639,9 +639,9 @@
       </build>
     </profile>
     <profile>
-      <id>spark-3.0</id>
+      <id>spark-3.1</id>
       <properties>
-        <spark.binary.version>3.0</spark.binary.version>
+        <spark.binary.version>3.1</spark.binary.version>
       </properties>
       <build>
         <plugins>
@@ -667,7 +667,7 @@
                 </goals>
                 <configuration>
                   <sources>
-                    <source>src/main/spark2.4plus</source>
+                    <source>src/main/spark2.4</source>
                   </sources>
                 </configuration>
               </execution>
