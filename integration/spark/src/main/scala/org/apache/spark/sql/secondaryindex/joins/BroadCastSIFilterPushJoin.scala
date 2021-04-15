@@ -18,24 +18,24 @@
 package org.apache.spark.sql.secondaryindex.joins
 
 import java.io.IOException
-import java.util
 
+import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.{Job, JobContext}
+import org.apache.hadoop.mapreduce.JobContext
 import org.apache.log4j.Logger
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonBuildSide, CarbonToSparkAdapter, SparkSession}
+import org.apache.spark.sql.CarbonToSparkAdapter.CarbonBuildSideType
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, BindReferences, Expression, In, Literal, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.execution.{BinaryExecNode, ProjectExec, RowDataSourceScanExec, SparkPlan}
-import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide, HashJoin}
+import org.apache.spark.sql.execution.joins.HashJoin
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
@@ -62,7 +62,7 @@ case class BroadCastSIFilterPushJoin(
     leftKeys: Seq[Expression],
     rightKeys: Seq[Expression],
     joinType: JoinType,
-    buildSide: BuildSide,
+    buildSide: CarbonBuildSideType,
     left: SparkPlan,
     right: SparkPlan,
     condition: Option[Expression]) extends BinaryExecNode with HashJoin {
@@ -110,9 +110,10 @@ case class BroadCastSIFilterPushJoin(
     }
   }
 
-  val carbonScan: SparkPlan = buildSide match {
-    case BuildLeft => right
-    case BuildRight => left
+  val carbonScan: SparkPlan = if (CarbonBuildSide(buildSide).isLeft) {
+    right
+  } else {
+    left
   }
 
   val mainTableRDD: Option[RDD[InternalRow]] = carbonScan.collectFirst {
@@ -129,6 +130,11 @@ case class BroadCastSIFilterPushJoin(
       isIndexTable = true)
     carbonScan.execute
   }
+
+  // TODO: Fix this
+  protected def prepareRelation(ctx: CodegenContext) = null
+
+  def inputRDDs(): Seq[RDD[InternalRow]] = secondaryIndexRDD
 }
 
 object BroadCastSIFilterPushJoin {
@@ -140,15 +146,17 @@ object BroadCastSIFilterPushJoin {
       inputCopy: Array[InternalRow],
       leftKeys: Seq[Expression],
       rightKeys: Seq[Expression],
-      buildSide: BuildSide,
+      buildSide: CarbonBuildSideType,
       isIndexTable: Boolean = false): Unit = {
 
+    val carbonBuildSide = CarbonBuildSide(buildSide)
     val keys = {
-      buildSide match {
-        case BuildLeft => (leftKeys)
-        case BuildRight => (rightKeys)
+      if (carbonBuildSide.isLeft) {
+        leftKeys
+      } else {
+        rightKeys
       }
-      }.map { a =>
+    }.map { a =>
       BindReferences.bindReference(a, buildPlan.output)
     }.toArray
 
@@ -166,9 +174,10 @@ object BroadCastSIFilterPushJoin {
           })
     }
 
-    val filterKey = (buildSide match {
-      case BuildLeft => rightKeys
-      case BuildRight => leftKeys
+    val filterKey = (if (carbonBuildSide.isLeft) {
+      rightKeys
+    } else {
+      leftKeys
     }).collectFirst { case a: Attribute => a }
 
     def resolveAlias(expressions: Seq[Expression]) = {
@@ -189,11 +198,10 @@ object BroadCastSIFilterPushJoin {
       }
     }
 
-    val filterKeys = buildSide match {
-      case BuildLeft =>
-        resolveAlias(rightKeys)
-      case BuildRight =>
-        resolveAlias(leftKeys)
+    val filterKeys = if (carbonBuildSide.isLeft) {
+      resolveAlias(rightKeys)
+    } else {
+      resolveAlias(leftKeys)
     }
 
     def matchScan(projectList: Seq[NamedExpression]): Boolean = {

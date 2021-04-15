@@ -26,7 +26,6 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
-import org.apache.spark.sql.execution.datasources.RefreshTable
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -96,7 +95,8 @@ case class RefreshCarbonTableCommand(
         }
       }
     }
-    RefreshTable(TableIdentifier(tableName, Option(databaseName))).run(sparkSession)
+    CarbonToSparkAdapter.createRefreshTableCommand(TableIdentifier(tableName, Option(databaseName)))
+      .run(sparkSession)
   }
 
   /**

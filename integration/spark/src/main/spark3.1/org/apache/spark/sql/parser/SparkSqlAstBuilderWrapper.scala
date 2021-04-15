@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.adapter
+package org.apache.spark.sql.parser
 
-import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
+import org.apache.spark.sql.execution.SparkSqlAstBuilder
+import org.apache.spark.sql.internal.SQLConf
 
-import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
+/**
+ * use this wrapper to adapter multiple spark versions
+ */
+abstract class SparkSqlAstBuilderWrapper(conf: SQLConf) extends SparkSqlAstBuilder {
 
-object CarbonToSparkAdapter {
-  def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]): FilePartition = {
-    FilePartition(index, files.toArray)
-  }
+  def visitPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String]
 }

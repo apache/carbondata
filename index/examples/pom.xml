@@ -81,9 +81,6 @@
   <profiles>
     <profile>
       <id>spark-2.3</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.binary.version>2.3</spark.binary.version>
       </properties>

@@ -34,7 +34,7 @@ case class CarbonExplainCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val explainCommand = child.asInstanceOf[ExplainCommand]
-    setAuditInfo(Map("query" -> explainCommand.logicalPlan.simpleString))
+    setAuditInfo(Map("query" -> explainCommand.logicalPlan.prettyJson))
     val isCommand = SparkSQLUtil.isCommand(explainCommand.logicalPlan)
     if (explainCommand.logicalPlan.isStreaming || isCommand) {
       explainCommand.run(sparkSession)

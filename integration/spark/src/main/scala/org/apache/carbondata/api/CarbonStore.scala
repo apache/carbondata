@@ -19,6 +19,7 @@ package org.apache.carbondata.api
 
 import java.io.{DataInputStream, FileNotFoundException, InputStreamReader}
 import java.time.{Duration, Instant}
+
 import java.util
 import java.util.{Collections, Comparator}
 
@@ -28,6 +29,7 @@ import scala.util.control.Breaks.{break, breakable}
 import com.google.gson.Gson
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -360,9 +362,14 @@ object CarbonStore {
 
   private def validateTimeFormat(timestamp: String): Long = {
     try {
-      DateTimeUtils.stringToTimestamp(UTF8String.fromString(timestamp)).get
+      CarbonToSparkAdapter.stringToTimestamp(timestamp) match {
+        case Some(value) => value
+        case _ =>
+          val errorMessage = "Error: Invalid load start time format: " + timestamp
+          throw new MalformedCarbonCommandException(errorMessage)
+      }
     } catch {
-      case e: Exception =>
+      case _: Exception =>
         val errorMessage = "Error: Invalid load start time format: " + timestamp
         throw new MalformedCarbonCommandException(errorMessage)
     }

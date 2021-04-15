@@ -22,7 +22,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.executor.OutputMetrics
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.EliminateView
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSeq, NamedExpression}
@@ -59,27 +59,7 @@ object SparkSQLUtil {
 
   def invokeQueryPlanNormalizeExprId(r: NamedExpression, input: AttributeSeq)
       : NamedExpression = {
-    QueryPlan.normalizeExprId(r, input)
-  }
-
-  def getStatisticsObj(outputList: Seq[NamedExpression],
-                       plan: LogicalPlan, stats: Statistics,
-                       aliasMap: Option[AttributeMap[Attribute]] = None)
-  : Statistics = {
-    val output = outputList.map(_.toAttribute)
-    val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
-      table => AttributeMap(table.output.zip(output))
-    }
-    val rewrites = mapSeq.head
-    val attributes : AttributeMap[ColumnStat] = stats.attributeStats
-    var attributeStats = AttributeMap(attributes.iterator
-      .map { pair => (rewrites(pair._1), pair._2) }.toSeq)
-    if (aliasMap.isDefined) {
-      attributeStats = AttributeMap(
-        attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
-    }
-    val hints = stats.hints
-    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, hints)
+    CarbonToSparkAdapter.normalizeExpressions(r, input)
   }
 
   def getEliminateViewObj(): Rule[LogicalPlan] = {
@@ -179,7 +159,7 @@ object SparkSQLUtil {
 
   def isCommand(logicalPlan: LogicalPlan): Boolean = logicalPlan match {
     case _: Command => true
-    case Union(children) if children.forall(_.isInstanceOf[Command]) => true
+    case u: Union if u.children.forall(_.isInstanceOf[Command]) => true
     case _ => false
   }
 

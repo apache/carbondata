@@ -17,12 +17,12 @@
 
 package org.apache.spark.sql.optimizer
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, PredicateHelper,
-ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, PredicateHelper, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.CarbonToSparkAdapter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
@@ -33,8 +33,7 @@ class CarbonUDFTransformRule extends Rule[LogicalPlan] with PredicateHelper {
 
   private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
     val output = plan.transform {
-      case proj@Project(cols, Join(
-      left, right, joinType: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
+      case proj@Project(cols, join: Join) =>
         var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
         var udfExists = false
         val newCols = cols.map {
@@ -47,7 +46,7 @@ class CarbonUDFTransformRule extends Rule[LogicalPlan] with PredicateHelper {
           case other => other
         }
         if (udfExists) {
-          val newLeft = left match {
+          val newLeft = join.left match {
             case Project(columns, logicalPlan) =>
               Project(columns ++ projectionToBeAdded, logicalPlan)
             case filter: Filter =>
@@ -56,7 +55,8 @@ class CarbonUDFTransformRule extends Rule[LogicalPlan] with PredicateHelper {
               Project(relation.output ++ projectionToBeAdded, relation)
             case other => other
           }
-          Project(newCols, Join(newLeft, right, joinType, condition))
+          Project(newCols,
+            CarbonToSparkAdapter.createJoinNode(newLeft, join.right, join.joinType, join.condition))
         } else {
           proj
         }

@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.mv.plans.modular
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, ExprId, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, Expression, ExprId, NamedExpression, SubqueryExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, LogicalPlan, Statistics, Subquery}
-import org.apache.spark.sql.catalyst.plans.logical
+import org.apache.spark.sql.catalyst.plans.{logical, QueryPlan}
 import org.apache.spark.sql.types.{DataType, Metadata}
 
 import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
@@ -72,5 +72,9 @@ object ExpressionHelper {
   def getOptimizedPlan(s: SubqueryExpression): LogicalPlan = {
     val Subquery(newPlan) = BirdcageOptimizer.execute(s.plan)
     newPlan
+  }
+
+  def normalizeExpressions(r: NamedExpression, attrs: AttributeSeq): NamedExpression = {
+    QueryPlan.normalizeExprId(r, attrs)
   }
 }

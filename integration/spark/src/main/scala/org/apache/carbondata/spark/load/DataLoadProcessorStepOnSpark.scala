@@ -18,12 +18,11 @@
 package org.apache.carbondata.spark.load
 
 import java.util
-
 import com.univocity.parsers.common.TextParsingException
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.TaskContext
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonToSparkAdapter, Row}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.util.LongAccumulator
@@ -183,7 +182,7 @@ object DataLoadProcessorStepOnSpark {
     val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
     rowConverter.initialize()
 
-    TaskContext.get().addTaskCompletionListener { context =>
+    CarbonToSparkAdapter.addTaskCompletionListener {
       val hasBadRecord: Boolean = CarbonBadRecordUtil.hasBadRecord(model)
       close(conf, badRecordLogger, rowConverter)
       GlobalSortHelper.badRecordsLogger(model, partialSuccessAccum, hasBadRecord)
@@ -231,7 +230,7 @@ object DataLoadProcessorStepOnSpark {
     val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
     rowConverter.initialize()
 
-    TaskContext.get().addTaskCompletionListener { context =>
+    CarbonToSparkAdapter.addTaskCompletionListener {
       val hasBadRecord: Boolean = CarbonBadRecordUtil.hasBadRecord(model)
       close(conf, badRecordLogger, rowConverter)
       GlobalSortHelper.badRecordsLogger(model, partialSuccessAccum, hasBadRecord)

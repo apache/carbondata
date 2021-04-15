@@ -20,15 +20,14 @@ package org.apache.spark.sql.execution.strategy
 import java.util.Locale
 
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, CountStarPlan, InsertIntoCarbonTable, SparkSession}
+import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, CarbonToSparkAdapter, CountStarPlan, InsertIntoCarbonTable, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Descending, Expression, IntegerLiteral, NamedExpression, SortOrder}
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
-import org.apache.spark.sql.catalyst.plans.{Inner, LeftSemi}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
+import org.apache.spark.sql.catalyst.plans.{Inner, JoinType, LeftSemi}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
 import org.apache.spark.sql.execution.{CarbonTakeOrderedAndProjectExec, FilterExec, ProjectExec, SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command.{DataWritingCommandExec, ExecutedCommandExec, LoadDataCommand}
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, LogicalRelation}
-import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight}
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper.isCarbonTable
 import org.apache.spark.sql.hive.MatchLogicalRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
@@ -56,8 +55,7 @@ object DMLStrategy extends SparkStrategy {
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
         CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
-      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
-      left, right)
+      case CarbonExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, right)
         if isCarbonPlan(left) && CarbonIndexUtil.checkIsIndexTable(right) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
         val carbon = CarbonSourceStrategy.apply(left).head
@@ -88,12 +86,12 @@ object DMLStrategy extends SparkStrategy {
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           Inner,
-          BuildRight,
+          CarbonToSparkAdapter.getBuildRight,
           carbonChild,
           planLater(right),
           condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
-      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
+      case CarbonExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
       right)
         if isCarbonPlan(right) && CarbonIndexUtil.checkIsIndexTable(left) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
@@ -103,12 +101,12 @@ object DMLStrategy extends SparkStrategy {
             leftKeys: Seq[Expression],
             rightKeys: Seq[Expression],
             Inner,
-            BuildLeft,
+            CarbonToSparkAdapter.getBuildLeft,
             planLater(left),
             carbon,
             condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
-      case ExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition,
+      case CarbonExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition,
       left, right)
         if isLeftSemiExistPushDownEnabled &&
           isAllCarbonPlan(left) && isAllCarbonPlan(right) =>
@@ -117,7 +115,7 @@ object DMLStrategy extends SparkStrategy {
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           LeftSemi,
-          BuildRight,
+          CarbonToSparkAdapter.getBuildRight,
           planLater(left),
           planLater(right),
           condition)
@@ -125,6 +123,21 @@ object DMLStrategy extends SparkStrategy {
       case ExtractTakeOrderedAndProjectExec(carbonTakeOrderedAndProjectExec) =>
         carbonTakeOrderedAndProjectExec :: Nil
       case _ => Nil
+    }
+  }
+
+  object CarbonExtractEquiJoinKeys {
+    def unapply(plan: LogicalPlan): Option[(JoinType, Seq[Expression], Seq[Expression],
+      Option[Expression], LogicalPlan, LogicalPlan)] = {
+      plan match {
+        case join: Join =>
+          ExtractEquiJoinKeys.unapply(join) match {
+              // ignoring hints as carbon is not using them right now
+            case Some(x) => Some(x._1, x._2, x._3, x._4, x._5, x._6)
+            case None => None
+          }
+        case _ => None
+      }
     }
   }
 

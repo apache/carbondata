@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, NamedExpression, So
 import org.apache.spark.sql.catalyst.expressions.codegen.LazilyGeneratedOrdering
 import org.apache.spark.sql.catalyst.plans.physical.{Partitioning, SinglePartition}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.util.Utils
 
 // To skip the order at map task
@@ -79,9 +80,9 @@ case class CarbonTakeOrderedAndProjectExec(
 
   override def outputPartitioning: Partitioning = SinglePartition
 
-  override def simpleString: String = {
-    val orderByString = Utils.truncatedString(sortOrder, "[", ",", "]")
-    val outputString = Utils.truncatedString(output, "[", ",", "]")
+  override def simpleString(maxFields: Int): String = {
+    val orderByString = sortOrder.mkString("[", ",", "]")
+    val outputString = output.mkString("[", ",", "]")
 
     s"CarbonTakeOrderedAndProjectExec(limit=$limit, orderBy=$orderByString, " +
     s"skipMapOrder=$skipMapOrder, readFromHead=$readFromHead, output=$outputString)"
@@ -108,9 +109,8 @@ case class CarbonTakeOrderedAndProjectExec(
       }
     }
     // update with modified RDD (localTopK)
-    val shuffled = new ShuffledRowRDD(
-      ShuffleExchangeExec.prepareShuffleDependency(
-        localTopK, child.output, SinglePartition, serializer))
+    val shuffled =
+      CarbonToSparkAdapter.createShuffledRowRDD(sparkContext, localTopK, child, serializer)
     shuffled.mapPartitions { iter =>
       val topK = org.apache.spark.util.collection.Utils.takeOrdered(iter.map(_.copy()), limit)(ord)
       if (projectList != child.output) {

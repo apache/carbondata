@@ -108,13 +108,13 @@ object CarbonScalaUtil {
           if (defaultValue) {
             timeStampFormat.format(new Date())
           } else {
-            timeStampFormat.format(DateTimeUtils.stringToTime(value))
+            timeStampFormat.format(CarbonToSparkAdapter.stringToTime(value))
           }
         case DateType if dateFormat != null =>
           if (defaultValue) {
             dateFormat.format(new Date())
           } else {
-            dateFormat.format(DateTimeUtils.stringToTime(value))
+            dateFormat.format(CarbonToSparkAdapter.stringToTime(value))
           }
         case _ =>
           val convertedValue =
@@ -162,7 +162,7 @@ object CarbonScalaUtil {
             if (defaultValue) {
               timeStampFormat.format(new Date())
             } else {
-              timeStampFormat.format(DateTimeUtils.stringToTime(value))
+              timeStampFormat.format(CarbonToSparkAdapter.stringToTime(value))
             }
           val convertedValue =
             DataTypeUtil
@@ -174,7 +174,7 @@ object CarbonScalaUtil {
             if (defaultValue) {
               dateFormat.format(new Date())
             } else {
-              dateFormat.format(DateTimeUtils.stringToTime(value))
+              dateFormat.format(CarbonToSparkAdapter.stringToTime(value))
             }
           val convertedValue =
             DataTypeUtil
@@ -236,7 +236,7 @@ object CarbonScalaUtil {
     try {
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
-          DateTimeUtils.timestampToString(value.toLong * 1000)
+          CarbonToSparkAdapter.timeStampToString(value.toLong * 1000)
         case CarbonDataTypes.DATE =>
           val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
@@ -245,7 +245,7 @@ object CarbonScalaUtil {
           if (date == null) {
             null
           } else {
-            DateTimeUtils.dateToString(date.toString.toInt)
+            CarbonToSparkAdapter.dateToString(date.toString.toInt)
           }
         case _ => value
       }
@@ -281,9 +281,9 @@ object CarbonScalaUtil {
       }
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
-          DateTimeUtils.stringToTime(value).getTime.toString
+          CarbonToSparkAdapter.stringToTime(value)
         case CarbonDataTypes.DATE =>
-          DateTimeUtils.stringToTime(value).getTime.toString
+          CarbonToSparkAdapter.stringToTime(value)
         case _ => value
       }
     } catch {

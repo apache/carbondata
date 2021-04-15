@@ -28,11 +28,12 @@ import org.apache.spark.sql.execution.command.management.RefreshCarbonTableComma
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableRenameCommand, CarbonAlterTableSetCommand, CarbonAlterTableUnsetCommand}
 import org.apache.spark.sql.execution.command.table._
-import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResource, RefreshTable}
+import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResource}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
 import org.apache.spark.sql.types.{DecimalType, Metadata}
 import org.apache.spark.sql.util.SparkSQLUtil
+import org.apache.spark.sql.CarbonToSparkAdapter.RefreshTable
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException

@@ -20,7 +20,7 @@ package org.apache.carbondata.spark.rdd
 import scala.collection.mutable
 
 import org.apache.spark.TaskContext
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonToSparkAdapter, Row}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.util.CollectionAccumulator
 
@@ -61,7 +61,7 @@ object UpdateDataLoad {
 
       loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
       val executor = new DataLoadExecutor
-      TaskContext.get().addTaskCompletionListener { context =>
+      CarbonToSparkAdapter.addTaskCompletionListener {
         // fill segment metadata to accumulator
         CommonLoadUtils.fillSegmentMetaDataInfoToAccumulator(
           carbonLoadModel.getTableName,

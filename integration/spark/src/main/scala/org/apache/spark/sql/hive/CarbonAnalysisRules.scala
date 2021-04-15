@@ -19,6 +19,7 @@ package org.apache.spark.sql.hive
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
@@ -32,6 +33,7 @@ import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCom
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.{CarbonPlanHelper, DMLHelper}
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.sql.CarbonToSparkAdapter.InsertIntoStatementWrapper
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -56,8 +58,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       selectStmt: String,
       alias: Option[String],
       filter: String): LogicalPlan = {
+    val tableIdentifier = CarbonToSparkAdapter.getTableIdentifier(table).get
     CarbonPlanHelper.validateCarbonTable(
-      table.tableIdentifier,
+      tableIdentifier,
       sparkSession,
       "only CarbonData table support update operation"
     )
@@ -67,7 +70,8 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
     def prepareTargetRelation(relation: UnresolvedRelation): SubqueryAlias = {
       val projList = projectionWithTupleId(alias)
-      val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
+      val carbonTable = CarbonEnv.
+        getCarbonTable(tableIdentifier)(sparkSession)
       MVManagerInSpark.disableMVOnTable(sparkSession, carbonTable)
       val tableRelation =
         alias match {
@@ -76,7 +80,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
               sparkSession,
               alias,
               relation,
-              Some(table.tableIdentifier))
+              Some(tableIdentifier))
           case _ => relation
         }
 
@@ -84,7 +88,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         sparkSession,
         alias,
         Project(projList, tableRelation),
-        Some(table.tableIdentifier))
+        Some(tableIdentifier))
     }
 
     // get the un-analyzed logical plan
@@ -107,24 +111,26 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         }
         val tableName: Option[Seq[String]] = alias match {
           case Some(_) => Some(alias.toSeq)
-          case _ => Some(Seq(child.asInstanceOf[UnresolvedRelation].tableIdentifier.table.toString))
+          case _ => Some(Seq(CarbonToSparkAdapter.getTableIdentifier(
+            child.asInstanceOf[UnresolvedRelation]).get.table))
         }
         val list = Seq(
           UnresolvedAlias(UnresolvedStar(tableName))) ++ renamedProjectList
         Project(list, child)
       case Filter(cond, child) if !includedDestRelation =>
         includedDestRelation = true
-        Filter(cond, Join(child, targetTable, Inner, None))
-      case r@CarbonUnresolvedRelation(t) if !includedDestRelation && t != table.tableIdentifier =>
+        Filter(cond, CarbonToSparkAdapter.createJoinNode(child, targetTable, Inner, None))
+      case r@CarbonUnresolvedRelation(t) if !includedDestRelation && t != tableIdentifier =>
         includedDestRelation = true
-        Join(r, targetTable, Inner, None)
+        CarbonToSparkAdapter.createJoinNode(r, targetTable, Inner, None)
     }
     val updatedSelectPlan: LogicalPlan = if (!includedDestRelation) {
       // special case to handle self join queries
       // Eg. update tableName  SET (column1) = (column1+1)
       selectPlan transform {
         case relation: UnresolvedRelation
-          if table.tableIdentifier == relation.tableIdentifier && !addedTupleId =>
+          if tableIdentifier == CarbonToSparkAdapter.getTableIdentifier(relation).get &&
+             !addedTupleId =>
           addedTupleId = true
           targetTable
       }
@@ -135,34 +141,34 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       var transformed: Boolean = false
       // Create a dummy projection to include filter conditions
       var newPlan: LogicalPlan = null
-      if (table.tableIdentifier.database.isDefined) {
+      if (tableIdentifier.database.isDefined) {
         newPlan = parser.parsePlan("select * from  " +
-           table.tableIdentifier.database.getOrElse("") + "." +
-           table.tableIdentifier.table + " " + alias.getOrElse("") + " " + filter)
+           tableIdentifier.database.getOrElse("") + "." +
+           tableIdentifier.table + " " + alias.getOrElse("") + " " + filter)
       }
       else {
         newPlan = parser.parsePlan("select * from  " +
-           table.tableIdentifier.table + " " + alias.getOrElse("") + " " + filter)
+           tableIdentifier.table + " " + alias.getOrElse("") + " " + filter)
       }
       newPlan transform {
         case CarbonUnresolvedRelation(t)
-          if !transformed && t == table.tableIdentifier =>
+          if !transformed && t == tableIdentifier =>
           transformed = true
 
           CarbonReflectionUtils.getSubqueryAlias(
             sparkSession,
             alias,
             updatedSelectPlan,
-            Some(table.tableIdentifier))
+            Some(tableIdentifier))
       }
     } else {
       updatedSelectPlan
     }
-    val destinationTable = CarbonReflectionUtils.getUnresolvedRelation(table.tableIdentifier, alias)
+    val destinationTable = CarbonReflectionUtils.getUnresolvedRelation(tableIdentifier, alias)
 
     // In Spark 2.1 and 2.2, it uses Analyzer.execute method to transform LogicalPlan
     // but in Spark 2.3, it uses Analyzer.executeAndCheck method
-    val analyzedPlan = CarbonReflectionUtils.invokeAnalyzerExecute(
+    val analyzedPlan = CarbonToSparkAdapter.invokeAnalyzerExecute(
         analyzer, ProjectForUpdate(destinationTable, columns, Seq(finalPlan)))
     // For all commands, they execute eagerly, and will be transformed to
     // logical plan 'LocalRelation' in analyze phase(please see the code in 'Dataset.logicalPlan'),
@@ -175,8 +181,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
   def processDeleteRecordsQuery(selectStmt: String,
       alias: Option[String],
       table: UnresolvedRelation): LogicalPlan = {
+    val tableIdentifier = CarbonToSparkAdapter.getTableIdentifier(table).get
     CarbonPlanHelper.validateCarbonTable(
-      table.tableIdentifier,
+      tableIdentifier,
       sparkSession,
       "only CarbonData table support delete operation"
     )
@@ -185,10 +192,11 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
     val selectPlan = parsePlan transform {
       case relation: UnresolvedRelation
-        if table.tableIdentifier == relation.tableIdentifier && !addedTupleId =>
+        if tableIdentifier == CarbonToSparkAdapter.getTableIdentifier(relation).get &&
+           !addedTupleId =>
         addedTupleId = true
         val projList = projectionWithTupleId(alias)
-        val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
+        val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
         if (carbonTable != null) {
           if (carbonTable.isMV) {
             throw new UnsupportedOperationException(
@@ -203,22 +211,23 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
               sparkSession,
               alias,
               relation,
-              Some(table.tableIdentifier))
+              Some(tableIdentifier))
             Project(projList, subqueryAlias)
           case _ => Project(projList, relation)
         }
     }
     CarbonProjectForDeleteCommand(
       selectPlan,
-      table.tableIdentifier.database,
-      table.tableIdentifier.table,
+      tableIdentifier.database,
+      tableIdentifier.table,
       System.currentTimeMillis().toString)
   }
 
   override def apply(logicalPlan: LogicalPlan): LogicalPlan = {
 
     logicalPlan transform {
-      case UpdateTable(t, cols, sel, alias, where) => processUpdateQuery(t, cols, sel, alias, where)
+      case spark.sql.UpdateTable(t, cols, sel, alias, where) =>
+        processUpdateQuery(t, cols, sel, alias, where)
       case DeleteRecords(statement, alias, table) =>
         processDeleteRecordsQuery(
           statement,
@@ -248,13 +257,13 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
       // Wait until children are resolved.
       case p: LogicalPlan if !p.childrenResolved => p
 
-      case p@InsertIntoTable(relation: LogicalRelation, _, child, _, _)
-        if relation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        castChildOutput(p, relation, child)
+      case p: InsertIntoStatementWrapper if p.table.isInstanceOf[LogicalRelation] && p.table.
+        asInstanceOf[LogicalRelation].relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        castChildOutput(p, p.table.asInstanceOf[LogicalRelation], p.children.head)
     }
   }
 
-  def castChildOutput(p: InsertIntoTable,
+  def castChildOutput(p: InsertIntoStatementWrapper,
       relation: LogicalRelation,
       child: LogicalPlan): LogicalPlan = {
     val carbonDSRelation = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
@@ -300,7 +309,8 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
 
       val overwrite = CarbonReflectionUtils.getOverWriteOption("overwrite", p)
 
-      InsertIntoCarbonTable(carbonDSRelation, p.partition, newChild, overwrite, true)
+      InsertIntoCarbonTable(carbonDSRelation, CarbonToSparkAdapter.getPartitionsFromInsert(p),
+        newChild, overwrite, true)
     } else {
       CarbonException.analysisException(
         "Cannot insert into target table because number of columns mismatch")

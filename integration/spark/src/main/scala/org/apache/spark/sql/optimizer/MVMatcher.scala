@@ -307,7 +307,8 @@ private abstract class MVMatchPattern extends Logging {
       alias_m: AttributeMap[Alias]): Option[modular.Matchable] = {
     var matchable = true
     val matched = operator_q.transformExpressions {
-      case cnt_q@AggregateExpression(Count(exprs_q), _, false, _) =>
+      case cnt_q: AggregateExpression if cnt_q.aggregateFunction.isInstanceOf[Count] =>
+        val exprs_q = cnt_q.aggregateFunction.children
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -337,14 +338,13 @@ private abstract class MVMatchPattern extends Logging {
             }
 
           case _ => false
-        }.map { cnt => AggregateExpression(
+        }.map { cnt => cnt_q.copy(
           Sum(cnt.toAttribute),
-          cnt_q.mode,
-          isDistinct = false,
-          cnt_q.resultId)
+          isDistinct = false)
         }.getOrElse { matchable = false; cnt_q }
 
-      case sum_q@AggregateExpression(Sum(expr_q), _, false, _) =>
+      case sum_q: AggregateExpression if sum_q.aggregateFunction.isInstanceOf[Sum] =>
+        val expr_q = sum_q.aggregateFunction.children.head
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -371,14 +371,13 @@ private abstract class MVMatchPattern extends Logging {
             }
 
           case _ => false
-        }.map { sum => AggregateExpression(
+        }.map { sum => sum_q.copy(
           Sum(sum.toAttribute),
-          sum_q.mode,
-          isDistinct = false,
-          sum_q.resultId)
+          isDistinct = false)
         }.getOrElse { matchable = false; sum_q }
 
-      case max_q@AggregateExpression(Max(expr_q), _, false, _) =>
+      case max_q: AggregateExpression if max_q.aggregateFunction.isInstanceOf[Max] =>
+        val expr_q = max_q.aggregateFunction.children.head
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -405,14 +404,13 @@ private abstract class MVMatchPattern extends Logging {
             }
 
           case _ => false
-        }.map { max => AggregateExpression(
+        }.map { max => max_q.copy(
           Max(max.toAttribute),
-          max_q.mode,
-          isDistinct = false,
-          max_q.resultId)
+          isDistinct = false)
         }.getOrElse { matchable = false; max_q }
 
-      case min_q@AggregateExpression(Min(expr_q), _, false, _) =>
+      case min_q: AggregateExpression if min_q.aggregateFunction.isInstanceOf[Min] =>
+        val expr_q = min_q.aggregateFunction.children.head
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -437,15 +435,16 @@ private abstract class MVMatchPattern extends Logging {
               expr_a.semanticEquals(expr_q)
             }
           case _ => false
-        }.map { min => AggregateExpression(
+        }.map { min => min_q.copy(
           Min(min.toAttribute),
           min_q.mode,
           isDistinct = false,
-          min_q.resultId)
+          resultId = min_q.resultId)
         }.getOrElse { matchable = false; min_q }
 
 
-      case avg_q@AggregateExpression(Average(expr_q), _, false, _) =>
+      case avg_q: AggregateExpression if avg_q.aggregateFunction.isInstanceOf[Average] =>
+        val expr_q = avg_q.aggregateFunction.children.head
         val cnt_q = operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
@@ -566,11 +565,9 @@ private abstract class MVMatchPattern extends Logging {
                 expr_a.semanticEquals(expr_q)
               }
             case _ => false
-          }.map { avg => AggregateExpression(
+          }.map { avg => avg_q.copy(
             Average(avg.toAttribute),
-            avg_q.mode,
-            isDistinct = false,
-            avg_q.resultId)
+            isDistinct = false)
           }.getOrElse { matchable = false; avg_q }
         } else {
           derivative.getOrElse { matchable = false; avg_q }
@@ -1426,12 +1423,12 @@ private object SelectSelectGroupbyChildDelta
           // aggregation of same column name on join tables like sum(t1.column), sum(t2.column),
           // in that case, compare alias name with column id, as alias name will be same for
           // both output(sum(t1))
-          val projectName = output.simpleString
+          val projectName = output.toString()
           outputName = projectName.substring(0, projectName.indexOf(" AS"))
         }
         if (!distinctOList.exists(distinctOutput =>
           if (distinctOutput.isInstanceOf[Alias]) {
-            val projectName = distinctOutput.simpleString
+            val projectName = distinctOutput.toString()
             val aliasName = projectName.substring(0, projectName.indexOf(" AS"))
             aliasName.equalsIgnoreCase(outputName)
           } else {

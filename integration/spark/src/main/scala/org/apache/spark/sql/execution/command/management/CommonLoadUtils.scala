@@ -1040,7 +1040,7 @@ object CommonLoadUtils {
         opt,
         loadParams.currPartitions)
       val convertedPlan =
-        CarbonReflectionUtils.getInsertIntoCommand(
+        CarbonToSparkAdapter.getInsertIntoCommand(
           table = convertRelation,
           partition = loadParams.finalPartition,
           query = query,

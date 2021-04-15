@@ -17,17 +17,17 @@
 
 package org.apache.spark.sql.hive.execution.command
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{ResetCommand, RunnableCommand}
 
 case class CarbonResetCommand()
   extends RunnableCommand {
-  override val output = ResetCommand.output
+  override val output = Seq()
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams.clear()
-    ResetCommand.run(sparkSession)
+    CarbonToSparkAdapter.createResetCommand().run(sparkSession)
   }
 }
 
@@ -37,7 +37,7 @@ case class CarbonResetCommand()
 object MatchResetCommand {
   def unapply(plan: LogicalPlan): Option[LogicalPlan] = {
     plan match {
-      case r@ResetCommand =>
+      case _: ResetCommand =>
         Some(plan)
       case _ =>
         None
