@@ -21,20 +21,17 @@ import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
 
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.Analyzer
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression}
-import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, SubqueryAlias}
-import org.apache.spark.sql.catalyst.plans.physical.Partitioning
-import org.apache.spark.sql.execution.{RowDataSourceScanExec, SparkPlan, SparkSqlAstBuilder}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.execution.{SparkPlan, SparkSqlAstBuilder}
 import org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand
 import org.apache.spark.sql.execution.datasources.{DataSource, LogicalRelation}
 import org.apache.spark.sql.internal.HiveSerDe
-import org.apache.spark.sql.sources.{BaseRelation, Filter}
+import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -70,19 +67,6 @@ object CarbonReflectionUtils {
       relation: LogicalPlan,
       view: Option[TableIdentifier]): SubqueryAlias = {
     SubqueryAlias(alias.getOrElse(""), relation)
-  }
-
-  def getInsertIntoCommand(table: LogicalPlan,
-      partition: Map[String, Option[String]],
-      query: LogicalPlan,
-      overwrite: Boolean,
-      ifPartitionNotExists: Boolean): InsertIntoTable = {
-    InsertIntoTable(
-      table,
-      partition,
-      query,
-      overwrite,
-      ifPartitionNotExists)
   }
 
   def getLogicalRelation(relation: BaseRelation,
@@ -174,19 +158,6 @@ object CarbonReflectionUtils {
       .find(_.name.toString.equalsIgnoreCase("isFormatted"))
       .map(l => im.reflectField(l.asTerm).get).getOrElse("false").asInstanceOf[Boolean]
     isFormatted
-  }
-
-  def getRowDataSourceScanExecObj(relation: LogicalRelation,
-      output: Seq[Attribute],
-      pushedFilters: Seq[Filter],
-      handledFilters: Seq[Filter],
-      rdd: RDD[InternalRow],
-      partition: Partitioning,
-      metadata: Map[String, String]): RowDataSourceScanExec = {
-    RowDataSourceScanExec(output, output.map(output.indexOf),
-      pushedFilters.toSet, handledFilters.toSet, rdd,
-      relation.relation,
-      relation.catalogTable.map(_.identifier))
   }
 
   def invokeWriteAndReadMethod(dataSourceObj: DataSource,
@@ -282,8 +253,4 @@ object CarbonReflectionUtils {
     nameField.set(caseObj, objToSet)
   }
 
-  def invokeAnalyzerExecute(analyzer: Analyzer,
-      plan: LogicalPlan): LogicalPlan = {
-    analyzer.executeAndCheck(plan)
-  }
 }

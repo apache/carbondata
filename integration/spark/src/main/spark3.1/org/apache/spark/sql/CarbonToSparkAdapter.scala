@@ -27,37 +27,41 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
-import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, SessionCatalog}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
-import org.apache.spark.sql.catalyst.expressions.codegen.ExprCode
-import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide, Optimizer}
-import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Join, LogicalPlan, OneRowRelation, Statistics, SubqueryAlias}
-import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.{InternalRow, QueryPlanningTracker, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener, SessionCatalog}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.codegen._
+import org.apache.spark.sql.catalyst.expressions.codegen.Block._
+import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide, Optimizer}
 import org.apache.spark.sql.catalyst.plans.{logical, JoinType, QueryPlan}
-import org.apache.spark.sql.execution.command.{ExplainCommand, ResetCommand}
-import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile, RefreshTable}
+import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, InsertIntoStatement, Join, JoinHint, LogicalPlan, OneRowRelation, Statistics, SubqueryAlias}
+import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
+import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.util.{DateTimeUtils, TimestampFormatter}
 import org.apache.spark.sql.execution.{ExplainMode, QueryExecution, ShuffledRowRDD, SimpleMode, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.command.{ExplainCommand, RefreshTableCommand, ResetCommand}
+import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
+import org.apache.spark.sql.execution.metric.SQLShuffleWriteMetricsReporter
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
-import org.apache.spark.sql.types.{DataType, Metadata, StringType}
-
+import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types.{DataType, Metadata}
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
-import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
 
 object CarbonToSparkAdapter {
 
   def addSparkSessionListener(sparkSession: SparkSession): Unit = {
-    SparkSqlAdapter.addSparkSessionListener(sparkSession)
+    sparkSession.sparkContext.addSparkListener(new SparkListener {
+      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+        CarbonEnv.carbonEnvMap.remove(sparkSession)
+        ThreadLocalSessionInfo.unsetAll()
+      }
+    })
   }
 
   def addSparkListener(sparkContext: SparkContext): Unit = {
@@ -66,6 +70,36 @@ object CarbonToSparkAdapter {
         SparkSession.setDefaultSession(null)
       }
     })
+  }
+
+  def createAttributeReference(
+      name: String,
+      dataType: DataType,
+      nullable: Boolean,
+      metadata: Metadata,
+      exprId: ExprId,
+      qualifier: Option[String],
+      attrRef : NamedExpression = null): AttributeReference = {
+    val qf = if (qualifier.nonEmpty) Seq(qualifier.get) else Seq.empty
+    AttributeReference(
+      name,
+      dataType,
+      nullable,
+      metadata)(exprId, qf)
+  }
+
+  def createAttributeReference(
+      name: String,
+      dataType: DataType,
+      nullable: Boolean,
+      metadata: Metadata,
+      exprId: ExprId,
+      qualifier: Seq[String]): AttributeReference = {
+    AttributeReference(
+      name,
+      dataType,
+      nullable,
+      metadata)(exprId, qualifier)
   }
 
   def lowerCaseAttribute(expression: Expression): Expression = expression.transform {
@@ -79,73 +113,43 @@ object CarbonToSparkAdapter {
         attr.qualifier)
   }
 
-  def createAttributeReference(name: String, dataType: DataType, nullable: Boolean,
-      metadata: Metadata, exprId: ExprId, qualifier: Option[String],
-      attrRef : NamedExpression = null): AttributeReference = {
-    AttributeReference(
-      name,
-      dataType,
-      nullable,
-      metadata)(exprId, qualifier)
-  }
-
   def createAttributeReference(attr: AttributeReference,
       attrName: String,
       newSubsume: String): AttributeReference = {
     AttributeReference(attrName, attr.dataType)(
       exprId = attr.exprId,
-      qualifier = Some(newSubsume))
-  }
-
-  def getTheLastQualifier(attribute: Attribute): String = {
-    attribute.qualifier.head
-  }
-
-  def getOutput(subQueryAlias: SubqueryAlias): Seq[Attribute] = {
-    subQueryAlias.output
+      qualifier = newSubsume.split("\n").map(_.trim))
   }
 
   def createScalaUDF(s: ScalaUDF, reference: AttributeReference): ScalaUDF = {
-    ScalaUDF(s.function, s.dataType, Seq(reference), s.inputTypes)
+    s.copy(children = Seq(reference))
   }
 
-  def createRangeListScalaUDF(toRangeListUDF: ToRangeListAsStringUDF,
-      dataType: StringType.type,
-      children: Seq[Expression],
-      inputTypes: Seq[DataType]): ScalaUDF = {
-    ScalaUDF(toRangeListUDF,
-      dataType,
-      children,
-      inputTypes,
-      Some("ToRangeListAsString"))
+  def createExprCode(code: String, isNull: String, value: String, dataType: DataType): ExprCode = {
+    ExprCode(
+      code"$code",
+      JavaCode.isNullVariable(isNull),
+      JavaCode.variable(value, dataType))
   }
 
-  def getTransformedPolygonJoinUdf(scalaUdf: ScalaUDF,
-      udfChildren: Seq[Expression],
-      types: Seq[DataType],
-      polygonJoinUdf: InPolygonJoinUDF): ScalaUDF = {
-    ScalaUDF(polygonJoinUdf,
-      scalaUdf.dataType,
-      udfChildren,
-      types,
-      scalaUdf.udfName,
-      scalaUdf.nullable,
-      scalaUdf.udfDeterministic)
-  }
-
-  def createExprCode(code: String, isNull: String, value: String, dataType: DataType = null
-  ): ExprCode = {
-    ExprCode(code, isNull, value)
-  }
-
-  def createAliasRef(child: Expression,
+  def createAliasRef(
+      child: Expression,
       name: String,
       exprId: ExprId = NamedExpression.newExprId,
-      qualifier: Option[String] = None,
+      qualifier: Seq[String] = Seq.empty,
       explicitMetadata: Option[Metadata] = None,
-      namedExpr : Option[NamedExpression] = None ) : Alias = {
-
+      namedExpr: Option[NamedExpression] = None) : Alias = {
     Alias(child, name)(exprId, qualifier, explicitMetadata)
+  }
+
+  def createAliasRef(
+      child: Expression,
+      name: String,
+      exprId: ExprId,
+      qualifier: Option[String]) : Alias = {
+    Alias(child, name)(exprId,
+      if (qualifier.isEmpty) Seq.empty else Seq(qualifier.get),
+      None)
   }
 
   // Create the aliases using two plan outputs mappings.
@@ -164,8 +168,13 @@ object CarbonToSparkAdapter {
     }
   }
 
-  def getExplainCommandObj() : ExplainCommand = {
-    ExplainCommand(OneRowRelation())
+  def getTheLastQualifier(attribute: Attribute): String = {
+    attribute.qualifier.reverse.head
+  }
+
+  def getExplainCommandObj(logicalPlan: LogicalPlan = OneRowRelation(),
+      mode: Option[String]) : ExplainCommand = {
+    ExplainCommand(logicalPlan, ExplainMode.fromString(mode.getOrElse(SimpleMode.name)))
   }
 
   /**
@@ -200,28 +209,24 @@ object CarbonToSparkAdapter {
     storageFormat.copy(properties = map, locationUri = Some(new URI(tablePath)))
   }
 
-  def getHiveExternalCatalog(sparkSession: SparkSession): HiveExternalCatalog = {
-    sparkSession.sessionState.catalog.externalCatalog.asInstanceOf[HiveExternalCatalog]
+  def getOutput(subQueryAlias: SubqueryAlias): Seq[Attribute] = {
+    val newAlias = Seq(subQueryAlias.identifier.name)
+    subQueryAlias.child.output.map(_.withQualifier(newAlias))
   }
 
-  def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]) = {
-    FilePartition(index, files.toArray.toSeq)
+  def getHiveExternalCatalog(sparkSession: SparkSession): HiveExternalCatalog = {
+    sparkSession.sessionState.catalog.externalCatalog
+      .asInstanceOf[ExternalCatalogWithListener]
+      .unwrapped
+      .asInstanceOf[HiveExternalCatalog]
+  }
+
+  def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]): FilePartition = {
+    FilePartition(index, files.toArray)
   }
 
   def stringToTimestamp(timestamp: String): Option[Long] = {
-    DateTimeUtils.stringToTimestamp(UTF8String.fromString(timestamp))
-  }
-
-  def getTableIdentifier(u: UnresolvedRelation): Some[TableIdentifier] = {
-    Some(u.tableIdentifier)
-  }
-
-  def dateToString(date: Int): String = {
-    DateTimeUtils.dateToString(date.toString.toInt)
-  }
-
-  def timeStampToString(timeStamp: Long): String = {
-    DateTimeUtils.timestampToString(value.toLong * 1000)
+    DateTimeUtils.stringToTimestamp(UTF8String.fromString(timestamp), ZoneId.systemDefault())
   }
 
   def stringToTime(value: String): String = {
@@ -229,48 +234,63 @@ object CarbonToSparkAdapter {
       ZoneId.systemDefault()).get).getTime.toString
   }
 
-  def getProcessingTime: String => ProcessingTime = {
-    ProcessingTime
+  def timeStampToString(timeStamp: Long): String = {
+    TimestampFormatter.getFractionFormatter(ZoneId.systemDefault()).format(timeStamp)
+  }
+
+  def dateToString(date: Int): String = {
+    DateTimeUtils.daysToMicros(date, ZoneId.systemDefault()).toString
+  }
+
+  def getProcessingTime: String => Trigger = {
+    Trigger.ProcessingTime
   }
 
   def addTaskCompletionListener[U](f: => U) {
-    TaskContext.get().addTaskCompletionListener { context =>
+    TaskContext.get().addTaskCompletionListener[Unit] { context =>
       f
     }
   }
 
+  def getTableIdentifier(u: UnresolvedRelation): Some[TableIdentifier] = {
+    val tableName = u.tableName.split(".")
+    Some(TableIdentifier(tableName(1), Option(tableName(0))))
+  }
+
+  // TODO: check if this is correct
+  def getTableIdentifier(parts: Seq[String]): TableIdentifier = {
+    TableIdentifier(parts(1), Option(parts.head))
+  }
+
   def createShuffledRowRDD(sparkContext: SparkContext, localTopK: RDD[InternalRow],
       child: SparkPlan, serializer: Serializer): ShuffledRowRDD = {
+    val writeMetrics = SQLShuffleWriteMetricsReporter.createShuffleWriteMetrics(sparkContext)
     new ShuffledRowRDD(
       ShuffleExchangeExec.prepareShuffleDependency(
-        localTopK, child.output, SinglePartition, serializer))
+        localTopK, child.output, SinglePartition, serializer, writeMetrics), writeMetrics)
   }
 
   def getInsertIntoCommand(table: LogicalPlan,
       partition: Map[String, Option[String]],
       query: LogicalPlan,
       overwrite: Boolean,
-      ifPartitionNotExists: Boolean): InsertIntoTable = {
-    InsertIntoTable(
+      ifPartitionNotExists: Boolean): InsertIntoStatement = {
+    InsertIntoStatement(
       table,
       partition,
+      Nil,
       query,
       overwrite,
       ifPartitionNotExists)
   }
 
-  def getExplainCommandObj(logicalPlan: LogicalPlan = OneRowRelation(),
-      mode: Option[String]) : ExplainCommand = {
-    ExplainCommand(logicalPlan, mode.isDefined)
-  }
-
   def invokeAnalyzerExecute(analyzer: Analyzer,
       plan: LogicalPlan): LogicalPlan = {
-    analyzer.executeAndCheck(plan)
+    analyzer.executeAndCheck(plan, QueryPlanningTracker.get.getOrElse(new QueryPlanningTracker))
   }
 
-  def normalizeExpressions(r: NamedExpression, attrs: AttributeSeq): NamedExpression = {
-    QueryPlan.normalizeExprId(r, attrs)
+  def normalizeExpressions[T](r: T, attrs: AttributeSeq): T = {
+    CarbonToSparkAdapter.normalizeExpressions(r, attrs)
   }
 
   def getBuildRight: BuildSide = {
@@ -281,22 +301,23 @@ object CarbonToSparkAdapter {
     BuildLeft
   }
 
-  type CarbonBuildSide = BuildSide
-
   def withNewExecutionId[T](sparkSession: SparkSession, queryExecution: QueryExecution): T => T = {
-    SQLExecution.withNewExecutionId(sparkSession, queryExecution)(_)
-  }
-
-  def getTableIdentifier(parts: TableIdentifier): TableIdentifier = {
-    parts
+    SQLExecution.withNewExecutionId(queryExecution, None)(_)
   }
 
   def createJoinNode(child: LogicalPlan,
       targetTable: LogicalPlan,
       joinType: JoinType,
       condition: Option[Expression]): Join = {
-    Join(child, targetTable, joinType, condition)
+    Join(child, targetTable, joinType, condition, JoinHint.NONE)
   }
+
+  def getPartitionsFromInsert(x: InsertIntoStatementWrapper): Map[String, Option[String]] = {
+    x.partitionSpec
+  }
+
+  type CarbonBuildSideType = BuildSide
+  type InsertIntoStatementWrapper = InsertIntoStatement
 
   def getStatisticsObj(outputList: Seq[NamedExpression],
       plan: LogicalPlan, stats: Statistics,
@@ -313,23 +334,28 @@ object CarbonToSparkAdapter {
       attributeStats = AttributeMap(
         attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
     }
-    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, stats.hints)
+    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats)
   }
 
   def createResetCommand(): ResetCommand = {
-    ResetCommand()
+    ResetCommand(None)
   }
 
-  def createRefreshTableCommand(tableIdentifier: TableIdentifier): RefreshTable = {
-    RefreshTable(tableIdentifier)
+  def createRefreshTableCommand(tableIdentifier: TableIdentifier): RefreshTableCommand = {
+    RefreshTableCommand(tableIdentifier)
   }
 
-  type RefreshTable = spark.sql.execution.datasources.RefreshTable
+  type RefreshTable = RefreshTableCommand
 
 }
 
+case class CarbonBuildSide(buildSide: BuildSide) {
+  def isRight: Boolean = buildSide.isInstanceOf[BuildRight.type]
+  def isLeft: Boolean = buildSide.isInstanceOf[BuildLeft.type]
+}
 
-class CarbonOptimizer(session: SparkSession) extends Optimizer(session.sessionState.catalog) {
+class CarbonOptimizer(session: SparkSession) extends
+  Optimizer(session.sessionState.catalogManager) {
 
   private lazy val mvRules = Seq(Batch("Materialized View Optimizers", Once,
     Seq(new MVRewriteRule(session)): _*))
@@ -340,7 +366,7 @@ class CarbonOptimizer(session: SparkSession) extends Optimizer(session.sessionSt
   private lazy val secondaryIndexRule = Batch("SI Optimizers", Once,
     Seq(new CarbonSITransformationRule(session)): _*)
 
-  override def batches: Seq[Batch] = {
+  override def defaultBatches: Seq[Batch] = {
     mvRules ++ convertedBatch() :+ iudRule :+ secondaryIndexRule
   }
 

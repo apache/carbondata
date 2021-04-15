@@ -26,13 +26,14 @@ import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, Ca
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAlias
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Cast, Descending, Expression, IntegerLiteral, Literal, NamedExpression, ScalaUDF, SortOrder}
+import org.apache.spark.sql.catalyst.optimizer.BuildRight
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
 import org.apache.spark.sql.catalyst.plans.{Inner, JoinType, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
 import org.apache.spark.sql.execution.{CarbonTakeOrderedAndProjectExec, FilterExec, PlanLater, ProjectExec, SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command.{DataWritingCommandExec, ExecutedCommandExec, LoadDataCommand}
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, LogicalRelation}
-import org.apache.spark.sql.execution.joins.{BroadCastPolygonFilterPushJoin, BuildLeft, BuildRight}
+import org.apache.spark.sql.execution.joins.BroadCastPolygonFilterPushJoin
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper.isCarbonTable
 import org.apache.spark.sql.hive.MatchLogicalRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
@@ -65,7 +66,7 @@ object DMLStrategy extends SparkStrategy {
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
         CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
-      case Join(left, right, joinType, condition)
+      case Join(left, right, joinType, condition, _)
         if condition.isDefined && condition.get.isInstanceOf[ScalaUDF] &&
            isPolygonJoinUdfFilter(condition) =>
         if (joinType != Inner) {
@@ -124,7 +125,7 @@ object DMLStrategy extends SparkStrategy {
           val sparkSession = SparkSQLUtil.getSparkSession
           lazy val analyzer = sparkSession.sessionState.analyzer
           lazy val optimizer = sparkSession.sessionState.optimizer
-          val analyzedPlan = CarbonReflectionUtils.invokeAnalyzerExecute(
+          val analyzedPlan = CarbonToSparkAdapter.invokeAnalyzerExecute(
             analyzer, rightSide)
           val polygonTablePlan = optimizer.execute(analyzedPlan)
           // transform join condition by replacing polygon column with ToRangeListAsString udf
@@ -163,8 +164,7 @@ object DMLStrategy extends SparkStrategy {
           )
           condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
         }
-      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
-      left, right)
+      case CarbonExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, right)
         if isCarbonPlan(left) && CarbonIndexUtil.checkIsIndexTable(right) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
         val carbon = CarbonSourceStrategy.apply(left).head
@@ -195,12 +195,12 @@ object DMLStrategy extends SparkStrategy {
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           Inner,
-          BuildRight,
+          CarbonToSparkAdapter.getBuildRight,
           carbonChild,
           planLater(right),
           condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
-      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
+      case CarbonExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
       right)
         if isCarbonPlan(right) && CarbonIndexUtil.checkIsIndexTable(left) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
@@ -210,12 +210,12 @@ object DMLStrategy extends SparkStrategy {
             leftKeys: Seq[Expression],
             rightKeys: Seq[Expression],
             Inner,
-            BuildLeft,
+            CarbonToSparkAdapter.getBuildLeft,
             planLater(left),
             carbon,
             condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
-      case ExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition,
+      case CarbonExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition,
       left, right)
         if isLeftSemiExistPushDownEnabled &&
           isAllCarbonPlan(left) && isAllCarbonPlan(right) =>
@@ -224,7 +224,7 @@ object DMLStrategy extends SparkStrategy {
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           LeftSemi,
-          BuildRight,
+          CarbonToSparkAdapter.getBuildRight,
           planLater(left),
           planLater(right),
           condition)
@@ -238,6 +238,21 @@ object DMLStrategy extends SparkStrategy {
   private def isPolygonJoinUdfFilter(condition: Option[Expression]) = {
     condition.get.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonJoinUDF] ||
     condition.get.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonJoinRangeListUDF]
+  }
+
+  object CarbonExtractEquiJoinKeys {
+    def unapply(plan: LogicalPlan): Option[(JoinType, Seq[Expression], Seq[Expression],
+      Option[Expression], LogicalPlan, LogicalPlan)] = {
+      plan match {
+        case join: Join =>
+          ExtractEquiJoinKeys.unapply(join) match {
+              // ignoring hints as carbon is not using them right now
+            case Some(x) => Some(x._1, x._2, x._3, x._4, x._5, x._6)
+            case None => None
+          }
+        case _ => None
+      }
+    }
   }
 
   /**

@@ -26,7 +26,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
 
 class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSession: SparkSession)
-  extends SparkSqlAstBuilder(conf) with SqlAstBuilderHelper {
+  extends SparkSqlAstBuilder with SqlAstBuilderHelper {
 
   val helper = new CarbonHelperSqlAstBuilder(conf, parser, sparkSession)
 

@@ -65,7 +65,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val ESCAPECHAR = carbonKeyWord("ESCAPECHAR")
   protected val EXCLUDE = carbonKeyWord("EXCLUDE")
   protected val EXPLAIN = carbonKeyWord("EXPLAIN")
-  protected val EXTENDED = carbonKeyWord("EXTENDED")
+  protected val MODE = carbonKeyWord("EXTENDED") |
+                       carbonKeyWord("CODEGEN") |
+                       carbonKeyWord("COST") |
+                       carbonKeyWord("FORMATTED")
   protected val FORMATTED = carbonKeyWord("FORMATTED")
   protected val FACT = carbonKeyWord("FACT")
   protected val FIELDS = carbonKeyWord("FIELDS")

@@ -54,7 +54,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
-    setAuditInfo(Map("plan" -> plan.simpleString))
+    setAuditInfo(Map("plan" -> plan.prettyJson))
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }

@@ -19,7 +19,9 @@ package org.apache.spark.util
 
 import scala.collection.JavaConverters.{mapAsScalaMapConverter, _}
 
+import org.apache.hadoop.mapred.JobConf
 import org.apache.spark.{SPARK_VERSION, TaskContext}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.{Column, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
@@ -82,6 +84,10 @@ object SparkUtil {
     if (!SparkUtil.isSparkVersionXAndAbove("2.3")) {
       sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
     }
+  }
+
+  def addCredentials(conf: JobConf) {
+    SparkHadoopUtil.get.addCredentials(conf)
   }
 
   def isPrimitiveType(datatype: DataType): Boolean = {

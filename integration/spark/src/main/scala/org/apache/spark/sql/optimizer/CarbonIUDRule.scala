@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.optimizer
 
-import org.apache.spark.sql.ProjectForUpdate
+import org.apache.spark.sql.{CarbonToSparkAdapter, ProjectForUpdate}
 import org.apache.spark.sql.catalyst.expressions.{NamedExpression, PredicateHelper}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -36,6 +36,7 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
   private def processPlan(plan: LogicalPlan): LogicalPlan = {
     plan transform {
       case ProjectForUpdate(table, cols, Seq(updatePlan)) =>
+        val tableIdentifier = CarbonToSparkAdapter.getTableIdentifier(table).get
         var isTransformed = false
         val newPlan = updatePlan transform {
           case Project(pList, child) if !isTransformed =>
@@ -65,7 +66,7 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
             Project(dest, child)
         }
         CarbonProjectForUpdateCommand(
-          newPlan, table.tableIdentifier.database, table.tableIdentifier.table, cols)
+          newPlan, tableIdentifier.database, tableIdentifier.table, cols)
     }
   }
 }

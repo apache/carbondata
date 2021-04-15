@@ -36,6 +36,7 @@ import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnC
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDescribeColumnCommand, CarbonDescribeShortCommand}
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
+import org.apache.spark.sql.execution.ExplainMode
 import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
@@ -297,7 +298,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           }
           if (!isJoinWithMainTable) {
             // Should go as value update, not as join update. So execute the sub query.
-            val analyzedPlan = CarbonReflectionUtils.invokeAnalyzerExecute(session
+            val analyzedPlan = CarbonToSparkAdapter.invokeAnalyzerExecute(session
               .sessionState
               .analyzer, subQueryUnresolvedLogicalPlan)
             val subQueryLogicalPlan = session.sessionState.optimizer.execute(analyzedPlan)
@@ -353,7 +354,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           case None => UpdateTable(relation,
             columns,
             selectStmt,
-            Some(tab._1.tableIdentifier.table),
+            Some(CarbonToSparkAdapter.getTableIdentifier(tab._1).table),
             where)
         }
         rel
@@ -544,13 +545,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val explainPlan: Parser[LogicalPlan] =
-    (EXPLAIN ~> opt(EXTENDED)) ~ start ^^ {
-      case isExtended ~ logicalPlan =>
-        logicalPlan match {
-          case _: CarbonCreateTableCommand =>
-            ExplainCommand(logicalPlan, extended = isExtended.isDefined)
-          case _ => CarbonToSparkAdapter.getExplainCommandObj()
-        }
+    (EXPLAIN ~> opt(MODE)) ~ start ^^ {
+      case mode ~ logicalPlan =>
+        CarbonToSparkAdapter.getExplainCommandObj(logicalPlan, mode)
     }
 
   /**

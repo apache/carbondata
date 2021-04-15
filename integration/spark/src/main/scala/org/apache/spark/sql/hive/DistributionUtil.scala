@@ -273,7 +273,7 @@ object DistributionUtil {
       case b: CoarseGrainedSchedulerBackend =>
         if (requiredExecutors > 0) {
           LOGGER.info(s"Requesting total executors: $requiredExecutors")
-          b.requestTotalExecutors(requiredExecutors, localityAwareTasks, hostToLocalTaskCount)
+          sc.requestTotalExecutors(requiredExecutors, localityAwareTasks, hostToLocalTaskCount)
         }
         true
       case _ =>

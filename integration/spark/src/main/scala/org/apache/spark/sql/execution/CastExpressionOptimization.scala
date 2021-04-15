@@ -18,20 +18,20 @@
 package org.apache.spark.sql.execution
 
 import java.text.{ParseException, SimpleDateFormat}
+
 import java.util
 import java.util.{Locale, TimeZone}
 
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertToJavaList
 import org.apache.spark.sql.catalyst.expressions.{Attribute, EmptyRow, EqualTo, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.optimizer.CarbonFilters.{transformExpression, translateColumn, translateLiteral}
 import org.apache.spark.sql.types.{ArrayType, DateType, DoubleType, IntegerType, ShortType, StringType, TimestampType}
 import org.apache.spark.sql.types.{DataType => SparkDataType}
-import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.scan.expression.Expression
@@ -44,7 +44,7 @@ object CastExpressionOptimization {
   def typeCastStringToLong(v: Any, dataType: SparkDataType): Any = {
     if (dataType == TimestampType || dataType == DateType) {
       val value = if (dataType == TimestampType) {
-        DateTimeUtils.stringToTimestamp(UTF8String.fromString(v.toString))
+        CarbonToSparkAdapter.stringToTimestamp(v.toString)
       } else {
         None
       }
