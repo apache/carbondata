@@ -93,29 +93,30 @@ object ExtractSelectModule extends PredicateHelper {
           flags.setFlag(SORT)
         }, Seq(Seq(order)) ++ fspecs, wspecs)
 
-      case Join(left, right, joinType, condition) =>
+      case join: Join =>
         val (loutputs, linputs, lpredicates, ljoinedges, lchildren, _, laliases, lflags, lfspecs,
-        lwspecs) = collectProjectsFiltersJoinsAndSort(left)
+        lwspecs) = collectProjectsFiltersJoinsAndSort(join.left)
         val (routputs, rinputs, rpredicates, rjoinedges, rchildren, _, raliases, rflags, rfspecs,
-        rwspecs) = collectProjectsFiltersJoinsAndSort(right)
-        val (lcondition, rcondition, ccondition) = split(condition, lchildren, rchildren)
-        val joinEdge = collectJoinEdge(ccondition, lchildren, rchildren, joinType)
+        rwspecs) = collectProjectsFiltersJoinsAndSort(join.right)
+        val (lcondition, rcondition, ccondition) = split(join.condition, lchildren, rchildren)
+        val joinEdge = collectJoinEdge(ccondition, lchildren, rchildren, join.joinType)
         val adjustedJoinEdges = rjoinedges
           .map(e => JoinEdge(e.left + lchildren.size, e.right + lchildren.size, e.joinType))
         val output: Seq[Attribute] = {
-          joinType match {
+          join.joinType match {
             case LeftSemi =>
-              left.output
+              join.left.output
             case LeftOuter =>
-              left.output ++ right.output.map(_.withNullability(true))
+              join.left.output ++ join.right.output.map(_.withNullability(true))
             case RightOuter =>
-              left.output.map(_.withNullability(true)) ++ right.output
+              join.left.output.map(_.withNullability(true)) ++ join.right.output
             case FullOuter =>
-              left.output.map(_.withNullability(true)) ++ right.output.map(_.withNullability(true))
+              join.left.output.map(_.withNullability(true)) ++
+              join.right.output.map(_.withNullability(true))
             case LeftAnti =>
-              left.output
+              join.left.output
             case _ =>
-              left.output ++ right.output
+              join.left.output ++ join.right.output
           }
         }
         if (lfspecs.isEmpty && rfspecs.isEmpty && lflags == NoFlags && rflags == NoFlags &&
@@ -128,8 +129,8 @@ object ExtractSelectModule extends PredicateHelper {
             lchildren ++ rchildren, true, laliases ++ raliases, NoFlags, Seq.empty, Seq.empty)
         } else {
           throw new UnsupportedOperationException(
-            s"unsupported join: \n left child ${ left } " +
-            s"\n right child ${ right }")
+            s"unsupported join: \n left child ${ join.left } " +
+            s"\n right child ${ join.right }")
         }
 
       // when select * is executed with limit, ColumnPruning rule will remove the project node from
@@ -329,7 +330,7 @@ object ExtractUnionModule extends PredicateHelper {
 
   private def collectUnionChildren(plan: LogicalPlan): List[LogicalPlan] = {
     plan match {
-      case Union(children) => children.toList match {
+      case union: Union => union.children.toList match {
         case head :: Nil => collectUnionChildren(head)
         case head :: tail => collectUnionChildren(head) ++ collectUnionChildren(Union(tail))
         case Nil => Nil

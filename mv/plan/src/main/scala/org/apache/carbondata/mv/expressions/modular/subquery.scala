@@ -54,7 +54,7 @@ abstract class ModularSubquery(
     // Normalize the outer references in the subquery plan.
     val normalizedPlan = plan.transformAllExpressions {
       case OuterReference(r) => OuterReference(
-        QueryPlan.normalizeExprId(r, attrs))
+        QueryPlan.normalizeExpressions(r, attrs))
     }
     withNewPlan(normalizedPlan).canonicalized.asInstanceOf[ModularSubquery]
   }

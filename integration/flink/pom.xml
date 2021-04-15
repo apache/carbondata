@@ -235,9 +235,9 @@
             </dependencies>
         </profile>
       <profile>
-        <id>spark-3.0</id>
+        <id>spark-3.1</id>
         <properties>
-          <spark.binary.version>3.0</spark.binary.version>
+          <spark.binary.version>3.1</spark.binary.version>
         </properties>
         <dependencies>
           <dependency>

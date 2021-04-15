@@ -27,28 +27,28 @@ import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
 object ExpressionHelper {
 
   def createReference(
-     name: String,
-     dataType: DataType,
-     nullable: Boolean,
-     metadata: Metadata,
-     exprId: ExprId,
-     qualifier: Option[String],
-     attrRef : NamedExpression = null): AttributeReference = {
-    AttributeReference(name, dataType, nullable, metadata)(exprId, qualifier)
+      name: String,
+      dataType: DataType,
+      nullable: Boolean,
+      metadata: Metadata,
+      exprId: ExprId,
+      qualifier: Option[String],
+      attrRef: NamedExpression = null): AttributeReference = {
+    val qf = if (qualifier.nonEmpty) Seq(qualifier.get) else Seq.empty
+    AttributeReference(name, dataType, nullable, metadata)(exprId, qf)
   }
 
   def createAlias(
-       child: Expression,
-       name: String,
-       exprId: ExprId = NamedExpression.newExprId,
-       qualifier: Option[String] = None,
-       explicitMetadata: Option[Metadata] = None,
-       namedExpr : Option[NamedExpression] = None ) : Alias = {
-    Alias(child, name)(exprId, qualifier, explicitMetadata)
+      child: Expression,
+      name: String,
+      exprId: ExprId,
+      qualifier: Option[String]): Alias = {
+    val qf = if (qualifier.nonEmpty) Seq(qualifier.get) else Seq.empty
+    Alias(child, name)(exprId, qf, None)
   }
 
   def getTheLastQualifier(reference: AttributeReference): String = {
-    reference.qualifier.head
+    reference.qualifier.reverse.head
   }
 
   def getStatisticsObj(outputList: Seq[NamedExpression],
@@ -66,13 +66,11 @@ object ExpressionHelper {
       attributeStats = AttributeMap(
         attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
     }
-    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, stats.hints)
+    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats)
   }
 
   def getOptimizedPlan(s: SubqueryExpression): LogicalPlan = {
-    val Subquery(newPlan) = BirdcageOptimizer.execute(s.plan)
+    val Subquery(newPlan, _) = BirdcageOptimizer.execute(Subquery.fromExpression(s))
     newPlan
   }
-
-
 }

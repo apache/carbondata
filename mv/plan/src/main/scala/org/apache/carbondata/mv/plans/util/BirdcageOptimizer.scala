@@ -77,14 +77,14 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         ReorderJoin,
         EliminateOuterJoin,
         PushPredicateThroughJoin,
-        PushDownPredicate,
+        PushDownPredicates,
         ColumnPruning,
         // Operator combine
         CollapseRepartition,
         CollapseProject,
         CollapseWindow,
         CombineFilters,
-        CombineLimits,
+        EliminateLimits,
         CombineUnions,
         // Constant folding and strength reduction
         NullPropagation,
@@ -103,8 +103,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         SimplifyCaseConversionExpressions,
         RewriteCorrelatedScalarSubquery,
         EliminateSerialization,
-        RemoveRedundantAliases,
-        RemoveRedundantProject) ++ extendedOperatorOptimizationRules: _*) ::
+        RemoveRedundantAliases) ++ extendedOperatorOptimizationRules: _*) ::
     Batch(
       "Check Cartesian Products", Once,
       CheckCartesianProducts) ::
@@ -125,7 +124,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     def apply(plan: LogicalPlan): LogicalPlan = {
       plan transformAllExpressions {
         case s: SubqueryExpression =>
-          val Subquery(newPlan) = BirdcageOptimizer.this.execute(Subquery(s.plan))
+          val newPlan = BirdcageOptimizer.execute(Subquery.fromExpression(s))
           s.withNewPlan(newPlan)
       }
     }
