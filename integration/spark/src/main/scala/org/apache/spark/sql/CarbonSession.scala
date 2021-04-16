@@ -1,51 +1,51 @@
-///*
-// * Licensed to the Apache Software Foundation (ASF) under one or more
-// * contributor license agreements.  See the NOTICE file distributed with
-// * this work for additional information regarding copyright ownership.
-// * The ASF licenses this file to You under the Apache License, Version 2.0
-// * (the "License"); you may not use this file except in compliance with
-// * the License.  You may obtain a copy of the License at
-// *
-// *    http://www.apache.org/licenses/LICENSE-2.0
-// *
-// * Unless required by applicable law or agreed to in writing, software
-// * distributed under the License is distributed on an "AS IS" BASIS,
-// * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// * See the License for the specific language governing permissions and
-// * limitations under the License.
-// */
-//package org.apache.spark.sql
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// package org.apache.spark.sql
 //
-//import java.io.File
-//import java.util.concurrent.atomic.AtomicLong
+// import java.io.File
+// import java.util.concurrent.atomic.AtomicLong
 //
-//import org.apache.commons.lang.StringUtils
-//import org.apache.hadoop.conf.Configuration
-//import org.apache.spark.{SparkConf, SparkContext}
-//import org.apache.spark.sql.SparkSession.Builder
-//import org.apache.spark.sql.catalyst.encoders.RowEncoder
-//import org.apache.spark.sql.catalyst.plans.logical._
-//import org.apache.spark.sql.execution.QueryExecution
-//import org.apache.spark.sql.execution.command.mutation.merge.MergeDataSetBuilder
-//import org.apache.spark.sql.internal.{SessionState, SharedState, StaticSQLConf}
-//import org.apache.spark.sql.profiler.{Profiler, SQLStart}
-//import org.apache.spark.util.{CarbonReflectionUtils, Utils}
+// import org.apache.commons.lang.StringUtils
+// import org.apache.hadoop.conf.Configuration
+// import org.apache.spark.{SparkConf, SparkContext}
+// import org.apache.spark.sql.SparkSession.Builder
+// import org.apache.spark.sql.catalyst.encoders.RowEncoder
+// import org.apache.spark.sql.catalyst.plans.logical._
+// import org.apache.spark.sql.execution.QueryExecution
+// import org.apache.spark.sql.execution.command.mutation.merge.MergeDataSetBuilder
+// import org.apache.spark.sql.internal.{SessionState, SharedState, StaticSQLConf}
+// import org.apache.spark.sql.profiler.{Profiler, SQLStart}
+// import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 //
-//import org.apache.carbondata.common.annotations.InterfaceAudience
-//import org.apache.carbondata.core.constants.CarbonCommonConstants
-//import org.apache.carbondata.core.util.CarbonProperties
-//import org.apache.carbondata.streaming.CarbonStreamingQueryListener
+// import org.apache.carbondata.common.annotations.InterfaceAudience
+// import org.apache.carbondata.core.constants.CarbonCommonConstants
+// import org.apache.carbondata.core.util.CarbonProperties
+// import org.apache.carbondata.streaming.CarbonStreamingQueryListener
 //
-///**
+// / **
 // * Session implementation for {org.apache.spark.sql.SparkSession}
 // * Implemented this class only to use our own SQL DDL commands.
 // * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
 // */
-//@deprecated("only use for backward compatibility, please switch to use CarbonExtensions", "2.0")
-//class CarbonSession(@transient val sc: SparkContext,
+// @deprecated("only use for backward compatibility, please switch to use CarbonExtensions", "2.0")
+// class CarbonSession(@transient val sc: SparkContext,
 //    @transient private val existingSharedState: Option[SharedState],
 //    @transient private val useHiveMetaStore: Boolean = true
-//) extends SparkSession(sc) { self =>
+// )  extends SparkSession(sc) { self =>
 //
 //  logWarning("CarbonSession is deprecated since 2.0, please switch to CarbonExtensions")
 //
@@ -146,9 +146,9 @@
 //      }
 //    }
 //  }
-//}
+// }
 //
-//object CarbonSession {
+// object CarbonSession {
 //
 //  private val statementId = new AtomicLong(0)
 //
@@ -178,7 +178,8 @@
 //        builder.enableHiveSupport()
 //      }
 //      val options =
-//        getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
+//        getValue("options", builder).asInstanceOf[scala.collection.mutable
+//        .HashMap[String, String]]
 //      val userSuppliedContext: Option[SparkContext] =
 //        getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
 //      CarbonReflectionUtils.updateCarbonSerdeInfo()
@@ -219,7 +220,8 @@
 //        session = SparkSession.getDefaultSession match {
 //          case Some(sparkSession: CarbonSession) =>
 //            if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
-//              options.foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
+//              options.foreach { case (k, v) => sparkSession.sessionState.conf
+//              .setConfString(k, v) }
 //              sparkSession
 //            } else {
 //              null
@@ -294,4 +296,4 @@
 //      new MergeDataSetBuilder(ds, srcDS, expr, ds.sparkSession)
 //    }
 //  }
-//}
+// }

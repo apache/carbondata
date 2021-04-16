@@ -18,8 +18,8 @@
 package org.apache.spark.sql.secondaryindex.joins
 
 import java.io.IOException
-
 import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

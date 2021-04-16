@@ -59,11 +59,7 @@ case class CarbonDataSourceScan(
     segmentIds: Option[String] = None)
   extends DataSourceScanExec {
 
-  lazy val supportsBatch: Boolean = {
-    CarbonPlanHelper.supportBatchedDataSource(sqlContext, output, extraRDD)
-  }
-
-  lazy val supportsColumnar: Boolean = {
+  override lazy val supportsColumnar: Boolean = {
     CarbonPlanHelper.supportBatchedDataSource(sqlContext, output, extraRDD)
   }
 

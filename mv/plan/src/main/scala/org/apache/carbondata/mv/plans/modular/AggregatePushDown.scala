@@ -76,24 +76,29 @@ trait AggregatePushDown { // self: ModularPlan =>
       aliasInfo: Option[(String, ExprId)]) = {
     aggregate match {
       case cnt: AggregateExpression if cnt.aggregateFunction.isInstanceOf[Count] &&
-        cnt.aggregateFunction.children.length == 1 && cnt.aggregateFunction.children.head.isInstanceOf[Attribute] =>
+        cnt.aggregateFunction.children.length == 1 && cnt.aggregateFunction.children.head
+          .isInstanceOf[Attribute] =>
         val exprs = cnt.aggregateFunction.children
         val tAttr = selAliasMap.get(exprs.head.asInstanceOf[Attribute]).getOrElse(exprs.head)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
           val cnt1 = AggregateExpression(Count(tAttr), cnt.mode, isDistinct = false)
           val alias = Alias(cnt1, cnt1.toString)()
-          val tSum = cnt.copy(Sum(alias.toAttribute), cnt.mode, isDistinct = false, resultId = cnt.resultId)
+          val tSum = cnt.copy(Sum(alias.toAttribute), cnt.mode, isDistinct = false, resultId = cnt
+            .resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
       case cnt: AggregateExpression if cnt.aggregateFunction.isInstanceOf[Count] &&
-        cnt.aggregateFunction.children.length == 1 && cnt.aggregateFunction.children.head.isInstanceOf[Literal] =>
-        val cnt1 = cnt.copy(Count(cnt.aggregateFunction.children.head), cnt.mode, isDistinct = false)
+        cnt.aggregateFunction.children.length == 1 && cnt.aggregateFunction.children.head
+          .isInstanceOf[Literal] =>
+        val cnt1 = cnt.copy(Count(cnt.aggregateFunction.children.head), cnt.mode,
+          isDistinct = false)
         val alias = Alias(cnt1, cnt1.toString)()
-        val tSum = cnt.copy(Sum(alias.toAttribute), cnt.mode, false, resultId = cnt.resultId)
+        val tSum = cnt.copy(Sum(alias.toAttribute), cnt.mode, isDistinct = false, resultId = cnt
+          .resultId)
         val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
         map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
       case sum: AggregateExpression if sum.aggregateFunction.isInstanceOf[Sum] &&
@@ -104,7 +109,8 @@ trait AggregatePushDown { // self: ModularPlan =>
         if (fact.outputSet.contains(tAttr)) {
           val sum1 = AggregateExpression(Sum(tAttr), sum.mode, isDistinct = false)
           val alias = Alias(sum1, sum1.toString)()
-          val tSum = sum.copy(Sum(alias.toAttribute), sum.mode, isDistinct = false, resultId = sum.resultId)
+          val tSum = sum.copy(Sum(alias.toAttribute), sum.mode, isDistinct = false, resultId = sum
+            .resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
         } else {
@@ -117,7 +123,8 @@ trait AggregatePushDown { // self: ModularPlan =>
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
           val alias = Alias(sum, sum.toString)()
-          val tSum = sum.copy(Sum(alias.toAttribute), mode = sum.mode, isDistinct = false, resultId = sum.resultId)
+          val tSum = sum.copy(Sum(alias.toAttribute), mode = sum.mode, isDistinct = false,
+            resultId = sum.resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
         } else {
@@ -125,9 +132,11 @@ trait AggregatePushDown { // self: ModularPlan =>
         }
       case sum: AggregateExpression if sum.aggregateFunction.isInstanceOf[Sum] &&
         sum.aggregateFunction.children.head.isInstanceOf[Literal] =>
-        val sum1 = AggregateExpression(Sum(sum.aggregateFunction.children.head), sum.mode, isDistinct = false)
+        val sum1 = AggregateExpression(Sum(sum.aggregateFunction.children.head), sum.mode,
+          isDistinct = false)
         val alias = Alias(sum1, sum1.toString)()
-        val tSum = sum.copy(Sum(alias.toAttribute), sum.mode, isDistinct = false, resultId = sum.resultId)
+        val tSum = sum.copy(Sum(alias.toAttribute), sum.mode, isDistinct = false, resultId = sum
+          .resultId)
         val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
         map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
       case max: AggregateExpression if max.aggregateFunction.isInstanceOf[Max] &&
@@ -136,9 +145,10 @@ trait AggregatePushDown { // self: ModularPlan =>
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val max1 = AggregateExpression(Sum(tAttr), max.mode, false)
+          val max1 = AggregateExpression(Sum(tAttr), max.mode, isDistinct = false)
           val alias = Alias(max1, max1.toString)()
-          val tMax = max.copy(Max(alias.toAttribute), max.mode, isDistinct = false, resultId = max.resultId)
+          val tMax = max.copy(Max(alias.toAttribute), max.mode, isDistinct = false, resultId = max
+            .resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tMax, name)(exprId = id), Seq(alias)))
         } else {
@@ -150,9 +160,10 @@ trait AggregatePushDown { // self: ModularPlan =>
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val min1 = AggregateExpression(Min(tAttr), min.mode, false)
+          val min1 = AggregateExpression(Min(tAttr), min.mode, isDistinct = false)
           val alias = Alias(min1, min1.toString)()
-          val tMin = min.copy(Max(alias.toAttribute), min.mode, false, resultId = min.resultId)
+          val tMin = min.copy(Max(alias.toAttribute), min.mode, isDistinct = false, resultId = min
+            .resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tMin, name)(exprId = id), Seq(alias)))
         } else {
@@ -164,8 +175,8 @@ trait AggregatePushDown { // self: ModularPlan =>
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val savg = AggregateExpression(Sum(tAttr), avg.mode, false)
-          val cavg = AggregateExpression(Count(tAttr), avg.mode, false)
+          val savg = AggregateExpression(Sum(tAttr), avg.mode, isDistinct = false)
+          val cavg = AggregateExpression(Count(tAttr), avg.mode, isDistinct = false)
           val sAvg = Alias(savg, savg.toString)()
           val cAvg = Alias(cavg, cavg.toString)()
           val tAvg = Divide(sAvg.toAttribute, cAvg.toAttribute)

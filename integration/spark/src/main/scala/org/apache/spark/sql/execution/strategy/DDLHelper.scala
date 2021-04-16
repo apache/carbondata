@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.CarbonToSparkAdapter.RefreshTable
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogUtils}
@@ -31,9 +32,8 @@ import org.apache.spark.sql.execution.command.table._
 import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResource}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
-import org.apache.spark.sql.types.{DecimalType, Metadata}
+import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.util.SparkSQLUtil
-import org.apache.spark.sql.CarbonToSparkAdapter.RefreshTable
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException

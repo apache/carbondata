@@ -24,11 +24,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Random
 
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.execution.command.NodeInfo
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
@@ -40,9 +37,7 @@ import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo, TaskBlockInfo}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -146,7 +141,7 @@ class CarbonSecondaryIndexRDD[K, V](
               segmentId,
               indexCarbonTable,
               factToIndexColumnMapping)
-        context.addTaskCompletionListener { context =>
+        CarbonToSparkAdapter.addTaskCompletionListener {
           if (null != secondaryIndexQueryResultProcessor) {
             secondaryIndexQueryResultProcessor.close()
           }
