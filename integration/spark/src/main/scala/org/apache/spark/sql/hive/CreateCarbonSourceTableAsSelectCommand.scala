@@ -42,8 +42,6 @@ case class CreateCarbonSourceTableAsSelectCommand(
     query: LogicalPlan)
   extends AtomicRunnableCommand {
 
-  override protected def innerChildren: Seq[LogicalPlan] = Seq(query)
-
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     Seq.empty
   }

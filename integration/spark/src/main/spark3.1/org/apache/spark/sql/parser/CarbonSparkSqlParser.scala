@@ -36,13 +36,13 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * Concrete parser for Spark SQL statements and carbon specific
  * statements
  */
-class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends SparkSqlParser(conf) {
+class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends SparkSqlParser {
 
   val parser = new CarbonSpark2SqlParser
 
   override val astBuilder = CarbonReflectionUtils.getAstBuilder(conf, parser, sparkSession)
 
-  private val substitutor = new VariableSubstitution(conf)
+  private val substitutor = new VariableSubstitution
 
   override def parsePlan(sqlText: String): LogicalPlan = {
     CarbonThreadUtil.updateSessionInfoToCurrentThread(sparkSession)
@@ -95,7 +95,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
   }
 
   def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
-    BucketSpecContext, ColTypeListContext, ColTypeListContext, TablePropertyListContext,
+    BucketSpecContext, PartitionFieldListContext, ColTypeListContext, TablePropertyListContext,
     LocationSpecContext, Option[String], TerminalNode, QueryContext, String)): LogicalPlan = {
     // val parser = new CarbonSpark2SqlParser
 
@@ -132,8 +132,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     properties.foreach{property => tableProperties.put(property._1, property._2)}
 
     // validate partition clause
-    val partitionByStructFields = Option(partitionColumns).toSeq.flatMap(visitColTypeList)
-    val partitionFields = CarbonSparkSqlParserUtil.
+    val partitionByStructFields = Option(partitionColumns).toSeq.flatMap(x => visitPartitionFieldList(x)._2)
+    val partitionFields = CarbonToSparkAdapter.
       validatePartitionFields(partitionColumns, colNames, tableProperties,
       partitionByStructFields)
 
@@ -142,7 +142,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     val extraTableTuple = (cols, external, tableIdentifier, ifNotExists, colNames, tablePath,
       tableProperties, properties, partitionByStructFields, partitionFields,
       parser, sparkSession, selectQuery)
-    CarbonSparkSqlParserUtil.createCarbonTable(createTableTuple, extraTableTuple)
+    CarbonToSparkAdapter.createCarbonTable(createTableTuple, extraTableTuple)
   }
 }
 

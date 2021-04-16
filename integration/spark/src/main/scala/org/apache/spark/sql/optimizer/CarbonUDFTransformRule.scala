@@ -17,12 +17,12 @@
 
 package org.apache.spark.sql.optimizer
 
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, PredicateHelper, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StringType
-import org.apache.spark.sql.CarbonToSparkAdapter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 

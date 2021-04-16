@@ -20,15 +20,14 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonToSparkAdapter}
+import org.apache.spark.sql.CarbonDatasourceHadoopRelation
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, SortOrder, UnsafeProjection}
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
-import org.apache.spark.sql.execution.{DataSourceScanExec, WholeStageCodegenExec}
+import org.apache.spark.sql.execution.{ColumnarBatchScan, DataSourceScanExec, WholeStageCodegenExec}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types.AtomicType
 
@@ -46,27 +45,21 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
  *  USING carbondata and STORED AS carbondata.
  */
 case class CarbonDataSourceScan(
-    @transient relation: CarbonDatasourceHadoopRelation,
-    output: Seq[Attribute],
-    partitionFilters: Seq[SparkExpression],
-    dataFilters: Seq[SparkExpression],
-    @transient readComittedScope: ReadCommittedScope,
-    @transient pushedDownProjection: CarbonProjection,
-    @transient pushedDownFilters: Seq[Expression],
-    directScanSupport: Boolean,
-    @transient extraRDD: Option[(RDD[InternalRow], Boolean)] = None,
-    tableIdentifier: Option[TableIdentifier] = None)
-  extends DataSourceScanExec {
+  @transient relation: CarbonDatasourceHadoopRelation,
+  output: Seq[Attribute],
+  partitionFilters: Seq[SparkExpression],
+  dataFilters: Seq[SparkExpression],
+  @transient readComittedScope: ReadCommittedScope,
+  @transient pushedDownProjection: CarbonProjection,
+  @transient pushedDownFilters: Seq[Expression],
+  directScanSupport: Boolean,
+  @transient extraRDD: Option[(RDD[InternalRow], Boolean)] = None,
+  tableIdentifier: Option[TableIdentifier] = None)
+  extends DataSourceScanExec with ColumnarBatchScan {
 
-  lazy val supportsBatch: Boolean = {
+  override lazy val supportsBatch: Boolean = {
     CarbonPlanHelper.supportBatchedDataSource(sqlContext, output, extraRDD)
   }
-
-  lazy val supportsColumnar: Boolean = {
-    CarbonPlanHelper.supportBatchedDataSource(sqlContext, output, extraRDD)
-  }
-
-  lazy val needsUnsafeRowConversion: Boolean = { true }
 
   override lazy val (outputPartitioning, outputOrdering): (Partitioning, Seq[SortOrder]) = {
     val info: BucketingInfo = relation.carbonTable.getBucketingInfo
@@ -100,8 +93,8 @@ case class CarbonDataSourceScan(
     val metadata =
       Map(
         "ReadSchema" -> seqToString(pushedDownProjection.getAllColumns),
-        "Batched" -> supportsColumnar.toString,
-        "DirectScan" -> (supportsColumnar && directScanSupport).toString,
+        "Batched" -> supportsBatch.toString,
+        "DirectScan" -> (supportsBatch && directScanSupport).toString,
         "PushedFilters" -> seqToString(pushedDownFilters.map(_.getStatement)))
     if (relation.carbonTable.isHivePartitionTable) {
       metadata + ("PartitionFilters" -> seqToString(partitionFilters)) +
@@ -137,15 +130,15 @@ case class CarbonDataSourceScan(
       relation.carbonTable.getTableInfo,
       new CarbonInputMetrics,
       selectedPartitions)
-    carbonRdd.setVectorReaderSupport(supportsColumnar)
-    carbonRdd.setDirectScanSupport(supportsColumnar && directScanSupport)
+    carbonRdd.setVectorReaderSupport(supportsBatch)
+    carbonRdd.setDirectScanSupport(supportsBatch && directScanSupport)
     extraRDD.map(_._1.union(carbonRdd)).getOrElse(carbonRdd)
   }
 
   override def inputRDDs(): Seq[RDD[InternalRow]] = inputRDD :: Nil
 
   override protected def doExecute(): RDD[InternalRow] = {
-    if (supportsColumnar) {
+    if (supportsBatch) {
       // in the case of fallback, this batched scan should never fail because of:
       // 1) only primitive types are supported
       // 2) the number of columns should be smaller than spark.sql.codegen.maxFields
@@ -174,7 +167,7 @@ case class CarbonDataSourceScan(
   override protected def doCanonicalize(): CarbonDataSourceScan = {
     CarbonDataSourceScan(
       relation,
-      output.map(CarbonToSparkAdapter.normalizeExpressions(_, output)),
+      output.map(QueryPlan.normalizeExprId(_, output)),
       QueryPlan.normalizePredicates(partitionFilters, output),
       QueryPlan.normalizePredicates(dataFilters, output),
       null,
@@ -183,9 +176,5 @@ case class CarbonDataSourceScan(
       directScanSupport,
       extraRDD,
       tableIdentifier)
-  }
-
-  protected def doProduce(ctx: CodegenContext): String = {
-    WholeStageCodegenExec(this)(1).doProduce(ctx)
   }
 }

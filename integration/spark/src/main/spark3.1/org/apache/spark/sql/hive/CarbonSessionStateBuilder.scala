@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.connector.catalog.CatalogManager
 import org.apache.spark.sql.execution.strategy.{CarbonSourceStrategy, DDLStrategy, DMLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.hive.client.HiveClient
 import org.apache.spark.sql.internal.{SessionState, SQLConf}
@@ -181,6 +182,8 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
       .unwrapped
       .asInstanceOf[HiveExternalCatalog]
 
+  override protected lazy val catalogManager = new CatalogManager(v2SessionCatalog, catalog)
+
   /**
    * Create a Hive aware resource loader.
    */
@@ -190,8 +193,7 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
   }
 
   override protected def analyzer: Analyzer = {
-    new CarbonAnalyzer(catalog,
-      conf,
+    new CarbonAnalyzer(catalogManager,
       sparkSession,
       super.analyzer)
   }

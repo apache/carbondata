@@ -17,12 +17,11 @@
 
 package org.apache.spark.sql.hive
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
+import org.apache.spark.sql.CarbonToSparkAdapter.InsertIntoStatementWrapper
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.Inner
@@ -33,11 +32,9 @@ import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCom
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.{CarbonPlanHelper, DMLHelper}
 import org.apache.spark.sql.util.CarbonException
-import org.apache.spark.sql.CarbonToSparkAdapter.InsertIntoStatementWrapper
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.view.MVStatus
 import org.apache.carbondata.view.MVManagerInSpark
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {

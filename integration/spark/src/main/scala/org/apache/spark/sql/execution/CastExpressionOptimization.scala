@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution
 
 import java.text.{ParseException, SimpleDateFormat}
-
 import java.util
 import java.util.{Locale, TimeZone}
 

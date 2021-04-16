@@ -18,8 +18,8 @@
 package org.apache.carbondata.streaming.parser
 
 import java.text.SimpleDateFormat
-
 import java.util
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow

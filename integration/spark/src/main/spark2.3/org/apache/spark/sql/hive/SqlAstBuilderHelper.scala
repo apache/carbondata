@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.hive
 
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.CarbonParserUtil
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext, ChangeColumnContext, CreateTableContext}
@@ -57,7 +58,7 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
   def visitAddTableColumns(parser: CarbonSpark2SqlParser,
       ctx: AddTableColumnsContext): LogicalPlan = {
     val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
-    val fields = parser.getFields(cols)
+    val fields = CarbonToSparkAdapter.getFields(parser, cols)
     val tblProperties = scala.collection.mutable.Map.empty[String, String]
     val tableModel = CarbonParserUtil.prepareTableModel(false,
       CarbonParserUtil.convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),
