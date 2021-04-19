@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+/*test ci */
+
 package org.apache.carbondata.geo.scan.filter.executor;
 
 import java.util.BitSet;
