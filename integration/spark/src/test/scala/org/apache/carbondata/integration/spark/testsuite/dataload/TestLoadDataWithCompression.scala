@@ -26,8 +26,8 @@ import java.util.concurrent.{Executors, ExecutorService, Future}
 import scala.util.Random
 
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
-import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
-import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
+import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, Row, SaveMode}
+import org.apache.spark.sql.streaming.StreamingQuery
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -681,7 +681,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
               .text(dataLocation)
               .writeStream
               .format("carbondata")
-              .trigger(ProcessingTime(s"1 seconds"))
+              .trigger(CarbonToSparkAdapter.getProcessingTime(s"1 seconds"))
               .option("checkpointLocation",
                 CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
               .option("dbName", "default")

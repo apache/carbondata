@@ -41,7 +41,7 @@ import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, TableIdenti
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan, logical}
-import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, ExplainCommand, PartitionerField, ResetCommand, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, ExplainCommand, Field, PartitionerField, ResetCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile, RefreshTable}
 import org.apache.spark.sql.execution.{QueryExecution, SQLExecution, ShuffledRowRDD, SparkPlan}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
@@ -65,6 +65,7 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, ColTypeListContext, CreateTableHeaderContext, LocationSpecContext, PartitionFieldListContext, QueryContext, SkewSpecContext, TablePropertyListContext}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateColumnExists, convertDbNameToLowerCase, validateStreamingProperty}
 
@@ -573,6 +574,18 @@ object CarbonToSparkAdapter {
           tableLocation = tablePath,
           external)
     }
+  }
+
+  def getField(parser: CarbonSpark2SqlParser,
+               schema: Seq[StructField],
+               isExternal: Boolean = false): Seq[Field] = {
+    schema.map { col =>
+      parser.getFields(col.comment, col.name.head, col.dataType, isExternal)
+    }
+  }
+
+  def supportsBatchOrColumnar(scan: CarbonDataSourceScan): Boolean = {
+    scan.supportsBatch
   }
 }
 

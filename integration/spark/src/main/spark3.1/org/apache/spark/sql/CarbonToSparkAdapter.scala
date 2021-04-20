@@ -49,6 +49,7 @@ import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCo
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.metric.SQLShuffleWriteMetricsReporter
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
@@ -582,6 +583,10 @@ object CarbonToSparkAdapter {
     schema.map { col =>
       parser.getFields(col.comment, col.name.head, col.dataType, isExternal)
     }
+  }
+
+  def supportsBatchOrColumnar(scan: CarbonDataSourceScan): Boolean = {
+    scan.supportsColumnar
   }
 }
 

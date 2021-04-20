@@ -50,6 +50,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.ColTypeListContext
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import scala.collection.mutable
@@ -521,6 +522,11 @@ object CarbonToSparkAdapter {
       parser.getFields(col.comment, col.name.head, col.dataType, isExternal)
     }
   }
+
+  def supportsBatchOrColumnar(scan: CarbonDataSourceScan): Boolean = {
+    scan.supportsBatch
+  }
+
 }
 
 class CarbonOptimizer(session: SparkSession) extends Optimizer(session.sessionState.catalog) {
