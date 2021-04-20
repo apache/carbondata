@@ -40,6 +40,7 @@ import org.apache.carbondata.core.fileoperations.{AtomicFileOperationFactory, At
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, CarbonTableBuilder, TableSchema, TableSchemaBuilder}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -71,9 +72,11 @@ object CarbonDataStoreCreator {
         new CarbonTableIdentifier(dbName,
           tableName,
           UUID.randomUUID().toString))
+      val schemaBuilder = getSchemaBuilder(Array(10, 4, 18, 4), false)
       val table: CarbonTable = createTable(absoluteTableIdentifier,
-        getCarbonTableSchema(absoluteTableIdentifier),
-        useLocalDict)
+        useLocalDict,
+        schemaBuilder,
+        null)
       val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
       val loadModel: CarbonLoadModel = new CarbonLoadModel()
       import scala.collection.JavaConverters._
@@ -134,8 +137,82 @@ object CarbonDataStoreCreator {
     }
   }
 
-  def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier, schema: TableSchema,
-      useLocalDict: Boolean): CarbonTable = {
+  def getSchemaBuilder(precisionScalaArray: Array[Int], isDecimal: Boolean): TableSchemaBuilder = {
+    val integer = new AtomicInteger(0)
+    val schemaBuilder = new TableSchemaBuilder
+    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
+    if (isDecimal) {
+      schemaBuilder.addColumn(new StructField("salary",
+        DataTypes.createDecimalType(precisionScalaArray(0), precisionScalaArray(1))), integer,
+        false, false)
+      schemaBuilder.addColumn(new StructField("bonus",
+        DataTypes.createDecimalType(precisionScalaArray(2), precisionScalaArray(3))), integer,
+        false, true)
+      schemaBuilder.addColumn(new StructField("monthlyBonus",
+        DataTypes.createDecimalType(precisionScalaArray(4), precisionScalaArray(5))), integer,
+        false, true)
+    } else {
+      schemaBuilder.addColumn(new StructField("salary", DataTypes.DOUBLE), integer, false, false)
+      schemaBuilder.addColumn(new StructField("bonus",
+        DataTypes.createDecimalType(precisionScalaArray(0), precisionScalaArray(1))), integer,
+        false, true)
+      schemaBuilder.addColumn(new StructField("monthlyBonus",
+        DataTypes.createDecimalType(precisionScalaArray(2), precisionScalaArray(3))), integer,
+        false, true)
+    }
+
+    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
+    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
+      integer,
+      false,
+      true)
+    schemaBuilder
+  }
+
+  def getCarbonTableSchemaForAllPrimitive: TableSchemaBuilder = {
+    val integer = new AtomicInteger(0)
+    val schemaBuilder = new TableSchemaBuilder
+    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("salary", DataTypes.createDecimalType(6, 1)),
+      integer,
+      false,
+      false)
+    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(8, 6)),
+      integer,
+      false,
+      true)
+    schemaBuilder.addColumn(new StructField("charfield", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(5, 3)),
+      integer,
+      false,
+      true)
+    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
+    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("finalsalary", DataTypes.DOUBLE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("bigintfield", DataTypes.LONG), integer, false, false)
+    schemaBuilder.addColumn(new StructField("tinyfield", DataTypes.BYTE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
+      integer,
+      false,
+      true)
+    schemaBuilder
+  }
+
+  def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier,
+      useLocalDict: Boolean,
+      schemaBuilder: TableSchemaBuilder,
+      partitionInfo: PartitionInfo): CarbonTable = {
+    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
+    val schema = schemaBuilder.build()
+    schema.setPartitionInfo(partitionInfo)
     val builder = new CarbonTableBuilder
     builder.databaseName(absoluteTableIdentifier.getDatabaseName)
       .tableName(absoluteTableIdentifier.getTableName)
@@ -171,104 +248,6 @@ object CarbonDataStoreCreator {
     thriftWriter.close()
     CarbonMetadata.getInstance.getCarbonTable(tableInfo.getTableUniqueName)
   }
-
-  def getCarbonTableSchema(absoluteTableIdentifier: AbsoluteTableIdentifier): TableSchema = {
-    val integer = new AtomicInteger(0)
-    val schemaBuilder = new TableSchemaBuilder
-    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("salary", DataTypes.DOUBLE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(10, 4)),
-      integer,
-      false,
-      true)
-    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(18, 4)),
-      integer,
-      false,
-      true)
-    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
-    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
-      integer,
-      false,
-      true)
-    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
-    val schema = schemaBuilder.build()
-    schema
-  }
-
-  // TODO: need to refactor
-  def getCarbonTableSchemaForDecimal(absoluteTableIdentifier: AbsoluteTableIdentifier)
-      : TableSchema = {
-    val integer = new AtomicInteger(0)
-    val schemaBuilder = new TableSchemaBuilder
-    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("salary", DataTypes.createDecimalType(6, 1)),
-      integer,
-      false,
-      false)
-    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(8, 6)),
-      integer,
-      false,
-      true)
-    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(5, 3)),
-      integer,
-      false,
-      true)
-    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
-    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
-      integer,
-      false,
-      true)
-    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
-    val schema = schemaBuilder.build()
-    schema
-  }
-
-  def getCarbonTableSchemaForAllPrimitive(absoluteTableIdentifier: AbsoluteTableIdentifier)
-      : TableSchema = {
-    val integer = new AtomicInteger(0)
-    val schemaBuilder = new TableSchemaBuilder
-    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("salary", DataTypes.createDecimalType(6, 1)),
-      integer,
-      false,
-      false)
-    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(8, 6)),
-      integer,
-      false,
-      true)
-    schemaBuilder.addColumn(new StructField("charfield", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(5, 3)),
-      integer,
-      false,
-      true)
-    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
-    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("finalsalary", DataTypes.DOUBLE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("bigintfield", DataTypes.LONG), integer, false, false)
-    schemaBuilder.addColumn(new StructField("tinyfield", DataTypes.BYTE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
-      integer,
-      false,
-      true)
-    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
-    val schema = schemaBuilder.build()
-    schema
-  }
-
 
 
   /**

@@ -18,10 +18,19 @@
 package org.apache.carbondata.hive;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
@@ -127,13 +136,46 @@ public class MapredCarbonOutputCommitter extends OutputCommitter {
     try {
       Configuration configuration = jobContext.getConfiguration();
       CarbonLoadModel carbonLoadModel = MapredCarbonOutputFormat.getLoadModel(configuration);
-      ThreadLocalSessionInfo.unsetAll();
-      SegmentFileStore.writeSegmentFile(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
-          carbonLoadModel.getSegmentId(), String.valueOf(carbonLoadModel.getFactTimeStamp()));
-      SegmentFileStore
-          .mergeIndexAndWriteSegmentFile(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
-              carbonLoadModel.getSegmentId(), String.valueOf(carbonLoadModel.getFactTimeStamp()));
-      CarbonTableOutputFormat.setLoadModel(configuration, carbonLoadModel);
+      if (!carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable()) {
+        ThreadLocalSessionInfo.unsetAll();
+        SegmentFileStore
+            .writeSegmentFile(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
+                carbonLoadModel.getSegmentId(), String.valueOf(carbonLoadModel.getFactTimeStamp()));
+        SegmentFileStore.mergeIndexAndWriteSegmentFile(
+            carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
+            carbonLoadModel.getSegmentId(), String.valueOf(carbonLoadModel.getFactTimeStamp()));
+        CarbonTableOutputFormat.setLoadModel(configuration, carbonLoadModel);
+      } else {
+        String tableFactLocation =
+            carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getTablePath();
+        List<CarbonFile> carbonFiles =
+            FileFactory.getCarbonFile(tableFactLocation).listFiles(true, new CarbonFileFilter() {
+              @Override
+              public boolean accept(CarbonFile file) {
+                return (file.getName().endsWith(".carbonindex") || file.getName()
+                    .endsWith(".carbonindexmerge")) && file.getName()
+                    .contains("" + carbonLoadModel.getFactTimeStamp());
+              }
+            });
+        Map<String, Set<String>> partitionIndexMap = new HashMap<String, Set<String>>();
+        for (CarbonFile carbonFile: carbonFiles) {
+          String absTablePath = carbonFile.getAbsolutePath();
+          String partitionPath =
+              absTablePath.substring(0, absTablePath.indexOf(carbonFile.getName()));
+          Set<String> indexSet = partitionIndexMap.get(partitionPath);
+          if (indexSet == null) {
+            indexSet = new HashSet<>();
+            indexSet.add(carbonFile.getName());
+            partitionIndexMap.put(partitionPath, indexSet);
+          } else {
+            indexSet.add(carbonFile.getAbsolutePath());
+          }
+        }
+        jobContext.getConfiguration().set("carbon.index.files.name",
+            ObjectSerializationUtil.convertObjectToString(partitionIndexMap));
+        jobContext.getConfiguration().set("carbon.output.partitions.name", ObjectSerializationUtil
+            .convertObjectToString(new ArrayList<>(partitionIndexMap.keySet())));
+      }
       carbonOutputCommitter.commitJob(jobContext);
     } catch (Exception e) {
       LOGGER.error(e);

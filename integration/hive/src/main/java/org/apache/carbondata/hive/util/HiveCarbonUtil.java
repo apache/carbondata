@@ -81,7 +81,7 @@ public class HiveCarbonUtil {
     String partitionColumnTypes =
         tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMN_TYPES);
     if (partitionColumns != null) {
-      columns = columns + "," + partitionColumns;
+      columns = columns + "," + partitionColumns.replace("/", ",");
       columnTypes = columnTypes + ":" + partitionColumnTypes;
     }
     String[] columnTypeArray = splitSchemaStringToArray(columnTypes);
@@ -105,11 +105,21 @@ public class HiveCarbonUtil {
     String tablePath = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_LOCATION);
     String columns = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_COLUMNS);
     String sortColumns = tableProperties.getProperty("sort_columns");
-    String[] columnTypes = splitSchemaStringToArray(tableProperties.getProperty("columns.types"));
+    String columnTypes = tableProperties.getProperty("columns.types");
+    Object partitionColumns =
+        tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMNS);
+    Object partitionColumnTypes =
+        tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMN_TYPES);
+    if (partitionColumns != null) {
+      columns = columns + "," + partitionColumns.toString().replace("/", ",");
+      columnTypes = columnTypes + ":" + partitionColumnTypes.toString();
+    }
+    String[] columnTypesArray = splitSchemaStringToArray(
+        columnTypes);
     String complexDelim = tableProperties.getProperty("complex_delimiter", "");
     CarbonLoadModel carbonLoadModel =
         getCarbonLoadModel(tableName, databaseName, tablePath, sortColumns, columns.split(","),
-            columnTypes, configuration);
+            columnTypesArray, configuration);
     for (String delim : complexDelim.split(",")) {
       carbonLoadModel.setComplexDelimiter(delim);
     }
