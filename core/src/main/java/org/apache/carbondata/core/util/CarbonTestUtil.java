@@ -174,6 +174,10 @@ public class CarbonTestUtil {
     return segmentsFolder.listFiles(true).size();
   }
 
+  public static int getIndexFileCount(String tableName, String segment) throws IOException {
+    return getIndexFileCount(tableName, segment, null);
+  }
+
   public static int getIndexFileCount(String tableName,
       String segment, String extension) throws IOException {
     if (extension == null) {
@@ -182,29 +186,16 @@ public class CarbonTestUtil {
     CarbonTable table = CarbonMetadata.getInstance().getCarbonTable(tableName);
     String path = CarbonTablePath
         .getSegmentPath(table.getAbsoluteTableIdentifier().getTablePath(), segment);
-    CarbonFile[] carbonFiles;
+    boolean recursive = false;
     if (table.isHivePartitionTable()) {
-      List<CarbonFile> carbonFilesList =
-          FileFactory.getCarbonFile(table.getAbsoluteTableIdentifier().getTablePath())
-              .listFiles(true, new CarbonFileFilter() {
-                @Override
-                public boolean accept(CarbonFile file) {
-                  return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
-                      .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT);
-                }
-              });
-      carbonFiles = carbonFilesList.toArray(new CarbonFile[carbonFilesList.size()]);
-    } else {
-      carbonFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile file) {
-          return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
-              .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT);
-        }
-      });
+      path = table.getAbsoluteTableIdentifier().getTablePath();
+      recursive = true;
     }
-    CarbonFile[] validIndexFiles =
-        (CarbonFile[]) SegmentFileStore.getValidCarbonIndexFiles(carbonFiles);
+    List<CarbonFile> carbonFiles = FileFactory.getCarbonFile(path).listFiles(recursive,
+        file -> file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
+    CarbonFile[] validIndexFiles = (CarbonFile[]) SegmentFileStore
+        .getValidCarbonIndexFiles(carbonFiles.toArray(new CarbonFile[carbonFiles.size()]));
     String finalExtension = extension;
     return Arrays.stream(validIndexFiles).filter(file -> file.getName().endsWith(finalExtension))
         .toArray().length;
