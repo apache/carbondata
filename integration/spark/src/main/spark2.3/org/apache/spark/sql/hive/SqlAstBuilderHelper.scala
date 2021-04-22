@@ -58,7 +58,7 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
   def visitAddTableColumns(parser: CarbonSpark2SqlParser,
       ctx: AddTableColumnsContext): LogicalPlan = {
     val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
-    val fields = CarbonToSparkAdapter.getFields(parser, cols)
+    val fields = CarbonToSparkAdapter.getField(parser, cols)
     val tblProperties = scala.collection.mutable.Map.empty[String, String]
     val tableModel = CarbonParserUtil.prepareTableModel(false,
       CarbonParserUtil.convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),

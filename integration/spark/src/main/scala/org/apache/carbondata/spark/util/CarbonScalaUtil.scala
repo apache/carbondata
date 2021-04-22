@@ -281,9 +281,9 @@ object CarbonScalaUtil {
       }
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
-          CarbonToSparkAdapter.stringToTime(value)
+          CarbonToSparkAdapter.stringToTime(value).getTime.toString
         case CarbonDataTypes.DATE =>
-          CarbonToSparkAdapter.stringToTime(value)
+          CarbonToSparkAdapter.stringToTime(value).getTime.toString
         case _ => value
       }
     } catch {

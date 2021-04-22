@@ -17,12 +17,14 @@
 
 package org.apache.carbondata.mv.plans.modular
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, Expression, ExprId, NamedExpression, SubqueryExpression}
-import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, LogicalPlan, Statistics, Subquery}
-import org.apache.spark.sql.catalyst.plans.{logical, QueryPlan}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, ExprId, Expression, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.optimizer.{BooleanSimplification, CollapseProject, CollapseRepartition, CollapseWindow, ColumnPruning, CombineFilters, CombineUnions, ConstantFolding, EliminateLimits, EliminateOuterJoin, EliminateSerialization, EliminateSorts, FoldablePropagation, NullPropagation, PushDownPredicates, PushPredicateThroughJoin, PushProjectionThroughUnion, RemoveDispensableExpressions, RemoveRedundantAliases, ReorderAssociativeOperator, ReorderJoin, RewriteCorrelatedScalarSubquery, SimplifyBinaryComparison, SimplifyCaseConversionExpressions, SimplifyCasts, SimplifyConditionals}
+import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan, logical}
+import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Join, LogicalPlan, Statistics, Subquery}
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.types.{DataType, Metadata}
-
 import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, AggregateFunction, AggregateMode}
 
 object ExpressionHelper {
 
@@ -76,5 +78,72 @@ object ExpressionHelper {
 
   def normalizeExpressions[T <: Expression](r: T, attrs: AttributeSeq): T = {
     QueryPlan.normalizeExpressions(r, attrs)
+  }
+
+  def attributeMap(rAliasMap: AttributeMap[Attribute]) : AttributeMap[Alias] = {
+    rAliasMap.asInstanceOf[AttributeMap[Alias]]
+  }
+
+  def seqOfRules : Seq[Rule[LogicalPlan]] = {
+    Seq(
+      // Operator push down
+      PushProjectionThroughUnion,
+      ReorderJoin,
+      EliminateOuterJoin,
+      PushPredicateThroughJoin,
+      PushDownPredicates,
+      ColumnPruning,
+      // Operator combine
+      CollapseRepartition,
+      CollapseProject,
+      CollapseWindow,
+      CombineFilters,
+      EliminateLimits,
+      CombineUnions,
+      // Constant folding and strength reduction
+      NullPropagation,
+      FoldablePropagation,
+      ConstantFolding,
+      ReorderAssociativeOperator,
+      // No need to apply LikeSimplification rule while creating MV
+      // as modular plan asCompactSql will be set in schema
+      //        LikeSimplification,
+      BooleanSimplification,
+      SimplifyConditionals,
+      RemoveDispensableExpressions,
+      SimplifyBinaryComparison,
+      EliminateSorts,
+      SimplifyCasts,
+      SimplifyCaseConversionExpressions,
+      RewriteCorrelatedScalarSubquery,
+      EliminateSerialization,
+      RemoveRedundantAliases)
+  }
+}
+
+trait getVerboseString extends LeafNode {
+  def verboseString: String = toString
+}
+
+object MatchJoin {
+  def unapply(plan : LogicalPlan): Option[(LogicalPlan, LogicalPlan, JoinType, Option[Expression],
+    Option[Any])] = {
+    plan match {
+      case j@Join(left, right, joinType, condition, hint) =>
+        Some(left, right, joinType, condition, Some(hint))
+      case _ => None
+    }
+  }
+}
+
+object MatchAggregateExpression {
+  def unapply(expr : AggregateExpression): Option[(AggregateFunction, AggregateMode, Boolean,
+    Option[Expression], ExprId)] = {
+    expr match {
+      case j@AggregateExpression(aggregateFunction, mode, isDistinct, filter, resultId) =>
+        val a = Some(aggregateFunction, mode, isDistinct, filter, resultId)
+        a
+      case _ => None
+    }
   }
 }

@@ -546,7 +546,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val explainPlan: Parser[LogicalPlan] =
     (EXPLAIN ~> opt(MODE)) ~ start ^^ {
       case mode ~ logicalPlan =>
-        CarbonToSparkAdapter.getExplainCommandObj(logicalPlan, mode)
+        logicalPlan match {
+          case _: CarbonCreateTableCommand =>
+            CarbonToSparkAdapter.getExplainCommandObj(logicalPlan, mode)
+          case _ => CarbonToSparkAdapter.getExplainCommandObj(mode)
+        }
     }
 
   /**

@@ -27,7 +27,7 @@ case class CarbonResetCommand()
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams.clear()
-    CarbonToSparkAdapter.createResetCommand().run(sparkSession)
+    ResetCommand(None).run(sparkSession)
   }
 }
 

@@ -22,7 +22,6 @@ import java.time.ZoneId
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
@@ -32,33 +31,36 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexRepl
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, QueryPlanningTracker, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener, SessionCatalog}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide, Optimizer}
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, ColTypeListContext, CreateTableHeaderContext, LocationSpecContext, PartitionFieldListContext, QueryContext, SkewSpecContext, TablePropertyListContext}
-import org.apache.spark.sql.catalyst.plans.{logical, JoinType, QueryPlan}
+import org.apache.spark.sql.catalyst.plans.{JoinType, logical}
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, InsertIntoStatement, Join, JoinHint, LogicalPlan, OneRowRelation, QualifiedColType, Statistics, SubqueryAlias}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.util.{DateTimeUtils, TimestampFormatter}
-import org.apache.spark.sql.execution.{ExplainMode, QueryExecution, ShuffledRowRDD, SimpleMode, SparkPlan, SQLExecution}
-import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, ExplainCommand, Field, PartitionerField, RefreshTableCommand, ResetCommand, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.{ExplainMode, QueryExecution, SQLExecution, ShuffledRowRDD, SimpleMode, SparkPlan}
+import org.apache.spark.sql.execution.command.{ExplainCommand, Field, PartitionerField, RefreshTableCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
-import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
+import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.metric.SQLShuffleWriteMetricsReporter
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.hive.HiveExternalCatalog
+import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateColumnExists, convertDbNameToLowerCase, validateStreamingProperty}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
+import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types.{DataType, Metadata, StructField}
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.unsafe.types.UTF8String
-
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -195,6 +197,10 @@ object CarbonToSparkAdapter {
     ExplainCommand(logicalPlan, ExplainMode.fromString(mode.getOrElse(SimpleMode.name)))
   }
 
+  def getExplainCommandObj(mode: Option[String]) : ExplainCommand = {
+    ExplainCommand(OneRowRelation(), ExplainMode.fromString(mode.getOrElse(SimpleMode.name)))
+  }
+
   /**
    * As a part of SPARK-24085 Hive tables supports scala subquery for
    * the partitioned tables,so Carbon also needs to supports
@@ -247,9 +253,9 @@ object CarbonToSparkAdapter {
     DateTimeUtils.stringToTimestamp(UTF8String.fromString(timestamp), ZoneId.systemDefault())
   }
 
-  def stringToTime(value: String): String = {
+  def stringToTime(value: String): java.util.Date = {
     DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String.fromString(value),
-      ZoneId.systemDefault()).get).getTime.toString
+      ZoneId.systemDefault()).get)
   }
 
   def timeStampToString(timeStamp: Long): String = {
@@ -271,8 +277,13 @@ object CarbonToSparkAdapter {
   }
 
   def getTableIdentifier(u: UnresolvedRelation): Some[TableIdentifier] = {
-    val tableName = u.tableName.split(".")
-    Some(TableIdentifier(tableName(1), Option(tableName(0))))
+    val tableName = u.tableName.split("\\.")
+    if (tableName.size == 2) {
+      Some(TableIdentifier(tableName(1), Option(tableName(0))))
+    } else {
+      val currentDatabase = SparkSQLUtil.getSparkSession.sessionState.catalog.getCurrentDatabase
+      Some(TableIdentifier(tableName(0), Option(currentDatabase)))
+    }
   }
 
   // TODO: check if this is correct
@@ -355,15 +366,11 @@ object CarbonToSparkAdapter {
     Statistics(stats.sizeInBytes, stats.rowCount, attributeStats)
   }
 
-  def createResetCommand(): ResetCommand = {
-    ResetCommand(None)
-  }
-
   def createRefreshTableCommand(tableIdentifier: TableIdentifier): RefreshTableCommand = {
     RefreshTableCommand(tableIdentifier)
   }
 
-  type RefreshTable = RefreshTableCommand
+  type RefreshTables = RefreshTableCommand
 
   /**
    * Validates the partition columns and return's A tuple of partition columns and partitioner
@@ -588,6 +595,24 @@ object CarbonToSparkAdapter {
   def supportsBatchOrColumnar(scan: CarbonDataSourceScan): Boolean = {
     scan.supportsColumnar
   }
+
+  def createDataset(sparkSession: SparkSession, qe: QueryExecution) : Dataset[Row] = {
+    new Dataset[Row](qe, RowEncoder(qe.analyzed.schema))
+  }
+
+  def createSharedState(sparkContext: SparkContext) : SharedState = {
+    new SharedState(sparkContext, Map.empty[String, String])
+  }
+
+  def translateFilter(dataFilters: Seq[Expression]) : Seq[Filter] = {
+    dataFilters.flatMap(DataSourceStrategy.translateFilter(_,
+      supportNestedPredicatePushdown = true))
+  }
+
+  def getCarbonOptimizer(session : SparkSession, sessionState: SessionState) : CarbonOptimizer = {
+    new CarbonOptimizer(session)
+  }
+
 }
 
 case class CarbonBuildSide(buildSide: BuildSide) {

@@ -97,20 +97,12 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       case join: logical.Join if (join.left.isInstanceOf[logical.Filter]
         && join.right.isInstanceOf[LocalRelation]
         && join.joinType == Inner) =>
-        val tbl1 = join.left.allAttributes.attrs
-        val tbl2 = join.right.allAttributes.attrs
+        val tbl1 = join.left.output
+        val tbl2 = join.right.output
         val cond1 = join.left.expressions.head
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
           tbl1 ++ tbl2: _*)(Seq(cond1, join.condition.get): _*)(Map.empty)(JoinEdge(0, 1, Inner))
-
-//      case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
-//      MatchLocalRelation(tbl2, _),
-//      Inner,
-//      Some(cond2)) =>
-//        Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
-//          ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
-//          tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, Inner))
     }
     comparePlans(modularized, correctAnswer)
   }
@@ -128,8 +120,8 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       case join: logical.Join if (join.left.isInstanceOf[logical.Filter]
         && join.right.isInstanceOf[LocalRelation]
         && join.joinType == LeftOuter) =>
-        val tbl1 = join.left.allAttributes.attrs
-        val tbl2 = join.right.allAttributes.attrs
+        val tbl1 = join.left.output
+        val tbl2 = join.right.output
         val cond1 = join.left.expressions.head
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
@@ -160,8 +152,8 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       case join: logical.Join if (join.left.isInstanceOf[logical.Filter]
         && join.right.isInstanceOf[LocalRelation]
         && join.joinType == RightOuter) =>
-        val tbl1 = join.left.allAttributes.attrs
-        val tbl2 = join.right.allAttributes.attrs
+        val tbl1 = join.left.output
+        val tbl2 = join.right.output
         val cond1 = join.left.expressions.head
         Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
@@ -177,131 +169,5 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
 //          tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, RightOuter))
     }
     comparePlans(modularized, correctAnswer)
-  }
-
-  ignore("joins: conjunctive predicates #1 with alias") {
-    val left = testRelation0.where('a === 1).subquery('x)
-    val right = testRelation1.subquery('y)
-    val originalQuery =
-      left.join(right, condition = Some("x.b".attr === "y.d".attr)).analyze
-
-    val modularized = analysis.EliminateSubqueryAliases(originalQuery).modularize
-    val correctAnswer = originalQuery match {
-      case join: logical.Join if (join.left.isInstanceOf[logical.Filter]
-        && join.right.isInstanceOf[LocalRelation]
-        && join.joinType == Inner) =>
-        val tbl1 = join.left.allAttributes.attrs
-        val tbl2 = join.right.allAttributes.attrs
-        val cond1 = join.left.expressions.head
-        Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
-          ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
-          tbl1 ++ tbl2: _*)(Seq(cond1, join.condition.get): _*)(Map.empty)(JoinEdge(0, 1, Inner))
-//      case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
-//      MatchLocalRelation(tbl2, _),
-//      Inner,
-//      Some(cond2)) =>
-//        Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
-//          ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
-//          tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, Inner))
-    }
-    comparePlans(modularized, correctAnswer)
-  }
-
-  ignore("joins: conjunctive predicates #2 with alias") {
-    val lleft = testRelation0.where('a >= 3).subquery('z)
-    val left = testRelation0.where('a === 1).subquery('x)
-    val right = testRelation0.subquery('y)
-    val originalQuery =
-      lleft.join(
-        left.join(right, condition = Some("x.b".attr === "y.b".attr)),
-        condition = Some("z.a".attr === "x.b".attr))
-        .analyze
-
-    val modularized = originalQuery.modularize
-    val correctAnswer = originalQuery match {
-      case join: logical.Join if (join.left.isInstanceOf[logical.Filter]
-        && join.right.isInstanceOf[logical.Join] && join.right.asInstanceOf[logical.Join]
-        .joinType == Inner && join.joinType == Inner) =>
-        val tbl1 = join.left.allAttributes.attrs
-        val tbl2 = join.right.asInstanceOf[logical.Join].left.allAttributes.attrs
-        val tbl3 = join.right.asInstanceOf[logical.Join].right.allAttributes.attrs
-        val cond1 = join.left.expressions.head
-        val cond2 = join.right.asInstanceOf[logical.Join].left.expressions.head
-        val cond3 = join.right.asInstanceOf[logical.Join].condition.get
-        val cond4 = join.condition.get
-        Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
-          ModularRelation(null, null, tbl2, NoFlags, Seq.empty),
-          ModularRelation(null, null, tbl3, NoFlags, Seq.empty)).select(tbl1 ++ tbl2 ++ tbl3: _*)(
-          tbl1 ++ tbl2 ++ tbl3: _*)(Seq(cond1, cond2, cond3, cond4): _*)(Map.empty)(JoinEdge(0,
-          1, Inner), JoinEdge(1, 2, Inner))
-
-//      case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
-//      logical.Join(logical.Filter(cond2, MatchLocalRelation(tbl2, _)),
-//      MatchLocalRelation(tbl3, _),
-//      Inner,
-//      Some(cond3)),
-//      Inner,
-//      Some(cond4)) =>
-//        Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
-//          ModularRelation(null, null, tbl2, NoFlags, Seq.empty),
-//          ModularRelation(null, null, tbl3, NoFlags, Seq.empty)).select(tbl1 ++ tbl2 ++ tbl3: _*)(
-//          tbl1 ++ tbl2 ++ tbl3: _*)(Seq(cond1, cond2, cond3, cond4): _*)(Map.empty)(JoinEdge(0,
-//          1, Inner), JoinEdge(1, 2, Inner))
-    }
-    comparePlans(modularized, correctAnswer)
-  }
-
-//  ignore("SPJGH query") {
-//    val left = testRelation0.where('b >= 1).subquery('x)
-//    val right = testRelation2.where('d >= 2).subquery('y)
-//
-//    val originalQuery =
-//      left.join(right, Inner, Option("x.c".attr === "y.c".attr))
-//        .groupBy("x.a".attr)("x.a".attr as 'f, Count("x.b") as 'g)
-//        .select('f)
-//        .where('g > 1).analyze
-//
-//    val modularized = originalQuery.modularize
-//    val correctAnswer = originalQuery match {
-//      case logical.Project(proj0, logical.Filter(cond1, logical.Project(proj1,
-//        logical.Aggregate(grp, agg,
-//      logical.Join(logical.Filter(cond2, MatchLocalRelation(tbl1, _)),
-//      logical.Filter(cond3, MatchLocalRelation(tbl2, _)),
-//      Inner,
-//      Some(cond4)))))) =>
-//        Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
-//          ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
-//          tbl1 ++ tbl2: _*)(Seq(cond2, cond3, cond4): _*)(Map.empty)(JoinEdge(0, 1, Inner))
-//          .groupBy(agg: _*)(tbl1 ++ tbl2: _*)(grp: _*)
-//          .select(proj0: _*)(proj1: _*)(cond1)(Map.empty)()
-//    }
-//    comparePlans(modularized, correctAnswer)
-//  }
-
-  ignore("non-SPJGH query") {
-    val mqoAnswer = try testRelation0
-      .where('b > 2)
-      .select('a)
-      .orderBy('a.asc)
-      .analyze
-      .modularize catch {
-      case e: Exception =>
-        s"""
-           |Exception thrown while modularizing query:
-           |== Exception ==
-           |$e
-        """.stripMargin.trim
-    }
-    val correctAnswer =
-      s"""
-         |Exception thrown while modularizing query:
-         |== Exception ==
-         |java.lang.UnsupportedOperationException: unsupported operation: No modular plan for
-         |Sort [a#0 ASC NULLS FIRST], true
-         |+- Project [a#0]
-         |   +- Filter (b#1 > 2)
-         |      +- LocalRelation <empty>, [a#0, b#1, c#2]
-      """.stripMargin.trim
-    compareMessages(mqoAnswer.toString, correctAnswer)
   }
 }
