@@ -26,9 +26,12 @@ public class ByteArrayColumnWithRowId implements Comparable<ByteArrayColumnWithR
 
   private short rowId;
 
-  ByteArrayColumnWithRowId(byte[] column, short rowId) {
+  private boolean isNoDictionary;
+
+  ByteArrayColumnWithRowId(byte[] column, short rowId, boolean isNoDictionary) {
     this.column = column;
     this.rowId = rowId;
+    this.isNoDictionary = isNoDictionary;
   }
 
   public byte[] getColumn() {
@@ -41,8 +44,13 @@ public class ByteArrayColumnWithRowId implements Comparable<ByteArrayColumnWithR
 
   @Override
   public int compareTo(ByteArrayColumnWithRowId o) {
-    return UnsafeComparer.INSTANCE
-        .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
+    if (isNoDictionary) {
+      return UnsafeComparer.INSTANCE
+          .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
+    } else {
+      return UnsafeComparer.INSTANCE
+          .compareTo(column, 0, column.length, o.column, 0, o.column.length);
+    }
   }
 
   @Override

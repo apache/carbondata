@@ -205,7 +205,27 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
     exception2 = intercept[MalformedCarbonCommandException](sql(
       "describe column MAC.one on complexcarbontable"))
     assert(exception2.getMessage.contains(
-      "one is invalid child name for column mac of table: complexcarbontable"))
+      "one is invalid child name for column MAC of table: complexcarbontable"))
+
+    exception2 = intercept[MalformedCarbonCommandException](sql(
+      "describe column deviceInformationId.x on complexcarbontable"))
+    assert(exception2.getMessage.contains(
+      "x is invalid child name for column deviceInformationId of table: complexcarbontable"))
+
+    exception2 = intercept[MalformedCarbonCommandException](sql(
+      "describe column mobile.imei.x on complexcarbontable"))
+    assert(exception2.getMessage.contains(
+      "x is invalid child name for column mobile.imei of table: complexcarbontable"))
+
+    exception2 = intercept[MalformedCarbonCommandException](sql(
+      "describe column MAC.item.x on complexcarbontable"))
+    assert(exception2.getMessage.contains(
+      "x is invalid child name for column MAC.item of table: complexcarbontable"))
+
+    exception2 = intercept[MalformedCarbonCommandException](sql(
+      "describe column channelsId.key.x on complexcarbontable"))
+    assert(exception2.getMessage.contains(
+      "x is invalid child name for column channelsId.key of table: complexcarbontable"))
   }
 
   test("test describe short table format") {
