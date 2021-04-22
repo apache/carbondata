@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.strategy
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, GetArrayItem, GetMapValue, GetStructField, Literal, NamedExpression}
 import org.apache.spark.sql.types.{ArrayType, DataType, MapType, StructType}
@@ -35,15 +35,24 @@ object PushDownHelper {
     // parent/child field and push down the corresponding project column. In case of Array, Map,
     // ArrayOfStruct, StructOfArray, MapOfStruct or StructOfMap, push down parent column
     val output = ArrayBuffer[String]()
-    projects.foreach(PushDownHelper.collectColumns(_, output))
+    var parentColumns = ArrayBuffer[String]()
+    projects.foreach(PushDownHelper.collectColumns(_, output, parentColumns))
+    parentColumns = parentColumns.distinct
     if (output.isEmpty) {
       requiredColumns.foreach(projection.addColumn)
     } else {
       requiredColumns.map(_.toLowerCase).foreach { requiredColumn =>
         val childOption = output.filter(_.startsWith(requiredColumn + "."))
-        childOption.isEmpty match {
-          case true => projection.addColumn(requiredColumn)
-          case false => childOption.foreach(projection.addColumn)
+        if (childOption.isEmpty) {
+          projection.addColumn(requiredColumn)
+        } else {
+          // If projection contains both parent and its child, then push down parent column
+          // itself instead of its child column
+          if (parentColumns.contains(requiredColumn)) {
+            projection.addColumn(requiredColumn)
+          } else {
+            childOption.foreach(projection.addColumn)
+          }
         }
       }
     }
@@ -51,7 +60,8 @@ object PushDownHelper {
 
   private def collectColumns(
       exp: NamedExpression,
-      pushDownColumns: ArrayBuffer[String]
+      pushDownColumns: ArrayBuffer[String],
+      parentColumns: ArrayBuffer[String]
   ): Unit = {
     exp transform {
       case struct: GetStructField =>
@@ -69,7 +79,9 @@ object PushDownHelper {
         pushDownColumns += getParentName(map)
         Literal.TrueLiteral
       case attr: AttributeReference =>
-        pushDownColumns += attr.name.toLowerCase
+        val attrName = attr.name.toLowerCase
+        pushDownColumns += attrName
+        parentColumns += attrName
         Literal.TrueLiteral
     }
   }

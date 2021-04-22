@@ -611,51 +611,14 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select a.d,a.f from table1"),
       Seq(Row(2, Row(3, "mno", 4)), Row(2, Row(3, "mno", 4)), Row(2, Row(3, "mno", 4))))
     checkAnswer(sql("select a.j from table1"), Seq(Row(5), Row(5), Row(5)))
-    checkAnswer(sql("select * from table1"),
+    checkAnswer(sql("select a.b,a from table1"),
       Seq(Row(1, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
-        Row(2, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
-        Row(3, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5))))
-    checkAnswer(sql("select *,a from table1"),
-      Seq(Row(1,
-        Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5),
-        Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
-        Row(2,
-          Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5),
-          Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
-        Row(3,
-          Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5),
-          Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5))))
-  }
-
-  test("test Projection PushDown for StructofStruct for Dictionary Include ") {
-    sql("DROP TABLE IF EXISTS table1")
-    sql(
-      "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
-      "h:string,i:int>,j:int>) STORED AS carbondata ")
-    sql("insert into table1 values(1,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', " +
-        "'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
-    sql("insert into table1 values(2,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', " +
-        "'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
-    sql("insert into table1 values(3,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', " +
-        "'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
-    checkAnswer(sql("select a.b from table1"), Seq(Row(1), Row(1), Row(1)))
-    checkAnswer(sql("select a.c from table1"), Seq(Row("abc"), Row("abc"), Row("abc")))
-    checkAnswer(sql("select a.d from table1"), Seq(Row(2), Row(2), Row(2)))
-    checkAnswer(sql("select a.e from table1"), Seq(Row("efg"), Row("efg"), Row("efg")))
-    checkAnswer(sql("select a.f from table1"),
-      Seq(Row(Row(3, "mno", 4)), Row(Row(3, "mno", 4)), Row(Row(3, "mno", 4))))
-    checkAnswer(sql("select a.f.g  from table1"), Seq(Row(3), Row(3), Row(3)))
-    checkAnswer(sql("select a.f.h  from table1"), Seq(Row("mno"), Row("mno"), Row("mno")))
-    checkAnswer(sql("select a.f.i  from table1"), Seq(Row(4), Row(4), Row(4)))
-    checkAnswer(sql("select a.f.g,a.f.h,a.f.i  from table1"),
-      Seq(Row(3, "mno", 4), Row(3, "mno", 4), Row(3, "mno", 4)))
-    checkAnswer(sql("select a.b,a.f from table1"),
-      Seq(Row(1, Row(3, "mno", 4)), Row(1, Row(3, "mno", 4)), Row(1, Row(3, "mno", 4))))
-    checkAnswer(sql("select a.c,a.f from table1"),
-      Seq(Row("abc", Row(3, "mno", 4)), Row("abc", Row(3, "mno", 4)), Row("abc", Row(3, "mno", 4))))
-    checkAnswer(sql("select a.d,a.f from table1"),
-      Seq(Row(2, Row(3, "mno", 4)), Row(2, Row(3, "mno", 4)), Row(2, Row(3, "mno", 4))))
-    checkAnswer(sql("select a.j from table1"), Seq(Row(5), Row(5), Row(5)))
+        Row(1, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
+        Row(1, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5))))
+    checkAnswer(sql("select a.b,a,a from table1"),
+      Seq(Row(1, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5), Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
+          Row(1, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5), Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
+          Row(1, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5), Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5))))
     checkAnswer(sql("select * from table1"),
       Seq(Row(1, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
         Row(2, Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5)),
