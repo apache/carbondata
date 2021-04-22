@@ -286,6 +286,38 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       .contains(Encoding.INVERTED_INDEX))
   }
 
+  test("inverted index with dimension column in INVERTED_INDEX and test filter query") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
+        "true")
+    sql("drop table if exists indexFormat")
+    sql(
+      "CREATE TABLE indexFormat (CUST_ID INT,CUST_NAME string,ACTIVE_EMUI_VERSION string," +
+      "DOB timestamp,DOJ timestamp,BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint," +
+      "DECIMAL_COLUMN1 DECIMAL(30, 10),DECIMAL_COLUMN2 DECIMAL(36, 10),Double_COLUMN1 double, " +
+      "Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata TBLPROPERTIES(" +
+      "'TABLE_BLOCKSIZE'='256 MB', 'sort_columns'='CUST_NAME, ACTIVE_EMUI_VERSION', " +
+      "'inverted_index'='CUST_NAME, ACTIVE_EMUI_VERSION', 'local_dictionary_enable'='true', " +
+      "'local_dictionary_exclude'='ACTIVE_EMUI_VERSION')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data_2000.csv' INTO " +
+        "TABLE indexFormat OPTIONS('DELIMITER'=',', " +
+        "'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID," +
+        "CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1," +
+        "DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')")
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "indexFormat")(sqlContext
+      .sparkSession)
+    assert(carbonTable.getColumnByName("CUST_NAME").getColumnSchema.getEncodingList
+      .contains(Encoding.INVERTED_INDEX))
+    assert(carbonTable.getColumnByName("ACTIVE_EMUI_VERSION").getColumnSchema.getEncodingList
+      .contains(Encoding.INVERTED_INDEX))
+    checkAnswer(sql("select CUST_NAME from indexFormat where CUST_NAME='CUST_NAME_00004'"),
+      Seq(Row("CUST_NAME_00004")))
+    sql("drop table if exists indexFormat")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
+        CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT)
+  }
+
   test("test same column configured in inverted and no inverted index") {
     sql("drop table if exists index1")
     val exception = intercept[MalformedCarbonCommandException] {
@@ -307,6 +339,8 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
+        CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT)
     sql("drop table if exists index1")
     sql("drop table if exists index2")
     sql("drop table if exists indexFormat")

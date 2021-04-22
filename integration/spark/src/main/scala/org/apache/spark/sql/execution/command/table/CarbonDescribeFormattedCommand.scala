@@ -412,7 +412,7 @@ case class CarbonDescribeColumnCommand(
             val nextField = inputFieldsIterator.next()
             // child of an array can be only 'item'
             if (!nextField.equalsIgnoreCase("item")) {
-              throw handleException(nextField, currField.name, carbonTable.getTableName)
+              throw handleException(nextField, inputColumn, carbonTable.getTableName)
             }
             // make the child type as current field to describe further nested types.
             currField = StructField("item", currField.dataType.asInstanceOf[ArrayType].elementType)
@@ -433,7 +433,7 @@ case class CarbonDescribeColumnCommand(
               .find(_.name.equalsIgnoreCase(nextField))
             // verify if the input child name exists in the schema
             if (!nextCurrField.isDefined) {
-              throw handleException(nextField, currField.name, carbonTable.getTableName)
+              throw handleException(nextField, inputColumn, carbonTable.getTableName)
             }
             // make the child type as current field to describe further nested types.
             currField = nextCurrField.get
@@ -455,7 +455,7 @@ case class CarbonDescribeColumnCommand(
             val nextCurrField = nextField match {
               case "key" => StructField("key", children.keyType)
               case "value" => StructField("value", children.valueType)
-              case _ => throw handleException(nextField, currField.name, carbonTable.getTableName)
+              case _ => throw handleException(nextField, inputColumn, carbonTable.getTableName)
             }
             // make the child type as current field to describe further nested types.
             currField = nextCurrField
@@ -469,6 +469,11 @@ case class CarbonDescribeColumnCommand(
           results ++= Seq(("key", children.keyType.simpleString, "null"),
             ("value", children.valueType.simpleString, "null"))
         } else {
+          if (inputFieldsIterator.hasNext) {
+            val nextField = inputFieldsIterator.next().toLowerCase()
+            // throw exception as no children present to display.
+            throw handleException(nextField, inputColumn, carbonTable.getTableName)
+          }
           results = Seq((inputColumn,
             currField.dataType.typeName, currField.getComment().getOrElse("null")))
         }
