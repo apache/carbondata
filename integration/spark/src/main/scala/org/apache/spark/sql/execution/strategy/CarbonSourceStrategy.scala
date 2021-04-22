@@ -165,7 +165,8 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       Some(TableIdentifier(table.identifier.getTableName, Option(table.identifier.getDatabaseName)))
     )
     // filter
-    val filterOption = if (directScanSupport && scan.supportsColumnar) {
+    val filterOption = if (directScanSupport && CarbonToSparkAdapter
+        .supportsBatchOrColumnar(scan)) {
       allPredicates.reduceLeftOption(expressions.And)
     } else if (extraSegments.nonEmpty) {
       allPredicates.reduceLeftOption(expressions.And)

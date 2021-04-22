@@ -24,6 +24,8 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.{RuleExecutor, _}
 import org.apache.spark.sql.internal.SQLConf
 
+import org.apache.carbondata.mv.plans.modular.ExpressionHelper
+
 object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
 
   val conf = new SQLConf()
@@ -71,39 +73,8 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
       RemoveLiteralFromGroupExpressions,
       RemoveRepetitionFromGroupExpressions) ::
     Batch(
-      "Operator Optimizations", fixedPoint, Seq(
-        // Operator push down
-        PushProjectionThroughUnion,
-        ReorderJoin,
-        EliminateOuterJoin,
-        PushPredicateThroughJoin,
-        PushDownPredicates,
-        ColumnPruning,
-        // Operator combine
-        CollapseRepartition,
-        CollapseProject,
-        CollapseWindow,
-        CombineFilters,
-        EliminateLimits,
-        CombineUnions,
-        // Constant folding and strength reduction
-        NullPropagation,
-        FoldablePropagation,
-        ConstantFolding,
-        ReorderAssociativeOperator,
-        // No need to apply LikeSimplification rule while creating MV
-        // as modular plan asCompactSql will be set in schema
-        //        LikeSimplification,
-        BooleanSimplification,
-        SimplifyConditionals,
-        RemoveDispensableExpressions,
-        SimplifyBinaryComparison,
-        EliminateSorts,
-        SimplifyCasts,
-        SimplifyCaseConversionExpressions,
-        RewriteCorrelatedScalarSubquery,
-        EliminateSerialization,
-        RemoveRedundantAliases) ++ extendedOperatorOptimizationRules: _*) ::
+      "Operator Optimizations", fixedPoint, ExpressionHelper.seqOfRules
+        ++ extendedOperatorOptimizationRules: _*) ::
     Batch(
       "Check Cartesian Products", Once,
       CheckCartesianProducts) ::
@@ -124,8 +95,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     def apply(plan: LogicalPlan): LogicalPlan = {
       plan transformAllExpressions {
         case s: SubqueryExpression =>
-          val newPlan = BirdcageOptimizer.execute(Subquery.fromExpression(s))
-          s.withNewPlan(newPlan)
+          s.withNewPlan(ExpressionHelper.getOptimizedPlan(s))
       }
     }
   }

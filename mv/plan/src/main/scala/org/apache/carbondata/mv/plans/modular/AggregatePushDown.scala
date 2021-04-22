@@ -35,7 +35,7 @@ trait AggregatePushDown { // self: ModularPlan =>
       case (attr: Attribute, i) if !fact.outputSet.contains(attr) => pushable = false
       case (alias: Alias, i)
         if alias.child.isInstanceOf[Attribute] &&
-           !fact.outputSet.contains(alias.child.asInstanceOf[Attribute]) => pushable = false
+          !fact.outputSet.contains(alias.child.asInstanceOf[Attribute]) => pushable = false
       case (alias: Alias, i) if alias.child.isInstanceOf[AggregateExpression] =>
         val res = transformAggregate(
           alias.child
@@ -77,7 +77,7 @@ trait AggregatePushDown { // self: ModularPlan =>
     aggregate match {
       case cnt: AggregateExpression if cnt.aggregateFunction.isInstanceOf[Count] &&
         cnt.aggregateFunction.children.length == 1 && cnt.aggregateFunction.children.head
-          .isInstanceOf[Attribute] =>
+        .isInstanceOf[Attribute] =>
         val exprs = cnt.aggregateFunction.children
         val tAttr = selAliasMap.get(exprs.head.asInstanceOf[Attribute]).getOrElse(exprs.head)
           .asInstanceOf[Attribute]
@@ -93,7 +93,7 @@ trait AggregatePushDown { // self: ModularPlan =>
         }
       case cnt: AggregateExpression if cnt.aggregateFunction.isInstanceOf[Count] &&
         cnt.aggregateFunction.children.length == 1 && cnt.aggregateFunction.children.head
-          .isInstanceOf[Literal] =>
+        .isInstanceOf[Literal] =>
         val cnt1 = cnt.copy(Count(cnt.aggregateFunction.children.head), cnt.mode,
           isDistinct = false)
         val alias = Alias(cnt1, cnt1.toString)()
@@ -116,15 +116,14 @@ trait AggregatePushDown { // self: ModularPlan =>
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case sum: AggregateExpression if sum.aggregateFunction.isInstanceOf[Sum] &&
-        checkMatchCast(sum.aggregateFunction.asInstanceOf[Sum].child) =>
-        val expr = sum.aggregateFunction.children.head
+      case sum@MatchAggregateExpression(Sum(cast@MatchCast(expr, dataType)), _, false, _, _) =>
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val alias = Alias(sum, sum.toString)()
-          val tSum = sum.copy(Sum(alias.toAttribute), mode = sum.mode, isDistinct = false,
-            resultId = sum.resultId)
+          val sum1 = AggregateExpression(Sum(cast), sum.mode, false)
+          val alias = Alias(sum1, sum1.toString)()
+          val tSum = sum.copy(Sum(alias.toAttribute), sum.mode, isDistinct = false, resultId = sum
+            .resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
           map += (ith -> (Alias(tSum, name)(exprId = id), Seq(alias)))
         } else {
@@ -188,14 +187,6 @@ trait AggregatePushDown { // self: ModularPlan =>
       case _ => Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
     }
   }
-
-  private def checkMatchCast(expr: Expression): Boolean = {
-    expr match {
-      case MatchCast(expr, _) => true
-      case _ => false
-    }
-  }
-
 }
 
 
@@ -213,7 +204,7 @@ object MatchCast {
 }
 
 /**
- * unapply method of Cast cexprlass with expression.
+ * unapply method of Cast class with expression.
  */
 object MatchCastExpression {
   def unapply(expr: Expression): Option[(Expression, DataType)] = {

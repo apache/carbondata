@@ -23,8 +23,8 @@ import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
+import org.apache.carbondata.mv.plans.modular.{JoinEdge, MatchJoin}
 import org.apache.carbondata.mv.plans.modular.Flags._
-import org.apache.carbondata.mv.plans.modular.JoinEdge
 
 
 
@@ -93,30 +93,29 @@ object ExtractSelectModule extends PredicateHelper {
           flags.setFlag(SORT)
         }, Seq(Seq(order)) ++ fspecs, wspecs)
 
-      case join: Join =>
+      case MatchJoin(left, right, joinType, condition, hint) =>
         val (loutputs, linputs, lpredicates, ljoinedges, lchildren, _, laliases, lflags, lfspecs,
-        lwspecs) = collectProjectsFiltersJoinsAndSort(join.left)
+        lwspecs) = collectProjectsFiltersJoinsAndSort(left)
         val (routputs, rinputs, rpredicates, rjoinedges, rchildren, _, raliases, rflags, rfspecs,
-        rwspecs) = collectProjectsFiltersJoinsAndSort(join.right)
-        val (lcondition, rcondition, ccondition) = split(join.condition, lchildren, rchildren)
-        val joinEdge = collectJoinEdge(ccondition, lchildren, rchildren, join.joinType)
+        rwspecs) = collectProjectsFiltersJoinsAndSort(right)
+        val (lcondition, rcondition, ccondition) = split(condition, lchildren, rchildren)
+        val joinEdge = collectJoinEdge(ccondition, lchildren, rchildren, joinType)
         val adjustedJoinEdges = rjoinedges
           .map(e => JoinEdge(e.left + lchildren.size, e.right + lchildren.size, e.joinType))
         val output: Seq[Attribute] = {
-          join.joinType match {
+          joinType match {
             case LeftSemi =>
-              join.left.output
+              left.output
             case LeftOuter =>
-              join.left.output ++ join.right.output.map(_.withNullability(true))
+              left.output ++ right.output.map(_.withNullability(true))
             case RightOuter =>
-              join.left.output.map(_.withNullability(true)) ++ join.right.output
+              left.output.map(_.withNullability(true)) ++ right.output
             case FullOuter =>
-              join.left.output.map(_.withNullability(true)) ++
-              join.right.output.map(_.withNullability(true))
+              left.output.map(_.withNullability(true)) ++ right.output.map(_.withNullability(true))
             case LeftAnti =>
-              join.left.output
+              left.output
             case _ =>
-              join.left.output ++ join.right.output
+              left.output ++ right.output
           }
         }
         if (lfspecs.isEmpty && rfspecs.isEmpty && lflags == NoFlags && rflags == NoFlags &&
@@ -129,8 +128,8 @@ object ExtractSelectModule extends PredicateHelper {
             lchildren ++ rchildren, true, laliases ++ raliases, NoFlags, Seq.empty, Seq.empty)
         } else {
           throw new UnsupportedOperationException(
-            s"unsupported join: \n left child ${ join.left } " +
-            s"\n right child ${ join.right }")
+            s"unsupported join: \n left child ${ left } " +
+            s"\n right child ${ right }")
         }
 
       // when select * is executed with limit, ColumnPruning rule will remove the project node from

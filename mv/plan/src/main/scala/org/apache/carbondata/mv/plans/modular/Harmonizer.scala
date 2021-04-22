@@ -86,7 +86,7 @@ object HarmonizeDimensionTable extends Rule[ModularPlan] with PredicateHelper {
                 case a: Alias  if a.child.isInstanceOf[Attribute] =>
                 (a.child.asInstanceOf[Attribute], a.toAttribute) })
             val pullUpPredicates = s1.predicateList
-              .map(replaceAlias(_, rAliasMap.asInstanceOf[AttributeMap[Alias]]))
+              .map(replaceAlias(_, ExpressionHelper.attributeMap(rAliasMap)))
             if (pullUpPredicates.forall(cond => canEvaluate(cond, h))) {
               tPullUpPredicates = tPullUpPredicates ++ pullUpPredicates
               plans.modular.HarmonizedRelation(h.copy(child = s1.copy(predicateList = Nil)))

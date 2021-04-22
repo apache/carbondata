@@ -21,10 +21,7 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.types.{AtomicType, StructType}
@@ -98,8 +95,7 @@ case class CarbonFileIndex(
       val hadoopConf = sparkSession.sessionState.newHadoopConf()
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(hadoopConf)
       // convert t sparks source filter
-      val filters = dataFilters.flatMap(DataSourceStrategy.translateFilter(_,
-        supportNestedPredicatePushdown = true))
+      val filters = CarbonToSparkAdapter.translateFilter(dataFilters)
       val dataTypeMap = dataSchema.map(f => f.name -> f.dataType).toMap
       // convert to carbon filter expressions
       val filter: Option[CarbonExpression] = filters.filterNot{ ref =>

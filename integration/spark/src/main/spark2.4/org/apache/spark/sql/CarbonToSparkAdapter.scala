@@ -33,7 +33,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCata
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
-import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide, Optimizer}
+import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Join, LogicalPlan, OneRowRelation, Statistics, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.util.{DateTimeUtils, TimestampFormatter}
@@ -42,15 +42,13 @@ import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan, logical}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, ExplainCommand, Field, PartitionerField, ResetCommand, TableModel, TableNewProcessor}
-import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile, RefreshTable}
+import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, FilePartition, PartitionedFile, RefreshTable}
 import org.apache.spark.sql.execution.{QueryExecution, SQLExecution, ShuffledRowRDD, SparkPlan}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
-import org.apache.spark.sql.execution.metric.SQLShuffleWriteMetricsReporter
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.types.{DataType, Metadata, StructField}
-import org.apache.spark.sql.CarbonToSparkAdapter.InsertIntoStatementWrapper
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -62,12 +60,19 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, ColTypeListContext, CreateTableHeaderContext, LocationSpecContext, PartitionFieldListContext, QueryContext, SkewSpecContext, TablePropertyListContext}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, ColTypeListContext, CreateTableHeaderContext, LocationSpecContext, QueryContext, SkewSpecContext, TablePropertyListContext}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
+import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateColumnExists, convertDbNameToLowerCase, validateStreamingProperty}
+import org.apache.spark.sql.sources.Filter
+import org.apache.spark.sql.streaming.{Trigger,ProcessingTime}
+import org.apache.spark.sql.catalyst.plans.logical.InsertIntoTable
+import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide}
+
 
 import scala.collection.mutable
 
@@ -190,8 +195,8 @@ object CarbonToSparkAdapter {
     attribute.qualifier.reverse.head
   }
 
-  def getExplainCommandObj() : ExplainCommand = {
-    ExplainCommand(OneRowRelation())
+  def getExplainCommandObj(mode: Option[String]) : ExplainCommand = {
+    ExplainCommand(OneRowRelation(), mode.isDefined)
   }
 
   /**
@@ -246,13 +251,12 @@ object CarbonToSparkAdapter {
     DateTimeUtils.stringToTimestamp(UTF8String.fromString(timestamp))
   }
 
-  def stringToTime(value: String): String = {
-    DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String.fromString(value),
-      ZoneId.systemDefault()).get).getTime.toString
+  def stringToTime(value: String): java.util.Date = {
+    DateTimeUtils.stringToTime(value)
   }
 
   def timeStampToString(timeStamp: Long): String = {
-    TimestampFormatter.getFractionFormatter(ZoneId.systemDefault()).format(timeStamp)
+    DateTimeUtils.timestampToString(timeStamp)
   }
 
   def getTableIdentifier(u: UnresolvedRelation): Some[TableIdentifier] = {
@@ -263,8 +267,8 @@ object CarbonToSparkAdapter {
     DateTimeUtils.dateToString(date.toString.toInt)
   }
 
-  def getProcessingTime: String => ProcessingTime = {
-    ProcessingTime
+  def getProcessingTime: String => Trigger = {
+    Trigger.ProcessingTime
   }
 
   def addTaskCompletionListener[U](f: => U) {
@@ -315,7 +319,8 @@ object CarbonToSparkAdapter {
     BuildLeft
   }
 
-  type CarbonBuildSide = BuildSide
+  type CarbonBuildSideType = BuildSide
+  type InsertIntoStatementWrapper = InsertIntoTable
 
   def withNewExecutionId[T](sparkSession: SparkSession, queryExecution: QueryExecution): T => T = {
     SQLExecution.withNewExecutionId(sparkSession, queryExecution)(_)
@@ -354,15 +359,11 @@ object CarbonToSparkAdapter {
     Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, stats.hints)
   }
 
-  def createResetCommand(): ResetCommand = {
-    ResetCommand()
-  }
-
   def createRefreshTableCommand(tableIdentifier: TableIdentifier): RefreshTable = {
     RefreshTable(tableIdentifier)
   }
 
-  type RefreshTable = spark.sql.execution.datasources.RefreshTable
+  type RefreshTables = RefreshTable
 
   /**
    * Validates the partition columns and return's A tuple of partition columns and partitioner
@@ -417,7 +418,7 @@ object CarbonToSparkAdapter {
    *
    */
   def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
-    BucketSpecContext, PartitionFieldListContext, ColTypeListContext, TablePropertyListContext,
+    BucketSpecContext, ColTypeListContext, ColTypeListContext, TablePropertyListContext,
     LocationSpecContext, Option[String], TerminalNode, QueryContext, String),
     extraTableTuple: (Seq[StructField], Boolean, TableIdentifier, Boolean, Seq[String],
     Option[String], mutable.Map[String, String], Map[String, String], Seq[StructField],
@@ -580,16 +581,41 @@ object CarbonToSparkAdapter {
                schema: Seq[StructField],
                isExternal: Boolean = false): Seq[Field] = {
     schema.map { col =>
-      parser.getFields(col.comment, col.name.head, col.dataType, isExternal)
+      parser.getFields(col.getComment, col.name, col.dataType, isExternal)
     }
   }
 
   def supportsBatchOrColumnar(scan: CarbonDataSourceScan): Boolean = {
     scan.supportsBatch
   }
+
+  def createDataset(sparkSession: SparkSession, qe: QueryExecution) : Dataset[Row] = {
+    new Dataset[Row](sparkSession, qe, RowEncoder(qe.analyzed.schema))
+  }
+
+  def createSharedState(sparkContext: SparkContext) : SharedState = {
+    new SharedState(sparkContext)
+  }
+
+  def translateFilter(dataFilters: Seq[Expression]) : Seq[Filter] = {
+    dataFilters.flatMap(DataSourceStrategy.translateFilter)
+  }
+
+  def getCarbonOptimizer(session : SparkSession, sessionState: SessionState) : CarbonOptimizer = {
+    new CarbonOptimizer(session, sessionState.catalog, sessionState.optimizer)
+  }
 }
 
-class CarbonOptimizer(session: SparkSession) extends Optimizer(session.sessionState.catalog) {
+case class CarbonBuildSide(buildSide: BuildSide) {
+  def isRight: Boolean = buildSide.isInstanceOf[BuildRight.type]
+  def isLeft: Boolean = buildSide.isInstanceOf[BuildLeft.type]
+}
+
+
+class CarbonOptimizer(
+    session: SparkSession,
+    catalog: SessionCatalog,
+    optimizer: Optimizer) extends Optimizer(catalog) {
 
   private lazy val mvRules = Seq(Batch("Materialized View Optimizers", Once,
     Seq(new MVRewriteRule(session)): _*))
@@ -605,13 +631,13 @@ class CarbonOptimizer(session: SparkSession) extends Optimizer(session.sessionSt
   }
 
   def convertedBatch(): Seq[Batch] = {
-    session.sessionState.optimizer.batches.map { batch =>
+    optimizer.batches.map { batch =>
       Batch(
         batch.name,
         batch.strategy match {
-          case session.sessionState.optimizer.Once =>
+          case optimizer.Once =>
             Once
-          case _: session.sessionState.optimizer.FixedPoint =>
+          case _: optimizer.FixedPoint =>
             fixedPoint
         },
         batch.rules: _*

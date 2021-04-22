@@ -18,7 +18,7 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.CarbonToSparkAdapter.RefreshTable
+import org.apache.spark.sql.CarbonToSparkAdapter.RefreshTables
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogUtils}
@@ -276,7 +276,7 @@ object DDLHelper {
     }
   }
 
-  def refreshTable(refreshTable: RefreshTable): RefreshCarbonTableCommand = {
+  def refreshTable(refreshTable: RefreshTables): RefreshCarbonTableCommand = {
     RefreshCarbonTableCommand(
       refreshTable.tableIdent.database,
       refreshTable.tableIdent.table)

@@ -33,6 +33,7 @@ import org.apache.spark.sql.execution.command.index.{CarbonCreateIndexCommand, C
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnCommand
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
+import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
 import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
 import org.apache.spark.sql.types.{DataType, StructField}
@@ -523,7 +524,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val explainPlan: Parser[LogicalPlan] =
     (EXPLAIN ~> opt(MODE)) ~ start ^^ {
       case mode ~ logicalPlan =>
-        CarbonToSparkAdapter.getExplainCommandObj(logicalPlan, mode)
+        logicalPlan match {
+          case _: CarbonCreateTableCommand =>
+            CarbonToSparkAdapter.getExplainCommandObj(logicalPlan, mode)
+          case _ => CarbonToSparkAdapter.getExplainCommandObj(mode)
+        }
     }
 
   /**

@@ -126,16 +126,17 @@
     <hadoop.version>2.7.2</hadoop.version>
     <httpclient.version>4.3.4</httpclient.version>
     <httpcore.version>4.3-alpha1</httpcore.version>
-    <scala.binary.version>2.12</scala.binary.version>
-    <scala.version>2.12.8</scala.version>
+    <scala.binary.version>2.11</scala.binary.version>
+    <scala.version>2.11.8</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
-    <spark.version>3.1.1</spark.version>
-    <spark.binary.version>3.1</spark.binary.version>
+    <spark.version>2.3.4</spark.version>
+    <spark.binary.version>2.3</spark.binary.version>
     <antlr4.version>4.8</antlr4.version>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
     <dev.path>${basedir}/dev</dev.path>
     <spark.master.url>local[2]</spark.master.url>
+    <dep.jackson.version>2.6.5</dep.jackson.version>
     <hdfs.url>local</hdfs.url>
     <presto.jdbc.url>localhost:8086</presto.jdbc.url>
     <!--    prestosql by default-->
@@ -253,6 +254,21 @@
         <artifactId>spark-core_${scala.binary.version}</artifactId>
         <version>${spark.version}</version>
         <scope>${spark.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.30</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.7.30</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-jdk14</artifactId>
+        <version>1.7.30</version>
       </dependency>
       <dependency>
         <groupId>org.apache.spark</groupId>
@@ -548,6 +564,9 @@
     </profile>
     <profile>
       <id>spark-2.3</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.binary.version>2.3</spark.binary.version>
         <spark.version>2.3.4</spark.version>
@@ -692,14 +711,12 @@
     </profile>
     <profile>
       <id>spark-3.1</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.binary.version>3.1</spark.binary.version>
         <spark.version>3.1.1</spark.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala.version>2.12.8</scala.version>
+        <dep.jackson.version>2.10.0</dep.jackson.version>
       </properties>
       <build>
         <plugins>
