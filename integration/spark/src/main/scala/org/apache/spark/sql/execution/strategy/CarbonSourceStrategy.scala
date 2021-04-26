@@ -38,7 +38,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.scan.expression.{Expression => CarbonFilter}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.geo.{InPolygonListUDF, InPolygonRangeListUDF, InPolygonUDF, InPolylineListUDF}
+import org.apache.carbondata.geo.{GeoHashUtils, GeoIdToGridXyUDF, GeoIdToLatLngUDF, InPolygonListUDF, InPolygonRangeListUDF, InPolygonUDF, InPolylineListUDF, LatLngToGeoIdUDF, ToRangeListUDF, ToUpperLayerGeoIdUDF}
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.index.{TextMatchMaxDocUDF, TextMatchUDF}
 
@@ -62,8 +62,47 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
         } catch {
           case _: CarbonPhysicalPlanException => Nil
         }
+      case Project(projectList, _: OneRowRelation) if validateUdf(projectList) => Nil
       case _ => Nil
     }
+  }
+
+  private def validateUdf(projects: Seq[NamedExpression]): Boolean = {
+    projects foreach {
+      case alias: Alias if alias.child.isInstanceOf[Expression] =>
+        alias.child match {
+          case Cast(s: ScalaUDF, _, _) => validateGeoUtilUDFs(s)
+          case s: ScalaUDF => validateGeoUtilUDFs(s)
+          case _ =>
+        }
+    }
+    true
+  }
+
+  def validateGeoUtilUDFs(s: ScalaUDF): Boolean = {
+    s.function match {
+      case _: ToRangeListUDF =>
+        val inputNames = List("polygon", "oriLatitude", "gridSize")
+        for (i <- s.children.indices) {
+          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+        }
+      case _: LatLngToGeoIdUDF =>
+        val inputNames = List("latitude", "longitude", "oriLatitude", "gridSize")
+        for (i <- s.children.indices) {
+          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+        }
+      case _: GeoIdToGridXyUDF =>
+        GeoHashUtils.validateUDFInputValue(s.children.head, "geoId", s.inputTypes.head.typeName)
+      case _: GeoIdToLatLngUDF =>
+        val inputNames = List("geoId", "oriLatitude", "gridSize")
+        for (i <- s.children.indices) {
+          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+        }
+      case _: ToUpperLayerGeoIdUDF =>
+        GeoHashUtils.validateUDFInputValue(s.children.head, "geoId", s.inputTypes.head.typeName)
+      case _ =>
+    }
+    true
   }
 
   private def isCarbonRelation(logicalRelation: LogicalRelation): Boolean = {

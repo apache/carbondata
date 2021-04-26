@@ -169,35 +169,35 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
           s"120.190359 30.315388)', -1)").collect())
     assert(exception2.getMessage.contains("Expect buffer size to be a positive value"))
 
-    // Expect grid size to be a positive value
-    intercept[SparkException](
+    exception2 = intercept[MalformedCarbonCommandException](
       sql(s"select LatLngToGeoId(39930753, 116302895, 39.832277, -50) as geoId").collect())
+    assert(exception2.getMessage.contains("Expect grid size to be a positive integer"))
 
-    // Expect grid size to be a positive value
-    intercept[SparkException](
+    exception2 = intercept[MalformedCarbonCommandException](
       sql(s"select GeoIdToLatLng(855279270226, 39.832277, -50) as LatitudeAndLongitude").collect())
+    assert(exception2.getMessage.contains("Expect grid size to be a positive integer"))
 
-    // Expect grid size to be a positive value
-    intercept[SparkException](
+    exception2 = intercept[MalformedCarbonCommandException](
       sql(s"select ToRangeList('116.321011 40.123503, 116.320311 40.122503,116.321111 40.121503, " +
           s"116.321011 40.123503', 39.832277, 0) as rangeList")
         .collect())
+    assert(exception2.getMessage.contains("Expect grid size to be a positive integer"))
 
-    // Expect geoId to be of Long type
-    intercept[SparkException](
+    exception2 = intercept[MalformedCarbonCommandException](
       sql(s"select GeoIdToGridXy('X') as GridXY").collect())
+    assert(exception2.getMessage.contains("Expect geoId to be of long type"))
 
-    // Expect latitude to be of Long type
-    intercept[SparkException](
+    exception2 = intercept[MalformedCarbonCommandException](
       sql(s"select LatLngToGeoId('X', 'X', 'X', 'X') as geoId").collect())
+    assert(exception2.getMessage.contains("Expect latitude to be of long type"))
 
-    // Expect geoId to be of Long type
-    intercept[SparkException](
+    exception2 = intercept[MalformedCarbonCommandException](
       sql(s"select GeoIdToLatLng('X', 'X', 'X') as LatitudeAndLongitude").collect())
+    assert(exception2.getMessage.contains("Expect geoId to be of long type"))
 
-    // Expect geoId to be of Long type
-    intercept[SparkException](
+    exception2 = intercept[MalformedCarbonCommandException](
       sql(s"select ToUpperLayerGeoId('X') as upperLayerGeoId").collect())
+    assert(exception2.getMessage.contains("Expect geoId to be of long type"))
   }
 
   test("test materialized view with spatial column") {

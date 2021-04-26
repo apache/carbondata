@@ -95,8 +95,8 @@ public class GeoHashUtils {
       throws MalformedCarbonCommandException {
     if (inputName.equalsIgnoreCase(GeoConstants.GRID_SIZE) && (input == null
         || !Pattern.compile(POSITIVE_INTEGER_REGEX).matcher(input.toString()).find())) {
-      throw new MalformedCarbonCommandException("Expect grid size to be a positive value");
-    } else if (input == null) {
+      throw new MalformedCarbonCommandException("Expect grid size to be a positive integer");
+    } else if (input == null || input.toString().equals("null")) {
       throw new MalformedCarbonCommandException(
           "Expect " + inputName + " to be of " + datatype + " type");
     }
