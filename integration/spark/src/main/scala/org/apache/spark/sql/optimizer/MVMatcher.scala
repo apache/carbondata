@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression,
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
 import org.apache.spark.sql.types.{DataType, Metadata}
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.mv.plans.modular.{JoinEdge, Matchable, ModularPlan, _}
@@ -277,7 +278,7 @@ private abstract class MVMatchPattern extends Logging {
   protected def getTransformedTimeSeriesFunction(function: ScalaUDF): Expression = {
     function.transform {
       case literal: Literal =>
-        Literal(literal.toString().toLowerCase, literal.dataType)
+        Literal(UTF8String.fromString(literal.toString().toLowerCase), literal.dataType)
     }
   }
 

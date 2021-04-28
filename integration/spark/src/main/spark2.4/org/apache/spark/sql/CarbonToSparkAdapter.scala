@@ -21,16 +21,17 @@ import java.net.URI
 import java.time.ZoneId
 
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener, SessionCatalog}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
@@ -40,16 +41,17 @@ import org.apache.spark.sql.catalyst.util.{DateTimeUtils, TimestampFormatter}
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
-import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan, logical}
+import org.apache.spark.sql.catalyst.plans.{logical, JoinType, QueryPlan}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, ExplainCommand, Field, PartitionerField, ResetCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, FilePartition, PartitionedFile, RefreshTable}
-import org.apache.spark.sql.execution.{QueryExecution, SQLExecution, ShuffledRowRDD, SparkPlan}
+import org.apache.spark.sql.execution.{QueryExecution, ShuffledRowRDD, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
-import org.apache.spark.sql.types.{DataType, Metadata, StructField}
+import org.apache.spark.sql.types.{CharType, DataType, Metadata, StructField}
 import org.apache.spark.unsafe.types.UTF8String
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -69,11 +71,9 @@ import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateColumnExists, convertDbNameToLowerCase, validateStreamingProperty}
 import org.apache.spark.sql.sources.Filter
-import org.apache.spark.sql.streaming.{Trigger,ProcessingTime}
+import org.apache.spark.sql.streaming.{ProcessingTime, Trigger}
 import org.apache.spark.sql.catalyst.plans.logical.InsertIntoTable
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide}
-
-
 import scala.collection.mutable
 
 object CarbonToSparkAdapter {
@@ -603,6 +603,10 @@ object CarbonToSparkAdapter {
 
   def getCarbonOptimizer(session : SparkSession, sessionState: SessionState) : CarbonOptimizer = {
     new CarbonOptimizer(session, sessionState.catalog, sessionState.optimizer)
+  }
+
+  def isCharType(dataType: DataType) = {
+    false
   }
 }
 

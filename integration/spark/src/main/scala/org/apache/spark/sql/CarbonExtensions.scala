@@ -76,7 +76,8 @@ case class CarbonOptimizerRule(session: SparkSession) extends Rule[LogicalPlan] 
           val sessionState = session.sessionState
           val field = sessionState.getClass.getDeclaredField("optimizer")
           field.setAccessible(true)
-          field.set(sessionState, CarbonToSparkAdapter.getCarbonOptimizer(session, sessionState))
+          field.set(sessionState,
+            CarbonToSparkAdapter.getCarbonOptimizer(session, sessionState))
         }
       }
     }

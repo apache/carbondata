@@ -17,7 +17,6 @@
 package org.apache.spark.sql.execution.strategy
 
 import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -29,7 +28,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileForm
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression}
-import org.apache.spark.sql.execution.{CodegenSupport, FilterExec, ProjectExec, SparkPlan}
+import org.apache.spark.sql.execution.{CodegenSupport, DataSourceScanExec, FilterExec, ProjectExec, SparkPlan}
 import org.apache.spark.sql.execution.datasources.{FileFormat, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
 import org.apache.spark.sql.execution.datasources.json.JsonFileFormat
@@ -44,7 +43,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
-import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager, FileFormat => FileFormatName}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -340,8 +339,8 @@ object MixedFormatHandler {
     } else {
       ProjectExec(projects, withFilter)
     }
-    (withProjections.asInstanceOf[CodegenSupport].inputRDDs().head,
-      fileFormat.supportBatch(sparkSession, outputSchema))
+    (withProjections.find(_.isInstanceOf[DataSourceScanExec]).get.asInstanceOf[DataSourceScanExec]
+      .inputRDDs().head, fileFormat.supportBatch(sparkSession, outputSchema))
   }
 
   // This function is used to get the unique columns based on expression Id from

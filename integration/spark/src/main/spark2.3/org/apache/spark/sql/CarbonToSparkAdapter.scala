@@ -560,6 +560,11 @@ object CarbonToSparkAdapter {
   def getCarbonOptimizer(session : SparkSession, sessionState: SessionState) : CarbonOptimizer = {
     new CarbonOptimizer(session, sessionState.catalog, sessionState.optimizer)
   }
+
+  def isCharType(dataType: DataType) = {
+    false
+  }
+
 }
 
 case class CarbonBuildSide(buildSide: BuildSide) {
