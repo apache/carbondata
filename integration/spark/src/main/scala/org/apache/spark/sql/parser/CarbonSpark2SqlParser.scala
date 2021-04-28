@@ -37,7 +37,7 @@ import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand,
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDescribeColumnCommand, CarbonDescribeShortCommand}
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
 import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
-import org.apache.spark.sql.types.{DataType, StructField}
+import org.apache.spark.sql.types.{CharType, DataType, DataTypes, StructField}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -748,7 +748,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   def getFields(schema: Seq[StructField], isExternal: Boolean = false): Seq[Field] = {
     schema.map { col =>
-      getFields(col.getComment(), col.name, col.dataType, isExternal)
+      // TODO: Spark has started supporting CharType/VarChar types but both are marked as
+      //  experimental. Adding a hack to change to string for now.
+      if (CarbonToSparkAdapter.isCharType(col.dataType)) {
+        getFields(col.getComment(), col.name, DataTypes.StringType, isExternal)
+      } else {
+        getFields(col.getComment(), col.name, col.dataType, isExternal)
+      }
     }
   }
 

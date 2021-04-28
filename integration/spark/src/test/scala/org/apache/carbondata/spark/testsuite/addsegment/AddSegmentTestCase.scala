@@ -373,7 +373,6 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
-
   test("Test added segment with different format") {
     createCarbonTable()
     createParquetTable()

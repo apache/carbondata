@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.execution.strategy
 
+import java.util.concurrent.TimeUnit.NANOSECONDS
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.CarbonInputMetrics
@@ -29,8 +31,10 @@ import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution.{DataSourceScanExec, WholeStageCodegenExec}
+import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types.AtomicType
+import org.apache.spark.sql.vectorized.ColumnarBatch
 
 import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -59,11 +63,32 @@ case class CarbonDataSourceScan(
     segmentIds: Option[String] = None)
   extends DataSourceScanExec {
 
-  override lazy val supportsColumnar: Boolean = {
-    CarbonPlanHelper.supportBatchedDataSource(sqlContext, output, extraRDD)
+  // TODO: Need to make this configurable
+  override lazy val supportsColumnar: Boolean = true
+
+  override protected def doExecuteColumnar(): RDD[ColumnarBatch] = {
+    val numOutputRows = longMetric("numOutputRows")
+    inputRDD.asInstanceOf[RDD[ColumnarBatch]].mapPartitionsInternal { batches =>
+      new Iterator[ColumnarBatch] {
+
+        override def hasNext: Boolean = {
+          val res = batches.hasNext
+          res
+        }
+
+        override def next(): ColumnarBatch = {
+          val batch = batches.next()
+          numOutputRows += batch.numRows()
+          batch
+        }
+      }
+    }
   }
 
-  lazy val needsUnsafeRowConversion: Boolean = { true }
+  override lazy val metrics = Map(
+    "numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"))
+
+  lazy val needsUnsafeRowConversion: Boolean = { false }
 
   override lazy val (outputPartitioning, outputOrdering): (Partitioning, Seq[SortOrder]) = {
     val info: BucketingInfo = relation.carbonTable.getBucketingInfo
