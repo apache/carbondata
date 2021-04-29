@@ -16,8 +16,6 @@
  */
 package org.apache.spark.sql.execution.strategy
 
-import java.util.concurrent.TimeUnit.NANOSECONDS
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.CarbonInputMetrics
@@ -33,7 +31,6 @@ import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partition
 import org.apache.spark.sql.execution.{DataSourceScanExec, WholeStageCodegenExec}
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.types.AtomicType
 import org.apache.spark.sql.vectorized.ColumnarBatch
 
 import org.apache.carbondata.core.index.IndexFilter
