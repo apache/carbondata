@@ -43,7 +43,7 @@ class MajorCompactionWithMeasureSortColumns extends QueryTest with BeforeAndAfte
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, backupDateFormat)
   }
 
-  test("test major compaction with measure sort columns") {
+  ignore("test major compaction with measure sort columns") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE, "1024")
 
