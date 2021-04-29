@@ -59,7 +59,7 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateCol
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.streaming.Trigger
-import org.apache.spark.sql.types.{CharType, DataType, Metadata, StructField}
+import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StructField}
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -616,8 +616,12 @@ object CarbonToSparkAdapter {
     new CarbonOptimizer(session, sessionState.optimizer)
   }
 
-  def isCharType(dataType: DataType) = {
+  def isCharType(dataType: DataType): Boolean = {
     dataType.isInstanceOf[CharType]
+  }
+
+  def getTypeName(s: AbstractDataType): String = {
+    s.defaultConcreteType.typeName
   }
 
 }

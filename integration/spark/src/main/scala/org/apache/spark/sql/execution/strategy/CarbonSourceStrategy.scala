@@ -84,22 +84,32 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       case _: ToRangeListUDF =>
         val inputNames = List("polygon", "oriLatitude", "gridSize")
         for (i <- s.children.indices) {
-          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+          GeoHashUtils.validateUDFInputValue(s.children(i),
+            inputNames(i),
+            CarbonToSparkAdapter.getTypeName(s.inputTypes(i)))
         }
       case _: LatLngToGeoIdUDF =>
         val inputNames = List("latitude", "longitude", "oriLatitude", "gridSize")
         for (i <- s.children.indices) {
-          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+          GeoHashUtils.validateUDFInputValue(s.children(i),
+            inputNames(i),
+            CarbonToSparkAdapter.getTypeName(s.inputTypes(i)))
         }
       case _: GeoIdToGridXyUDF =>
-        GeoHashUtils.validateUDFInputValue(s.children.head, "geoId", s.inputTypes.head.typeName)
+        GeoHashUtils.validateUDFInputValue(s.children.head,
+          "geoId",
+          CarbonToSparkAdapter.getTypeName(s.inputTypes.head))
       case _: GeoIdToLatLngUDF =>
         val inputNames = List("geoId", "oriLatitude", "gridSize")
         for (i <- s.children.indices) {
-          GeoHashUtils.validateUDFInputValue(s.children(i), inputNames(i), s.inputTypes(i).typeName)
+          GeoHashUtils.validateUDFInputValue(s.children(i),
+            inputNames(i),
+            CarbonToSparkAdapter.getTypeName(s.inputTypes(i)))
         }
       case _: ToUpperLayerGeoIdUDF =>
-        GeoHashUtils.validateUDFInputValue(s.children.head, "geoId", s.inputTypes.head.typeName)
+        GeoHashUtils.validateUDFInputValue(s.children.head,
+          "geoId",
+          CarbonToSparkAdapter.getTypeName(s.inputTypes.head))
       case _ =>
     }
     true

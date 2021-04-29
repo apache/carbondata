@@ -49,7 +49,7 @@ import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
-import org.apache.spark.sql.types.{CharType, DataType, Metadata, StructField}
+import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StructField}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -633,6 +633,10 @@ object CarbonToSparkAdapter {
 
   def isCharType(dataType: DataType) = {
     false
+  }
+
+  def getTypeName(s: DataType): String = {
+    s.typeName
   }
 }
 

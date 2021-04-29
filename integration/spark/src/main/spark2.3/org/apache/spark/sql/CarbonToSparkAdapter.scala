@@ -590,6 +590,10 @@ object CarbonToSparkAdapter {
     false
   }
 
+  def getTypeName(s: DataType): String = {
+    s.typeName
+  }
+
 }
 
 case class CarbonBuildSide(buildSide: BuildSide) {
