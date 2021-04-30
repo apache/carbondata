@@ -55,7 +55,7 @@ import org.apache.carbondata.spark.DeleteDeltaResultImpl
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 object DeleteExecution {
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+  @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   def deleteDeltaExecution(
       databaseNameOp: Option[String],
@@ -207,7 +207,7 @@ object DeleteExecution {
 
       val result = new DeleteDeltaResultImpl()
       var deleteStatus = SegmentStatus.LOAD_FAILURE
-      val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+      lazy val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       // here key = segment/blockName
       var blockName = if (carbonTable.isHivePartitionTable) {
         key
@@ -321,7 +321,7 @@ object DeleteExecution {
           deleteStatus = SegmentStatus.SUCCESS
         } catch {
           case e : MultipleMatchingException =>
-            LOGGER.error(e.getMessage)
+          LOGGER.error(e.getMessage)
           // don't throw exception here.
           case e: Exception =>
             val errorMsg = s"Delete data operation is failed for ${ database }.${ tableName }."

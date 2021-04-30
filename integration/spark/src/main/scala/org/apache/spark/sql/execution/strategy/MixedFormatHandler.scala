@@ -33,9 +33,9 @@ import org.apache.spark.sql.execution.{CodegenSupport, DataSourceScanExec, Filte
 import org.apache.spark.sql.execution.datasources.{FileFormat, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
 import org.apache.spark.sql.execution.datasources.json.JsonFileFormat
+import org.apache.spark.sql.execution.datasources.orc.OrcFileFormat
 import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 import org.apache.spark.sql.execution.datasources.text.TextFileFormat
-import org.apache.spark.sql.hive.orc.OrcFileFormat
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.SparkSQLUtil
 
@@ -217,9 +217,9 @@ object MixedFormatHandler {
 
   def getFileFormat(fileFormat: FileFormatName, supportBatch: Boolean = true): FileFormat = {
     if (fileFormat.equals(new FileFormatName("parquet"))) {
-      new ExtendedParquetFileFormat(supportBatch)
+      new ParquetFileFormat
     } else if (fileFormat.equals(new FileFormatName("orc"))) {
-      new ExtendedOrcFileFormat(supportBatch)
+      new OrcFileFormat
     } else if (fileFormat.equals(new FileFormatName("json"))) {
       new JsonFileFormat
     } else if (fileFormat.equals(new FileFormatName("csv"))) {
@@ -228,18 +228,6 @@ object MixedFormatHandler {
       new TextFileFormat
     } else {
       throw new UnsupportedOperationException("Format not supported " + fileFormat)
-    }
-  }
-
-  class ExtendedParquetFileFormat(supportBatch: Boolean) extends ParquetFileFormat {
-    override def supportBatch(sparkSession: SparkSession, schema: StructType): Boolean = {
-      super.supportBatch(sparkSession, schema) && supportBatch
-    }
-  }
-
-  class ExtendedOrcFileFormat(supportBatch: Boolean) extends OrcFileFormat {
-    override def supportBatch(sparkSession: SparkSession, schema: StructType): Boolean = {
-      super.supportBatch(sparkSession, schema) && supportBatch
     }
   }
 
