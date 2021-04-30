@@ -60,8 +60,8 @@ case class CarbonDataSourceScan(
     segmentIds: Option[String] = None)
   extends DataSourceScanExec {
 
-  // TODO: Need to make this configurable
-  override lazy val supportsColumnar: Boolean = true
+  override lazy val supportsColumnar: Boolean = CarbonPlanHelper
+    .supportBatchedDataSource(sqlContext, output, extraRDD)
 
   override protected def doExecuteColumnar(): RDD[ColumnarBatch] = {
     val numOutputRows = longMetric("numOutputRows")
