@@ -85,7 +85,7 @@ case class CarbonDataSourceScan(
   override lazy val metrics = Map(
     "numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"))
 
-  lazy val needsUnsafeRowConversion: Boolean = { false }
+  lazy val needsUnsafeRowConversion: Boolean = { true }
 
   override lazy val (outputPartitioning, outputOrdering): (Partitioning, Seq[SortOrder]) = {
     val info: BucketingInfo = relation.carbonTable.getBucketingInfo

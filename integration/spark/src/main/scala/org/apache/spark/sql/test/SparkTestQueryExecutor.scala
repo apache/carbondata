@@ -71,6 +71,9 @@ object SparkTestQueryExecutor {
     .config("spark.sql.warehouse.dir", warehouse)
     .config("spark.sql.crossJoin.enabled", "true")
     .config("spark.sql.extensions", extensions)
+    // Default value is changed to true in hive 3.1 which dosent allow drop columns(instead use
+    // replace columns when V2 is supported)
+    .config("spark.hadoop.hive.metastore.disallow.incompatible.col.type.changes", "false")
     .getOrCreate()
   spark.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
   CarbonEnv.getInstance(spark)
