@@ -590,6 +590,10 @@ object CarbonToSparkAdapter {
     false
   }
 
+  def isVarCharType(dataType: DataType) = {
+    false
+  }
+
   def getTypeName(s: DataType): String = {
     s.typeName
   }

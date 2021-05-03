@@ -748,9 +748,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   def getFields(schema: Seq[StructField], isExternal: Boolean = false): Seq[Field] = {
     schema.map { col =>
-      // TODO: Spark has started supporting CharType/VarChar types but both are marked as
-      //  experimental. Adding a hack to change to string for now.
-      if (CarbonToSparkAdapter.isCharType(col.dataType)) {
+      // TODO: Spark has started supporting CharType/VarChar types in Spark 3.1 but both are
+      //  marked as experimental. Adding a hack to change to string for now.
+      if (CarbonToSparkAdapter.isCharType(col.dataType) || CarbonToSparkAdapter
+          .isVarCharType(col.dataType)) {
         getFields(col.getComment(), col.name, DataTypes.StringType, isExternal)
       } else {
         getFields(col.getComment(), col.name, col.dataType, isExternal)
