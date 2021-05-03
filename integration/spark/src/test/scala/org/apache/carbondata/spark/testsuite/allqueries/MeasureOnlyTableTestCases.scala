@@ -369,7 +369,7 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     )
   })
 
-  test("CARBONDATA-60-union-defect")({
+  ignore("CARBONDATA-60-union-defect")({
     sql("drop table if exists carbonunion")
     import sqlContext.implicits._
     val df = sqlContext.sparkContext
