@@ -23,7 +23,6 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -160,7 +159,18 @@ case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,
     sqlContext: SQLContext)
 
-case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)
+case class DataTypeInfo(dataType: String,
+    name: String,
+    precision: Int = 0,
+    scale: Int = 0) {
+  private var children: List[DataTypeInfo] = null
+  def setChildren(childrenList: List[DataTypeInfo]): Unit = {
+    children = childrenList
+  }
+  def getChildren(): List[DataTypeInfo] = {
+    children
+  }
+}
 
 class AlterTableColumnRenameModel(columnName: String,
     newColumnName: String,

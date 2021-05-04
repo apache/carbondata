@@ -819,6 +819,8 @@ Users can specify which columns to include and exclude for local dictionary gene
      - Invalid scenarios 
        * Change of decimal precision from (10,2) to (10,5) is invalid as in this case only scale is increased but total number of digits remains the same.
        * Change the comment of the partition column
+       * Rename operation fails if the structure of the complex column has been altered. Please ensure the old and new columns are compatible with 
+         each other. Meaning the number of children and complex levels should be unaltered while attempting to rename.
      - Valid scenarios
        * Change of decimal precision from (10,2) to (12,3) is valid as the total number of digits are increased by 2 but scale is increased only by 1 which will not lead to any data loss.
        * Change the comment of columns other than partition column
@@ -841,10 +843,22 @@ Users can specify which columns to include and exclude for local dictionary gene
      ```
      ALTER TABLE test_db.carbon CHANGE a3 a4 STRING
      ```
-     Example3:Change column a3's comment to "col_comment".
+     Example4:Change column a3's comment to "col_comment".
      
      ```
      ALTER TABLE test_db.carbon CHANGE a3 a3 STRING COMMENT 'col_comment'
+     ```
+     
+     Example5:Change child column name in column str struct\<a:int> from a to b.
+                   
+     ```
+     ALTER TABLE test_db.carbon CHANGE str str struct<b:int>
+     ```
+     
+     Example6:Change column name in column arr1 array\<int> from arr1 to arr2.
+          
+     ```
+     ALTER TABLE test_db.carbon CHANGE arr1 arr2 array<int>
      ```
 
      **NOTE:** Once the column is renamed, user has to take care about replacing the fileheader with the new name or changing the column header in csv file.
@@ -866,6 +880,8 @@ Users can specify which columns to include and exclude for local dictionary gene
      **NOTE:**
      * Merge index is supported on streaming table from carbondata 2.0.1 version.
      But streaming segments (ROW_V1) cannot create merge index.
+     * Rename column name is only supported for complex columns including array and struct.
+     * Change datatype is not yet supported for complex types.
 
 
    - #### SET and UNSET
