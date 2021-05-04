@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
@@ -1092,15 +1093,15 @@ object CarbonParserUtil {
   private def appendParentForEachChild(field: Field, parentName: String): Field = {
     field.dataType.getOrElse("NIL") match {
       case "Array" | "Struct" | "Map" =>
-        val newChildren = field.children
-          .map(_.map(appendParentForEachChild(_, parentName + "." + field.column)))
-        field.copy(column = parentName + "." + field.column,
-          name = Some(parentName + "." + field.name.getOrElse(None)),
+        val newChildren = field.children.map(_.map(appendParentForEachChild(_,
+          parentName + CarbonCommonConstants.POINT + field.column)))
+        field.copy(column = parentName + CarbonCommonConstants.POINT + field.column,
+          name = Some(parentName + CarbonCommonConstants.POINT + field.name.getOrElse(None)),
           children = newChildren,
           parent = parentName)
       case _ =>
-        field.copy(column = parentName + "." + field.column,
-          name = Some(parentName + "." + field.name.getOrElse(None)),
+        field.copy(column = parentName + CarbonCommonConstants.POINT + field.column,
+          name = Some(parentName + CarbonCommonConstants.POINT + field.name.getOrElse(None)),
           parent = parentName)
     }
   }
@@ -1113,6 +1114,7 @@ object CarbonParserUtil {
    * @return DataTypeInfo object with datatype, precision and scale
    */
   def parseDataType(
+      columnName: String,
       dataType: String,
       values: Option[List[(Int, Int)]]): DataTypeInfo = {
     var precision: Int = 0
@@ -1122,7 +1124,8 @@ object CarbonParserUtil {
         if (values.isDefined) {
           throw new MalformedCarbonCommandException("Invalid data type")
         }
-        DataTypeInfo(DataTypeConverterUtil.convertToCarbonType(dataType).getName.toLowerCase)
+        DataTypeInfo(columnName,
+          DataTypeConverterUtil.convertToCarbonType(dataType).getName.toLowerCase)
       case "decimal" =>
         if (values.isDefined) {
           precision = values.get(0)._1
@@ -1136,10 +1139,53 @@ object CarbonParserUtil {
         } else if (scale < 0 || scale > 38) {
           throw new MalformedCarbonCommandException("Invalid value for scale")
         }
-        DataTypeInfo("decimal", precision, scale)
+        DataTypeInfo(columnName, "decimal", precision, scale)
       case _ =>
-        DataTypeInfo(DataTypeConverterUtil.convertToCarbonType(dataType).getName.toLowerCase)
+        DataTypeInfo(columnName,
+          DataTypeConverterUtil.convertToCarbonType(dataType).getName.toLowerCase)
     }
+  }
+
+  /**
+   * This method will return the instantiated DataTypeInfo by parsing the column
+   */
+  def parseColumn(columnName: String, dataType: DataType,
+      values: Option[List[(Int, Int)]]): DataTypeInfo = {
+    // creates parent dataTypeInfo first
+    val dataTypeName = DataTypeConverterUtil.convertToCarbonType(dataType.typeName).getName
+    val dataTypeInfo = CarbonParserUtil.parseDataType(columnName, dataTypeName.toLowerCase, values)
+    // check which child type is present and create children dataTypeInfo accordingly
+    dataType match {
+      case arrayType: ArrayType =>
+        val childType: DataType = arrayType.elementType
+        val childName = columnName + ".val"
+        val childValues = childType match {
+          case d: DecimalType => Some(List((d.precision, d.scale)))
+          case _ => None
+        }
+        val childDatatypeInfo = parseColumn(childName, childType, childValues)
+        dataTypeInfo.setChildren(List(childDatatypeInfo))
+      case structType: StructType =>
+        var childTypeInfoList: List[DataTypeInfo] = null
+        for (childField <- structType) {
+          val childType = childField.dataType
+          val childName = columnName + CarbonCommonConstants.POINT + childField.name
+          val childValues = childType match {
+            case d: DecimalType => Some(List((d.precision, d.scale)))
+            case _ => None
+          }
+          val childDatatypeInfo = CarbonParserUtil.parseColumn(childName, childType, childValues)
+          if (childTypeInfoList == null) {
+            childTypeInfoList = List(childDatatypeInfo)
+          } else {
+            childTypeInfoList = childTypeInfoList :+ childDatatypeInfo
+          }
+        }
+        dataTypeInfo.setChildren(childTypeInfoList)
+      case _ =>
+    }
+    // TODO have to handle for map types [CARBONDATA-4199]
+    dataTypeInfo
   }
 
   def checkFieldDefaultValue(fieldName: String, defaultValueColumnName: String): Boolean = {

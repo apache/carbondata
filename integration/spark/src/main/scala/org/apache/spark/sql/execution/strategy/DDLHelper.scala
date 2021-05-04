@@ -31,7 +31,7 @@ import org.apache.spark.sql.execution.command.table._
 import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
-import org.apache.spark.sql.types.{DecimalType, Metadata}
+import org.apache.spark.sql.types.{DecimalType}
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
@@ -40,7 +40,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
-import org.apache.carbondata.spark.util.DataTypeConverterUtil
 import org.apache.carbondata.view.MVManagerInSpark
 
 object DDLHelper {
@@ -225,12 +224,7 @@ object DDLHelper {
         case d: DecimalType => Some(List((d.precision, d.scale)))
         case _ => None
       }
-      val dataTypeInfo = CarbonParserUtil.parseDataType(
-        DataTypeConverterUtil
-          .convertToCarbonType(newColumn.dataType.typeName)
-          .getName
-          .toLowerCase,
-        values)
+      val dataTypeInfo = CarbonParserUtil.parseColumn(newColumn.name, newColumn.dataType, values)
       var newColumnComment: Option[String] = Option.empty
       if (newColumnMetaData != null &&
         newColumnMetaData.contains(CarbonCommonConstants.COLUMN_COMMENT)) {

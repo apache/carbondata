@@ -21,7 +21,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -50,6 +52,10 @@ import org.apache.commons.lang3.ArrayUtils;
  * Utility class for restructuring
  */
 public class RestructureUtil {
+  // if table column is of complex type- this look up stores the column id of the parent
+  // (as well as children) [tableColumn_id -> tableColumn_name]. This helps to determine the
+  // existence of incoming query column by matching based on id.
+  private static Map<String, String> existingTableColumnIDMap;
 
   /**
    * Below method will be used to get the updated query dimension update
@@ -159,11 +165,21 @@ public class RestructureUtil {
     return presentDimension;
   }
 
+  public static void fillExistingTableColumnIDMap(CarbonDimension tableColumn) {
+    existingTableColumnIDMap.put(tableColumn.getColumnId(), tableColumn.getColName());
+    List<CarbonDimension> children = tableColumn.getListOfChildDimensions();
+    if (children == null) return;
+    for (CarbonDimension dimension : children) {
+      fillExistingTableColumnIDMap(dimension);
+    }
+  }
+
   /**
    * Match the columns for transactional and non transactional tables
    * @param isTransactionalTable
-   * @param queryColumn
-   * @param tableColumn
+   * @param queryColumn - column entity that is present in the fired query or in the query model.
+   * @param tableColumn - column entity that is present in the table block or in the segment
+   *                      properties.
    * @return
    */
   public static boolean isColumnMatches(boolean isTransactionalTable,
@@ -177,6 +193,12 @@ public class RestructureUtil {
           .isColumnMatchBasedOnId(queryColumn)) {
         return true;
       } else {
+        if (tableColumn instanceof CarbonDimension) {
+          // insert list of table column id into a lookUp set, which will later be used to match
+          // against query column id
+          existingTableColumnIDMap = new HashMap<>();
+          fillExistingTableColumnIDMap((CarbonDimension) tableColumn);
+        }
         return isColumnMatchesStruct(tableColumn, queryColumn);
       }
     } else {
@@ -191,26 +213,39 @@ public class RestructureUtil {
   }
 
   /**
-   * In case of Multilevel Complex column - Struct/StructOfStruct, traverse all the child dimension
-   * to check column Id
+   * In case of Multilevel Complex column - Struct/StructOfStruct, traverse all the child dimensions
+   * of tableColumn to check if any of its column Id has matched with that of queryColumn .
    *
-   * @param tableColumn
-   * @param queryColumn
+   * @param tableColumn - column entity that is present in the table block or in the segment
+   *                      properties.
+   * @param queryColumn - column entity that is present in the fired query or in the query model.
+   * tableColumn name and queryColumn name may or may not be the same in case schema has evolved.
+   * Hence matching happens based on the column ID
    * @return
    */
   private static boolean isColumnMatchesStruct(CarbonColumn tableColumn, CarbonColumn queryColumn) {
     if (tableColumn instanceof CarbonDimension) {
-      List<CarbonDimension> parentDimension =
+      List<CarbonDimension> childrenDimensions =
           ((CarbonDimension) tableColumn).getListOfChildDimensions();
-      CarbonDimension carbonDimension = null;
+      CarbonDimension carbonDimension;
       String[] colSplits = queryColumn.getColName().split("\\.");
       StringBuffer tempColName = new StringBuffer(colSplits[0]);
       for (String colSplit : colSplits) {
         if (!tempColName.toString().equalsIgnoreCase(colSplit)) {
-          tempColName = tempColName.append(".").append(colSplit);
+          tempColName = tempColName.append(CarbonCommonConstants.POINT).append(colSplit);
         }
-        carbonDimension = CarbonTable.getCarbonDimension(tempColName.toString(), parentDimension);
-        if (carbonDimension != null) {
+        carbonDimension =
+            CarbonTable.getCarbonDimension(tempColName.toString(), childrenDimensions);
+        if (carbonDimension == null) {
+          // Avoid returning true in case of SDK as the column name contains the id.
+          if (existingTableColumnIDMap != null && existingTableColumnIDMap
+              .containsKey(queryColumn.getColumnId())) {
+            String columnName = existingTableColumnIDMap.get(queryColumn.getColumnId());
+            if (columnName != null && !columnName.contains(queryColumn.getColumnId())) {
+              return true;
+            }
+          }
+        } else {
           // In case of SDK the columnId and columnName is same and this check will ensure for
           // all the child columns that the table column name is equal to query column name and
           // table columnId is equal to table columnName
@@ -222,7 +257,7 @@ public class RestructureUtil {
             return true;
           }
           if (carbonDimension.getListOfChildDimensions() != null) {
-            parentDimension = carbonDimension.getListOfChildDimensions();
+            childrenDimensions = carbonDimension.getListOfChildDimensions();
           }
         }
       }

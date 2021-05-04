@@ -1933,6 +1933,9 @@ public final class CarbonCommonConstants {
   public static final String MAP = "map";
   public static final String DECIMAL = "decimal";
   public static final String FROM = "from";
+  public static final String BIGINT = "bigint";
+  public static final String LONG = "long";
+  public static final String INT = "int";
 
   /**
    * TABLE UPDATE STATUS FILENAME

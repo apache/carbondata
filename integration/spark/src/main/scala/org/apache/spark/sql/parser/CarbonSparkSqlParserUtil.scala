@@ -667,7 +667,7 @@ object CarbonSparkSqlParserUtil {
     val isColumnRename = !columnName.equalsIgnoreCase(columnNameCopy)
     val alterTableColRenameAndDataTypeChangeModel =
       AlterTableDataTypeChangeModel(
-        CarbonParserUtil.parseDataType(dataType.toLowerCase,
+        CarbonParserUtil.parseDataType(columnName, dataType.toLowerCase,
           values),
         CarbonParserUtil.convertDbNameToLowerCase(dbName),
         table.toLowerCase,

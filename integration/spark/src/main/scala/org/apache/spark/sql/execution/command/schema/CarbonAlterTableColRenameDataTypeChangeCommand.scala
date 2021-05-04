@@ -34,32 +34,27 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.datatype.DecimalType
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.events.{AlterTableColRenameAndDataTypeChangePostEvent, AlterTableColRenameAndDataTypeChangePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 abstract class CarbonAlterTableColumnRenameCommand(oldColumnName: String, newColumnName: String)
   extends MetadataCommand {
+  import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
-  protected def validColumnsForRenaming(carbonColumns: mutable.Buffer[CarbonColumn],
-      oldCarbonColumn: CarbonColumn,
+  protected def validColumnsForRenaming(columnSchemaList: mutable.Buffer[ColumnSchema],
+      alteredColumnNamesMap: mutable.LinkedHashMap[String, String],
       carbonTable: CarbonTable): Unit = {
     // check whether new column name is already an existing column name
-    if (carbonColumns.exists(_.getColName.equalsIgnoreCase(newColumnName))) {
+    alteredColumnNamesMap.foreach(keyVal => if (columnSchemaList.exists(_.getColumnName
+      .equalsIgnoreCase(keyVal._2))) {
       throw new MalformedCarbonCommandException(s"Column Rename Operation failed. New " +
-                                                s"column name $newColumnName already exists" +
+                                                s"column name ${ keyVal._2 } already exists" +
                                                 s" in table ${ carbonTable.getTableName }")
-    }
-
-    // if the column rename is for complex column, block the operation
-    if (oldCarbonColumn.isComplex) {
-      throw new MalformedCarbonCommandException(s"Column Rename Operation failed. Rename " +
-                                                s"column is unsupported for complex datatype " +
-                                                s"column ${ oldCarbonColumn.getColName }")
-    }
+    })
 
     // if column rename operation is on bucket column, then fail the rename operation
     if (null != carbonTable.getBucketingInfo) {
@@ -69,8 +64,8 @@ abstract class CarbonAlterTableColumnRenameCommand(oldColumnName: String, newCol
           if (col.getColumnName.equalsIgnoreCase(oldColumnName)) {
             throw new MalformedCarbonCommandException(
               s"Column Rename Operation failed. Renaming " +
-                s"the bucket column $oldColumnName is not " +
-                s"allowed")
+              s"the bucket column $oldColumnName is not " +
+              s"allowed")
           }
       }
     }
@@ -83,6 +78,9 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
     childTableColumnRename: Boolean = false)
   extends CarbonAlterTableColumnRenameCommand(alterTableColRenameAndDataTypeChangeModel.columnName,
     alterTableColRenameAndDataTypeChangeModel.newColumnName) {
+  // stores mapping of altered column names: old-column-name -> new-column-name.
+  // Including both parent/table and children columns
+  val alteredColumnNamesMap = collection.mutable.LinkedHashMap.empty[String, String]
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -130,6 +128,9 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       val newColumnName = alterTableColRenameAndDataTypeChangeModel.newColumnName.toLowerCase
       val oldColumnName = alterTableColRenameAndDataTypeChangeModel.columnName.toLowerCase
       val isColumnRename = alterTableColRenameAndDataTypeChangeModel.isColumnRename
+      if (isColumnRename) {
+        alteredColumnNamesMap += (oldColumnName -> newColumnName)
+      }
       val newColumnComment = alterTableColRenameAndDataTypeChangeModel.newColumnComment
       val carbonColumns = carbonTable.getCreateOrderColumn().asScala.filter(!_.isInvisible)
       if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(oldColumnName))) {
@@ -143,27 +144,47 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       val newColumnPrecision = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.precision
       val newColumnScale = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.scale
       // set isDataTypeChange flag
-      if (oldCarbonColumn.head.getDataType.getName
-        .equalsIgnoreCase(alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.dataType)) {
+      val oldDatatype = oldCarbonColumn.head.getDataType
+      val newDatatype = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.dataType
+      if (isColumnRename && (DataTypes.isMapType(oldDatatype) ||
+                             newDatatype.equalsIgnoreCase(CarbonCommonConstants.MAP))) {
+        throw new UnsupportedOperationException(
+          "Alter rename is unsupported for Map datatype column")
+      }
+      if (oldDatatype.getName.equalsIgnoreCase(newDatatype)) {
         val newColumnPrecision =
           alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.precision
         val newColumnScale = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.scale
         // if the source datatype is decimal and there is change in precision and scale, then
         // along with rename, datatype change is also required for the command, so set the
         // isDataTypeChange flag to true in this case
-        if (oldCarbonColumn.head.getDataType.getName.equalsIgnoreCase("decimal") &&
-            (oldCarbonColumn.head.getDataType.asInstanceOf[DecimalType].getPrecision !=
+        if (DataTypes.isDecimal(oldDatatype) &&
+            (oldDatatype.asInstanceOf[DecimalType].getPrecision !=
              newColumnPrecision ||
-             oldCarbonColumn.head.getDataType.asInstanceOf[DecimalType].getScale !=
+             oldDatatype.asInstanceOf[DecimalType].getScale !=
              newColumnScale)) {
           isDataTypeChange = true
         }
+        if (DataTypes.isArrayType(oldDatatype) || DataTypes.isStructType(oldDatatype)) {
+          val oldParent = oldCarbonColumn.head
+          val oldChildren = oldParent.asInstanceOf[CarbonDimension].getListOfChildDimensions.asScala
+            .toList
+          AlterTableUtil.validateComplexStructure(oldChildren,
+            alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.getChildren(),
+            alteredColumnNamesMap)
+        }
       } else {
+        if (oldDatatype.isComplexType) {
+          throw new UnsupportedOperationException(
+            "Old and new complex columns are not compatible in structure")
+        }
         isDataTypeChange = true
       }
+
       // If there is no columnrename and datatype change and comment change
       // return directly without execution
-      if (!isColumnRename && !isDataTypeChange && !newColumnComment.isDefined) {
+      if (!isColumnRename && !isDataTypeChange && !newColumnComment.isDefined &&
+          alteredColumnNamesMap.isEmpty) {
         return Seq.empty
       }
       // if column datatype change operation is on partition column, then fail the
@@ -178,35 +199,54 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
             }
         }
       }
-      if (alterTableColRenameAndDataTypeChangeModel.isColumnRename) {
+
+      if (!alteredColumnNamesMap.isEmpty) {
         // validate the columns to be renamed
-        validColumnsForRenaming(carbonColumns, oldCarbonColumn.head, carbonTable)
+        validColumnsForRenaming(carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala,
+          alteredColumnNamesMap, carbonTable)
       }
+
       if (isDataTypeChange) {
         // validate the columns to change datatype
-        validateColumnDataType(alterTableColRenameAndDataTypeChangeModel.dataTypeInfo,
+        AlterTableUtil.validateColumnDataType(alterTableColRenameAndDataTypeChangeModel
+          .dataTypeInfo,
           oldCarbonColumn.head)
       }
       // read the latest schema file
       val tableInfo: TableInfo =
         metaStore.getThriftTableInfo(carbonTable)
       // maintain the added column for schema evolution history
-      var addColumnSchema: ColumnSchema = null
+      var addedTableColumnSchema: ColumnSchema = null
       var deletedColumnSchema: ColumnSchema = null
       var schemaEvolutionEntry: SchemaEvolutionEntry = null
       val columnSchemaList = tableInfo.fact_table.table_columns.asScala.filter(!_.isInvisible)
 
+      var addedColumnsList: List[ColumnSchema] = List.empty[ColumnSchema]
+      var deletedColumnsList: List[ColumnSchema] = List.empty[ColumnSchema]
+
+      /*
+      * columnSchemaList is a flat structure containing all column schemas including both parent
+      * and child.
+      * It is iterated and rename/change-datatype update are made in this list itself.
+      * Entry is made to the schemaEvolutionEntry for each of the update.
+      */
       columnSchemaList.foreach { columnSchema =>
-        if (columnSchema.column_name.equalsIgnoreCase(oldColumnName)) {
-          deletedColumnSchema = columnSchema.deepCopy()
-          if (alterTableColRenameAndDataTypeChangeModel.isColumnRename) {
-            // if only column rename, just get the column schema and rename, make a
-            // schemaEvolutionEntry
+        val columnName = columnSchema.column_name
+        val isTableColumnAltered = columnName.equalsIgnoreCase(oldColumnName)
+        var isSchemaEntryRequired = false
+        deletedColumnSchema = columnSchema.deepCopy()
+
+        if (isTableColumnAltered) {
+          // isColumnRename will be true if the table-column/parent-column name has been altered,
+          // just get the columnSchema and rename, and make a schemaEvolutionEntry
+          if (isColumnRename) {
             columnSchema.setColumn_name(newColumnName)
+            isSchemaEntryRequired = true
           }
-          // if the column rename is false,it will be just datatype change only, then change the
-          // datatype and make an evolution entry, If both the operations are happening, then rename
-          // change datatype and make an evolution entry
+
+          // if the table column rename is false, it will be just table column datatype change
+          // only, then change the datatype and make an evolution entry, If both the operations
+          // are happening, then rename, change datatype and make an evolution entry
           if (isDataTypeChange) {
             // if only datatype change,  just get the column schema and change datatype, make a
             // schemaEvolutionEntry
@@ -216,7 +256,9 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
             columnSchema
               .setPrecision(newColumnPrecision)
             columnSchema.setScale(newColumnScale)
+            isSchemaEntryRequired = true
           }
+
           if (newColumnComment.isDefined && columnSchema.getColumnProperties != null) {
             columnSchema.getColumnProperties.put(
               CarbonCommonConstants.COLUMN_COMMENT, newColumnComment.get)
@@ -225,11 +267,37 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
             newColumnProperties.put(CarbonCommonConstants.COLUMN_COMMENT, newColumnComment.get)
             columnSchema.setColumnProperties(newColumnProperties)
           }
-          addColumnSchema = columnSchema
-          timeStamp = System.currentTimeMillis()
-          // make a new schema evolution entry after column rename or datatype change
-          schemaEvolutionEntry = AlterTableUtil
-            .addNewSchemaEvolutionEntry(timeStamp, addColumnSchema, deletedColumnSchema)
+          addedTableColumnSchema = columnSchema
+        } else if (isComplexChild(columnSchema)) {
+          if (alteredColumnNamesMap.contains(columnName)) {
+            // matches exactly
+            val newComplexChildName = alteredColumnNamesMap(columnName)
+            columnSchema.setColumn_name(newComplexChildName)
+            isSchemaEntryRequired = true
+          } else {
+            val alteredParent = checkIfParentIsAltered(columnName)
+            /*
+             * Lets say, if complex schema is: str struct<a: int>
+             * and if parent column is changed from str -> str2
+             * then its child name should also be changed from str.a -> str2.a
+             */
+            if (alteredParent != null) {
+              val newParent = alteredColumnNamesMap(alteredParent)
+              val newComplexChildName = newParent + columnName
+                .split(alteredParent)(1)
+              columnSchema.setColumn_name(newComplexChildName)
+              isSchemaEntryRequired = true
+            }
+          }
+        }
+
+        // make a new schema evolution entry after column rename or datatype change
+        if (isSchemaEntryRequired) {
+          addedColumnsList ++= List(columnSchema)
+          deletedColumnsList ++= List(deletedColumnSchema)
+          schemaEvolutionEntry = AlterTableUtil.addNewSchemaEvolutionEntry(schemaEvolutionEntry,
+            addedColumnsList,
+            deletedColumnsList)
         }
       }
 
@@ -242,7 +310,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       updateSchemaAndRefreshTable(sparkSession,
         carbonTable,
         tableInfo,
-        addColumnSchema,
+        addedTableColumnSchema,
         schemaEvolutionEntry,
         oldCarbonColumn.head)
       val alterTableColRenameAndDataTypeChangePostEvent
@@ -277,6 +345,24 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       AlterTableUtil.releaseLocks(locks)
     }
     Seq.empty
+  }
+
+  private def isComplexChild(columnSchema: ColumnSchema): Boolean = {
+    columnSchema.column_name.contains(CarbonCommonConstants.POINT)
+  }
+
+  private def isChildOfTheGivenColumn(columnSchemaName: String, oldColumnName: String): Boolean = {
+    columnSchemaName.startsWith(oldColumnName + CarbonCommonConstants.POINT)
+  }
+
+  private def checkIfParentIsAltered(columnSchemaName: String): String = {
+    var parent: String = null
+    alteredColumnNamesMap.foreach(keyVal => {
+      if (isChildOfTheGivenColumn(columnSchemaName, keyVal._1)) {
+        parent = keyVal._1
+      }
+    })
+    parent
   }
 
   /**
@@ -321,54 +407,6 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
     CarbonSessionCatalogUtil.alterColumnChangeDataTypeOrRename(
       tableIdentifier, columns, sparkSession)
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
-  }
-
-  /**
-   * This method will validate a column for its data type and check whether the column data type
-   * can be modified and update if conditions are met.
-   */
-  private def validateColumnDataType(
-      dataTypeInfo: DataTypeInfo,
-      carbonColumn: CarbonColumn): Unit = {
-    carbonColumn.getDataType.getName match {
-      case "INT" =>
-        if (!dataTypeInfo.dataType.equalsIgnoreCase("bigint") &&
-            !dataTypeInfo.dataType.equalsIgnoreCase("long")) {
-          sys.error(s"Given column ${ carbonColumn.getColName } with data type " +
-                    s"${ carbonColumn.getDataType.getName } cannot be modified. " +
-                    s"Int can only be changed to bigInt or long")
-        }
-      case "DECIMAL" =>
-        if (!dataTypeInfo.dataType.equalsIgnoreCase("decimal")) {
-          sys.error(s"Given column ${ carbonColumn.getColName } with data type" +
-                    s" ${ carbonColumn.getDataType.getName } cannot be modified." +
-                    s" Decimal can be only be changed to Decimal of higher precision")
-        }
-        if (dataTypeInfo.precision <= carbonColumn.getColumnSchema.getPrecision) {
-          sys.error(s"Given column ${ carbonColumn.getColName } cannot be modified. " +
-                    s"Specified precision value ${ dataTypeInfo.precision } should be " +
-                    s"greater than current precision value " +
-                    s"${ carbonColumn.getColumnSchema.getPrecision }")
-        } else if (dataTypeInfo.scale < carbonColumn.getColumnSchema.getScale) {
-          sys.error(s"Given column ${ carbonColumn.getColName } cannot be modified. " +
-                    s"Specified scale value ${ dataTypeInfo.scale } should be greater or " +
-                    s"equal to current scale value ${ carbonColumn.getColumnSchema.getScale }")
-        } else {
-          // difference of precision and scale specified by user should not be less than the
-          // difference of already existing precision and scale else it will result in data loss
-          val carbonColumnPrecisionScaleDiff = carbonColumn.getColumnSchema.getPrecision -
-                                               carbonColumn.getColumnSchema.getScale
-          val dataInfoPrecisionScaleDiff = dataTypeInfo.precision - dataTypeInfo.scale
-          if (dataInfoPrecisionScaleDiff < carbonColumnPrecisionScaleDiff) {
-            sys.error(s"Given column ${ carbonColumn.getColName } cannot be modified. " +
-                      s"Specified precision and scale values will lead to data loss")
-          }
-        }
-      case _ =>
-        sys.error(s"Given column ${ carbonColumn.getColName } with data type " +
-                  s"${ carbonColumn.getDataType.getName } cannot be modified. " +
-                  s"Only Int and Decimal data types are allowed for modification")
-    }
   }
 
   override protected def opName: String = "ALTER TABLE CHANGE DATA TYPE OR RENAME COLUMN"
