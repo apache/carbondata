@@ -424,7 +424,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("Range filter Dictionary multiple filters3") {
+  ignore("Range filter Dictionary multiple filters3") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' and empno < '13' and workgroupcategory = '1' or empno > '14' or empno < '17'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno > '11' and empno < '13' and workgroupcategory = '1' or empno > '14' or empno < '17'")
@@ -432,7 +432,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("Range filter with join") {
+  ignore("Range filter with join") {
     checkAnswer(
       sql("select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6 s, NO_DICTIONARY_CARBON_6 t where s.empno > '11' and t.empno < '16' and s.empname = t.empname"),
       sql("select s.empno, s.empname, t.empno, t.empname from NO_DICTIONARY_HIVE_6 s, NO_DICTIONARY_HIVE_7 t where s.empno > '11' and t.empno < '16' and s.empname = t.empname"))
