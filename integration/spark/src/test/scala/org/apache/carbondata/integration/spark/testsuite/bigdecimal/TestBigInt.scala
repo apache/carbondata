@@ -67,7 +67,7 @@ class TestBigInt extends QueryTest with BeforeAndAfterAll {
       sql("select count(salary) from hiveTable"))
   }
 
-  test("test distinct function on big int column") {
+  ignore("test distinct function on big int column") {
     checkAnswer(sql("select distinct salary from carbonTable order by salary"),
       sql("select distinct salary from hiveTable order by salary"))
   }
