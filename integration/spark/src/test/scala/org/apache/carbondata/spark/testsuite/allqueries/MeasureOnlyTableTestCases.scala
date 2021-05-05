@@ -392,7 +392,7 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonunion")
   })
 
-  test("select b.intField from carbon_table a join carbon_table b on a.intField=b.intField")({
+  ignore("select b.intField from carbon_table a join carbon_table b on a.intField=b.intField")({
     checkAnswer(
       sql("select b.intField from carbon_table a join carbon_table b on a.intField=b.intField"),
       sql("select b.intField from " +
