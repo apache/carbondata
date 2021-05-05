@@ -130,7 +130,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA INPATH '$resourcesPath/big_int_Decimal.csv'  INTO TABLE big_int_basicc_1 options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')""")
     sql(s"load data local inpath '$resourcesPath/big_int_Decimal.csv' into table big_int_basicc_Hive")
     sql(s"load data local inpath '$resourcesPath/big_int_Decimal.csv' into table big_int_basicc_Hive_1")
-
+    sql("drop table if exists date_test")
     sql("create table if not exists date_test(name String, age int, dob date,doj timestamp) STORED AS carbondata ")
     sql("insert into date_test select 'name1',12,'2014-01-01','2014-01-01 00:00:00' ")
     sql("insert into date_test select 'name2',13,'2015-01-01','2015-01-01 00:00:00' ")
@@ -311,25 +311,32 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("check invalid  date Geaterthan filter value ") {
-    val df = sql("select * from date_test where doj > '0' ")
-    checkAnswer(df,
-      Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0")),
-        Row("name2", 13, Date.valueOf("2015-01-01"), Timestamp.valueOf("2015-01-01 00:00:00.0")),
-        Row("name3", 14, Date.valueOf("2016-01-01"), Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+    // Plan changed for both parquet and carbon, Even parquet table does not return anything
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      val df = sql("select * from date_test where doj > '0' ")
+      checkAnswer(df,
+        Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0")),
+          Row("name2", 13, Date.valueOf("2015-01-01"), Timestamp.valueOf("2015-01-01 00:00:00.0")),
+          Row("name3", 14, Date.valueOf("2016-01-01"), Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+    }
   }
 
   test("check invalid  date Geaterthan and lessthan filter value ") {
-    val df = sql("select * from date_test where doj > '0' and doj < '2015-01-01' ")
-    checkAnswer(df,
-      Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0"))))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      val df = sql("select * from date_test where doj > '0' and doj < '2015-01-01' ")
+      checkAnswer(df,
+        Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0"))))
+    }
   }
 
   test("check invalid  date Geaterthan or lessthan filter value ") {
-    val df = sql("select * from date_test where doj > '0' or doj < '2015-01-01' ")
-    checkAnswer(df,
-      Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0")),
-        Row("name2", 13, Date.valueOf("2015-01-01"), Timestamp.valueOf("2015-01-01 00:00:00.0")),
-        Row("name3", 14, Date.valueOf("2016-01-01"), Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      val df = sql("select * from date_test where doj > '0' or doj < '2015-01-01' ")
+      checkAnswer(df,
+        Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0")),
+          Row("name2", 13, Date.valueOf("2015-01-01"), Timestamp.valueOf("2015-01-01 00:00:00.0")),
+          Row("name3", 14, Date.valueOf("2016-01-01"), Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+    }
   }
 
   test("check invalid  timestamp value") {
@@ -349,25 +356,31 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("check invalid  timestamp Geaterthan filter value ") {
-    val df = sql("select * from date_test where doj > '0' ")
-    checkAnswer(df,
-      Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0")),
-        Row("name2", 13, Date.valueOf("2015-01-01"), Timestamp.valueOf("2015-01-01 00:00:00.0")),
-        Row("name3", 14, Date.valueOf("2016-01-01"), Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      val df = sql("select * from date_test where doj > '0' ")
+      checkAnswer(df,
+        Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0")),
+          Row("name2", 13, Date.valueOf("2015-01-01"), Timestamp.valueOf("2015-01-01 00:00:00.0")),
+          Row("name3", 14, Date.valueOf("2016-01-01"), Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+    }
   }
 
   test("check invalid  timestamp Geaterthan and lessthan filter value ") {
-    val df = sql("select * from date_test where doj > '0' and doj < '2015-01-01 00:00:00' ")
-    checkAnswer(df,
-      Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0"))))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      val df = sql("select * from date_test where doj > '0' and doj < '2015-01-01 00:00:00' ")
+      checkAnswer(df,
+        Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0"))))
+    }
   }
 
   test("check invalid  timestamp Geaterthan or lessthan filter value ") {
-    val df = sql("select * from date_test where doj > '0' or doj < '2015-01-01 00:00:00' ")
-    checkAnswer(df,
-      Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0")),
-        Row("name2", 13, Date.valueOf("2015-01-01"), Timestamp.valueOf("2015-01-01 00:00:00.0")),
-        Row("name3", 14, Date.valueOf("2016-01-01"), Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      val df = sql("select * from date_test where doj > '0' or doj < '2015-01-01 00:00:00' ")
+      checkAnswer(df,
+        Seq(Row("name1", 12, Date.valueOf("2014-01-01"), Timestamp.valueOf("2014-01-01 00:00:00.0")),
+          Row("name2", 13, Date.valueOf("2015-01-01"), Timestamp.valueOf("2015-01-01 00:00:00.0")),
+          Row("name3", 14, Date.valueOf("2016-01-01"), Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+    }
   }
 
   test("like% test case with restructure") {
