@@ -1,4 +1,3 @@
-
 <!--
     Licensed to the Apache Software Foundation (ASF) under one or more 
     contributor license agreements.  See the NOTICE file distributed with
@@ -113,6 +112,14 @@ or
 select * from source_index where IN_POLYGON_LIST('select polygon from polyon_table', 'OR')
 ```
 
+Polygon table example for above sub-query:
+
+| polygon: String Type | poiId: Int Type |
+|---------------|----------------|
+| POLYGON ((116.137676 40.163503, 116.137676 39.935276, 116.560993 39.935276, 116.137676 40.163503)) | 1 |
+| POLYGON ((116.560993 39.935276, 116.560993 40.163503, 116.137676 40.163503, 116.560993 39.935276)) |  2  |
+
+
 Query with Polyline List UDF predicate
 
 ```
@@ -124,6 +131,13 @@ or
 ```
 select * from source_index where IN_POLYLINE_LIST('select polyLine from polyon_table', 65)
 ```
+
+PolyLine table example for above sub-query:
+
+| polyLine: String Type | poiId: Int Type |
+|---------------|----------------|
+| LINESTRING (116.137676 40.163503, 116.137676 39.935276, 116.260993 39.935276) | 1 |
+| LINESTRING (116.260993 39.935276, 116.560993 39.935276, 116.560993 40.163503) |  2  |
 
 Query with Polygon Range List UDF predicate
 
@@ -137,10 +151,18 @@ Query having Join on Spatial and Polygon table with Polygon Join UDF predicate
 select sum(t1.col1), t2.poiId
 from spatial_table t1
 inner join
-(select polygon, poiId from polygon_table) t2
+(select polygon, poiId from polygon_table where poiType='abc') t2
 on IN_POLYGON_JOIN(t1.mygeohash, t2.polygon)
 group by t2.poiId
 ```
+
+Polygon table example for above query:
+
+| polygon: String Type | poiType: String Type | poiId: Int Type |
+|---------------|----------------|----------------|
+| POLYGON ((116.137676 40.163503, 116.137676 39.935276, 116.560993 39.935276, 116.137676 40.163503)) | abc | 1 |
+| POLYGON ((116.560993 39.935276, 116.560993 40.163503, 116.137676 40.163503, 116.560993 39.935276)) |  def  | 2  |
+| POLYGON ((116.560993 40.935276, 116.360993 40.163503, 116.137676 40.163403, 116.560993 39.935276)) |  abc  | 3  |
 
 Query having Join on Spatial and Polygon table with Polygon Join RangeList UDF predicate
 
@@ -152,6 +174,14 @@ inner join
 on IN_POLYGON_JOIN_RANGE_LIST(t1.mygeohash, t2.polygonRanges)
 group by t2.poiId
 ```
+
+Polygon table example for above query:
+
+| polygonRanges: String Type | poiType: String Type | poiId: Int Type |
+|---------------|----------------|----------------|
+| RANGELIST (855279368848 855279368850, 855280799610 855280799612, 855282156300 855282157400) | abc | 1 |
+| rangelist (855279368852 855279368854, 855280799613 855280799615, 855282156200 855282157500) |  def  | 2  |
+| RANGELIST (855279368848 855279368850, 855280799613 855280799617, 855282156300 855282157400) |  abc  | 3  |
 
 Convert spatial index to spatial grid x, y
 

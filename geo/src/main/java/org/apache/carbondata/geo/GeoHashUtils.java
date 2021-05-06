@@ -23,10 +23,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.geo.scan.expression.PolygonRangeListExpression;
 
 import static org.apache.carbondata.geo.GeoConstants.POSITIVE_INTEGER_REGEX;
 
@@ -446,5 +448,34 @@ public class GeoHashUtils {
       }
     }
     return false;
+  }
+
+  /**
+   * Evaluate whether the search value(geoId) is present in the GeoId polygon ranges.
+   */
+  public static boolean performRangeSearch(String polygonRanges, String geoId) {
+    if (null == polygonRanges || polygonRanges.equalsIgnoreCase("null")) {
+      return false;
+    }
+    List<Long[]> ranges = PolygonRangeListExpression.getRangeListFromString(polygonRanges);
+    // check if the geoId is present within the ranges
+    return GeoHashUtils.rangeBinarySearch(ranges, Long.parseLong(geoId));
+  }
+
+  /**
+   * Apply pattern for a input polygon row
+   * @param regex to be applied to a pattern
+   * @param polygonOrRanges could be polygon or GeoId RangeList
+   * @return polygon or GeoId range
+   */
+  public static String getRange(String regex, String polygonOrRanges) {
+    // parser and get the range list
+    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+    Matcher matcher = pattern.matcher(polygonOrRanges);
+    String range = polygonOrRanges;
+    while (matcher.find()) {
+      range = matcher.group();
+    }
+    return range;
   }
 }

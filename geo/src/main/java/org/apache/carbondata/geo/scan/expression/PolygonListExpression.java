@@ -28,6 +28,8 @@ import org.apache.carbondata.geo.GeoConstants;
 import org.apache.carbondata.geo.GeoHashUtils;
 import org.apache.carbondata.geo.GeoOperationType;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * InPolygonList expression processor. It inputs the InPolygonList string to the Geo
  * implementation's query method, gets a list of range of IDs from each polygon and
@@ -55,7 +57,7 @@ public class PolygonListExpression extends PolygonExpression {
       Matcher matcher = pattern.matcher(polygon);
       while (matcher.find()) {
         String matchedStr = matcher.group();
-        if (!(matchedStr == null || matchedStr.isEmpty())) {
+        if (!(matchedStr == null || StringUtils.isEmpty(matchedStr))) {
           polygons.add(matchedStr);
         }
       }

@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.geo
 
-import java.util.regex.Pattern
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -78,13 +76,7 @@ class ToRangeListAsStringUDF
   override def apply(polygon: java.lang.String, oriLatitude: java.lang.Double,
       gridSize: java.lang.Integer): String = {
     // parse and get the polygon
-    var range: String = polygon
-    val pattern = Pattern.compile(GeoConstants.POLYGON_REG_EXPRESSION, Pattern.CASE_INSENSITIVE)
-    val matcher = pattern.matcher(polygon)
-    while ( { matcher.find }) {
-      val matchedStr = matcher.group
-      range = matchedStr
-    }
+    val range: String = GeoHashUtils.getRange(GeoConstants.POLYGON_REG_EXPRESSION, polygon)
     if (range == null || range.equalsIgnoreCase("null")) {
       return null
     }

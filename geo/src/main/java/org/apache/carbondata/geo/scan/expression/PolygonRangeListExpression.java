@@ -43,7 +43,7 @@ public class PolygonRangeListExpression extends PolygonExpression {
   /**
    * If range start's with RANGELIST_REG_EXPRESSION or not
    */
-  private boolean hasPattern = true;
+  private boolean computeRange = true;
 
   private List<String> polygonRangeLists = new ArrayList<>();
 
@@ -54,10 +54,10 @@ public class PolygonRangeListExpression extends PolygonExpression {
   }
 
   public PolygonRangeListExpression(String polygonRangeList, String opType, String columnName,
-      CustomIndex indexInstance, boolean hasPattern, List<String> polygonRangeLists) {
+      CustomIndex indexInstance, boolean computeRange, List<String> polygonRangeLists) {
     super(polygonRangeList, columnName, indexInstance);
     this.opType = opType;
-    this.hasPattern = hasPattern;
+    this.computeRange = computeRange;
     this.polygonRangeLists = polygonRangeLists;
   }
 
@@ -65,7 +65,7 @@ public class PolygonRangeListExpression extends PolygonExpression {
   public void processExpression() {
     // 1. parse the range list string
     List<String> rangeLists = new ArrayList<>();
-    if (hasPattern) {
+    if (computeRange) {
       Pattern pattern =
           Pattern.compile(GeoConstants.RANGELIST_REG_EXPRESSION, Pattern.CASE_INSENSITIVE);
       Matcher matcher = pattern.matcher(polygon);

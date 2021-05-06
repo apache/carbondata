@@ -67,7 +67,7 @@ object DMLStrategy extends SparkStrategy {
         CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
       case Join(left, right, joinType, condition)
         if condition.isDefined && condition.get.isInstanceOf[ScalaUDF] &&
-           isPolygonUdfFilter(condition) =>
+           isPolygonJoinUdfFilter(condition) =>
         if (joinType != Inner) {
           throw new UnsupportedOperationException("Unsupported query")
         }
@@ -235,7 +235,7 @@ object DMLStrategy extends SparkStrategy {
     }
   }
 
-  private def isPolygonUdfFilter(condition: Option[Expression]) = {
+  private def isPolygonJoinUdfFilter(condition: Option[Expression]) = {
     condition.get.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonJoinUDF] ||
     condition.get.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonJoinRangeListUDF]
   }

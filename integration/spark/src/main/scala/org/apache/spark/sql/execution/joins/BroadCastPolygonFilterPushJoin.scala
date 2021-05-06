@@ -61,15 +61,13 @@ case class BroadCastPolygonFilterPushJoin(
   override lazy val metrics = Map(
     "numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"))
 
+  // execute the polygon table sparkPlan and collect data rows
   private lazy val inputCopy: Array[InternalRow] = {
     getBuildPlan.map(_.copy()).collect().clone()
   }
 
-  lazy val spatialTableRDD: Option[RDD[InternalRow]] = streamedPlan.collectFirst {
-    case scan: CarbonDataSourceScan => scan.inputRDDs().head
-  }
-
   @transient private lazy val boundCondition: InternalRow => Boolean = {
+    // get the join condition
     if (condition.isDefined) {
       newPredicate(condition.get, streamedPlan.output ++ buildPlan.output).eval _
     } else {
@@ -101,6 +99,8 @@ case class BroadCastPolygonFilterPushJoin(
   }
 
   protected def getBuildPlan: RDD[InternalRow] = {
+    // buildPlan will be the polygon table plan. Match the buildPlan and return the result of
+    // this query as an RDD[InternalRow]
     buildPlan match {
       case c@CarbonBroadCastExchangeExec(_, _) =>
         c.asInstanceOf[BroadcastExchangeExec].child.execute()
@@ -119,14 +119,23 @@ case class BroadCastPolygonFilterPushJoin(
 
 object BroadCastPolygonFilterPushJoin {
 
+  /**
+   * This method will add the polygon range list filter to the spatial table scan
+   * @param buildPlan polygon table spark plan
+   * @param streamedPlan spatial table spark plan
+   * @param inputCopy polygon table data rows
+   * @param condition in_polygon_join expression
+   */
   def addPolygonRangeListFilterToPlan(buildPlan: SparkPlan,
       streamedPlan: SparkPlan,
       inputCopy: Array[InternalRow],
       condition: Option[Expression]): Unit = {
 
+    // get the polygon column from the in_polygon_join join condition
     val children = condition.get.asInstanceOf[ScalaUDF].children
     val polygonExpression = children(1)
 
+    // evaluate and get the polygon data rows from polygon table InternalRows
     val keys = polygonExpression.map { a =>
       BindReferences.bindReference(a, buildPlan.output)
     }.toArray
@@ -143,6 +152,7 @@ object BroadCastPolygonFilterPushJoin {
           })
     }
 
+    // get the spatial table scan
     val tableScan = streamedPlan.collectFirst {
       case ProjectExec(_, batchData: CarbonDataSourceScan) =>
         batchData
@@ -157,6 +167,7 @@ object BroadCastPolygonFilterPushJoin {
       CarbonCommonConstants.BROADCAST_RECORD_SIZE,
       CarbonCommonConstants.DEFAULT_BROADCAST_RECORD_SIZE)
 
+    // add filter to spatial table scan
     if (tableScan.isDefined && null != filters
         && filters.length > 0
         && (filters(0).length > 0 && filters(0).length <= configuredFilterRecordSize.toInt)) {
@@ -172,10 +183,13 @@ object BroadCastPolygonFilterPushJoin {
       polygonFilter: Array[Expression], table: CarbonTable): Unit = {
     rdd match {
       case value: CarbonScanRDD[InternalRow] =>
+        // prepare Polygon Range List filter
         if (polygonFilter.nonEmpty) {
+          // get the GeoHandler custom instance
           val (columnName, instance) = GeoUtils.getGeoHashHandler(table
             .getTableInfo.getFactTable.getTableProperties.asScala)
           var inputPolygonRanges = new ArrayBuffer[String]
+          // remove NULL values in the polygon range list and convert list of ranges to string
           polygonFilter.map { expression =>
             val range: String = expression.asInstanceOf[Literal].value.toString
             inputPolygonRanges += range
@@ -184,20 +198,22 @@ object BroadCastPolygonFilterPushJoin {
           inputPolygonRanges = inputPolygonRanges.filterNot(range =>
             range.equalsIgnoreCase("NULL") ||
             range.equalsIgnoreCase("'null'"))
-          val polygonOrRanges = inputPolygonRanges.mkString("\\,")
-          val expressionVal = if (polygonOrRanges.toLowerCase.startsWith(GeoConstants.RANGE_LIST)) {
-            new PolygonRangeListExpression(polygonOrRanges,
+          val polygonRanges = inputPolygonRanges.mkString("\\,")
+          // get the PolygonRangeListExpression for input polygon range
+          val expressionVal = if (polygonRanges.toLowerCase.startsWith(GeoConstants.RANGE_LIST)) {
+            new PolygonRangeListExpression(polygonRanges,
               "OR",
               columnName,
               instance)
           } else {
-            new PolygonRangeListExpression(polygonOrRanges,
+            new PolygonRangeListExpression(polygonRanges,
               "OR",
               columnName,
               instance,
               false,
               inputPolygonRanges.asJava)
           }
+          // set the filter as PolygonRangeListExpression
           if (null != expressionVal) {
             val filter = new IndexFilter(table, expressionVal)
             value.indexFilter = filter
@@ -210,6 +226,7 @@ object BroadCastPolygonFilterPushJoin {
 
 object CarbonBroadCastExchangeExec {
   def unapply(plan: SparkPlan): Option[(BroadcastMode, SparkPlan)] = {
+    // if plan contains BroadcastExchange, get the sparkPlan
     plan match {
       case cExe: BroadcastExchangeExec =>
         Some(cExe.mode, cExe.child)
