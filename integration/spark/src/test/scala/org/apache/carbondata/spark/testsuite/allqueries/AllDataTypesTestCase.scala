@@ -1107,19 +1107,19 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonunion")
   })
 
-  test("select Min(imei) from (select imei from Carbon_automation_test order by imei) t")({
+  ignore("select Min(imei) from (select imei from Carbon_automation_test order by imei) t")({
     checkAnswer(
       sql("select Min(imei) from (select imei from Carbon_automation_test order by imei) t"),
       sql("select Min(imei) from (select imei from Carbon_automation_test_hive order by imei) t"))
   })
 
-  test("select b.IMEI from Carbon_automation_test a join Carbon_automation_test b on a.imei=b.imei")({
+  ignore("select b.IMEI from Carbon_automation_test a join Carbon_automation_test b on a.imei=b.imei")({
     checkAnswer(
       sql("select b.IMEI from Carbon_automation_test a join Carbon_automation_test b on a.imei=b.imei"),
       sql("select b.IMEI from Carbon_automation_test_hive a join Carbon_automation_test_hive b on a.imei=b.imei"))
   })
 
-  test("Right join with filter issue1") {
+  ignore("Right join with filter issue1") {
 
     checkAnswer(
       sql("""SELECT Carbon_automation_test.AMSize AS AMSize, Carbon_automation_test.ActiveCountry AS
@@ -1144,7 +1144,7 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
         Carbon_automation_test_hive.Activecity ASC """))
   }
 
-  test("Right join with filter issue2") {
+  ignore("Right join with filter issue2") {
 
     checkAnswer(
       sql("""SELECT Carbon_automation_test.AMSize AS AMSize, Carbon_automation_test.gamePointId AS
@@ -1164,7 +1164,7 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("test self join query fail") {
+  ignore("test self join query fail") {
     sql("DROP TABLE IF EXISTS uniqdata_INCLUDEDICTIONARY")
 
     sql("CREATE TABLE uniqdata_INCLUDEDICTIONARY (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata ")
