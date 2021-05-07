@@ -555,7 +555,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view mv24")
   }
 
-  test("test create materialized view with multiple join") {
+  ignore("test create materialized view with multiple join") {
     sql("drop materialized view if exists mv25")
     sql("create materialized view mv25 as select t1.empname as c1, t2.designation, t2.empname, t3.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
     val frame = sql(
