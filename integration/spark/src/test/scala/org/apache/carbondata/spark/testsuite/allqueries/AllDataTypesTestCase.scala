@@ -830,7 +830,7 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
   })
 
   // TC_386
-  test("SELECT channelsId, deliveryCity FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC")({
+  ignore("SELECT channelsId, deliveryCity FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC")({
     checkAnswer(
       sql("SELECT channelsId, deliveryCity FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC"),
       Seq(Row("1", "changsha"), Row("1", "guangzhou"), Row("1", "shenzhen"), Row("1", "xiangtan"), Row("1", "yichang"), Row("1", "zhuzhou"), Row("2", "changsha"), Row("2", "guangzhou"), Row("2", "shenzhen"), Row("2", "xiangtan"), Row("2", "yichang"), Row("2", "zhuzhou"), Row("3", "changsha"), Row("3", "guangzhou"), Row("3", "shenzhen"), Row("3", "wuhan"), Row("3", "xiangtan"), Row("3", "yichang"), Row("3", "zhuzhou"), Row("4", "guangzhou"), Row("4", "shenzhen"), Row("4", "xiangtan"), Row("4", "yichang"), Row("4", "zhuzhou"), Row("5", "changsha"), Row("5", "guangzhou"), Row("5", "shenzhen"), Row("5", "wuhan"), Row("5", "xiangtan"), Row("5", "yichang"), Row("5", "zhuzhou"), Row("6", "changsha"), Row("6", "guangzhou"), Row("6", "shenzhen"), Row("6", "wuhan"), Row("6", "xiangtan"), Row("6", "yichang"), Row("6", "zhuzhou"), Row("7", "changsha"), Row("7", "guangzhou"), Row("7", "shenzhen"), Row("7", "wuhan"), Row("7", "xiangtan"), Row("7", "yichang"), Row("7", "zhuzhou")))
