@@ -71,6 +71,7 @@ import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
+import org.apache.carbondata.mv.plans.modular.ModularPlan
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -596,6 +597,11 @@ object CarbonToSparkAdapter {
 
   def getTypeName(s: DataType): String = {
     s.typeName
+  }
+
+  def transformDown(plan: ModularPlan,
+      rule: PartialFunction[ModularPlan, ModularPlan]): ModularPlan = {
+    plan.transformDown(rule)
   }
 
 }

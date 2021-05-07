@@ -40,6 +40,8 @@ case class GroupBy(
     modularPlan: Option[ModularPlan] = None) extends UnaryNode with Matchable {
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
 
+  override def verboseString: String = super.verboseString
+
   override def makeCopy(newArgs: Array[AnyRef]): GroupBy = {
     val groupBy = super.makeCopy(newArgs).asInstanceOf[GroupBy]
     if (rewritten) groupBy.setRewritten()
@@ -86,13 +88,19 @@ case class Select(
     if (rewritten) select.setRewritten()
     select
   }
+
+  override def verboseString: String = super.verboseString
 }
 
 case class Union(children: Seq[ModularPlan], flags: FlagSet, flagSpec: Seq[Seq[Any]])
   extends ModularPlan {
   override def output: Seq[Attribute] = children.head.output
+
+  override def verboseString: String = super.verboseString
 }
 
 case object OneRowTable extends LeafNode {
   override def output: Seq[Attribute] = Nil
+
+  override def verboseString: String = super.verboseString
 }

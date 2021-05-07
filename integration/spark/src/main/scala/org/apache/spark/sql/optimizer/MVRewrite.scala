@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.Map
 import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.log4j.Logger
@@ -30,8 +31,9 @@ import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, Literal, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan}
+import org.apache.spark.sql.catalyst.trees.{CurrentOrigin, TreeNode}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.DataTypes
+import org.apache.spark.sql.types.{DataType, DataTypes}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -232,12 +234,18 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
     if (modularPlan.find(_.rewritten).isDefined) {
       LOGGER.debug(s"Getting updated plan for the rewritten modular plan: " +
                    s"{ ${ modularPlan.toString().trim } }")
-      var updatedPlan = modularPlan transform {
+      var updatedPlan = CarbonToSparkAdapter.transformDown(modularPlan, {
         case select: Select =>
           updatePlan(select)
         case groupBy: GroupBy =>
           updatePlan(groupBy)
-      }
+      })
+//      var updatedPlan = modularPlan transform {
+//        case select: Select =>
+//          updatePlan(select)
+//        case groupBy: GroupBy =>
+//          updatePlan(groupBy)
+//      }
       if (modularPlan.isRolledUp) {
         // If the rewritten query is rolled up, then rewrite the query based on the original modular
         // plan. Make a new outputList based on original modular plan and wrap rewritten plan with
@@ -673,8 +681,12 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
           // cast((FLOOR((cast(col_name) as double))).., upper layer even exprid will be same,
           // we need to find the attribute ref(col_name) at lower level and check where expid is
           // same or of same tables, so doin the semantic equals
-          val qualifiedName =
-            output.qualifier.headOption.getOrElse(s"${output.exprId.id}_${output.name}")
+          // from spark 3.1, qualifier will have 3 values, last will be table name
+          val qualifiedName = if (output.qualifier.nonEmpty) {
+            s"${ output.exprId.id }_${output.qualifier.lastOption }"
+          } else {
+            s"${ output.exprId.id }_${ output.name }"
+          }
           if (!attributesOfDuplicateCol.forall(attribute =>
             attributesOfCol.exists(a => a.semanticEquals(attribute)))) {
             Alias(output, qualifiedName)(exprId = output.exprId)

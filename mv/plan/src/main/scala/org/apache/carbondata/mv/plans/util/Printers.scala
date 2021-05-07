@@ -20,6 +20,7 @@ package org.apache.carbondata.mv.plans.util
 import java.io.{OutputStream, PrintWriter, StringWriter}
 
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression, _}
+import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.util.quoteIdentifier
 
@@ -358,6 +359,12 @@ trait Printers {
           ""
         }
         qualifierPrefix + quoteIdentifier(child.name) + " AS " + quoteIdentifier(a.name)
+      case a@Alias(child: AggregateExpression, _) =>
+        child.sql + " AS " + quoteIdentifier(a.name)
+      case a@Alias(cast: Cast, _) =>
+        cast.sql + " AS " + quoteIdentifier(a.name)
+      case a@Alias(cast: Coalesce, _) =>
+        cast.sql + " AS " + quoteIdentifier(a.name)
       case reference@AttributeReference(_, _, _, _) =>
         val qualifierPrefix = if (reference.qualifier.nonEmpty) {
           ExpressionHelper.getTheLastQualifier(reference) + "."
@@ -406,7 +413,7 @@ trait Printers {
   }
 
   def formatUDFinExpression(select: Seq[Expression]): String = {
-    val result = select.map {
+    val result: Seq[String] = select.map {
       case udf: ScalaUDF if udf.isInstanceOf[ScalaUDF] =>
         if (udf.udfName.isDefined) {
           udf.udfName.get + "(" + formatExpressionsInUDF(udf.children) + " )"

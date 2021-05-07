@@ -22,9 +22,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.JavaConverters._
 
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
 import org.apache.spark.sql.parser.MVQueryParser
 
@@ -112,11 +112,17 @@ case class MVCatalogInSpark(session: SparkSession)
       val mvIdentifier = mvSchema.getIdentifier
       val mvTableIdentifier =
         TableIdentifier(mvIdentifier.getTableName, Some(mvIdentifier.getDatabaseName))
+      val plan = new FindDataSourceTable(session)
+        .apply(session.sessionState.catalog.lookupRelation(mvTableIdentifier))
+      val output = plan match {
+        case alias: SubqueryAlias =>
+          CarbonToSparkAdapter.getOutput(alias)
+        case _ =>
+          plan.output
+      }
       val relation = ModularRelation(mvIdentifier.getDatabaseName,
         mvIdentifier.getTableName,
-        new FindDataSourceTable(session)
-          .apply(session.sessionState.catalog.lookupRelation(mvTableIdentifier))
-          .output,
+        output,
         Flags.NoFlags,
         Seq.empty)
       val modularPlan = Select(relation.outputList,
