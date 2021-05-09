@@ -179,6 +179,7 @@ object IndexServer extends ServerInterface {
             request.getInvalidSegments.asScala)
         IndexStoreManager.getInstance()
           .clearInvalidSegments(request.getCarbonTable, request.getInvalidSegments)
+        IndexStoreManager.getInstance().clearIndex(request.getCarbonTable.getTableId)
       }
       if (request.isSIPruningEnabled) {
         new ExtendedBlockletWrapperContainer(Array(DistributedRDDUtils.pruneOnDriver(request)),

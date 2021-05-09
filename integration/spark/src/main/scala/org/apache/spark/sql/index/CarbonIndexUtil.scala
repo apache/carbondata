@@ -38,6 +38,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -471,6 +472,8 @@ object CarbonIndexUtil {
           .stripMargin).collect()
       CarbonHiveIndexMetadataUtil.refreshTable(dbName, tableName, sparkSession)
       CarbonMetadata.getInstance.removeTable(dbName, tableName)
+      // clear the index info from index store cache
+      IndexStoreManager.getInstance().clearIndex(carbonTable.getTableId);
       CarbonMetadata.getInstance.loadTableMetadata(table.getTableInfo)
     } catch {
       case e: Exception =>
