@@ -1309,14 +1309,20 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test double boundary") {
+
     sql("drop table if exists par")
     sql("drop table if exists car")
 
     sql("create table par (c1 string, c2 double, n int) using parquet")
     sql("create table car (c1 string, c2 double, n int) using carbon")
-    sql("insert into par select 'a', 1.7986931348623157E308, 215565665556")
-    sql("insert into car select 'a', 1.7986931348623157E308, 215565665556")
-
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      sql("insert into par select 'a', 1.7986931348623157E308, 215565665556")
+      sql("insert into car select 'a', 1.7986931348623157E308, 215565665556")
+    } else {
+      // double range reduced in spark 3.1, the above insert fails in SparkSqlParser
+      sql("insert into par select 'a', 1.7976931348623157E308, 215565665556")
+      sql("insert into car select 'a', 1.7976931348623157E308, 215565665556")
+    }
     checkAnswer(sql("select * from car"), sql("select * from par"))
     sql("drop table if exists par")
     sql("drop table if exists car")
