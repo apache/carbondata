@@ -18,7 +18,6 @@
 package org.apache.spark.sql.secondaryindex.command
 
 import java.io.IOException
-
 import java.util
 import java.util.UUID
 

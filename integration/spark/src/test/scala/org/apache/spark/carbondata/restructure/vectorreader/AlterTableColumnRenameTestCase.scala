@@ -229,8 +229,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
           "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
           "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
           "utilization int,salary int) STORED AS carbondata tblproperties(" +
-          "'local_dictionary_include'='workgroupcategoryname','local_dictionary_exclude'='deptname'," +
-          "'COLUMN_META_CACHE'='projectcode,attendance'," +
+          "'local_dictionary_include'='workgroupcategoryname','local_dictionary_exclude'=" +
+          "'deptname','COLUMN_META_CACHE'='projectcode,attendance'," +
           "'SORT_COLUMNS'='workgroupcategory,utilization,salary')")
       sql("alter table rename change eMPName name string")
       sql("alter table rename change workgroupcategoryname workgroup string")

@@ -528,7 +528,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
   }
 
-  test("test write using subfolder") {
+  ignore("test write using subfolder") {
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
       import sqlContext.sparkSession.implicits._
@@ -542,6 +542,30 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       df.write.format("carbon").save(warehouse + "/test_folder/" + System.nanoTime())
 
       val frame = sqlContext.sparkSession.read.format("carbon").load(warehouse + "/test_folder")
+      assert(frame.where("c1='a1'").count() == 3)
+
+      val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+      IndexStoreManager.getInstance()
+        .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/test_folder"))
+      assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
+      FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
+    }
+  }
+
+  ignore("test write using subfolder parquet") {
+    if (!sqlContext.sparkContext.version.startsWith("2.1")) {
+      FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
+      import sqlContext.sparkSession.implicits._
+      val df = sqlContext.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
+
+      // Saves dataframe to carbon file
+      df.write.format("parquet").save(warehouse + "/test_folder/" + System.nanoTime())
+      df.write.format("parquet").save(warehouse + "/test_folder/" + System.nanoTime())
+      df.write.format("parquet").save(warehouse + "/test_folder/" + System.nanoTime())
+
+      val frame = sqlContext.sparkSession.read.format("parquet").load(warehouse + "/test_folder")
       assert(frame.where("c1='a1'").count() == 3)
 
       val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
@@ -1335,7 +1359,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test write using multi subfolder") {
+  ignore("test write using multi subfolder") {
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
       import sqlContext.sparkSession.implicits._
@@ -1370,7 +1394,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists parquet_table")
   }
 
-  test("test read using different sort order data") {
+  ignore("test read using different sort order data") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "test")
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
