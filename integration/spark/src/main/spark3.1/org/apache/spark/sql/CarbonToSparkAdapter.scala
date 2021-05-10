@@ -610,7 +610,7 @@ object CarbonToSparkAdapter {
 
   def translateFilter(dataFilters: Seq[Expression]) : Seq[Filter] = {
     dataFilters.flatMap(DataSourceStrategy.translateFilter(_,
-      supportNestedPredicatePushdown = true))
+      supportNestedPredicatePushdown = false))
   }
 
   def getCarbonOptimizer(session: SparkSession,
