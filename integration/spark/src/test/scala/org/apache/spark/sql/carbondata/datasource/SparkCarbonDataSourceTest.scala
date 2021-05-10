@@ -1671,8 +1671,8 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
 
       (0 to 10).foreach {
         i =>
-          sql(s"insert into sorted_par select $i, ${ i.toDouble / 2 }, 'name$i', " +
-              s"'address$i', ${ i * 100 }, ${ 10 - i }")
+          sql(s"insert into sorted_par select '$i', ${ i.toDouble / 2 }, 'name$i', " +
+              s"'address$i', ${ i * 100 }, '${ 10 - i }'")
       }
       checkAnswer(sql("select * from sorted_par order by bytefield"),
         sql("select * from sort_table"))
@@ -1753,19 +1753,19 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
         FileFactory.createDirectoryAndSetPermission(path,
           new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
       }
-      sql(s"create table par_table(age int, height double, name string, address " +
+      sql(s"create table par_table(male boolean, age int, height double, name string, address " +
           s"string," +
           s"salary long, floatField float, bytefield byte) using parquet options(path '$path')")
     } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
-      sql(s"create table par_table(age int, height double, name string, address " +
+      sql(s"create table par_table(male boolean, age int, height double, name string, address " +
           s"string," +
           s"salary long, floatField float, bytefield byte) using parquet location '$path'")
     }
 
     (0 to 10).foreach {
       i =>
-        sql(s"insert into par_table select $i, ${ i.toDouble / 2 }, 'name$i', " +
-            s"'address$i', ${ i * 100 }, $i.$i, $i")
+        sql(s"insert into par_table select 'true','$i', ${ i.toDouble / 2 }, 'name$i', " +
+            s"'address$i', ${ i * 100 }, $i.$i, '$i'")
     }
   }
 
