@@ -23,6 +23,7 @@ import java.util.Collections
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -130,6 +131,9 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
   }
 
   test("test local dictionary generation for map type") {
+    if (SPARK_VERSION.startsWith("3.")) {
+      sql("set spark.sql.mapKeyDedupPolicy=LAST_WIN")
+    }
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name map<string,string>) STORED AS carbondata tblproperties" +

@@ -26,7 +26,6 @@ import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, Ca
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAlias
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Cast, Descending, Expression, IntegerLiteral, Literal, NamedExpression, ScalaUDF, SortOrder}
-import org.apache.spark.sql.catalyst.optimizer.BuildRight
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
 import org.apache.spark.sql.catalyst.plans.{Inner, JoinType, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
@@ -40,7 +39,6 @@ import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.apache.spark.sql.types.{DataType, DoubleType, IntegerType, StringType}
 import org.apache.spark.sql.util.SparkSQLUtil
-import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -66,13 +64,13 @@ object DMLStrategy extends SparkStrategy {
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
         CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
-      case Join(left, right, joinType, condition, _)
-        if condition.isDefined && condition.get.isInstanceOf[ScalaUDF] &&
-           isPolygonJoinUdfFilter(condition) =>
-        if (joinType != Inner) {
+      case join: Join if join.condition.isDefined && join.condition.get.isInstanceOf[ScalaUDF] &&
+                         isPolygonJoinUdfFilter(join.condition) =>
+        val condition = join.condition
+        if (join.joinType != Inner) {
           throw new UnsupportedOperationException("Unsupported query")
         }
-        val carbon = CarbonSourceStrategy.apply(left).head
+        val carbon = CarbonSourceStrategy.apply(join.left).head
         val leftKeys = Seq(condition.get.asInstanceOf[ScalaUDF].children.head)
         val rightKeys = Seq(condition.get.asInstanceOf[ScalaUDF].children.last)
         if (condition.get.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonJoinUDF]) {
@@ -116,7 +114,7 @@ object DMLStrategy extends SparkStrategy {
           val rangeListScalaUdf = CarbonToSparkAdapter.createRangeListScalaUDF(toRangeListUDF,
             dataType, children, inputTypes)
           // add ToRangeListAsString udf column to the polygon table plan projection list
-          val rightSide = right transform {
+          val rightSide = join.right transform {
             case Project(projectList, child) =>
               val positionId = UnresolvedAlias(rangeListScalaUdf)
               val newProjectList = projectList :+ positionId
@@ -135,17 +133,15 @@ object DMLStrategy extends SparkStrategy {
               var udfChildren: Seq[Expression] = Seq.empty
               udfChildren = udfChildren :+ scalaUdf.children.head
               udfChildren = udfChildren :+ polygonTablePlan.output.last
-              val types = scalaUdf.inputTypes :+ scalaUdf.inputTypes.head
               val polygonJoinUdf = new InPolygonJoinUDF
               CarbonToSparkAdapter.getTransformedPolygonJoinUdf(scalaUdf,
-                udfChildren, types, polygonJoinUdf)
+                udfChildren, polygonJoinUdf)
           }
           // push down in_polygon join filter to carbon
           val pushedDownJoin = BroadCastPolygonFilterPushJoin(
             leftKeys,
             rightKeys,
-            joinType,
-            BuildRight,
+            join.joinType,
             Some(newCondition),
             carbon,
             PlanLater(polygonTablePlan)
@@ -156,11 +152,10 @@ object DMLStrategy extends SparkStrategy {
           val pushedDownJoin = BroadCastPolygonFilterPushJoin(
             leftKeys,
             rightKeys,
-            joinType,
-            BuildRight,
+            join.joinType,
             condition,
             carbon,
-            PlanLater(right)
+            PlanLater(join.right)
           )
           condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
         }

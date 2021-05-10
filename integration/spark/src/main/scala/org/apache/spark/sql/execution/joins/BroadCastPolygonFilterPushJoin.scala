@@ -21,10 +21,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, BindReferences, Expression, JoinedRow, Literal, Predicate, ScalaUDF}
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
-import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, BindReferences, Expression, JoinedRow, Literal, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.plans.physical.BroadcastMode
 import org.apache.spark.sql.execution.{BinaryExecNode, ProjectExec, RowDataSourceScanExec, SparkPlan}
@@ -35,7 +34,7 @@ import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.{IndexFilter, Segment}
+import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.geo.{GeoConstants, GeoUtils}
@@ -46,16 +45,13 @@ case class BroadCastPolygonFilterPushJoin(
     leftKeys: Seq[Expression],
     rightKeys: Seq[Expression],
     joinType: JoinType,
-    buildSide: BuildSide,
     condition: Option[Expression],
     left: SparkPlan,
     right: SparkPlan
 ) extends BinaryExecNode {
 
-  protected lazy val (buildPlan, streamedPlan) = buildSide match {
-    case BuildLeft => (left, right)
-    case BuildRight => (right, left)
-  }
+  // BuildSide will be BuildRight
+  protected lazy val (buildPlan, streamedPlan) = (right, left)
 
   override lazy val metrics = Map(
     "numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"))
@@ -68,7 +64,7 @@ case class BroadCastPolygonFilterPushJoin(
   @transient private lazy val boundCondition: InternalRow => Boolean = {
     // get the join condition
     if (condition.isDefined) {
-      Predicate.create(condition.get, streamedPlan.output ++ buildPlan.output).eval _
+      CarbonToSparkAdapter.getPredicate(streamedPlan.output ++ buildPlan.output, condition)
     } else {
       (_: InternalRow) => true
     }

@@ -49,7 +49,7 @@ import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
-import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StructField}
+import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StringType, StructField}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -165,14 +165,18 @@ object CarbonToSparkAdapter {
 
   def getTransformedPolygonJoinUdf(scalaUdf: ScalaUDF,
       udfChildren: Seq[Expression],
-      types: Seq[DataType],
       polygonJoinUdf: InPolygonJoinUDF): ScalaUDF = {
     ScalaUDF(polygonJoinUdf,
       scalaUdf.dataType,
       udfChildren,
       scalaUdf.inputsNullSafe,
-      types,
+      scalaUdf.inputTypes :+ scalaUdf.inputTypes.head,
       scalaUdf.udfName)
+  }
+
+  def getPredicate(inputSchema: Seq[Attribute],
+      condition: Option[Expression]): InternalRow => Boolean = {
+    GeneratePredicate.generate(condition.get, inputSchema).eval(_)
   }
 
   def createExprCode(code: String, isNull: String, value: String, dataType: DataType): ExprCode = {

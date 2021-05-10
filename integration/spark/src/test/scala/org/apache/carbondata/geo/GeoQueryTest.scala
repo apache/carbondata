@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.geo
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -242,9 +243,11 @@ class GeoQueryTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterE
               s"inner join " +
               s"(select polygon,poiId from $polygonTable where poitype='xyz') t2 " +
               s"on in_polygon_join_range_list(t1.mygeohash,t2.polygon) group by t2.poiId"
-    assert(sql(s"explain $joinQuery").collect()(0)
-      .toString()
-      .contains("- pruned by Main Index\n    - skipped: 2 blocks, 1 blocklets"))
+    if (SPARK_VERSION.startsWith("2")) {
+      assert(sql(s"explain $joinQuery").collect()(0)
+        .toString()
+        .contains("- pruned by Main Index\n    - skipped: 2 blocks, 1 blocklets"))
+    }
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
       CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
     checkAnswer(sql(joinQuery),

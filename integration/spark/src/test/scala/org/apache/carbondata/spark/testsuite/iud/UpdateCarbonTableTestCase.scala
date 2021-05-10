@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.testsuite.iud
 import java.io.{File, IOException}
 
 import mockit.{Mock, MockUp}
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.execution.command.mutation.{HorizontalCompaction, HorizontalCompactionException}
 import org.apache.spark.sql.test.util.QueryTest
@@ -550,7 +551,11 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val exception = intercept[Exception] {
       sql("""update iud.dest d set (c2, c5 ) = (c2 + 1, concat(c5 , "z"), "abc")""").collect()
     }
-    assertResult("The number of columns in source table and destination table columns mismatch;")(
+    var errMsg = "The number of columns in source table and destination table columns mismatch;"
+    if (SPARK_VERSION.startsWith("3")) {
+      errMsg = errMsg.replace(";", "")
+    }
+    assertResult(errMsg)(
       exception.getMessage)
   }
 

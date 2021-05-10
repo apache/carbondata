@@ -18,8 +18,11 @@
 package org.apache.spark.sql
 
 import java.net.URI
+import java.sql.{Date, Timestamp}
 import java.time.ZoneId
+import javax.xml.bind.DatatypeConverter
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -33,7 +36,7 @@ import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, QueryPlanni
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener, SessionCatalog}
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, Predicate, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide, Optimizer}
@@ -60,7 +63,7 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateCol
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.streaming.Trigger
-import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StructField, VarcharType}
+import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StringType, StructField, VarcharType}
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -73,6 +76,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, Select}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -258,8 +262,33 @@ object CarbonToSparkAdapter {
   }
 
   def stringToTime(value: String): java.util.Date = {
-    DateTimeUtils.toJavaDate(DateTimeUtils.stringToDate(UTF8String.fromString(value),
-      ZoneId.systemDefault()).get)
+    stringToDateValue(value)
+  }
+
+  def getPredicate(inputSchema: Seq[Attribute],
+      condition: Option[Expression]): InternalRow => Boolean = {
+    Predicate.create(condition.get, inputSchema).eval _
+  }
+
+  @tailrec
+  private def stringToDateValue(value: String): java.util.Date = {
+    val indexOfGMT = value.indexOf("GMT")
+    if (indexOfGMT != -1) {
+      // ISO8601 with a weird time zone specifier (2000-01-01T00:00GMT+01:00)
+      val s0 = value.substring(0, indexOfGMT)
+      val s1 = value.substring(indexOfGMT + 3)
+      // Mapped to 2000-01-01T00:00+01:00
+      stringToDateValue(s0 + s1)
+    } else if (!value.contains('T')) {
+      // JDBC escape string
+      if (value.contains(' ')) {
+        Timestamp.valueOf(value)
+      } else {
+        Date.valueOf(value)
+      }
+    } else {
+      DatatypeConverter.parseDateTime(value).getTime
+    }
   }
 
   def timeStampToString(timeStamp: Long): String = {
@@ -288,6 +317,29 @@ object CarbonToSparkAdapter {
       val currentDatabase = SparkSQLUtil.getSparkSession.sessionState.catalog.getCurrentDatabase
       Some(TableIdentifier(tableName(0), Option(currentDatabase)))
     }
+  }
+
+  def createRangeListScalaUDF(toRangeListUDF: ToRangeListAsStringUDF,
+      dataType: StringType.type,
+      children: Seq[Expression],
+      inputTypes: Seq[DataType]): ScalaUDF = {
+    ScalaUDF(toRangeListUDF,
+      dataType,
+      children,
+      Nil,
+      None,
+      Some("ToRangeListAsString"))
+  }
+
+  def getTransformedPolygonJoinUdf(scalaUdf: ScalaUDF,
+      udfChildren: Seq[Expression],
+      polygonJoinUdf: InPolygonJoinUDF): ScalaUDF = {
+    ScalaUDF(polygonJoinUdf,
+      scalaUdf.dataType,
+      udfChildren,
+      scalaUdf.inputEncoders,
+      scalaUdf.outputEncoder,
+      scalaUdf.udfName)
   }
 
   // TODO: check if this is correct

@@ -31,7 +31,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexRepl
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, SessionCatalog}
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SubqueryExpression}
-import org.apache.spark.sql.catalyst.expressions.codegen.ExprCode
+import org.apache.spark.sql.catalyst.expressions.codegen.{ExprCode, GeneratePredicate}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Join, LogicalPlan, OneRowRelation, Statistics, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -50,7 +50,7 @@ import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
-import org.apache.spark.sql.types.{DataType, Metadata, StructField}
+import org.apache.spark.sql.types.{DataType, Metadata, StringType, StructField}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
@@ -152,6 +152,11 @@ object CarbonToSparkAdapter {
       scalaUdf.udfName,
       scalaUdf.nullable,
       scalaUdf.udfDeterministic)
+  }
+
+  def getPredicate(inputSchema: Seq[Attribute],
+      condition: Option[Expression]): InternalRow => Boolean = {
+    GeneratePredicate.generate(condition.get, inputSchema).eval(_)
   }
 
   def createExprCode(code: String, isNull: String, value: String, dataType: DataType = null
