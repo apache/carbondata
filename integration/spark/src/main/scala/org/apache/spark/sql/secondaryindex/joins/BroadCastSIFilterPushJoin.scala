@@ -138,7 +138,9 @@ case class BroadCastSIFilterPushJoin(
     carbonScan.execute
   }
 
-  // TODO: Fix this
+  // TODO: Spark has started supporting Codegen for Join, Carbon needs to implement the same.
+  override def supportCodegen: Boolean = false
+
   protected def prepareRelation(ctx: CodegenContext) = null
 
   def inputRDDs(): Seq[RDD[InternalRow]] = secondaryIndexRDD

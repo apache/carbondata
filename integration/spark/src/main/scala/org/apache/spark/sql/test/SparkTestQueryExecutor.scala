@@ -74,6 +74,7 @@ object SparkTestQueryExecutor {
     .config("spark.sql.storeAssignmentPolicy", "legacy")
     .config("spark.sql.legacy.timeParserPolicy", "legacy")
     .config("spark.sql.legacy.parquet.int96RebaseModeInWrite", "legacy")
+    .config("spark.sql.hive.manageFilesourcePartitions", "false")
     // Default value is changed to true in hive 3.1 which dosent allow drop columns(instead use
     // replace columns when V2 is supported)
     .config("spark.hadoop.hive.metastore.disallow.incompatible.col.type.changes", "false")

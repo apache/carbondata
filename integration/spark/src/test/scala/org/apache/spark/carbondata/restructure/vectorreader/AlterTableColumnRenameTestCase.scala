@@ -32,6 +32,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test only column rename operation") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("alter table rename change empname empAddress string")
       val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "rename")
@@ -41,6 +42,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("CARBONDATA-4053 test rename column, column name in table properties changed correctly") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("create table simple_table(a string, aa1 string) stored as carbondata" +
         " tblproperties(\"sort_columns\"=\"a,aa1\")")
@@ -54,6 +56,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test only column rename operation with datatype change also") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createTable()
@@ -68,6 +71,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test trying to rename column which does not exists") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createTable()
@@ -79,6 +83,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test rename when new column name already in schema") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createTable()
@@ -91,6 +96,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test change column command with comment") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createNonPartitionTableAndLoad()
@@ -127,6 +133,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("column rename for different datatype") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createTable()
@@ -141,6 +148,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("query count after column rename and filter results") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createNonPartitionTableAndLoad()
@@ -162,6 +170,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("compaction after column rename and count") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createNonPartitionTableAndLoad()
@@ -178,6 +187,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test rename after adding column and drop column") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createNonPartitionTableAndLoad()
@@ -198,6 +208,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test column rename and update and insert and delete") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createNonPartitionTableAndLoad()
@@ -222,6 +233,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test sort columns, local dictionary and other column properties in DESC formatted, " +
        "check case sensitive also") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       sql(
@@ -259,6 +271,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test rename on partition column") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("drop table if exists partitiontwo")
       sql(
@@ -278,6 +291,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test rename column with lucene") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("DROP TABLE IF EXISTS index_test")
       sql(
@@ -301,6 +315,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test rename column with bloom indexSchema") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("DROP TABLE IF EXISTS bloomtable")
       sql(
@@ -325,6 +340,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test rename on complex column") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("drop table if exists complex")
       sql("create table complex (id int, name string, " +
@@ -337,6 +353,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test SET command with column rename") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createTable()
@@ -356,6 +373,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test column rename with change datatype for decimal datatype") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("drop table if exists deciTable")
       sql("create table decitable(name string, age int, avg decimal(30,10)) STORED AS carbondata")
@@ -370,6 +388,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test column rename of bigint column") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("drop table if exists biginttable")
       sql("create table biginttable(name string, age int, bigintfield bigint) STORED AS carbondata")
@@ -382,6 +401,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test column comment after column rename") {
+    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       dropTable()
       createTable()

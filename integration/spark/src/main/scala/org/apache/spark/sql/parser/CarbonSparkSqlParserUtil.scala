@@ -530,8 +530,7 @@ object CarbonSparkSqlParserUtil {
       optionsList: Option[List[(String, String)]],
       partitions: Option[List[(String, Option[String])]],
       filePath: String,
-      isOverwrite: Option[String]
-  ): CarbonLoadDataCommand = {
+      isOverwrite: Option[String]): CarbonLoadDataCommand = {
     if (optionsList.isDefined) {
       CarbonParserUtil.validateOptions(optionsList)
     }

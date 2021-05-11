@@ -50,7 +50,7 @@ object SparkSQLUtil {
   }
 
   def getSparkSession: SparkSession = {
-    SparkSession.getActiveSession.getOrElse(null)
+    SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
   }
 
   def invokeStatsMethod(logicalPlanObj: LogicalPlan, conf: SQLConf): Statistics = {

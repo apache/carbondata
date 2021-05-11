@@ -369,7 +369,14 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
         s"overwrite INTO table testhivetable")
     checkAnswer(sql("select * from test_time"), sql("select * from testhivetable"))
     sql(s"insert into test_time select 11, '2016-7-24', '2019-3-10 02:00:00' ")
+    // The updated Spark query cache mechanism will clone the spark session when persist is
+    // called, due to this the property "carbon.load.dateformat.setlenient.enable" set in thread
+    // local for 1 spark session is not getting reflected in the other.
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE,
+      "false")
     sql("update test_time set (time) = ('2019-3-10 02:00:00') where ID='2'")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE,
+      "true")
     // Using America/Los_Angeles timezone (timezone is fixed to America/Los_Angeles for all tests)
     // Here, 2019-3-10 02:00:00 is invalid data in America/Los_Angeles zone, as DST is observed and
     // clocks were turned forward 1 hour to 2019-3-10 03:00:00. With lenience property enabled,
@@ -397,6 +404,8 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
     FileUtils.forceDelete(new File(csvPath))
     CarbonProperties.getInstance()
       .removeProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE,
+      "true")
     sql("set carbon.load.dateformat.setlenient.enable = false")
   }
 }

@@ -264,7 +264,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
         assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
-      sql("ALTER TABLE carbon_table drop COLUMNS (a1 INT, b1 STRING) ")
+      sql("ALTER TABLE carbon_table drop COLUMNS (a1, b1) ")
       assert(false)
     } catch {
       case e: Exception =>
@@ -529,7 +529,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test write using subfolder") {
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+    if (true) {
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
       import sqlContext.sparkSession.implicits._
       val df = sqlContext.sparkContext.parallelize(1 to 10)
@@ -541,7 +541,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       df.write.format("carbon").save(warehouse + "/test_folder/" + System.nanoTime())
       df.write.format("carbon").save(warehouse + "/test_folder/" + System.nanoTime())
 
-      val frame = sqlContext.sparkSession.read.format("carbon").load(warehouse + "/test_folder")
+      val frame = sqlContext.sparkSession.read.format("carbon").option("recursiveFileLookup", "true").load(warehouse + "/test_folder")
       assert(frame.where("c1='a1'").count() == 3)
 
       val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
