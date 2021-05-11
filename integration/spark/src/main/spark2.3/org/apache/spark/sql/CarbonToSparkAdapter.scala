@@ -143,12 +143,11 @@ object CarbonToSparkAdapter {
 
   def getTransformedPolygonJoinUdf(scalaUdf: ScalaUDF,
       udfChildren: Seq[Expression],
-      types: Seq[DataType],
       polygonJoinUdf: InPolygonJoinUDF): ScalaUDF = {
     ScalaUDF(polygonJoinUdf,
       scalaUdf.dataType,
       udfChildren,
-      types,
+      scalaUdf.inputTypes :+ scalaUdf.inputTypes.head,
       scalaUdf.udfName,
       scalaUdf.nullable,
       scalaUdf.udfDeterministic)

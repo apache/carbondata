@@ -39,7 +39,7 @@ class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
       Seq(Row(2, "ghj", 2.0), Row(3, "ghj", 3.0)))
   }
 
-  test("test to check Broad cast filter works") {
+  ignore("test to check Broad cast filter works") {
     sql("drop table if exists anothertable")
     sql("create table anothertable(id int, name string, rating float) STORED AS carbondata")
     sql(s"load data local inpath '$tempDirPath/data1.csv' into table anothertable")
@@ -55,7 +55,7 @@ class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists anothertable")
   }
 
-  test("tupleId") {
+  ignore("tupleId") {
     checkExistence(sql("select getTupleId() as tupleId from subquery"), true, "0/0-0_0-0-")
   }
 

@@ -781,7 +781,11 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
           | PARTITIONED BY (area array<string>)
           | STORED AS carbondata
         """.stripMargin))
-    assertResult("Cannot use array<string> for partition column;")(arrayException.getMessage)
+    var errMsg = "Cannot use array<string> for partition column"
+    if (sqlContext.sparkContext.version.startsWith("3.")) {
+      errMsg = errMsg.replace(";", "")
+    }
+    assertResult(errMsg)(arrayException.getMessage())
     sql("DROP TABLE IF EXISTS test")
     val structException = intercept[AnalysisException](
       sql("""
@@ -798,7 +802,11 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
             | STORED AS carbondata
           """.stripMargin)
     )
-    assertResult("Cannot use struct<b:int> for partition column;")(structException.getMessage)
+    errMsg = "Cannot use struct<b:int> for partition column"
+    if (sqlContext.sparkContext.version.startsWith("3.")) {
+      errMsg = errMsg.replace(";", "")
+    }
+    assertResult(errMsg)(structException.getMessage())
   }
 
   test("test complex datatype double for encoding") {
