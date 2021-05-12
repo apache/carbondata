@@ -62,17 +62,28 @@ public class TableSpec {
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
     if (keepPartitionColumnsToEnd && carbonTable.getPartitionInfo() != null) {
-      // keep the partition columns in the end
+      // keep the partition columns in the end if that is not present in sort columns
       List<CarbonDimension> reArrangedDimensions = new ArrayList<>();
       List<CarbonMeasure> reArrangedMeasures = new ArrayList<>();
       List<CarbonDimension> partitionDimensions = new ArrayList<>();
       List<CarbonMeasure> partitionMeasures = new ArrayList<>();
       List<ColumnSchema> columnSchemaList = carbonTable.getPartitionInfo().getColumnSchemaList();
+      String[] sortColumns = carbonTable.getTableInfo()
+          .getFactTable().getTableProperties().getOrDefault("sort_columns", "").split(",");
+      for (String col : sortColumns) {
+        for (CarbonDimension dim : dimensions) {
+          if (dim.getColName().equalsIgnoreCase(col)) {
+            reArrangedDimensions.add(dim);
+          }
+        }
+      }
       for (CarbonDimension dim : dimensions) {
-        if (columnSchemaList.contains(dim.getColumnSchema())) {
-          partitionDimensions.add(dim);
-        } else {
-          reArrangedDimensions.add(dim);
+        if (!dim.isSortColumn()) {
+          if (columnSchemaList.contains(dim.getColumnSchema())) {
+            partitionDimensions.add(dim);
+          } else {
+            reArrangedDimensions.add(dim);
+          }
         }
       }
       if (partitionDimensions.size() != 0) {

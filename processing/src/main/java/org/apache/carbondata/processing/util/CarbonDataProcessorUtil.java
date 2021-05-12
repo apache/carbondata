@@ -655,7 +655,7 @@ public final class CarbonDataProcessorUtil {
    * @param dataFields
    * @return
    */
-  public static Map<String, DataType[]> getNoDictSortAndNoSortDataTypesAsDataFieldOrder(
+  public static Map<String, DataType[]> getNoDictSortAndNoSortDataTypes(
       DataField[] dataFields) {
     List<DataType> noDictSortType = new ArrayList<>();
     List<DataType> noDictNoSortType = new ArrayList<>();

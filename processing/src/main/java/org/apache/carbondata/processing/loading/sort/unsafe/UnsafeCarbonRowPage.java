@@ -55,6 +55,8 @@ public class UnsafeCarbonRowPage {
 
   private boolean isSaveToDisk;
 
+  private int[] changedDataFieldOrder;
+
   public UnsafeCarbonRowPage(TableFieldStat tableFieldStat, MemoryBlock memoryBlock,
       String taskId, boolean isSaveToDisk) {
     this.tableFieldStat = tableFieldStat;
@@ -67,15 +69,28 @@ public class UnsafeCarbonRowPage {
     this.managerType = MemoryManagerType.UNSAFE_MEMORY_MANAGER;
     this.sortTempRowUpdater = tableFieldStat.getSortTempRowUpdater();
     this.isSaveToDisk = isSaveToDisk;
+    this.changedDataFieldOrder = tableFieldStat.getChangedDataFieldOrder();
   }
 
   public int addRow(Object[] row,
       ReUsableByteArrayDataOutputStream reUsableByteArrayDataOutputStream)
       throws MemoryException, IOException {
-    int size = addRow(row, dataBlock.getBaseOffset() + lastSize, reUsableByteArrayDataOutputStream);
+    int size = addRow(getConvertedRow(row), dataBlock
+        .getBaseOffset() + lastSize, reUsableByteArrayDataOutputStream);
     buffer.set(lastSize);
     lastSize = lastSize + size;
     return size;
+  }
+
+  private Object[] getConvertedRow(Object[] row) {
+    if (changedDataFieldOrder != null && changedDataFieldOrder.length == row.length) {
+      Object[] convertedRow = new Object[row.length];
+      for (int i = 0; i < row.length; i++) {
+        convertedRow[i] = row[changedDataFieldOrder[i]];
+      }
+      return convertedRow;
+    }
+    return row;
   }
 
   /**

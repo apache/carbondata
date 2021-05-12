@@ -517,6 +517,24 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     assert(result.get(0).get(6).equals(dataAndIndexSize._2))
   }
 
+  test("test partition column with different sort scope") {
+    verifySortWithPartition("global_sort")
+    verifySortWithPartition("no_sort")
+    verifySortWithPartition("local_sort")
+  }
+
+  def verifySortWithPartition(scope: String): Unit = {
+    sql("drop table if exists carbon_partition")
+    sql(s"create table carbon_partition(id int, name string, salary double) " +
+        "partitioned by(country string, id1 int)" +
+        s"stored as carbondata tblproperties('sort_scope'='$scope','sort_columns'='country, id')")
+    sql("insert into carbon_partition select 1, 'Ram',3500,'India', 20")
+    checkAnswer(
+      sql("SELECT * FROM carbon_partition"),
+      Seq(Row(1, "Ram", 3500.0, "India", 20))
+    )
+  }
+
   test("test partition with all sort scope") {
     sql("drop table if exists origin_csv")
     sql(
