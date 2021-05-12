@@ -25,7 +25,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
 import org.apache.spark.sql.index.CarbonIndexUtil
@@ -652,6 +652,11 @@ object AlterTableUtil {
         throw new MalformedCarbonCommandException(
           s"Table property ${ CarbonCommonConstants.RANGE_COLUMN }: ${ rangeColumnProp }" +
           s" is not exists in the table")
+      }
+      val dataType = rangeColumn.getDataType.getName;
+      if (CarbonParserUtil.validateUnsupportedDataTypeForRangeColumn(dataType)) {
+        throw new MalformedCarbonCommandException(
+          s"RANGE_COLUMN doesn't support $dataType data type: " + rangeColumnProp)
       } else {
         propertiesMap.put(CarbonCommonConstants.RANGE_COLUMN, rangeColumn.getColName)
       }
