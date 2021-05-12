@@ -603,6 +603,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         }
       case And(ArrayContains(_, _), ArrayContains(_, _)) =>
         (filterTree, condition, None)
+      case And(And(IsNotNull(_), ArrayContains(_, _)), ArrayContains(_, _)) =>
+        (filterTree, condition, None)
       case and@And(left, right) =>
         val (newSIFilterTreeLeft, newLeft, tableNameLeft) =
           createIndexTableFilterCondition(

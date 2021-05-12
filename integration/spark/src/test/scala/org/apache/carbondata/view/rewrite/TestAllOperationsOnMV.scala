@@ -95,21 +95,28 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("Cannot drop columns present in a materialized view table default.dm1")
   }
 
-  ignore("test rename column on maintable") {
-    // check rename column not present in materialized view table
-    sql("alter table maintable change c_code d_code int")
-    checkResult()
-    // check rename column present in mv materialized view table
-    intercept[ProcessMetaDataException] {
-      sql("alter table maintable change name name1 string")
-    }.getMessage.contains("Column name exists in a MV materialized view. Drop MV materialized view to continue")
+  test("test rename column on maintable") {
+    // TODO: Fix after V2 implementation
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      // check rename column not present in materialized view table
+      sql("alter table maintable change c_code d_code int")
+      checkResult()
+      // check rename column present in mv materialized view table
+      intercept[ProcessMetaDataException] {
+        sql("alter table maintable change name name1 string")
+      }.getMessage.contains(
+          "Column name exists in a MV materialized view. Drop MV materialized view to continue")
+    }
   }
 
-  ignore("test alter rename column on MV table") {
-    intercept[ProcessMetaDataException] {
-      sql("alter table dm1 change sum_price sum_cost int")
-    }.getMessage.contains("Cannot change data type or rename column for columns " +
-                          "present in mv materialized view table default.dm1")
+  test("test alter rename column on MV table") {
+    // TODO: Fix after V2 implementation
+    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+      intercept[ProcessMetaDataException] {
+        sql("alter table dm1 change sum_price sum_cost int")
+      }.getMessage.contains("Cannot change data type or rename column for columns " +
+                            "present in mv materialized view table default.dm1")
+    }
   }
 
   test("test alter rename table") {

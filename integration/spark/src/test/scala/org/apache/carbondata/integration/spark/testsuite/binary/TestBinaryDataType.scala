@@ -29,6 +29,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 /**
@@ -1047,132 +1048,136 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
     }
 
     test("alter table for binary") {
-        sql("DROP TABLE IF EXISTS carbontable")
-        sql("DROP TABLE IF EXISTS binarytable")
-        sql(
-            s"""
-               | CREATE TABLE IF NOT EXISTS carbontable (
-               |    id int,
-               |    label boolean,
-               |    name string)
-               | STORED AS carbondata
+        // TODO: Fix after V2 implementation
+        if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+            sql("DROP TABLE IF EXISTS carbontable")
+            sql("DROP TABLE IF EXISTS binarytable")
+            sql(
+                s"""
+                   | CREATE TABLE IF NOT EXISTS carbontable (
+                   |    id int,
+                   |    label boolean,
+                   |    name string)
+                   | STORED AS carbondata
              """.stripMargin)
 
+            sql("insert into carbontable values(1,true,'Bob')")
 
-        sql("insert into carbontable values(1,true,'Bob')")
-
-        sql(
-            s"""
-               | alter table carbontable add columns (
-               |    binaryField binary,
-               |    autoLabel boolean)
-               | TBLPROPERTIES('DEFAULT.VALUE.binaryField'='binary','DEFAULT.VALUE.autoLabel'='true')
+            sql(
+                s"""
+                   | alter table carbontable add columns (
+                   |    binaryField binary,
+                   |    autoLabel boolean)
+                   | TBLPROPERTIES('DEFAULT.VALUE.binaryField'='binary','DEFAULT.VALUE
+                   | .autoLabel'='true')
             """.stripMargin)
 
-        var carbonResult = sql("SELECT * FROM carbontable")
-        carbonResult.collect().foreach { each =>
-            if (1 == each.get(0)) {
-                assert("binary".equals(new String(each.getAs[Array[Byte]](3))))
-            } else {
-                assert(false)
+            var carbonResult = sql("SELECT * FROM carbontable")
+            carbonResult.collect().foreach { each =>
+                if (1 == each.get(0)) {
+                    assert("binary".equals(new String(each.getAs[Array[Byte]](3))))
+                } else {
+                    assert(false)
+                }
             }
-        }
 
-        sql(
-            s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarystringdata.csv'
-               | INTO TABLE carbontable
-               | OPTIONS('header'='false','DELIMITER'='|')
+            sql(
+                s"""
+                   | LOAD DATA LOCAL INPATH '$resourcesPath/binarystringdata.csv'
+                   | INTO TABLE carbontable
+                   | OPTIONS('header'='false','DELIMITER'='|')
              """.stripMargin)
 
+            sql("insert into carbontable values(1,true,'Bob','binary',false)")
 
-        sql("insert into carbontable values(1,true,'Bob','binary',false)")
-
-        carbonResult = sql("SELECT * FROM carbontable")
-        carbonResult.collect().foreach { each =>
-            if (2 == each.get(0)) {
-                assert("\u0001history\u0002".equals(new String(each.getAs[Array[Byte]](3))))
-            } else if (1 == each.get(0)) {
-                assert("\u0001education\u0002".equals(new String(each.getAs[Array[Byte]](3)))
-                        || "binary".equals(new String(each.getAs[Array[Byte]](3))))
-            } else if (3 == each.get(0)) {
-                assert("\u0001biology\u0002".equals(new String(each.getAs[Array[Byte]](3)))
-                        || "".equals(new String(each.getAs[Array[Byte]](3))))
-            } else {
-                assert(false)
+            carbonResult = sql("SELECT * FROM carbontable")
+            carbonResult.collect().foreach { each =>
+                if (2 == each.get(0)) {
+                    assert("\u0001history\u0002".equals(new String(each.getAs[Array[Byte]](3))))
+                } else if (1 == each.get(0)) {
+                    assert("\u0001education\u0002".equals(new String(each.getAs[Array[Byte]](3)))
+                           || "binary".equals(new String(each.getAs[Array[Byte]](3))))
+                } else if (3 == each.get(0)) {
+                    assert("\u0001biology\u0002".equals(new String(each.getAs[Array[Byte]](3)))
+                           || "".equals(new String(each.getAs[Array[Byte]](3))))
+                } else {
+                    assert(false)
+                }
             }
-        }
 
-        var result = sql("show tables")
-        result.collect().foreach { each =>
-            assert(!"binarytable".equalsIgnoreCase(each.getAs[String](1)))
-        }
-
-        // rename
-        sql(
-            s"""
-               | alter table carbontable RENAME TO binarytable
-            """.stripMargin)
-        result = sql("show tables")
-        assert(result.collect().exists { each =>
-            "binarytable".equalsIgnoreCase(each.getAs[String](1))
-        })
-
-        // add columns after rename
-        sql(
-            s"""
-               | alter table binarytable add columns (
-               |    binaryField2 binary,
-               |    autoLabel2 boolean)
-               | TBLPROPERTIES('DEFAULT.VALUE.binaryField2'='binary','DEFAULT.VALUE.autoLabel2'='true')
-            """.stripMargin)
-        sql("insert into binarytable values(1,true,'Bob','binary',false,'binary',false)")
-
-        carbonResult = sql("SELECT * FROM binarytable")
-        carbonResult.collect().foreach { each =>
-            if (2 == each.get(0)) {
-                assert("\u0001history\u0002".equals(new String(each.getAs[Array[Byte]](3))))
-            } else if (1 == each.get(0)) {
-                assert("\u0001education\u0002".equals(new String(each.getAs[Array[Byte]](3)))
-                        || "binary".equals(new String(each.getAs[Array[Byte]](3))))
-            } else if (3 == each.get(0)) {
-                assert(null == each.getAs[Array[Byte]](3)
-                        || "\u0001biology\u0002".equals(new String(each.getAs[Array[Byte]](3))))
-            } else {
-                assert(false)
+            var result = sql("show tables")
+            result.collect().foreach { each =>
+                assert(!"binarytable".equalsIgnoreCase(each.getAs[String](1)))
             }
-        }
 
-        // drop columns after rename
-        sql(
-            s"""
-               | alter table binarytable drop columns (
-               |    binaryField2,
-               |    autoLabel2)
+            // rename
+            sql(
+                s"""
+                   | alter table carbontable RENAME TO binarytable
             """.stripMargin)
-        sql("insert into binarytable values(1,true,'Bob','binary',false)")
+            result = sql("show tables")
+            assert(result.collect().exists { each =>
+                "binarytable".equalsIgnoreCase(each.getAs[String](1))
+            })
 
-        carbonResult = sql("SELECT * FROM binarytable")
-        carbonResult.collect().foreach { each =>
-            if (2 == each.get(0)) {
-                assert("\u0001history\u0002".equals(new String(each.getAs[Array[Byte]](3))))
-            } else if (1 == each.get(0)) {
-                assert("\u0001education\u0002".equals(new String(each.getAs[Array[Byte]](3)))
-                        || "binary".equals(new String(each.getAs[Array[Byte]](3))))
-            } else if (3 == each.get(0)) {
-                assert("\u0001biology\u0002".equals(new String(each.getAs[Array[Byte]](3)))
-                        || "".equals(new String(each.getAs[Array[Byte]](3))))
-            } else {
-                assert(false)
+            // add columns after rename
+            sql(
+                s"""
+                   | alter table binarytable add columns (
+                   |    binaryField2 binary,
+                   |    autoLabel2 boolean)
+                   | TBLPROPERTIES('DEFAULT.VALUE.binaryField2'='binary','DEFAULT.VALUE.autoLabel2'='true')
+            """.stripMargin)
+            sql("insert into binarytable values(1,true,'Bob','binary',false,'binary',false)")
+
+            carbonResult = sql("SELECT * FROM binarytable")
+            carbonResult.collect().foreach { each =>
+                if (2 == each.get(0)) {
+                    assert("\u0001history\u0002".equals(new String(each.getAs[Array[Byte]](3))))
+                } else if (1 == each.get(0)) {
+                    assert("\u0001education\u0002".equals(new String(each.getAs[Array[Byte]](3)))
+                           || "binary".equals(new String(each.getAs[Array[Byte]](3))))
+                } else if (3 == each.get(0)) {
+                    assert(null == each.getAs[Array[Byte]](3)
+                           || "\u0001biology\u0002".equals(new String(each.getAs[Array[Byte]](3))))
+                } else {
+                    assert(false)
+                }
             }
-        }
 
-        // change data type
-        val e = intercept[Exception] {
-            sql(s"alter table binarytable CHANGE binaryField binaryField3 STRING ")
+            // drop columns after rename
+            sql(
+                s"""
+                   | alter table binarytable drop columns (
+                   |    binaryField2,
+                   |    autoLabel2)
+            """.stripMargin)
+            sql("insert into binarytable values(1,true,'Bob','binary',false)")
+
+            carbonResult = sql("SELECT * FROM binarytable")
+            carbonResult.collect().foreach { each =>
+                if (2 == each.get(0)) {
+                    assert("\u0001history\u0002".equals(new String(each.getAs[Array[Byte]](3))))
+                } else if (1 == each.get(0)) {
+                    assert("\u0001education\u0002".equals(new String(each.getAs[Array[Byte]](3)))
+                           || "binary".equals(new String(each.getAs[Array[Byte]](3))))
+                } else if (3 == each.get(0)) {
+                    assert("\u0001biology\u0002".equals(new String(each.getAs[Array[Byte]](3)))
+                           || "".equals(new String(each.getAs[Array[Byte]](3))))
+                } else {
+                    assert(false)
+                }
+            }
+
+            // change data type
+            val e = intercept[Exception] {
+                sql(s"alter table binarytable CHANGE binaryField binaryField3 STRING ")
+            }
+            assert(e.getMessage
+              .contains(
+                  "operation failed for default.binarytable: Alter table data type change operation failed: Given column binaryfield with data type BINARY cannot be modified. Only Int and Decimal data types are allowed for modification"))
         }
-        assert(e.getMessage.contains("operation failed for default.binarytable: Alter table data type change operation failed: Given column binaryfield with data type BINARY cannot be modified. Only Int and Decimal data types are allowed for modification"))
-    }
+        }
 
     test("Create table and load data with binary column for hive: test encode with base64") {
         sql("DROP TABLE IF EXISTS hivetable")
@@ -1460,7 +1465,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                | STORED AS carbondata
                | TBLPROPERTIES('SORT_COLUMNS'='')
              """.stripMargin)
-        val e = intercept[Exception] {
+        val e = intercept[CarbonDataLoadingException] {
             sql(
                 s"""
                    | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
@@ -1551,26 +1556,28 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             sql("insert into hive_table select 'a','b','1'");
         }
 
-        val e2 = intercept[SparkException] {
-            sql("insert into hive_table2 select 'a','b','binary'");
-        }
+        if (!SparkUtil.isSparkVersionXAndAbove("3")) {
+            val e2 = intercept[SparkException] {
+                sql("insert into hive_table2 select 'a','b','binary'");
+            }
 
-        assert(e2.getMessage.contains(
-            "Dynamic partition strict mode requires at least one static partition column"))
+            assert(e2.getMessage.contains(
+                "Dynamic partition strict mode requires at least one static partition column"))
 
-        val eInt2 = intercept[Exception] {
-            sql("insert into hive_table2 select 'a','b','1'");
-        }
+            val eInt2 = intercept[Exception] {
+                sql("insert into hive_table2 select 'a','b','1'");
+            }
 
-        val e3 = intercept[SparkException] {
-            sql("insert into parquet_table select 'a','b','binary'");
-        }
+            val e3 = intercept[SparkException] {
+                sql("insert into parquet_table select 'a','b','binary'");
+            }
 
-        assert(e3.getMessage.contains(
-            "Dynamic partition strict mode requires at least one static partition column"))
+            assert(e3.getMessage.contains(
+                "Dynamic partition strict mode requires at least one static partition column"))
 
-        val eInt3 = intercept[Exception] {
-            sql("insert into parquet_table select 'a','b','1'");
+            val eInt3 = intercept[Exception] {
+                sql("insert into parquet_table select 'a','b','1'");
+            }
         }
 
         sql("insert into carbon_partition_table select 'a','b','binary'");
@@ -1695,15 +1702,22 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         // Exceptions are specific to spark versions
         val message_2_3 = "cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"
         val message_2_4 = "cannot resolve 'avg(substring(default.uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not binary"
+        var message_3 = "cannot resolve 'avg(substr(spark_catalog.default.uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not binary;"
         if(SparkUtil.isSparkVersionEqualTo("2.3")) {
             assert(e1.getMessage.contains(message_2_3))
             assert(e2.getMessage.contains(message_2_3))
             assert(e3.getMessage.contains(message_2_3))
         }
-        else if (SparkUtil.isSparkVersionXAndAbove("2.4")) {
+        else if (SparkUtil.isSparkVersionXAndAbove("2.4") &&
+                 !SparkUtil.isSparkVersionXAndAbove("3")) {
             assert(e1.getMessage.contains(message_2_4))
             assert(e2.getMessage.contains(message_2_4))
             assert(e3.getMessage.contains(message_2_4))
+        } else {
+            assert(e1.getMessage.contains(message_3))
+            assert(e2.getMessage.contains(message_3))
+            message_3 = "cannot resolve 'avg(substring(spark_catalog.default.uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not binary;"
+            assert(e3.getMessage.contains(message_3))
         }
     }
 
@@ -1715,12 +1729,14 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    binaryField binary)
                | STORED AS carbondata
                      """.stripMargin)
-        val exception = intercept[AnalysisException] {
-            sql("insert into binaryTable select 1")
+        if(!SparkUtil.isSparkVersionXAndAbove("3")) {
+            val exception = intercept[AnalysisException] {
+                sql("insert into binaryTable select 1")
+            }
+            assert(exception.getMessage()
+              .contains(
+                  "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: "))
         }
-        assert(exception.getMessage()
-          .contains(
-              "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: "))
         sql("DROP TABLE binaryTable")
     }
 

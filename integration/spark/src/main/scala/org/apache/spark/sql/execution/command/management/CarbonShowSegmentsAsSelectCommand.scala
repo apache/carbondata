@@ -49,16 +49,22 @@ case class CarbonShowSegmentsAsSelectCommand(
   }
   private lazy val df = createDataFrame
 
-  override def output: Seq[Attribute] = {
-    sparkSession.sessionState.catalog.getGlobalTempView(tableName) match {
-      case Some(v) => v.inputSet.map { attr =>
-        AttributeReference(attr.name, attr.dataType, nullable = true)()
-      }.toSeq
-      case _ => df.queryExecution.analyzed.output.map { attr =>
-        AttributeReference(attr.name, attr.dataType, nullable = true)()
-      }
-    }
+  private val tempViewName = makeTempViewName(carbonTable)
 
+  override def output: Seq[Attribute] = {
+    Seq(
+      AttributeReference("Load", StringType, nullable = false)(),
+      AttributeReference("Segment Status", StringType, nullable = false)(),
+      AttributeReference("Start Time", StringType, nullable = false)(),
+      AttributeReference("Time Taken", LongType, nullable = false)(),
+      AttributeReference("Partitions", ArrayType.defaultConcreteType, nullable = false)(),
+      AttributeReference("Data Size", LongType, nullable = false)(),
+      AttributeReference("Index Size", LongType, nullable = false)(),
+      AttributeReference("Merge To Id", StringType, nullable = false)(),
+      AttributeReference("File Format", StringType, nullable = false)(),
+      AttributeReference("Path", StringType, nullable = false)(),
+      AttributeReference("Load End Time", StringType, nullable = false)(),
+      AttributeReference("Segment File", StringType, nullable = false)())
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -107,7 +113,6 @@ case class CarbonShowSegmentsAsSelectCommand(
     }
 
     val segments = readSegments(tablePath, showHistory, limit)
-    val tempViewName = makeTempViewName(carbonTable)
     registerSegmentRowView(sparkSession, tempViewName,
       carbonTable, segments, rows)
     try {

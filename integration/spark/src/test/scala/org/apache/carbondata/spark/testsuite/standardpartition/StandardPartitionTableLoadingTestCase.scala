@@ -18,12 +18,12 @@
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import java.io.{File, FileWriter, IOException}
-
 import java.util
 import java.util.concurrent.{Callable, Executors, ExecutorService}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
@@ -31,7 +31,6 @@ import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.{PartitionCacheKey, PartitionCacheManager}
-import org.apache.spark.SPARK_VERSION
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.Strings
@@ -452,7 +451,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       writer.write(s"$i,name_$i,city_${i % 5},${ i % 100 }")
       writer.close()
     }
-    println(new File(inputPath).listFiles().length)
     sql(s"LOAD DATA LOCAL INPATH '$inputPath' INTO TABLE smallpartitionfiles")
     FileUtils.deleteDirectory(folder)
     val specs = CarbonFilters.getPartitions(Seq.empty,

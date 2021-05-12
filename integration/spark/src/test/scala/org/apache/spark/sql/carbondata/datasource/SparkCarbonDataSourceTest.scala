@@ -541,7 +541,11 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       df.write.format("carbon").save(warehouse + "/test_folder/" + System.nanoTime())
       df.write.format("carbon").save(warehouse + "/test_folder/" + System.nanoTime())
 
-      val frame = sqlContext.sparkSession.read.format("carbon").option("recursiveFileLookup", "true").load(warehouse + "/test_folder")
+      val frame = sqlContext.sparkSession
+        .read
+        .format("carbon")
+        .option("recursiveFileLookup", "true")
+        .load(warehouse + "/test_folder")
       assert(frame.where("c1='a1'").count() == 3)
 
       val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()

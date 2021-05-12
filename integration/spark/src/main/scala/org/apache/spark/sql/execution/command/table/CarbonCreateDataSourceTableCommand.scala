@@ -78,7 +78,8 @@ case class CarbonCreateDataSourceTableCommand(
       catalogTable.partitionColumnNames,
       caseSensitiveAnalysis)
     val rows = try {
-      org.apache.spark.sql.execution.CreateDataSourceTableCommand.createDataSource(catalogTable, ignoreIfExists, sparkSession)
+      org.apache.spark.sql.execution.CreateDataSourceTableCommand
+        .createDataSource(catalogTable, ignoreIfExists, sparkSession)
     } catch {
       case ex: TableAlreadyExistsException if ignoreIfExists =>
         LOGGER.error(ex)
