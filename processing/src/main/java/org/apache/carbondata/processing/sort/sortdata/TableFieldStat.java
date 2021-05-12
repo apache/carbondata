@@ -92,21 +92,16 @@ public class TableFieldStat implements Serializable {
    */
   private int[] dictSortColIdxSchemaOrderMapping;
 
+  private int[] changedOrderInDataField;
+
   public TableFieldStat(SortParameters sortParameters) {
     int noDictDimCnt = sortParameters.getNoDictionaryCount();
     int dictDimCnt = sortParameters.getDimColCount() - noDictDimCnt;
     this.complexDimCnt = sortParameters.getComplexDimColCount();
     this.isSortColNoDictFlags = sortParameters.getNoDictionarySortColumn();
     this.isVarcharDimFlags = sortParameters.getIsVarcharDimensionColumn();
-    boolean[] isDimNoDictFlags = sortParameters.getNoDictionaryDimnesionColumn();
-    boolean[] sortColumn = sortParameters.getSortColumn();
-    for (int i = 0; i < isDimNoDictFlags.length; i++) {
-      if (isDimNoDictFlags[i] && sortColumn[i]) {
-        noDictSortDimCnt++;
-      } else if (!isDimNoDictFlags[i] && sortColumn[i]) {
-        dictSortDimCnt++;
-      }
-    }
+    noDictSortDimCnt = sortParameters.getNoDictSortDimCnt();
+    dictSortDimCnt = sortParameters.getDictSortDimCnt();
     this.measureCnt = sortParameters.getMeasureColCount();
     this.measureDataType = sortParameters.getMeasureDataType();
     this.noDictDataType = sortParameters.getNoDictDataType();
@@ -121,6 +116,7 @@ public class TableFieldStat implements Serializable {
         varcharDimCnt++;
       }
     }
+    this.changedOrderInDataField = sortParameters.getChangedOrderInDataField();
 
     // be careful that the default value is 0
     this.dictSortDimIdx = new int[dictSortDimCnt];
@@ -208,6 +204,10 @@ public class TableFieldStat implements Serializable {
     } else {
       this.sortTempRowUpdater = new DummyRowUpdater();
     }
+  }
+
+  public int[] getChangedDataFieldOrder() {
+    return changedOrderInDataField;
   }
 
   public int getDictSortDimCnt() {
@@ -356,6 +356,10 @@ public class TableFieldStat implements Serializable {
       for (CarbonDimension dim : visibleDimensions) {
         if (!columnSchemaList.contains(dim.getColumnSchema())) {
           otherCols.add(dim.getColumnSchema());
+        } else {
+          if (dim.isSortColumn()) {
+            otherCols.add(dim.getColumnSchema());
+          }
         }
       }
       for (CarbonMeasure measure : visibleMeasures) {
@@ -363,7 +367,11 @@ public class TableFieldStat implements Serializable {
           otherCols.add(measure.getColumnSchema());
         }
       }
-      otherCols.addAll(columnSchemaList);
+      columnSchemaList.forEach(columnSchema -> {
+        if (!columnSchema.isSortColumn()) {
+          otherCols.add(columnSchema);
+        }
+      });
     }
     return otherCols;
   }
