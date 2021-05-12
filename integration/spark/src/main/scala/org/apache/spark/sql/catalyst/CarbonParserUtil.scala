@@ -589,6 +589,15 @@ object CarbonParserUtil {
     noInvertedIdxCols
   }
 
+  def validateUnsupportedDataTypeForRangeColumn(dataType: String): Boolean = {
+    DataTypes.BINARY.getName.equalsIgnoreCase(dataType) ||
+      DataTypes.BOOLEAN.getName.equalsIgnoreCase(dataType) ||
+      CarbonCommonConstants.ARRAY.equalsIgnoreCase(dataType) ||
+      CarbonCommonConstants.STRUCT.equalsIgnoreCase(dataType) ||
+      CarbonCommonConstants.MAP.equalsIgnoreCase(dataType) ||
+      CarbonCommonConstants.DECIMAL.equalsIgnoreCase(dataType)
+  }
+
   protected def extractInvertedIndexColumns(fields: Seq[Field],
       tableProperties: Map[String, String]): Seq[String] = {
     // check whether the column name is in fields
@@ -684,12 +693,7 @@ object CarbonParserUtil {
         val errorMsg = "range_column: " + rangeColumn +
                        " does not exist in table. Please check the create table statement."
         throw new MalformedCarbonCommandException(errorMsg)
-      } else if (DataTypes.BINARY.getName.equalsIgnoreCase(dataType) ||
-                 DataTypes.BOOLEAN.getName.equalsIgnoreCase(dataType) ||
-                 CarbonCommonConstants.ARRAY.equalsIgnoreCase(dataType) ||
-                 CarbonCommonConstants.STRUCT.equalsIgnoreCase(dataType) ||
-                 CarbonCommonConstants.MAP.equalsIgnoreCase(dataType) ||
-                 CarbonCommonConstants.DECIMAL.equalsIgnoreCase(dataType)) {
+      } else if (validateUnsupportedDataTypeForRangeColumn(dataType)) {
         throw new MalformedCarbonCommandException(
           s"RANGE_COLUMN doesn't support $dataType data type: " + rangeColumn)
       } else {

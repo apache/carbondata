@@ -847,6 +847,31 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql("ALTER TABLE carbon_range_column6 SET TBLPROPERTIES('range_column'='name')")
   }
 
+  test("check range column validation for unsupported data types") {
+    sql("""drop table if exists carbon_range_column7""".stripMargin)
+    sql(
+      """
+        | CREATE TABLE carbon_range_column7(id INT, name STRING, city STRING, age INT, bin binary,
+        |  bool1 boolean, arr1 array<int>, struct1 struct<id1:string,name1:string>,
+        |  map1 map<string,string>, dec1 decimal(10,5)) STORED AS carbondata
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city')
+      """.stripMargin)
+    val invalidRangeColumnsMap = Map("bin" -> "BINARY", "bool1" -> "BOOLEAN", "arr1" -> "ARRAY",
+      "struct1" -> "STRUCT", "map1" -> "MAP", "dec1" -> "DECIMAL")
+    validateInvalidRangeColumn(invalidRangeColumnsMap)
+    sql("""drop table if exists carbon_range_column7""".stripMargin)
+  }
+
+  def validateInvalidRangeColumn(invalidRangeColumnsMap: Map[String, String]): Unit = {
+    invalidRangeColumnsMap.foreach { value =>
+      val ex = intercept[RuntimeException] {
+        sql(s"ALTER TABLE carbon_range_column7 SET TBLPROPERTIES('range_column'='${ value._1 }')")
+      }
+      assertResult("Alter table newProperties operation failed: RANGE_COLUMN doesn't " +
+        s"support ${ value._2 } data type: ${value._1}")(ex.getMessage)
+    }
+  }
+
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
     val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentNo)
