@@ -275,24 +275,12 @@
         <artifactId>spark-sql_${scala.binary.version}</artifactId>
         <version>${spark.version}</version>
         <scope>${spark.deps.scope}</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>com.univocity</groupId>
-            <artifactId>univocity-parsers</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.spark</groupId>
         <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
         <version>${spark.version}</version>
         <scope>${spark.deps.scope}</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>com.univocity</groupId>
-            <artifactId>univocity-parsers</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.spark</groupId>

@@ -23,6 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.testsuite.dataload.EscapeCharTest.createParquetTable
 
 /**
  * Test Class for data loading with Unsafe ColumnPage
@@ -464,8 +465,9 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
       """
     )
     checkAnswer(sql("select count(*) from escapechar2"), Seq(Row(21)))
+    val parquetTable = createParquetTable("\\")
     checkAnswer(sql("select specialchar from escapechar2 where imei = '1AA44'"),
-      Seq(Row("escapeesc")))
+      sql(s"select specialchar from $parquetTable where imei = '1AA44'"))
     sql("DROP TABLE IF EXISTS escapechar2")
   }
 
@@ -486,9 +488,9 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
       """
     )
     checkAnswer(sql("select count(*) from escapechar3"), Seq(Row(21)))
-    checkAnswer(sql("select specialchar from escapechar3 where imei in ('1232','12323')"), Seq(Row
-    ("ayush@b.com"), Row("ayushb.com")
-    )
+    val parquetTable = createParquetTable("@")
+    checkAnswer(sql("select specialchar from escapechar3 where imei in ('1232','12323')"),
+      sql(s"select specialchar from $parquetTable where imei in ('1232','12323')")
     )
     sql("DROP TABLE IF EXISTS escapechar3")
   }
@@ -730,5 +732,21 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists comment_test")
     sql("drop table if exists decimal_varlength")
     sql("drop table if exists decimal_varlength_hive")
+  }
+}
+
+object EscapeCharTest extends QueryTest {
+  val parquetTable = "parquet_Table"
+
+  def createParquetTable(escape: String,
+      csvFile: String = "datawithescapecharacter.csv"): String = {
+    sql(s"DROP TABLE IF EXISTS $parquetTable")
+    val frame = sqlContext.read
+      .option("quote", "\"")
+      .option("escape", escape)
+      .option("header", "true")
+      .csv(s"$resourcesPath/$csvFile")
+    frame.write.format("parquet").saveAsTable(parquetTable)
+    parquetTable
   }
 }
