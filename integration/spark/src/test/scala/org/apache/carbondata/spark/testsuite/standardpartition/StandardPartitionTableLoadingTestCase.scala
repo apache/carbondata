@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import java.io.{File, FileWriter, IOException}
+
 import java.util
 import java.util.concurrent.{Callable, Executors, ExecutorService}
 
@@ -30,6 +31,7 @@ import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.{PartitionCacheKey, PartitionCacheManager}
+import org.apache.spark.SPARK_VERSION
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.Strings
@@ -430,6 +432,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
   }
 
   test("Partition LOAD with small files") {
+    sql("set spark.sql.hive.manageFilesourcePartitions=false")
     sql("DROP TABLE IF EXISTS smallpartitionfiles")
     sql(
       """
@@ -449,6 +452,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       writer.write(s"$i,name_$i,city_${i % 5},${ i % 100 }")
       writer.close()
     }
+    println(new File(inputPath).listFiles().length)
     sql(s"LOAD DATA LOCAL INPATH '$inputPath' INTO TABLE smallpartitionfiles")
     FileUtils.deleteDirectory(folder)
     val specs = CarbonFilters.getPartitions(Seq.empty,
@@ -457,6 +461,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     specs.get.foreach{s =>
       assert(new File(s.getLocation.toString).listFiles().length < 10)
     }
+    sql("set spark.sql.hive.manageFilesourcePartitions=true")
   }
 
   test("verify partition read with small files") {
@@ -491,7 +496,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
           if b.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]] =>
           b.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]]
       }.head
-      assert(scanRdd.getPartitions.length < 10)
+      assert(scanRdd.getPartitions.length <= 10)
       assertResult(100)(dataFrame.count)
     } finally {
       CarbonProperties.getInstance()
@@ -578,7 +583,11 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
           | STORED AS carbondata
       """.stripMargin)
     }
-    assert(ex.getMessage().equalsIgnoreCase("Cannot use all columns for partition columns;"))
+    var errMsg = "Cannot use all columns for partition columns;"
+    if (SPARK_VERSION.startsWith("3")) {
+      errMsg = errMsg.replace(";", "")
+    }
+    assert(ex.getMessage().equalsIgnoreCase(errMsg))
   }
 
   test("test partition without merge index files for segment") {

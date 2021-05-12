@@ -424,7 +424,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  ignore("Range filter Dictionary multiple filters3") {
+  test("Range filter Dictionary multiple filters3") {
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' and empno < '13' and workgroupcategory = '1' or empno > '14' or empno < '17'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno > '11' and empno < '13' and workgroupcategory = '1' or empno > '14' or empno < '17'")
@@ -432,87 +432,87 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  ignore("Range filter with join") {
+  test("Range filter with join") {
     checkAnswer(
       sql("select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6 s, NO_DICTIONARY_CARBON_6 t where s.empno > '11' and t.empno < '16' and s.empname = t.empname"),
       sql("select s.empno, s.empname, t.empno, t.empname from NO_DICTIONARY_HIVE_6 s, NO_DICTIONARY_HIVE_7 t where s.empno > '11' and t.empno < '16' and s.empname = t.empname"))
   }
 
-  ignore("Range filter with join 1") {
+  test("Range filter with join 1") {
     checkAnswer(
       sql("select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6 s, NO_DICTIONARY_CARBON_6 t where s.empno > '09' and t.empno < '30' and s.empname = t.empname"),
       sql("select s.empno, s.empname, t.empno, t.empname from NO_DICTIONARY_HIVE_6 s, NO_DICTIONARY_HIVE_7 t where s.empno > '09' and t.empno < '30' and s.empname = t.empname"))
   }
 
-  ignore("Range with name comparision") {
+  test("Range with name comparision") {
    checkAnswer(
     sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '11' and empname < '12'"),
     sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '11' and empname < '12'"))
   }
 
-  ignore("Range with name comparision 1") {
+  test("Range with name comparision 1") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empname < '11'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empname < '11'"))
   }
 
-  ignore("Range with name comparision 3") {
+  test("Range with name comparision 3") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empname <= '11'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empname <= '11'"))
   }
 
 
-  ignore("Range with name comparision 4") {
+  test("Range with name comparision 4") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '10' and empno <= '11'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '10' and empno <= '11'"))
   }
 
-  ignore("Range with name comparision 5") {
+  test("Range with name comparision 5") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '09' and empno <= '50'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '09' and empno <= '50'"))
   }
 
-  ignore("Range with name comparision 6") {
+  test("Range with name comparision 6") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '03' and empno <= '09'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '03' and empno <= '09'"))
   }
 
-  ignore("Range with name comparision 7") {
+  test("Range with name comparision 7") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '10' and empno <= '50'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '10' and empno <= '50'"))
   }
 
-  ignore("Range with name comparision 8") {
+  test("Range with name comparision 8") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '50'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '50'"))
   }
 
-  ignore("Range with name comparision 9") {
+  test("Range with name comparision 9") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '13'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '13'"))
   }
 
-  ignore("Range with name comparision 10") {
+  test("Range with name comparision 10") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '14'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '14'"))
   }
 
-  ignore("Range with name comparision 11") {
+  test("Range with name comparision 11") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname like '1%'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname like '1%'"))
   }
 
 
-  ignore("Range with name comparision 12") {
+  test("Range with name comparision 12") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname like '12%'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname like '12%'"))
@@ -524,70 +524,70 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname like '11%'"))
   }
 
-  ignore("Range with name comparision 14") {
+  test("Range with name comparision 14") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname like '%1%'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname like '%1%'"))
   }
 
-  ignore("Range with name comparision 15") {
+  test("Range with name comparision 15") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname like '1111%'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname like '1111%'"))
   }
   // Greater Than Less Than test cases
-  ignore("No Range with name comparision 1") {
+  test("No Range with name comparision 1") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '11'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '11'"))
   }
 
-  ignore("No Range with name comparision 2") {
+  test("No Range with name comparision 2") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '11'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '11'"))
   }
 
-  ignore("No Range with name comparision 3") {
+  test("No Range with name comparision 3") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname < '126'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname < '126'"))
   }
 
-  ignore("No Range with name comparision 4") {
+  test("No Range with name comparision 4") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname <= '126'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname <= '126'"))
   }
 
-  ignore("No Range with name comparision 5") {
+  test("No Range with name comparision 5") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '107'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '107'"))
   }
 
 
-  ignore("No Range with name comparision 6") {
+  test("No Range with name comparision 6") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '107'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '107'"))
   }
 
 
-  ignore("No Range with name comparision 7") {
+  test("No Range with name comparision 7") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname < '107'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname < '107'"))
   }
 
 
-  ignore("No Range with name comparision 8") {
+  test("No Range with name comparision 8") {
     checkAnswer(
       sql("select empname from NO_DICTIONARY_CARBON_7 where empname <= '107'"),
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname <= '107'"))
   }
 
-  ignore("Range filter with two between clauses") {
+  test("Range filter with two between clauses") {
 
     checkAnswer(sql("select * from carbontest where c3 between 2 and 3 or c3 between 3 and 4"),
       sql("select * from carbontest_hive where c3 between 2 and 3 or c3 between 3 and 4"))

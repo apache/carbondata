@@ -18,7 +18,7 @@
 package org.apache.carbondata.spark.testsuite.windowsexpr
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -26,6 +26,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 /**
  * Test Class for all query on multiple datatypes
  */
+@Ignore
 class WindowsExprTestCase extends QueryTest with BeforeAndAfterAll {
   // scalastyle:off lineLength
   override def beforeAll {
@@ -47,18 +48,18 @@ class WindowsExprTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table hivewindowstable")
   }
 
-  test("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM windowstable) tmp WHERE rank <= 2 order by country") {
+  ignore("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM windowstable) tmp WHERE rank <= 2 order by country") {
       sql("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM windowstable) tmp WHERE rank <= 2 order by country").collect()
       sql("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM hivewindowstable) tmp WHERE rank <= 2 order by country").collect()
   }
 
-  test("SELECT ID, country, SUM(salary) OVER (PARTITION BY country ) AS TopBorcT FROM windowstable") {
+  ignore("SELECT ID, country, SUM(salary) OVER (PARTITION BY country ) AS TopBorcT FROM windowstable") {
     checkAnswer(
       sql("SELECT ID, country, SUM(salary) OVER (PARTITION BY country ) AS TopBorcT FROM windowstable"),
       sql("SELECT ID, country, SUM(salary) OVER (PARTITION BY country ) AS TopBorcT FROM hivewindowstable"))
   }
 
-  test("SELECT country,name,salary,ROW_NUMBER() OVER (PARTITION BY country ORDER BY salary DESC) as rownum FROM windowstable") {
+  ignore("SELECT country,name,salary,ROW_NUMBER() OVER (PARTITION BY country ORDER BY salary DESC) as rownum FROM windowstable") {
     checkAnswer(
       sql("SELECT country,name,salary,ROW_NUMBER() OVER (PARTITION BY country ORDER BY salary DESC) as rownum FROM windowstable"),
       sql("SELECT country,name,salary,ROW_NUMBER() OVER (PARTITION BY country ORDER BY salary DESC) as rownum FROM hivewindowstable"))

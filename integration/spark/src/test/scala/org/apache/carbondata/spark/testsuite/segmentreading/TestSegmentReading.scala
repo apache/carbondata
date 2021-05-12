@@ -144,7 +144,8 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
       sql("SET carbon.input.segments.default.carbon_table=*")
     }
   }
-  ignore("test group by with segment reading") {
+
+  test("test group by with segment reading") {
     try {
       sql("SET carbon.input.segments.default.carbon_table=*")
       checkAnswer(
@@ -159,7 +160,8 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
       sql("SET carbon.input.segments.default.carbon_table=*")
     }
   }
-  ignore("test join with segment reading") {
+
+  test("test join with segment reading") {
     try {
       sql("SET carbon.input.segments.default.carbon_table=*")
       sql("drop table if exists carbon_table_join")
