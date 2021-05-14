@@ -39,7 +39,7 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
       s"""
          | LOAD DATA LOCAL INPATH '$storeLocation'
          | INTO TABLE carbon_table
-         | OPTIONS('FILEHEADER' = 'booleanField')
+         | OPTIONS('FILEHEADER' = 'booleanField','skip_empty_line'='false')
        """.stripMargin)
 
     val booleanLocation = s"$rootPath/integration/spark/src/test/resources/bool/supportBoolean.csv"

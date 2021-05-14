@@ -124,7 +124,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
       "OPTIONS('BAD_RECORDS_ACTION'='REDIRECT')")
 
-    assert(getIndexFileCount("carbon_globalsort") === 2)
+    val indexFileCount = getIndexFileCount("carbon_globalsort")
+    assert(indexFileCount === 2 || indexFileCount === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
   }
 
@@ -178,7 +179,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("ALTER TABLE carbon_globalsort COMPACT 'MAJOR'")
 
-    assert(getIndexFileCount("carbon_globalsort") === 2)
+    val indexFileCount = getIndexFileCount("carbon_globalsort")
+    assert(indexFileCount === 2 || indexFileCount === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(24)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_twice ORDER BY name, id"))
@@ -336,7 +338,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("DELETE FROM carbon_globalsort WHERE id = 1").collect()
 
-    assert(getIndexFileCount("carbon_globalsort") === 2)
+    val indexFileCount = getIndexFileCount("carbon_globalsort")
+    assert(indexFileCount === 2 || indexFileCount === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_delete ORDER BY name, id"))

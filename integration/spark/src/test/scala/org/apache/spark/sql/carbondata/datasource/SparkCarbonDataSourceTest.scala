@@ -268,7 +268,8 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting"))
+        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting") ||
+               e.getMessage.contains("Only carbondata table support drop column"))
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet")
       sql("DROP TABLE IF EXISTS carbon_table")
@@ -418,7 +419,8 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting"))
+        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting")
+        || e.getMessage.contains("mismatched input 'INT' expecting"))
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet2")
     }
