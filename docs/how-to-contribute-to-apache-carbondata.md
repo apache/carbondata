@@ -20,7 +20,7 @@
 The Apache CarbonData community welcomes all kinds of contributions from anyone with a passion for
 faster data format! Apache CarbonData is a new file format for faster interactive query using
 advanced columnar storage, index, compression and encoding techniques to improve computing
-efficiency,in turn it will help speedup queries an order of magnitude faster over PetaBytes of data.
+efficiency, in turn it will help speedup queries an order of magnitude faster over PetaBytes of data.
 
 We use a review-then-commit workflow in CarbonData for all contributions.
 
@@ -37,7 +37,7 @@ emailing dev-subscribe@carbondata.apache.org
 
 We use [Apache JIRA](https://issues.apache.org/jira/browse/CARBONDATA) as an issue tracking and
 project management tool, as well as a way to communicate among a very diverse and distributed set
-of contributors. To be able to gather feedback, avoid frustration, and avoid duplicated efforts all
+of contributors. To be able to gather feedback, avoid frustration and avoid duplicated efforts, all
 CarbonData-related work should be tracked there.
 
 If you do not already have an Apache JIRA account, sign up [here](https://issues.apache.org/jira/).
@@ -134,7 +134,7 @@ $ mvn clean verify
 Once the initial code is complete and the tests pass, it’s time to start the code review process.
 We review and discuss all code, no matter who authors it. It’s a great way to build community,
 since you can learn from other developers, and they become familiar with your contribution.
-It also builds a strong project by encouraging a high quality bar and keeping code consistent
+It also builds a strong project by encouraging a high-quality bar and keeping code consistent
 throughout the project.
 
 #### Create a pull request
@@ -165,10 +165,10 @@ Hi @<committer/reviewer name>, can you please take a look?
 
 During the code review process, don’t rebase your branch or otherwise modify published commits,
 since this can remove existing comment history and be confusing to the reviewer,
-When you make a revision, always push it in a new commit.
+When you make a revision, always push it into a new commit.
 
 Our GitHub mirror automatically provides pre-commit testing coverage using Jenkins.
-Please make sure those tests pass,the contribution cannot be merged otherwise.
+Please make sure those tests pass, the contribution cannot be merged otherwise.
 
 #### LGTM
 Once the reviewer is happy with the change, they’ll respond with an LGTM ("looks good to me!").
