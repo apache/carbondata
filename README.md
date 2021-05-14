@@ -17,7 +17,7 @@
 
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
 
-Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
+Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g. Apache Hadoop, Apache Spark, etc.
 
 You can find the latest CarbonData document and learn more at:
 [http://carbondata.apache.org](http://carbondata.apache.org/)
@@ -33,9 +33,9 @@ Spark2.4:
        src="https://scan.coverity.com/projects/13444/badge.svg"/>
 </a>
 ## Features
-CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc, and CarbonData has following unique features:
+CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema, complex data type etc, and CarbonData has following unique features:
 * Stores data along with index: it can significantly accelerate query performance and reduces the I/O scans and CPU resources, where there are filters in the query.  CarbonData index consists of multiple level of indices, a processing framework can leverage this index to reduce the task it needs to schedule and process, and it can also do skip scan in more finer grain unit (called blocklet) in task side scanning instead of scanning the whole file.
-* Operable encoded data :Through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized".
+* Operable encoded data: through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized".
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan).
 
 ## Building CarbonData
@@ -74,7 +74,7 @@ Some features are marked as experimental because the syntax/implementation might
 2. Accelerating performance using MV on parquet/orc.
 3. Merge API for Spark DataFrame.
 4. Hive write for non-transactional table.
-5. Secondary Index as a Coarse Grain Index in query processing
+5. Secondary Index as a Coarse Grain Index in query processing.
 
 ##  Integration
 * [Hive](https://github.com/apache/carbondata/blob/master/docs/hive-guide.md)
@@ -88,7 +88,7 @@ Some features are marked as experimental because the syntax/implementation might
 
 ## Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
-This guide document introduce [how to contribute to CarbonData](https://github.com/apache/carbondata/blob/master/docs/how-to-contribute-to-apache-carbondata.md).
+This guide document introduces [how to contribute to CarbonData](https://github.com/apache/carbondata/blob/master/docs/how-to-contribute-to-apache-carbondata.md).
 
 ## Contact us
 To get involved in CarbonData:
