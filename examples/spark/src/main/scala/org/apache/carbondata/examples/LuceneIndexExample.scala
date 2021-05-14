@@ -30,7 +30,10 @@ object LuceneIndexExample {
 
   def main(args: Array[String]) {
     val spark = ExampleUtils.createSparkSession("LuceneIndexExample")
-    exampleBody(spark)
+    // TODO: Fix after V2 implementation
+    if (!spark.sparkContext.version.startsWith("3.1")) {
+      exampleBody(spark)
+    }
     spark.close()
   }
 

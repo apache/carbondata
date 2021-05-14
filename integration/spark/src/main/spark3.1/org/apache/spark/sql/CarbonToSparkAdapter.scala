@@ -342,9 +342,12 @@ object CarbonToSparkAdapter {
       scalaUdf.udfName)
   }
 
-  // TODO: check if this is correct
   def getTableIdentifier(parts: Seq[String]): TableIdentifier = {
-    TableIdentifier(parts(1), Option(parts.head))
+    if (parts.length == 1) {
+      TableIdentifier(parts.head, None)
+    } else {
+      TableIdentifier(parts(1), Option(parts.head))
+    }
   }
 
   def createShuffledRowRDD(sparkContext: SparkContext, localTopK: RDD[InternalRow],

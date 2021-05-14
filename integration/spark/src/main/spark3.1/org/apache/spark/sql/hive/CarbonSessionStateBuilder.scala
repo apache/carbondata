@@ -143,9 +143,8 @@ class CarbonHiveSessionCatalog(
  * @param sparkSession
  */
 class CarbonSessionStateBuilder(sparkSession: SparkSession,
-    parentState: Option[SessionState] = None,
-    options: Map[String, String])
-  extends HiveSessionStateBuilder(sparkSession, parentState, options) {
+    parentState: Option[SessionState] = None)
+  extends HiveSessionStateBuilder(sparkSession, parentState, Map.empty) {
 
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf, sparkSession)
 
