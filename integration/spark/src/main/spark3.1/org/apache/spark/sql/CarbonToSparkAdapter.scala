@@ -296,7 +296,7 @@ object CarbonToSparkAdapter {
   }
 
   def dateToString(date: Int): String = {
-    DateTimeUtils.daysToMicros(date, ZoneId.systemDefault()).toString
+    DateTimeUtils.daysToLocalDate(date).toString
   }
 
   def getProcessingTime: String => Trigger = {
