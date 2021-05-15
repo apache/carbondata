@@ -17,10 +17,12 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, NamedExpression}
+import org.apache.spark.sql.catalyst.plans.logical.Project
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
-import org.apache.spark.sql.types.{ArrayType, LongType, StringType}
+import org.apache.spark.sql.types.{ArrayType, DataType, DataTypes, LongType, StringType}
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.api.CarbonStore.readSegments
@@ -29,8 +31,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 
 case class SegmentRow(
-    id: String, status: String, loadStartTime: String, timeTakenMs: Long, partitions: Seq[String],
-    dataSize: Long, indexSize: Long, mergedToId: String, format: String, path: String,
+    id: String, status: String, loadStartTime: String, timeTakenMs: String, partitions: Seq[String],
+    dataSize: String, indexSize: String, mergedToId: String, format: String, path: String,
     loadEndTime: String, segmentFileName: String)
 
 case class CarbonShowSegmentsAsSelectCommand(
@@ -47,24 +49,25 @@ case class CarbonShowSegmentsAsSelectCommand(
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
   }
-  private lazy val df = createDataFrame
 
-  private val tempViewName = makeTempViewName(carbonTable)
+  val tempViewName: String = makeTempViewName(carbonTable)
+
+  val df: DataFrame = createDataFrame
 
   override def output: Seq[Attribute] = {
-    Seq(
-      AttributeReference("Load", StringType, nullable = false)(),
-      AttributeReference("Segment Status", StringType, nullable = false)(),
-      AttributeReference("Start Time", StringType, nullable = false)(),
-      AttributeReference("Time Taken", LongType, nullable = false)(),
-      AttributeReference("Partitions", ArrayType.defaultConcreteType, nullable = false)(),
-      AttributeReference("Data Size", LongType, nullable = false)(),
-      AttributeReference("Index Size", LongType, nullable = false)(),
-      AttributeReference("Merge To Id", StringType, nullable = false)(),
-      AttributeReference("File Format", StringType, nullable = false)(),
-      AttributeReference("Path", StringType, nullable = false)(),
-      AttributeReference("Load End Time", StringType, nullable = false)(),
-      AttributeReference("Segment File", StringType, nullable = false)())
+    var attrList: Seq[Attribute] = Seq()
+    sparkSession.sessionState.sqlParser.parsePlan(query).find(_.isInstanceOf[Project]) match {
+      case Some(project: Project) =>
+        val projectList = project.projectList
+        if (projectList.exists(_.isInstanceOf[UnresolvedStar])) {
+          attrList = df.queryExecution.analyzed.output
+        } else {
+          attrList = projectList.map(x => AttributeReference(x.name, DataTypes.StringType,
+              nullable = false)())
+        }
+      case _ =>
+    }
+    attrList
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -74,12 +77,15 @@ case class CarbonShowSegmentsAsSelectCommand(
         throw new MalformedCarbonCommandException(
           "Unsupported operation on non transactional table")
       }
-      df.collect()
+      checkIfTableExist(sparkSession, tempViewName)
+      df.createTempView(tempViewName)
+      sparkSession.sql(query).collect()
     } catch {
+      case an: AnalysisException => throw an
       case ex: Throwable =>
         throw new MalformedCarbonCommandException("failed to run query: " + ex.getMessage)
     } finally {
-      sparkSession.catalog.dropTempView(makeTempViewName(carbonTable))
+      sparkSession.catalog.dropTempView(tempViewName)
     }
   }
 
@@ -98,10 +104,10 @@ case class CarbonShowSegmentsAsSelectCommand(
               stageRow.getString(0),
               stageRow.getString(1),
               stageRow.getString(2),
-              -1,
+              "-1",
               Seq(stageRow.getString(4)),
-              stageRow.getString(5).toLong,
-              stageRow.getString(6).toLong,
+              stageRow.getString(5),
+              stageRow.getString(6),
               null,
               stageRow.getString(7),
               null,
@@ -113,15 +119,8 @@ case class CarbonShowSegmentsAsSelectCommand(
     }
 
     val segments = readSegments(tablePath, showHistory, limit)
-    registerSegmentRowView(sparkSession, tempViewName,
+    makeDfFromRows(sparkSession, tempViewName,
       carbonTable, segments, rows)
-    try {
-      sparkSession.sql(query)
-    } catch {
-      case t: Throwable =>
-        sparkSession.catalog.dropTempView(tempViewName)
-        throw t
-    }
   }
 
   /**
@@ -131,12 +130,12 @@ case class CarbonShowSegmentsAsSelectCommand(
     s"${carbonTable.getTableName}_segments"
   }
 
-  private def registerSegmentRowView(
+  private def makeDfFromRows(
       sparkSession: SparkSession,
       tempViewName: String,
       carbonTable: CarbonTable,
       segments: Array[LoadMetadataDetails],
-      rows: Seq[SegmentRow]): Unit = {
+      rows: Seq[SegmentRow]): DataFrame = {
 
     // populate a DataFrame containing all segment information
     val tablePath = carbonTable.getTablePath
@@ -156,10 +155,10 @@ case class CarbonShowSegmentsAsSelectCommand(
         segment.getLoadName,
         segment.getSegmentStatus.toString,
         startTime,
-        timeTaken,
+        timeTaken.toString,
         partitions,
-        dataSize,
-        indexSize,
+        dataSize.toString,
+        indexSize.toString,
         mergedToId,
         segment.getFileFormat.toString,
         path,
@@ -169,8 +168,7 @@ case class CarbonShowSegmentsAsSelectCommand(
 
     // create a temp view using the populated DataFrame and execute the query on it
     val df = sparkSession.createDataFrame(segmentRowView)
-    checkIfTableExist(sparkSession, tempViewName)
-    df.createOrReplaceTempView(tempViewName)
+    df
   }
 
   private def checkIfTableExist(sparkSession: SparkSession, tempViewName: String): Unit = {
