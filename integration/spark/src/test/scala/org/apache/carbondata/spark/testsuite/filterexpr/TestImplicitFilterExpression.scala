@@ -17,10 +17,10 @@
 package org.apache.carbondata.spark.testsuite.filterexpr
 
 import java.util
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Dataset, Row}
+
+import org.apache.spark.sql.{CarbonEnv, DataFrame}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
-import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll

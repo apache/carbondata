@@ -1591,31 +1591,31 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         // set hive.exec.dynamic.partition.mode=nonstrict
         sql("set hive.exec.dynamic.partition.mode=nonstrict")
         sql("insert into hive_table select 'a','b','binary'");
-        val eInt11 = intercept[AnalysisException] {
-            sql("insert into hive_table select 'a','b',1");
-        }
-        assert(eInt11.getMessage.contains(
-            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
-
         checkAnswer(sql("select cast(photo as string) from hive_table"),
             Seq(Row("binary"), Row("1"), Row("binary")))
 
         sql("insert into hive_table2 select 'a','b','binary'");
-        val eInt22 = intercept[AnalysisException] {
-            sql("insert into hive_table2 select 'a','b',1");
-        }
-        assert(eInt22.getMessage.contains(
-            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
-
         checkAnswer(sql("select cast(photo as string) from hive_table2"),
             Seq(Row("binary"), Row("1"), Row("binary")))
 
         sql("insert into parquet_table select 'a','b','binary'");
-        val eInt32 = intercept[AnalysisException] {
-            sql("insert into parquet_table select 'a','b',1");
+        if (!SparkUtil.isSparkVersionXAndAbove("3")) {
+            val eInt11 = intercept[AnalysisException] {
+                sql("insert into hive_table select 'a','b',1");
+            }
+            assert(eInt11.getMessage.contains(
+                "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+            val eInt22 = intercept[AnalysisException] {
+                sql("insert into hive_table2 select 'a','b',1");
+            }
+            assert(eInt22.getMessage.contains(
+                "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+            val eInt32 = intercept[AnalysisException] {
+                sql("insert into parquet_table select 'a','b',1");
+            }
+            assert(eInt32.getMessage.contains(
+                "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
         }
-        assert(eInt32.getMessage.contains(
-            "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
 
         // TODO: is it bug in parquet?
         // checkAnswer(sql("select cast(photo as string) from parquet_table"),
