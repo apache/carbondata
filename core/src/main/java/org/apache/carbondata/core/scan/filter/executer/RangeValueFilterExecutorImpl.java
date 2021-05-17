@@ -375,9 +375,7 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
     // false, in that scenario the default values of the column should be shown.
     // select all rows if dimension does not exists in the current block
     if (!isDimensionPresentInCurrentBlock) {
-      int numberOfRows = blockChunkHolder.getDataBlock().numRows();
-      return FilterUtil.createBitSetGroupWithDefaultValue(
-          blockChunkHolder.getDataBlock().numberOfPages(), numberOfRows, true);
+      return FilterUtil.createBitSetGroupWithColumnChunk(blockChunkHolder, true);
     }
 
     int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
