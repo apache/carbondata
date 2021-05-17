@@ -243,11 +243,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
            | """
           .stripMargin)
     )
-    var errMsg = "Cannot use map<int,string> for partition column"
-    if (SPARK_VERSION.startsWith("3.")) {
-      errMsg = errMsg.replace(";", "")
-    }
-    assertResult(errMsg)(exception.getMessage())
+    assert(exception.getMessage().contains("Cannot use map<int,string> for partition column"))
   }
 
   test("Test IUD in map columns") {

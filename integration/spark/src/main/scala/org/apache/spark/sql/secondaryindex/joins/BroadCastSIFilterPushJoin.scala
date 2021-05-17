@@ -34,7 +34,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, BindReferences, Expression, In, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.catalyst.plans.JoinType
-import org.apache.spark.sql.execution.{BinaryExecNode, ProjectExec, RowDataSourceScanExec, SparkPlan}
+import org.apache.spark.sql.execution.{BinaryExecNode, CarbonCodegenSupport, ProjectExec, RowDataSourceScanExec, SparkPlan}
 import org.apache.spark.sql.execution.joins.HashJoin
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
@@ -65,7 +65,7 @@ case class BroadCastSIFilterPushJoin(
     buildSide: CarbonBuildSideType,
     left: SparkPlan,
     right: SparkPlan,
-    condition: Option[Expression]) extends BinaryExecNode with HashJoin {
+    condition: Option[Expression]) extends BinaryExecNode with HashJoin with CarbonCodegenSupport {
 
   override def output: Seq[Attribute] = carbonScan.output
 
@@ -137,11 +137,6 @@ case class BroadCastSIFilterPushJoin(
       isIndexTable = true)
     carbonScan.execute
   }
-
-  // TODO: Spark has started supporting Codegen for Join, Carbon needs to implement the same.
-  override def supportCodegen: Boolean = false
-
-  protected def prepareRelation(ctx: CodegenContext) = null
 
   def inputRDDs(): Seq[RDD[InternalRow]] = secondaryIndexRDD
 }

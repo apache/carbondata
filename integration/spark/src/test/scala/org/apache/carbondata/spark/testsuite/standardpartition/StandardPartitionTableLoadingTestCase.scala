@@ -581,11 +581,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
           | STORED AS carbondata
       """.stripMargin)
     }
-    var errMsg = "Cannot use all columns for partition columns;"
-    if (SPARK_VERSION.startsWith("3")) {
-      errMsg = errMsg.replace(";", "")
-    }
-    assert(ex.getMessage().equalsIgnoreCase(errMsg))
+    assert(ex.getMessage().contains("Cannot use all columns for partition columns"))
   }
 
   test("test partition without merge index files for segment") {

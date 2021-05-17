@@ -1068,8 +1068,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    | alter table carbontable add columns (
                    |    binaryField binary,
                    |    autoLabel boolean)
-                   | TBLPROPERTIES('DEFAULT.VALUE.binaryField'='binary','DEFAULT.VALUE
-                   | .autoLabel'='true')
+                   | TBLPROPERTIES('DEFAULT.VALUE.binaryField'='binary','DEFAULT.VALUE.autoLabel'='true')
             """.stripMargin)
 
             var carbonResult = sql("SELECT * FROM carbontable")

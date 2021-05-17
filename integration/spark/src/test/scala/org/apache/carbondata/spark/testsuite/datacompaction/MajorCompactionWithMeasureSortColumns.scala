@@ -16,6 +16,9 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
+import java.sql.Date
+
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -89,8 +92,11 @@ class MajorCompactionWithMeasureSortColumns extends QueryTest with BeforeAndAfte
     sql("ALTER TABLE store COMPACT 'MAJOR'")
 
     val answer = sql("select * from store ").orderBy("code1")
-    // using except is not allowing the action to finish and thus the test case is hanged forever
-    assert(answer.exceptAll(csvRows).count() == 2)
+    assert(csvRows.count() == answer.distinct().count())
+    checkAnswer(answer.distinct(),
+      Seq(Row("51job, Inc.", "21695-534", "FR", 610, 60, Date.valueOf("2017-11-27"), 4483, 0, 510),
+        Row("Intercontinental Exchange Inc.", "22100-020", "TH", 87, 4,
+          Date.valueOf("2017-10-16"), 2, 647, 69630)))
     sql("drop table store")
   }
 

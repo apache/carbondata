@@ -157,7 +157,6 @@ case class RefreshCarbonTableCommand(
     var allowCreateTableNonEmptyLocation: String = null
     val allowCreateTableNonEmptyLocationConf =
       "spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation"
-    sparkSession.sessionState.conf.contains("")
     try {
       if (sparkSession.sessionState.conf.contains(allowCreateTableNonEmptyLocationConf) &&
           SparkUtil.isSparkVersionXAndAbove("2.4")) {
