@@ -30,7 +30,6 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -81,6 +80,7 @@ import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolv
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -898,29 +898,22 @@ public final class FilterUtil {
   }
 
   /**
-   * This method will create default bitset group. Applicable for restructure scenarios.
+   * This method will create bit set group for particular raw blocklet column chunk.
+   * Applicable for restructure scenarios.
    *
-   * @param pageCount
-   * @param totalRowCount
+   * @param rawBlockletColumnChunks
    * @param defaultValue
    * @return
    */
-  public static BitSetGroup createBitSetGroupWithDefaultValue(int pageCount, int totalRowCount,
-      boolean defaultValue) {
+  public static BitSetGroup createBitSetGroupWithColumnChunk(RawBlockletColumnChunks
+      rawBlockletColumnChunks, boolean defaultValue) {
+    int pageCount = rawBlockletColumnChunks.getDataBlock().numberOfPages();
     BitSetGroup bitSetGroup = new BitSetGroup(pageCount);
-    int numberOfRows = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-    int pagesTobeFullFilled = totalRowCount / numberOfRows;
-    int rowCountForLastPage = totalRowCount % numberOfRows;
-    for (int i = 0; i < pagesTobeFullFilled; i++) {
-      BitSet bitSet = new BitSet(numberOfRows);
-      bitSet.set(0, numberOfRows, defaultValue);
+    for (int i = 0; i < pageCount; i++) {
+      int pageRowCount = rawBlockletColumnChunks.getDataBlock().getPageRowCount(i);
+      BitSet bitSet = new BitSet(pageRowCount);
+      bitSet.set(0, pageRowCount, defaultValue);
       bitSetGroup.setBitSet(bitSet, i);
-    }
-    // create and fill bitset for the last page if any records are left
-    if (rowCountForLastPage > 0) {
-      BitSet bitSet = new BitSet(rowCountForLastPage);
-      bitSet.set(0, rowCountForLastPage, defaultValue);
-      bitSetGroup.setBitSet(bitSet, pagesTobeFullFilled);
     }
     return bitSetGroup;
   }

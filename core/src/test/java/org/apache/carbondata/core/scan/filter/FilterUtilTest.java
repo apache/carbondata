@@ -21,7 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import mockit.Mock;
+import mockit.MockUp;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.DataRefNode;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -32,6 +37,7 @@ import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 import org.junit.Before;
@@ -223,17 +229,6 @@ public class FilterUtilTest {
             DataTypes.STRING) instanceof ColumnFilterInfo);
   }
 
-  @Test public void testCreateBitSetGroupWithDefaultValue() {
-    // test for exactly divisible values
-    BitSetGroup bitSetGroupWithDefaultValue =
-        FilterUtil.createBitSetGroupWithDefaultValue(14, 448000, true);
-    assertTrue(bitSetGroupWithDefaultValue.getNumberOfPages() == 14);
-    // test for remainder values
-    bitSetGroupWithDefaultValue =
-        FilterUtil.createBitSetGroupWithDefaultValue(15, 448200, true);
-    assertTrue(bitSetGroupWithDefaultValue.getNumberOfPages() == 15);
-  }
-
   @Test public void testRemoveInExpressionNodeWithPositionIdColumn() {
     List<Expression> children = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // create literal expression
@@ -255,6 +250,32 @@ public class FilterUtilTest {
     FilterUtil.removeInExpressionNodeWithPositionIdColumn(expression);
     // after removing the right node instance of right node should be of true expression
     assert (((AndExpression) expression).getRight() instanceof TrueExpression);
+  }
+
+  @Test public void testCreateBitSetGroupWithColumnChunk() {
+    BlockletDataRefNode blockletDataRefNode = new MockUp<BlockletDataRefNode>() {
+      @Mock
+      public int numberOfPages() {
+        return 2;
+      }
+      @Mock
+      public int getPageRowCount(int pageNumber) {
+        if (pageNumber==0) {
+          return 94;
+        } else {
+          return 6;
+        }
+      }
+    }.getMockInstance();
+    RawBlockletColumnChunks rawBlockletColumnChunks = new MockUp<RawBlockletColumnChunks>() {
+      @Mock
+      public DataRefNode getDataBlock() {
+        return blockletDataRefNode;
+      }
+    }.getMockInstance();
+    BitSetGroup bitSetGroupWithColumnChunk =
+        FilterUtil.createBitSetGroupWithColumnChunk(rawBlockletColumnChunks, true);
+    assertTrue(bitSetGroupWithColumnChunk.getNumberOfPages() == 2);
   }
 
   @Test public void testRemoveInExpressionNodeWithDifferentColumn() {

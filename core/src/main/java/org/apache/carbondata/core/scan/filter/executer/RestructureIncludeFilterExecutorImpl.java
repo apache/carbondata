@@ -49,10 +49,8 @@ public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorIm
   @Override
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeLine) {
-    int numberOfRows = rawBlockletColumnChunks.getDataBlock().numRows();
-    return FilterUtil.createBitSetGroupWithDefaultValue(
-        rawBlockletColumnChunks.getDataBlock().numberOfPages(),
-        numberOfRows, isDefaultValuePresentInFilterValues);
+    return FilterUtil.createBitSetGroupWithColumnChunk(rawBlockletColumnChunks,
+        isDefaultValuePresentInFilterValues);
   }
 
   @Override

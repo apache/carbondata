@@ -214,10 +214,8 @@ public class RowLevelRangeLessThanFilterExecutorImpl extends RowLevelFilterExecu
       boolean useBitsetPipeLine) throws IOException {
     // select all rows if dimension does not exists in the current block
     if (!isDimensionPresentInCurrentBlock[0] && !isMeasurePresentInCurrentBlock[0]) {
-      int numberOfRows = rawBlockletColumnChunks.getDataBlock().numRows();
       return FilterUtil
-          .createBitSetGroupWithDefaultValue(rawBlockletColumnChunks.getDataBlock().numberOfPages(),
-              numberOfRows, true);
+          .createBitSetGroupWithColumnChunk(rawBlockletColumnChunks, true);
     }
     if (isDimensionPresentInCurrentBlock[0]) {
       int chunkIndex =
