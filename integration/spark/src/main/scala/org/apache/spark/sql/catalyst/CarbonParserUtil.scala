@@ -639,7 +639,7 @@ object CarbonParserUtil {
   protected def extractDimAndMsrFields(fields: Seq[Field], indexFields: Seq[Field],
       tableProperties: Map[String, String]):
   (Seq[Field], Seq[Field], Seq[String], Seq[String], Seq[String]) = {
-    var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
+    var dimFields: Seq[Field] = Seq[Field]()
     var msrFields: Seq[Field] = Seq[Field]()
     var noDictionaryDims: Seq[String] = Seq[String]()
     var varcharCols: Seq[String] = Seq[String]()
@@ -712,9 +712,9 @@ object CarbonParserUtil {
     allFields.foreach { field =>
       if (field.dataType.get.toUpperCase.equals("TIMESTAMP")) {
         noDictionaryDims :+= field.column
-        dimFields += field
+        dimFields :+= field
       } else if (isDetectAsDimensionDataType(field.dataType.get)) {
-        dimFields += field
+        dimFields :+= field
         // consider all String and binary cols as noDictionaryDims by default
         if ((DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) ||
             (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
@@ -728,7 +728,7 @@ object CarbonParserUtil {
                                                     field.column}}in sort_columns.")
       } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column))) {
         noDictionaryDims :+= field.column
-        dimFields += field
+        dimFields :+= field
       } else {
         msrFields :+= field
       }
@@ -740,7 +740,7 @@ object CarbonParserUtil {
     } else {
       tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, sortKeyDimsTmp.mkString(","))
     }
-    (dimFields.toSeq, msrFields, noDictionaryDims, sortKeyDimsTmp, varcharCols)
+    (dimFields, msrFields, noDictionaryDims, sortKeyDimsTmp, varcharCols)
   }
 
   def isDefaultMeasure(dataType: Option[String]): Boolean = {

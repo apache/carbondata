@@ -912,14 +912,17 @@ object AlterTableUtil {
     val colSchemas = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
     longStringCols.foreach { col =>
       if (!colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col))) {
-        val errorMsg = "LONG_STRING_COLUMNS column: " + col +
-                       " does not exist in table. Please check the DDL."
+        val errorMsg = s"LONG_STRING_COLUMNS column: $col does not exist in table. Please check " +
+                       s"the DDL."
         throw new MalformedCarbonCommandException(errorMsg)
       } else if (colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col) &&
-                                          !x.getDataType.toString
-                                            .equalsIgnoreCase("STRING"))) {
-        val errMsg = "LONG_STRING_COLUMNS column: " + col +
-                     " is not a string datatype column"
+                                        x.isComplexColumn)) {
+        val errMsg = s"Complex child column $col cannot be set as LONG_STRING_COLUMNS."
+        throw new MalformedCarbonCommandException(errMsg)
+      } else if (colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col) &&
+                                        !x.getDataType.toString
+                                          .equalsIgnoreCase("STRING"))) {
+        val errMsg = s"LONG_STRING_COLUMNS column: $col is not a string datatype column"
         throw new MalformedCarbonCommandException(errMsg)
       }
     }

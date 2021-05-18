@@ -812,6 +812,46 @@ test("test alter command for boolean data type with correct default measure valu
     sql("DROP TABLE t1")
   }
 
+  test("testing the duplicate add columns for complex data types") {
+    sql("drop table if exists alter_complex")
+    sql("create table alter_complex (a int, b string, arr1 array<int>) " +
+        "stored as carbondata")
+    val errMsg = "Alter table add operation failed: Duplicate column found with name"
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table alter_complex add columns(arr1 array<int>)")
+    }.getMessage.contains(errMsg))
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table alter_complex add columns(arr2 array<int>, arr2 array<int>)")
+    }.getMessage.contains(errMsg))
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table alter_complex add columns(c int, c int)")
+    }.getMessage.contains(errMsg))
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table alter_complex add columns(c int, c string)")
+    }.getMessage.contains(errMsg))
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table alter_complex add columns(c string, c int)")
+    }.getMessage.contains(errMsg))
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table alter_complex add columns(c string, c array<string>)")
+    }.getMessage.contains(errMsg))
+    sql("drop table if exists alter_complex")
+  }
+
+  test("testing the long string properties for complex columns") {
+    sql("drop table if exists alter_complex")
+    sql("create table alter_complex (a int, arr1 array<string>) " +
+        "stored as carbondata")
+    assert(intercept[RuntimeException] {
+      sql("alter table alter_complex SET TBLPROPERTIES" +
+          "('LONG_STRING_COLUMNS'='arr1.val')")
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: Complex child column arr1.val cannot be set " +
+        "as LONG_STRING_COLUMNS"))
+    sql("drop table if exists alter_complex")
+  }
+
   def sortScopeInDescFormatted(tableName: String): String = {
     sql(s"DESCRIBE FORMATTED $tableName").filter(
       (x: Row) => x.getString(0).equalsIgnoreCase("sort scope")
