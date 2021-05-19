@@ -296,18 +296,11 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   test("test rename on complex column") {
     sql("drop table if exists complex")
     sql("create table complex (id int, name string, " +
-        "structField struct<intval:int, stringval:string>) STORED AS carbondata")
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
-      val ex = intercept[AnalysisException] {
-        sql("alter table complex change structField complexTest struct")
-      }
-      assert(ex.getMessage.contains("DataType struct is not supported"))
-    } else {
-      val ex = intercept[ProcessMetaDataException] {
-        sql("alter table complex change structField complexTest struct")
-      }
-      assert(ex.getMessage.contains("Rename column is unsupported for complex datatype"))
+      "structField struct<intval:int, stringval:string>) STORED AS carbondata")
+    val ex = intercept[ProcessMetaDataException] {
+      sql("alter table complex change structField complexTest struct")
     }
+    assert(ex.getMessage.contains("Rename column is unsupported for complex datatype"))
   }
 
   test("test SET command with column rename") {

@@ -105,6 +105,10 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      if (!carbonTable.isTransactionalTable) {
+        throw new MalformedCarbonCommandException(
+          "Unsupported operation on non transactional table")
+      }
       if (!alterTableColRenameAndDataTypeChangeModel.isColumnRename &&
           !carbonTable.canAllow(carbonTable, TableOperation.ALTER_CHANGE_DATATYPE,
             alterTableColRenameAndDataTypeChangeModel.columnName)) {
@@ -262,8 +266,10 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
     } catch {
       case e: Exception =>
         if (carbonTable != null) {
-          AlterTableUtil
-            .revertColumnRenameAndDataTypeChanges(dbName, tableName, timeStamp)(sparkSession)
+          if (carbonTable.isTransactionalTable) {
+            AlterTableUtil
+              .revertColumnRenameAndDataTypeChanges(dbName, tableName, timeStamp)(sparkSession)
+          }
         }
         if (isDataTypeChange) {
           throwMetadataException(dbName, tableName,
