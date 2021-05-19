@@ -127,14 +127,6 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
           tbl1 ++ tbl2: _*)(Seq(cond1, join.condition.get): _*)(
           Map.empty)(JoinEdge(0, 1, LeftOuter))
-
-//      case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
-//      MatchLocalRelation(tbl2, _),
-//      LeftOuter,
-//      Some(cond2)) =>
-//        Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
-//          ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
-//          tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, LeftOuter))
     }
     comparePlans(modularized, correctAnswer)
   }
@@ -159,14 +151,6 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
           ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
           tbl1 ++ tbl2: _*)(Seq(cond1, join.condition.get): _*)(Map.empty)(
           JoinEdge(0, 1, RightOuter))
-
-//      case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
-//      MatchLocalRelation(tbl2, _),
-//      RightOuter,
-//      Some(cond2)) =>
-//        Seq(ModularRelation(null, null, tbl1, NoFlags, Seq.empty),
-//          ModularRelation(null, null, tbl2, NoFlags, Seq.empty)).select(tbl1 ++ tbl2: _*)(
-//          tbl1 ++ tbl2: _*)(Seq(cond1, cond2): _*)(Map.empty)(JoinEdge(0, 1, RightOuter))
     }
     comparePlans(modularized, correctAnswer)
   }

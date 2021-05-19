@@ -42,14 +42,7 @@ class ExtractJoinConditionsSuite extends ModularPlanTest {
     val correctAnswer = originalQuery match {
       case join: logical.Join if (join.left.isInstanceOf[logical.Filter]
         && join.joinType == Inner) => join.condition.toSeq
-
-//      case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
-//      MatchLocalRelation(tbl2, _),
-//      Inner,
-//      Some(cond2)) =>
-//        Seq(cond2)
     }
-
     compareExpressions(correctAnswer, extracted)
   }
 
@@ -69,14 +62,7 @@ class ExtractJoinConditionsSuite extends ModularPlanTest {
       case join: logical.Join if (join.left.isInstanceOf[logical.Filter]
         && join.right.isInstanceOf[logical.Filter] &&
         join.joinType == Inner) => join.condition.toSeq
-
-//      case logical.Join(logical.Filter(cond1, MatchLocalRelation(tbl1, _)),
-//      logical.Filter(cond2, MatchLocalRelation(tbl2, _)),
-//      Inner,
-//      Some(cond3)) =>
-//        Seq(cond3)
     }
-
     compareExpressions(correctAnswer, extracted)
   }
 }

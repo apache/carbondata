@@ -369,7 +369,7 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     )
   })
 
-  ignore("CARBONDATA-60-union-defect")({
+  test("CARBONDATA-60-union-defect")({
     sql("drop table if exists carbonunion")
     import sqlContext.implicits._
     val df = sqlContext.sparkContext
@@ -392,7 +392,7 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonunion")
   })
 
-  ignore("select b.intField from carbon_table a join carbon_table b on a.intField=b.intField")({
+  test("select b.intField from carbon_table a join carbon_table b on a.intField=b.intField")({
     checkAnswer(
       sql("select b.intField from carbon_table a join carbon_table b on a.intField=b.intField"),
       sql("select b.intField from " +

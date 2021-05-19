@@ -33,7 +33,7 @@ class ReusedExchangeTestSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists t_reused_exchange")
   }
 
-  ignore("test ReusedExchange") {
+  test("test ReusedExchange") {
     sql("create table t_reused_exchange(c1 int, c2 string) using carbondata")
     checkExistence(
       sql(
