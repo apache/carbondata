@@ -28,7 +28,8 @@ import org.apache.spark.sql.execution.command.management.RefreshCarbonTableComma
 class CarbonExtensionSpark2SqlParser extends CarbonSpark2SqlParser {
 
   override protected lazy val extendedSparkSyntax: Parser[LogicalPlan] =
-    loadDataNew | alterTableAddColumns | explainPlan | refreshTable
+    loadDataNew | alterTableAddColumns | explainPlan | refreshTable |
+    alterTableColumnRenameAndModifyDataType
 
   /**
    * alter table add columns with TBLPROPERTIES

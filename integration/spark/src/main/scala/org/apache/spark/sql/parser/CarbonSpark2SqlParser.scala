@@ -36,6 +36,7 @@ import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnC
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDescribeColumnCommand, CarbonDescribeShortCommand}
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
+import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
 import org.apache.spark.sql.types.{CharType, DataType, DataTypes, StructField}
 import org.apache.spark.sql.util.CarbonException
@@ -604,9 +605,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
 
   protected lazy val alterTableColumnRenameAndModifyDataType: Parser[LogicalPlan] =
-    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~
-    ident ~ opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
-      case dbName ~ table ~ change ~ columnName ~ columnNameCopy ~ dataType ~ values =>
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (CHANGE ~> COLUMN ~> ident) ~ ident ~ ident ~
+    opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
+      case dbName ~ table ~ columnName ~ columnNameCopy ~ dataType ~
+           values if CarbonPlanHelper.isCarbonTable(TableIdentifier(table, dbName)) =>
         CarbonSparkSqlParserUtil.alterTableColumnRenameAndModifyDataType(
           dbName, table, columnName, columnNameCopy, dataType, values)
     }

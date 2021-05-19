@@ -68,6 +68,8 @@ object DDLStrategy extends SparkStrategy {
       case changeColumn: AlterTableChangeColumnCommand
         if isCarbonTable(changeColumn.tableName) =>
         ExecutedCommandExec(DDLHelper.changeColumn(changeColumn, sparkSession)) :: Nil
+      case changeColumn: CarbonAlterTableColRenameDataTypeChangeCommand =>
+        ExecutedCommandExec(changeColumn) :: Nil
       case colRenameDataTypeChange: CarbonAlterTableColRenameDataTypeChangeCommand =>
         CarbonPlanHelper.changeColumn(colRenameDataTypeChange, sparkSession)
       case addColumns: AlterTableAddColumnsCommand
