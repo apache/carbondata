@@ -532,21 +532,18 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | AS 'bloomfilter'
          | properties( 'BLOOM_SIZE'='640000')
       """.stripMargin)
-    // TODO: Fix after V2 implementation
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
-      val changeDataTypeException: MalformedCarbonCommandException =
-        intercept[MalformedCarbonCommandException] {
-          sql(s"ALTER TABLE $normalTable CHANGE id id bigint")
-        }
-      assert(changeDataTypeException.getMessage.contains(
-        "alter table change datatype is not supported for index"))
-      val columnRenameException: MalformedCarbonCommandException =
-        intercept[MalformedCarbonCommandException] {
-          sql(s"ALTER TABLE $normalTable CHANGE id test int")
-        }
-      assert(columnRenameException.getMessage.contains(
-        "alter table column rename is not supported for index"))
-    }
+    val changeDataTypeException: MalformedCarbonCommandException =
+      intercept[MalformedCarbonCommandException] {
+        sql(s"ALTER TABLE $normalTable CHANGE id id bigint")
+      }
+    assert(changeDataTypeException.getMessage.contains(
+      "alter table change datatype is not supported for index"))
+    val columnRenameException: MalformedCarbonCommandException =
+      intercept[MalformedCarbonCommandException] {
+        sql(s"ALTER TABLE $normalTable CHANGE id test int")
+      }
+    assert(columnRenameException.getMessage.contains(
+      "alter table column rename is not supported for index"))
   }
 
   test("test drop index columns for bloomfilter index") {

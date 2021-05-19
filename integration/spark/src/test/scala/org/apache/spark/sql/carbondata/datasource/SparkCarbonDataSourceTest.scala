@@ -1348,7 +1348,6 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test write using multi subfolder") {
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
       import sqlContext.sparkSession.implicits._
       val df = sqlContext.sparkContext.parallelize(1 to 10)
@@ -1368,7 +1367,6 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
         .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/test_folder"))
       assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
-    }
   }
 
   test("test read using old data") {
@@ -1385,7 +1383,6 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
   test("test read using different sort order data") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "test")
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       sql("drop table if exists old_comp")
       FileFactory.deleteAllFilesOfDir(new File(warehouse + "/testdb"))
       val store = new StoreCreator(warehouse, s"$projectPath/hadoop/src/test/resources/data.csv")
@@ -1427,7 +1424,6 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       assert(sql("select * from old_comp1 ").count() == 4000)
       sql("drop table if exists old_comp1")
       FileFactory.deleteAllFilesOfDir(new File(warehouse + "/testdb"))
-    }
   }
 
 

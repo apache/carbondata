@@ -605,7 +605,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
 
   protected lazy val alterTableColumnRenameAndModifyDataType: Parser[LogicalPlan] =
-    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (CHANGE ~> COLUMN ~> ident) ~ ident ~ ident ~
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (CHANGE ~> ident) ~ ident ~ ident ~
     opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
       case dbName ~ table ~ columnName ~ columnNameCopy ~ dataType ~
            values if CarbonPlanHelper.isCarbonTable(TableIdentifier(table, dbName)) =>

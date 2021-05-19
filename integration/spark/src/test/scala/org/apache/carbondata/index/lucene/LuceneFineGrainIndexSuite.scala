@@ -627,8 +627,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | AS 'lucene'
       """.stripMargin)
 
-    // TODO: Fix after V2 implementation
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       val ex1 = intercept[MalformedCarbonCommandException] {
         sql("alter table index_test7 rename to index_test5")
       }
@@ -664,7 +662,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
         sql("alter table index_test7 change id test int")
       }
       assert(ex7.getMessage.contains("alter table column rename is not supported"))
-    }
   }
 
   ignore("test lucene fine grain multiple index on table") {
