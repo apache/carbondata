@@ -681,10 +681,14 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql("alter table addSegCar add segment " +
         s"options('path'='${table1.location}', 'format'='parquet')")
-    intercept[Exception] {
+    assert(intercept[Exception] {
       sql("alter table addSegCar add segment " +
           s"options('path'='${table2.location}', 'format'='parquet')")
-    }
+    }.getMessage
+      .contains(
+        "Schema is not same. Table schema is : StructType(StructField(a,IntegerType,true), " +
+        "StructField(b,StringType,true)) and segment schema is : StructType(StructField(a," +
+        "IntegerType,false))"))
     sql("alter table addSegCar add segment " +
         s"options('path'='${table3.location}', 'format'='parquet')")
 

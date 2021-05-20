@@ -355,15 +355,25 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("desc restructure"), true, "intfield", "bigint")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(11,3)")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
-    intercept[ProcessMetaDataException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,2)")
-    }
-    intercept[ProcessMetaDataException] {
+    }.getMessage
+      .contains(
+        "Alter table data type change operation " +
+        "failed: Given column decimalfield cannot be modified. Specified precision value 12 " +
+        "should be greater than current precision value 12"))
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,1)")
-    }
-    intercept[ProcessMetaDataException] {
+    }.getMessage
+      .contains(
+        "Alter table data type change operation failed: Given column decimalfield cannot be " +
+        "modified. Specified scale value 1 should be greater or equal to current scale value 3"))
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,5)")
-    }
+    }.getMessage
+      .contains(
+        "Alter table data type change operation failed: Given column decimalfield cannot be " +
+        "modified. Specified precision and scale values will lead to data loss"))
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,4)")
   }
 
@@ -775,9 +785,12 @@ test("test alter command for boolean data type with correct default measure valu
         s"('sort_columns'='')")
 
     // This throws exception as SORT_COLUMNS is empty
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='local_sort')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: Cannot set SORT_SCOPE as local_sort when " +
+        "table has no SORT_COLUMNS"))
 
     // Even if we change the SORT_SCOPE to LOCAL_SORT
     // the SORT_SCOPE should remain to NO_SORT
@@ -803,9 +816,12 @@ test("test alter command for boolean data type with correct default measure valu
     sql("DROP TABLE IF EXISTS t1")
     sql(s"CREATE TABLE t1(age int, name string) STORED AS carbondata TBLPROPERTIES" +
         s"('sort_scope'='local_sort', 'sort_columns'='age')")
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='fake_sort')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: Invalid SORT_SCOPE fake_sort, valid " +
+        "SORT_SCOPE are 'NO_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT"))
 
     // SORT_SCOPE should remain unchanged
     assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("LOCAL_SORT"))

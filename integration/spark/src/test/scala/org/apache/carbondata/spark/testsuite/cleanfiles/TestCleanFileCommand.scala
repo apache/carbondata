@@ -239,9 +239,9 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql(s"""select count(*) from cleantest"""),
       Seq(Row(4)))
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
-    }
+    }.getMessage.contains("Clean files with force operation not permitted by default"))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
@@ -282,9 +282,9 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     list = getFileCountInTrashFolder(trashFolderPath)
     assert(list == 4)
 
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()
-    }
+    }.getMessage.contains("Clean files with force operation not permitted by default"))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").show()

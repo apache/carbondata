@@ -60,28 +60,28 @@ class GeoQueryTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterE
     loadData()
     createPolygonTable
     // verify empty data on polygon table
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql(s"select longitude, latitude from $geoTable where IN_POLYGON_LIST(" +
           s"'select polygon from $polygonTable','OR')").collect()
-    }.getMessage.contains("polygon list need at least 2 polygons, really has 0")
+    }.getMessage.contains("polygon list need at least 2 polygons, really has 0"))
     sql(s"insert into $polygonTable select 'POLYGON ((120.176433 30.327431,120.171283 30.322245," +
         s"120.181411 30.314540, 120.190509 30.321653,120.185188 30.329358,120.176433 30.327431))" +
         s"','abc','1'")
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql(s"select longitude, latitude from $geoTable where IN_POLYGON_LIST(" +
           s"'select polygon from $polygonTable','OR')").collect()
-    }.getMessage.contains("polygon list need at least 2 polygons, really has 1")
+    }.getMessage.contains("polygon list need at least 2 polygons, really has 1"))
     sql(s"insert into $polygonTable select 'POLYGON ((120.176433 30.327431,120.171283 30.322245," +
         s"120.181411 30.314540, 120.190509 30.321653,120.185188 30.329358,120.176433 30.327431))" +
         s"','abc','1'")
-    intercept[UnsupportedOperationException] {
+    assert(intercept[UnsupportedOperationException] {
       sql(s"select longitude, latitude from $geoTable where IN_POLYGON_LIST(" +
           s"'select polygon,poiId from $polygonTable','OR')").collect()
-    }.getMessage.contains("More than one column exists in the query for Polygon List Udf")
-    intercept[RuntimeException] {
+    }.getMessage.contains("More than one column exists in the query for Polygon List Udf"))
+    assert(intercept[RuntimeException] {
       sql(s"select longitude, latitude from $geoTable where IN_POLYGON_LIST(" +
           s"'select poiId from $polygonTable','OR')").collect()
-    }.getMessage.contains("polygon list need at least 2 polygons, really has 0")
+    }.getMessage.contains("polygon list need at least 2 polygons, really has 0"))
   }
 
   test("test polygon line udf with select query as input") {

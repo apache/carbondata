@@ -263,23 +263,25 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
   test("test si creation with struct and map type") {
     sql("create table complextable (country struct<b:string>, name string, id Map<string, string>, arr1 array<string>, arr2 array<string>) stored as carbondata")
-    intercept[RuntimeException] {
+    val errMsg = "one or more specified index cols either does not exist or not a key column or " +
+                 "complex column in table"
+    assert(intercept[RuntimeException] {
       sql("create index index_1 on table complextable(country) as 'carbondata'")
-    }
-    intercept[RuntimeException] {
+    }.getMessage.contains(errMsg))
+    assert(intercept[RuntimeException] {
       sql("create index index_1 on table complextable(id) as 'carbondata'")
-    }
-    intercept[RuntimeException] {
+    }.getMessage.contains(errMsg))
+    assert(intercept[RuntimeException] {
       sql("create index index_1 on table complextable(arr1, arr2) as 'carbondata'")
-    }
+    }.getMessage.contains("SI creation with more than one complex type is not supported yet"))
   }
 
   test("test si creation with array") {
     sql("create table complextable (id int, name string, country array<array<string>>, add array<int>) stored as carbondata")
     sql("drop index if exists index_1 on complextable")
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("create index index_1 on table complextable(country) as 'carbondata'")
-    }.getMessage.contains("SI creation with nested array complex type is not supported yet")
+    }.getMessage.contains("SI creation with nested array complex type is not supported yet"))
   }
 
   test("test complex with null and empty data") {
