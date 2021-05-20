@@ -55,14 +55,14 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
          | STORED AS carbondata
        """.stripMargin)
 
-    val ex = intercept[ProcessMetaDataException] {
+    assert(intercept[ProcessMetaDataException] {
       sql(
         s"""
            | alter TABLE carbon_table add columns(
            | bb char(10)
             )
        """.stripMargin)
-    }
+    }.getMessage.contains("Alter table add operation failed: Duplicate column found with name: bb"))
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 

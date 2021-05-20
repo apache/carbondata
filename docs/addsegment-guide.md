@@ -17,19 +17,19 @@
 
 # Heterogeneous format segments in carbondata
 
-###Background
+### Background
 In the industry, many users already adopted to data with different formats like ORC, Parquet, JSON, CSV etc.,  
 If users want to migrate to Carbondata for better performance or for better features then there is no direct way. 
 All the existing data needs to be converted to Carbondata to migrate.  
 This solution works out if the existing data is less, what if the existing data is more?   
 Heterogeneous format segments aims to solve this problem by avoiding data conversion.
 
-###Add segment with path and format
+### Add segment with path and format
 Users can add the existing data as a segment to the carbon table provided the schema of the data
  and the carbon table should be the same. 
 
 ```
-Alter table table_name add segment options (‘path’= 'hdfs://usr/oldtable,'format'=parquet)
+alter table table_name add segment options ('path'= 'hdfs://usr/oldtable','format'='parquet')
 ```
 In the above command user can add the existing data to the carbon table as a new segment and also
  can provide the data format.
@@ -37,21 +37,21 @@ In the above command user can add the existing data to the carbon table as a new
 During add segment, it will infer the schema from data and validates the schema against the carbon table. 
 If the schema doesn’t match it throws an exception.
 
-###Changes to tablestatus file
-Carbon adds the new segment by adding segment information to tablestatus file. In order to add the path and format information to tablestatus, we are going to add `segmentPath`  and ‘format’  to the tablestatus file. 
+### Changes to tablestatus file
+Carbon adds the new segment by adding segment information to tablestatus file. In order to add the path and format information to tablestatus, we are going to add `segmentPath`  and `format`  to the tablestatus file. 
 And any extra `options` will be added to the segment file.
 
 
-###Changes to Spark Integration
+### Changes to Spark Integration
 During select query carbon reads data through RDD which is created by
   CarbonDatasourceHadoopRelation.buildScan, This RDD reads data from physical carbondata files and provides data to spark query plan.
 To support multiple formats per segment basis we can create multiple RDD using the existing Spark
  file format scan class FileSourceScanExec . This class can generate scan RDD for all spark supported formats. We can union all these multi-format RDD and create a single RDD and provide it to spark query plan.
 
-Note: This integration will be clean as we use the sparks optimized reading, pruning and it
+**Note**: This integration will be clean as we use the sparks optimized reading, pruning and it
  involves whole codegen and vector processing with unsafe support.
 
-###Changes to Presto Integration
+### Changes to Presto Integration
 CarbondataSplitManager can create the splits for carbon and as well as for other formats and 
  choose the page source as per the split.  
 

@@ -237,12 +237,12 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into t1 select 1, 'Andy'")
     sql("create table t2 (age int, name string) STORED AS carbondata")
     sql("insert into t2 select 3, 'Andy'")
-    intercept[AnalysisException] {
+    assert(intercept[AnalysisException] {
       sql("update t1 set (age) = " +
           "(select t2.age from t2 where t2.name = t1.name limit 1) " +
           "where t1.age = 1 ").collect()
-    }.getMessage.contains("Update subquery has join with maintable " +
-                          "and limit leads to multiple join for each limit for each row")
+    }.getMessage.contains("Update subquery has join with main table " +
+                          "and limit leads to multiple join for each limit for each row"))
     sql("drop table if exists t1")
     sql("drop table if exists t2")
   }
@@ -297,11 +297,11 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into t2 select 2, 'Andy'")
     sql("insert into t2 select 1, 'aa'")
     sql("insert into t2 select 3, 'aa'")
-    intercept[AnalysisException] {
+    assert(intercept[AnalysisException] {
       sql("update t1 set (age) = " +
           "(select t2.age from t2 where t2.name = 'Andy') where t1.age = 1 ").collect()
     }.getMessage.contains("update cannot be supported for 1 to N mapping, " +
-                          "as more than one value present for the update key")
+                          "as more than one value present for the update key"))
     // test join scenario
     val exception1 = intercept[RuntimeException] {
       sql("update t1 set (age) = (select t2.age from t2 where t2.name = t1.name) ").collect()
@@ -555,9 +555,9 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("update carbon table-error[no set columns") {
-    intercept[Exception] {
+    assert(intercept[Exception] {
       sql("""update iud.dest d set () = ()""").collect()
-    }
+    }.getMessage.contains("At least one source column has to be specified"))
   }
 
   test("update carbon table-error[no set columns with updated column") {

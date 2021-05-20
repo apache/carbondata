@@ -443,9 +443,9 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(new File(writerPath).exists())
     cleanTestData()
 
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       buildTestDataWithSortColumns(List(""))
-    }
+    }.getMessage.contains("column:  specified in sort columns does not exist in schema"))
 
     assert(!(new File(writerPath).exists()))
     cleanTestData()

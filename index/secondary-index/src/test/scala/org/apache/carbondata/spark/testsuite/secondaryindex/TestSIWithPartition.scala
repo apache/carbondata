@@ -60,9 +60,9 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
 
   test("Testing SI on partition column") {
     sql("drop index if exists indextable1 on uniqdata1")
-    intercept[UnsupportedOperationException] {
+    assert(intercept[UnsupportedOperationException] {
       sql("create index indextable1 on table uniqdata1 (ACTIVE_EMUI_VERSION) AS 'carbondata'")
-    }
+    }.getMessage.contains("Secondary Index cannot be created on a partition column"))
   }
 
   test("Testing SI without partition column") {
@@ -328,9 +328,9 @@ class TestSIWithPartition extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(
       "select count(*) from uniqdata1 where CUST_ID='9000' and ACTIVE_EMUI_VERSION = 'abc'"),
       Seq(Row(4)))
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("update uniqdata1 d set (d.CUST_ID) = ('8000')  where d.CUST_ID = '9000'").collect()
-    }
+    }.getMessage.contains("Update is not permitted on table that contains secondary index"))
   }
 
   test("Testing SI on partition table with rename") {

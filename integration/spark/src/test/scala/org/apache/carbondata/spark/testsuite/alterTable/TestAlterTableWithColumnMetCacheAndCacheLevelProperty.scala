@@ -52,9 +52,12 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty
   }
 
   test("validate column_meta_cache with only empty spaces - alter_column_meta_cache_01") {
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='    ')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: Invalid value: Empty column names for the " +
+        "option(s)"))
   }
 
   test("validate the property with characters in different cases - alter_column_meta_cache_02") {
@@ -64,16 +67,22 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty
 
   test("validate column_meta_cache with intermediate empty string between columns " +
        "- alter_column_meta_cache_03") {
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2,  ,c3')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: Invalid value: Empty column names for the " +
+        "option(s)"))
   }
 
   test("validate column_meta_cache with combination of valid and invalid columns " +
        "- alter_column_meta_cache_04") {
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2,c10')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: Column c10 does not exists in the table " +
+        "alter_column_meta_cache"))
   }
 
   test("validate column_meta_cache for dimensions and measures - alter_column_meta_cache_05") {
@@ -85,21 +94,28 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty
   }
 
   test("validate for duplicate column names - alter_column_meta_cache_06") {
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2,c2,c3')")
-    }
+    }.getMessage
+      .contains("Alter table newProperties operation failed: Duplicate column name found : c2"))
   }
 
   test("validate column_meta_cache for complex struct type - alter_column_meta_cache_07") {
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c5')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: c5 is a complex type column and complex type" +
+        " is not allowed for the option(s)"))
   }
 
   test("validate column_meta_cache for complex array type - alter_column_meta_cache_08") {
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c5,c2')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: c5 is a complex type column and complex type" +
+        " is not allowed for the option(s): column_meta_cache"))
   }
 
   test("validate column_meta_cache with empty value - alter_column_meta_cache_09") {
@@ -134,15 +150,21 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty
   }
 
   test("validate cache_level with only empty spaces - ALTER_CACHE_LEVEL_01") {
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("Alter table cache_level SET TBLPROPERTIES('cache_level'='    ')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: Invalid value: Empty column names for the " +
+        "option(s)"))
   }
 
   test("validate cache_level with invalid values - ALTER_CACHE_LEVEL_02") {
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
       sql("Alter table cache_level SET TBLPROPERTIES('cache_level'='xyz,abc')")
-    }
+    }.getMessage
+      .contains(
+        "Alter table newProperties operation failed: Invalid value: Allowed values for " +
+        "cache_level are BLOCK AND BLOCKLET"))
   }
 
   test("validate cache_level with property in different cases - ALTER_CACHE_LEVEL_03") {
