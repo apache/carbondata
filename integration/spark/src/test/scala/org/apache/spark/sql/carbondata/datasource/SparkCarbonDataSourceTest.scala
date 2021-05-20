@@ -1422,8 +1422,9 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       assert(sql("select * from old_comp ").count() == 4000)
       sql("drop table if exists old_comp")
 
-      sql(s"create table old_comp1 using carbon options" +
-          s"(path='$warehouse/testdb/testtable/Fact/Part0/')")
+    sql(s"create table old_comp1(id int, date string, country string, name string, phonetype " +
+      s"string, serialname string, salary int) using carbon options" +
+      s"(path='$warehouse/testdb/testtable/Fact/Part0/')")
       assert(sql("select * from old_comp1 where country='china'").count() == 3396)
       assert(sql("select * from old_comp1 ").count() == 4000)
       sql("drop table if exists old_comp1")
