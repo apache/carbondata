@@ -448,7 +448,8 @@ object CarbonSparkSqlParserUtil {
       columnName: String,
       columnNameCopy: String,
       dataType: String,
-      values: Option[List[(Int, Int)]]
+      values: Option[List[(Int, Int)]],
+      comment: Option[String]
   ): CarbonAlterTableColRenameDataTypeChangeCommand = {
     val isColumnRename = !columnName.equalsIgnoreCase(columnNameCopy)
     val alterTableColRenameAndDataTypeChangeModel =
@@ -459,7 +460,8 @@ object CarbonSparkSqlParserUtil {
         table.toLowerCase,
         columnName.toLowerCase,
         columnNameCopy.toLowerCase,
-        isColumnRename)
+        isColumnRename,
+        comment)
     CarbonAlterTableColRenameDataTypeChangeCommand(alterTableColRenameAndDataTypeChangeModel)
   }
 

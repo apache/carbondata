@@ -164,6 +164,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val MAP = carbonKeyWord("MAP")
   protected val SMALLINT = carbonKeyWord("SMALLINT")
   protected val CHANGE = carbonKeyWord("CHANGE")
+  protected val COMMENT = carbonKeyWord("COMMENT")
   protected val TBLPROPERTIES = carbonKeyWord("TBLPROPERTIES")
   protected val ID = carbonKeyWord("ID")
   protected val ON = carbonKeyWord("ON")
