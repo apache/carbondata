@@ -17,8 +17,9 @@
 
 package org.apache.spark.sql.parser
 
-import scala.collection.JavaConverters.seqAsJavaListConverter
+import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
@@ -257,6 +258,25 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (SET ~> "(" ~> repsep(element, ",") <~ ")") ~
     ("=" ~> restInput) <~ opt(";") ^^ {
       case tab ~ columns ~ rest =>
+        // If update is received for complex data types then throw exception
+        var finalColumns = List.empty[String]
+        var updateColumns = new ListBuffer[String]()
+        columns.foreach { column =>
+          if (column.contains('.')) {
+            val columnFullName = column.split('.')
+            if (columnFullName.size >= 3) {
+              throw new UnsupportedOperationException("Unsupported operation on Complex data types")
+            } else if ((tab._3.isDefined && tab._3.get.equals(columnFullName(0)))
+                || tab._4.table.equals(columnFullName(0))) {
+              updateColumns += columnFullName(1)
+            } else {
+              throw new UnsupportedOperationException("Unsupported operation on Complex data types")
+            }
+          } else {
+            updateColumns += column
+          }
+        }
+        finalColumns = updateColumns.toList
         val (sel, where) = splitQuery(rest)
         val selectPattern = """^\s*select\s+""".r
         // In case of "update = (subquery) where something"
@@ -349,9 +369,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             (sel, updateRelation(tab._1, tab._2, tab._4, tab._3))
           }
         val rel = tab._3 match {
-          case Some(a) => UpdateTable(relation, columns, selectStmt, Some(tab._3.get), where)
+          case Some(a) => UpdateTable(relation, finalColumns, selectStmt, Some(tab._3.get),
+            where)
           case None => UpdateTable(relation,
-            columns,
+            finalColumns,
             selectStmt,
             Some(tab._1.tableIdentifier.table),
             where)
@@ -377,7 +398,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val element: Parser[String] =
     (ident <~ ".").? ~ ident ^^ {
-      case table ~ column => column.toLowerCase
+      case table ~ column =>
+        if (table.isDefined) {
+          table.get.toLowerCase + "." + column.toLowerCase
+        } else {
+          column.toLowerCase
+        }
     }
 
   protected lazy val table: Parser[UnresolvedRelation] = {
