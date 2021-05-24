@@ -757,12 +757,80 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(id int,a struct<b:int,c:int>,d array<int>) STORED AS carbondata")
     sql("insert into test values(1, named_struct('b', 2, 'c', 3), array(4))")
-    val structException = intercept[UnsupportedOperationException](
+    val structException = intercept[AnalysisException](
     sql("update test set(a.b)=(4) where id=1").collect())
-    assertResult("Unsupported operation on Complex data type")(structException.getMessage)
+    assert(structException.getMessage().contains("Unsupported operation on Complex data type"))
     val arrayException = intercept[UnsupportedOperationException](
     sql("update test set(a)=(4) where id=1").collect())
     assertResult("Unsupported operation on Complex data type")(arrayException.getMessage)
+  }
+
+  test("check update operation on primitive data types when complex type present in table which " +
+       "has child name equal to primitive data types") {
+    sql("drop table if exists update_complex")
+    sql("create table update_complex (a int, b string, struct1 STRUCT<a:int, c:string>) " +
+        "stored as carbondata")
+    sql("insert into update_complex select 1,'c', named_struct('a',4,'b','d')")
+    sql("update update_complex set (a, b)=(4, 'y')")
+    checkAnswer(sql("select a,b from update_complex"),
+      Seq(Row(4, "y")))
+    sql("update update_complex m set (m.a, m.b)=(5, 'z')")
+    checkAnswer(sql("select a,b from update_complex"),
+      Seq(Row(5, "z")))
+    sql("update update_complex set (update_complex.a, update_complex.b)=(6, 'x')")
+    checkAnswer(sql("select a,b from update_complex"),
+      Seq(Row(6, "x")))
+    sql("update update_complex set (Update_Complex.B)=('g')")
+    checkAnswer(sql("select B from Update_Complex"),
+      Seq(Row("g")))
+    sql("drop table if exists update_complex")
+  }
+
+  test("check update operation on primitive data types when complex type present") {
+    sql("drop table if exists update_complex")
+    sql("create table update_complex (d int, b string, struct1 STRUCT<a:int, b:string>) " +
+        "stored as carbondata")
+    sql("insert into update_complex select 1,'c', named_struct('a',4,'b','d')")
+    sql("update update_complex set (d)=(4)")
+    checkAnswer(sql("select d from update_complex"),
+      Seq(Row(4)))
+    sql("drop table if exists update_complex")
+  }
+
+  test("check update operation on primitive data types when complex type present with alias") {
+    sql("drop table if exists update_complex")
+    sql("create table update_complex (d int, e int, b string, struct1 STRUCT<a:int, b:string>) " +
+        "stored as carbondata")
+    sql("insert into update_complex select 1, 2, 'c', named_struct('a',4,'b','d')")
+    sql("update update_complex m set (d, e)=(4, 4)")
+    checkAnswer(sql("select d,e from update_complex"),
+      Seq(Row(4, 4)))
+    sql("update update_complex m set (m.d, e)=(5, 5)")
+    checkAnswer(sql("select d,e from update_complex"),
+      Seq(Row(5, 5)))
+    sql("update update_complex m set (d, m.e)=(6, 6)")
+    checkAnswer(sql("select d,e from update_complex"),
+      Seq(Row(6, 6)))
+    sql("update update_complex m set (m.d, m.e)=(7, 7)")
+    checkAnswer(sql("select d,e from update_complex"),
+      Seq(Row(7, 7)))
+    sql("drop table if exists update_complex")
+  }
+
+  test("check update operation on complex columns with alias") {
+    sql("DROP TABLE IF EXISTS update_complex")
+    sql("create table update_complex(id int,a struct<b:int,c:int>,d array<int>) STORED AS carbondata")
+    sql("insert into update_complex values(1, named_struct('b', 2, 'c', 3), array(4))")
+    var exception1 = intercept[UnsupportedOperationException](
+      sql("update update_complex m set(a)=(4) where id=1").collect())
+    assert(exception1.getMessage().contains("Unsupported operation on Complex data type"))
+    val exception2 = intercept[AnalysisException](
+      sql("update update_complex m set(a.b)=(4) where id=1").collect())
+    assert(exception2.getMessage().contains("Unsupported operation on Complex data type"))
+    exception1 = intercept[UnsupportedOperationException](
+      sql("update update_complex set(update_complex.a)=(5) where id=1").collect())
+    assert(exception1.getMessage().contains("Unsupported operation on Complex data type"))
+    sql("DROP TABLE IF EXISTS update_complex")
   }
 
   test("test block partition column") {

@@ -41,14 +41,6 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
           case Project(pList, child) if !isTransformed =>
             var (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
               .splitAt(pList.size - cols.size)
-            // check complex column
-            cols.foreach { col =>
-              val complexExists = "\"name\":\"" + col + "\""
-              if (dest.exists(m => m.dataType.json.contains(complexExists))) {
-                throw new UnsupportedOperationException(
-                  "Unsupported operation on Complex data type")
-              }
-            }
             // check updated columns exists in table
             val diff = cols.diff(dest.map(_.name.toLowerCase))
             if (diff.nonEmpty) {
