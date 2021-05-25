@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -463,7 +464,11 @@ public final class DataTypeUtil {
     long timeValue;
     if (Boolean.parseBoolean(CarbonProperties.getInstance().getProperty(CarbonCommonConstants
         .CARBON_SPARK_VERSION_SPARK3))) {
-      return createTimeInstant(dimensionValue, dateFormat);
+      try {
+        return createTimeInstant(dimensionValue, dateFormat);
+      } catch (DateTimeParseException e) {
+        throw new NumberFormatException(e.getMessage());
+      }
     }
     try {
       if (null != dateFormat && !dateFormat.trim().isEmpty()) {
