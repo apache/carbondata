@@ -52,10 +52,10 @@ import org.apache.commons.lang3.ArrayUtils;
  * Utility class for restructuring
  */
 public class RestructureUtil {
-  // if table column is of complex type- this look up stores the column id of the parent and their
-  // children. This helps to determine the existence of incoming query column by matching based
-  // on id.
-  private static Map<String, String> existingTableColumnIDMap = new HashMap<>();
+  // if table column is of complex type- this look up stores the column id of the parent
+  // (as well as children) [tableColumn_id -> tableColumn_name]. This helps to determine the
+  // existence of incoming query column by matching based on id.
+  private static Map<String, String> existingTableColumnIDMap;
 
   /**
    * Below method will be used to get the updated query dimension update
@@ -237,10 +237,13 @@ public class RestructureUtil {
         carbonDimension =
             CarbonTable.getCarbonDimension(tempColName.toString(), childrenDimensions);
         if (carbonDimension == null) {
-          if (existingTableColumnIDMap.containsKey(queryColumn.getColumnId())
-              && !existingTableColumnIDMap.get(queryColumn.getColumnId())
-              .contains(queryColumn.getColumnId())) {
-            return true;
+          // Avoid returning true in case of SDK as the column name contains the id.
+          if (existingTableColumnIDMap != null && existingTableColumnIDMap
+              .containsKey(queryColumn.getColumnId())) {
+            String columnName = existingTableColumnIDMap.get(queryColumn.getColumnId());
+            if (columnName != null && !columnName.contains(queryColumn.getColumnId())) {
+              return true;
+            }
           }
         } else {
           // In case of SDK the columnId and columnName is same and this check will ensure for

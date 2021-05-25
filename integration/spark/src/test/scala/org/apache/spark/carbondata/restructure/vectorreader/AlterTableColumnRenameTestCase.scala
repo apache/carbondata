@@ -55,7 +55,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   test("Rename more than one column at a time in one operation") {
     sql("drop table if exists test_rename")
     sql("CREATE TABLE test_rename (str struct<a:struct<b:int, d:int>, c:int>) STORED AS carbondata")
-    sql("insert into test_rename values(named_struct('a11',named_struct('b2',12,'d',12), 'c', 12))")
+    sql("insert into test_rename values(named_struct('a',named_struct('b',12,'d',12), 'c', 12))")
     sql("alter table test_rename change str str22 struct<a11:struct<b2:int, d:int>, c:int>")
     sql("insert into test_rename values(named_struct('a11',named_struct('b2',24,'d',24), 'c', 24))")
 
@@ -65,14 +65,12 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     val ex1 = intercept[AnalysisException] {
       sql("select str from test_rename").show(false)
     }
-    assert(ex1.getMessage
-      .contains("cannot resolve '`str`' given input columns: [test_rename.str22]"))
+    assert(ex1.getMessage.contains("cannot resolve '`str`'"))
 
     val ex2 = intercept[AnalysisException] {
       sql("select str.a from test_rename").show(false)
     }
-    assert(ex2.getMessage
-      .contains("cannot resolve '`str.a`' given input columns: [test_rename.str22]"))
+    assert(ex2.getMessage.contains("cannot resolve '`str.a`'"))
 
     // check un-altered columns
     val rows1 = sql("select str22.c from test_rename").collect()
@@ -81,7 +79,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(rows2.sameElements(Array(Row(12), Row(24))))
   }
 
-  test("rename complex columns with invalid structure/duplicate names/Map type") {
+  test("rename complex columns with invalid structure/duplicate-names/Map-type") {
     sql("drop table if exists test_rename")
     sql(
       "CREATE TABLE test_rename (str struct<a:int,b:long>, str2 struct<a:int,b:long>, map1 " +
@@ -92,22 +90,22 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     }
     assert(ex1.getMessage
       .contains(
-        "column rename operation failed: because datatypes of complex children cannot be altered"))
+        "column rename operation failed: Altering datatypes of any child column is not supported"))
 
     val ex2 = intercept[ProcessMetaDataException] {
       sql("alter table test_rename change str str struct<a:int,b:long,c:int>")
     }
     assert(ex2.getMessage
       .contains(
-        "column rename operation failed: because number of children of old and new complex " +
-        "columns are not the same"))
+        "column rename operation failed: Number of children of old and new complex columns are " +
+        "not the same"))
 
     val ex3 = intercept[ProcessMetaDataException] {
       sql("alter table test_rename change str str int")
     }
     assert(ex3.getMessage
       .contains(
-        "column rename operation failed: because old and new complex columns are not compatible " +
+        "column rename operation failed: Old and new complex columns are not compatible " +
         "in structure"))
 
     val ex4 = intercept[ProcessMetaDataException] {
@@ -115,7 +113,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     }
     assert(ex4.getMessage
       .contains(
-        "column rename operation failed: because duplicate columns are present"))
+        "column rename operation failed: Duplicate columns are present"))
 
     val ex5 = intercept[ProcessMetaDataException] {
       sql("alter table test_rename change str str2 struct<a:int,b:long>")
@@ -128,14 +126,33 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
       sql("alter table test_rename change map1 map2 map<string, struct<a:int>>")
     }
     assert(ex6.getMessage
-      .contains("rename operation failed: cannot alter map type column"))
+      .contains("rename operation failed: Alter rename is unsupported for Map datatype column"))
 
     val ex7 = intercept[ProcessMetaDataException] {
       sql("alter table test_rename change str3 str33 struct<a:int, bc:map<string, string>>")
     }
     assert(ex7.getMessage
       .contains(
-        "rename operation failed: cannot alter complex structure that includes map type column"))
+        "rename operation failed: Cannot alter complex structure that includes map type column"))
+
+    val ex8 = intercept[ProcessMetaDataException] {
+      sql("alter table test_rename change str2 str22 struct<>")
+    }
+    assert(ex8.getMessage
+      .contains(
+        "rename operation failed: Either the old or the new dimension is null"))
+
+    // ensure all failed rename operations have been reverted to original state
+    val describe = sql("desc table test_rename")
+    assert(describe.collect().size == 4)
+    assertResult(1)(describe.filter(
+      "col_name='str' and data_type = 'struct<a:int,b:bigint>'").count())
+    assertResult(1)(describe.filter(
+      "col_name='str2' and data_type = 'struct<a:int,b:bigint>'").count())
+    assertResult(1)(describe.filter(
+      "col_name='map1' and data_type = 'map<string,string>'").count())
+    assertResult(1)(describe.filter(
+      "col_name='str3' and data_type = 'struct<a:int,b:map<string,string>>'").count())
   }
 
   def checkAnswerUtil1(df1: DataFrame, df2: DataFrame, df3: DataFrame) {
@@ -158,7 +175,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
         "named_struct('a', named_struct('b', 2)), named_struct('a', named_struct('b', " +
         "named_struct('c', 2))), 1)")
 
-    // rename parent column from str2 to str22 and read old rows
+    // Operation 1: rename parent column from str2 to str22 and read old rows
     sql("alter table test_rename change str2 str22 struct<a:struct<b:int>>")
     var df1 = sql("select str22 from test_rename")
     var df2 = sql("select str22.a from test_rename")
@@ -166,7 +183,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(df1.collect().size == 1 && df2.collect().size == 1 && df3.collect().size == 1)
     checkAnswerUtil1(df1, df2, df3)
 
-    // rename child column from a to a11
+    // Operation 2: rename child column from a to a11
     sql("alter table test_rename change str22 str22 struct<a11:struct<b:int>>")
     df1 = sql("select str22 from test_rename")
     df2 = sql("select str22.a11 from test_rename")
@@ -174,7 +191,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(df1.collect().size == 1 && df2.collect().size == 1 && df3.collect().size == 1)
     checkAnswerUtil1(df1, df2, df3)
 
-    // rename parent column from str22 to str33
+    // Operation 3: rename parent column from str22 to str33
     sql("alter table test_rename change str22 str33 struct<a11:struct<b:int>>")
     df1 = sql("select str33 from test_rename")
     df2 = sql("select str33.a11 from test_rename")
@@ -192,7 +209,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(df1.collect().size == 2 && df2.collect().size == 2 && df3.collect().size == 2)
     checkAnswerUtil2(df1, df2, df3)
 
-    sql("alter table test_rename change str33 str33 struct<a11:struct<b11:int>>")
+    // Operation 4: rename child column from a11 to a22 & b to b11
     sql("alter table test_rename change str33 str33 struct<a22:struct<b11:int>>")
     df1 = sql("select str33 from test_rename")
     df2 = sql("select str33.a22 from test_rename")
@@ -200,11 +217,60 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(df1.collect().size == 2 && df2.collect().size == 2 && df3.collect().size == 2)
     checkAnswerUtil2(df1, df2, df3)
 
-    val desc = sql("desc table test_rename").collect()
-    assert(desc(0)(0).equals("str1"))
-    assert(desc(1)(0).equals("str33"))
-    assert(desc(1)(1).equals("struct<a22:struct<b11:int>>"))
-    assert(desc(2)(0).equals("str3"))
+    // Operation 5: rename primitive column from intField to intField2
+    sql("alter table test_rename change intField intField2 int")
+
+    val describe = sql("desc table test_rename")
+    assert(describe.collect().size == 4)
+    assertResult(1)(describe.filter(
+      "col_name='str1' and data_type = 'struct<a:int>'").count())
+    assertResult(1)(describe.filter(
+      "col_name='str33' and data_type = 'struct<a22:struct<b11:int>>'").count())
+    assertResult(1)(describe.filter(
+      "col_name='str3' and data_type = 'struct<a:struct<b:struct<c:int>>>'").count())
+
+    // validate schema evolution entries for 4 above alter operations
+    val (addedColumns, removedColumns, noOfEvolutions) = returnValuesAfterSchemaEvolution(
+      "test_rename")
+    validateSchemaEvolution(addedColumns, removedColumns, noOfEvolutions)
+  }
+
+  def returnValuesAfterSchemaEvolution(tableName: String): (Seq[ColumnSchema], Seq[ColumnSchema],
+    Int) = {
+    val carbonTable = CarbonEnv.getCarbonTable(None, tableName)(sqlContext.sparkSession)
+    val schemaEvolutionList = carbonTable.getTableInfo
+      .getFactTable
+      .getSchemaEvolution()
+      .getSchemaEvolutionEntryList()
+    var addedColumns = Seq[ColumnSchema]()
+    var removedColumns = Seq[ColumnSchema]()
+    for (i <- 0 until schemaEvolutionList.size()) {
+      addedColumns ++=
+      JavaConverters
+        .asScalaIteratorConverter(schemaEvolutionList.get(i).getAdded.iterator())
+        .asScala
+        .toSeq
+
+      removedColumns ++=
+      JavaConverters
+        .asScalaIteratorConverter(schemaEvolutionList.get(i).getRemoved.iterator())
+        .asScala
+        .toSeq
+    }
+    (addedColumns, removedColumns, schemaEvolutionList.size() - 1)
+  }
+
+  def validateSchemaEvolution(added: Seq[ColumnSchema], removed: Seq[ColumnSchema],
+      noOfEvolutions: Int): Unit = {
+    assert(noOfEvolutions == 5 && added.size == 11 && removed.size == 11)
+    // asserting only first 6 entries of added and removed columns
+    assert(
+      added(0).getColumnName.equals("str22") && removed(0).getColumnName.equals("str2") &&
+      added(1).getColumnName.equals("str22.a") && removed(1).getColumnName.equals("str2.a") &&
+      added(2).getColumnName.equals("str22.a.b") && removed(2).getColumnName.equals("str2.a.b") &&
+      added(3).getColumnName.equals("str22.a11") && removed(3).getColumnName.equals("str22.a") &&
+      added(4).getColumnName.equals("str22.a11.b") && removed(4).getColumnName.equals("str22.a.b")&&
+      added(5).getColumnName.equals("str33") && removed(5).getColumnName.equals("str22"))
   }
 
   test("test alter rename array of (primitive/array/struct)") {
@@ -260,7 +326,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     }
     assert(ex1.getMessage
       .contains(
-        "column rename operation failed: because datatypes of complex children cannot be altered"))
+        "column rename operation failed: Altering datatypes of any child column is not supported"))
   }
 
   test("test change comment in case of complex types") {
@@ -276,36 +342,6 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     describe = sql("desc table test_rename")
     count = describe.filter("col_name='str' and comment = 'new comment 2'").count()
     assertResult(1)(count)
-  }
-
-  test("check schema evolution after renaming complex column") {
-    sql("drop table if exists test_rename")
-    sql(
-      "CREATE TABLE test_rename (str1 struct<a:int>) STORED AS carbondata")
-    sql("alter table test_rename change str1 str2 struct<abc:int>")
-    val carbonTable = CarbonEnv.getCarbonTable(None, "test_rename")(sqlContext.sparkSession)
-    val schemaEvolutionList = carbonTable.getTableInfo
-      .getFactTable
-      .getSchemaEvolution()
-      .getSchemaEvolutionEntryList()
-    var addedColumns = Seq[ColumnSchema]()
-    var removedColumns = Seq[ColumnSchema]()
-    for (i <- 0 until schemaEvolutionList.size()) {
-      addedColumns ++=
-      JavaConverters
-        .asScalaIteratorConverter(schemaEvolutionList.get(i).getAdded.iterator())
-        .asScala
-        .toSeq
-
-      removedColumns ++=
-      JavaConverters
-        .asScalaIteratorConverter(schemaEvolutionList.get(i).getRemoved.iterator())
-        .asScala
-        .toSeq
-    }
-    assert(addedColumns.size == 1 && removedColumns.size == 1)
-    assert(addedColumns(0).getColumnName.equals("str2"))
-    assert(removedColumns(0).getColumnName.equals("str1"))
   }
 
   test("test only column rename operation with datatype change also") {

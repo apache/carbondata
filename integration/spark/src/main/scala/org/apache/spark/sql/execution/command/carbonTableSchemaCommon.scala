@@ -159,16 +159,13 @@ case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,
     sqlContext: SQLContext)
 
-case class DataTypeInfo(dataType: String,
-    name: String,
-    precision: Int = 0,
-    scale: Int = 0) {
-  private var children: List[DataTypeInfo] = null
+case class DataTypeInfo(columnName: String, dataType: String, precision: Int = 0, scale: Int = 0) {
+  private var children: Option[List[DataTypeInfo]] = None
   def setChildren(childrenList: List[DataTypeInfo]): Unit = {
-    children = childrenList
+    children = Some(childrenList)
   }
   def getChildren(): List[DataTypeInfo] = {
-    children
+    children.get
   }
 }
 

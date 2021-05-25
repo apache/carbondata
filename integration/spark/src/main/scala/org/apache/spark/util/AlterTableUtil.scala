@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
+import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
 import org.apache.spark.sql.index.CarbonIndexUtil
 
@@ -44,7 +45,7 @@ import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverte
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
@@ -357,18 +358,30 @@ object AlterTableUtil {
   /**
    * This method create a new SchemaEvolutionEntry and adds to SchemaEvolutionEntry List
    *
-   * @param addColumnSchema          added new column schema
-   * @param deletedColumnSchema      old column schema which is deleted
+   * @param addColumnSchema     added new column schema
+   * @param deletedColumnSchema old column schema which is deleted
+   * @param addedColumnsList    list of added column schemas
+   * @param deletedColumnsList  list of deleted column schemas
    * @return
    */
   def addNewSchemaEvolutionEntry(
-      timeStamp: Long,
+      schemaEvolutionEntry: SchemaEvolutionEntry,
       addColumnSchema: org.apache.carbondata.format.ColumnSchema,
-      deletedColumnSchema: org.apache.carbondata.format.ColumnSchema): SchemaEvolutionEntry = {
-    val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
-    schemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
-    schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
-    schemaEvolutionEntry
+      deletedColumnSchema: org.apache.carbondata.format.ColumnSchema,
+      addedColumnsList: List[org.apache.carbondata.format.ColumnSchema],
+      deletedColumnsList: List[org.apache.carbondata.format.ColumnSchema]): SchemaEvolutionEntry = {
+    val timeStamp = System.currentTimeMillis()
+    if (schemaEvolutionEntry == null) {
+      val newSchemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
+      newSchemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
+      newSchemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
+      newSchemaEvolutionEntry
+    } else {
+      schemaEvolutionEntry.setTime_stamp(timeStamp)
+      schemaEvolutionEntry.setAdded(addedColumnsList.asJava)
+      schemaEvolutionEntry.setRemoved(deletedColumnsList.asJava)
+      schemaEvolutionEntry
+    }
   }
 
   def readLatestTableSchema(carbonTable: CarbonTable)(sparkSession: SparkSession): TableInfo = {
@@ -1071,4 +1084,106 @@ object AlterTableUtil {
       }
     }
   }
+
+  /**
+   * This method checks the structure of the old and new complex columns, and-
+   * 1. throws exception if the number of complex-levels in both columns does not match
+   * 2. throws exception if the number of children of both columns does not match
+   * 3. creates alteredColumnNamesMap: new_column_name -> datatype. Here new_column_name are those
+   *    names of the columns that are altered.
+   * These maps will later be used while altering the table schema
+   */
+  def validateComplexStructure(oldDimensionList: List[CarbonDimension],
+      newDimensionList: List[DataTypeInfo],
+      alteredColumnNamesMap: mutable.LinkedHashMap[String, String]): Unit = {
+    if (oldDimensionList == null && newDimensionList == null) {
+      throw new UnsupportedOperationException("Both old and new dimensions are null")
+    } else if (oldDimensionList == null || newDimensionList == null) {
+      throw new UnsupportedOperationException("Either the old or the new dimension is null")
+    } else if (oldDimensionList.size != newDimensionList.size) {
+      throw new UnsupportedOperationException(
+        "Number of children of old and new complex columns are not the same")
+    } else {
+      for ((newDimensionInfo, i) <- newDimensionList.zipWithIndex) {
+        val oldDimensionInfo = oldDimensionList(i)
+        val old_column_name = oldDimensionInfo.getColName.split('.').last
+        val old_column_datatype = oldDimensionInfo.getDataType.getName
+        val new_column_name = newDimensionInfo.columnName.split('.').last
+        val new_column_datatype = newDimensionInfo.dataType
+        if (!old_column_datatype.equalsIgnoreCase(new_column_datatype)) {
+          /**
+           * datatypes of complex children cannot be altered. So throwing exception for now.
+           * TODO: use alteredColumnDatatypesMap to update the carbon schema
+           */
+          throw new UnsupportedOperationException(
+            "Altering datatypes of any child column is not supported")
+        }
+        if (!old_column_name.equalsIgnoreCase(new_column_name)) {
+          alteredColumnNamesMap += (oldDimensionInfo.getColName -> newDimensionInfo.columnName)
+        }
+        if (old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.MAP) ||
+            new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.MAP)) {
+          throw new UnsupportedOperationException(
+            "Cannot alter complex structure that includes map type column")
+        } else if (new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.ARRAY) ||
+                   old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.ARRAY) ||
+                   new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.STRUCT) ||
+                   old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.STRUCT)) {
+          validateComplexStructure(oldDimensionInfo.getListOfChildDimensions.asScala.toList,
+            newDimensionInfo.getChildren(), alteredColumnNamesMap)
+        }
+      }
+    }
+  }
+
+  /**
+   * This method will validate a column for its data type and check whether the column data type
+   * can be modified and update if conditions are met.
+   */
+  def validateColumnDataType(
+      dataTypeInfo: DataTypeInfo,
+      carbonColumn: CarbonColumn): Unit = {
+    carbonColumn.getDataType.getName.toLowerCase() match {
+      case CarbonCommonConstants.INT =>
+        if (!dataTypeInfo.dataType.equalsIgnoreCase(CarbonCommonConstants.BIGINT) &&
+            !dataTypeInfo.dataType.equalsIgnoreCase(CarbonCommonConstants.LONG)) {
+          sys.error(s"Given column ${ carbonColumn.getColName } with data type " +
+                    s"${ carbonColumn.getDataType.getName } cannot be modified. " +
+                    s"Int can only be changed to bigInt or long")
+        }
+      case CarbonCommonConstants.DECIMAL =>
+        if (!dataTypeInfo.dataType.equalsIgnoreCase(CarbonCommonConstants.DECIMAL)) {
+          sys.error(s"Given column ${ carbonColumn.getColName } with data type" +
+                    s" ${ carbonColumn.getDataType.getName } cannot be modified." +
+                    s" Decimal can be only be changed to Decimal of higher precision")
+        }
+        if (dataTypeInfo.precision <= carbonColumn.getColumnSchema.getPrecision) {
+          sys.error(s"Given column ${ carbonColumn.getColName } cannot be modified. " +
+                    s"Specified precision value ${ dataTypeInfo.precision } should be " +
+                    s"greater than current precision value " +
+                    s"${ carbonColumn.getColumnSchema.getPrecision }")
+        } else if (dataTypeInfo.scale < carbonColumn.getColumnSchema.getScale) {
+          sys.error(s"Given column ${ carbonColumn.getColName } cannot be modified. " +
+                    s"Specified scale value ${ dataTypeInfo.scale } should be greater or " +
+                    s"equal to current scale value ${ carbonColumn.getColumnSchema.getScale }")
+        } else {
+          // difference of precision and scale specified by user should not be less than the
+          // difference of already existing precision and scale else it will result in data loss
+          val carbonColumnPrecisionScaleDiff = carbonColumn.getColumnSchema.getPrecision -
+                                               carbonColumn.getColumnSchema.getScale
+          val dataInfoPrecisionScaleDiff = dataTypeInfo.precision - dataTypeInfo.scale
+          if (dataInfoPrecisionScaleDiff < carbonColumnPrecisionScaleDiff) {
+            sys.error(s"Given column ${ carbonColumn.getColName } cannot be modified. " +
+                      s"Specified precision and scale values will lead to data loss")
+          }
+        }
+      case _ =>
+        if (!carbonColumn.getDataType.getName.equalsIgnoreCase(dataTypeInfo.dataType)) {
+          sys.error(s"Given column ${ carbonColumn.getColName } with data type " +
+                    s"${ carbonColumn.getDataType.getName } cannot be modified. " +
+                    s"Only Int and Decimal data types are allowed for modification")
+        }
+    }
+  }
+
 }

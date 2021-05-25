@@ -805,7 +805,7 @@ Users can specify which columns to include and exclude for local dictionary gene
      2. If a column to be dropped has any Secondary index table created on them, drop column operation fails and the user will 
      be asked to drop the corresponding SI table first before going for actual drop.
 
-   - #### CHANGE COLUMN NAME/TYPE/COMMENT
+   - #### change-column-nametype
    
      This command is used to change column name and comment and the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
@@ -826,39 +826,39 @@ Users can specify which columns to include and exclude for local dictionary gene
        * Change the comment of columns other than partition column
      - **NOTE:** The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
 
-     Example1:Change column a1's name to a2 and its data type from INT to BIGINT.
+     Example 1: Change column a1's name to a2 and its data type from INT to BIGINT.
 
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a2 BIGINT
      ```
      
-     Example2:Changing decimal precision of column a1 from 10 to 18.
+     Example 2: Changing decimal precision of column a1 from 10 to 18.
 
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
 
-     Example3:Change column a3's name to a4.
+     Example 3: Change column a3's name to a4.
 
      ```
      ALTER TABLE test_db.carbon CHANGE a3 a4 STRING
      ```
-     Example4:Change column a3's comment to "col_comment".
+     Example 4: Change column a3's comment to "col_comment".
      
      ```
      ALTER TABLE test_db.carbon CHANGE a3 a3 STRING COMMENT 'col_comment'
      ```
      
-     Example5:Change child column name in column str struct\<a:int> from a to b.
+     Example 5: Change child column name in column: structField struct\<age:int> from age to id.
                    
      ```
-     ALTER TABLE test_db.carbon CHANGE str str struct<b:int>
+     ALTER TABLE test_db.carbon CHANGE structField structField struct<id:int>
      ```
      
-     Example6:Change column name in column arr1 array\<int> from arr1 to arr2.
+     Example 6: Change column name in column: oldArray array\<int> from oldArray to newArray.
           
      ```
-     ALTER TABLE test_db.carbon CHANGE arr1 arr2 array<int>
+     ALTER TABLE test_db.carbon CHANGE oldArray newArray array<int>
      ```
 
      **NOTE:** Once the column is renamed, user has to take care about replacing the fileheader with the new name or changing the column header in csv file.
@@ -881,7 +881,6 @@ Users can specify which columns to include and exclude for local dictionary gene
      * Merge index is supported on streaming table from carbondata 2.0.1 version.
      But streaming segments (ROW_V1) cannot create merge index.
      * Rename column name is only supported for complex columns including array and struct.
-     * Change datatype is not yet supported for complex types.
 
 
    - #### SET and UNSET
