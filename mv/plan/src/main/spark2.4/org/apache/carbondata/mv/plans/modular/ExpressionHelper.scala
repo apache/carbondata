@@ -125,6 +125,18 @@ object ExpressionHelper {
 trait getVerboseString extends LeafNode {
 }
 
+trait groupByUnaryNode extends UnaryNode {
+}
+
+trait selectModularPlan extends ModularPlan {
+}
+
+trait unionModularPlan extends ModularPlan {
+}
+
+trait oneRowTableLeafNode extends LeafNode {
+}
+
 object MatchJoin {
   def unapply(plan : LogicalPlan): Option[(LogicalPlan, LogicalPlan, JoinType, Option[Expression],
     Option[Any])] = {

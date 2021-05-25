@@ -26,6 +26,8 @@ import org.apache.spark.sql.types.{DataType, Metadata}
 import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, AggregateFunction, AggregateMode}
 
+import scala.reflect.ClassTag
+
 object ExpressionHelper {
 
   def createReference(
@@ -123,6 +125,32 @@ object ExpressionHelper {
 
 trait getVerboseString extends LeafNode {
   def verboseString: String = toString
+}
+
+trait groupByUnaryNode extends UnaryNode {
+  override def verboseString(maxFields: Int): String = super.verboseString(maxFields)
+
+  override def mapProductIterator[B](f: Any => B)
+                                    (implicit evidence$1: ClassTag[B]): Array[B] = {
+    super.mapProductIterator(f)
+  }
+}
+
+trait selectModularPlan extends ModularPlan {
+  override def verboseString(maxFields: Int): String = super.verboseString(maxFields)
+
+  override def mapProductIterator[B](f: Any => B)
+                                    (implicit evidence$1: ClassTag[B]): Array[B] = {
+    super.mapProductIterator(f)
+  }
+}
+
+trait unionModularPlan extends ModularPlan {
+  override def verboseString(maxFields: Int): String = super.verboseString(maxFields)
+}
+
+trait oneRowTableLeafNode extends LeafNode {
+  override def verboseString(maxFields: Int): String = super.verboseString(maxFields)
 }
 
 object MatchJoin {
