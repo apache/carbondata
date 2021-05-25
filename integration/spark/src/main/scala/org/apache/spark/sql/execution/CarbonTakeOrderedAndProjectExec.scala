@@ -19,11 +19,11 @@ package org.apache.spark.sql.execution
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.codegen.LazilyGeneratedOrdering
 import org.apache.spark.sql.catalyst.expressions.{Attribute, NamedExpression, SortOrder, UnsafeProjection}
 import org.apache.spark.sql.catalyst.plans.physical.{Partitioning, SinglePartition}
+import org.apache.spark.sql.{CarbonTakeOrderedAndProjectExecHelper, CarbonToSparkAdapter}
 
 // To skip the order at map task
 case class CarbonTakeOrderedAndProjectExec(
@@ -32,7 +32,8 @@ case class CarbonTakeOrderedAndProjectExec(
     projectList: Seq[NamedExpression],
     child: SparkPlan,
     skipMapOrder: Boolean = false,
-    readFromHead: Boolean = true) extends UnaryExecNode {
+    readFromHead: Boolean = true) extends CarbonTakeOrderedAndProjectExecHelper(sortOrder,
+      limit, skipMapOrder, readFromHead) {
 
   private val serializer: Serializer = new UnsafeRowSerializer(child.output.size)
 
@@ -77,14 +78,6 @@ case class CarbonTakeOrderedAndProjectExec(
   override def outputOrdering: Seq[SortOrder] = sortOrder
 
   override def outputPartitioning: Partitioning = SinglePartition
-
-  override def simpleString: String = {
-    val orderByString = sortOrder.mkString("[", ",", "]")
-    val outputString = output.mkString("[", ",", "]")
-
-    s"CarbonTakeOrderedAndProjectExec(limit=$limit, orderBy=$orderByString, " +
-    s"skipMapOrder=$skipMapOrder, readFromHead=$readFromHead, output=$outputString)"
-  }
 
   override def output: Seq[Attribute] = {
     projectList.map(_.toAttribute)

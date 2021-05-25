@@ -21,7 +21,6 @@ import java.net.URI
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
@@ -38,12 +37,12 @@ import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
-import org.apache.spark.sql.catalyst.plans.{logical, JoinType, QueryPlan}
+import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan, logical}
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, InsertIntoTable, Join, LogicalPlan, OneRowRelation, Statistics, SubqueryAlias}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.execution.{QueryExecution, ShuffledRowRDD, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.{QueryExecution, SQLExecution, ShuffledRowRDD, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, FilePartition, PartitionedFile, RefreshTable}
@@ -60,7 +59,6 @@ import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.streaming.{ProcessingTime, Trigger}
 import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StringType, StructField}
 import org.apache.spark.unsafe.types.UTF8String
-
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -688,5 +686,16 @@ class CarbonOptimizer(
         batch.rules: _*
       )
     }
+  }
+}
+
+abstract class CarbonTakeOrderedAndProjectExecHelper(sortOrder: Seq[SortOrder],
+                                                     limit: Int, skipMapOrder: Boolean, readFromHead: Boolean) extends UnaryExecNode {
+  override def simpleString: String = {
+    val orderByString = sortOrder.mkString("[", ",", "]")
+    val outputString = output.mkString("[", ",", "]")
+
+    s"CarbonTakeOrderedAndProjectExec(limit=$limit, orderBy=$orderByString, " +
+      s"skipMapOrder=$skipMapOrder, readFromHead=$readFromHead, output=$outputString)"
   }
 }

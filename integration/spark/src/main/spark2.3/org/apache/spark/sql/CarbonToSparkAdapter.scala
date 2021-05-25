@@ -21,7 +21,6 @@ import java.net.URI
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
@@ -30,7 +29,7 @@ import org.apache.spark.serializer.Serializer
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, SessionCatalog}
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SortOrder, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.{ExprCode, GeneratePredicate}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Join, LogicalPlan, OneRowRelation, Statistics, SubqueryAlias}
@@ -44,7 +43,7 @@ import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan, logical}
 import org.apache.spark.sql.execution.command.{ExplainCommand, Field, PartitionerField, ResetCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, FilePartition, PartitionedFile, RefreshTable}
-import org.apache.spark.sql.execution.{QueryExecution, SQLExecution, ShuffledRowRDD, SparkPlan}
+import org.apache.spark.sql.execution.{QueryExecution, SQLExecution, ShuffledRowRDD, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.hive.HiveExternalCatalog
@@ -60,7 +59,6 @@ import org.apache.spark.sql.catalyst.plans.logical.InsertIntoTable
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide}
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateColumnExists, convertDbNameToLowerCase, validateStreamingProperty}
-
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -646,5 +644,16 @@ class CarbonOptimizer(
         batch.rules: _*
       )
     }
+  }
+}
+
+abstract class CarbonTakeOrderedAndProjectExecHelper(sortOrder: Seq[SortOrder],
+                                                     limit: Int, skipMapOrder: Boolean, readFromHead: Boolean) extends UnaryExecNode {
+  override def simpleString: String = {
+    val orderByString = sortOrder.mkString("[", ",", "]")
+    val outputString = output.mkString("[", ",", "]")
+
+    s"CarbonTakeOrderedAndProjectExec(limit=$limit, orderBy=$orderByString, " +
+      s"skipMapOrder=$skipMapOrder, readFromHead=$readFromHead, output=$outputString)"
   }
 }
