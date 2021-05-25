@@ -137,10 +137,6 @@ class CarbonEnv {
       .addNonSerializableProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
     Profiler.initialize(sparkSession.sparkContext)
     CarbonToSparkAdapter.addSparkSessionListener(sparkSession)
-    if (sparkSession.sparkContext.version.startsWith("3.1")) {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants
-          .CARBON_SPARK_VERSION_SPARK3, "true")
-    }
     initialized = true
     LOGGER.info("Initialize CarbonEnv completed...")
   }
