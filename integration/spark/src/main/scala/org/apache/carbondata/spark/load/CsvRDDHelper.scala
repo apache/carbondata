@@ -44,7 +44,6 @@ import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
-import org.apache.carbondata.spark.adapter.CarbonToSparkAdapter
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.{getNodeBlockMapping, LOGGER}
 import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil}
 
