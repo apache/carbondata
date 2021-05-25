@@ -25,6 +25,11 @@ import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -439,10 +444,27 @@ public final class DataTypeUtil {
     }
   }
 
+  private static long createTimeInstant(String dimensionValue, String dateFormat) {
+    String updatedDim = dimensionValue;
+    if (!dimensionValue.trim().contains(" ")) {
+      updatedDim += " 00:00:00";
+    }
+    Instant instant = Instant.from(ZonedDateTime
+        .of(LocalDateTime.parse(updatedDim, DateTimeFormatter.ofPattern(dateFormat)),
+        ZoneId.systemDefault()));
+    validateTimeStampRange(instant.getEpochSecond());
+    long us = Math.multiplyExact(instant.getEpochSecond(), 1000L);
+    return Math.addExact(us, instant.getNano() * 1000L);
+  }
+
   private static Object parseTimestamp(String dimensionValue, String dateFormat) {
     Date dateToStr;
     DateFormat dateFormatter = null;
     long timeValue;
+    if (Boolean.parseBoolean(CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+        .CARBON_SPARK_VERSION_SPARK3))) {
+      return createTimeInstant(dimensionValue, dateFormat);
+    }
     try {
       if (null != dateFormat && !dateFormat.trim().isEmpty()) {
         dateFormatter = new SimpleDateFormat(dateFormat);

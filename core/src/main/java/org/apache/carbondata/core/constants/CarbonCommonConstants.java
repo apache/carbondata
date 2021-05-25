@@ -2648,4 +2648,5 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SDK_EMPTY_METADATA_PATH = "emptyMetadataFolder";
 
+  public static final String CARBON_SPARK_VERSION_SPARK3 = "carbon.spark.version.spark3";
 }

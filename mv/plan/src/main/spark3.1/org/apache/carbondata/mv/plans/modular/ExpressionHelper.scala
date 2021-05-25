@@ -134,6 +134,14 @@ trait groupByUnaryNode extends UnaryNode {
                                     (implicit evidence$1: ClassTag[B]): Array[B] = {
     super.mapProductIterator(f)
   }
+
+  override def mapChildren(f: ModularPlan => ModularPlan) : ModularPlan = {
+    val groupBy = super.mapChildren(f)
+    if (this.rewritten && !groupBy.rewritten) {
+      groupBy.setRewritten()
+    }
+    groupBy
+  }
 }
 
 trait selectModularPlan extends ModularPlan {
@@ -142,6 +150,14 @@ trait selectModularPlan extends ModularPlan {
   override def mapProductIterator[B](f: Any => B)
                                     (implicit evidence$1: ClassTag[B]): Array[B] = {
     super.mapProductIterator(f)
+  }
+
+  override def mapChildren(f: ModularPlan => ModularPlan) : ModularPlan = {
+    val select = super.mapChildren(f)
+    if (this.rewritten && !select.rewritten) {
+      select.setRewritten()
+    }
+    select
   }
 }
 
