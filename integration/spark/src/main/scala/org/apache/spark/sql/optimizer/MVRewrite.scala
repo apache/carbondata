@@ -234,18 +234,12 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
     if (modularPlan.find(_.rewritten).isDefined) {
       LOGGER.debug(s"Getting updated plan for the rewritten modular plan: " +
                    s"{ ${ modularPlan.toString().trim } }")
-      var updatedPlan = CarbonToSparkAdapter.transformDown(modularPlan, {
+      var updatedPlan = modularPlan transform {
         case select: Select =>
           updatePlan(select)
         case groupBy: GroupBy =>
           updatePlan(groupBy)
-      })
-//      var updatedPlan = modularPlan transform {
-//        case select: Select =>
-//          updatePlan(select)
-//        case groupBy: GroupBy =>
-//          updatePlan(groupBy)
-//      }
+      }
       if (modularPlan.isRolledUp) {
         // If the rewritten query is rolled up, then rewrite the query based on the original modular
         // plan. Make a new outputList based on original modular plan and wrap rewritten plan with

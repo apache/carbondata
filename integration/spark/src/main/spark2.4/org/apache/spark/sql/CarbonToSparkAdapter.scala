@@ -642,11 +642,6 @@ object CarbonToSparkAdapter {
   def getTypeName(s: DataType): String = {
     s.typeName
   }
-
-  def transformDown(plan: ModularPlan,
-      rule: PartialFunction[ModularPlan, ModularPlan]): ModularPlan = {
-    plan.transformDown(rule)
-  }
 }
 
 case class CarbonBuildSide(buildSide: BuildSide) {
