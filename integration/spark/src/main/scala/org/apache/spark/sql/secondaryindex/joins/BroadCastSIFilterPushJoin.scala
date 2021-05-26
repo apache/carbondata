@@ -162,7 +162,7 @@ object BroadCastSIFilterPushJoin {
       } else {
         rightKeys
       }
-    }.map { a =>
+      }.map { a =>
       BindReferences.bindReference(a, buildPlan.output)
     }.toArray
 

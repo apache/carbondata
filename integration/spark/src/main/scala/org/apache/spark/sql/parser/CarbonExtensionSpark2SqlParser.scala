@@ -59,7 +59,6 @@ class CarbonExtensionSpark2SqlParser extends CarbonSpark2SqlParser {
           databaseNameOp, tableName, Option(optionsList), partitions, filePath, isOverwrite)
     }
 
-
   /**
    * REFRESH MATERIALIZED VIEW mv_name
    */

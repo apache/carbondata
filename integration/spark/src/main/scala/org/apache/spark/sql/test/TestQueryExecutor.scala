@@ -84,7 +84,7 @@ object TestQueryExecutor {
   val masterUrl = {
     val property = System.getProperty("spark.master.url")
     if (property == null) {
-      "local[10]"
+      "local[2]"
     } else {
       property
     }

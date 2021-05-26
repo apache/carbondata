@@ -773,7 +773,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         CarbonRefreshIndexCommand(indexName.toLowerCase(), parentTableIdent, segments)
     }
 
-
   def getFields(schema: Seq[StructField], isExternal: Boolean = false): Seq[Field] = {
     schema.map { col =>
       // TODO: Spark has started supporting CharType/VarChar types in Spark 3.1 but both are

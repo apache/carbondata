@@ -321,7 +321,7 @@ object DeleteExecution {
           deleteStatus = SegmentStatus.SUCCESS
         } catch {
           case e : MultipleMatchingException =>
-          LOGGER.error(e.getMessage)
+            LOGGER.error(e.getMessage)
           // don't throw exception here.
           case e: Exception =>
             val errorMsg = s"Delete data operation is failed for ${ database }.${ tableName }."
