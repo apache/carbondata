@@ -680,18 +680,24 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       dataType: DataType = null): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     val encodingList = parentColumnSchema.getEncodingList
+    var colPropMap = parentColumnSchema.getColumnProperties
     // if data type is arrayType, then store the column as its CHILD data type in SI
     if (DataTypes.isArrayType(parentColumnSchema.getDataType)) {
       columnSchema.setDataType(dataType)
+      if (colPropMap == null) {
+        colPropMap = new java.util.HashMap[String, String]()
+      }
+      colPropMap.put("isParentColumnComplex", "true")
+      columnSchema.setColumnProperties(colPropMap)
       if (dataType == DataTypes.DATE) {
         encodingList.add(Encoding.DIRECT_DICTIONARY)
         encodingList.add(Encoding.DICTIONARY)
       }
     } else {
       columnSchema.setDataType(parentColumnSchema.getDataType)
+      columnSchema.setColumnProperties(colPropMap)
     }
     columnSchema.setColumnName(parentColumnSchema.getColumnName)
-    columnSchema.setColumnProperties(parentColumnSchema.getColumnProperties)
     columnSchema.setEncodingList(encodingList)
     columnSchema.setColumnUniqueId(parentColumnSchema.getColumnUniqueId)
     columnSchema.setColumnReferenceId(parentColumnSchema.getColumnReferenceId)

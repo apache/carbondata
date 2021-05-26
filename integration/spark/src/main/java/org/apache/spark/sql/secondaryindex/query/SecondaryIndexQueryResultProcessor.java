@@ -277,15 +277,11 @@ public class SecondaryIndexQueryResultProcessor {
       CarbonDimension dims = dimensions.get(i);
       boolean isComplexColumn = false;
       // As complex column of MainTable is stored as its primitive type in SI,
-      // we need to check if dimension is complex dimension or not based on dimension
-      // name. Check if name exists in complexDimensionInfoMap of main table result
-      if (!complexDimensionInfoMap.isEmpty() && complexColumnParentBlockIndexes.length > 0) {
-        for (GenericQueryType queryType : complexDimensionInfoMap.values()) {
-          if (queryType.getName().equalsIgnoreCase(dims.getColName())) {
-            isComplexColumn = true;
-            break;
-          }
-        }
+      // we need to check if dimension is complex dimension or not based on isParentColumnComplex
+      // property.
+      if (dims.getColumnProperties() != null && Boolean
+          .parseBoolean(dims.getColumnProperties().get("isParentColumnComplex"))) {
+        isComplexColumn = true;
       }
       // fill all the no dictionary and dictionary data to the prepared row first, fill the complex
       // flatten data to prepared row at last
@@ -293,7 +289,11 @@ public class SecondaryIndexQueryResultProcessor {
         // dictionary
         preparedRow[i] = wrapper.getDictionaryKeyByIndex(dictionaryIndex++);
       } else {
-        if (isComplexColumn) {
+        if (isComplexColumn && complexColumnParentBlockIndexes.length == 0) {
+          // After restructure some complex column will not be present in parent block.
+          // In such case, set the SI implicit row value to empty byte array.
+          preparedRow[i] = new byte[0];
+        } else if (isComplexColumn) {
           // get the flattened data of complex column
           byte[] complexKeyByIndex = wrapper.getComplexKeyByIndex(complexIndex);
           ByteBuffer byteArrayInput = ByteBuffer.wrap(complexKeyByIndex);

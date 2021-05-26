@@ -214,6 +214,24 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_com")
   }
 
+  test("Test alter add complex type and compaction") {
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql("create table alter_com (a int, b string, arr1 array<string>) stored as carbondata")
+    sql("insert into alter_com select 1,'a',array('hi')")
+    sql("insert into alter_com select 2,'b',array('hello','world')")
+    sql("ALTER TABLE alter_com ADD COLUMNS(struct1 STRUCT<a:int, b:string>)")
+    sql("insert into alter_com select 3,'c',array('hi'),null")
+    sql("insert into alter_com select 4,'d',array('hi'),named_struct('s1',4,'s2','d')")
+    sql("alter table alter_com compact 'minor'")
+    checkAnswer(sql("""Select count(*) from alter_com"""), Seq(Row(4)))
+    checkAnswer(sql("Select * from alter_com"),
+      Seq(Row(1, "a", mutable.WrappedArray.make(Array("hi")), null),
+        Row(2, "b", mutable.WrappedArray.make(Array("hello", "world")), null),
+        Row(3, "c", mutable.WrappedArray.make(Array("hi")), null),
+        Row(4, "d", mutable.WrappedArray.make(Array("hi")), Row(4, "d"))))
+    sql("DROP TABLE IF EXISTS alter_com")
+  }
+
   def insertIntoTableForArrayType(): Unit = {
     sql("insert into alter_com values(4,array(2),array(1,2,3,4),array('abc','def'))")
     sql("insert into alter_com values(5,array(1,2),array(1), array('Hulk','Thor'))")

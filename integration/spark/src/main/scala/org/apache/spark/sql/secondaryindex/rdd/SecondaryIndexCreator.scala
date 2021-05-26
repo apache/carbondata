@@ -195,7 +195,7 @@ object SecondaryIndexCreator {
                   mainTable,
                   projections.mkString(","),
                   Array(eachSegment),
-                  isPositionReferenceRequired = true)
+                  isPositionReferenceRequired = true, !explodeColumn.isEmpty)
                 // flatten the complex SI
                 if (explodeColumn.nonEmpty) {
                   val columns = dataFrame.schema.map { x =>
@@ -564,7 +564,8 @@ object SecondaryIndexCreator {
       carbonTable: CarbonTable,
       projections: String,
       segments: Array[String],
-      isPositionReferenceRequired: Boolean = false): DataFrame = {
+      isPositionReferenceRequired: Boolean = false,
+      isComplexTypeProjection: Boolean = false): DataFrame = {
     try {
       CarbonThreadUtil.threadSet(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS + carbonTable.getDatabaseName +
@@ -584,9 +585,9 @@ object SecondaryIndexCreator {
         case p: Project =>
           Project(p.projectList :+ positionId, p.child)
       }
-      val tableProperties = if (carbonTable.isHivePartitionTable) {
-        // in case of partition table, TableProperties object in carbonEnv is not same as
-        // in carbonTable object, so update from carbon env itself.
+      val tableProperties = if (carbonTable.isHivePartitionTable || isComplexTypeProjection) {
+        // in case of partition table and complex type projection, TableProperties object in
+        // carbonEnv is not same as in carbonTable object, so update from carbon env itself.
         CarbonEnv.getCarbonTable(Some(carbonTable.getDatabaseName), carbonTable.getTableName)(
           sparkSession).getTableInfo
           .getFactTable

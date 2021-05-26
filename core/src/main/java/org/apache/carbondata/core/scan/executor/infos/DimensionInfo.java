@@ -56,6 +56,17 @@ public class DimensionInfo {
    * count of no dictionary columns not existing in the current block
    */
   private int newNoDictionaryColumnCount;
+
+  /**
+   * count of complex columns not existing in the current block
+   */
+  private int newComplexColumnCount;
+
+  /**
+   * flag to check whether there exist a complex column in the query which
+   * does not exist in the current block
+   */
+  private boolean isComplexColumnAdded;
   /**
   * maintains the block datatype
   */
@@ -114,5 +125,21 @@ public class DimensionInfo {
 
   public void setNewNoDictionaryColumnCount(int newNoDictionaryColumnCount) {
     this.newNoDictionaryColumnCount = newNoDictionaryColumnCount;
+  }
+
+  public boolean isComplexColumnAdded() {
+    return isComplexColumnAdded;
+  }
+
+  public void setComplexColumnAdded(boolean complexColumnAdded) {
+    isComplexColumnAdded = complexColumnAdded;
+  }
+
+  public int getNewComplexColumnCount() {
+    return newComplexColumnCount;
+  }
+
+  public void setNewComplexColumnCount(int newComplexColumnCount) {
+    this.newComplexColumnCount = newComplexColumnCount;
   }
 }

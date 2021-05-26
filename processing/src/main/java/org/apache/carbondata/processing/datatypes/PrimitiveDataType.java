@@ -414,22 +414,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException {
-    if (this.carbonDimension.getDataType() == DataTypes.STRING
-        || this.carbonDimension.getDataType() == DataTypes.VARCHAR) {
-      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
-        dataOutputStream.writeInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
-      } else {
-        dataOutputStream.writeShort(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
-      }
-      dataOutputStream.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
-    } else {
-      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
-        dataOutputStream.writeInt(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
-      } else {
-        dataOutputStream.writeShort(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
-      }
-      dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
-    }
+    CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream, this.carbonDimension.getDataType());
     String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
     if (null == message) {
       message = CarbonDataProcessorUtil
