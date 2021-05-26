@@ -17,12 +17,18 @@
 
 package org.apache.carbondata.core.scan.collector.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
@@ -31,12 +37,18 @@ import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+
+import org.apache.log4j.Logger;
 
 /**
  * It is not a collector it is just a scanned result holder.
  */
 public class RestructureBasedRawResultCollector extends RawBasedResultCollector {
+
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(RestructureBasedRawResultCollector.class.getName());
 
   public RestructureBasedRawResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
@@ -57,8 +69,9 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
     if (dimensionInfo.isDictionaryColumnAdded()) {
       fillDictionaryKeyArrayBatchWithLatestSchema(listBasedResult);
     }
-    if (dimensionInfo.isNoDictionaryColumnAdded()) {
-      fillNoDictionaryKeyArrayBatchWithLatestSchema(listBasedResult);
+    if (dimensionInfo.isNoDictionaryColumnAdded() || dimensionInfo
+        .isComplexColumnAdded()) {
+      fillNoDictionaryAndComplexKeyArrayBatchWithLatestSchema(listBasedResult);
     }
     QueryStatistic resultPrepTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.RESULT_PREP_TIME);
@@ -111,36 +124,70 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
   }
 
   /**
-   * This method will fill the no dictionary byte array with newly added no dictionary columns
+   * This method will fill the no dictionary and complex byte array with newly added columns
    *
    * @param rows
    * @return
    */
-  private void fillNoDictionaryKeyArrayBatchWithLatestSchema(List<Object[]> rows) {
+  private void fillNoDictionaryAndComplexKeyArrayBatchWithLatestSchema(List<Object[]> rows) {
     for (Object[] row : rows) {
       ByteArrayWrapper byteArrayWrapper = (ByteArrayWrapper) row[0];
       byte[][] noDictKeyArray = byteArrayWrapper.getNoDictionaryKeys();
+      byte[][] complexTypesKeyArray = byteArrayWrapper.getComplexTypesKeys();
       ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
       byte[][] noDictionaryKeyArrayWithNewlyAddedColumns =
           new byte[noDictKeyArray.length + dimensionInfo.getNewNoDictionaryColumnCount()][];
+      byte[][] complexTypeKeyArrayWithNewlyAddedColumns =
+          new byte[complexTypesKeyArray.length + dimensionInfo.getNewComplexColumnCount()][];
       int existingColumnValueIndex = 0;
       int newKeyArrayIndex = 0;
+      int existingComplexColumnValueIndex = 0;
+      int newComplexKeyArrayIndex = 0;
       for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
         if (actualQueryDimensions[i].getDimension().getDataType() != DataTypes.DATE
             && !actualQueryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
+          DataType currDataType = actualQueryDimensions[i].getDimension().getDataType();
           // if dimension exists then add the byte array value else add the default value
           if (dimensionInfo.getDimensionExists()[i]) {
-            noDictionaryKeyArrayWithNewlyAddedColumns[newKeyArrayIndex++] =
-                noDictKeyArray[existingColumnValueIndex++];
+            if (currDataType.isComplexType()) {
+              complexTypeKeyArrayWithNewlyAddedColumns[newComplexKeyArrayIndex++] =
+                  complexTypesKeyArray[existingComplexColumnValueIndex++];
+            } else {
+              noDictionaryKeyArrayWithNewlyAddedColumns[newKeyArrayIndex++] =
+                  noDictKeyArray[existingColumnValueIndex++];
+            }
           } else {
             byte[] newColumnDefaultValue = null;
             Object defaultValue = dimensionInfo.getDefaultValues()[i];
             if (null != defaultValue) {
               newColumnDefaultValue = (byte[]) defaultValue;
-            } else if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
+            } else if (currDataType == DataTypes.STRING) {
               newColumnDefaultValue =
                   DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(
                       CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+            } else if (currDataType.isComplexType()) {
+              // Iterate over child dimensions and add its default value.
+              List<CarbonDimension> children =
+                  actualQueryDimensions[i].getDimension().getListOfChildDimensions();
+              try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                  DataOutputStream dataOutputStream = new DataOutputStream(byteStream)) {
+                if (DataTypes.isArrayType(currDataType)) {
+                  dataOutputStream.writeInt(1);
+                } else if (DataTypes.isStructType(currDataType)) {
+                  dataOutputStream.writeShort(children.size());
+                }
+                for (int j = 0; j < children.size(); j++) {
+                  // update default null values based on datatype
+                  CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream,
+                      children.get(j).getDataType());
+                }
+                newColumnDefaultValue = byteStream.toByteArray();
+              } catch (IOException e) {
+                LOGGER.error(e.getMessage(), e);
+              }
+              complexTypeKeyArrayWithNewlyAddedColumns[newComplexKeyArrayIndex++] =
+                  newColumnDefaultValue;
+              continue;
             } else {
               newColumnDefaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
             }
@@ -149,6 +196,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
         }
       }
       byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeyArrayWithNewlyAddedColumns);
+      byteArrayWrapper.setComplexTypesKeys(complexTypeKeyArrayWithNewlyAddedColumns);
     }
   }
 }

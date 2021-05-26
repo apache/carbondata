@@ -234,13 +234,20 @@ public class SecondaryIndexQueryResultProcessor {
       // get complex dimension info map from block execution info
       Map<Integer, GenericQueryType> complexDimensionInfoMap =
           blockExecutionInfo.getComplexDimensionInfoMap();
+      // after restructuring some dimension will be not present in older blocks.
+      // To identify if the block is restructured.
+      boolean isComplexColumnAdded = false;
+      if (blockExecutionInfo.getDimensionInfo() != null && blockExecutionInfo.getDimensionInfo()
+          .isComplexColumnAdded()) {
+        isComplexColumnAdded = true;
+      }
       int[] complexColumnParentBlockIndexes =
           blockExecutionInfo.getComplexColumnParentBlockIndexes();
       while (detailQueryIterator.hasNext()) {
         RowBatch batchResult = detailQueryIterator.next();
         while (batchResult.hasNext()) {
           addRowForSorting(prepareRowObjectForSorting(batchResult.next(), complexDimensionInfoMap,
-              complexColumnParentBlockIndexes));
+              complexColumnParentBlockIndexes, isComplexColumnAdded));
           isRecordFound = true;
         }
       }
@@ -259,8 +266,8 @@ public class SecondaryIndexQueryResultProcessor {
    * This method will prepare the data from raw object that will take part in sorting
    */
   private Object[] prepareRowObjectForSorting(Object[] row,
-      Map<Integer, GenericQueryType> complexDimensionInfoMap, int[] complexColumnParentBlockIndexes)
-      throws SecondaryIndexException {
+      Map<Integer, GenericQueryType> complexDimensionInfoMap, int[] complexColumnParentBlockIndexes,
+      boolean isComplexColumnAdded) throws SecondaryIndexException {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     byte[] implicitColumnByteArray = wrapper.getImplicitColumnByteArray();
 
@@ -293,26 +300,32 @@ public class SecondaryIndexQueryResultProcessor {
         // dictionary
         preparedRow[i] = wrapper.getDictionaryKeyByIndex(dictionaryIndex++);
       } else {
-        if (isComplexColumn) {
-          // get the flattened data of complex column
-          byte[] complexKeyByIndex = wrapper.getComplexKeyByIndex(complexIndex);
-          ByteBuffer byteArrayInput = ByteBuffer.wrap(complexKeyByIndex);
-          GenericQueryType genericQueryType =
-              complexDimensionInfoMap.get(complexColumnParentBlockIndexes[complexIndex++]);
-          int complexDataLength = byteArrayInput.getShort(2);
-          // In case, if array is empty
-          if (complexDataLength == 0) {
-            complexDataLength = complexDataLength + 1;
+        if (isComplexColumn || isComplexColumnAdded) {
+          if (complexColumnParentBlockIndexes.length > 0) {
+            // get the flattened data of complex column
+            byte[] complexKeyByIndex = wrapper.getComplexKeyByIndex(complexIndex);
+            ByteBuffer byteArrayInput = ByteBuffer.wrap(complexKeyByIndex);
+            GenericQueryType genericQueryType =
+                complexDimensionInfoMap.get(complexColumnParentBlockIndexes[complexIndex++]);
+            int complexDataLength = byteArrayInput.getShort(2);
+            // In case, if array is empty
+            if (complexDataLength == 0) {
+              complexDataLength = complexDataLength + 1;
+            }
+            // get flattened array data
+            Object[] complexFlattenedData = new Object[complexDataLength];
+            Object[] data = genericQueryType.getObjectArrayDataBasedOnDataType(byteArrayInput);
+            for (int index = 0; index < complexDataLength; index++) {
+              complexFlattenedData[index] =
+                  getData(data, index, dims.getColumnSchema().getDataType());
+            }
+            // store the dimesnion column index and the complex column flattened data to a map
+            complexDataMap.put(i, complexFlattenedData);
+          } else {
+            // After restructure some complex column will not be present in parent block.
+            // In such case, set the SI implicit row value to empty byte array.
+            preparedRow[i] = new byte[0];
           }
-          // get flattened array data
-          Object[] complexFlattenedData = new Object[complexDataLength];
-          Object[] data = genericQueryType.getObjectArrayDataBasedOnDataType(byteArrayInput);
-          for (int index = 0; index < complexDataLength; index++) {
-            complexFlattenedData[index] =
-                getData(data, index, dims.getColumnSchema().getDataType());
-          }
-          // store the dimesnion column index and the complex column flattened data to a map
-          complexDataMap.put(i, complexFlattenedData);
         } else {
           // no dictionary dims
           byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);

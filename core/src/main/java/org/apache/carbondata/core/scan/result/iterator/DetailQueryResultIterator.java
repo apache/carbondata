@@ -42,6 +42,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       blockExecutionInfo
           .setComplexColumnParentBlockIndexes(infos.get(0).getComplexColumnParentBlockIndexes());
       blockExecutionInfo.setComplexDimensionInfoMap(infos.get(0).getComplexDimensionInfoMap());
+      blockExecutionInfo.setDimensionInfo(infos.get(0).getDimensionInfo());
     }
   }
 

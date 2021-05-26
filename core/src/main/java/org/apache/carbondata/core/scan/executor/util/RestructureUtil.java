@@ -77,6 +77,7 @@ public class RestructureUtil {
     dimensionInfo.dataType = new DataType[queryDimensions.length + measureCount];
     int newDictionaryColumnCount = 0;
     int newNoDictionaryColumnCount = 0;
+    int newNoDictionaryComplexColumnCount = 0;
     // selecting only those dimension which is present in the query
     int dimIndex = 0;
     for (ProjectionDimension queryDimension : queryDimensions) {
@@ -140,6 +141,9 @@ public class RestructureUtil {
           if (queryDimension.getDimension().getDataType() == DataTypes.DATE) {
             dimensionInfo.setDictionaryColumnAdded(true);
             newDictionaryColumnCount++;
+          } else if (queryDimension.getDimension().getDataType().isComplexType()) {
+            dimensionInfo.setComplexColumnAdded(true);
+            newNoDictionaryComplexColumnCount++;
           } else {
             dimensionInfo.setNoDictionaryColumnAdded(true);
             newNoDictionaryColumnCount++;
@@ -150,6 +154,7 @@ public class RestructureUtil {
     }
     dimensionInfo.setNewDictionaryColumnCount(newDictionaryColumnCount);
     dimensionInfo.setNewNoDictionaryColumnCount(newNoDictionaryColumnCount);
+    dimensionInfo.setNewComplexColumnCount(newNoDictionaryComplexColumnCount);
     blockExecutionInfo.setDimensionInfo(dimensionInfo);
     return presentDimension;
   }
