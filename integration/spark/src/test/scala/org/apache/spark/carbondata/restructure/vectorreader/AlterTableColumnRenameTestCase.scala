@@ -593,7 +593,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   test("test rename on complex column") {
     sql("drop table if exists complex")
     sql("create table complex (id int, name string, " +
-      "structField struct<intval:int, stringval:string>) STORED AS carbondata")
+        "structField struct<intval:int, stringval:string>) STORED AS carbondata")
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table complex change structField complexTest struct")
     }

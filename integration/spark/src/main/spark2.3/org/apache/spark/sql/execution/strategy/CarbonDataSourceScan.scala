@@ -45,17 +45,17 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
  *  USING carbondata and STORED AS carbondata.
  */
 case class CarbonDataSourceScan(
-  @transient relation: CarbonDatasourceHadoopRelation,
-  output: Seq[Attribute],
-  partitionFilters: Seq[SparkExpression],
-  dataFilters: Seq[SparkExpression],
-  @transient readComittedScope: ReadCommittedScope,
-  @transient pushedDownProjection: CarbonProjection,
-  @transient pushedDownFilters: Seq[Expression],
-  directScanSupport: Boolean,
-  @transient extraRDD: Option[(RDD[InternalRow], Boolean)] = None,
-  tableIdentifier: Option[TableIdentifier] = None,
-  segmentIds: Option[String] = None)
+    @transient relation: CarbonDatasourceHadoopRelation,
+    output: Seq[Attribute],
+    partitionFilters: Seq[SparkExpression],
+    dataFilters: Seq[SparkExpression],
+    @transient readComittedScope: ReadCommittedScope,
+    @transient pushedDownProjection: CarbonProjection,
+    @transient pushedDownFilters: Seq[Expression],
+    directScanSupport: Boolean,
+    @transient extraRDD: Option[(RDD[InternalRow], Boolean)] = None,
+    tableIdentifier: Option[TableIdentifier] = None,
+    segmentIds: Option[String] = None)
   extends DataSourceScanExec with ColumnarBatchScan {
 
   override lazy val supportsBatch: Boolean = {

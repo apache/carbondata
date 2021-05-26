@@ -189,7 +189,6 @@ trait AggregatePushDown { // self: ModularPlan =>
   }
 }
 
-
 /**
  * unapply method of Cast class.
  */

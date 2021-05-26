@@ -110,7 +110,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     intercept[ProcessMetaDataException] {
       sql("alter table dm1 change sum_price sum_cost int")
     }.getMessage.contains("Cannot change data type or rename column for columns " +
-      "present in mv materialized view table default.dm1")
+                          "present in mv materialized view table default.dm1")
   }
 
   test("test alter rename table") {

@@ -21,6 +21,7 @@ import java.net.URI
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
@@ -59,6 +60,7 @@ import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.streaming.{ProcessingTime, Trigger}
 import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StringType, StructField}
 import org.apache.spark.unsafe.types.UTF8String
+
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -444,11 +446,11 @@ object CarbonToSparkAdapter {
    *
    */
   def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
-    BucketSpecContext, ColTypeListContext, ColTypeListContext, TablePropertyListContext,
-    LocationSpecContext, Option[String], TerminalNode, QueryContext, String),
-    extraTableTuple: (Seq[StructField], Boolean, TableIdentifier, Boolean, Seq[String],
-    Option[String], mutable.Map[String, String], Map[String, String], Seq[StructField],
-    Seq[PartitionerField], CarbonSpark2SqlParser, SparkSession,
+      BucketSpecContext, ColTypeListContext, ColTypeListContext, TablePropertyListContext,
+      LocationSpecContext, Option[String], TerminalNode, QueryContext, String),
+      extraTableTuple: (Seq[StructField], Boolean, TableIdentifier, Boolean, Seq[String],
+      Option[String], mutable.Map[String, String], Map[String, String], Seq[StructField],
+      Seq[PartitionerField], CarbonSpark2SqlParser, SparkSession,
       Option[LogicalPlan])): LogicalPlan = {
     val (tableHeader, skewSpecContext, bucketSpecContext, partitionColumns, columns,
     tablePropertyList, locationSpecContext, tableComment, ctas, query, provider) = createTableTuple
@@ -685,7 +687,7 @@ class CarbonOptimizer(
 }
 
 abstract class CarbonTakeOrderedAndProjectExecHelper(sortOrder: Seq[SortOrder],
-                                                     limit: Int, skipMapOrder: Boolean, readFromHead: Boolean) extends UnaryExecNode {
+    limit: Int, skipMapOrder: Boolean, readFromHead: Boolean) extends UnaryExecNode {
   override def simpleString: String = {
     val orderByString = sortOrder.mkString("[", ",", "]")
     val outputString = output.mkString("[", ",", "]")

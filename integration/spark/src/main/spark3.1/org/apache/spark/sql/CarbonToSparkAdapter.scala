@@ -26,6 +26,7 @@ import javax.xml.bind.DatatypeConverter
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
@@ -66,6 +67,7 @@ import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, Metadata, StringType, StructField, VarcharType}
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.unsafe.types.UTF8String
+
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -643,8 +645,7 @@ object CarbonToSparkAdapter {
   }
 
   def getField(parser: CarbonSpark2SqlParser,
-               schema: Seq[QualifiedColType],
-               isExternal: Boolean = false): Seq[Field] = {
+    schema: Seq[QualifiedColType],isExternal: Boolean = false): Seq[Field] = {
     schema.map { col =>
       parser.getFields(col.comment, col.name.head, col.dataType, isExternal)
     }
@@ -723,7 +724,7 @@ class CarbonOptimizer(session: SparkSession, optimizer: Optimizer) extends
 }
 
 abstract class CarbonTakeOrderedAndProjectExecHelper(sortOrder: Seq[SortOrder],
-                                                     limit: Int, skipMapOrder: Boolean, readFromHead: Boolean) extends UnaryExecNode {
+    limit: Int, skipMapOrder: Boolean, readFromHead: Boolean) extends UnaryExecNode {
   override def simpleString(maxFields: Int): String = {
     val orderByString = sortOrder.mkString("[", ",", "]")
     val outputString = output.mkString("[", ",", "]")
