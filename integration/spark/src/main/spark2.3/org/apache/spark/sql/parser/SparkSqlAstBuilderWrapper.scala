@@ -27,5 +27,7 @@ import org.apache.spark.sql.internal.SQLConf
 class SparkSqlAstBuilderWrapper(conf: SQLConf)
   extends SparkSqlAstBuilder(conf) {
 
-  def visitPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String] = ???
+  def visitPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String] = {
+    null
+  }
 }

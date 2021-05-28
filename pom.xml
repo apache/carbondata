@@ -446,7 +446,10 @@
           <failOnViolation>true</failOnViolation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <failOnWarning>false</failOnWarning>
-          <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
+          <sourceDirectories>
+            <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
+            <sourceDirectory>${basedir}/src/main/spark${spark.binary.version}</sourceDirectory>
+          </sourceDirectories>
           <testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>
           <configLocation>scalastyle-config.xml</configLocation>
           <outputFile>${basedir}/target/scalastyle-output.xml</outputFile>

@@ -132,7 +132,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     properties.foreach{property => tableProperties.put(property._1, property._2)}
 
     // validate partition clause
-    val partitionByStructFields = Option(partitionColumns).toSeq.flatMap(x => visitPartitionFieldList(x)._2)
+    val partitionByStructFields = Option(partitionColumns).toSeq
+        .flatMap(x => visitPartitionFieldList(x)._2)
     val partitionFields = CarbonToSparkAdapter.
       validatePartitionFields(partitionColumns, colNames, tableProperties,
       partitionByStructFields)

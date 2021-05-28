@@ -20,7 +20,6 @@ package org.apache.spark.sql
 import java.net.URI
 import java.sql.{Date, Timestamp}
 import java.time.ZoneId
-
 import javax.xml.bind.DatatypeConverter
 
 import scala.annotation.tailrec
@@ -37,19 +36,19 @@ import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, QueryPlanni
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener, SessionCatalog}
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, Predicate, ScalaUDF, SortOrder, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSeq, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, Predicate, ScalaUDF, SortOrder, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide, Optimizer}
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, ColTypeListContext, CreateTableHeaderContext, LocationSpecContext, PartitionFieldListContext, QueryContext, SkewSpecContext, TablePropertyListContext}
-import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan, logical}
+import org.apache.spark.sql.catalyst.plans.{logical, JoinType, QueryPlan}
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, InsertIntoStatement, Join, JoinHint, LogicalPlan, OneRowRelation, QualifiedColType, Statistics, SubqueryAlias}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.{CurrentOrigin, TreeNode}
 import org.apache.spark.sql.catalyst.util.{DateTimeUtils, TimestampFormatter}
-import org.apache.spark.sql.execution.{ExplainMode, QueryExecution, SQLExecution, ShuffledRowRDD, SimpleMode, SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.execution.{ExplainMode, QueryExecution, ShuffledRowRDD, SimpleMode, SparkPlan, SQLExecution, UnaryExecNode}
 import org.apache.spark.sql.execution.command.{ExplainCommand, Field, PartitionerField, RefreshTableCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, FilePartition, PartitionedFile}
@@ -645,7 +644,7 @@ object CarbonToSparkAdapter {
   }
 
   def getField(parser: CarbonSpark2SqlParser,
-    schema: Seq[QualifiedColType],isExternal: Boolean = false): Seq[Field] = {
+    schema: Seq[QualifiedColType], isExternal: Boolean = false): Seq[Field] = {
     schema.map { col =>
       parser.getFields(col.comment, col.name.head, col.dataType, isExternal)
     }

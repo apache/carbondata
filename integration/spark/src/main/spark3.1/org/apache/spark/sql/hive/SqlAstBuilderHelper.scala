@@ -19,9 +19,9 @@ package org.apache.spark.sql.hive
 
 import java.util
 
-import org.apache.spark.sql.CarbonToSparkAdapter
-
 import scala.collection.JavaConverters._
+
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.CarbonParserUtil
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext, CreateTableContext, HiveChangeColumnContext}
