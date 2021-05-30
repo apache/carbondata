@@ -20,7 +20,7 @@
 The Apache CarbonData community welcomes all kinds of contributions from anyone with a passion for
 faster data format! Apache CarbonData is a new file format for faster interactive query using
 advanced columnar storage, index, compression and encoding techniques to improve computing
-efficiency, in turn it will help speedup queries an order of magnitude faster over PetaBytes of data.
+efficiency, in turn it will help speedup queries by order of magnitude faster over PetaBytes of data.
 
 We use a review-then-commit workflow in CarbonData for all contributions.
 
