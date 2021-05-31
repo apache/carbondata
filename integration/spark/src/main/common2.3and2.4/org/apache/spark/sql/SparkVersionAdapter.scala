@@ -26,12 +26,12 @@ import org.apache.spark.serializer.Serializer
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSeq, Expression, NamedExpression, SortOrder}
-import org.apache.spark.sql.catalyst.expressions.codegen.{ExprCode, GeneratePredicate}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeSeq, Expression, InterpretedPredicate, NamedExpression, SortOrder}
+import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, ColTypeListContext, CreateTableHeaderContext, LocationSpecContext, QueryContext, SkewSpecContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.{logical, JoinType, QueryPlan}
-import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, InsertIntoTable, Join, LogicalPlan, OneRowRelation, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, Join, LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.{QueryExecution, ShuffledRowRDD, SparkPlan, SQLExecution, UnaryExecNode}
@@ -427,6 +427,9 @@ trait SparkVersionAdapter {
     s.typeName
   }
 
+  def evaluateWithPredicate(exp: Expression, schema: Seq[Attribute], row: InternalRow): Any = {
+    InterpretedPredicate.create(exp, schema).expression.eval(row)
+  }
 }
 
 case class CarbonBuildSide(buildSide: BuildSide) {

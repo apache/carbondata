@@ -21,23 +21,25 @@ import java.net.URI
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.{SparkContext, TaskContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, ExprId, NamedExpression, ScalaUDF, SortOrder, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, ExprId, NamedExpression, Predicate, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.BindReferences.bindReference
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, FilePartition, PartitionedFile}
+import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.types.{DataType, Metadata, StringType}
 
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
 
 object CarbonToSparkAdapter extends SparkVersionAdapter {
@@ -226,6 +228,10 @@ object CarbonToSparkAdapter extends SparkVersionAdapter {
       scalaUdf.inputEncoders,
       scalaUdf.outputEncoder,
       scalaUdf.udfName)
+  }
+
+  def evaluateWithPredicate(exp: Expression, schema: Seq[Attribute], row: InternalRow): Any = {
+    Predicate.createInterpreted(bindReference(exp, schema)).expression.eval(row)
   }
 }
 

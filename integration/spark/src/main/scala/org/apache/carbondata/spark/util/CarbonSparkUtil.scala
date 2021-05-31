@@ -58,6 +58,13 @@ object CarbonSparkUtil {
     }
   }
 
+  def collectNonCarbonRelation(plan: LogicalPlan): Seq[LogicalRelation] = {
+    plan.collect {
+      case l: LogicalRelation =>
+        l
+    }
+  }
+
   /**
    * return's the formatted column comment if column comment is present else empty("")
    *

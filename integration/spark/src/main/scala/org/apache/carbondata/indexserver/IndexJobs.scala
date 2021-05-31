@@ -88,8 +88,7 @@ class DistributedIndexJob extends AbstractIndexJob {
           IndexServer.getClient
         }
         client.getSplits(indexFormat)
-          .getExtendedBlocklets(indexFormat.getCarbonTable.getTablePath, indexFormat
-            .getQueryId, indexFormat.isCountStarJob)
+          .getExtendedBlocklets(indexFormat)
       } finally {
         if (null != splitFolderPath && !splitFolderPath.deleteFile()) {
           LOGGER.error("Problem while deleting the temp directory:"
@@ -162,8 +161,7 @@ class EmbeddedIndexJob extends AbstractIndexJob {
     val originalJobDesc = spark.sparkContext.getLocalProperty("spark.job.description")
     indexFormat.setIsWriteToFile(false)
     indexFormat.setFallbackJob()
-    val splits = IndexServer.getSplits(indexFormat).getExtendedBlocklets(indexFormat
-      .getCarbonTable.getTablePath, indexFormat.getQueryId, indexFormat.isCountStarJob)
+    val splits = IndexServer.getSplits(indexFormat).getExtendedBlocklets(indexFormat)
     // Fire a job to clear the cache from executors as Embedded mode does not maintain the cache.
     if (!indexFormat.isJobToClearIndexes) {
       IndexServer.invalidateSegmentCache(indexFormat.getCarbonTable, indexFormat

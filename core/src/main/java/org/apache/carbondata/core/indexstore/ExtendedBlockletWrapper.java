@@ -36,7 +36,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexInputFormat;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
+import org.apache.carbondata.core.mutate.CdcVO;
 import org.apache.carbondata.core.stream.ExtendedByteArrayInputStream;
 import org.apache.carbondata.core.stream.ExtendedByteArrayOutputStream;
 import org.apache.carbondata.core.stream.ExtendedDataInputStream;
@@ -65,20 +67,20 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
 
   }
 
-  public ExtendedBlockletWrapper(List<ExtendedBlocklet> extendedBlockletList, String tablePath,
-      String queryId, boolean isWriteToFile, boolean isCountJob) {
+  public ExtendedBlockletWrapper(List<ExtendedBlocklet> extendedBlockletList,
+      IndexInputFormat indexInputFormat) {
     Map<String, Short> uniqueLocations = new HashMap<>();
-    byte[] bytes = convertToBytes(tablePath, uniqueLocations, extendedBlockletList, isCountJob);
+    byte[] bytes = convertToBytes(indexInputFormat, uniqueLocations, extendedBlockletList);
     int serializeAllowedSize = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
             CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT)) * 1024;
     DataOutputStream stream = null;
     // if data size is more then data will be written in file and file name will be sent from
     // executor to driver, in case of any failure data will send through network
-    if (bytes.length > serializeAllowedSize && isWriteToFile) {
+    if (bytes.length > serializeAllowedSize && indexInputFormat.isWriteToFile()) {
       final String fileName = UUID.randomUUID().toString();
       String folderPath = CarbonUtil.getIndexServerTempPath()
-              + CarbonCommonConstants.FILE_SEPARATOR + queryId;
+              + CarbonCommonConstants.FILE_SEPARATOR + indexInputFormat.getQueryId();
       try {
         final CarbonFile carbonFile = FileFactory.getCarbonFile(folderPath);
         boolean isFolderExists = true;
@@ -115,15 +117,16 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     }
   }
 
-  private byte[] convertToBytes(String tablePath, Map<String, Short> uniqueLocations,
-      List<ExtendedBlocklet> extendedBlockletList, boolean isCountJob) {
+  private byte[] convertToBytes(IndexInputFormat indexInputFormat,
+      Map<String, Short> uniqueLocations, List<ExtendedBlocklet> extendedBlockletList) {
     ByteArrayOutputStream bos = new ExtendedByteArrayOutputStream();
     DataOutputStream stream = new DataOutputStream(bos);
+    String tablePath = indexInputFormat.getCarbonTable().getTablePath();
     try {
       for (ExtendedBlocklet extendedBlocklet : extendedBlockletList) {
         boolean isExternalPath = !extendedBlocklet.getFilePath().startsWith(tablePath);
         extendedBlocklet.setFilePath(extendedBlocklet.getFilePath().replace(tablePath, ""));
-        extendedBlocklet.serializeData(stream, uniqueLocations, isCountJob, isExternalPath);
+        extendedBlocklet.serializeData(stream, uniqueLocations, indexInputFormat, isExternalPath);
       }
       byte[] input = bos.toByteArray();
       return new SnappyCompressor().compressByte(input, input.length);
@@ -171,8 +174,8 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
    * @return
    * @throws IOException
    */
-  public List<ExtendedBlocklet> readBlocklet(String tablePath, String queryId, boolean isCountJob)
-      throws IOException {
+  public List<ExtendedBlocklet> readBlocklet(String tablePath, String queryId, boolean isCountJob,
+      CdcVO cdcVO) throws IOException {
     byte[] data;
     if (bytes != null) {
       if (isWrittenToFile) {
@@ -216,7 +219,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       try {
         for (int i = 0; i < numberOfBlocklet; i++) {
           ExtendedBlocklet extendedBlocklet = new ExtendedBlocklet();
-          extendedBlocklet.deserializeFields(eDIS, locations, tablePath, isCountJob);
+          extendedBlocklet.deserializeFields(eDIS, locations, tablePath, isCountJob, cdcVO);
           extendedBlockletList.add(extendedBlocklet);
         }
       } finally {

@@ -52,9 +52,9 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
-import org.apache.carbondata.core.scan.expression.Expression
-import org.apache.carbondata.core.scan.expression.conditional.ImplicitExpression
-import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.core.scan.expression.{BinaryExpression, Expression}
+import org.apache.carbondata.core.scan.expression.conditional.{CDCBlockImplicitExpression, ImplicitExpression}
+import org.apache.carbondata.core.scan.expression.logical.{AndExpression, TrueExpression}
 import org.apache.carbondata.core.scan.filter.FilterUtil
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants}
@@ -699,16 +699,41 @@ class CarbonScanRDD[T: ClassTag](
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[Object] = {
     CarbonInputFormat.setCarbonReadSupport(conf, readSupportClz)
-    val tableInfo1 = getTableInfo
-    CarbonInputFormat.setTableInfo(conf, tableInfo1)
+    val tableInfo = getTableInfo
+    CarbonInputFormat.setTableInfo(conf, tableInfo)
     if (indexFilter != null) {
-      indexFilter.setTable(CarbonTable.buildFromTableInfo(tableInfo1))
+      indexFilter.setTable(CarbonTable.buildFromTableInfo(tableInfo))
+      val children = indexFilter.getExpression.getChildren
+      // if the children of the filter contains CDCBlockImplicitExpression, set that to true
+      // expression here, as we don't need this in executor evaluation
+      children.asScala.zipWithIndex.foreach { case (child, index) =>
+        if (child.isInstanceOf[CDCBlockImplicitExpression]) {
+          indexFilter.getExpression.getChildren.set(index, new TrueExpression(null))
+          setCDCExpressionToTrue(indexFilter)
+        }
+      }
     }
     CarbonInputFormat.setFilterPredicates(conf, indexFilter)
-    CarbonInputFormat.setDatabaseName(conf, tableInfo1.getDatabaseName)
-    CarbonInputFormat.setTableName(conf, tableInfo1.getFactTable.getTableName)
+    CarbonInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
+    CarbonInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)
     CarbonInputFormat.setDataTypeConverter(conf, dataTypeConverterClz)
     createInputFormat(conf)
+  }
+
+  /**
+   * When min max pruning is enabled in merge operation, CDCBlockImplicitExpression will be present
+   * which will be used for pruning in driver side. For executor make this as true expression.
+   * @param indexFilter
+   */
+  def setCDCExpressionToTrue(indexFilter: IndexFilter): Unit = {
+    if (indexFilter.getExpression.asInstanceOf[BinaryExpression].getLeft
+      .isInstanceOf[CDCBlockImplicitExpression]) {
+      indexFilter.setExpression(new AndExpression(new TrueExpression(null),
+        indexFilter.getExpression.asInstanceOf[BinaryExpression].getRight))
+    } else {
+      indexFilter.setExpression(new AndExpression(
+        indexFilter.getExpression.asInstanceOf[BinaryExpression].getLeft, new TrueExpression(null)))
+    }
   }
 
   private def createFileInputFormat(conf: Configuration): CarbonFileInputFormat[Object] = {

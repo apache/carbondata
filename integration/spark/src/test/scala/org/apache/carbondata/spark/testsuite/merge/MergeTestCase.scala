@@ -780,6 +780,140 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row("c", "200"), Row("e", "100")))
   }
 
+  test("test upsert APIs on partition table") {
+    sql("drop table if exists target")
+    val initframe = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", 0, "CHINA"),
+      Row("b", 1, "INDIA"),
+      Row("c", 2, "INDIA"),
+      Row("d", 3, "US")
+    ).asJava,
+      StructType(Seq(StructField("key", StringType),
+        StructField("value", IntegerType),
+        StructField("country", StringType))))
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "target")
+      .option("partitionColumns", "country")
+      .mode(SaveMode.Overwrite)
+      .save()
+    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+    var cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", 7, "CHINA"),
+        Row("b", 1, "UK"), // b was just deleted once
+        Row("g", null, "UK"),   // c was deleted and then updated twice
+        Row("e", 3, "US")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", IntegerType), StructField("country", StringType))))
+    // upsert API
+    target.as("A").upsert(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("a", 7, "CHINA"), Row("b", 1, "UK"), Row("g", null, "UK"), Row("e", 3, "US"),
+        Row("c", 2, "INDIA"), Row("d", 3, "US")))
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", 7, "CHINA"),
+        Row("e", 3, "US")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", IntegerType), StructField("country", StringType))))
+    // delete API
+    target.as("A").delete(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("b", 1, "UK"), Row("g", null, "UK"), Row("c", 2, "INDIA"), Row("d", 3, "US")))
+    // update API
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("g", 8, "RUSSIA")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", IntegerType), StructField("country", StringType))))
+    target.as("A").update(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("b", 1, "UK"), Row("g", 8, "RUSSIA"), Row("c", 2, "INDIA"), Row("d", 3, "US")))
+    // insert API
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("j", 2, "RUSSIA"),
+        Row("k", 0, "INDIA")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", IntegerType), StructField("country", StringType))))
+    target.as("A").insert(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("b", 1, "UK"), Row("g", 8, "RUSSIA"), Row("c", 2, "INDIA"), Row("d", 3, "US"),
+        Row("j", 2, "RUSSIA"), Row("k", 0, "INDIA")))
+  }
+
+  test("test all the merge APIs UPDATE, DELETE, UPSERT and INSERT") {
+    sql("drop table if exists target")
+    val initframe = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", "0"),
+      Row("b", "1"),
+      Row("c", "2"),
+      Row("d", "3")
+    ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "target")
+      .mode(SaveMode.Overwrite)
+      .save()
+    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+    var cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", "7"),
+        Row("b", null), // b was just deleted once
+        Row("g", null),   // c was deleted and then updated twice
+        Row("e", "3")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", StringType))))
+    // upsert API
+    target.as("A").upsert(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("a", "7"), Row("b", null), Row("g", null), Row("e", "3"), Row("c", "2"),
+        Row("d", "3")))
+
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", "7"),   // c was deleted and then updated twice
+        Row("e", "3")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", StringType))))
+    // delete API
+    target.as("A").delete(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("b", null), Row("g", null), Row("c", "2"), Row("d", "3")))
+
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("g", "56")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", StringType))))
+    // update API
+    target.as("A").update(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("b", null), Row("g", "56"), Row("c", "2"), Row("d", "3")))
+
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("z", "234"),
+        Row("x", "2")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", StringType))))
+    // insert API
+    target.as("A").insert(cdc.as("B"), "key").execute()
+
+    checkAnswer(sql("select * from target"),
+      Seq(Row("b", null), Row("g", "56"), Row("c", "2"), Row("d", "3"), Row("z", "234"),
+        Row("x", "2")))
+  }
+
   test("check the cdc ") {
     sql("drop table if exists target")
 

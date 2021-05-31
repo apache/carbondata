@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 
 import org.apache.spark.sql.{CarbonBoundReference, CarbonDatasourceHadoopRelation, CarbonEnv,
-  Dataset, SparkSession, SparkUnknownExpression}
+  SparkSession, SparkUnknownExpression}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
@@ -33,6 +33,7 @@ import org.apache.spark.sql.catalyst.expressions.{And, ArrayContains, Attribute,
   ScalaUDF, StartsWith, StringTrim}
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
 import org.apache.spark.sql.execution.CastExpressionOptimization
+import org.apache.spark.sql.execution.command.mutation.merge.udf.BlockPathsUDF
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonSessionCatalogUtil}
 import org.apache.spark.sql.types.{ArrayType, BooleanType, DecimalType, DoubleType, FloatType,
   IntegerType, LongType, MapType, StringType, StructType, TimestampType}
@@ -47,9 +48,9 @@ import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.{ColumnExpression, Expression,
   LiteralExpression, MatchExpression}
-import org.apache.carbondata.core.scan.expression.conditional.{EqualToExpression,
-  GreaterThanEqualToExpression, GreaterThanExpression, ImplicitExpression, InExpression,
-  LessThanEqualToExpression, LessThanExpression, ListExpression, NotEqualsExpression,
+import org.apache.carbondata.core.scan.expression.conditional.{CDCBlockImplicitExpression,
+  EqualToExpression, GreaterThanEqualToExpression, GreaterThanExpression, ImplicitExpression,
+  InExpression, LessThanEqualToExpression, LessThanExpression, ListExpression, NotEqualsExpression,
   NotInExpression, StartsWithExpression}
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression,
   OrExpression}
@@ -286,6 +287,12 @@ object CarbonFilters {
         val (columnName, instance) = getGeoHashHandler(relation.carbonTable)
         Some(new PolygonRangeListExpression(children.head.toString(), children.last.toString(),
           columnName, instance))
+      case _: BlockPathsUDF =>
+        if (children.size > 1) {
+          throw new MalformedCarbonCommandException(
+            "Expected one comma separated values of block paths")
+        }
+        Some(new CDCBlockImplicitExpression(children.head.toString()))
       case _ => None
     }
   }

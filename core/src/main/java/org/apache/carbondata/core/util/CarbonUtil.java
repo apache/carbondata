@@ -70,6 +70,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
@@ -3507,5 +3508,18 @@ public final class CarbonUtil {
    */
   public static boolean isComplexColumn(String colName) {
     return colName.contains(".val") || colName.contains(CarbonCommonConstants.POINT);
+  }
+
+  /**
+   * This method returns the minmax value from the index row object
+   * @return minmax byte array
+   */
+  public static byte[][] getMinMaxValue(IndexRow row, int index) {
+    IndexRow minMaxRow = row.getRow(index);
+    byte[][] minMax = new byte[minMaxRow.getColumnCount()][];
+    for (int i = 0; i < minMax.length; i++) {
+      minMax[i] = minMaxRow.getByteArray(i);
+    }
+    return minMax;
   }
 }
