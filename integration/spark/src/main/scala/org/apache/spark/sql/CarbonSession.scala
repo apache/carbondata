@@ -25,7 +25,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.QueryExecution
-import org.apache.spark.sql.execution.command.mutation.merge.MergeDataSetBuilder
+import org.apache.spark.sql.execution.command.mutation.merge.{MergeDataSetBuilder, UpsertBuilder}
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -293,5 +293,10 @@ object CarbonSession {
     def merge(srcDS: Dataset[Row], expr: Column): MergeDataSetBuilder = {
       new MergeDataSetBuilder(ds, srcDS, expr, ds.sparkSession)
     }
+
+    def merge(srcDS: Dataset[Row], keyColumn: String, operationType: String): UpsertBuilder = {
+      new UpsertBuilder(ds, srcDS, keyColumn, operationType, ds.sparkSession)
+    }
+
   }
 }

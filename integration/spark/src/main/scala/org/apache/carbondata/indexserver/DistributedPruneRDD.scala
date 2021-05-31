@@ -127,7 +127,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       }"
       val value = (executorIP + "_" + cacheSize.toString, new ExtendedBlockletWrapper(f.toList
         .asJava, indexInputFormat.getCarbonTable.getTablePath, indexInputFormat.getQueryId,
-        indexInputFormat.isWriteToFile, indexInputFormat.isCountStarJob))
+        indexInputFormat.isWriteToFile, indexInputFormat.isCountStarJob, indexInputFormat.getCdcVO))
       Iterator(value)
     }
   }

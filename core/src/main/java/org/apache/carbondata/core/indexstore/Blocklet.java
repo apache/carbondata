@@ -31,7 +31,7 @@ import org.apache.hadoop.io.Writable;
 public class Blocklet implements Writable, Serializable {
 
   /** file path of this blocklet */
-  private String filePath;
+  protected String filePath;
 
   /** id to identify the blocklet inside the block (it is a sequential number) */
   private String blockletId;

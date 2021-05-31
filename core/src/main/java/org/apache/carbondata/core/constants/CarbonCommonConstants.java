@@ -2670,4 +2670,14 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_SPARK3_VERSION = "2.2.0";
 
+  /**
+   * This property is to enable the min max pruning of target carbon table based on input/source
+   * data
+   */
+  @CarbonProperty
+  public static final String CARBON_CDC_MINMAX_PRUNING_ENABLED =
+      "carbon.cdc.minmax.pruning.enabled";
+
+  public static final String CARBON_CDC_MINMAX_PRUNING_ENABLED_DEFAULT = "false";
+
 }
