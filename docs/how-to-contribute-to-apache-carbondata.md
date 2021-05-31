@@ -7,7 +7,7 @@
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software 
     distributed under the License is distributed on an "AS IS" BASIS, 
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -153,7 +153,7 @@ Please include a descriptive pull request message to help make the reviewer’s 
 ```
  - The root cause/problem statement
  - What is the implemented solution
- ```
+```
 
 If you know a good committer to review your pull request, please make a comment like the following.
 If not, don’t worry, a committer will pick it up.
