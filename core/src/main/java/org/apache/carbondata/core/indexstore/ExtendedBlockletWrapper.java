@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datastore.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
+import org.apache.carbondata.core.mutate.CdcVO;
 import org.apache.carbondata.core.stream.ExtendedByteArrayInputStream;
 import org.apache.carbondata.core.stream.ExtendedByteArrayOutputStream;
 import org.apache.carbondata.core.stream.ExtendedDataInputStream;
@@ -66,9 +67,10 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
   }
 
   public ExtendedBlockletWrapper(List<ExtendedBlocklet> extendedBlockletList, String tablePath,
-      String queryId, boolean isWriteToFile, boolean isCountJob) {
+      String queryId, boolean isWriteToFile, boolean isCountJob, CdcVO cdcVO) {
     Map<String, Short> uniqueLocations = new HashMap<>();
-    byte[] bytes = convertToBytes(tablePath, uniqueLocations, extendedBlockletList, isCountJob);
+    byte[] bytes =
+        convertToBytes(tablePath, uniqueLocations, extendedBlockletList, isCountJob, cdcVO);
     int serializeAllowedSize = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
             CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT)) * 1024;
@@ -116,14 +118,15 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
   }
 
   private byte[] convertToBytes(String tablePath, Map<String, Short> uniqueLocations,
-      List<ExtendedBlocklet> extendedBlockletList, boolean isCountJob) {
+      List<ExtendedBlocklet> extendedBlockletList, boolean isCountJob, CdcVO cdcVO) {
     ByteArrayOutputStream bos = new ExtendedByteArrayOutputStream();
     DataOutputStream stream = new DataOutputStream(bos);
     try {
       for (ExtendedBlocklet extendedBlocklet : extendedBlockletList) {
         boolean isExternalPath = !extendedBlocklet.getFilePath().startsWith(tablePath);
         extendedBlocklet.setFilePath(extendedBlocklet.getFilePath().replace(tablePath, ""));
-        extendedBlocklet.serializeData(stream, uniqueLocations, isCountJob, isExternalPath);
+        extendedBlocklet
+            .serializeData(stream, uniqueLocations, isCountJob, isExternalPath, cdcVO);
       }
       byte[] input = bos.toByteArray();
       return new SnappyCompressor().compressByte(input, input.length);
@@ -171,8 +174,8 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
    * @return
    * @throws IOException
    */
-  public List<ExtendedBlocklet> readBlocklet(String tablePath, String queryId, boolean isCountJob)
-      throws IOException {
+  public List<ExtendedBlocklet> readBlocklet(String tablePath, String queryId, boolean isCountJob,
+      CdcVO cdcVO) throws IOException {
     byte[] data;
     if (bytes != null) {
       if (isWrittenToFile) {
@@ -216,7 +219,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       try {
         for (int i = 0; i < numberOfBlocklet; i++) {
           ExtendedBlocklet extendedBlocklet = new ExtendedBlocklet();
-          extendedBlocklet.deserializeFields(eDIS, locations, tablePath, isCountJob);
+          extendedBlocklet.deserializeFields(eDIS, locations, tablePath, isCountJob, cdcVO);
           extendedBlockletList.add(extendedBlocklet);
         }
       } finally {

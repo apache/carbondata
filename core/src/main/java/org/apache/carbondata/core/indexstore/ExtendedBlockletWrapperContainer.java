@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.mutate.CdcVO;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 
@@ -63,7 +64,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
   }
 
   public List<ExtendedBlocklet> getExtendedBlocklets(String tablePath, String queryId,
-      boolean isCountJob) throws IOException {
+      boolean isCountJob, CdcVO cdcVO) throws IOException {
     if (!isFallbackJob) {
       int numOfThreads = CarbonProperties.getNumOfThreadsForPruning();
       ExecutorService executorService = Executors
@@ -86,7 +87,8 @@ public class ExtendedBlockletWrapperContainer implements Writable {
       for (int value : split) {
         end += value;
         futures.add(executorService.submit(
-            new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId, isCountJob)));
+            new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId, isCountJob,
+                cdcVO)));
         start += value;
       }
       executorService.shutdown();
@@ -110,7 +112,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       for (ExtendedBlockletWrapper extendedBlockletWrapper: extendedBlockletWrappers) {
         extendedBlocklets
-            .addAll(extendedBlockletWrapper.readBlocklet(tablePath, queryId, isCountJob));
+            .addAll(extendedBlockletWrapper.readBlocklet(tablePath, queryId, isCountJob, cdcVO));
       }
       return extendedBlocklets;
     }
@@ -128,13 +130,16 @@ public class ExtendedBlockletWrapperContainer implements Writable {
 
     private boolean isCountJob;
 
+    private CdcVO cdcVO;
+
     public ExtendedBlockletDeserializerThread(int start, int end, String tablePath,
-        String queryId, boolean isCountJob) {
+        String queryId, boolean isCountJob, CdcVO cdcVO) {
       this.start = start;
       this.end = end;
       this.tablePath = tablePath;
       this.queryId = queryId;
       this.isCountJob = isCountJob;
+      this.cdcVO = cdcVO;
     }
 
     @Override
@@ -142,7 +147,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       for (int i = start; i < end; i++) {
         extendedBlocklets.addAll(extendedBlockletWrappers[i].readBlocklet(tablePath, queryId,
-            isCountJob));
+            isCountJob, cdcVO));
       }
       return extendedBlocklets;
     }

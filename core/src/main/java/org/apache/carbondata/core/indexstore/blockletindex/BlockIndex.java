@@ -886,7 +886,7 @@ public class BlockIndex extends CoarseGrainIndex
     }
   }
 
-  private byte[][] getMinMaxValue(IndexRow row, int index) {
+  public static byte[][] getMinMaxValue(IndexRow row, int index) {
     IndexRow minMaxRow = row.getRow(index);
     byte[][] minMax = new byte[minMaxRow.getColumnCount()][];
     for (int i = 0; i < minMax.length; i++) {
@@ -895,7 +895,7 @@ public class BlockIndex extends CoarseGrainIndex
     return minMax;
   }
 
-  private boolean[] getMinMaxFlag(IndexRow row, int index) {
+  public static boolean[] getMinMaxFlag(IndexRow row, int index) {
     IndexRow minMaxFlagRow = row.getRow(index);
     boolean[] minMaxFlag = new boolean[minMaxFlagRow.getColumnCount()];
     for (int i = 0; i < minMaxFlag.length; i++) {

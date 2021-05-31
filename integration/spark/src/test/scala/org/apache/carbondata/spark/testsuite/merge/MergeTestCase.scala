@@ -780,6 +780,68 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row("c", "200"), Row("e", "100")))
   }
 
+  test("test new API") {
+    sql("drop table if exists target")
+    val initframe = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", "0"),
+      Row("b", "1"),
+      Row("c", "2"),
+      Row("d", "3")
+    ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "target")
+      .mode(SaveMode.Overwrite)
+      .save()
+    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+    var cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", "7"),
+        Row("b", null), // b was just deleted once
+        Row("g", null),   // c was deleted and then updated twice
+        Row("e", "3")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", StringType))))
+    sql("select * from target").show(false)
+    // upsert API
+    target.as("A").merge(cdc.as("B"), "key", "upsert").execute()
+    sql("select * from target").show(false)
+
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", "7"),   // c was deleted and then updated twice
+        Row("e", "3")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", StringType))))
+    // delete API
+    target.as("A").merge(cdc.as("B"), "key", "delete").execute()
+    sql("select * from target").show(false)
+
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("g", "56")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", StringType))))
+    // update API
+    target.as("A").merge(cdc.as("B"), "key", "update").execute()
+    sql("select * from target").show(false)
+
+    cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("z", "234"),
+        Row("x", "2")
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("value", StringType))))
+    // insert API
+    target.as("A").merge(cdc.as("B"), "key", "insert").execute()
+
+    sql("select * from target").show(false)
+  }
+
   test("check the cdc ") {
     sql("drop table if exists target")
 

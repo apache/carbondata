@@ -21,14 +21,19 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexRowIndexes;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.mutate.CdcVO;
+import org.apache.carbondata.core.mutate.FilePathMinMaxVO;
 import org.apache.carbondata.core.stream.ExtendedByteArrayOutputStream;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
@@ -46,6 +51,8 @@ public class ExtendedBlocklet extends Blocklet {
   private String segmentNo;
 
   private boolean isCgIndexPresent = false;
+
+  private Map<String, List<FilePathMinMaxVO>> columnToMinMaxMapping;
 
   public ExtendedBlocklet() {
 
@@ -168,7 +175,7 @@ public class ExtendedBlocklet extends Blocklet {
    * @throws IOException
    */
   public void serializeData(DataOutput out, Map<String, Short> uniqueLocation, boolean isCountJob,
-      boolean isExternalPath)
+      boolean isExternalPath, CdcVO cdcVO)
       throws IOException {
     super.write(out);
     if (isCountJob) {
@@ -177,6 +184,21 @@ public class ExtendedBlocklet extends Blocklet {
       // not have proper row count. So, always take row count from indexRow.
       out.writeLong(inputSplit.getIndexRow().getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
       out.writeUTF(inputSplit.getSegmentId());
+    } else if (cdcVO != null) {
+      // In case of CDC, we ust need the filepath and the min max of the blocklet, so just serialize
+      // these data to reduce less network transfer cost and faster cache access from index server.
+      out.writeUTF(inputSplit.getFilePath());
+      List<Integer> indexesToFetch = cdcVO.getIndexesToFetch();
+      for (Integer indexToFetch : indexesToFetch) {
+        byte[] minValues = BlockIndex.getMinMaxValue(inputSplit.getIndexRow(),
+            BlockletIndexRowIndexes.MIN_VALUES_INDEX)[indexToFetch];
+        out.writeInt(minValues.length);
+        out.write(minValues);
+        byte[] maxValues = BlockIndex.getMinMaxValue(inputSplit.getIndexRow(),
+            BlockletIndexRowIndexes.MAX_VALUES_INDEX)[indexToFetch];
+        out.writeInt(maxValues.length);
+        out.write(maxValues);
+      }
     } else {
       if (indexUniqueId == null) {
         out.writeBoolean(false);
@@ -213,12 +235,28 @@ public class ExtendedBlocklet extends Blocklet {
    * @throws IOException
    */
   public void deserializeFields(DataInput in, String[] locations, String tablePath,
-      boolean isCountJob)
+      boolean isCountJob, CdcVO cdcVO)
       throws IOException {
     super.readFields(in);
     if (isCountJob) {
       count = in.readLong();
       segmentNo = in.readUTF();
+      return;
+    } else if (cdcVO != null) {
+      filePath = in.readUTF();
+      this.columnToMinMaxMapping = new HashMap<>();
+      for (Map.Entry<String, Integer> entry : cdcVO.getColumnToIndexMap().entrySet()) {
+        List<FilePathMinMaxVO> minMaxOfColumnInList = new ArrayList<>();
+        int minLength = in.readInt();
+        byte[] minValuesForBlocklets = new byte[minLength];
+        in.readFully(minValuesForBlocklets);
+        int maxLength = in.readInt();
+        byte[] maxValuesForBlocklets = new byte[maxLength];
+        in.readFully(maxValuesForBlocklets);
+        minMaxOfColumnInList
+            .add(new FilePathMinMaxVO(filePath, minValuesForBlocklets, maxValuesForBlocklets));
+        this.columnToMinMaxMapping.put(entry.getKey(), minMaxOfColumnInList);
+      }
       return;
     }
     if (in.readBoolean()) {
@@ -242,5 +280,9 @@ public class ExtendedBlocklet extends Blocklet {
 
   public void setCgIndexPresent(boolean cgIndexPresent) {
     isCgIndexPresent = cgIndexPresent;
+  }
+
+  public Map<String, List<FilePathMinMaxVO>> getColumnToMinMaxMapping() {
+    return columnToMinMaxMapping;
   }
 }

@@ -55,6 +55,7 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.AndFilterExecutorImpl;
+import org.apache.carbondata.core.scan.filter.executer.CDCBlockImplicitExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.DimColumnExecutorFilterInfo;
 import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.FalseFilterExecutor;
@@ -195,6 +196,12 @@ public final class FilterUtil {
             if (filterExecutor != null) {
               return filterExecutor;
             }
+          }
+          if (filterExpressionResolverTree
+              .getFilterExpression() instanceof CDCBlockImplicitExpression) {
+            return new CDCBlockImplicitExecutorImpl(
+                ((CDCBlockImplicitExpression) filterExpressionResolverTree.getFilterExpression())
+                    .getBlocksToScan());
           }
           return new RowLevelFilterExecutorImpl(
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree)

@@ -427,6 +427,6 @@ object DistributedRDDUtils {
       new java.util.ArrayList(),
       new java.util.ArrayList())
     new ExtendedBlockletWrapper(blocklets, request.getCarbonTable.getTablePath, request.getQueryId,
-      request.isWriteToFile, request.isCountStarJob)
+      request.isWriteToFile, request.isCountStarJob, request.getCdcVO)
   }
 }

@@ -36,6 +36,7 @@ import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.mutate.CdcVO;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
@@ -101,6 +102,10 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   private boolean isSIPruningEnabled;
 
   private Set<String> missingSISegments;
+
+  private CdcVO cdcVO;
+
+  private Boolean isCDCJob;
 
   IndexInputFormat() {
 
@@ -275,6 +280,10 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
         out.writeUTF(segment);
       }
     }
+    out.writeBoolean(cdcVO != null);
+    if (cdcVO != null) {
+      cdcVO.write(out);
+    }
   }
 
   @Override
@@ -330,6 +339,11 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
         missingSISegments.add(in.readUTF());
       }
     }
+    this.isCDCJob = in.readBoolean();
+    if (this.isCDCJob) {
+      this.cdcVO = new CdcVO();
+      cdcVO.readFields(in);
+    }
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -351,6 +365,14 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
    */
   public boolean isFallbackJob() {
     return isFallbackJob;
+  }
+
+  public CdcVO getCdcVO() {
+    return cdcVO;
+  }
+
+  public void setCdcVO(CdcVO cdcVO) {
+    this.cdcVO = cdcVO;
   }
 
   /**

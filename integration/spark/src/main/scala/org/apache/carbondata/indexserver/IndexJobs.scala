@@ -89,7 +89,7 @@ class DistributedIndexJob extends AbstractIndexJob {
         }
         client.getSplits(indexFormat)
           .getExtendedBlocklets(indexFormat.getCarbonTable.getTablePath, indexFormat
-            .getQueryId, indexFormat.isCountStarJob)
+            .getQueryId, indexFormat.isCountStarJob, null)
       } finally {
         if (null != splitFolderPath && !splitFolderPath.deleteFile()) {
           LOGGER.error("Problem while deleting the temp directory:"
@@ -163,7 +163,7 @@ class EmbeddedIndexJob extends AbstractIndexJob {
     indexFormat.setIsWriteToFile(false)
     indexFormat.setFallbackJob()
     val splits = IndexServer.getSplits(indexFormat).getExtendedBlocklets(indexFormat
-      .getCarbonTable.getTablePath, indexFormat.getQueryId, indexFormat.isCountStarJob)
+      .getCarbonTable.getTablePath, indexFormat.getQueryId, indexFormat.isCountStarJob, null)
     // Fire a job to clear the cache from executors as Embedded mode does not maintain the cache.
     if (!indexFormat.isJobToClearIndexes) {
       IndexServer.invalidateSegmentCache(indexFormat.getCarbonTable, indexFormat
