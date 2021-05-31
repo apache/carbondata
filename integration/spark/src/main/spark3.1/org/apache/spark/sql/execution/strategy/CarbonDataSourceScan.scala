@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonToSparkAdapter}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, SparkVersionAdapter}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, SortOrder, UnsafeProjection}
@@ -194,7 +194,7 @@ case class CarbonDataSourceScan(
   override protected def doCanonicalize(): CarbonDataSourceScan = {
     CarbonDataSourceScan(
       relation,
-      output.map(CarbonToSparkAdapter.normalizeExpressions(_, output)),
+      output.map(SparkVersionAdapter.normalizeExpressions(_, output)),
       QueryPlan.normalizePredicates(partitionFilters, output),
       QueryPlan.normalizePredicates(dataFilters, output),
       null,

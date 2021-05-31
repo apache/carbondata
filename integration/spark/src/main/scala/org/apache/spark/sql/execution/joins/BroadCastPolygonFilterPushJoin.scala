@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.SparkVersionAdapter
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, BindReferences, Expression, JoinedRow, Literal, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.JoinType
@@ -64,7 +64,7 @@ case class BroadCastPolygonFilterPushJoin(
   @transient private lazy val boundCondition: InternalRow => Boolean = {
     // get the join condition
     if (condition.isDefined) {
-      CarbonToSparkAdapter.getPredicate(streamedPlan.output ++ buildPlan.output, condition)
+      SparkVersionAdapter.getPredicate(streamedPlan.output ++ buildPlan.output, condition)
     } else {
       (_: InternalRow) => true
     }

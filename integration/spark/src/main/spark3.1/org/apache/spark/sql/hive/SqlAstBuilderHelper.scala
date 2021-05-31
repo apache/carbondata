@@ -21,7 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.SparkVersionAdapter
 import org.apache.spark.sql.catalyst.CarbonParserUtil
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext, CreateTableContext, HiveChangeColumnContext}
@@ -66,7 +66,7 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
 
     val col = ctx.columns.qualifiedColTypeWithPosition.asScala
         .map(typedVisit[QualifiedColType]).toSeq
-    val fields = CarbonToSparkAdapter.getField(parser, col)
+    val fields = SparkVersionAdapter.getField(parser, col)
     val tblProperties = scala.collection.mutable.Map.empty[String, String]
     val fullTableName = visitMultipartIdentifier(ctx.multipartIdentifier)
     val tableModel = CarbonParserUtil.prepareTableModel(ifNotExistPresent = false,

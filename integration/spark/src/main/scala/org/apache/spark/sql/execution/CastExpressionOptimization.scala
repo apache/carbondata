@@ -24,7 +24,7 @@ import java.util.{Locale, TimeZone}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.SparkVersionAdapter
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertToJavaList
 import org.apache.spark.sql.catalyst.expressions.{Attribute, EmptyRow, EqualTo, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
@@ -43,7 +43,7 @@ object CastExpressionOptimization {
   def typeCastStringToLong(v: Any, dataType: SparkDataType): Any = {
     if (dataType == TimestampType || dataType == DateType) {
       val value = if (dataType == TimestampType) {
-        CarbonToSparkAdapter.stringToTimestamp(v.toString)
+        SparkVersionAdapter.stringToTimestamp(v.toString)
       } else {
         None
       }

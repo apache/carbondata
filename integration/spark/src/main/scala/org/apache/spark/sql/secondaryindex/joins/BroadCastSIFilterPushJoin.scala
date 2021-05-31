@@ -28,8 +28,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.JobContext
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonBuildSide, CarbonToSparkAdapter, SparkSession}
-import org.apache.spark.sql.CarbonToSparkAdapter.CarbonBuildSideType
+import org.apache.spark.sql.{CarbonBuildSide, SparkSession}
+import org.apache.spark.sql.SparkVersionAdapter.CarbonBuildSideType
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, BindReferences, Expression, In, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext

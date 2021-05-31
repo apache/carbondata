@@ -69,12 +69,12 @@ class CarbonSession(@transient val sc: SparkContext,
       case Some(_) =>
         val ss = existingSharedState.get
         if (ss == null) {
-          CarbonToSparkAdapter.createSharedState(sparkContext)
+          SparkVersionAdapter.createSharedState(sparkContext)
         } else {
           ss
         }
       case None =>
-        CarbonToSparkAdapter.createSharedState(sparkContext)
+        SparkVersionAdapter.createSharedState(sparkContext)
     }
   }
 
@@ -89,7 +89,7 @@ class CarbonSession(@transient val sc: SparkContext,
     withProfiler(
       sqlText,
       (qe, sse) => {
-          CarbonToSparkAdapter.createDataset(SparkSQLUtil.getSparkSession, qe)
+          SparkVersionAdapter.createDataset(SparkSQLUtil.getSparkSession, qe)
       }
     )
   }
@@ -111,7 +111,7 @@ class CarbonSession(@transient val sc: SparkContext,
   def sparkSql(sqlText: String): DataFrame = {
     withProfiler(
       sqlText,
-      (qe, sse) => CarbonToSparkAdapter.createDataset(SparkSQLUtil.getSparkSession, qe)
+      (qe, sse) => SparkVersionAdapter.createDataset(SparkSQLUtil.getSparkSession, qe)
     )
   }
 

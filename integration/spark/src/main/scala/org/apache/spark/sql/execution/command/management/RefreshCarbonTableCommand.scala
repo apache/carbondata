@@ -98,7 +98,7 @@ case class RefreshCarbonTableCommand(
         }
       }
     }
-    CarbonToSparkAdapter.createRefreshTableCommand(TableIdentifier(tableName, Option(databaseName)))
+    SparkVersionAdapter.createRefreshTableCommand(TableIdentifier(tableName, Option(databaseName)))
       .run(sparkSession)
   }
 

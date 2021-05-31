@@ -17,9 +17,6 @@
 
 package org.apache.spark.sql.execution.streaming
 
-import java.util
-import java.util.Date
-
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
@@ -28,7 +25,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
-import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession, SparkVersionAdapter}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.{QueryExecution, SQLExecution}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
@@ -253,7 +250,7 @@ object CarbonAppendableStreamSink {
     )
 
     // run write data file job
-    CarbonToSparkAdapter.withNewExecutionId(sparkSession, queryExecution) {
+    SparkVersionAdapter.withNewExecutionId(sparkSession, queryExecution) {
       var result: Array[(TaskCommitMessage, StreamFileIndex)] = null
       try {
         committer.setupJob(job)

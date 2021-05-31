@@ -22,7 +22,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.executor.OutputMetrics
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession, SparkVersionAdapter}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.EliminateView
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSeq, NamedExpression}
@@ -59,7 +59,7 @@ object SparkSQLUtil {
 
   def invokeQueryPlanNormalizeExprId(r: NamedExpression, input: AttributeSeq)
       : NamedExpression = {
-    CarbonToSparkAdapter.normalizeExpressions(r, input)
+    SparkVersionAdapter.normalizeExpressions(r, input)
   }
 
   def getEliminateViewObj(): Rule[LogicalPlan] = {

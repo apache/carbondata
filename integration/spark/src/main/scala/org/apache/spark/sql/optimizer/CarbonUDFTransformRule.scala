@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.optimizer
 
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.SparkVersionAdapter
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, PredicateHelper, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -56,7 +56,7 @@ class CarbonUDFTransformRule extends Rule[LogicalPlan] with PredicateHelper {
             case other => other
           }
           Project(newCols,
-            CarbonToSparkAdapter.createJoinNode(newLeft, join.right, join.joinType, join.condition))
+            SparkVersionAdapter.createJoinNode(newLeft, join.right, join.joinType, join.condition))
         } else {
           proj
         }

@@ -25,7 +25,7 @@ import scala.collection.mutable
 import scala.util.Random
 
 import org.apache.spark._
-import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, SparkSession, SparkVersionAdapter}
 import org.apache.spark.sql.execution.command.NodeInfo
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
@@ -141,7 +141,7 @@ class CarbonSecondaryIndexRDD[K, V](
               segmentId,
               indexCarbonTable,
               factToIndexColumnMapping)
-        CarbonToSparkAdapter.addTaskCompletionListener {
+        SparkVersionAdapter.addTaskCompletionListener {
           if (null != secondaryIndexQueryResultProcessor) {
             secondaryIndexQueryResultProcessor.close()
           }

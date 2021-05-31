@@ -18,7 +18,7 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.CarbonToSparkAdapter.RefreshTables
+import org.apache.spark.sql.SparkVersionAdapter.RefreshTables
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogUtils}

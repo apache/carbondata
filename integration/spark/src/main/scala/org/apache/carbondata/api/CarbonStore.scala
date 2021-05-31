@@ -27,7 +27,7 @@ import scala.util.control.Breaks.{break, breakable}
 
 import com.google.gson.Gson
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.SparkVersionAdapter
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -359,7 +359,7 @@ object CarbonStore {
 
   private def validateTimeFormat(timestamp: String): Long = {
     try {
-      CarbonToSparkAdapter.stringToTimestamp(timestamp) match {
+      SparkVersionAdapter.stringToTimestamp(timestamp) match {
         case Some(value) => value
         case _ =>
           val errorMessage = "Error: Invalid load start time format: " + timestamp
