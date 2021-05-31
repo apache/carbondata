@@ -184,7 +184,6 @@ Thank you for your contribution to Apache CarbonData!
 Once the pull request is merged into the Apache CarbonData repository, you can safely delete the
 branch locally and purge it from your forked repository.
 
-
 From another local branch, run:
 ```
 $ git fetch --all
