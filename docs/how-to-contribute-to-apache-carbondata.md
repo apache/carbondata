@@ -189,3 +189,4 @@ From another local branch, run:
 $ git fetch --all
 $ git branch -d <my-branch>
 $ git push <GitHub_user> --delete <my-branch>
+```
