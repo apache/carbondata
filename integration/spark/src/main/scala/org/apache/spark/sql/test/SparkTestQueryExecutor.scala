@@ -63,6 +63,7 @@ object SparkTestQueryExecutor {
   val extensions = CarbonProperties
     .getInstance()
     .getProperty("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+  // TODO: Analyse the legacy configs and add test cases for the same
   val spark = SparkSession
     .builder()
     .config(conf)

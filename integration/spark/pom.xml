@@ -576,6 +576,7 @@
               <excludes>
                 <exclude>src/main/spark3.1</exclude>
                 <exclude>src/main/spark2.4</exclude>
+                <exclude>src/main/common2.4and3.1</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -634,6 +635,7 @@
                   <sources>
                     <source>src/main/spark2.4</source>
                     <source>src/main/common2.3and2.4</source>
+                    <source>src/main/common2.4and3.1</source>
                   </sources>
                 </configuration>
               </execution>
@@ -674,6 +676,7 @@
                 <configuration>
                   <sources>
                     <source>src/main/spark3.1</source>
+                    <source>src/main/common2.4and3.1</source>
                   </sources>
                 </configuration>
               </execution>

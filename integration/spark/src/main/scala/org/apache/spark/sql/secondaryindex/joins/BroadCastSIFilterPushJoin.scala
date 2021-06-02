@@ -65,7 +65,7 @@ case class BroadCastSIFilterPushJoin(
     buildSide: CarbonBuildSideType,
     left: SparkPlan,
     right: SparkPlan,
-    condition: Option[Expression]) extends BinaryExecNode with HashJoin with CarbonCodegenSupport {
+    condition: Option[Expression]) extends BinaryExecNode with CarbonCodegenSupport {
 
   override def output: Seq[Attribute] = carbonScan.output
 

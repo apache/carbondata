@@ -36,6 +36,7 @@ import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MV
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.types.{DataType, Metadata, StringType}
 
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
 
 object CarbonToSparkAdapter {
@@ -45,7 +46,12 @@ object CarbonToSparkAdapter {
   }
 
   def addSparkSessionListener(sparkSession: SparkSession): Unit = {
-    SparkSqlAdapter.addSparkSessionListener(sparkSession)
+    sparkSession.sparkContext.addSparkListener(new SparkListener {
+      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+        CarbonEnv.carbonEnvMap.remove(sparkSession)
+        ThreadLocalSessionInfo.unsetAll()
+      }
+    })
   }
 
   def addSparkListener(sparkContext: SparkContext): Unit = {
@@ -129,8 +135,7 @@ object CarbonToSparkAdapter {
       name: String,
       exprId: ExprId = NamedExpression.newExprId,
       qualifier: Option[String] = None,
-      explicitMetadata: Option[Metadata] = None,
-      namedExpr : Option[NamedExpression] = None ) : Alias = {
+      explicitMetadata: Option[Metadata] = None) : Alias = {
 
     Alias(child, name)(exprId, qualifier, explicitMetadata)
   }

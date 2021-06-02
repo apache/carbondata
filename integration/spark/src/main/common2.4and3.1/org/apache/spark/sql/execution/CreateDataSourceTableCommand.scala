@@ -21,7 +21,7 @@ import org.apache.log4j.Logger
 import org.apache.spark.sql.{AnalysisException, Row, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType, CatalogUtils}
 import org.apache.spark.sql.execution.command.RunnableCommand
-import org.apache.spark.sql.util.CreateTableCommonUtil.getNewTable
+import org.apache.spark.sql.util.CreateTableCommonUtil.getCatalogTable
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
@@ -41,7 +41,7 @@ case class CreateDataSourceTableCommand(table: CatalogTable, ignoreIfExists: Boo
         throw new AnalysisException(s"Table ${table.identifier.unquotedString} already exists.")
       }
     }
-    val newTable: CatalogTable = getNewTable(sparkSession, sessionState, table, LOGGER)
+    val newTable: CatalogTable = getCatalogTable(sparkSession, sessionState, table, LOGGER)
 
     // We will return Nil or throw exception at the beginning if the table already exists, so when
     // we reach here, the table should not exist and we should set `ignoreIfExists` to false.

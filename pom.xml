@@ -449,6 +449,8 @@
           <sourceDirectories>
             <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
             <sourceDirectory>${basedir}/src/main/spark${spark.binary.version}</sourceDirectory>
+            <sourceDirectory>${basedir}/src/main/common2.3and2.4</sourceDirectory>
+            <sourceDirectory>${basedir}/src/main/common2.4and3.1</sourceDirectory>
           </sourceDirectories>
           <testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>
           <configLocation>scalastyle-config.xml</configLocation>
@@ -698,6 +700,7 @@
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/spark2.4</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/common2.3and2.4</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/common2.4and3.1</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
@@ -771,6 +774,7 @@
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/spark3.1</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/common2.4and3.1</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>

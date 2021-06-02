@@ -18,10 +18,9 @@
 package org.apache.carbondata.mv.expressions.modular
 
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.types._
 
-import org.apache.carbondata.mv.plans.modular.{ExpressionHelper, ModularPlan}
+import org.apache.carbondata.mv.plans.modular.{ModularPlan, SparkVersionHelper}
 
 /**
  * A base interface for expressions that contain a [[ModularPlan]].
@@ -54,7 +53,7 @@ abstract class ModularSubquery(
     // Normalize the outer references in the subquery plan.
     val normalizedPlan = plan.transformAllExpressions {
       case OuterReference(r) => OuterReference(
-        ExpressionHelper.normalizeExpressions(r, attrs))
+        SparkVersionHelper.normalizeExpressions(r, attrs))
     }
     withNewPlan(normalizedPlan).canonicalized.asInstanceOf[ModularSubquery]
   }

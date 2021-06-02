@@ -251,7 +251,7 @@ object DMLStrategy extends SparkStrategy {
       plan match {
         case join: Join =>
           ExtractEquiJoinKeys.unapply(join) match {
-              // ignoring hints as carbon is not using them right now
+              // TODO: Spark is using hints now, carbon also should use join hints
             case Some(x) => Some(x._1, x._2, x._3, x._4, x._5, x._6)
             case None => None
           }

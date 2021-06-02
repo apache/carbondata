@@ -27,7 +27,10 @@ import org.apache.spark.sql.types.StructType
 
 object CreateTableCommonUtil {
 
-  def getNewTable(sparkSession: SparkSession, sessionState: SessionState,
+  /*
+   * Will create a new Catalog Table based on the datasourceSchema
+   */
+  def getCatalogTable(sparkSession: SparkSession, sessionState: SessionState,
       table: CatalogTable, LOGGER: Logger ): CatalogTable = {
     // Create the relation to validate the arguments before writing the metadata to the metastore,
     // and infer the table schema and partition if users didn't specify schema in CREATE TABLE.

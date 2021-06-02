@@ -155,8 +155,7 @@ object CarbonToSparkAdapter {
       name: String,
       exprId: ExprId = NamedExpression.newExprId,
       qualifier: Seq[String] = Seq.empty,
-      explicitMetadata: Option[Metadata] = None,
-      namedExpr: Option[NamedExpression] = None) : Alias = {
+      explicitMetadata: Option[Metadata] = None) : Alias = {
     Alias(child, name)(exprId, qualifier, explicitMetadata)
   }
 

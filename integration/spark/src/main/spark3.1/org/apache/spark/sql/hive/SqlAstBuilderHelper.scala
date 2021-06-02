@@ -35,7 +35,6 @@ import org.apache.spark.sql.types.{DecimalType, StructField}
 
 trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
 
-
   override def visitHiveChangeColumn(ctx: HiveChangeColumnContext): LogicalPlan = {
 
     val newColumn = visitColType(ctx.colType)

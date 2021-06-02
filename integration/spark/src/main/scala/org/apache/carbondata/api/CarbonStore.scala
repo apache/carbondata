@@ -362,8 +362,7 @@ object CarbonStore {
       SparkVersionAdapter.stringToTimestamp(timestamp) match {
         case Some(value) => value
         case _ =>
-          val errorMessage = "Error: Invalid load start time format: " + timestamp
-          throw new MalformedCarbonCommandException(errorMessage)
+          throw new RuntimeException
       }
     } catch {
       case _: Exception =>

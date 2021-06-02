@@ -85,6 +85,7 @@ object ExampleUtils {
     } else {
       "local[" + workThreadNum.toString() + "]"
     }
+    // TODO: Analyse the legacy configs and add test cases for non legacy ones
     val spark = SparkSession
       .builder()
       .master(masterUrl)

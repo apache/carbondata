@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.{RuleExecutor, _}
 import org.apache.spark.sql.internal.SQLConf
 
-import org.apache.carbondata.mv.plans.modular.ExpressionHelper
+import org.apache.carbondata.mv.plans.modular.SparkVersionHelper
 
 object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
 
@@ -73,7 +73,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
       RemoveLiteralFromGroupExpressions,
       RemoveRepetitionFromGroupExpressions) ::
     Batch(
-      "Operator Optimizations", fixedPoint, ExpressionHelper.seqOfRules
+      "Operator Optimizations", fixedPoint, SparkVersionHelper.seqOfRules
         ++ extendedOperatorOptimizationRules: _*) ::
     Batch(
       "Check Cartesian Products", Once,
@@ -95,7 +95,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     def apply(plan: LogicalPlan): LogicalPlan = {
       plan transformAllExpressions {
         case s: SubqueryExpression =>
-          s.withNewPlan(ExpressionHelper.getOptimizedPlan(s))
+          s.withNewPlan(SparkVersionHelper.getOptimizedPlan(s))
       }
     }
   }

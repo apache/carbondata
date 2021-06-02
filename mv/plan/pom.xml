@@ -177,6 +177,7 @@
                 <configuration>
                   <sources>
                     <source>src/main/spark2.3</source>
+                    <source>src/main/common2.3and2.4</source>
                   </sources>
                 </configuration>
               </execution>
@@ -216,6 +217,7 @@
                 <configuration>
                   <sources>
                     <source>src/main/spark2.4</source>
+                    <source>src/main/common2.3and2.4</source>
                   </sources>
                 </configuration>
               </execution>
@@ -238,6 +240,7 @@
               <excludes>
                 <exclude>src/main/spark2.3</exclude>
                 <exclude>src/main/spark2.4</exclude>
+                <source>src/main/common2.3and2.4</source>
               </excludes>
             </configuration>
           </plugin>

@@ -258,24 +258,6 @@ object SparkVersionAdapter {
   type CarbonBuildSideType = BuildSide
   type InsertIntoStatementWrapper = InsertIntoStatement
 
-  def getStatisticsObj(outputList: Seq[NamedExpression],
-                       plan: LogicalPlan, stats: Statistics,
-                       aliasMap: Option[AttributeMap[Attribute]] = None): Statistics = {
-    val output = outputList.map(_.toAttribute)
-    val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
-      table => AttributeMap(table.output.zip(output))
-    }
-    val rewrites = mapSeq.head
-    val attributes: AttributeMap[ColumnStat] = stats.attributeStats
-    var attributeStats = AttributeMap(attributes.iterator
-      .map { pair => (rewrites(pair._1), pair._2) }.toSeq)
-    if (aliasMap.isDefined) {
-      attributeStats = AttributeMap(
-        attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
-    }
-    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats)
-  }
-
   def createRefreshTableCommand(tableIdentifier: TableIdentifier): RefreshTableCommand = {
     RefreshTableCommand(tableIdentifier)
   }

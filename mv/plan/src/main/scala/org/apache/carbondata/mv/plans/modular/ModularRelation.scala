@@ -21,8 +21,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.JoinType
-import org.apache.spark.sql.catalyst.plans.logical
-import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, LogicalPlan, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical.Statistics
 
 import org.apache.carbondata.mv.plans.modular.Flags._
 
@@ -46,7 +45,7 @@ case class ModularRelation(
   protected override def computeStats(spark: SparkSession): Statistics = {
     val plan = spark.table(s"${ databaseName }.${ tableName }").queryExecution.optimizedPlan
     val stats = plan.stats
-    ExpressionHelper.getStatisticsObj(outputList, plan, stats)
+    SparkVersionHelper.getStatisticsObj(outputList, plan, stats)
   }
 
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
@@ -160,7 +159,7 @@ case class HarmonizedRelation(source: ModularPlan) extends getVerboseString {
           toAttribute
         (ar, a.toAttribute)
     })
-    ExpressionHelper.getStatisticsObj(output, plan, stats, Option(aliasMap))
+    SparkVersionHelper.getStatisticsObj(output, plan, stats, Option(aliasMap))
   }
 
   override def output: Seq[Attribute] = source.output
