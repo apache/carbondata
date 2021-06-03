@@ -177,6 +177,39 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
   }
 
+  test("test SI global sort with si segment merge enabled for newly added complex column") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
+    sql("create table complextable2 (id int, name string, country array<string>) stored as " +
+        "carbondata tblproperties('sort_scope'='global_sort','sort_columns'='name')")
+    sql(
+      s"load data inpath '$resourcesPath/secindex/array.csv' into table complextable2 options" +
+      s"('delimiter'=','," +
+      "'quotechar'='\"','fileheader'='id,name,country','complex_delimiter_level_1'='$'," +
+      "'global_sort_partitions'='10')")
+    sql("ALTER TABLE complextable2 ADD COLUMNS(arr2 array<string>)")
+    sql(
+      s"load data inpath '$resourcesPath/secindex/array2.csv' into table complextable2 options" +
+      s"('delimiter'=','," +
+      "'quotechar'='\"','fileheader'='id,name,country,arr2','complex_delimiter_level_1'='$'," +
+      "'global_sort_partitions'='10')")
+    val result = sql(" select * from complextable2 where array_contains(arr2,'iron')")
+    sql("drop index if exists index_2 on complextable")
+    sql("create index index_2 on table complextable2(arr2) as 'carbondata' properties" +
+        "('sort_scope'='global_sort') ")
+    checkAnswer(sql("select count(*) from complextable2 where array_contains(arr2,'iron')"),
+      sql("select count(*) from complextable2 where ni(array_contains(arr2,'iron'))"))
+    val df = sql(" select * from complextable2 where array_contains(arr2,'iron')")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
+  }
+
   test("test SI global sort with si segment merge enabled for primitive data types") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
