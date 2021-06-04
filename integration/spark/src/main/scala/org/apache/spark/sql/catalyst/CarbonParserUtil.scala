@@ -1094,7 +1094,7 @@ object CarbonParserUtil {
     field.dataType.getOrElse("NIL") match {
       case "Array" | "Struct" | "Map" =>
         val newChildren = field.children.map(_.map(appendParentForEachChild(_,
-            parentName + CarbonCommonConstants.POINT + field.column)))
+          parentName + CarbonCommonConstants.POINT + field.column)))
         field.copy(column = parentName + CarbonCommonConstants.POINT + field.column,
           name = Some(parentName + CarbonCommonConstants.POINT + field.name.getOrElse(None)),
           children = newChildren,
@@ -1184,7 +1184,7 @@ object CarbonParserUtil {
         dataTypeInfo.setChildren(childTypeInfoList)
       case _ =>
     }
-    // To-Do for map types
+    // TODO have to handle for map types [CARBONDATA-4199]
     dataTypeInfo
   }
 

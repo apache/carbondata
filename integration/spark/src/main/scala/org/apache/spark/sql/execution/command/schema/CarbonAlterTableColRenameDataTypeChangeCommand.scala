@@ -43,18 +43,18 @@ import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 abstract class CarbonAlterTableColumnRenameCommand(oldColumnName: String, newColumnName: String)
   extends MetadataCommand {
+  import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
   protected def validColumnsForRenaming(columnSchemaList: mutable.Buffer[ColumnSchema],
       alteredColumnNamesMap: mutable.LinkedHashMap[String, String],
       carbonTable: CarbonTable): Unit = {
     // check whether new column name is already an existing column name
-    for ((oldColumnName, newColumnName) <- alteredColumnNamesMap) {
-      if (columnSchemaList.exists(_.getColumn_name.equalsIgnoreCase(newColumnName))) {
-        throw new MalformedCarbonCommandException(s"Column Rename Operation failed. New " +
-                                                  s"column name $newColumnName already exists" +
-                                                  s" in table ${ carbonTable.getTableName }")
-      }
-    }
+    alteredColumnNamesMap.foreach(keyVal => if (columnSchemaList.exists(_.getColumnName
+      .equalsIgnoreCase(keyVal._2))) {
+      throw new MalformedCarbonCommandException(s"Column Rename Operation failed. New " +
+                                                s"column name ${ keyVal._2 } already exists" +
+                                                s" in table ${ carbonTable.getTableName }")
+    })
 
     // if column rename operation is on bucket column, then fail the rename operation
     if (null != carbonTable.getBucketingInfo) {
@@ -69,6 +69,7 @@ abstract class CarbonAlterTableColumnRenameCommand(oldColumnName: String, newCol
           }
       }
     }
+
   }
 }
 
@@ -173,9 +174,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
             alteredColumnNamesMap)
         }
       } else {
-        if (oldDatatype.isComplexType ||
-            newDatatype.equalsIgnoreCase(CarbonCommonConstants.ARRAY) ||
-            newDatatype.equalsIgnoreCase(CarbonCommonConstants.STRUCT)) {
+        if (oldDatatype.isComplexType) {
           throw new UnsupportedOperationException(
             "Old and new complex columns are not compatible in structure")
         }
@@ -201,12 +200,10 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         }
       }
 
-      // read the latest schema file
-      val tableInfo: TableInfo = metaStore.getThriftTableInfo(carbonTable)
-      val columnSchemaList = tableInfo.fact_table.table_columns.asScala.filter(!_.isInvisible)
       if (!alteredColumnNamesMap.isEmpty) {
         // validate the columns to be renamed
-        validColumnsForRenaming(columnSchemaList, alteredColumnNamesMap, carbonTable)
+        validColumnsForRenaming(carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala,
+          alteredColumnNamesMap, carbonTable)
       }
 
       if (isDataTypeChange) {
@@ -215,10 +212,15 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
           .dataTypeInfo,
           oldCarbonColumn.head)
       }
+      // read the latest schema file
+      val tableInfo: TableInfo =
+        metaStore.getThriftTableInfo(carbonTable)
       // maintain the added column for schema evolution history
       var addedTableColumnSchema: ColumnSchema = null
       var deletedColumnSchema: ColumnSchema = null
       var schemaEvolutionEntry: SchemaEvolutionEntry = null
+      val columnSchemaList = tableInfo.fact_table.table_columns.asScala.filter(!_.isInvisible)
+
       var addedColumnsList: List[ColumnSchema] = List.empty[ColumnSchema]
       var deletedColumnsList: List[ColumnSchema] = List.empty[ColumnSchema]
 
@@ -355,11 +357,11 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
 
   private def checkIfParentIsAltered(columnSchemaName: String): String = {
     var parent: String = null
-    for ((oldComplexChildName, newComplexChildName) <- alteredColumnNamesMap) {
-      if (isChildOfTheGivenColumn(columnSchemaName, oldComplexChildName)) {
-        parent = oldComplexChildName
+    alteredColumnNamesMap.foreach(keyVal => {
+      if (isChildOfTheGivenColumn(columnSchemaName, keyVal._1)) {
+        parent = keyVal._1
       }
-    }
+    })
     parent
   }
 

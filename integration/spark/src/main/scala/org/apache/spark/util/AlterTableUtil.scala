@@ -367,11 +367,11 @@ object AlterTableUtil {
       addedColumnsList: List[org.apache.carbondata.format.ColumnSchema],
       deletedColumnsList: List[org.apache.carbondata.format.ColumnSchema]): SchemaEvolutionEntry = {
     val timeStamp = System.currentTimeMillis()
-    var newSchemaEvolutionEntry = schemaEvolutionEntry;
-    if (newSchemaEvolutionEntry == null) {
-      newSchemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
+    val newSchemaEvolutionEntry = if (schemaEvolutionEntry == null) {
+      new SchemaEvolutionEntry(timeStamp)
+    } else {
+      schemaEvolutionEntry
     }
-    newSchemaEvolutionEntry.setTime_stamp(timeStamp)
     newSchemaEvolutionEntry.setAdded(addedColumnsList.asJava)
     newSchemaEvolutionEntry.setRemoved(deletedColumnsList.asJava)
     newSchemaEvolutionEntry
@@ -1099,17 +1099,14 @@ object AlterTableUtil {
     } else {
       for ((newDimensionInfo, i) <- newDimensionList.zipWithIndex) {
         val oldDimensionInfo = oldDimensionList(i)
-        val old_column_name = oldDimensionInfo.getColName.split(CarbonCommonConstants.CHAR_POINT).
-          last
+        val old_column_name = oldDimensionInfo
+          .getColName.split(CarbonCommonConstants.POINT.toCharArray).last
         val old_column_datatype = oldDimensionInfo.getDataType.getName
-        val new_column_name = newDimensionInfo.columnName.split(CarbonCommonConstants.CHAR_POINT).
-          last
+        val new_column_name = newDimensionInfo
+          .columnName.split(CarbonCommonConstants.POINT.toCharArray).last
         val new_column_datatype = newDimensionInfo.dataType
         if (!old_column_datatype.equalsIgnoreCase(new_column_datatype)) {
-          /**
-           * datatypes of complex children cannot be altered. So throwing exception for now.
-           * TODO: use alteredColumnDatatypesMap to update the carbon schema
-           */
+          // datatypes of complex children cannot be altered. So throwing exception for now.
           throw new UnsupportedOperationException(
             "Altering datatypes of any child column is not supported")
         }

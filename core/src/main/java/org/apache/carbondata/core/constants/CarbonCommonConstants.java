@@ -1911,12 +1911,6 @@ public final class CarbonCommonConstants {
   public static final String POINT = ".";
 
   /**
-   * POINT as a character
-   */
-  public static final char CHAR_POINT = '.';
-
-
-  /**
    * Windows File separator
    */
   public static final String WINDOWS_FILE_SEPARATOR = "\\";

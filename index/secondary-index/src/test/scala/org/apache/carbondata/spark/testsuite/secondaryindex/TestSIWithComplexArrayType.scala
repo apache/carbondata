@@ -47,13 +47,14 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
 
   test("Test restructured array<string> and existing string column as index columns on SI with compaction") {
     sql("drop table if exists complextable")
-    sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
+    sql("create table complextable (id string, country array<string>, columnName string) stored as carbondata")
     sql("insert into complextable select 1,array('china', 'us'), 'b'")
     sql("insert into complextable select 2,array('pak'), 'v'")
 
     sql("drop index if exists index_11 on complextable")
-    sql(
-      "ALTER TABLE complextable ADD COLUMNS(arr2 array<string>)")
+    sql("ALTER TABLE complextable ADD COLUMNS(newArray array<string>)")
+    sql("alter table complextable change newArray arr2 array<string>")
+    sql("alter table complextable change columnName name string")
     sql("insert into complextable select 3,array('china'), 'f',array('hello','world')")
     sql("insert into complextable select 4,array('India'),'g',array('iron','man','jarvis')")
 
@@ -93,9 +94,10 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("insert into complextable select 2,array('pak'), 'v'")
 
     sql("drop index if exists index_11 on complextable")
-    sql(
-      "ALTER TABLE complextable ADD COLUMNS(arr2 array<string>)")
-    sql("ALTER TABLE complextable ADD COLUMNS(addr string)")
+    sql("ALTER TABLE complextable ADD COLUMNS(newArray array<string>)")
+    sql("alter table complextable change newArray arr2 array<string>")
+    sql("ALTER TABLE complextable ADD COLUMNS(address string)")
+    sql("alter table complextable change address addr string")
     sql("insert into complextable select 3,array('china'), 'f',array('hello','world'),'china'")
     sql("insert into complextable select 4,array('India'),'g',array('iron','man','jarvis'),'India'")
 
@@ -129,11 +131,12 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test array<string> on secondary index with compaction") {
-    sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
+    sql("create table complextable (id string, columnCountry array<string>, name string) stored as carbondata")
     sql("insert into complextable select 1,array('china', 'us'), 'b'")
     sql("insert into complextable select 2,array('pak'), 'v'")
     sql("insert into complextable select 3,array('china'), 'f'")
     sql("insert into complextable select 4,array('india'),'g'")
+    sql("alter table complextable change columnCountry country array<string>")
     val result1 = sql(" select * from complextable where array_contains(country,'china')")
     val result2 = sql(" select * from complextable where country[0]='china'")
     sql("drop index if exists index_1 on complextable")
@@ -162,11 +165,12 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test array<string> and string as index columns on secondary index with compaction") {
-    sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
+    sql("create table complextable (id string, columnCountry array<string>, name string) stored as carbondata")
     sql("insert into complextable select 1, array('china', 'us'), 'b'")
     sql("insert into complextable select 2, array('pak'), 'v'")
     sql("insert into complextable select 3, array('china'), 'f'")
     sql("insert into complextable select 4, array('india'),'g'")
+    sql("alter table complextable change columnCountry country array<string>")
     val result = sql(" select * from complextable where array_contains(country,'china') and name='f'")
     sql("drop index if exists index_1 on complextable")
     sql("create index index_1 on table complextable(country, name) as 'carbondata'")
