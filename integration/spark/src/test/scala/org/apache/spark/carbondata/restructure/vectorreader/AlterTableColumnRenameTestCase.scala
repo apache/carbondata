@@ -113,7 +113,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     }
     assert(ex4.getMessage
       .contains(
-        "column rename operation failed: Duplicate columns are present"))
+        "Column Rename Operation failed. New column name str.a already exists in table " +
+        "test_rename"))
 
     val ex5 = intercept[ProcessMetaDataException] {
       sql("alter table test_rename change str str2 struct<a:int,b:long>")

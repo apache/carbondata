@@ -52,8 +52,8 @@ CarbonData DDL statements are documented here,which includes:
     * [RENAME TABLE](#rename-table)
     * [ADD COLUMNS](#add-columns)
     * [DROP COLUMNS](#drop-columns)
-    * [RENAME COLUMN](#change-column-nametype)
-    * [CHANGE COLUMN NAME/TYPE/COMMENT](#change-column-nametype)
+    * [RENAME COLUMN](#change-column-name-type-comment)
+    * [CHANGE COLUMN NAME/TYPE/COMMENT](#change-column-name-type-comment)
     * [MERGE INDEXES](#merge-index)
     * [SET/UNSET](#set-and-unset)
   * [DROP TABLE](#drop-table)
@@ -805,7 +805,7 @@ Users can specify which columns to include and exclude for local dictionary gene
      2. If a column to be dropped has any Secondary index table created on them, drop column operation fails and the user will 
      be asked to drop the corresponding SI table first before going for actual drop.
 
-   - #### change-column-nametype
+   - #### change-column-name-type-comment
    
      This command is used to change column name and comment and the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.

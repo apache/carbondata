@@ -358,30 +358,23 @@ object AlterTableUtil {
   /**
    * This method create a new SchemaEvolutionEntry and adds to SchemaEvolutionEntry List
    *
-   * @param addColumnSchema     added new column schema
-   * @param deletedColumnSchema old column schema which is deleted
    * @param addedColumnsList    list of added column schemas
    * @param deletedColumnsList  list of deleted column schemas
    * @return
    */
   def addNewSchemaEvolutionEntry(
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      addColumnSchema: org.apache.carbondata.format.ColumnSchema,
-      deletedColumnSchema: org.apache.carbondata.format.ColumnSchema,
       addedColumnsList: List[org.apache.carbondata.format.ColumnSchema],
       deletedColumnsList: List[org.apache.carbondata.format.ColumnSchema]): SchemaEvolutionEntry = {
     val timeStamp = System.currentTimeMillis()
-    if (schemaEvolutionEntry == null) {
-      val newSchemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
-      newSchemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
-      newSchemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
-      newSchemaEvolutionEntry
-    } else {
-      schemaEvolutionEntry.setTime_stamp(timeStamp)
-      schemaEvolutionEntry.setAdded(addedColumnsList.asJava)
-      schemaEvolutionEntry.setRemoved(deletedColumnsList.asJava)
-      schemaEvolutionEntry
+    var newSchemaEvolutionEntry = schemaEvolutionEntry;
+    if (newSchemaEvolutionEntry == null) {
+      newSchemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
     }
+    newSchemaEvolutionEntry.setTime_stamp(timeStamp)
+    newSchemaEvolutionEntry.setAdded(addedColumnsList.asJava)
+    newSchemaEvolutionEntry.setRemoved(deletedColumnsList.asJava)
+    newSchemaEvolutionEntry
   }
 
   def readLatestTableSchema(carbonTable: CarbonTable)(sparkSession: SparkSession): TableInfo = {
@@ -1106,9 +1099,11 @@ object AlterTableUtil {
     } else {
       for ((newDimensionInfo, i) <- newDimensionList.zipWithIndex) {
         val oldDimensionInfo = oldDimensionList(i)
-        val old_column_name = oldDimensionInfo.getColName.split('.').last
+        val old_column_name = oldDimensionInfo.getColName.split(CarbonCommonConstants.CHAR_POINT).
+          last
         val old_column_datatype = oldDimensionInfo.getDataType.getName
-        val new_column_name = newDimensionInfo.columnName.split('.').last
+        val new_column_name = newDimensionInfo.columnName.split(CarbonCommonConstants.CHAR_POINT).
+          last
         val new_column_datatype = newDimensionInfo.dataType
         if (!old_column_datatype.equalsIgnoreCase(new_column_datatype)) {
           /**

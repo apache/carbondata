@@ -1093,15 +1093,15 @@ object CarbonParserUtil {
   private def appendParentForEachChild(field: Field, parentName: String): Field = {
     field.dataType.getOrElse("NIL") match {
       case "Array" | "Struct" | "Map" =>
-        val newChildren = field.children
-          .map(_.map(appendParentForEachChild(_, parentName + "." + field.column)))
-        field.copy(column = parentName + "." + field.column,
-          name = Some(parentName + "." + field.name.getOrElse(None)),
+        val newChildren = field.children.map(_.map(appendParentForEachChild(_,
+            parentName + CarbonCommonConstants.POINT + field.column)))
+        field.copy(column = parentName + CarbonCommonConstants.POINT + field.column,
+          name = Some(parentName + CarbonCommonConstants.POINT + field.name.getOrElse(None)),
           children = newChildren,
           parent = parentName)
       case _ =>
-        field.copy(column = parentName + "." + field.column,
-          name = Some(parentName + "." + field.name.getOrElse(None)),
+        field.copy(column = parentName + CarbonCommonConstants.POINT + field.column,
+          name = Some(parentName + CarbonCommonConstants.POINT + field.name.getOrElse(None)),
           parent = parentName)
     }
   }
