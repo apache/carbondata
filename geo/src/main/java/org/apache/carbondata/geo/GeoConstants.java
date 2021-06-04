@@ -31,13 +31,13 @@ public class GeoConstants {
   public static final String POSITIVE_INTEGER_REGEX = "^[+]?\\d*[1-9]\\d*$";
 
   // Regular expression to parse input polygons for IN_POLYGON_LIST
-  public static final String POLYGON_REG_EXPRESSION = "(?<=POLYGON \\(\\()(.*?)(?=(\\)\\)))";
+  public static final String POLYGON_REG_EXPRESSION = "(?<=POLYGON[ ]{0,1}\\(\\()(.*?)(?=(\\)\\)))";
 
   // Regular expression to parse input polylines for IN_POLYLINE_LIST
-  public static final String POLYLINE_REG_EXPRESSION = "LINESTRING \\(.*?\\)";
+  public static final String POLYLINE_REG_EXPRESSION = "LINESTRING *\\(.*?\\)";
 
   // Regular expression to parse input rangelists for IN_POLYGON_RANGE_LIST
-  public static final String RANGELIST_REG_EXPRESSION = "(?<=RANGELIST \\()(.*?)(?=\\))";
+  public static final String RANGELIST_REG_EXPRESSION = "(?<=RANGELIST[ ]{0,1}\\()(.*?)(?=\\))";
 
   public static final String GRID_SIZE = "gridSize";
 

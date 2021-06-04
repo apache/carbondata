@@ -631,14 +631,16 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   test("test one polyline query") {
     createTable()
     loadData2()
-    checkAnswer(
-      sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
+    val df = sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
         s"'LINESTRING (120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464, " +
-        s"120.190359 30.315388)', 65)"),
-      Seq(Row(120184976, 30327105),
+        s"120.190359 30.315388)', 65)")
+    checkAnswer(df, Seq(Row(120184976, 30327105),
         Row(120197093, 30325985),
         Row(120196020, 30321651),
         Row(120198638, 30323540)))
+    checkAnswer(sql(s"select longitude, latitude from $table1 where IN_POLYLINE_LIST(" +
+          s"'LINESTRING(120.184179 30.327465, 120.191603 30.328946, 120.199242 30.324464, " +
+          s"120.190359 30.315388)', 65)"), df)
   }
 
   test("test polyline list query, result is union of two polylines") {
@@ -669,7 +671,7 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     loadData()
     checkAnswer(
       sql(s"select mygeohash, longitude, latitude from $table1 where IN_POLYGON_RANGE_LIST(" +
-        s"'RANGELIST (855279368848 855279368850, 855280799610 855280799612)', 'OR')"),
+        s"'RANGELIST(855279368848 855279368850, 855280799610 855280799612)', 'OR')"),
       Seq(Row(855279368850L, 116288955, 39999101),
         Row(855280799612L, 116285807, 40084087)))
   }

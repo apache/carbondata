@@ -41,7 +41,7 @@ class GeoQueryTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterE
     sql(s"insert into $polygonTable select 'POLYGON ((120.176433 30.327431,120.171283 30.322245," +
         s"120.181411 30.314540, 120.190509 30.321653,120.185188 30.329358,120.176433 30.327431))" +
         s"','abc','1'")
-    sql(s"insert into $polygonTable select 'polygon ((120.191603 30.328946,120.184179 30.327465," +
+    sql(s"insert into $polygonTable select 'polygon((120.191603 30.328946,120.184179 30.327465," +
         s"120.181819 30.321464,120.190359 30.315388,120.199242 30.324464,120.191603 30.328946))'," +
         s"'abc','1'")
     sql(s"insert into $polygonTable select null,'abc','1'")
