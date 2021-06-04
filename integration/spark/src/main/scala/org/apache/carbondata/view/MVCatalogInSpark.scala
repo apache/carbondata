@@ -82,6 +82,10 @@ case class MVCatalogInSpark(session: SparkSession)
     enabledSchemas.toArray
   }
 
+  def getAllSchemas: Array[MVSchemaWrapper] = {
+    viewSchemas.toArray
+  }
+
   def isMVInSync(mvSchema: MVSchema): Boolean = {
     viewManager.isMVInSyncWithParentTables(mvSchema)
   }

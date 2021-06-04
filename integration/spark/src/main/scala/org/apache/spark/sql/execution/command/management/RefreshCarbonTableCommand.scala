@@ -84,6 +84,9 @@ case class RefreshCarbonTableCommand(
       if (FileFactory.isFileExist(schemaFilePath)) {
         // read TableInfo
         val tableInfo = SchemaReader.getTableInfo(identifier)
+        // remove mv related info from source table properties
+        tableInfo.getFactTable
+          .getTableProperties.remove(CarbonCommonConstants.RELATED_MV_TABLES_MAP)
         // refresh the column schema in case of store before V3
         refreshColumnSchema(tableInfo)
 

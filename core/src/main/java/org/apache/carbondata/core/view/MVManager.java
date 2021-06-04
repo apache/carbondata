@@ -142,7 +142,12 @@ public abstract class MVManager {
   }
 
   public MVSchema getSchema(String databaseName, String viewName) throws IOException {
-    return schemaProvider.getSchema(this, databaseName, viewName);
+    return schemaProvider.getSchema(this, databaseName, viewName, false);
+  }
+
+  public MVSchema getSchema(String databaseName, String viewName, boolean isRegisterMV)
+      throws IOException {
+    return schemaProvider.getSchema(this, databaseName, viewName, isRegisterMV);
   }
 
   /**

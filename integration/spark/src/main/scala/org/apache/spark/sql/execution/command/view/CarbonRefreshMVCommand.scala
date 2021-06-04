@@ -39,10 +39,26 @@ case class CarbonRefreshMVCommand(
     val databaseName =
       databaseNameOption.getOrElse(session.sessionState.catalog.getCurrentDatabase)
     val viewManager = MVManagerInSpark.get(session)
-    val schema = viewManager.getSchema(databaseName, mvName)
+    var schema = viewManager.getSchema(databaseName, mvName)
     if (schema == null) {
-      throw new MalformedMVCommandException(
-        s"Materialized view $databaseName.$mvName does not exist")
+      // schema can be null when MV is registered i.e. in case of compatibility scenarios
+      // with old store. So check and get schema if exists in the system folder.
+      schema = viewManager.getSchema(databaseName, mvName, true)
+      if (schema == null) {
+        throw new MalformedMVCommandException(
+          s"Materialized view $databaseName.$mvName does not exist")
+      }
+      val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
+      if (!viewCatalog.getAllSchemas.exists(_.viewSchema.getIdentifier.getTableName
+          .equals(schema.getIdentifier.getTableName))) {
+        try {
+          viewCatalog.registerSchema(schema)
+        } catch {
+          case e: Exception =>
+            throw new Exception(
+              "Error while registering schema for mv: " + schema.getIdentifier.getTableName, e)
+        }
+      }
     }
 
     // refresh table property of parent table if needed
