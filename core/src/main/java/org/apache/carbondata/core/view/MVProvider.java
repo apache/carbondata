@@ -102,12 +102,17 @@ public class MVProvider {
   }
 
   public MVSchema getSchema(MVManager viewManager, String databaseName,
-                            String viewName) throws IOException {
+                            String viewName, boolean isRegisterMV) throws IOException {
     SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       return null;
     }
-    return schemaProvider.retrieveSchema(viewManager, viewName);
+    if (!isRegisterMV) {
+      return schemaProvider.retrieveSchema(viewManager, viewName);
+    } else {
+      // in case of old store, get schema by checking in system folder.
+      return schemaProvider.retrieveSchemaFromFolder(viewManager, viewName);
+    }
   }
 
   List<MVSchema> getSchemas(MVManager viewManager, String databaseName,
@@ -561,6 +566,18 @@ public class MVProvider {
         }
       }
       return false;
+    }
+
+    public MVSchema retrieveSchemaFromFolder(MVManager viewManager, String mvName)
+        throws IOException {
+      this.schemas = this.retrieveAllSchemasInternal(viewManager);
+      for (MVSchema schema : this.schemas) {
+        if (schema.getIdentifier().getTableName().equalsIgnoreCase(mvName)) {
+          touchMDTFile();
+          return schema;
+        }
+      }
+      return null;
     }
 
     private synchronized void touchMDTFile() throws IOException {

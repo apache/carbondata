@@ -24,6 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.view.rewrite.TestUtil
 
 /**
  *
@@ -228,6 +229,44 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterEach {
         Seq(Row("a", "aa", "aaa"), Row("b", "bb", "bbb"))
       )
       sql("drop table carbontable")
+    }
+  }
+
+  test("test register table with mv") {
+    sql(s"create database carbon location '$dbLocation'")
+    sql("use carbon")
+    sql(
+      """create table carbon.carbontable (
+        |c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""".stripMargin)
+    sql("insert into carbontable select 'a',1,'aa','aaa'")
+    sql("create materialized view mv1 as select avg(c2),c3 from carbontable group by c3")
+    backUpData(dbLocation, Some("carbon"), "carbontable")
+    backUpData(dbLocation, Some("carbon"), "mv1")
+    val source = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system" +
+                 CarbonCommonConstants.FILE_SEPARATOR + "mv_schema.mv1"
+    val destination = dbLocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + "mv_schema.mv1"
+    backUpMvSchema(source, destination)
+    sql("drop table carbontable")
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
+      restoreData(dbLocation, "carbontable")
+      restoreData(dbLocation, "mv1")
+      backUpMvSchema(destination, source)
+      sql("refresh table carbontable")
+      sql("refresh table mv1")
+      sql("refresh materialized view mv1")
+      checkAnswer(sql("select count(*) from carbontable"), Row(1))
+      checkAnswer(sql("select c1 from carbontable"), Seq(Row("a")))
+      val df = sql("select avg(c2),c3 from carbontable group by c3")
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
+    }
+  }
+
+  private def backUpMvSchema(source: String, destination: String) = {
+    try {
+      FileUtils.copyFile(new File(source), new File(destination))
+    } catch {
+      case e: Exception =>
+        throw new IOException("Mv schema file backup/restore failed.")
     }
   }
 
