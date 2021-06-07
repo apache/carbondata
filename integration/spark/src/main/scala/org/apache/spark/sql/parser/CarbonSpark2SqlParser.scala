@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.{Dataset, DeleteRecords, SparkSession, SparkVersionAdapter, UpdateTable}
+import org.apache.spark.sql.{CarbonToSparkAdapter, Dataset, DeleteRecords, SparkSession, UpdateTable}
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
@@ -39,7 +39,7 @@ import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, C
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
-import org.apache.spark.sql.types.{CharType, DataType, DataTypes, StructField}
+import org.apache.spark.sql.types.{DataType, DataTypes, StructField}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -318,7 +318,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           }
           if (!isJoinWithMainTable) {
             // Should go as value update, not as join update. So execute the sub query.
-            val analyzedPlan = SparkVersionAdapter.invokeAnalyzerExecute(session
+            val analyzedPlan = CarbonToSparkAdapter.invokeAnalyzerExecute(session
               .sessionState
               .analyzer, subQueryUnresolvedLogicalPlan)
             val subQueryLogicalPlan = session.sessionState.optimizer.execute(analyzedPlan)
@@ -375,7 +375,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           case None => UpdateTable(relation,
             finalColumns,
             selectStmt,
-            Some(SparkVersionAdapter.getTableIdentifier(tab._1).get.table),
+            Some(CarbonToSparkAdapter.getTableIdentifier(tab._1).get.table),
             where)
         }
         rel
@@ -575,8 +575,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       case mode ~ logicalPlan =>
         logicalPlan match {
           case _: CarbonCreateTableCommand =>
-            SparkVersionAdapter.getExplainCommandObj(logicalPlan, mode)
-          case _ => SparkVersionAdapter.getExplainCommandObj(mode)
+            CarbonToSparkAdapter.getExplainCommandObj(logicalPlan, mode)
+          case _ => CarbonToSparkAdapter.getExplainCommandObj(mode)
         }
     }
 
@@ -777,7 +777,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     schema.map { col =>
       // TODO: Spark has started supporting CharType/VarChar types in Spark 3.1 but both are
       //  marked as experimental. Adding a hack to change to string for now.
-      if (SparkVersionAdapter.isCharType(col.dataType) || SparkVersionAdapter
+      if (CarbonToSparkAdapter.isCharType(col.dataType) || CarbonToSparkAdapter
           .isVarCharType(col.dataType)) {
         getFields(col.getComment(), col.name, DataTypes.StringType, isExternal)
       } else {

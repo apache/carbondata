@@ -91,6 +91,12 @@
         <spark.binary.version>2.4</spark.binary.version>
       </properties>
     </profile>
+    <profile>
+      <id>spark-3.1</id>
+      <properties>
+        <spark.binary.version>3.1</spark.binary.version>
+      </properties>
+    </profile>
   </profiles>
 
 </project>

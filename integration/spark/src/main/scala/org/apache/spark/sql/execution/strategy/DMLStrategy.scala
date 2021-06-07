@@ -133,7 +133,7 @@ object DMLStrategy extends SparkStrategy {
           val sparkSession = SparkSQLUtil.getSparkSession
           lazy val analyzer = sparkSession.sessionState.analyzer
           lazy val optimizer = sparkSession.sessionState.optimizer
-          val analyzedPlan = SparkVersionAdapter.invokeAnalyzerExecute(
+          val analyzedPlan = CarbonToSparkAdapter.invokeAnalyzerExecute(
             analyzer, rightSide)
           val polygonTablePlan = optimizer.execute(analyzedPlan)
           // transform join condition by replacing polygon column with ToRangeListAsString udf
@@ -200,7 +200,7 @@ object DMLStrategy extends SparkStrategy {
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           Inner,
-          SparkVersionAdapter.getBuildRight,
+          CarbonToSparkAdapter.getBuildRight,
           carbonChild,
           planLater(right),
           condition)
@@ -215,7 +215,7 @@ object DMLStrategy extends SparkStrategy {
             leftKeys: Seq[Expression],
             rightKeys: Seq[Expression],
             Inner,
-            SparkVersionAdapter.getBuildLeft,
+            CarbonToSparkAdapter.getBuildLeft,
             planLater(left),
             carbon,
             condition)
@@ -229,7 +229,7 @@ object DMLStrategy extends SparkStrategy {
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           LeftSemi,
-          SparkVersionAdapter.getBuildRight,
+          CarbonToSparkAdapter.getBuildRight,
           planLater(left),
           planLater(right),
           condition)

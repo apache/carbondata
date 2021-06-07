@@ -46,4 +46,5 @@ object ExpressionHelper {
   def getTheLastQualifier(reference: AttributeReference): String = {
     reference.qualifier.head
   }
+
 }

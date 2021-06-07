@@ -19,7 +19,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.apache.spark.sql.{CarbonThreadUtil, SparkSession, SparkVersionAdapter}
+import org.apache.spark.sql.{CarbonThreadUtil, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -97,7 +97,6 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
   def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
     BucketSpecContext, PartitionFieldListContext, ColTypeListContext, TablePropertyListContext,
     LocationSpecContext, Option[String], TerminalNode, QueryContext, String)): LogicalPlan = {
-    // val parser = new CarbonSpark2SqlParser
 
     val (tableHeader, skewSpecContext,
       bucketSpecContext,
@@ -111,7 +110,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       provider) = createTableTuple
 
     val (tableIdent, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
-    val tableIdentifier = SparkVersionAdapter.getTableIdentifier(tableIdent)
+    val tableIdentifier = CarbonToSparkAdapter.getTableIdentifier(tableIdent)
     val cols: Seq[StructField] = Option(columns).toSeq.flatMap(visitColTypeList)
     val colNames: Seq[String] = CarbonSparkSqlParserUtil
       .validateCreateTableReqAndGetColumns(tableHeader,
@@ -134,7 +133,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     // validate partition clause
     val partitionByStructFields = Option(partitionColumns).toSeq
         .flatMap(x => visitPartitionFieldList(x)._2)
-    val partitionFields = SparkVersionAdapter.
+    val partitionFields = CarbonToSparkAdapter.
       validatePartitionFields(partitionColumns, colNames, tableProperties,
       partitionByStructFields)
 
@@ -143,7 +142,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     val extraTableTuple = (cols, external, tableIdentifier, ifNotExists, colNames, tablePath,
       tableProperties, properties, partitionByStructFields, partitionFields,
       parser, sparkSession, selectQuery)
-    SparkVersionAdapter.createCarbonTable(createTableTuple, extraTableTuple)
+    CarbonToSparkAdapter.createCarbonTable(createTableTuple, extraTableTuple)
   }
 }
 

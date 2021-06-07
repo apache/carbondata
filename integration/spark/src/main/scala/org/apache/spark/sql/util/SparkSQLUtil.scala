@@ -22,13 +22,12 @@ import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.executor.OutputMetrics
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession, SparkVersionAdapter}
+import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.EliminateView
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSeq, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{AttributeSeq, NamedExpression}
 import org.apache.spark.sql.catalyst.optimizer.{CheckCartesianProducts, EliminateOuterJoin, NullPropagation, PullupCorrelatedPredicates, RemoveRedundantAliases, ReorderJoin}
-import org.apache.spark.sql.catalyst.plans.{logical, QueryPlan}
-import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Command, LogicalPlan, Statistics, Union}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, Statistics, Union}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.internal.{SessionState, SQLConf}
@@ -59,7 +58,7 @@ object SparkSQLUtil {
 
   def invokeQueryPlanNormalizeExprId(r: NamedExpression, input: AttributeSeq)
       : NamedExpression = {
-    SparkVersionAdapter.normalizeExpressions(r, input)
+    CarbonToSparkAdapter.normalizeExpressions(r, input)
   }
 
   def getEliminateViewObj(): Rule[LogicalPlan] = {

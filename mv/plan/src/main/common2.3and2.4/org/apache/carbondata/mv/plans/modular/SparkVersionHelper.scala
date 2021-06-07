@@ -31,8 +31,8 @@ import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
 object SparkVersionHelper {
 
   def getStatisticsObj(outputList: Seq[NamedExpression],
-                       plan: LogicalPlan, stats: Statistics,
-                       aliasMap: Option[AttributeMap[Attribute]] = None): Statistics = {
+      plan: LogicalPlan, stats: Statistics,
+      aliasMap: Option[AttributeMap[Attribute]] = None): Statistics = {
     val output = outputList.map(_.toAttribute)
     val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
       table => AttributeMap(table.output.zip(output))
@@ -99,19 +99,19 @@ object SparkVersionHelper {
   }
 }
 
-trait getVerboseString extends LeafNode {
+trait GetVerboseString extends LeafNode {
 }
 
-trait groupByUnaryNode extends UnaryNode {
+trait GroupByUnaryNode extends UnaryNode {
 }
 
-trait selectModularPlan extends ModularPlan {
+trait SelectModularPlan extends ModularPlan {
 }
 
-trait unionModularPlan extends ModularPlan {
+trait UnionModularPlan extends ModularPlan {
 }
 
-trait oneRowTableLeafNode extends LeafNode {
+trait OneRowTableLeafNode extends LeafNode {
 }
 
 object MatchJoin {

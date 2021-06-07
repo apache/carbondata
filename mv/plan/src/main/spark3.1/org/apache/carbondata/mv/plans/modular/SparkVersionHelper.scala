@@ -98,11 +98,11 @@ object SparkVersionHelper {
 
 }
 
-trait getVerboseString extends LeafNode {
+trait GetVerboseString extends LeafNode {
   def verboseString: String = toString
 }
 
-trait groupByUnaryNode extends UnaryNode {
+trait GroupByUnaryNode extends UnaryNode {
   override def verboseString(maxFields: Int): String = super.verboseString(maxFields)
 
   override def mapProductIterator[B](f: Any => B)(implicit evidence$1: ClassTag[B]): Array[B] = {
@@ -118,7 +118,7 @@ trait groupByUnaryNode extends UnaryNode {
   }
 }
 
-trait selectModularPlan extends ModularPlan {
+trait SelectModularPlan extends ModularPlan {
   override def verboseString(maxFields: Int): String = super.verboseString(maxFields)
 
   override def mapProductIterator[B](f: Any => B)(implicit evidence$1: ClassTag[B]): Array[B] = {
@@ -134,11 +134,11 @@ trait selectModularPlan extends ModularPlan {
   }
 }
 
-trait unionModularPlan extends ModularPlan {
+trait UnionModularPlan extends ModularPlan {
   override def verboseString(maxFields: Int): String = super.verboseString(maxFields)
 }
 
-trait oneRowTableLeafNode extends LeafNode {
+trait OneRowTableLeafNode extends LeafNode {
   override def verboseString(maxFields: Int): String = super.verboseString(maxFields)
 }
 

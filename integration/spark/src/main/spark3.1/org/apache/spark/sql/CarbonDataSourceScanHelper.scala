@@ -55,7 +55,8 @@ abstract class  CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelat
 
   lazy val needsUnsafeRowConversion: Boolean = true
 
-  val a = output.map(SparkVersionAdapter.normalizeExpressions(_, output))
+  val outputAttibutesAfterNormalizingExpressionIds: Seq[Attribute] = output
+      .map(CarbonToSparkAdapter.normalizeExpressions(_, output))
 
   @transient lazy val indexFilter: IndexFilter = {
     val filter = pushedDownFilters.reduceOption(new AndExpression(_, _))

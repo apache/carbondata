@@ -49,7 +49,8 @@ abstract class  CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelat
 
   lazy val supportsBatchOrColumnar: Boolean = supportsBatch
 
-  val a: Seq[Attribute] = output.map(QueryPlan.normalizeExprId(_, output))
+  val outputAttibutesAfterNormalizingExpressionIds: Seq[Attribute] = output
+      .map(QueryPlan.normalizeExprId(_, output))
 
   @transient lazy val indexFilter: IndexFilter = {
     val filter = pushedDownFilters.reduceOption(new AndExpression(_, _))

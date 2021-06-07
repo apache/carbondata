@@ -60,7 +60,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
-object SparkVersionAdapter {
+trait SparkVersionAdapter {
 
   def getPredicate(inputSchema: Seq[Attribute],
     condition: Option[Expression]): InternalRow => Boolean = {

@@ -21,7 +21,6 @@ import org.apache.spark
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
-import org.apache.spark.sql.SparkVersionAdapter.InsertIntoStatementWrapper
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.Inner
@@ -55,7 +54,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       selectStmt: String,
       alias: Option[String],
       filter: String): LogicalPlan = {
-    val tableIdentifier = SparkVersionAdapter.getTableIdentifier(table).get
+    val tableIdentifier = CarbonToSparkAdapter.getTableIdentifier(table).get
     CarbonPlanHelper.validateCarbonTable(
       tableIdentifier,
       sparkSession,
@@ -108,7 +107,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         }
         val tableName: Option[Seq[String]] = alias match {
           case Some(_) => Some(alias.toSeq)
-          case _ => Some(Seq(SparkVersionAdapter.getTableIdentifier(
+          case _ => Some(Seq(CarbonToSparkAdapter.getTableIdentifier(
             child.asInstanceOf[UnresolvedRelation]).get.table))
         }
         val list = Seq(
@@ -116,17 +115,17 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         Project(list, child)
       case Filter(cond, child) if !includedDestRelation =>
         includedDestRelation = true
-        Filter(cond, SparkVersionAdapter.createJoinNode(child, targetTable, Inner, None))
+        Filter(cond, CarbonToSparkAdapter.createJoinNode(child, targetTable, Inner, None))
       case r@CarbonUnresolvedRelation(t) if !includedDestRelation && t != tableIdentifier =>
         includedDestRelation = true
-        SparkVersionAdapter.createJoinNode(r, targetTable, Inner, None)
+        CarbonToSparkAdapter.createJoinNode(r, targetTable, Inner, None)
     }
     val updatedSelectPlan: LogicalPlan = if (!includedDestRelation) {
       // special case to handle self join queries
       // Eg. update tableName  SET (column1) = (column1+1)
       selectPlan transform {
         case relation: UnresolvedRelation
-          if tableIdentifier == SparkVersionAdapter.getTableIdentifier(relation).get &&
+          if tableIdentifier == CarbonToSparkAdapter.getTableIdentifier(relation).get &&
              !addedTupleId =>
           addedTupleId = true
           targetTable
@@ -165,7 +164,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
     // In Spark 2.1 and 2.2, it uses Analyzer.execute method to transform LogicalPlan
     // but in Spark 2.3, it uses Analyzer.executeAndCheck method
-    val analyzedPlan = SparkVersionAdapter.invokeAnalyzerExecute(
+    val analyzedPlan = CarbonToSparkAdapter.invokeAnalyzerExecute(
         analyzer, ProjectForUpdate(destinationTable, columns, Seq(finalPlan)))
     // For all commands, they execute eagerly, and will be transformed to
     // logical plan 'LocalRelation' in analyze phase(please see the code in 'Dataset.logicalPlan'),
@@ -178,7 +177,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
   def processDeleteRecordsQuery(selectStmt: String,
       alias: Option[String],
       table: UnresolvedRelation): LogicalPlan = {
-    val tableIdentifier = SparkVersionAdapter.getTableIdentifier(table).get
+    val tableIdentifier = CarbonToSparkAdapter.getTableIdentifier(table).get
     CarbonPlanHelper.validateCarbonTable(
       tableIdentifier,
       sparkSession,
@@ -189,7 +188,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
     val selectPlan = parsePlan transform {
       case relation: UnresolvedRelation
-        if tableIdentifier == SparkVersionAdapter.getTableIdentifier(relation).get &&
+        if tableIdentifier == CarbonToSparkAdapter.getTableIdentifier(relation).get &&
            !addedTupleId =>
         addedTupleId = true
         val projList = projectionWithTupleId(alias)
@@ -254,14 +253,21 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
       // Wait until children are resolved.
       case p: LogicalPlan if !p.childrenResolved => p
 
+<<<<<<< HEAD
       case p: InsertIntoStatementWrapper if p.table.isInstanceOf[LogicalRelation] && p.table.
         asInstanceOf[LogicalRelation].relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         // when plan contains Union, it can have multiple insert statements as its children
         castChildOutput(p, p.table.asInstanceOf[LogicalRelation], p.children.head, plan.isInstanceOf[Union])
+=======
+      case p: CarbonToSparkAdapter.InsertIntoStatementWrapper if p.table
+        .isInstanceOf[LogicalRelation] && p.table.asInstanceOf[LogicalRelation].relation
+        .isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        castChildOutput(p, p.table.asInstanceOf[LogicalRelation], p.children.head)
+>>>>>>> Review Comment fixes
     }
   }
 
-  def castChildOutput(p: InsertIntoStatementWrapper,
+  def castChildOutput(p: CarbonToSparkAdapter.InsertIntoStatementWrapper,
       relation: LogicalRelation,
       child: LogicalPlan,
       containsMultipleInserts: Boolean): LogicalPlan = {

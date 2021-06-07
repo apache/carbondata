@@ -128,7 +128,7 @@ case class CarbonDataSourceScan(
   override protected def doCanonicalize(): CarbonDataSourceScan = {
     CarbonDataSourceScan(
       relation,
-      a,
+      outputAttibutesAfterNormalizingExpressionIds,
       QueryPlan.normalizePredicates(partitionFilters, output),
       QueryPlan.normalizePredicates(dataFilters, output),
       null,

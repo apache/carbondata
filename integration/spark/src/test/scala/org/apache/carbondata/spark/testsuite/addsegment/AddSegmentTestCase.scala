@@ -301,7 +301,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     for (i <- 0 until 10) {
       sql(s"alter table addsegment1 add segment " +
           s"options('path'='${ newPath + i }', 'format'='carbon')").collect()
-      sql("select count(*) from addsegment1").show()
+
     }
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(110)))
     checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(110)))

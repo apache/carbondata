@@ -43,7 +43,7 @@ import org.apache.spark.sql.types.{DataType, Metadata, StringType}
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
 
-object CarbonToSparkAdapter {
+object CarbonToSparkAdapter extends SparkVersionAdapter {
 
   def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]): FilePartition = {
     FilePartition(index, files.toArray)
@@ -236,9 +236,9 @@ object CarbonToSparkAdapter {
 }
 
 class CarbonOptimizer(
-                       session: SparkSession,
-                       catalog: SessionCatalog,
-                       optimizer: Optimizer) extends Optimizer(catalog) {
+    session: SparkSession,
+    catalog: SessionCatalog,
+    optimizer: Optimizer) extends Optimizer(catalog) {
 
   private lazy val mvRules = Seq(Batch("Materialized View Optimizers", Once,
     Seq(new MVRewriteRule(session)): _*))

@@ -92,7 +92,7 @@ object CarbonExpressions {
     def unapply(plan: LogicalPlan): Option[TableIdentifier] = {
       plan match {
         case u: UnresolvedRelation =>
-          SparkVersionAdapter.getTableIdentifier(u)
+          CarbonToSparkAdapter.getTableIdentifier(u)
         case _ => None
       }
     }

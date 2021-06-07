@@ -17,10 +17,8 @@
 
 package org.apache.carbondata.mv.plans.modular
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSeq, Expression, ExprId, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, ExprId, NamedExpression}
 import org.apache.spark.sql.types.{DataType, Metadata}
-
-import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
 
 object ExpressionHelper {
 
@@ -48,4 +46,5 @@ object ExpressionHelper {
   def getTheLastQualifier(reference: AttributeReference): String = {
     reference.qualifier.reverse.head
   }
+
 }

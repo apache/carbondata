@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.SparkVersionAdapter.RefreshTables
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
@@ -177,7 +176,7 @@ object DDLStrategy extends SparkStrategy {
           CarbonDropTableCommand(ifNotExists, identifier.database, identifier.table.toLowerCase)
         ) :: Nil
       // refresh
-      case refreshTable: RefreshTables =>
+      case refreshTable: CarbonToSparkAdapter.RefreshTables =>
         ExecutedCommandExec(DDLHelper.refreshTable(refreshTable)) :: Nil
       case refreshResource: RefreshResource =>
         DDLHelper.refreshResource(refreshResource)
