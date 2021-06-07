@@ -184,6 +184,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
                 newColumnDefaultValue = byteStream.toByteArray();
               } catch (IOException e) {
                 LOGGER.error(e.getMessage(), e);
+                throw new RuntimeException(e);
               }
               complexTypeKeyArrayWithNewlyAddedColumns[newComplexKeyArrayIndex++] =
                   newColumnDefaultValue;
