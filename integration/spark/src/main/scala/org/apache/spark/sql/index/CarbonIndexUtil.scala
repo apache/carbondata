@@ -435,12 +435,17 @@ object CarbonIndexUtil {
     }
   }
 
-  def updateIndexStatus(carbonTable: CarbonTable,
+  /**
+   *
+   * @param newIndexName nonEmpty means rename index
+   * @return original index status, null means update failed
+   */
+  def updateIndexInfo(carbonTable: CarbonTable,
       indexName: String,
       indexType: IndexType,
       status: IndexStatus,
-      needLock: Boolean = true,
-      sparkSession: SparkSession): Unit = {
+      newIndexName: String = "",
+      needLock: Boolean = true)(sparkSession: SparkSession): IndexStatus = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     val locks: java.util.List[ICarbonLock] = new java.util.ArrayList[ICarbonLock]
@@ -458,8 +463,15 @@ object CarbonIndexUtil {
       }
       CarbonMetadata.getInstance.removeTable(dbName, tableName)
       val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-      val indexInfo = IndexTableInfo.setIndexStatus(table.getIndexInfo, indexName, status)
       val indexMetadata = table.getIndexMetadata
+      val originalStatus = indexMetadata.getIndexStatus(indexType.getIndexProviderName, indexName)
+      if (newIndexName.isEmpty) {
+        indexMetadata.updateIndexStatus(indexType.getIndexProviderName, indexName, status.name())
+      } else {
+        indexMetadata.renameIndexWithStatus(indexType.getIndexProviderName,
+          indexName, newIndexName, status.name())
+      }
+      val newIndexInfo = table.getIndexInfo
       indexMetadata.updateIndexStatus(indexType.getIndexProviderName, indexName, status.name())
       table.getTableInfo
         .getFactTable
@@ -467,14 +479,16 @@ object CarbonIndexUtil {
         .put(table.getCarbonTableIdentifier.getTableId, indexMetadata.serialize)
       sparkSession.sql(
         s"""ALTER TABLE $dbName.$tableName SET SERDEPROPERTIES ('indexInfo' =
-           |'$indexInfo')"""
+           |'$newIndexInfo')"""
           .stripMargin).collect()
       CarbonHiveIndexMetadataUtil.refreshTable(dbName, tableName, sparkSession)
       CarbonMetadata.getInstance.removeTable(dbName, tableName)
       CarbonMetadata.getInstance.loadTableMetadata(table.getTableInfo)
+      IndexStatus.valueOf(originalStatus)
     } catch {
       case e: Exception =>
         LOGGER.error("Failed to update index status for %s".format(indexName))
+        null
     } finally {
       AlterTableUtil.releaseLocks(locks.asScala.toList)
     }
