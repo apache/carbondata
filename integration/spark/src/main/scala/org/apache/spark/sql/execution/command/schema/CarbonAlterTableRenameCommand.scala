@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil, MockClassForAlterRevertTests}
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -29,7 +30,9 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.index.IndexStoreManager
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
@@ -69,31 +72,26 @@ private[sql] case class CarbonAlterTableRenameCommand(
       throwMetadataException(oldDatabaseName, oldTableName, "Table does not exist")
     }
 
-    var oldCarbonTable: CarbonTable = null
-    oldCarbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
-      .asInstanceOf[CarbonRelation].carbonTable
-    if (!oldCarbonTable.getTableInfo.isTransactionalTable) {
+    var carbonTable: CarbonTable = relation.carbonTable
+    if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (!oldCarbonTable.canAllow(oldCarbonTable, TableOperation.ALTER_RENAME)) {
+    if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_RENAME)) {
       throw new MalformedCarbonCommandException("alter rename is not supported for this table")
     }
     // if table have created MV, not support table rename
-    if (MVManagerInSpark.get(sparkSession).hasSchemaOnTable(oldCarbonTable) ||
-        oldCarbonTable.isMV) {
+    if (MVManagerInSpark.get(sparkSession).hasSchemaOnTable(carbonTable) || carbonTable.isMV) {
       throw new MalformedCarbonCommandException(
         "alter rename is not supported for MV table or for tables which have child MV")
     }
 
     var timeStamp = 0L
-    var carbonTable: CarbonTable = null
     var hiveRenameSuccess = false
     // lock file path to release locks after operation
     var carbonTableLockFilePath: String = null
+    var originalIndexStatusBeforeDisable: IndexStatus = null
     try {
-      carbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
-        .asInstanceOf[CarbonRelation].carbonTable
       carbonTableLockFilePath = carbonTable.getTablePath
       // if any load is in progress for table, do not allow rename table
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
@@ -104,13 +102,19 @@ private[sql] case class CarbonAlterTableRenameCommand(
       IndexStoreManager.getInstance().clearIndex(oldAbsoluteTableIdentifier)
       // get the latest carbon table and check for column existence
       val operationContext = new OperationContext
-      // TODO: Pass new Table Path in pre-event.
-      val alterTableRenamePreEvent: AlterTableRenamePreEvent = AlterTableRenamePreEvent(
-        carbonTable,
-        alterTableRenameModel,
-        "",
-        sparkSession)
-      OperationListenerBus.getInstance().fireEvent(alterTableRenamePreEvent, operationContext)
+      if (carbonTable.isIndexTable) {
+        val oldIndexName = alterTableRenameModel.oldTableIdentifier.table
+        val parentTableName = carbonTable.getParentTableName
+        val parentTable: CarbonTable = CarbonEnv.getCarbonTable(
+          Some(oldDatabaseName), parentTableName)(sparkSession)
+        originalIndexStatusBeforeDisable = CarbonIndexUtil.updateIndexInfo(
+          parentTable, oldIndexName, IndexType.SI, IndexStatus.DISABLED)(sparkSession)
+      } else {
+        // TODO: Pass new Table Path in pre-event.
+        val alterTableRenamePreEvent: AlterTableRenamePreEvent = AlterTableRenamePreEvent(
+          carbonTable, alterTableRenameModel, "", sparkSession)
+        OperationListenerBus.getInstance().fireEvent(alterTableRenamePreEvent, operationContext)
+      }
       val tableInfo: org.apache.carbondata.format.TableInfo =
         metastore.getThriftTableInfo(carbonTable)
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
@@ -142,12 +146,24 @@ private[sql] case class CarbonAlterTableRenameCommand(
         carbonTable.getTablePath)(sparkSession)
       new MockClassForAlterRevertTests().mockForAlterRevertTest()
 
-      val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
-        carbonTable,
-        alterTableRenameModel,
-        oldAbsoluteTableIdentifier.getTablePath,
-        sparkSession)
-      OperationListenerBus.getInstance().fireEvent(alterTableRenamePostEvent, operationContext)
+      if (carbonTable.isIndexTable) {
+        val oldIndexName = alterTableRenameModel.oldTableIdentifier.table
+        val parentTableName = carbonTable.getParentTableName
+        val parentTable: CarbonTable = metastore
+          .lookupRelation(Some(oldDatabaseName), parentTableName)(sparkSession)
+          .asInstanceOf[CarbonRelation].carbonTable
+        CarbonIndexUtil.updateIndexInfo(parentTable, oldIndexName, IndexType.SI,
+          originalIndexStatusBeforeDisable, newTableName)(sparkSession)
+        metastore.lookupRelation(Some(oldDatabaseName), newTableName)(sparkSession)
+          .asInstanceOf[CarbonRelation]
+      } else {
+        val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
+          carbonTable,
+          alterTableRenameModel,
+          oldAbsoluteTableIdentifier.getTablePath,
+          sparkSession)
+        OperationListenerBus.getInstance().fireEvent(alterTableRenamePostEvent, operationContext)
+      }
 
       sparkSession.catalog.refreshTable(newTableIdentifier.quotedString)
       LOGGER.info(s"Table $oldTableName has been successfully renamed to $newTableName")
@@ -162,6 +178,18 @@ private[sql] case class CarbonAlterTableRenameCommand(
             carbonTable.getAbsoluteTableIdentifier.getTablePath,
             sparkSession,
             carbonTable.isExternalTable)
+        }
+        // it means rename table is index table and disable index has succeed, need revert
+        if (originalIndexStatusBeforeDisable != null &&
+            !originalIndexStatusBeforeDisable.equals(IndexStatus.DISABLED)) {
+          val oldIndexName = alterTableRenameModel.oldTableIdentifier.table
+          val parentTableName = carbonTable.getParentTableName
+          val parentTable: CarbonTable = CarbonEnv.getCarbonTable(
+            Some(oldDatabaseName), parentTableName)(sparkSession)
+          CarbonIndexUtil.updateIndexInfo(parentTable, oldIndexName, IndexType.SI,
+            originalIndexStatusBeforeDisable)(sparkSession)
+          metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
+            .asInstanceOf[CarbonRelation]
         }
         if (carbonTable != null) {
           AlterTableUtil.revertRenameTableChanges(

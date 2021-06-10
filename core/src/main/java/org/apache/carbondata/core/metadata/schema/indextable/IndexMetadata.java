@@ -97,6 +97,17 @@ public class IndexMetadata implements Serializable {
     }
   }
 
+  public void renameIndexWithStatus(String indexProvider, String oldIndexName,
+      String newIndexName, String indexStatus) {
+    if (null != indexProviderMap) {
+      Map<String, String> properties = indexProviderMap.get(indexProvider).remove(oldIndexName);
+      if (properties != null) {
+        properties.put(CarbonCommonConstants.INDEX_STATUS, indexStatus);
+        indexProviderMap.get(indexProvider).put(newIndexName, properties);
+      }
+    }
+  }
+
   public void updateIndexStatus(String indexProvider, String indexName, String indexStatus) {
     if (null != indexProviderMap) {
       indexProviderMap.get(indexProvider).get(indexName)
@@ -161,5 +172,9 @@ public class IndexMetadata implements Serializable {
 
   public String getIndexColumns(String provider, String indexName) {
     return indexProviderMap.get(provider).get(indexName).get(CarbonCommonConstants.INDEX_COLUMNS);
+  }
+
+  public String getIndexStatus(String provider, String indexName) {
+    return indexProviderMap.get(provider).get(indexName).get(CarbonCommonConstants.INDEX_STATUS);
   }
 }

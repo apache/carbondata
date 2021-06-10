@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
+import mockit.{Mock, MockUp}
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.hive.MockClassForAlterRevertTests
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 /**
  * test functionality for alter table with indexSchema
@@ -34,6 +38,7 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("DROP TABLE IF EXISTS carbon_tb")
     sql("DROP TABLE IF EXISTS fact_table1")
+    sql("DROP TABLE IF EXISTS x1")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
   }
@@ -116,6 +121,45 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
       true, "dm_carbon_si")
   }
 
+  test("rename index table success, insert new record success" +
+       " and query hit new index table") {
+    sql("create table if not exists x1 (imei string, mac string) stored as carbondata")
+    sql("create index idx_x1_mac on table x1(mac) as 'carbondata'")
+    sql("alter table idx_x1_mac rename to idx_x1_mac1")
+    checkAnswer(sql("show indexes on x1"),
+      Row("idx_x1_mac1", "carbondata", "mac", "NA", "enabled", "NA"))
+    checkAnswer(sql("insert into x1 select '1', '2'"), Row("0"))
+    assert(sql("explain select * from x1 where mac = '2'")
+      .collect()(1).getString(0).contains("idx_x1_mac1"))
+    checkAnswer(sql("select count(*) from x1 where mac = '2'"), Row(1))
+    sql("DROP TABLE IF EXISTS x1")
+  }
+
+  test("rename index table fail, revert success, insert new record success" +
+       " and query hit old index table") {
+    val mock: MockUp[MockClassForAlterRevertTests] = new MockUp[MockClassForAlterRevertTests]() {
+      @Mock
+      @throws[ProcessMetaDataException]
+      def mockForAlterRevertTest(): Unit = {
+        throw new ProcessMetaDataException("default", "idx_x1_mac", "thrown in mock")
+      }
+    }
+    sql("create table if not exists x1 (imei string, mac string) stored as carbondata")
+    sql("create index idx_x1_mac on table x1(mac) as 'carbondata'")
+    intercept[ProcessMetaDataException] {
+      sql("alter table idx_x1_mac rename to idx_x1_mac1")
+    }
+    checkAnswer(sql("show indexes on x1"),
+      Row("idx_x1_mac", "carbondata", "mac", "NA", "enabled", "NA"))
+    checkAnswer(sql("insert into x1 select '1', '2'"), Row("0"))
+    val plan = sql("explain select * from x1 where mac = '2'").collect()(1).getString(0)
+    assert(plan.contains("idx_x1_mac"))
+    assert(!plan.contains("idx_x1_mac1"))
+    checkAnswer(sql("select count(*) from x1 where mac = '2'"), Row(1))
+    sql("DROP TABLE IF EXISTS x1")
+    mock.tearDown();
+  }
+
   /*
    * mv indexSchema does not support running here, now must run in mv project.
   test("Creating a mv indexSchema,then table rename") {
@@ -155,6 +199,7 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("DROP TABLE IF EXISTS carbon_tb")
     sql("DROP TABLE IF EXISTS fact_table1")
+    sql("DROP TABLE IF EXISTS x1")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
         CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
