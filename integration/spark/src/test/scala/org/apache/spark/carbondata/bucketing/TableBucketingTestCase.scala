@@ -38,13 +38,13 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
-  var threshold: Int = _
+  var threshold: String = _
 
   override def beforeAll {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold").toInt
+    threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold")
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "-1")
     sql("DROP TABLE IF EXISTS t4")
     sql("DROP TABLE IF EXISTS t5")
@@ -1139,6 +1139,8 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t50")
     sql("DROP TABLE IF EXISTS bucketed_parquet_table")
     sql("DROP TABLE IF EXISTS parquet_table")
-    sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
+    if (null != threshold) {
+      sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold)
+    }
   }
 }

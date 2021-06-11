@@ -356,7 +356,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql("alter table index_test_table compact 'major'")
-    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       checkAnswer(sql("SELECT COUNT(*) FROM index_test_table WHERE TEXT_MATCH('name:n10')"),
         sql("select COUNT(*) from index_test_table where name='n10'"))
@@ -385,7 +384,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql("alter table index_test_table compact 'minor'")
-    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       checkAnswer(sql("SELECT COUNT(*) FROM index_test_table WHERE TEXT_MATCH('name:n10')"),
         sql("select count(*) from index_test_table where name='n10'"))
@@ -435,7 +433,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_table OPTIONS('header'='false')")
-    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
     checkAnswer(sql("SELECT count(*) FROM index_test_table WHERE TEXT_MATCH('name:n99*')"),
       sql("select count(*) from index_test_table where name like 'n99%'"))
@@ -499,7 +496,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
         | AS
         | Select * from source_table where TEXT_MATCH('name:n1*')
       """.stripMargin)
-    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       checkAnswer(sql("SELECT count(*) FROM target_table"),
         sql("select count(*) from source_table where name like 'n1%'"))
@@ -524,7 +520,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_limit OPTIONS('header'='false')")
-    // TODO: Fix after V2 implementation
     if (!sqlContext.sparkContext.version.startsWith("3.1")) {
       checkAnswer(sql(
         "select count(*) from index_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),

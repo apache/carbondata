@@ -88,7 +88,8 @@ class SparkCarbonFileFormat extends FileFormat
       files: Seq[FileStatus]): Option[StructType] = {
     val conf = sparkSession.sessionState.newHadoopConf()
     if (options.isEmpty && files.isEmpty) {
-      throw new UnsupportedOperationException("Path of carbondata table is not available.")
+      throw new UnsupportedOperationException("CarbonData file is not present in the table" +
+        " location or Path of carbondata table is not available.")
     }
     val tablePath = options.get("path") match {
       case Some(path) =>
