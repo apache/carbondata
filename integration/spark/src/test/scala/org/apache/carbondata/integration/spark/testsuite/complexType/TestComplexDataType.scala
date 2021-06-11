@@ -27,6 +27,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -763,6 +764,29 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     val arrayException = intercept[UnsupportedOperationException](
     sql("update test set(a)=(4) where id=1").collect())
     assertResult("Unsupported operation on Complex data type")(arrayException.getMessage)
+  }
+
+  test("testing the long string properties for complex columns in main table") {
+    sql("drop table if exists complex1")
+    sql("drop table if exists complex2")
+    sql("drop table if exists complex3")
+    sql("create table complex1 (a int, arr1 array<string>) stored as carbondata")
+    assert(intercept[RuntimeException] {
+      sql("alter table complex1 SET TBLPROPERTIES ('LONG_STRING_COLUMNS'='arr1.val')")
+    }.getMessage.contains(
+      "Alter table newProperties operation failed: Complex child column arr1.val cannot be set " +
+      "as LONG_STRING_COLUMNS"))
+    assert(intercept[MalformedCarbonCommandException] {
+      sql("create table complex2 (a int, arr1 array<string>) " +
+          "stored as carbondata TBLPROPERTIES('LONG_STRING_COLUMNS'='arr1.val')")
+    }.getMessage.contains("Complex child column arr1.val cannot be set as LONG_STRING_COLUMNS"))
+    assert(intercept[MalformedCarbonCommandException] {
+      sql("create table complex3 (a int, struct1 struct<b:string,c:string>) " +
+          "stored as carbondata TBLPROPERTIES('LONG_STRING_COLUMNS'='struct1.b')")
+    }.getMessage.contains("Complex child column struct1.b cannot be set as LONG_STRING_COLUMNS"))
+    sql("drop table if exists complex1")
+    sql("drop table if exists complex2")
+    sql("drop table if exists complex3")
   }
 
   test("check update operation on primitive data types when complex type present in table which " +
