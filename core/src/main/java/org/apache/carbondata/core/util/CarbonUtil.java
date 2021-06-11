@@ -3500,4 +3500,12 @@ public final class CarbonUtil {
       dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
     }
   }
+
+  /**
+   * returns whether column is complex column based on column name for child column
+   * @return true if column is complex
+   */
+  public static boolean isComplexColumn(String colName) {
+    return colName.contains(".val") || colName.contains(CarbonCommonConstants.POINT);
+  }
 }

@@ -449,6 +449,10 @@ object CarbonParserUtil {
     var tmpStr: String = ""
     varcharCols.foreach {
       column =>
+        if (CarbonUtil.isComplexColumn(column)) {
+          val errMsg = s"Complex child column $column cannot be set as LONG_STRING_COLUMNS"
+          throw new MalformedCarbonCommandException(errMsg)
+        }
         tmpStr = column.toUpperCase
         duplicateColumnErr.get(tmpStr) match {
           case None => duplicateColumnErr.put(tmpStr, 1)

@@ -37,6 +37,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.WritableUtil;
 import org.apache.carbondata.core.preagg.TimeSeriesUDF;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Store the information about the column meta data present the table
@@ -589,8 +590,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
    * @return
    */
   public boolean isComplexColumn() {
-    return this.getColumnName()
-        .contains(".val") || this.getColumnName().contains(".");
+    return CarbonUtil.isComplexColumn(this.getColumnName());
   }
 
   public ColumnSchema clone() {
