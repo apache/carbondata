@@ -250,13 +250,15 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
 
       case p@InsertIntoTable(relation: LogicalRelation, _, child, _, _)
         if relation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        castChildOutput(p, relation, child)
+        // when plan contains Union, it can have multiple insert statements as its children
+        castChildOutput(p, relation, child, plan.isInstanceOf[Union])
     }
   }
 
   def castChildOutput(p: InsertIntoTable,
       relation: LogicalRelation,
-      child: LogicalPlan): LogicalPlan = {
+      child: LogicalPlan,
+      containsMultipleInserts: Boolean): LogicalPlan = {
     val carbonDSRelation = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     if (carbonDSRelation.carbonRelation.output.size > CarbonCommonConstants
       .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
@@ -300,7 +302,8 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
 
       val overwrite = CarbonReflectionUtils.getOverWriteOption("overwrite", p)
 
-      InsertIntoCarbonTable(carbonDSRelation, p.partition, newChild, overwrite, true)
+      InsertIntoCarbonTable(carbonDSRelation, p.partition, newChild, overwrite, true,
+        containsMultipleInserts)
     } else {
       CarbonException.analysisException(
         "Cannot insert into target table because number of columns mismatch")

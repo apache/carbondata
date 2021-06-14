@@ -22,15 +22,16 @@ import java.util.Locale
 import scala.collection.mutable
 
 import org.apache.log4j.Logger
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, CarbonToSparkAdapter, CountStarPlan, InsertIntoCarbonTable, SparkSession}
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAlias
-import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Cast, Descending, Expression, IntegerLiteral, Literal, NamedExpression, ScalaUDF, SortOrder}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, Attribute, AttributeReference, Cast, Descending, Expression, IntegerLiteral, Literal, NamedExpression, ScalaUDF, SortOrder, UnsafeProjection}
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
-import org.apache.spark.sql.catalyst.plans.{Inner, JoinType, LeftSemi}
+import org.apache.spark.sql.catalyst.plans.{Inner, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, Limit, LogicalPlan, Project, ReturnAnswer, Sort}
-import org.apache.spark.sql.execution.{CarbonTakeOrderedAndProjectExec, FilterExec, PlanLater, ProjectExec, SparkPlan, SparkStrategy}
-import org.apache.spark.sql.execution.command.{DataWritingCommandExec, ExecutedCommandExec, LoadDataCommand}
+import org.apache.spark.sql.execution.{CarbonTakeOrderedAndProjectExec, FilterExec, LeafExecNode, PlanLater, ProjectExec, SparkPlan, SparkStrategy}
+import org.apache.spark.sql.execution.command.{DataWritingCommandExec, ExecutedCommandExec, LoadDataCommand, RunnableCommand}
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, LogicalRelation}
 import org.apache.spark.sql.execution.joins.{BroadCastPolygonFilterPushJoin, BuildLeft, BuildRight}
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper.isCarbonTable
@@ -57,7 +58,16 @@ object DMLStrategy extends SparkStrategy {
       case loadData: LoadDataCommand if isCarbonTable(loadData.table) =>
         ExecutedCommandExec(DMLHelper.loadData(loadData)) :: Nil
       case insert: InsertIntoCarbonTable =>
-        ExecutedCommandExec(CarbonPlanHelper.insertInto(insert)) :: Nil
+        if (insert.containsMultipleInserts) {
+          // Successful insert in carbon will return segment ID in a row.
+          // In-case of this specific multiple inserts scenario the Union node executes in the
+          // physical plan phase of the command, so the rows should be of unsafe row object.
+          // So we should override the sideEffectResult to prepare the content of command's
+          // corresponding rdd from physical plan of insert into command.
+          UnionCommandExec(CarbonPlanHelper.insertInto(insert)) :: Nil
+        } else {
+          ExecutedCommandExec(CarbonPlanHelper.insertInto(insert)) :: Nil
+        }
       case insert: InsertIntoHadoopFsRelationCommand
         if insert.catalogTable.isDefined && isCarbonTable(insert.catalogTable.get.identifier) =>
         DataWritingCommandExec(DMLHelper.insertInto(insert), planLater(insert.query)) :: Nil
@@ -362,6 +372,29 @@ object DMLStrategy extends SparkStrategy {
       }
       newPlan
     }
+  }
+}
+
+/**
+ * This class will be used when Union node is present in plan with multiple inserts.
+ * It is a physical operator that executes the run method of a RunnableCommand and
+ * saves the result to prevent multiple executions.
+ */
+case class UnionCommandExec(cmd: RunnableCommand) extends LeafExecNode {
+
+  protected[sql] lazy val sideEffectResult: Seq[InternalRow] = {
+    val converter = CatalystTypeConverters.createToCatalystConverter(schema)
+    val internalRow = cmd.run(sqlContext.sparkSession).map(converter(_).asInstanceOf[InternalRow])
+    val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
+    // To make GenericInternalRow to UnsafeRow
+    val row = unsafeProjection(internalRow.head)
+    Seq(row)
+  }
+
+  override def output: Seq[Attribute] = cmd.output
+
+  protected override def doExecute(): RDD[InternalRow] = {
+    sqlContext.sparkContext.parallelize(sideEffectResult, 1)
   }
 }
 

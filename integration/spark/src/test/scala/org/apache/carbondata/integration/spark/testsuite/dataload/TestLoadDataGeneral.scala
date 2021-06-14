@@ -394,6 +394,27 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     assert(df.exists(_.get(0).toString.contains("`a`bc`!!d`")))
   }
 
+  test("test load with multiple inserts") {
+    sql("drop table if exists catalog_returns_5")
+    sql("drop table if exists catalog_returns_6")
+    sql("create table catalog_returns_5(cr_returned_date_sk int,cr_returned_time_sk int," +
+        "cr_item_sk int)ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' LINES TERMINATED BY '\\n'")
+    sql("insert into catalog_returns_5 values(1,2,3)")
+    sql("create table catalog_returns_6(cr_returned_time_sk int,cr_item_sk int) partitioned by" +
+        " (cr_returned_date_sk int) stored as carbondata")
+    val df = sql(
+      "from catalog_returns_5 insert overwrite table catalog_returns_6 partition " +
+      "(cr_returned_date_sk) select cr_returned_time_sk, cr_item_sk, cr_returned_date_sk where " +
+      "cr_returned_date_sk is not null distribute by cr_returned_date_sk insert overwrite table " +
+      "catalog_returns_6 partition (cr_returned_date_sk) select cr_returned_time_sk, cr_item_sk, " +
+      "cr_returned_date_sk where cr_returned_date_sk is null distribute by cr_returned_date_sk")
+    assert(df.collect().size == 2)
+    checkAnswer(df, Seq(Row("0"), Row("1")))
+    checkAnswer(sql("select * from catalog_returns_6"), Seq(Row(2, 3, 1)))
+    sql("drop table if exists catalog_returns_5")
+    sql("drop table if exists catalog_returns_6")
+  }
+
   override def afterEach {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")

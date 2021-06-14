@@ -67,7 +67,8 @@ case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     partition: Map[String, Option[String]],
     child: LogicalPlan,
     overwrite: Boolean,
-    ifNotExists: Boolean)
+    ifNotExists: Boolean,
+    containsMultipleInserts: Boolean)
   extends Command {
 
     override def output: Seq[Attribute] = {
