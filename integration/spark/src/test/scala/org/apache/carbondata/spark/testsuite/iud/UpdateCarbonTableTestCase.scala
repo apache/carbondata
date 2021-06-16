@@ -1178,6 +1178,15 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("update table having alias table name - case insensitive check") {
+    sql("""drop table if exists iud.zerorows""").collect()
+    sql("""create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows""")
+    sql("update iud.zeRorows up_TAble set(up_table.C1)=('abc') where up_TABLE.C2=1")
+    checkAnswer(sql("select * from iud.zerorows where c2=1"),
+     Seq(Row("abc", 1, "aa", "aaa")))
+  }
+
   test("test update atomicity when horizontal compaction fails") {
     sql("drop table if exists iud.zerorows")
     sql("create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
