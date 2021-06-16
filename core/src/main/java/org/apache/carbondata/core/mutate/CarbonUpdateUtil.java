@@ -580,7 +580,7 @@ public class CarbonUpdateUtil {
     for (Map.Entry<String, Long> eachSeg : segmentBlockCount.entrySet()) {
 
       if (eachSeg.getValue() == 0) {
-        segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), ""));
+        segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), (String) null));
       }
 
     }
