@@ -260,14 +260,14 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       case tab ~ columns ~ rest =>
         // If update is received for complex data types then throw exception
         var finalColumns = List.empty[String]
-        var updateColumns = new ListBuffer[String]()
+        val updateColumns = new ListBuffer[String]()
         columns.foreach { column =>
           if (column.contains('.')) {
             val columnFullName = column.split('.')
-            if (columnFullName.size >= 3) {
+            if (columnFullName.length >= 3) {
               throw new UnsupportedOperationException("Unsupported operation on Complex data types")
-            } else if ((tab._3.isDefined && tab._3.get.equals(columnFullName(0)))
-                || tab._4.table.equals(columnFullName(0))) {
+            } else if ((tab._3.isDefined && tab._3.get.equalsIgnoreCase(columnFullName(0)))
+                || tab._4.table.equalsIgnoreCase(columnFullName(0))) {
               updateColumns += columnFullName(1)
             } else {
               throw new UnsupportedOperationException("Unsupported operation on Complex data types")
