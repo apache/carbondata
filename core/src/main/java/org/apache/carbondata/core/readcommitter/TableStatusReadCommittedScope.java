@@ -83,7 +83,7 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   public Map<String, String> getCommittedIndexFile(Segment segment) throws IOException {
     Map<String, String> indexFiles;
     SegmentFileStore fileStore = null;
-    if (segment.getSegmentFileName() != null) {
+    if (segment.getSegmentFileName() != null && !segment.getSegmentFileName().isEmpty()) {
       fileStore = new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
     }
     if (segment.getSegmentFileName() == null || fileStore.getSegmentFile() == null) {
