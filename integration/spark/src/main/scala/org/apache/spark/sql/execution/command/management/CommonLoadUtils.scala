@@ -781,9 +781,8 @@ object CommonLoadUtils {
         internalRowOriginal
       }
       for (index <- timeStampIndex) {
-        if (internalRow.getLong(index) == 0) {
-          internalRow.setNullAt(index)
-        } else {
+        // timestmap value can be set other than null/empty case
+        if (!internalRow.isNullAt(index)) {
           internalRow.setLong(
             index,
             internalRow.getLong(index) / TimeStampGranularityTypeValue.MILLIS_SECONDS.getValue)
