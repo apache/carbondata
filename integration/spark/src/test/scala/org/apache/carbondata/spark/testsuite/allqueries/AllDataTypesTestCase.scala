@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.allqueries
 
+import java.sql.Timestamp
+
 import org.apache.spark.sql.{Row, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -71,6 +73,33 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
       case ce: UnsupportedOperationException => ce.getMessage
       case ce: Exception => ce.getMessage
     }
+  }
+
+  test("insert data with from_unixtime(0) and query") {
+    sql("drop table if exists time_carbon1")
+    sql("drop table if exists time_parquet")
+    sql("create table if not exists time_carbon1(time1 timestamp) stored as carbondata")
+    sql("create table if not exists time_parquet(time1 timestamp) stored as parquet")
+    sql("insert into time_carbon1 select from_unixtime(0)")
+    sql("insert into time_parquet select from_unixtime(0)")
+    sql("insert into time_carbon1 select from_unixtime(123456)")
+    sql("insert into time_parquet select from_unixtime(123456)")
+    checkAnswer(sql("select * from time_carbon1"),
+      sql("select * from time_parquet"))
+    sql("drop table if exists time_carbon1")
+    sql("drop table if exists time_parquet")
+  }
+
+  test("insert data with empty/null and query") {
+    sql("drop table if exists time_carbon2")
+    sql("create table if not exists time_carbon2(time1 timestamp) stored as carbondata")
+    sql("insert into time_carbon2 select null")
+    checkAnswer(sql("select count(*) from time_carbon2"), Seq(Row(1)))
+    checkAnswer(sql("select * from time_carbon2"), Seq(Row(null)))
+    sql("insert into time_carbon2 select ''")
+    checkAnswer(sql("select count(*) from time_carbon2"), Seq(Row(2)))
+    checkAnswer(sql("select * from time_carbon2"), Seq(Row(null), Row(null)))
+    sql("drop table if exists time_carbon2")
   }
 
   // Test-24
