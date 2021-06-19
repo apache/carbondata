@@ -156,6 +156,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
           originalIndexStatusBeforeDisable, newTableName)(sparkSession)
         metastore.lookupRelation(Some(oldDatabaseName), newTableName)(sparkSession)
           .asInstanceOf[CarbonRelation]
+        AlterTableUtil.updateSchemaInfo(parentTable, null,
+          metastore.getThriftTableInfo(parentTable))(sparkSession)
       } else {
         val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
           carbonTable,

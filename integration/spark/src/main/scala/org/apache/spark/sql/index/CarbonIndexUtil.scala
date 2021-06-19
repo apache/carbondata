@@ -472,7 +472,6 @@ object CarbonIndexUtil {
           indexName, newIndexName, status.name())
       }
       val newIndexInfo = table.getIndexInfo
-      indexMetadata.updateIndexStatus(indexType.getIndexProviderName, indexName, status.name())
       table.getTableInfo
         .getFactTable
         .getTableProperties
