@@ -29,7 +29,6 @@ import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution.{ColumnarBatchScan, DataSourceScanExec, WholeStageCodegenExec}
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.types.AtomicType
 
 import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -37,6 +36,7 @@ import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.core.scan.expression.optimize.ExpressionOptimizer
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -107,6 +107,7 @@ case class CarbonDataSourceScan(
 
   @transient private lazy val indexFilter: IndexFilter = {
     val filter = pushedDownFilters.reduceOption(new AndExpression(_, _))
+      .map(ExpressionOptimizer.optimize(relation.carbonTable, _))
       .map(new IndexFilter(relation.carbonTable, _, true)).orNull
     if (filter != null && pushedDownFilters.length == 1) {
       // push down the limit if only one filter
