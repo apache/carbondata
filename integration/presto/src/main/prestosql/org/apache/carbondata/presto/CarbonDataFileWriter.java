@@ -31,9 +31,9 @@ import org.apache.carbondata.hive.MapredCarbonOutputFormat;
 import org.apache.carbondata.presto.impl.CarbonTableConfig;
 
 import com.google.common.collect.ImmutableList;
-import io.prestosql.plugin.hive.HiveFileWriter;
+import io.prestosql.plugin.hive.FileWriter;
 import io.prestosql.plugin.hive.HiveType;
-import io.prestosql.plugin.hive.HiveWriteUtils;
+import io.prestosql.plugin.hive.util.HiveWriteUtils;
 import io.prestosql.spi.Page;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.block.Block;
@@ -43,9 +43,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator;
-import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.hive.ql.io.IOConstants;
-import org.apache.hadoop.hive.ql.io.parquet.serde.ArrayWritableObjectInspector;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspector;
@@ -67,7 +65,7 @@ import static org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFacto
  * This class implements HiveFileWriter and it creates the carbonFileWriter to write the page data
  * sent from presto.
  */
-public class CarbonDataFileWriter implements HiveFileWriter {
+public class CarbonDataFileWriter implements FileWriter {
 
   private static final Logger LOG =
       LogServiceFactory.getLogService(CarbonDataFileWriter.class.getName());

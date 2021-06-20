@@ -19,7 +19,6 @@ package org.apache.carbondata.presto;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,7 +47,6 @@ import org.apache.carbondata.presto.impl.CarbonTableReader;
 import com.google.common.collect.ImmutableList;
 import io.prestosql.plugin.hive.CoercionPolicy;
 import io.prestosql.plugin.hive.DirectoryLister;
-import io.prestosql.plugin.hive.ForHive;
 import io.prestosql.plugin.hive.HdfsEnvironment;
 import io.prestosql.plugin.hive.HiveColumnHandle;
 import io.prestosql.plugin.hive.HiveConfig;
@@ -59,6 +57,8 @@ import io.prestosql.plugin.hive.HiveSplitManager;
 import io.prestosql.plugin.hive.HiveTableHandle;
 import io.prestosql.plugin.hive.HiveTransactionHandle;
 import io.prestosql.plugin.hive.NamenodeStats;
+import io.prestosql.plugin.hive.TableToPartitionMapping;
+import io.prestosql.plugin.hive.authentication.HiveIdentity;
 import io.prestosql.plugin.hive.metastore.SemiTransactionalHiveMetastore;
 import io.prestosql.plugin.hive.metastore.Table;
 import io.prestosql.spi.HostAddress;
@@ -95,7 +95,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
       NamenodeStats namenodeStats,
       HdfsEnvironment hdfsEnvironment,
       DirectoryLister directoryLister,
-      @ForHive ExecutorService executorService,
+      ExecutorService executorService,
       VersionEmbedder versionEmbedder,
       CoercionPolicy coercionPolicy,
       CarbonTableReader reader) {
@@ -116,9 +116,9 @@ public class CarbondataSplitManager extends HiveSplitManager {
     // get table metadata
     SemiTransactionalHiveMetastore metastore =
         metastoreProvider.apply((HiveTransactionHandle) transactionHandle);
-    Table table =
-        metastore.getTable(schemaTableName.getSchemaName(), schemaTableName.getTableName())
-            .orElseThrow(() -> new TableNotFoundException(schemaTableName));
+    Table table = metastore.getTable(new HiveIdentity(session), schemaTableName.getSchemaName(),
+        schemaTableName.getTableName())
+        .orElseThrow(() -> new TableNotFoundException(schemaTableName));
     if (!table.getStorage().getStorageFormat().getInputFormat().contains("carbon")) {
       return super.getSplits(transactionHandle, session, tableHandle, splitSchedulingStrategy);
     }
@@ -176,10 +176,10 @@ public class CarbondataSplitManager extends HiveSplitManager {
         properties.setProperty("queryId", queryId);
         properties.setProperty("index", String.valueOf(index));
         cSplits.add(new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
-            schemaTableName.getTableName(), cache.getCarbonTable().getTablePath(), 0, 0, 0,
-            properties, new ArrayList(), getHostAddresses(split.getLocations()),
-            OptionalInt.empty(), false, new HashMap<>(),
-            Optional.empty(), false));
+            schemaTableName.getTableName(), cache.getCarbonTable().getTablePath(), 0, 0, 0, 0,
+            properties, new ArrayList<>(), getHostAddresses(split.getLocations()),
+            OptionalInt.empty(), false, TableToPartitionMapping.empty(), Optional.empty(), false,
+            Optional.empty()));
       }
 
       statisticRecorder.logStatisticsAsTableDriver();
