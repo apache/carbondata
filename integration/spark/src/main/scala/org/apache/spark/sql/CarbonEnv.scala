@@ -119,6 +119,7 @@ class CarbonEnv {
     val threadLevelCarbonSessionInfo = new CarbonSessionInfo()
     if (currentThreadSessionInfo != null) {
       threadLevelCarbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
+      threadLevelCarbonSessionInfo.setSessionParams(currentThreadSessionInfo.getSessionParams)
     }
     ThreadLocalSessionInfo.setCarbonSessionInfo(threadLevelCarbonSessionInfo)
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(

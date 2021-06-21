@@ -1120,6 +1120,15 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assert(ex.getMessage.contains("can not add same segment path repeatedly"))
   }
 
+  test("Test add segment with empty path") {
+    createCarbonTable()
+    val ex = intercept[Exception] {
+      sql("alter table addsegment1 add segment " +
+          s"options('path'='', 'format'='carbon')").collect()
+    }
+    assert(ex.getMessage.contains("PATH cannot be empty"))
+  }
+
   def getDataSize(path: String): String = {
     val allFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = {
