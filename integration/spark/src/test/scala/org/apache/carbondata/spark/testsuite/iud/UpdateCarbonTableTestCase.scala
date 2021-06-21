@@ -29,6 +29,7 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.locks.CarbonLockUtil
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -1190,6 +1191,30 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("update iud.zeRorows up_TAble set(up_table.C1)=('abc') where up_TABLE.C2=1")
     checkAnswer(sql("select * from iud.zerorows where c2=1"),
      Seq(Row("abc", 1, "aa", "aaa")))
+  }
+
+  test("test update on table with auto-merge enabled") {
+    sql("""drop table if exists iud.autoMergeUpdate""").collect()
+    sql("""create table iud.autoMergeUpdate (c1 string,c2 int,c3 string,c5 string) STORED AS
+        |carbondata tblproperties('auto_load_merge'='true')""".stripMargin)
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.autoMergeUpdate""")
+    sql("update iud.autoMergeUpdate up_TAble set(up_table.C1)=('abc')")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.autoMergeUpdate""")
+    val retryCount = CarbonLockUtil.getLockProperty(
+      CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK,
+      CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT)
+    val retryTimeOut = CarbonLockUtil.getLockProperty(
+      CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK,
+      CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK_DEFAULT)
+    val updateTime = System.currentTimeMillis()
+    sql("update iud.autoMergeUpdate up_TAble set(up_table.C1)=('abcd')")
+    assert((System.currentTimeMillis() - updateTime) < (retryCount * retryTimeOut * 1000L))
+    checkAnswer(sql("select * from  iud.autoMergeUpdate"),
+      Seq(Row("abcd", 1, "aa", "aaa"), Row("abcd", 2, "bb", "bbb"),
+        Row("abcd", 3, "cc", "ccc"), Row("abcd", 4, "dd", "ddd"),
+        Row("abcd", 5, "ee", "eee"), Row("abcd", 1, "aa", "aaa"),
+        Row("abcd", 2, "bb", "bbb"), Row("abcd", 3, "cc", "ccc"),
+        Row("abcd", 4, "dd", "ddd"), Row("abcd", 5, "ee", "eee")))
   }
 
   test("test update atomicity when horizontal compaction fails") {

@@ -1101,16 +1101,18 @@ object CommonLoadUtils {
     }
     try {
       val compactedSegments = new util.ArrayList[String]()
-      // Trigger auto compaction
-      CarbonDataRDDFactory.handleSegmentMerging(
-        loadParams.sparkSession.sqlContext,
-        loadParams.carbonLoadModel
-          .getCopyWithPartition(loadParams.carbonLoadModel.getCsvHeader,
-            loadParams.carbonLoadModel.getCsvDelimiter),
-        table,
-        compactedSegments,
-        loadParams.operationContext)
-      loadParams.carbonLoadModel.setMergedSegmentIds(compactedSegments)
+      if (loadParams.updateModel.isEmpty) {
+        // Trigger auto compaction
+        CarbonDataRDDFactory.handleSegmentMerging(
+          loadParams.sparkSession.sqlContext,
+          loadParams.carbonLoadModel
+            .getCopyWithPartition(loadParams.carbonLoadModel.getCsvHeader,
+              loadParams.carbonLoadModel.getCsvDelimiter),
+          table,
+          compactedSegments,
+          loadParams.operationContext)
+        loadParams.carbonLoadModel.setMergedSegmentIds(compactedSegments)
+      }
     } catch {
       case e: Exception =>
         LOGGER.error(
