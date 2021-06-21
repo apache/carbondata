@@ -121,8 +121,10 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
       true, "dm_carbon_si")
   }
 
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
   test("rename index table success, insert new record success" +
-       " and query hit new index table") {
+       " and query hit new index table", true) {
     sql("create table if not exists x1 (imei string, mac string) stored as carbondata")
     sql("create index idx_x1_mac on table x1(mac) as 'carbondata'")
     sql("alter table idx_x1_mac rename to idx_x1_mac1")
@@ -135,8 +137,10 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS x1")
   }
 
+  // Exclude when running with index server, as pruning info for explain command
+  // not set with index server.
   test("rename index table fail, revert success, insert new record success" +
-       " and query hit old index table") {
+       " and query hit old index table", true) {
     val mock: MockUp[MockClassForAlterRevertTests] = new MockUp[MockClassForAlterRevertTests]() {
       @Mock
       @throws[ProcessMetaDataException]

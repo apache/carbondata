@@ -277,8 +277,7 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  // Exclude when running with index server as the returned rows order may vary
-  test("Test alter add for arrays enabling local dictionary", true) {
+  test("Test alter add for arrays enabling local dictionary") {
     import scala.collection.mutable.WrappedArray.make
     createTableForComplexTypes("LOCAL_DICTIONARY_INCLUDE", "ARRAY")
     // For the previous segments the default value for newly added array column is null
@@ -289,15 +288,15 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql(
       "insert into alter_com values(2,array(9,0),array(1,2,3),array('hello','world'),array(6,7)," +
       "array(8,9), named_struct('a',1,'b','abcde') )")
-    val rows = sql("select * from alter_com").collect()
-    assert(rows(6)(0) == 2)
-    assert(rows(6)(1) == make(Array(9, 0)))
-    assert(rows(6)(2) == make(Array(1, 2, 3)))
-    assert(rows(6)(3) == make(Array("hello", "world")))
-    assert(rows(6)(4) == make(Array(6, 7)))
-    assert(rows(6)(5) == make(Array(8, 9)))
-    assert(rows(6)(6) == Row(1, "abcde"))
-    assert(rows.size == 7)
+    sql("select * from alter_com").show(false)
+    checkAnswer(sql("select * from alter_com where array_contains(arr4,6)"),
+      Seq(Row(2,
+        make(Array(9, 0)),
+        make(Array(1, 2, 3)),
+        make(Array("hello", "world")),
+        make(Array(6, 7)),
+        make(Array(8, 9)),
+        Row(1, "abcde"))))
 
     val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
     assert(addedColumns.size == 5)
