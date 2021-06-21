@@ -253,17 +253,12 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
       // Wait until children are resolved.
       case p: LogicalPlan if !p.childrenResolved => p
 
-<<<<<<< HEAD
-      case p: InsertIntoStatementWrapper if p.table.isInstanceOf[LogicalRelation] && p.table.
-        asInstanceOf[LogicalRelation].relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        // when plan contains Union, it can have multiple insert statements as its children
-        castChildOutput(p, p.table.asInstanceOf[LogicalRelation], p.children.head, plan.isInstanceOf[Union])
-=======
       case p: CarbonToSparkAdapter.InsertIntoStatementWrapper if p.table
         .isInstanceOf[LogicalRelation] && p.table.asInstanceOf[LogicalRelation].relation
         .isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        castChildOutput(p, p.table.asInstanceOf[LogicalRelation], p.children.head)
->>>>>>> Review Comment fixes
+        // when plan contains Union, it can have multiple insert statements as its children
+        castChildOutput(p, p.table.asInstanceOf[LogicalRelation], p.children.head,
+          plan.isInstanceOf[Union])
     }
   }
 

@@ -54,8 +54,9 @@ case class CarbonShowSegmentsAsSelectCommand(
 
   val df: DataFrame = createDataFrame
 
+  var attrList: Seq[Attribute] = Seq()
+
   override def output: Seq[Attribute] = {
-    var attrList: Seq[Attribute] = Seq()
     sparkSession.sessionState.sqlParser.parsePlan(query).find(_.isInstanceOf[Project]) match {
       case Some(project: Project) =>
         val projectList = project.projectList

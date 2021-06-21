@@ -360,11 +360,11 @@ trait Printers {
         }
         qualifierPrefix + quoteIdentifier(child.name) + " AS " + quoteIdentifier(a.name)
       case a@Alias(child: AggregateExpression, _) =>
-        child.sql + " AS " + quoteIdentifier(a.name)
+        child.sql + s" AS " + quoteIdentifier(a.name)
       case a@Alias(cast: Cast, _) =>
-        cast.sql + " AS " + quoteIdentifier(a.name)
+        cast.sql + s" AS " + quoteIdentifier(a.name)
       case a@Alias(cast: Coalesce, _) =>
-        cast.sql + " AS " + quoteIdentifier(a.name)
+        cast.sql + s" AS " + quoteIdentifier(a.name)
       case reference@AttributeReference(_, _, _, _) =>
         val qualifierPrefix = if (reference.qualifier.nonEmpty) {
           ExpressionHelper.getTheLastQualifier(reference) + "."

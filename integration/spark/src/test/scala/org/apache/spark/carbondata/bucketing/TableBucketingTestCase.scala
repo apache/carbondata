@@ -24,6 +24,7 @@ import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.execution.WholeStageCodegenExec
 import org.apache.spark.sql.execution.exchange.Exchange
 import org.apache.spark.sql.execution.joins.SortMergeJoinExec
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -44,7 +45,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold")
+    threshold = SQLConf.AUTO_BROADCASTJOIN_THRESHOLD.defaultValueString
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "-1")
     sql("DROP TABLE IF EXISTS t4")
     sql("DROP TABLE IF EXISTS t5")

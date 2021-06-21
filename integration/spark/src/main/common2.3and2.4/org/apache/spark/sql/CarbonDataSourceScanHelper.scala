@@ -34,7 +34,7 @@ import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 abstract class  CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelation,
-                                           output: Seq[Attribute],
+    output: Seq[Attribute],
     partitionFilters: Seq[SparkExpression],
     pushedDownFilters: Seq[Expression],
     pushedDownProjection: CarbonProjection,

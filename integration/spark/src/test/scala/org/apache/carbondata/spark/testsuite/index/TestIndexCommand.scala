@@ -39,38 +39,29 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
 
   val newClass = "org.apache.spark.sql.CarbonSource"
 
-  // TODO: This issue will be fixed during alter change column support for spark 3.1.1
-  // REFER: https://issues.apache.org/jira/browse/CARBONDATA-4210
-  ignore("test index create: don't support using non-exist class") {
+  test("test index create: don't support using non-exist class") {
     assert(intercept[MetadataProcessException] {
       sql(s"CREATE INDEX index1 ON indextest (a) AS '$newClass'")
     }.getMessage
       .contains(
-        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource': wrong number of" +
-        " arguments"))
+        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource'"))
   }
 
-  // TODO: This issue will be fixed during alter change column support for spark 3.1.1
-  // REFER: https://issues.apache.org/jira/browse/CARBONDATA-4210
-  ignore("test index create with properties: don't support using non-exist class") {
+  test("test index create with properties: don't support using non-exist class") {
     assert(intercept[MetadataProcessException] {
       sql(s"CREATE INDEX index2 ON indextest (a) AS '$newClass' PROPERTIES('key'='value')")
     }.getMessage
       .contains(
-        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource': wrong number of" +
-        " arguments"))
+        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource'"))
   }
 
-  // TODO: This issue will be fixed during alter change column support for spark 3.1.1
-  // REFER: https://issues.apache.org/jira/browse/CARBONDATA-4210
-  ignore("test index create with existing name: don't support using non-exist class") {
+  test("test index create with existing name: don't support using non-exist class") {
     assert(intercept[MetadataProcessException] {
       sql(
         s"CREATE INDEX index2 ON indextest (a) AS '$newClass' PROPERTIES('key'='value')")
     }.getMessage
       .contains(
-        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource': wrong number of" +
-        " arguments"))
+        "failed to create IndexClassProvider 'org.apache.spark.sql.CarbonSource'"))
   }
 
   test("test show indexes with no index") {
