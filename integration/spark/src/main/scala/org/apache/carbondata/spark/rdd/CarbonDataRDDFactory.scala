@@ -312,9 +312,11 @@ object CarbonDataRDDFactory {
     val segmentLock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
       CarbonTablePath.addSegmentPrefix(carbonLoadModel.getSegmentId) + LockUsage.LOCK)
 
+    // dataFrame.get.rdd.isEmpty() will launch a job, so avoid calling it multiple times
+    val isEmptyDataframe = updateModel.isDefined && dataFrame.get.rdd.isEmpty()
     try {
       if (!carbonLoadModel.isCarbonTransactionalTable || segmentLock.lockWithRetries()) {
-        if (updateModel.isDefined && dataFrame.get.rdd.isEmpty()) {
+        if (isEmptyDataframe) {
           // if the rowToBeUpdated is empty, mark created segment as marked for delete and return
           CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, "")
         } else {
@@ -473,7 +475,7 @@ object CarbonDataRDDFactory {
           LOGGER.info("********clean up done**********")
           throw new Exception(status(0)._2._2.errorMsg)
         }
-        if (updateModel.isDefined && dataFrame.get.rdd.isEmpty()) {
+        if (isEmptyDataframe) {
           return null
         }
         // as no record loaded in new segment, new segment should be deleted
@@ -556,7 +558,11 @@ object CarbonDataRDDFactory {
       // Release the segment lock, once table status is finally updated
       segmentLock.unlock()
       if (isLoadingCommitted) {
-        triggerEventsAfterLoading(sqlContext, carbonLoadModel, hadoopConf, operationContext)
+        triggerEventsAfterLoading(sqlContext,
+          carbonLoadModel,
+          hadoopConf,
+          operationContext,
+          updateModel.isDefined)
       }
     }
   }
@@ -565,12 +571,18 @@ object CarbonDataRDDFactory {
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration,
-      operationContext: OperationContext): Unit = {
+      operationContext: OperationContext,
+      isUpdateOperation: Boolean): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     // code to handle Pre-Priming cache for loading
     if (!StringUtils.isEmpty(carbonLoadModel.getSegmentId)) {
       DistributedRDDUtils.triggerPrepriming(sqlContext.sparkSession, carbonTable, Seq(),
         operationContext, hadoopConf, List(carbonLoadModel.getSegmentId))
+    }
+    if (isUpdateOperation) {
+      // During Update, we cannot perform compaction, as concurrent update and compaction is not
+      // allowed. If Update flow, then just return
+      return
     }
     try {
       // compaction handling
