@@ -88,8 +88,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     CarbonSparkSqlParserUtil.visitPropertyKeyValues(ctx, props)
   }
 
-  def getPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String]
-  = {
+  def getPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String] = {
     Option(ctx).map(visitPropertyKeyValues)
       .getOrElse(Map.empty)
   }

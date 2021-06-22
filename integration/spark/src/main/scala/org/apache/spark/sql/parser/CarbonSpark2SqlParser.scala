@@ -777,6 +777,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     schema.map { col =>
       // TODO: Spark has started supporting CharType/VarChar types in Spark 3.1 but both are
       //  marked as experimental. Adding a hack to change to string for now.
+      // Refer: https://issues.apache.org/jira/browse/CARBONDATA-4226
       if (CarbonToSparkAdapter.isCharType(col.dataType) || CarbonToSparkAdapter
           .isVarCharType(col.dataType)) {
         getFields(col.getComment(), col.name, DataTypes.StringType, isExternal)
@@ -848,9 +849,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   }
 
   def getScannerInput(dataType: DataType,
-                      columnComment: String,
-                      columnName: String,
-                      isExternal: Boolean): String = {
+      columnComment: String,
+      columnName: String,
+      isExternal: Boolean): String = {
     if (dataType.catalogString == "float" && !isExternal) {
       '`' + columnName + '`' + " double" + columnComment
     } else {

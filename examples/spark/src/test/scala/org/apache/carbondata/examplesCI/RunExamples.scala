@@ -105,6 +105,7 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   }
 
   // Below test case ignored due to the Deadlock in spark code
+  // TODO: To be fixed when spark removes deadlock in opensource code.
   ignore("LuceneIndexExample") {
     LuceneIndexExample.exampleBody(spark)
   }

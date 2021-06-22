@@ -139,7 +139,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       var newPlan: LogicalPlan = null
       if (tableIdentifier.database.isDefined) {
         newPlan = parser.parsePlan("select * from  " +
-           tableIdentifier.database.getOrElse("") + "." +
+           tableIdentifier.database.getOrElse("") + CarbonCommonConstants.POINT +
            tableIdentifier.table + " " + alias.getOrElse("") + " " + filter)
       }
       else {

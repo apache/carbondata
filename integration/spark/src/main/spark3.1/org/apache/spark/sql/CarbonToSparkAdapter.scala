@@ -138,8 +138,7 @@ object CarbonToSparkAdapter extends SparkVersionAdapter {
       exprId: ExprId,
       qualifier: Option[String]) : Alias = {
     Alias(child, name)(exprId,
-      if (qualifier.isEmpty) Seq.empty else Seq(qualifier.get),
-      None)
+      if (qualifier.isEmpty) Seq.empty else Seq(qualifier.get), None)
   }
 
   // Create the aliases using two plan outputs mappings.
