@@ -958,6 +958,7 @@ public class CarbonWriterBuilder {
         }
       }
     }
+    CarbonTable carbonTable = this.carbonTable;
     if (carbonTable == null) {
       // if carbonTable is not set by user, build it using schema
       carbonTable = buildCarbonTable();

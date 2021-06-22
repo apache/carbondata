@@ -40,6 +40,8 @@ import org.apache.carbondata.core.scan.expression.conditional.NotInExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.sdk.file.utils.SDKUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.log4j.Logger;
@@ -2962,6 +2964,59 @@ public class CarbonReaderTest extends TestCase {
     reader.close();
 
     FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testWriteWithSameBuilder() throws IOException, InterruptedException {
+    String path1 = "./testWriteFiles1";
+    String path2 = "./testWriteFiles2";
+    FileUtils.deleteDirectory(new File(path1));
+    FileUtils.deleteDirectory(new File(path2));
+
+    String json = "{\"name\":\"bob\", \"age\":10}";
+    Schema schema = new Schema(new Field[] {
+        new Field("name", "string"),
+        new Field("age", "int")
+    });
+    // write data twice with same writer builder
+    CarbonWriterBuilder builder = CarbonWriter.builder()
+        .withJsonInput(schema)
+        .writtenBy("testWriteWithSameBuilder");
+    int numRows = 10;
+    try {
+      CarbonWriter writer1 = builder.outputPath(path1).build();
+      for (int i = 0; i < numRows; i++) {
+        writer1.write(json);
+      }
+      writer1.close();
+      CarbonWriter writer2 = builder.outputPath(path2).build();
+      for (int i = 0; i < 10; i++) {
+        writer2.write(json);
+      }
+      writer2.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    // read it and verify
+    List<String> files = new ArrayList<>();
+    files.addAll(SDKUtil.listFiles(path1, CarbonTablePath.CARBON_DATA_EXT));
+    files.addAll(SDKUtil.listFiles(path2, CarbonTablePath.CARBON_DATA_EXT));
+    CarbonReader reader = CarbonReader.builder()
+        .withFileLists(files)
+        .projection(new String[]{"name", "age"}).build();
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      Assert.assertEquals("bob", row[0]);
+      Assert.assertEquals(10, row[1]);
+      i++;
+    }
+    Assert.assertEquals(i, numRows * 2);
+    reader.close();
+    FileUtils.deleteDirectory(new File(path1));
+    FileUtils.deleteDirectory(new File(path2));
   }
 
 }
