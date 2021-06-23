@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkSqlAstBuilder, SparkSqlParser}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
-import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.needToConvertToLowerCase
+import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.convertPropertiesToLowercase
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
@@ -128,16 +128,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       None
     }
 
-    val tableProperties = mutable.Map[String, String]()
     val properties: Map[String, String] = getPropertyKeyValues(tablePropertyList)
-
-    properties.foreach { property =>
-      if (needToConvertToLowerCase(property._1)) {
-        tableProperties.put(property._1.toLowerCase, property._2.toLowerCase)
-      } else {
-        tableProperties.put(property._1.toLowerCase, property._2)
-      }
-    }
+    val tableProperties = convertPropertiesToLowercase(properties)
     // validate partition clause
     val partitionByStructFields = Option(partitionColumns).toSeq.flatMap(visitColTypeList)
     val partitionFields = CarbonToSparkAdapter.

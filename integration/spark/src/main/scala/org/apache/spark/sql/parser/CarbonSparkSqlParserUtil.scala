@@ -547,4 +547,16 @@ object CarbonSparkSqlParserUtil {
       isOverwriteTable = isOverwrite.isDefined,
       partition = partitionSpec)
   }
+
+  def convertPropertiesToLowercase(properties: Map[String, String]): mutable.Map[String, String] = {
+    val tableProperties = mutable.Map[String, String]()
+    properties.foreach { property =>
+      if (needToConvertToLowerCase(property._1)) {
+        tableProperties.put(property._1.toLowerCase, property._2.toLowerCase)
+      } else {
+        tableProperties.put(property._1.toLowerCase, property._2)
+      }
+    }
+    tableProperties
+  }
 }
