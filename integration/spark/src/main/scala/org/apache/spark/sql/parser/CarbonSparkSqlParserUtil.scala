@@ -447,22 +447,25 @@ object CarbonSparkSqlParserUtil {
       table: String,
       columnName: String,
       columnNameCopy: String,
-      dataType: String,
+      dataType: Option[String],
       values: Option[List[(Int, Int)]],
-      comment: Option[String]
+      comment: Option[String],
+      complexChild: Option[Field]
   ): CarbonAlterTableColRenameDataTypeChangeCommand = {
     val isColumnRename = !columnName.equalsIgnoreCase(columnNameCopy)
-    val alterTableColRenameAndDataTypeChangeModel =
-      AlterTableDataTypeChangeModel(
-        CarbonParserUtil.parseDataType(columnName, dataType.toLowerCase,
-          values),
-        CarbonParserUtil.convertDbNameToLowerCase(dbName),
-        table.toLowerCase,
-        columnName.toLowerCase,
-        columnNameCopy.toLowerCase,
-        isColumnRename,
-        comment)
-    CarbonAlterTableColRenameDataTypeChangeCommand(alterTableColRenameAndDataTypeChangeModel)
+    val dataTypeInfo = if (!dataType.equals(None)) {
+      CarbonParserUtil.parseDataType(columnName, dataType.get.toLowerCase, values)
+    } else {
+      CarbonParserUtil.parseDataType(columnNameCopy, complexChild.get, values)
+    }
+    CarbonAlterTableColRenameDataTypeChangeCommand(AlterTableDataTypeChangeModel(
+      dataTypeInfo,
+      CarbonParserUtil.convertDbNameToLowerCase(dbName),
+      table.toLowerCase,
+      columnName.toLowerCase,
+      columnNameCopy.toLowerCase,
+      isColumnRename,
+      comment))
   }
 
   def alterTableAddColumns(
