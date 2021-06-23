@@ -44,7 +44,7 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSes
       val commentSpecContext = if (commentSpec.isEmpty) {
         null
       } else {
-        commentSpec.get(0).toString()
+        string(commentSpec.get(0).STRING())
       }
       val createTableTuple = (ctx.createTableHeader, createTableClauses.skewSpec(0),
         createTableClauses.bucketSpec(0), createTableClauses.partitioning, ctx.colTypeList(),
