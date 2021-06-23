@@ -1113,6 +1113,53 @@ object CarbonParserUtil {
   /**
    * This method will parse the given data type and validate against the allowed data types
    *
+   * @param complexField datatype structure(only complex) given by the user in DDL
+   * @param values values defined when the decimal datatype is given in DDL
+   * @return DataTypeInfo object with datatype, precision and scale
+   */
+  def parseDataType(
+      columnName: String,
+      complexField: Field,
+      values: Option[List[(Int, Int)]]): DataTypeInfo = {
+    val dataTypeName = DataTypeConverterUtil.convertToCarbonType(complexField).getName
+    val dataTypeInfo = CarbonParserUtil.parseDataType(columnName, dataTypeName.toLowerCase, values)
+    complexField.dataType match {
+      case Some(CarbonCommonConstants.ARRAY) =>
+        val childField = complexField.children.get(0)
+        val childType = childField.dataType
+        val childName = columnName + CarbonCommonConstants.POINT + childField.name
+        val childValues = childType match {
+          case d: DecimalType => Some(List((d.precision, d.scale)))
+          case _ => None
+        }
+        val childDatatypeInfo = parseDataType(childName, childField, childValues)
+        dataTypeInfo.setChildren(List(childDatatypeInfo))
+      case Some(CarbonCommonConstants.STRUCT) =>
+        var childTypeInfoList: List[DataTypeInfo] = null
+        for (childField <- complexField.children.get) {
+          val childType = childField.dataType
+          val childName = columnName + CarbonCommonConstants.POINT + childField.name.get
+          val childValues = childType match {
+            case d: DecimalType => Some(List((d.precision, d.scale)))
+            case _ => None
+          }
+          val childDatatypeInfo = parseDataType(childName, childField, childValues)
+          if (childTypeInfoList == null) {
+            childTypeInfoList = List(childDatatypeInfo)
+          } else {
+            childTypeInfoList = childTypeInfoList :+ childDatatypeInfo
+          }
+        }
+        dataTypeInfo.setChildren(childTypeInfoList)
+      case _ =>
+    }
+    // TODO have to handle for map types [CARBONDATA-4199]
+    dataTypeInfo
+  }
+
+  /**
+   * This method will parse the given data type and validate against the allowed data types
+   *
    * @param dataType datatype string given by the user in DDL
    * @param values values defined when the decimal datatype is given in DDL
    * @return DataTypeInfo object with datatype, precision and scale

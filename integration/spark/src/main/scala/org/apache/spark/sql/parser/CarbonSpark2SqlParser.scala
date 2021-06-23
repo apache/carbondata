@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.parser
 
+import java.util.regex.Pattern
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -629,14 +631,32 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           commandOptions)
     }
 
-
   protected lazy val alterTableColumnRenameAndModifyDataType: Parser[LogicalPlan] =
-    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (CHANGE ~> ident) ~ ident ~ ident ~
-      opt("(" ~> rep1sep(valueOptions, ",") <~ ")") ~ opt(COMMENT ~> restInput) <~ opt(";") ^^ {
-      case dbName ~ table ~ columnName ~ columnNameCopy ~ dataType ~ values ~
-           comment if CarbonPlanHelper.isCarbonTable(TableIdentifier(table, dbName)) =>
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (CHANGE ~> ident) ~ ident ~
+    opt(primitiveTypes) ~ opt(nestedType) ~ opt(COMMENT ~> restInput) <~ opt(";") ^^ {
+      case dbName ~ table ~ columnName ~ newColumnName ~ dataType ~ complexField ~
+           comment if CarbonPlanHelper.isCarbonTable(TableIdentifier(table, dbName)) &&
+                      (complexField.isDefined ^ dataType.isDefined) =>
+        var primitiveType = dataType
+        var newComment: Option[String] = comment
+        var decimalValues = None: Option[List[(Int, Int)]]
+        // if datatype is decimal then extract precision and scale
+        if (!dataType.equals(None) && dataType.get.contains(CarbonCommonConstants.DECIMAL)) {
+          val matcher = Pattern.compile("[0-9]+").matcher(dataType.get)
+          val list = collection.mutable.ListBuffer.empty[Int]
+          while ( { matcher.find }) {
+            list += matcher.group.toInt
+          }
+          decimalValues = Some(List((list(0), list(1))))
+          primitiveType = Some(CarbonCommonConstants.DECIMAL)
+        }
+        newComment = if (comment.isDefined) {
+          Some(StringUtils.substringBetween(comment.get, "'", "'"))
+        } else { None }
+
         CarbonSparkSqlParserUtil.alterTableColumnRenameAndModifyDataType(
-          dbName, table, columnName, columnNameCopy, dataType, values, comment)
+          dbName, table, columnName, newColumnName, primitiveType, decimalValues, newComment,
+          complexField)
     }
 
   protected lazy val alterTableAddColumns: Parser[LogicalPlan] =
