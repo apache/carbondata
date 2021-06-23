@@ -2990,7 +2990,7 @@ public class CarbonReaderTest extends TestCase {
       }
       writer1.close();
       CarbonWriter writer2 = builder.outputPath(path2).build();
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < numRows; i++) {
         writer2.write(json);
       }
       writer2.close();
