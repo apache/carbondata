@@ -118,9 +118,11 @@ also load data to the SI table with the same number of segments as the main tabl
 the main table will also load data to the SI table.
 
  **NOTE**:
- * In case of data load failure to the SI table, then we make the SI table disable by setting a hive serde
- property. The subsequent main table load will load the old failed loads along with current load and
- makes the SI table enable and available for query.
+ * In case of data load failure to the SI table, segments of main table and SI table will not be in sync.
+ In this scenario the subsequent query pruning will be performed at segment level. It means all successful SI segments 
+ will be pruned with SI table and rest of the segment pruning will be performed with help of main table.
+ The subsequent main table load will load the old failed loads along with current load and
+ makes the SI and main table segments in sync.
 
 ## Querying data
 Direct query can be made on SI tables to check the data present in position reference columns.
