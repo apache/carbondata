@@ -26,7 +26,7 @@ You can find the latest CarbonData document and learn more at:
 
 ## Status
 Spark2.4:
-[![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-2.4)](https://builds.apache.org/view/A-D/view/CarbonData/job/carbondata-master-spark-2.4/lastBuild/testReport)
+[![Build Status](https://ci-builds.apache.org/job/carbondata/job/spark-2.4/badge/icon)](https://ci-builds.apache.org/job/carbondata/job/spark-2.4/)
 [![Coverage Status](https://coveralls.io/repos/github/apache/carbondata/badge.svg?branch=master)](https://coveralls.io/github/apache/carbondata?branch=master)
 <a href="https://scan.coverity.com/projects/carbondata">
   <img alt="Coverity Scan Build Status"
