@@ -75,6 +75,7 @@ class SparkStoreCreatorForPresto extends QueryTest with BeforeAndAfterAll{
     val destination = s"$rootPath/integration/spark/target/spark_store/"
     val destDir = new File(destination)
     FileUtils.copyDirectory(srcDir, destDir)
+    Thread.sleep(1000)
     FileUtils.deleteDirectory(srcDir)
     sql("drop table if exists update_table")
     sql("drop table if exists actual_update_table")

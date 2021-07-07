@@ -72,6 +72,7 @@ class PrestoTestUsingSparkStore
     try {
       // Move spark store to presto store path
       FileUtils.copyDirectory(srcDir, destDir)
+      Thread.sleep(1000)
     }
     catch {
       case e: IOException =>
