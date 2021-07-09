@@ -222,7 +222,9 @@ public class CarbonTableReader {
         // Step 4: Load metadata info into CarbonMetadata
         CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
         CarbonTable carbonTable = Objects.requireNonNull(CarbonMetadata.getInstance()
-            .getCarbonTable(table.getSchemaName(), table.getTableName()), "carbontable is null");
+            .getCarbonTable(table.getSchemaName(), table.getTableName()),
+                "carbontable +" +table.getSchemaName()  +table.getTableName() +"is null. " +
+                        CarbonTable.buildUniqueName(table.getSchemaName(), table.getTableName()));
         refreshIndexInfo(carbonTable, config);
         cache = new CarbonTableCacheModel(modifiedTime, carbonTable);
         // cache the table

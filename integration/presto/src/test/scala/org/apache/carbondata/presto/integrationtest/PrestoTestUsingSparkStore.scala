@@ -61,7 +61,7 @@ class PrestoTestUsingSparkStore
   }
 
   def copyStoreContents(tableName: String): Any = {
-    FileUtils.deleteDirectory(new File(writerPath))
+    // FileUtils.deleteDirectory(new File(writerPath))
     import java.io.IOException
     val source = s"$sparkStorePath/$tableName/"
     val srcDir = new File(source)
