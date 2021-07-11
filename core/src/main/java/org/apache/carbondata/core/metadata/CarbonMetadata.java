@@ -180,6 +180,10 @@ public final class CarbonMetadata {
     return new ArrayList<>(tableInfoMap.values());
   }
 
+  public List<String> getAllTableskeys() {
+    return new ArrayList<>(tableInfoMap.keySet());
+  }
+
   public void clearAll() {
     tableInfoMap.clear();
   }

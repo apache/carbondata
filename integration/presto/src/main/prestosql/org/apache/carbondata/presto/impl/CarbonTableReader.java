@@ -218,13 +218,30 @@ public class CarbonTableReader {
             .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
                 tablePath);
         wrapperTableInfo.setTransactionalTable(isTransactionalTable);
+        boolean beforeRemovetable = false;
+        if (CarbonMetadata.getInstance()
+                .getCarbonTable(table.getSchemaName(), table.getTableName()) == null) {
+          beforeRemovetable = true;
+        }
         CarbonMetadata.getInstance().removeTable(wrapperTableInfo.getTableUniqueName());
+        boolean afterRemovetable = false;
+        if (CarbonMetadata.getInstance()
+                .getCarbonTable(table.getSchemaName(), table.getTableName()) == null) {
+          afterRemovetable = true;
+        }
         // Step 4: Load metadata info into CarbonMetadata
         CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
+        boolean afterupdatetable = false;
+        if (CarbonMetadata.getInstance()
+                .getCarbonTable(table.getSchemaName(), table.getTableName()) == null) {
+          afterupdatetable = true;
+        }
         CarbonTable carbonTable = Objects.requireNonNull(CarbonMetadata.getInstance()
-            .getCarbonTable(table.getSchemaName(), table.getTableName()),
-                "carbontable +" +table.getSchemaName()  +table.getTableName() +"is null. " +
-                        CarbonTable.buildUniqueName(table.getSchemaName(), table.getTableName()));
+                        .getCarbonTable(table.getSchemaName(), table.getTableName()),
+                "carbontable " + wrapperTableInfo.getTableUniqueName() + " is null. " +
+                        CarbonMetadata.getInstance().getAllTableskeys() + beforeRemovetable
+                        + afterRemovetable + afterupdatetable);
+
         refreshIndexInfo(carbonTable, config);
         cache = new CarbonTableCacheModel(modifiedTime, carbonTable);
         // cache the table
