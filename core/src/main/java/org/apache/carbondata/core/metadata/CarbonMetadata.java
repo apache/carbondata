@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -28,11 +29,15 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 import net.jodah.expiringmap.ExpirationPolicy;
 import net.jodah.expiringmap.ExpiringMap;
+import org.apache.log4j.Logger;
 
 /**
  * Class which persist the information about the tables present the carbon schemas
  */
 public final class CarbonMetadata {
+
+  private static final Logger LOGGER =
+          LogServiceFactory.getLogService(CarbonMetadata.class.getName());
 
   /**
    * meta data instance
@@ -82,9 +87,13 @@ public final class CarbonMetadata {
   public void loadTableMetadata(TableInfo tableInfo) {
     CarbonTable carbonTable = tableInfoMap.get(convertToLowerCase(tableInfo.getTableUniqueName()));
     if (null == carbonTable ||
-        carbonTable.getTableLastUpdatedTime() < tableInfo.getLastUpdatedTime()) {
+            carbonTable.getTableLastUpdatedTime() < tableInfo.getLastUpdatedTime()) {
       carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
       tableInfoMap.put(convertToLowerCase(tableInfo.getTableUniqueName()), carbonTable);
+      LOGGER.info("mahesh loadTableMetadata " + tableInfo.getTableUniqueName() + " map keys and " +
+              "carbondata object"
+              + CarbonMetadata.getInstance().getAllTableskeys()
+              + carbonTable);
     }
   }
 

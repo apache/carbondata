@@ -48,6 +48,8 @@ class PrestoTestUsingSparkStore
     val map = new util.HashMap[String, String]()
     map.put("hive.metastore", "file")
     map.put("hive.metastore.catalog.dir", s"file://$storePath")
+    map.put("query-manager.required-workers", "1")
+    map.put("task.max-worker-threads", "1")
     prestoServer.startServer("presto_spark_db", map)
     prestoServer.execute("drop schema if exists presto_spark_db")
     prestoServer.execute("create schema presto_spark_db")
