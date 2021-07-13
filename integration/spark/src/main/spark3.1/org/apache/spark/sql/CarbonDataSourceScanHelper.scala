@@ -20,12 +20,14 @@ package org.apache.spark.sql
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression => SparkExpression}
+import org.apache.spark.sql.catalyst.catalog.{CatalogTablePartition, ExternalCatalogUtils}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression => SparkExpression, PlanExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.execution.{DataSourceScanExec, WholeStageCodegenExec}
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 import org.apache.spark.sql.optimizer.CarbonFilters
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.vectorized.ColumnarBatch
 
 import org.apache.carbondata.core.index.IndexFilter
@@ -35,14 +37,16 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
-abstract class  CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelation,
-  output: Seq[Attribute],
-  partitionFilters: Seq[SparkExpression],
-  pushedDownFilters: Seq[Expression],
-  pushedDownProjection: CarbonProjection,
-  directScanSupport: Boolean,
-  extraRDD: Option[(RDD[InternalRow], Boolean)],
-  segmentIds: Option[String])
+abstract class CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelation,
+    output: Seq[Attribute],
+    partitionFiltersWithoutDpp: Seq[SparkExpression],
+    pushedDownFilters: Seq[Expression],
+    pushedDownProjection: CarbonProjection,
+    directScanSupport: Boolean,
+    extraRDD: Option[(RDD[InternalRow], Boolean)],
+    selectedCatalogPartitions: Seq[CatalogTablePartition],
+    partitionFiltersWithDpp: Seq[SparkExpression],
+    segmentIds: Option[String])
   extends DataSourceScanExec {
 
   override lazy val supportsColumnar: Boolean = CarbonPlanHelper
@@ -63,7 +67,7 @@ abstract class  CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelat
       .map(new IndexFilter(relation.carbonTable, _, true)).orNull
     if (filter != null && pushedDownFilters.length == 1) {
       // push down the limit if only one filter
-      filter.setLimit(relation.limit)
+      filter.setLimit(relation.getLimit)
     }
     filter
   }
@@ -89,11 +93,13 @@ abstract class  CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelat
 
   @transient lazy val selectedPartitions: Seq[PartitionSpec] = {
     CarbonFilters
-      .getPartitions(partitionFilters, relation.sparkSession, relation.carbonTable)
+      .getPartitions(partitionFiltersWithoutDpp, relation.sparkSession, relation.carbonTable)
       .orNull
   }
 
   lazy val inputRDD: RDD[InternalRow] = {
+    val dynamicFilter = partitionFiltersWithDpp.filter(exp =>
+      exp.find(_.isInstanceOf[PlanExpression[_]]).isDefined)
     val carbonRdd = new CarbonScanRDD[InternalRow](
       relation.sparkSession,
       pushedDownProjection,
@@ -104,6 +110,21 @@ abstract class  CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelat
       new CarbonInputMetrics,
       selectedPartitions,
       segmentIds = segmentIds)
+    if(dynamicFilter.nonEmpty) {
+      carbonRdd match {
+        case carbonRdd: CarbonScanRDD[InternalRow] =>
+          // prune dynamic partitions based on filter
+          val sparkExpression = SparkSQLUtil.getSparkSession
+          val runtimePartitions = ExternalCatalogUtils.prunePartitionsByFilter(
+            sparkExpression.sessionState.catalog.getTableMetadata(tableIdentifier.get),
+            selectedCatalogPartitions,
+            dynamicFilter,
+            sparkExpression.sessionState.conf.sessionLocalTimeZone
+          )
+          // set partitions to carbon rdd
+          carbonRdd.partitionNames = CarbonFilters.convertToPartitionSpec(runtimePartitions)
+      }
+    }
     carbonRdd.setVectorReaderSupport(supportsColumnar)
     carbonRdd.setDirectScanSupport(supportsColumnar && directScanSupport)
     extraRDD.map(_._1.union(carbonRdd)).getOrElse(carbonRdd)

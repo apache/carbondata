@@ -23,7 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, CustomDeterministi
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, NamedExpression, Rand}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.{ExecutedCommandExec, RunnableCommand}
@@ -45,7 +45,7 @@ object CarbonPlanHelper {
       databaseNameOp = Some(insertInto.table.carbonRelation.databaseName),
       tableName = insertInto.table.carbonRelation.tableName,
       options = scala.collection.immutable
-        .Map("fileheader" -> insertInto.table.tableSchema.get.fields.map(_.name).mkString(",")),
+        .Map("fileheader" -> insertInto.table.getTableSchema.get.fields.map(_.name).mkString(",")),
       isOverwriteTable = insertInto.overwrite,
       logicalPlan = insertInto.child,
       tableInfo = insertInto.table.carbonRelation.carbonTable.getTableInfo,
@@ -202,12 +202,20 @@ object CarbonPlanHelper {
           p.transformAllExpressions {
             case a@Alias(exp, _)
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
-              CarbonToSparkAdapter.createAliasRef(
-                CustomDeterministicExpression(exp),
-                a.name,
-                a.exprId,
-                a.qualifier,
-                a.explicitMetadata)
+              if (SparkUtil.isSparkVersionXAndAbove("3")) {
+                // create custom deterministic expression for Rand function
+                a.transform {
+                  case rand: Rand =>
+                    CustomDeterministicExpression(rand)
+                }
+              } else {
+                CarbonToSparkAdapter.createAliasRef(
+                  CustomDeterministicExpression(exp),
+                  a.name,
+                  a.exprId,
+                  a.qualifier,
+                  a.explicitMetadata)
+              }
             case exp: NamedExpression
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
               makeDeterministicExp(exp)
@@ -220,12 +228,20 @@ object CarbonPlanHelper {
           f.transformAllExpressions {
             case a@Alias(exp, _)
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
-              CarbonToSparkAdapter.createAliasRef(
-                CustomDeterministicExpression(exp),
-                a.name,
-                a.exprId,
-                a.qualifier,
-                a.explicitMetadata)
+              if (SparkUtil.isSparkVersionXAndAbove("3")) {
+                // create custom deterministic expression for Rand function
+                a.transform {
+                  case rand: Rand =>
+                    CustomDeterministicExpression(rand)
+                }
+              } else {
+                CarbonToSparkAdapter.createAliasRef(
+                  CustomDeterministicExpression(exp),
+                  a.name,
+                  a.exprId,
+                  a.qualifier,
+                  a.explicitMetadata)
+              }
             case exp: NamedExpression
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
               makeDeterministicExp(exp)

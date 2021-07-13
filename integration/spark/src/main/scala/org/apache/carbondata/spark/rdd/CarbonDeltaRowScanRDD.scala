@@ -44,7 +44,7 @@ class CarbonDeltaRowScanRDD[T: ClassTag](
     @transient private val spark: SparkSession,
     @transient private val serializedTableInfo: Array[Byte],
     @transient private val tableInfo: TableInfo,
-    @transient override val partitionNames: Seq[PartitionSpec],
+    @transient private val newPartitionNames: Seq[PartitionSpec],
     override val columnProjection: CarbonProjection,
     var filter: IndexFilter,
     identifier: AbsoluteTableIdentifier,
@@ -62,7 +62,7 @@ class CarbonDeltaRowScanRDD[T: ClassTag](
     serializedTableInfo,
     tableInfo,
     inputMetricsStats,
-    partitionNames,
+    newPartitionNames,
     dataTypeConverterClz,
     readSupportClz) {
   override def internalGetPartitions: Array[Partition] = {

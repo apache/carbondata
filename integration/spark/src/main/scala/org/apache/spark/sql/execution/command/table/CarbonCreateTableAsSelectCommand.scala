@@ -81,7 +81,7 @@ case class CarbonCreateTableAsSelectCommand(
         tableName = carbonDataSourceHadoopRelation.carbonRelation.tableName,
         options = scala.collection.immutable
           .Map("fileheader" ->
-               carbonDataSourceHadoopRelation.tableSchema.get.fields.map(_.name).mkString(",")),
+               carbonDataSourceHadoopRelation.getTableSchema.get.fields.map(_.name).mkString(",")),
         isOverwriteTable = false,
         logicalPlan = query,
         tableInfo = tableInfo)

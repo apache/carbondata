@@ -23,6 +23,7 @@ import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{expressions, InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, _}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
@@ -35,6 +36,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.scan.expression.{Expression => CarbonFilter}
 import org.apache.carbondata.core.util.CarbonProperties
@@ -120,18 +122,17 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
   }
 
   private def getPartitionFilter(relation: LogicalRelation,
-      filterPredicates: Seq[Expression]): Seq[Expression] = {
-    val names = relation.catalogTable.map(_.partitionColumnNames).getOrElse(Seq.empty)
+      filterPredicates: Seq[Expression], names: Seq[String]): (Seq[Expression], AttributeSet) = {
     // Get the current partitions from table.
     if (names.nonEmpty) {
       val partitionSet = AttributeSet(names
         .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
       // Update the name with lower case as it is case sensitive while getting partition info.
-      CarbonToSparkAdapter
+      (CarbonToSparkAdapter
         .getPartitionFilter(partitionSet, filterPredicates)
-        .map(CarbonToSparkAdapter.lowerCaseAttribute)
+        .map(CarbonToSparkAdapter.lowerCaseAttribute), partitionSet)
     } else {
-      Seq.empty
+      (Seq.empty, AttributeSet.empty)
     }
   }
 
@@ -143,7 +144,22 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       relation: LogicalRelation,
       rawProjects: Seq[NamedExpression],
       allPredicates: Seq[Expression]): SparkPlan = {
-    val partitionsFilter = getPartitionFilter(relation, allPredicates)
+    // get partition column names
+    val names = relation.catalogTable.map(_.partitionColumnNames).getOrElse(Seq.empty)
+    // get partition set from filter expression
+    val (partitionsFilter, partitionSet) = getPartitionFilter(relation, allPredicates, names)
+    var partitions : (Seq[CatalogTablePartition], Seq[PartitionSpec], Seq[Expression]) =
+      (null, null, Seq.empty)
+    var filterPredicates = allPredicates
+    if(names.nonEmpty) {
+      partitions = CarbonFilters.getCatalogTablePartitions(
+        partitionsFilter.filterNot(e => e.find(_.isInstanceOf[PlanExpression[_]]).isDefined),
+        SparkSession.getActiveSession.get,
+        relation.catalogTable.get.identifier
+      )
+      // remove dynamic partition filter from predicates
+      filterPredicates = CarbonToSparkAdapter.getDataFilter(partitionSet, allPredicates)
+    }
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val projects = rawProjects.map {p =>
       p.transform {
@@ -154,9 +170,9 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     // contains the original order of the projection requested
     val projectsAttr = projects.flatMap(_.references)
     val projectSet = AttributeSet(projectsAttr)
-    val filterSet = AttributeSet(allPredicates.flatMap(_.references))
+    val filterSet = AttributeSet(filterPredicates.flatMap(_.references))
 
-    val relationPredicates = allPredicates.map {
+    val relationPredicates = filterPredicates.map {
       _ transform {
         case a: AttributeReference => relation.attributeMap(a) // Match original case of attributes.
       }
@@ -168,7 +184,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     // A set of column attributes that are only referenced by pushed down filters.  We can eliminate
     // them from requested columns.
     val handledSet = {
-      val handledPredicates = allPredicates.filterNot(unhandledPredicates.contains)
+      val handledPredicates = filterPredicates.filterNot(unhandledPredicates.contains)
       val unhandledSet = AttributeSet(unhandledPredicates.flatMap(_.references))
       try {
         AttributeSet(handledPredicates.flatMap(_.references)) --
@@ -184,7 +200,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     val readCommittedScope =
       new TableStatusReadCommittedScope(table.identifier, FileFactory.getConfiguration)
     val extraSegments = MixedFormatHandler.extraSegments(table.identifier, readCommittedScope)
-    val extraRDD = MixedFormatHandler.extraRDD(relation, rawProjects, allPredicates,
+    val extraRDD = MixedFormatHandler.extraRDD(relation, rawProjects, filterPredicates,
       readCommittedScope, table.identifier, extraSegments)
     val vectorPushRowFilters =
       vectorPushRowFiltersEnabled(relationPredicates, extraSegments.nonEmpty)
@@ -213,7 +229,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     val scan = CarbonDataSourceScan(
       table,
       output,
-      partitionsFilter,
+      partitionsFilter.filterNot(SubqueryExpression.hasSubquery),
       handledPredicates,
       readCommittedScope,
       getCarbonProjection(relationPredicates, requiredColumns, projects),
@@ -222,14 +238,16 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       extraRDD,
       Some(TableIdentifier(table.identifier.getTableName,
         Option(table.identifier.getDatabaseName))),
+      partitions._1,
+      partitionsFilter,
       segmentIds
     )
     // filter
     val filterOption = if (directScanSupport && CarbonToSparkAdapter
         .supportsBatchOrColumnar(scan)) {
-      allPredicates.reduceLeftOption(expressions.And)
+      filterPredicates.reduceLeftOption(expressions.And)
     } else if (extraSegments.nonEmpty) {
-      allPredicates.reduceLeftOption(expressions.And)
+      filterPredicates.reduceLeftOption(expressions.And)
     } else {
       filterCondition
     }

@@ -559,7 +559,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
           case None =>
             CarbonEnv.getTablePath(tableIdentifier.database, tableIdentifier.table)(sparkSession)
         }
-        CarbonDatasourceHadoopRelation(sparkSession,
+        new CarbonDatasourceHadoopRelation(sparkSession,
           Array(tableLocation.asInstanceOf[String]),
           catalogTable.storage.properties,
           Option(catalogTable.schema))

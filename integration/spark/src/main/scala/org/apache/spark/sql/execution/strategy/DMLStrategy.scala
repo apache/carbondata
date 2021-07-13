@@ -374,9 +374,10 @@ object DMLStrategy extends SparkStrategy {
     def pushLimit(limit: Int, plan: LogicalPlan): LogicalPlan = {
       val newPlan = plan transform {
         case lr: LogicalRelation =>
-          val newRelation = lr.copy(relation = lr.relation
+          val relation = lr.relation
             .asInstanceOf[CarbonDatasourceHadoopRelation]
-            .copy(limit = limit))
+          relation.setLimit(limit)
+          val newRelation = lr.copy(relation = relation)
           newRelation
         case other => other
       }
