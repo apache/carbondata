@@ -26,7 +26,7 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, ExprId, NamedExpression, Predicate, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, DynamicPruningSubquery, Expression, ExprId, NamedExpression, Predicate, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.BindReferences.bindReference
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
@@ -174,14 +174,16 @@ object CarbonToSparkAdapter extends SparkVersionAdapter {
       partitionSet: AttributeSet,
       filterPredicates: Seq[Expression]): Seq[Expression] = {
     filterPredicates
-      .filterNot(SubqueryExpression.hasSubquery)
       .filter { filter =>
         filter.references.nonEmpty && filter.references.subsetOf(partitionSet)
       }
   }
 
   def getDataFilter(partitionSet: AttributeSet, filter: Seq[Expression]): Seq[Expression] = {
-    filter
+    filter.filter {
+      case _: DynamicPruningSubquery => false
+      case _ => true
+    }
   }
 
   // As per SPARK-22520 OptimizeCodegen is removed in 2.3.1

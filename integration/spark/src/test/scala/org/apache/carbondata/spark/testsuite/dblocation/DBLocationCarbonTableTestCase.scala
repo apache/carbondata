@@ -268,7 +268,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Alter table drop column test") {
-    sql(s"create database carbon location '$dbLocation'")
+    sql(s"create database carbon location '$dbLocation/newdb/'")
     sql("use carbon")
     sql(
       """create table carbon.carbontable (

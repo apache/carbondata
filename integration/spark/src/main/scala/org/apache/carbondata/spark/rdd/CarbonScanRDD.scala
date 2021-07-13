@@ -83,7 +83,7 @@ class CarbonScanRDD[T: ClassTag](
     @transient private val serializedTableInfo: Array[Byte],
     @transient private val tableInfo: TableInfo,
     inputMetricsStats: InitInputMetrics,
-    @transient val partitionNames: Seq[PartitionSpec],
+    @transient var partitionNames: Seq[PartitionSpec],
     val dataTypeConverterClz: Class[_ <: DataTypeConverter] = classOf[SparkDataTypeConverterImpl],
     val readSupportClz: Class[_ <: CarbonReadSupport[_]] = SparkReadSupport.readSupportClass,
     @transient var splits: java.util.List[InputSplit] = null,

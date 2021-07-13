@@ -198,8 +198,6 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
 
       // refresh cached files in FileIndex
       fileIndex.foreach(_.refresh())
-      // refresh data cache if table is cached
-      sparkSession.catalog.refreshByPath(outputPath.toString)
 
       if (catalogTable.nonEmpty) {
         CommandUtils.updateTableStats(sparkSession, catalogTable.get)

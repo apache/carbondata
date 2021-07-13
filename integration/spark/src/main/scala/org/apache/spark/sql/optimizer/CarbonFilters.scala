@@ -675,11 +675,11 @@ object CarbonFilters {
     if (!carbonTable.isHivePartitionTable) {
       return (null, null, partitionFilters)
     }
-    val partititions = getCatalogTablePartitions(partitionFilters, sparkSession, carbonTable)
-    if (partititions.isEmpty) {
+    val partitions = getCatalogTablePartitions(partitionFilters, sparkSession, carbonTable)
+    if (partitions.isEmpty) {
       (Seq.empty, Seq.empty, partitionFilters)
     } else {
-      (partititions, convertToPartitionSpec(partititions), partitionFilters)
+      (partitions, convertToPartitionSpec(partitions), partitionFilters)
     }
   }
 }
