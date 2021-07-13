@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression => SparkExpression}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.execution.{ColumnarBatchScan, DataSourceScanExec}
@@ -40,6 +41,8 @@ abstract class  CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelat
     pushedDownProjection: CarbonProjection,
     directScanSupport: Boolean,
     extraRDD: Option[(RDD[InternalRow], Boolean)],
+    selectedCatalogPartitions: Seq[CatalogTablePartition],
+    partitions: Seq[SparkExpression],
     segmentIds: Option[String])
   extends DataSourceScanExec with ColumnarBatchScan {
 

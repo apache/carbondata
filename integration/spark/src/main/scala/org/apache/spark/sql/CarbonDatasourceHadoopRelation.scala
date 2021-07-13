@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.StructType
@@ -25,13 +26,19 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
-case class CarbonDatasourceHadoopRelation(
-    sparkSession: SparkSession,
+class CarbonDatasourceHadoopRelation(
+    override val sparkSession: SparkSession,
     paths: Array[String],
     parameters: Map[String, String],
     tableSchema: Option[StructType],
-    limit: Int = -1)
-  extends BaseRelation {
+    partitionSchema: StructType = new StructType())
+  extends HadoopFsRelation(null,
+    partitionSchema,
+    tableSchema.get,
+    null,
+    new SparkCarbonTableFormat,
+    Map.empty)(
+    sparkSession) {
 
   val caseInsensitiveMap: Map[String, String] = parameters.map(f => (f._1.toLowerCase, f._2))
   lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
@@ -47,9 +54,11 @@ case class CarbonDatasourceHadoopRelation(
 
   @transient lazy val carbonTable: CarbonTable = carbonRelation.carbonTable
 
+  var limit: Int = -1
+
   override def sqlContext: SQLContext = sparkSession.sqlContext
 
-  override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
+  override val schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
 
@@ -58,4 +67,16 @@ case class CarbonDatasourceHadoopRelation(
   }
 
   override def sizeInBytes: Long = carbonRelation.sizeInBytes
+
+  def getTableSchema: Option[StructType] = {
+    tableSchema
+  }
+
+  def getLimit: Int = {
+    limit
+  }
+
+  def setLimit(newLimit: Int): Unit = {
+    this.limit = newLimit
+  }
 }

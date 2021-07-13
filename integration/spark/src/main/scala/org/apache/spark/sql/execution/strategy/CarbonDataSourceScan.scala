@@ -23,6 +23,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonDataSourceScanHelper}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, SortOrder, UnsafeProjection}
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
@@ -49,9 +50,19 @@ case class CarbonDataSourceScan(
     directScanSupport: Boolean,
     @transient extraRDD: Option[(RDD[InternalRow], Boolean)] = None,
     tableIdentifier: Option[TableIdentifier] = None,
+    @transient selectedCatalogPartitions : Seq[CatalogTablePartition] = Seq.empty,
+    @transient partitions: Seq[SparkExpression],
     segmentIds: Option[String] = None)
-  extends CarbonDataSourceScanHelper(relation, output, partitionFilters, pushedDownFilters,
-    pushedDownProjection, directScanSupport, extraRDD, segmentIds) {
+  extends CarbonDataSourceScanHelper(relation,
+    output,
+    partitionFilters,
+    pushedDownFilters,
+    pushedDownProjection,
+    directScanSupport,
+    extraRDD,
+    selectedCatalogPartitions,
+    partitions,
+    segmentIds) {
 
   override lazy val (outputPartitioning, outputOrdering): (Partitioning, Seq[SortOrder]) = {
     val info: BucketingInfo = relation.carbonTable.getBucketingInfo
@@ -136,6 +147,9 @@ case class CarbonDataSourceScan(
       null,
       directScanSupport,
       extraRDD,
-      tableIdentifier)
+      tableIdentifier,
+      selectedCatalogPartitions,
+      QueryPlan.normalizePredicates(partitions, output)
+    )
   }
 }

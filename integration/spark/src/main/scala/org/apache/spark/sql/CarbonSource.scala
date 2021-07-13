@@ -39,7 +39,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonOption
@@ -63,7 +63,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     // Otherwise create datasource relation
     val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
     newParameters.get("tablePath") match {
-      case Some(path) => CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
+      case Some(path) => new CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
         Array(path),
         newParameters,
         None)
@@ -71,7 +71,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
         val options = new CarbonOption(newParameters)
         val tablePath =
           CarbonEnv.getTablePath(options.dbName, options.tableName)(sqlContext.sparkSession)
-        CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
+        new CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
           Array(tablePath),
           newParameters,
           None)
@@ -136,9 +136,21 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
         "Table creation failed. Table name cannot contain blank space")
     }
     val path = getPathForTable(sqlContext.sparkSession, dbName, tableName, newParameters)
-
-    CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), newParameters,
-      Option(dataSchema))
+    var carbonTable: CarbonTable = null
+    try {
+      carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sqlContext.sparkSession)
+    } catch {
+      case _: Exception =>
+    }
+    val partitionSchema: StructType =
+      if (null != carbonTable && carbonTable.isHivePartitionTable) {
+        StructType(carbonTable.getPartitionInfo.getColumnSchemaList.asScala.map(field =>
+          dataSchema.fields.find(_.name.equalsIgnoreCase(field.getColumnName))).map(_.get))
+      } else {
+        new StructType()
+      }
+    new CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), newParameters,
+      Option(dataSchema), partitionSchema)
   }
 
   /**

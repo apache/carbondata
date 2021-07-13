@@ -45,7 +45,7 @@ object CarbonPlanHelper {
       databaseNameOp = Some(insertInto.table.carbonRelation.databaseName),
       tableName = insertInto.table.carbonRelation.tableName,
       options = scala.collection.immutable
-        .Map("fileheader" -> insertInto.table.tableSchema.get.fields.map(_.name).mkString(",")),
+        .Map("fileheader" -> insertInto.table.getTableSchema.get.fields.map(_.name).mkString(",")),
       isOverwriteTable = insertInto.overwrite,
       logicalPlan = insertInto.child,
       tableInfo = insertInto.table.carbonRelation.carbonTable.getTableInfo,
