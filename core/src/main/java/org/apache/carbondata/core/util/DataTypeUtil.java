@@ -740,7 +740,14 @@ public final class DataTypeUtil {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
-        return ByteUtil.toXorLong(dataInBytes, 0, dataInBytes.length);
+        DataType blockDatatype;
+        if (dataInBytes.length == DataTypes.INT.getSizeInBytes()) {
+          blockDatatype = DataTypes.INT;
+        } else {
+          blockDatatype = DataTypes.LONG;
+        }
+        return getDataBasedOnRestructuredDataType(dataInBytes, blockDatatype, 0,
+            dataInBytes.length);
       } else if (actualDataType == DataTypes.TIMESTAMP) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;

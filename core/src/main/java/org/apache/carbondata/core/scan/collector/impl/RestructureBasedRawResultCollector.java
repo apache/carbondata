@@ -166,21 +166,11 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
                   DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(
                       CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
             } else if (currDataType.isComplexType()) {
-              // Iterate over child dimensions and add its default value.
-              List<CarbonDimension> children =
-                  actualQueryDimensions[i].getDimension().getListOfChildDimensions();
               try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
                   DataOutputStream dataOutputStream = new DataOutputStream(byteStream)) {
-                if (DataTypes.isArrayType(currDataType)) {
-                  dataOutputStream.writeInt(1);
-                } else if (DataTypes.isStructType(currDataType)) {
-                  dataOutputStream.writeShort(children.size());
-                }
-                for (int j = 0; j < children.size(); j++) {
-                  // update default null values based on datatype
-                  CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream,
-                      children.get(j).getDataType());
-                }
+                // Iterate over child dimensions and add its default value.
+                addDefaultValueForComplexTypes(actualQueryDimensions[i].getDimension(),
+                    currDataType, dataOutputStream);
                 newColumnDefaultValue = byteStream.toByteArray();
               } catch (IOException e) {
                 LOGGER.error(e.getMessage(), e);
@@ -198,6 +188,25 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
       }
       byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeyArrayWithNewlyAddedColumns);
       byteArrayWrapper.setComplexTypesKeys(complexTypeKeyArrayWithNewlyAddedColumns);
+    }
+  }
+
+  private void addDefaultValueForComplexTypes(CarbonDimension dimension, DataType currDataType,
+      DataOutputStream dataOutputStream) throws IOException {
+    List<CarbonDimension> children = dimension.getListOfChildDimensions();
+    if (DataTypes.isArrayType(currDataType) || DataTypes.isMapType(currDataType)) {
+      dataOutputStream.writeInt(1);
+    } else if (DataTypes.isStructType(currDataType)) {
+      dataOutputStream.writeShort(children.size());
+    }
+    for (int j = 0; j < children.size(); j++) {
+      if (children.get(j).isComplex()) {
+        addDefaultValueForComplexTypes(children.get(j), children.get(j).getDataType(),
+            dataOutputStream);
+      } else {
+        // update default null values based on datatype
+        CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream, children.get(j).getDataType());
+      }
     }
   }
 }

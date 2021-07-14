@@ -76,7 +76,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   @Override
   public void setParentName(String parentName) {
     this.parentName = parentName;
-
   }
 
   @Override
@@ -135,11 +134,15 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       size = dataBuffer.array().length;
     } else if (child.getDataType() == DataTypes.TIMESTAMP) {
       size = DataTypes.LONG.getSizeInBytes();
+    } else if (dataBuffer.remaining() == DataTypes.INT.getSizeInBytes() && child.getDataType()
+        .equals(DataTypes.LONG)) {
+      // When datatype has been altered,
+      // get the actual data loaded size and then convert to long type.
+      size = DataTypes.INT.getSizeInBytes();
     } else {
       size = child.getDataType().getSizeInBytes();
     }
     actualData = getDataObject(dataBuffer, size);
-
     return actualData;
   }
 

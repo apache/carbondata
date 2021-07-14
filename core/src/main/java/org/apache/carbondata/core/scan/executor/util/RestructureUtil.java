@@ -119,15 +119,18 @@ public class RestructureUtil {
         for (CarbonDimension tableDimension : tableComplexDimension) {
           if (isColumnMatches(isTransactionalTable, queryDimension.getDimension(),
               tableDimension)) {
-            ProjectionDimension currentBlockDimension = null;
+            ProjectionDimension currentBlockDimension;
             // If projection dimension is child of struct field and contains Parent Ordinal
             if (null != queryDimension.getDimension().getComplexParentDimension()) {
               currentBlockDimension = new ProjectionDimension(queryDimension.getDimension());
             } else {
               currentBlockDimension = new ProjectionDimension(tableDimension);
+              // for complex dimension update datatype, set scale and precision by traversing
+              // the child dimensions. Spark requires the resultant row with latest datatype,
+              // update the dimension here to collect the resultant rows with updated datatype.
+              fillNewDatatypesForComplexChildren(currentBlockDimension.getDimension(),
+                  queryDimension.getDimension());
             }
-            // TODO: for complex dimension set scale and precision by traversing
-            // the child dimensions
             currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
@@ -163,6 +166,46 @@ public class RestructureUtil {
     dimensionInfo.setNewComplexColumnCount(newNoDictionaryComplexColumnCount);
     blockExecutionInfo.setDimensionInfo(dimensionInfo);
     return presentDimension;
+  }
+
+  public static CarbonDimension getCarbonDimension(String columnId,
+      List<CarbonDimension> dimensions) {
+    CarbonDimension carbonDimension = null;
+    if (dimensions == null) {
+      return carbonDimension;
+    }
+    for (CarbonDimension dim : dimensions) {
+      if (dim.isComplex()) {
+        carbonDimension = getCarbonDimension(columnId, dim.getListOfChildDimensions());
+      } else if (dim.getColumnId().equalsIgnoreCase(columnId)) {
+        carbonDimension = dim;
+        break;
+      }
+    }
+    return carbonDimension;
+  }
+
+  public static void fillNewDatatypesForComplexChildren(CarbonDimension currentDimension,
+      CarbonDimension tableDimension) {
+    if (tableDimension.getListOfChildDimensions() == null) {
+      return;
+    }
+    for (CarbonDimension childDimension : tableDimension.getListOfChildDimensions()) {
+      if (childDimension.getDataType().isComplexType()) {
+        fillNewDatatypesForComplexChildren(currentDimension, childDimension);
+      } else {
+        // only in case of primitive types, datatype is allowed to be altered.
+        // Find and update the current block dimension datatype.
+        CarbonDimension currentChildDimension = getCarbonDimension(childDimension.getColumnId(),
+            currentDimension.getListOfChildDimensions());
+        if (currentChildDimension != null) {
+          ColumnSchema currentSchema = currentChildDimension.getColumnSchema();
+          currentSchema.setDataType(childDimension.getDataType());
+          currentSchema.setPrecision(childDimension.getColumnSchema().getPrecision());
+          currentSchema.setScale(childDimension.getColumnSchema().getScale());
+        }
+      }
+    }
   }
 
   public static void fillExistingTableColumnIDMap(CarbonDimension tableColumn) {

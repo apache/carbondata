@@ -1124,26 +1124,19 @@ object CarbonParserUtil {
     val dataTypeName = DataTypeConverterUtil.convertToCarbonType(complexField).getName
     val dataTypeInfo = CarbonParserUtil.parseDataType(columnName, dataTypeName.toLowerCase, values)
     complexField.dataType match {
-      case Some(CarbonCommonConstants.ARRAY) =>
-        val childField = complexField.children.get(0)
-        val childType = childField.dataType
-        val childName = columnName + CarbonCommonConstants.POINT + childField.name
-        val childValues = childType match {
-          case d: DecimalType => Some(List((d.precision, d.scale)))
-          case _ => None
-        }
-        val childDatatypeInfo = parseDataType(childName, childField, childValues)
-        dataTypeInfo.setChildren(List(childDatatypeInfo))
-      case Some(CarbonCommonConstants.STRUCT) =>
+      case Some(CarbonCommonConstants.ARRAY) | Some(CarbonCommonConstants.STRUCT) |
+           Some(CarbonCommonConstants.MAP) =>
         var childTypeInfoList: List[DataTypeInfo] = null
         for (childField <- complexField.children.get) {
           val childType = childField.dataType
-          val childName = columnName + CarbonCommonConstants.POINT + childField.name.get
-          val childValues = childType match {
-            case d: DecimalType => Some(List((d.precision, d.scale)))
-            case _ => None
+          val childName = columnName + CarbonCommonConstants.POINT + childField.column
+          val decimalValues = if (childType.get.contains(CarbonCommonConstants.DECIMAL)) {
+            // If datatype is decimal, extract its precision and scale.
+            Some(List(CommonUtil.getScaleAndPrecision(childType.get)))
+          } else {
+            None
           }
-          val childDatatypeInfo = parseDataType(childName, childField, childValues)
+          val childDatatypeInfo = parseDataType(childName, childField, decimalValues)
           if (childTypeInfoList == null) {
             childTypeInfoList = List(childDatatypeInfo)
           } else {
@@ -1153,7 +1146,6 @@ object CarbonParserUtil {
         dataTypeInfo.setChildren(childTypeInfoList)
       case _ =>
     }
-    // TODO have to handle for map types [CARBONDATA-4199]
     dataTypeInfo
   }
 
@@ -1210,22 +1202,16 @@ object CarbonParserUtil {
       case arrayType: ArrayType =>
         val childType: DataType = arrayType.elementType
         val childName = columnName + ".val"
-        val childValues = childType match {
-          case d: DecimalType => Some(List((d.precision, d.scale)))
-          case _ => None
-        }
-        val childDatatypeInfo = parseColumn(childName, childType, childValues)
+        val decimalValues = getDecimalValues(childType)
+        val childDatatypeInfo = parseColumn(childName, childType, decimalValues)
         dataTypeInfo.setChildren(List(childDatatypeInfo))
       case structType: StructType =>
         var childTypeInfoList: List[DataTypeInfo] = null
         for (childField <- structType) {
           val childType = childField.dataType
           val childName = columnName + CarbonCommonConstants.POINT + childField.name
-          val childValues = childType match {
-            case d: DecimalType => Some(List((d.precision, d.scale)))
-            case _ => None
-          }
-          val childDatatypeInfo = CarbonParserUtil.parseColumn(childName, childType, childValues)
+          val decimalValues = getDecimalValues(childType)
+          val childDatatypeInfo = CarbonParserUtil.parseColumn(childName, childType, decimalValues)
           if (childTypeInfoList == null) {
             childTypeInfoList = List(childDatatypeInfo)
           } else {
@@ -1233,10 +1219,31 @@ object CarbonParserUtil {
           }
         }
         dataTypeInfo.setChildren(childTypeInfoList)
+      case mapType: MapType =>
+        val keyType: DataType = mapType.keyType
+        val valType: DataType = mapType.valueType
+        var childTypeInfoList: List[DataTypeInfo] = List()
+        val childName1 = columnName + ".key"
+        val childName2 = columnName + ".value"
+        val keyTypeDecimalValues = getDecimalValues(keyType)
+        val valTypeDecimalValues = getDecimalValues(valType)
+        val childDatatypeInfo1 = CarbonParserUtil.parseColumn(childName1,
+          keyType, keyTypeDecimalValues)
+        val childDatatypeInfo2 = CarbonParserUtil.parseColumn(childName2,
+          valType, valTypeDecimalValues)
+        childTypeInfoList = childTypeInfoList :+ childDatatypeInfo1
+        childTypeInfoList = childTypeInfoList :+ childDatatypeInfo2
+        dataTypeInfo.setChildren(childTypeInfoList)
       case _ =>
     }
-    // TODO have to handle for map types [CARBONDATA-4199]
     dataTypeInfo
+  }
+
+  def getDecimalValues(inputType: DataType): Option[List[(Int, Int)]] = {
+    inputType match {
+      case d: DecimalType => Some(List((d.precision, d.scale)))
+      case _ => None
+    }
   }
 
   def checkFieldDefaultValue(fieldName: String, defaultValueColumnName: String): Boolean = {
