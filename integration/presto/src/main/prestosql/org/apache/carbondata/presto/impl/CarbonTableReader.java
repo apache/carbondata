@@ -218,11 +218,19 @@ public class CarbonTableReader {
             .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
                 tablePath);
         wrapperTableInfo.setTransactionalTable(isTransactionalTable);
+        LOGGER.info("mahesh before remove " + wrapperTableInfo.getTableUniqueName() + " map keys "
+                + CarbonMetadata.getInstance().getAllTableskeys());
         CarbonMetadata.getInstance().removeTable(wrapperTableInfo.getTableUniqueName());
+        LOGGER.info("mahesh after remove " + wrapperTableInfo.getTableUniqueName() + " map keys "
+                + CarbonMetadata.getInstance().getAllTableskeys());
         // Step 4: Load metadata info into CarbonMetadata
         CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
+        LOGGER.info("mahesh after update " + wrapperTableInfo.getTableUniqueName() + " map keys "
+                + CarbonMetadata.getInstance().getAllTableskeys());
         CarbonTable carbonTable = Objects.requireNonNull(CarbonMetadata.getInstance()
-            .getCarbonTable(table.getSchemaName(), table.getTableName()), "carbontable is null");
+                        .getCarbonTable(wrapperTableInfo.getTableUniqueName()),
+                "carbontable " + wrapperTableInfo.getTableUniqueName() + " is null. " +
+                        CarbonMetadata.getInstance().getAllTableskeys());
         refreshIndexInfo(carbonTable, config);
         cache = new CarbonTableCacheModel(modifiedTime, carbonTable);
         // cache the table
@@ -230,6 +238,8 @@ public class CarbonTableReader {
         cache.setCarbonTable(carbonTable);
       }
       return cache;
+    } catch (RuntimeException ex) {
+      throw ex;
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
