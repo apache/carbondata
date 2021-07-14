@@ -244,11 +244,6 @@ class AlterTableColumnSchemaGenerator(
   }
 
   private def createChildSchema(childField: Field, currentSchemaOrdinal: Int): ColumnSchema = {
-    // TODO: should support adding multi-level complex columns: CARBONDATA-4164
-    if (!childField.children.contains(null)) {
-      throw new UnsupportedOperationException(
-        "Alter add columns with nested complex types is not allowed")
-    }
 
     TableNewProcessor.createColumnSchema(
       childField,
@@ -263,18 +258,49 @@ class AlterTableColumnSchemaGenerator(
       isVarcharColumn(childField.name.getOrElse(childField.column)))
   }
 
+  def addComplexChildCols(currField: Field,
+      currColumnSchema: ColumnSchema,
+      newCols: mutable.Buffer[ColumnSchema],
+      allColumns: mutable.Buffer[ColumnSchema],
+      longStringCols: mutable.Buffer[ColumnSchema],
+      currentSchemaOrdinal: Int): Unit = {
+    if (currField.children.get == null || currField.children.size == 0) {
+      return
+    }
+    if (DataTypes.isArrayType(currColumnSchema.getDataType) ||
+        DataTypes.isStructType(currColumnSchema.getDataType) ||
+        DataTypes.isMapType(currColumnSchema.getDataType)) {
+      val noOfChildren = currField.children.get.size
+      currColumnSchema.setNumberOfChild(noOfChildren)
+      for (i <- 0 to noOfChildren - 1) {
+        val childField = currField.children.get(i)
+        val childSchema: ColumnSchema = createChildSchema(childField, currentSchemaOrdinal)
+        if (childSchema.getDataType == DataTypes.VARCHAR) {
+          // put the new long string columns in 'longStringCols'
+          // and add them after old long string columns
+          longStringCols ++= Seq(childSchema)
+        } else {
+          allColumns ++= Seq(childSchema)
+        }
+        newCols ++= Seq(childSchema)
+        addComplexChildCols(childField, childSchema, newCols, allColumns, longStringCols,
+          currentSchemaOrdinal)
+      }
+    }
+  }
+
   def process: Seq[ColumnSchema] = {
     val tableSchema = tableInfo.getFactTable
     val tableCols = tableSchema.getListOfColumns.asScala
     // previous maximum column schema ordinal + 1 is the current column schema ordinal
     val currentSchemaOrdinal = tableCols.map(col => col.getSchemaOrdinal).max + 1
-    var longStringCols = Seq[ColumnSchema]()
+    val longStringCols = mutable.Buffer[ColumnSchema]()
     // get all original dimension columns
     // but exclude complex type columns and long string columns
     var allColumns = tableCols.filter(x =>
       (x.isDimensionColumn && !x.getDataType.isComplexType() && !x.isComplexColumn()
        && x.getSchemaOrdinal != -1 && (x.getDataType != DataTypes.VARCHAR)))
-    var newCols = Seq[ColumnSchema]()
+    val newCols = mutable.Buffer[ColumnSchema]()
     val invertedIndexCols: Array[String] = alterTableModel
       .tableProperties
       .get(CarbonCommonConstants.INVERTED_INDEX)
@@ -283,10 +309,6 @@ class AlterTableColumnSchemaGenerator(
 
     // add new dimension columns
     alterTableModel.dimCols.foreach(field => {
-      if (field.dataType.get.toLowerCase().equals(CarbonCommonConstants.MAP)) {
-        throw new MalformedCarbonCommandException(
-          s"Add column is unsupported for map datatype column: ${ field.column }")
-      }
       val encoders = new java.util.ArrayList[Encoding]()
       val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
         field,
@@ -307,34 +329,8 @@ class AlterTableColumnSchemaGenerator(
         allColumns ++= Seq(columnSchema)
       }
       newCols ++= Seq(columnSchema)
-      if (DataTypes.isArrayType(columnSchema.getDataType)) {
-        columnSchema.setNumberOfChild(field.children.size)
-        val childField = field.children.get(0)
-        val childSchema: ColumnSchema = createChildSchema(childField, currentSchemaOrdinal)
-        if (childSchema.getDataType == DataTypes.VARCHAR) {
-          // put the new long string columns in 'longStringCols'
-          // and add them after old long string columns
-          longStringCols ++= Seq(childSchema)
-        } else {
-          allColumns ++= Seq(childSchema)
-        }
-        newCols ++= Seq(childSchema)
-      } else if (DataTypes.isStructType(columnSchema.getDataType)) {
-        val noOfChildren = field.children.get.size
-        columnSchema.setNumberOfChild(noOfChildren)
-        for (i <- 0 to noOfChildren - 1) {
-          val childField = field.children.get(i)
-          val childSchema: ColumnSchema = createChildSchema(childField, currentSchemaOrdinal)
-          if (childSchema.getDataType == DataTypes.VARCHAR) {
-            // put the new long string columns in 'longStringCols'
-            // and add them after old long string columns
-            longStringCols ++= Seq(childSchema)
-          } else {
-            allColumns ++= Seq(childSchema)
-          }
-          newCols ++= Seq(childSchema)
-        }
-      }
+      addComplexChildCols(field, columnSchema, newCols, allColumns, longStringCols,
+        currentSchemaOrdinal)
     })
     // put the old long string columns
     allColumns ++= tableCols.filter(x =>

@@ -21,6 +21,7 @@ import java.sql.{Date, Timestamp}
 
 import scala.collection.JavaConverters
 import scala.collection.mutable
+import scala.collection.mutable.WrappedArray.make
 
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
@@ -214,6 +215,29 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_com")
   }
 
+  test("Test adding of map of all primitive datatypes") {
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql("CREATE TABLE alter_com(intfield int) STORED AS carbondata")
+    sql("ALTER TABLE alter_com ADD COLUMNS(map1 Map<short,int>, map2 Map<long,double>, " +
+        "map3 Map<decimal(3,2),string>, map4 Map<char(5),varchar(50)>, map5 Map<boolean,date>, " +
+        "map6 Map<string,timestamp>)")
+    sql("")
+    sql("insert into alter_com values(1, map(1,2),map(3,2.34), map(1.23,'hello')," +
+        "map('abc','def'), map(true,'2017-02-01')," + "map('time','2018-02-01 02:00:00.0')) ")
+    sql("select * from alter_com").show(false)
+    checkAnswer(sql("select * from alter_com"),
+      Seq(Row(1,
+        Map(1 -> 2),
+        Map(3 -> 2.34),
+        Map(java.math.BigDecimal.valueOf(1.23).setScale(2) -> "hello"),
+        Map("abc" -> "def"),
+        Map(true -> Date.valueOf("2017-02-01")),
+        Map("time" -> Timestamp.valueOf("2018-02-01 02:00:00.0")))))
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 6)
+  }
+
+
   test("Test alter add complex type and compaction") {
     sql("DROP TABLE IF EXISTS alter_com")
     sql("create table alter_com (a int, b string, arr1 array<string>) stored as carbondata")
@@ -354,22 +378,46 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_struct")
   }
 
-  test("Validate alter add multi-level complex column") {
+  test("test alter add multi-level complex columns") {
     sql("DROP TABLE IF EXISTS alter_com")
-    sql("CREATE TABLE alter_com(intField INT, arr array<int>) " +
-      "STORED AS carbondata ")
-    var exception = intercept[Exception] {
-      sql("ALTER TABLE alter_com ADD COLUMNS(arr1 array<array<int>>) ")
-    }
-    val exceptionMessage =
-      "operation failed for default.alter_com: Alter table add operation failed: Alter add " +
-      "columns with nested complex types is not allowed"
-    assert(exception.getMessage.contains(exceptionMessage))
-
-    exception = intercept[Exception] {
-      sql("ALTER TABLE alter_com ADD COLUMNS(struct1 struct<arr: array<int>>) ")
-    }
-    assert(exception.getMessage.contains(exceptionMessage))
+    sql("CREATE TABLE alter_com(intField INT) STORED AS carbondata ")
+    sql("insert into alter_com values(1)")
+    // multi-level nested array
+    sql(
+      "ALTER TABLE alter_com ADD COLUMNS(arr1 array<array<int>>, arr2 array<struct<a1:string, " +
+      "map1:Map<string, string>>>) ")
+    sql(
+      "insert into alter_com values(1, array(array(1,2)), array(named_struct('a1','st','map1', " +
+      "map('a','b'))))")
+    // multi-level nested struct
+    sql("ALTER TABLE alter_com ADD COLUMNS(struct1 struct<s1:string, arr: array<int>>," +
+        " struct2 struct<num:double,contact:map<string,array<int>>>) ")
+    sql("insert into alter_com values(1, " +
+        "array(array(1,2)), array(named_struct('a1','st','map1', map('a','b'))), " +
+        "named_struct('s1','hi','arr',array(1,2)), named_struct('num',2.3,'contact',map('ph'," +
+        "array(1,2))))")
+    // multi-level nested map
+    sql(
+      "ALTER TABLE alter_com ADD COLUMNS(map1 map<string,array<string>>, map2 map<string," +
+      "struct<d:int, s:struct<im:string>>>)")
+    sql("insert into alter_com values(1,  " +
+        "array(array(1,2)), array(named_struct('a1','st','map1', map('a','b'))), " +
+        "named_struct('s1','hi','arr',array(1,2)), named_struct('num',2.3,'contact',map('ph'," +
+        "array(1,2))),map('a',array('hi')), map('a',named_struct('d',23,'s',named_struct('im'," +
+        "'sh'))))")
+    sql("alter table alter_com compact 'minor'")
+    checkAnswer(sql("select * from alter_com"),
+      Seq(Row(1, null, null, null, null, null, null),
+        Row(1, make(Array(make(Array(1, 2)))), make(Array(Row("st", Map("a" -> "b")))),
+          null, null, null, null),
+        Row(1, make(Array(make(Array(1, 2)))), make(Array(Row("st", Map("a" -> "b")))),
+          Row("hi", make(Array(1, 2))), Row(2.3, Map("ph" -> make(Array(1, 2)))), null, null),
+        Row(1, make(Array(make(Array(1, 2)))), make(Array(Row("st", Map("a" -> "b")))),
+          Row("hi", make(Array(1, 2))), Row(2.3, Map("ph" -> make(Array(1, 2)))),
+          Map("a" -> make(Array("hi"))), Map("a" -> Row(23, Row("sh"))))
+      ))
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 6)
     sql("DROP TABLE IF EXISTS alter_com")
   }
 
@@ -386,21 +434,6 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     val exceptionMessage =
       "operation failed for default.alter_com: Alter table add operation failed: Cannot add a " +
       "default value in case of complex columns."
-    assert(exception.getMessage.contains(exceptionMessage))
-  }
-
-  test("Validate adding of map types through alter command") {
-    sql("DROP TABLE IF EXISTS alter_com")
-    sql(
-      "CREATE TABLE alter_com(doubleField double, arr1 array<long>, m map<int, string> ) STORED " +
-      "AS carbondata")
-    sql("insert into alter_com values(1.1,array(77),map(1,'abc'))")
-    val exception = intercept[Exception] {
-      sql("ALTER TABLE alter_com ADD COLUMNS(mapField map<int, string>)")
-    }
-    val exceptionMessage =
-      "operation failed for default.alter_com: Alter table add operation failed: Add column is " +
-      "unsupported for map datatype column: mapfield"
     assert(exception.getMessage.contains(exceptionMessage))
   }
 

@@ -129,8 +129,8 @@
     <scala.binary.version>2.11</scala.binary.version>
     <scala.version>2.11.8</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
-    <spark.version>2.3.4</spark.version>
-    <spark.binary.version>2.3</spark.binary.version>
+    <spark.version>2.4.5</spark.version>
+    <spark.binary.version>2.4</spark.binary.version>
     <antlr4.version>4.8</antlr4.version>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
@@ -569,9 +569,6 @@
     </profile>
     <profile>
       <id>spark-2.3</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.binary.version>2.3</spark.binary.version>
         <spark.version>2.3.4</spark.version>
@@ -645,6 +642,9 @@
     </profile>
     <profile>
       <id>spark-2.4</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.binary.version>2.4</spark.binary.version>
         <spark.version>2.4.5</spark.version>
