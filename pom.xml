@@ -99,6 +99,7 @@
     <module>core</module>
     <module>processing</module>
     <module>hadoop</module>
+    <module>acid</module>
     <module>mv/plan</module>
     <module>index/secondary-index</module>
     <module>index/bloom</module>
@@ -624,6 +625,7 @@
                 <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/acid/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/spark2.3</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/common2.3and2.4</sourceDirectory>
@@ -697,6 +699,7 @@
                 <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/acid/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/spark2.4</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/common2.3and2.4</sourceDirectory>

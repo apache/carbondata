@@ -1286,4 +1286,31 @@ public class CarbonTable implements Serializable, Writable {
     return allIndexes;
   }
 
+  public String getTableGroupId() {
+    //TODO: remove hardcoding of TABLE_GROUP_ID
+    if (tableInfo.getFactTable().getTableProperties().containsKey("TABLE_GROUP_ID")) {
+      return tableInfo.getFactTable().getTableProperties().get("TABLE_GROUP_ID");
+    } else {
+      return tableInfo.getTableUniqueName();
+    }
+  }
+
+  public String getTransactionLogPath() {
+    //TODO: remove hardcoding of TRANSACTION_LOG_PATH
+    if (tableInfo.getFactTable().getTableProperties().containsKey("TRANSACTION_LOG_PATH")) {
+      return tableInfo.getFactTable().getTableProperties().get("TRANSACTION_LOG_PATH");
+    } else {
+      return getMetadataPath();
+    }
+  }
+
+  public String getTransactionFileLockPath() {
+    //TODO: remove hardcoding of TRANSACTION_FILE_LOCK_PATH
+    if (tableInfo.getFactTable().getTableProperties().containsKey("TRANSACTION_FILE_LOCK_PATH")) {
+      return tableInfo.getFactTable().getTableProperties().get("TRANSACTION_FILE_LOCK_PATH");
+    } else {
+      return getTablePath();
+    }
+  }
+
 }

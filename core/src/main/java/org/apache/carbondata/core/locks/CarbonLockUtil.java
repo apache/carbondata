@@ -55,6 +55,8 @@ public class CarbonLockUtil {
         LOGGER.info("Delete segments lock has been successfully released");
       } else if (lockType.equals(LockUsage.INDEX_STATUS_LOCK)) {
         LOGGER.info("Index status lock has been successfully released");
+      } else if (lockType.equals(LockUsage.TRANSACTION_LOG_LOCK)) {
+        LOGGER.info("Transaction log file lock has been successfully released");
       }
     } else {
       if (lockType.equals(LockUsage.METADATA_LOCK)) {
@@ -67,6 +69,8 @@ public class CarbonLockUtil {
         LOGGER.info("Not able to release the delete segments lock");
       } else if (lockType.equals(LockUsage.INDEX_STATUS_LOCK)) {
         LOGGER.info("Not able to release the index status lock");
+      } else if (lockType.equals(LockUsage.TRANSACTION_LOG_LOCK)) {
+        LOGGER.info("Not able to release the transaction log file lock");
       }
     }
   }

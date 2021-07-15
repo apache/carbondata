@@ -64,6 +64,10 @@ public class CarbonLockFactory {
    */
   public static ICarbonLock getCarbonLockObj(AbsoluteTableIdentifier absoluteTableIdentifier,
       String lockFile) {
+    if (lockFile.equals(LockUsage.TRANSACTION_LOG_LOCK)) {
+      throw new UnsupportedOperationException(
+          "for transaction file lock, please use getCarbonLockObjWithInputPath() API");
+    }
     String absoluteLockPath;
     if (lockPath.isEmpty()) {
       absoluteLockPath = absoluteTableIdentifier.getTablePath();
@@ -80,6 +84,35 @@ public class CarbonLockFactory {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_S3;
       return new S3FileLock(absoluteLockPath,
                 lockFile);
+    } else if (fileType == FileFactory.FileType.HDFS || fileType == FileFactory.FileType.VIEWFS) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS;
+      return new HdfsFileLock(absoluteLockPath, lockFile);
+    } else if (fileType == FileFactory.FileType.ALLUXIO) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_ALLUXIO;
+      return new AlluxioFileLock(absoluteLockPath, lockFile);
+    } else {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL;
+      return new LocalFileLock(absoluteLockPath, lockFile);
+    }
+  }
+
+  /**
+   * This method will determine the lock type and initialize the lock path
+   *
+   * @param lockFile
+   * @param absoluteLockPath
+   * @return
+   */
+  public static ICarbonLock getCarbonLockObjWithInputPath(String lockFile, String absoluteLockPath) {
+    FileFactory.FileType fileType = FileFactory.getFileType(absoluteLockPath);
+    if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_CUSTOM)) {
+      return newCustomLock(absoluteLockPath, lockFile);
+    } else if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
+      return new ZooKeeperLocking(absoluteLockPath, lockFile);
+    } else if (fileType == FileFactory.FileType.S3) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_S3;
+      return new S3FileLock(absoluteLockPath,
+          lockFile);
     } else if (fileType == FileFactory.FileType.HDFS || fileType == FileFactory.FileType.VIEWFS) {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS;
       return new HdfsFileLock(absoluteLockPath, lockFile);
