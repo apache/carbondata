@@ -291,11 +291,10 @@ case class CarbonMergeDataSetCommand(
             val indexFormat = new IndexInputFormat(targetCarbonTable, null, validSegments,
               Nil.asJava, partitionsToConsider, false, null, false, false)
             columnMinMaxInBlocklet = new util.LinkedHashMap[String, util.List[FilePathMinMaxVO]]
-            val cdcVO = new CdcVO(columnMinMaxInBlocklet, columnToIndexMap)
+            val cdcVO = new CdcVO(columnToIndexMap)
             indexFormat.setCdcVO(cdcVO)
             IndexServer.getClient.getSplits(indexFormat)
-              .getExtendedBlocklets(indexFormat.getCarbonTable.getTablePath, indexFormat.getQueryId,
-                indexFormat.isCountStarJob, indexFormat.getCdcVO)
+              .getExtendedBlocklets(indexFormat)
               .asScala
               .flatMap { blocklet =>
                 blocklet.getColumnToMinMaxMapping.asScala.map {
@@ -322,11 +321,11 @@ case class CarbonMergeDataSetCommand(
                 val filePathAndMinMaxList = new util.ArrayList[FilePathMinMaxVO]()
                 blocklets.map { blocklet =>
                   val filePathMinMax = new FilePathMinMaxVO(blocklet.getFilePath,
-                    BlockIndex.getMinMaxValue(blocklet
+                    CarbonUtil.getMinMaxValue(blocklet
                       .getInputSplit
                       .getIndexRow,
                       BlockletIndexRowIndexes.MIN_VALUES_INDEX)(index),
-                    BlockIndex.getMinMaxValue(blocklet
+                    CarbonUtil.getMinMaxValue(blocklet
                       .getInputSplit
                       .getIndexRow,
                       BlockletIndexRowIndexes.MAX_VALUES_INDEX)(index))
@@ -485,7 +484,7 @@ case class CarbonMergeDataSetCommand(
         if (!isInsertOperation) {
           targetDs
             .withColumn(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID, expr("getTupleId()"))
-            .where(s"block_paths('${finalCarbonFilesToScan.mkString(",")}')")
+            .where(s"getBlockPaths('${finalCarbonFilesToScan.mkString(",")}')")
             .join(repartitionedSrcDs.select(keyColumn),
               expr(s"$targetDsAliasName.$keyColumn = $sourceAliasName.$keyColumn"),
               joinType)
@@ -541,7 +540,7 @@ case class CarbonMergeDataSetCommand(
       targetDs
         .withColumn(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID, expr("getTupleId()"))
         .withColumn("exist_on_target", lit(1))
-        .where(s"block_paths('${finalCarbonFilesToScan.mkString(",")}')")
+        .where(s"getBlockPaths('${finalCarbonFilesToScan.mkString(",")}')")
         .join(repartitionedSrcDs.withColumn("exist_on_src", lit(1)),
           mergeMatches.joinExpr,
           joinType)

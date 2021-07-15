@@ -41,14 +41,16 @@ object CarbonMergeDataSetUtil {
   /**
    * This method reads the splits and make (blockPath, (min, max)) tuple to to min max pruning of
    * the src dataset
-   *
-   * @param colTosplitsFilePathAndMinMaxMap   CarbonInputSplit whose min max cached in driver or
+   * @param carbonTable                       target carbon table object
+   * @param colToSplitsFilePathAndMinMaxMap   CarbonInputSplit whose min max cached in driver or
    *                                          the index server
+   * @param joinColumnsToComparatorMap        This map contains the column to comparator mapping
+   *                                          which will help in compare and update min max
    * @param fileMinMaxMapListOfAllJoinColumns collection to hold the filepath and min max of all the
    *                                          join columns involved
    */
   def addFilePathAndMinMaxTuples(
-      colTosplitsFilePathAndMinMaxMap: mutable.Map[String, util.List[FilePathMinMaxVO]],
+      colToSplitsFilePathAndMinMaxMap: mutable.Map[String, util.List[FilePathMinMaxVO]],
       carbonTable: CarbonTable,
       joinColumnsToComparatorMap: mutable.LinkedHashMap[CarbonColumn, SerializableComparator],
       fileMinMaxMapListOfAllJoinColumns: mutable.ArrayBuffer[(mutable.Map[String, (AnyRef, AnyRef)],
@@ -60,7 +62,7 @@ object CarbonMergeDataSetUtil {
       val isDimension = joinColumn.isDimension
       val isPrimitiveAndNotDate = DataTypeUtil.isPrimitiveColumn(joinDataType) &&
                                   (joinDataType != DataTypes.DATE)
-      colTosplitsFilePathAndMinMaxMap(joinColumn.getColName).asScala.foreach {
+      colToSplitsFilePathAndMinMaxMap(joinColumn.getColName).asScala.foreach {
         filePathMinMiax =>
           val filePath = filePathMinMiax.getFilePath
           val minBytes = filePathMinMiax.getMin
@@ -146,7 +148,8 @@ object CarbonMergeDataSetUtil {
    * This method updates the min max map of the block if the value is less than min or more
    * than max
    */
-  private def updateMapIfRequiredBasedOnMinMax(fileMinMaxMap: mutable.Map[String, (AnyRef, AnyRef)],
+  private def updateMapIfRequiredBasedOnMinMax(
+      fileMinMaxMap: mutable.Map[String, (AnyRef, AnyRef)],
       minValue: AnyRef,
       maxValue: AnyRef,
       uniqBlockPath: String,
@@ -166,7 +169,8 @@ object CarbonMergeDataSetUtil {
    * This method returns the partitions required to scan in the target table based on the
    * partitions present in the src table or dataset
    */
-  def getPartitionSpecToConsiderForPruning(sparkSession: SparkSession,
+  def getPartitionSpecToConsiderForPruning(
+      sparkSession: SparkSession,
       srcCarbonTable: CarbonTable,
       targetCarbonTable: CarbonTable,
       identifier: TableIdentifier = null): util.List[PartitionSpec] = {

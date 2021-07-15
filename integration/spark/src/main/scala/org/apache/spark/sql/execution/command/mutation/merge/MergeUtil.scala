@@ -39,6 +39,14 @@ object MergeUtil {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
+  /**
+   * This method triggers the merge action based calling merge handler
+   * @param carbonTable target carbon table
+   * @param factTimestamp the timestamp used for update and delete actions
+   * @param executorErrors executor errors returned from the operations like update and delete
+   * @param update RDD[ROW] which contains the rows to update or delete
+   * @return the segment list and the metadata details of the segments updated or deleted
+   */
   def triggerAction(sparkSession: SparkSession,
       carbonTable: CarbonTable,
       factTimestamp: Long,
@@ -56,6 +64,12 @@ object MergeUtil {
     tupleProcessed1
   }
 
+  /**
+   * This method updates the segment status after update or delete operation
+   * @param targetCarbonTable target carbon table
+   * @param factTimeStamp timestamp to update in the status which is used in update/delete operation
+   * @param tuple contains the segment list and the metadata details of the segments updated/deleted
+   */
   def updateSegmentStatusAfterUpdateOrDelete(targetCarbonTable: CarbonTable,
       factTimeStamp: Long,
       tuple: (util.List[SegmentUpdateDetails], Seq[Segment])): Unit = {
@@ -66,6 +80,14 @@ object MergeUtil {
     }
   }
 
+  /**
+   * This methods inserts the data to target carbon table.
+   * @param targetCarbonTable target carbon table to insert
+   * @param header            header of the data to be inserted
+   * @param updateTableModel  updated model if any for insert
+   * @param dataFrame         datframe to write into target carbon table.
+   * @return the segmentID created afterthis insert operation.
+   */
   def insertDataToTargetTable(sparkSession: SparkSession,
       targetCarbonTable: CarbonTable,
       header: String,
@@ -84,6 +106,12 @@ object MergeUtil {
     ).run(sparkSession)
   }
 
+  /**
+   * This method is to update the status only for delete operation.
+   * @param targetCarbonTable target carbon table
+   * @param factTimestamp timestamp to update in the status which is used in update/delete operation
+   * @return whether update status is successful or not
+   */
   def updateStatusIfJustDeleteOperation(targetCarbonTable: CarbonTable,
       factTimestamp: Long): Boolean = {
     val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath

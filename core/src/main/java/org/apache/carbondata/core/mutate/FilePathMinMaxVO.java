@@ -17,10 +17,12 @@
 
 package org.apache.carbondata.core.mutate;
 
+import java.io.Serializable;
+
 /**
  * VO class for filePath and Min Max for each blocklet
  */
-public class FilePathMinMaxVO {
+public class FilePathMinMaxVO implements Serializable {
 
   private String filePath;
 

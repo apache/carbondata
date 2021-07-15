@@ -47,7 +47,8 @@ import org.apache.carbondata.spark.util.CarbonSparkUtil
 /**
  * This class handles the merge actions of UPSERT, UPDATE, DELETE, INSERT
  */
-abstract class MergeHandler(sparkSession: SparkSession,
+abstract class MergeHandler(
+    sparkSession: SparkSession,
     frame: DataFrame,
     targetCarbonTable: CarbonTable,
     stats: Stats,
@@ -106,7 +107,8 @@ abstract class MergeHandler(sparkSession: SparkSession,
     (deltaRdd, path)
   }
 
-  protected def triggerAction(factTimestamp: Long,
+  protected def triggerAction(
+      factTimestamp: Long,
       executorErrors: ExecutionErrors,
       deltaRdd: RDD[Row],
       deltaPath: String): (util.List[SegmentUpdateDetails], Seq[Segment]) = {
@@ -142,7 +144,8 @@ abstract class MergeHandler(sparkSession: SparkSession,
   def handleMerge()
 }
 
-case class UpdateHandler(sparkSession: SparkSession,
+case class UpdateHandler(
+    sparkSession: SparkSession,
     frame: DataFrame,
     targetCarbonTable: CarbonTable,
     stats: Stats,
@@ -165,7 +168,8 @@ case class UpdateHandler(sparkSession: SparkSession,
 
 }
 
-case class DeleteHandler(sparkSession: SparkSession,
+case class DeleteHandler(
+    sparkSession: SparkSession,
     frame: DataFrame,
     targetCarbonTable: CarbonTable,
     stats: Stats,
@@ -184,7 +188,8 @@ case class DeleteHandler(sparkSession: SparkSession,
   }
 }
 
-case class InsertHandler(sparkSession: SparkSession,
+case class InsertHandler(
+    sparkSession: SparkSession,
     frame: DataFrame,
     targetCarbonTable: CarbonTable,
     stats: Stats,
@@ -194,7 +199,8 @@ case class InsertHandler(sparkSession: SparkSession,
   }
 }
 
-case class UpsertHandler(sparkSession: SparkSession,
+case class UpsertHandler(
+    sparkSession: SparkSession,
     frame: DataFrame,
     targetCarbonTable: CarbonTable,
     stats: Stats,
