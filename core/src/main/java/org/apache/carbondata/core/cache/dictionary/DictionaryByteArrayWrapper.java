@@ -79,7 +79,7 @@ public class DictionaryByteArrayWrapper {
 
   /**
    * This method will calculate the hash code for given data
-   *
+   * addition text
    * @return
    */
   @Override
