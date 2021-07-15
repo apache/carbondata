@@ -426,7 +426,6 @@ object DistributedRDDUtils {
       request.getValidSegments,
       new java.util.ArrayList(),
       new java.util.ArrayList())
-    new ExtendedBlockletWrapper(blocklets, request.getCarbonTable.getTablePath, request.getQueryId,
-      request.isWriteToFile, request.isCountStarJob)
+    new ExtendedBlockletWrapper(blocklets, request)
   }
 }

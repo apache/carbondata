@@ -52,16 +52,7 @@ abstract class MutationAction(sparkSession: SparkSession, carbonTable: CarbonTab
       val status = row.get(1)
       status != null && condition(status.asInstanceOf[Int])
     }
-    val tuple1 = DeleteExecution.deleteDeltaExecutionInternal(Some(carbonTable.getDatabaseName),
-      carbonTable.getTableName,
-      sparkSession, update,
-      factTimestamp.toString,
-      true, executorErrors, Some(0))
-    MutationActionFactory.checkErrors(executorErrors)
-    val tupleProcessed1 = DeleteExecution.processSegments(executorErrors, tuple1._1, carbonTable,
-      factTimestamp.toString, tuple1._2)
-    MutationActionFactory.checkErrors(executorErrors)
-    tupleProcessed1
+    MergeUtil.triggerAction(sparkSession, carbonTable, factTimestamp, executorErrors, update)
   }
 
 }

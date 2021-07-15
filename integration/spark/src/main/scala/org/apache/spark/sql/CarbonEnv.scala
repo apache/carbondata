@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTa
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
 import org.apache.spark.sql.execution.command.CreateFunctionCommand
+import org.apache.spark.sql.execution.command.mutation.merge.udf.BlockPathsUDF
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.listeners._
 import org.apache.spark.sql.profiler.Profiler
@@ -81,6 +82,7 @@ class CarbonEnv {
 
     sparkSession.udf.register("getTupleId", () => "")
     sparkSession.udf.register("getPositionId", () => "")
+    sparkSession.udf.register("getBlockPaths", new BlockPathsUDF)
     // add NI as a temp function, for queries to not hit SI table, it will be added as HiveSimpleUDF
     CreateFunctionCommand(
       databaseName = None,
