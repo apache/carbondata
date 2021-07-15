@@ -26,8 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.index.IndexInputFormat;
 import org.apache.carbondata.core.index.Segment;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexRowIndexes;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.CdcVO;
 import org.apache.carbondata.core.mutate.FilePathMinMaxVO;
 import org.apache.carbondata.core.stream.ExtendedByteArrayOutputStream;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 /**
@@ -170,31 +171,32 @@ public class ExtendedBlocklet extends Blocklet {
    * Method to serialize extended blocklet and input split for index server
    * DataFormat
    * <Extended Blocklet data><Carbon input split serializeData length><CarbonInputSplitData>
-   * @param out
-   * @param uniqueLocation
+   * @param out data output to write the primitives to extended blocklet
+   * @param uniqueLocation location to write the blocklet in case of distributed pruning, ex: Lucene
+   * @param isExternalPath identification for the externam segment
    * @throws IOException
    */
-  public void serializeData(DataOutput out, Map<String, Short> uniqueLocation, boolean isCountJob,
-      boolean isExternalPath, CdcVO cdcVO)
+  public void serializeData(DataOutput out, Map<String, Short> uniqueLocation,
+      IndexInputFormat indexInputFormat, boolean isExternalPath)
       throws IOException {
     super.write(out);
-    if (isCountJob) {
+    if (indexInputFormat.isCountStarJob()) {
       // In CarbonInputSplit, getDetailInfo() is a lazy call. we want to avoid this during
       // countStar query. As rowCount is filled inside getDetailInfo(). In countStar case we may
       // not have proper row count. So, always take row count from indexRow.
       out.writeLong(inputSplit.getIndexRow().getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
       out.writeUTF(inputSplit.getSegmentId());
-    } else if (cdcVO != null) {
+    } else if (indexInputFormat.getCdcVO() != null) {
       // In case of CDC, we ust need the filepath and the min max of the blocklet, so just serialize
       // these data to reduce less network transfer cost and faster cache access from index server.
       out.writeUTF(inputSplit.getFilePath());
-      List<Integer> indexesToFetch = cdcVO.getIndexesToFetch();
+      List<Integer> indexesToFetch = indexInputFormat.getCdcVO().getIndexesToFetch();
       for (Integer indexToFetch : indexesToFetch) {
-        byte[] minValues = BlockIndex.getMinMaxValue(inputSplit.getIndexRow(),
+        byte[] minValues = CarbonUtil.getMinMaxValue(inputSplit.getIndexRow(),
             BlockletIndexRowIndexes.MIN_VALUES_INDEX)[indexToFetch];
         out.writeInt(minValues.length);
         out.write(minValues);
-        byte[] maxValues = BlockIndex.getMinMaxValue(inputSplit.getIndexRow(),
+        byte[] maxValues = CarbonUtil.getMinMaxValue(inputSplit.getIndexRow(),
             BlockletIndexRowIndexes.MAX_VALUES_INDEX)[indexToFetch];
         out.writeInt(maxValues.length);
         out.write(maxValues);
@@ -229,9 +231,9 @@ public class ExtendedBlocklet extends Blocklet {
 
   /**
    * Method to deserialize extended blocklet and input split for index server
-   * @param in
-   * @param locations
-   * @param tablePath
+   * @param in data input stream to read the primitives of extended blocklet
+   * @param locations locations of the input split
+   * @param tablePath carbon table path
    * @throws IOException
    */
   public void deserializeFields(DataInput in, String[] locations, String tablePath,

@@ -34,11 +34,6 @@ import org.apache.hadoop.io.Writable;
 public class CdcVO implements Serializable, Writable {
 
   /**
-   * This collection contains columns and its min-max for each blocklet
-   */
-  private Map<String, List<FilePathMinMaxVO>> columnToMinMaxMapping;
-
-  /**
    * This collection contains column to index mapping which give info about the index for a column
    * in IndexRow object to fetch min max
    */
@@ -46,17 +41,11 @@ public class CdcVO implements Serializable, Writable {
 
   private List<Integer> indexesToFetch;
 
-  public CdcVO(Map<String, List<FilePathMinMaxVO>> columnToMinMaxMapping,
-      Map<String, Integer> columnToIndexMap) {
-    this.columnToMinMaxMapping = columnToMinMaxMapping;
+  public CdcVO(Map<String, Integer> columnToIndexMap) {
     this.columnToIndexMap = columnToIndexMap;
   }
 
   public CdcVO() {
-  }
-
-  public Map<String, List<FilePathMinMaxVO>> getColumnToMinMaxMapping() {
-    return columnToMinMaxMapping;
   }
 
   public Map<String, Integer> getColumnToIndexMap() {

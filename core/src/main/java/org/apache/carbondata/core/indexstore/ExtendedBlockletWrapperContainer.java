@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.index.IndexInputFormat;
 import org.apache.carbondata.core.mutate.CdcVO;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -63,8 +64,8 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     this.isFallbackJob = isFallbackJob;
   }
 
-  public List<ExtendedBlocklet> getExtendedBlocklets(String tablePath, String queryId,
-      boolean isCountJob, CdcVO cdcVO) throws IOException {
+  public List<ExtendedBlocklet> getExtendedBlocklets(IndexInputFormat indexInputFormat)
+      throws IOException {
     if (!isFallbackJob) {
       int numOfThreads = CarbonProperties.getNumOfThreadsForPruning();
       ExecutorService executorService = Executors
@@ -86,9 +87,9 @@ public class ExtendedBlockletWrapperContainer implements Writable {
       List<Future<List<ExtendedBlocklet>>> futures = new ArrayList<>();
       for (int value : split) {
         end += value;
-        futures.add(executorService.submit(
-            new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId, isCountJob,
-                cdcVO)));
+        futures.add(executorService.submit(new ExtendedBlockletDeserializerThread(start, end,
+            indexInputFormat.getCarbonTable().getTablePath(), indexInputFormat.getQueryId(),
+            indexInputFormat.isCountStarJob(), indexInputFormat.getCdcVO())));
         start += value;
       }
       executorService.shutdown();
@@ -111,8 +112,10 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     } else {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       for (ExtendedBlockletWrapper extendedBlockletWrapper: extendedBlockletWrappers) {
-        extendedBlocklets
-            .addAll(extendedBlockletWrapper.readBlocklet(tablePath, queryId, isCountJob, cdcVO));
+        extendedBlocklets.addAll(extendedBlockletWrapper
+            .readBlocklet(indexInputFormat.getCarbonTable().getTablePath(),
+                indexInputFormat.getQueryId(), indexInputFormat.isCountStarJob(),
+                indexInputFormat.getCdcVO()));
       }
       return extendedBlocklets;
     }

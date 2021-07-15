@@ -82,7 +82,7 @@ class CarbonEnv {
 
     sparkSession.udf.register("getTupleId", () => "")
     sparkSession.udf.register("getPositionId", () => "")
-    sparkSession.udf.register("block_paths", new BlockPathsUDF)
+    sparkSession.udf.register("getBlockPaths", new BlockPathsUDF)
     // add NI as a temp function, for queries to not hit SI table, it will be added as HiveSimpleUDF
     CreateFunctionCommand(
       databaseName = None,

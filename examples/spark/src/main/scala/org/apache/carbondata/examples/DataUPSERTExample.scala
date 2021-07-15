@@ -27,7 +27,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 /**
  * Example for UPSERT APIs
  */
-object DataUPSERTExample {
+object UPSERTExample {
 
   def main(args: Array[String]): Unit = {
     val spark = ExampleUtils.createSparkSession("DataUPSERTExample")

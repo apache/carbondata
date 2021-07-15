@@ -67,6 +67,8 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import static org.apache.carbondata.core.util.CarbonUtil.getMinMaxValue;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -886,16 +888,7 @@ public class BlockIndex extends CoarseGrainIndex
     }
   }
 
-  public static byte[][] getMinMaxValue(IndexRow row, int index) {
-    IndexRow minMaxRow = row.getRow(index);
-    byte[][] minMax = new byte[minMaxRow.getColumnCount()][];
-    for (int i = 0; i < minMax.length; i++) {
-      minMax[i] = minMaxRow.getByteArray(i);
-    }
-    return minMax;
-  }
-
-  public static boolean[] getMinMaxFlag(IndexRow row, int index) {
+  private static boolean[] getMinMaxFlag(IndexRow row, int index) {
     IndexRow minMaxFlagRow = row.getRow(index);
     boolean[] minMaxFlag = new boolean[minMaxFlagRow.getColumnCount()];
     for (int i = 0; i < minMaxFlag.length; i++) {

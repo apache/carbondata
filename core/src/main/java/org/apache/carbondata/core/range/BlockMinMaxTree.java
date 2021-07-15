@@ -56,7 +56,7 @@ public class BlockMinMaxTree implements Serializable {
     root = insert(getRoot(), newMinMaxNode);
   }
 
-  MinMaxNode insert(MinMaxNode root, MinMaxNode newMinMaxNode) {
+  private MinMaxNode insert(MinMaxNode root, MinMaxNode newMinMaxNode) {
     /* 1. check if the root null, then insert and make new node
      * 2. check if the new node completely overlaps with the root, where minCompare and maxCompare
      * both are zero, if yes add the filepaths and return
