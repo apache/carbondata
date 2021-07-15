@@ -204,4 +204,27 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     checkTableProperties(TableIdentifier("sourceTable"), TableIdentifier("targetTable"))
   }
 
+  test("test create table like with geoTable") {
+    sql("drop table if exists geoTable")
+    sql(s"""
+           | CREATE TABLE geoTable(
+           | timevalue BIGINT,
+           | longitude LONG,
+           | latitude LONG) COMMENT "This is a GeoTable"
+           | STORED AS carbondata
+           | TBLPROPERTIES ('SPATIAL_INDEX'='mygeohash',
+           | 'SPATIAL_INDEX.mygeohash.type'='geohash',
+           | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
+           | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
+           | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
+           | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
+           | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
+           | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
+           | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
+           | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
+       """.stripMargin)
+    sql("create table targetTable like geoTable")
+    checkTableProperties(TableIdentifier("geoTable"), TableIdentifier("targetTable"))
+  }
+
 }
