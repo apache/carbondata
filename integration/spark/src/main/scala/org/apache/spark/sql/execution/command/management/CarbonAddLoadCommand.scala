@@ -89,6 +89,9 @@ case class CarbonAddLoadCommand(
 
     var givenPath = options.getOrElse(
       "path", throw new UnsupportedOperationException("PATH is mandatory"))
+    if (givenPath.length == 0) {
+      throw new UnsupportedOperationException("PATH cannot be empty")
+    }
     // remove file separator if already present
     if (givenPath.charAt(givenPath.length - 1) == '/') {
       givenPath = givenPath.substring(0, givenPath.length - 1)

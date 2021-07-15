@@ -60,7 +60,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into test_rename values(named_struct('a11',named_struct('b2',24,'d',24), 'c', 24))")
 
     val rows = sql("select str22.a11.b2 from test_rename").collect()
-    assert(rows(0).equals(Row(12)) && rows(1).equals(Row(24)))
+    checkAnswer(sql("select str22.a11.b2 from test_rename"), Seq(Row(12), Row(24)))
     // check if old column names are still present
     val ex1 = intercept[AnalysisException] {
       sql("select str from test_rename").show(false)
@@ -73,10 +73,8 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     assert(ex2.getMessage.contains("cannot resolve '`str.a`'"))
 
     // check un-altered columns
-    val rows1 = sql("select str22.c from test_rename").collect()
-    val rows2 = sql("select str22.a11.d from test_rename").collect()
-    assert(rows1.sameElements(Array(Row(12), Row(24))))
-    assert(rows2.sameElements(Array(Row(12), Row(24))))
+    checkAnswer(sql("select str22.c from test_rename"), Seq(Row(12), Row(24)))
+    checkAnswer(sql("select str22.a11.b2 from test_rename"), Seq(Row(12), Row(24)))
   }
 
   test("rename complex columns with invalid structure/duplicate-names/Map-type") {
@@ -302,12 +300,11 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "insert into test_rename values (array(11,22,33), array(array(11,22),array(33,44)), array" +
       "('hello11', 'world11'), array(named_struct('a',4555)))")
-    val rows = sql("select arr11, arr22, arr33, arr44.a11 from test_rename").collect
-    assert(rows.size == 2)
-    val secondRow = rows(1)
-    assert(secondRow(0).equals(make(Array(11, 22, 33))) &&
-           secondRow(1).equals(make(Array(make(Array(11, 22)), make(Array(33, 44))))) &&
-           secondRow(2).equals(make(Array("hello11", "world11"))))
+    checkAnswer(sql("select arr11, arr22, arr33, arr44.a11 from test_rename"),
+      Seq(Row(make(Array(1, 2, 3)), make(Array(make(Array(1, 2)), make(Array(3, 4)))),
+        make(Array("hello", "world")), make(Array(45))),
+        Row(make(Array(11, 22, 33)), make(Array(make(Array(11, 22)), make(Array(33, 44)))),
+          make(Array("hello11", "world11")), make(Array(4555)))))
   }
 
   test("validate alter change datatype for complex children columns") {
