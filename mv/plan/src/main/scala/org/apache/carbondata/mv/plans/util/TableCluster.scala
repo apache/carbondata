@@ -18,7 +18,7 @@
 package org.apache.carbondata.mv.plans.util
 
 import com.fasterxml.jackson.annotation.{JsonCreator, JsonProperty, JsonRawValue}
-import com.google.common.base.Objects
+import com.google.common.base.MoreObjects
 
 class TableCluster @JsonCreator()(@JsonProperty("fact") @JsonRawValue fact: Set[String],
     @JsonProperty("dimension") @JsonRawValue dimension: Set[String]) {
@@ -32,7 +32,7 @@ class TableCluster @JsonCreator()(@JsonProperty("fact") @JsonRawValue fact: Set[
   }
 
   override def toString: String = {
-    Objects.toStringHelper(this)
+    MoreObjects.toStringHelper(this)
       .add("fact", fact)
       .add("dimension", dimension)
       .toString
