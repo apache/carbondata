@@ -347,7 +347,7 @@ object CarbonFilters {
   }
 
   def translateDataType(name: String, columnTypes: Map[String, SparkDataType]): DataType = {
-    CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(columnTypes(name))
+    CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(columnTypes(name.toLowerCase()))
   }
 
   def translateColumn(name: String, dataType: SparkDataType): ColumnExpression = {
