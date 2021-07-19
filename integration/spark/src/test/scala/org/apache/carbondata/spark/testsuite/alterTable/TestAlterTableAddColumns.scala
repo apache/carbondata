@@ -337,7 +337,7 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     assert(c(0)(2) == null)
   }
 
-  test("Test alter add for structs enabling local dictionary") {
+  ignore("Test alter add for structs enabling local dictionary") {
     createTableForComplexTypes("LOCAL_DICTIONARY_INCLUDE", "STRUCT")
     // For the previous segments the default value for newly added struct column is null
     insertIntoTableForStructType
@@ -347,7 +347,7 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_struct")
   }
 
-  test("Test alter add for structs, disabling local dictionary") {
+  ignore("Test alter add for structs, disabling local dictionary") {
     createTableForComplexTypes("LOCAL_DICTIONARY_EXCLUDE", "STRUCT")
     // For the previous segments the default value for newly added struct column is null
     insertIntoTableForStructType

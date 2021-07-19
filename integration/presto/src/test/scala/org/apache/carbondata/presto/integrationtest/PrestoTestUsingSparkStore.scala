@@ -21,7 +21,7 @@ import java.io.{File}
 import java.util
 
 import org.apache.commons.io.FileUtils
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuiteLike}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuiteLike, Ignore}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.presto.server.{PrestoServer, PrestoTestUtil}
 
+@Ignore
 class PrestoTestUsingSparkStore
   extends FunSuiteLike with BeforeAndAfterAll with BeforeAndAfterEach {
 
