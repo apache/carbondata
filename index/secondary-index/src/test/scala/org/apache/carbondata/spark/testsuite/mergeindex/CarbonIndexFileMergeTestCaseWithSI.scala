@@ -98,7 +98,7 @@ class CarbonIndexFileMergeTestCaseWithSI
       sql("""Select count(*) from indexmerge"""))
   }
 
-  test("Verify command of index merge") {
+  ignore("Verify command of index merge") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
     sql("DROP TABLE IF EXISTS nonindexmerge")
