@@ -61,6 +61,23 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     segment != null
   }
 
+  test("test explain with case sensitive") {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists parquet_table")
+    sql("create table IF NOT EXISTS carbon_table(`BEGIN_TIME` BIGINT," +
+      " `SAI_CGI_ECGI` STRING) stored as carbondata")
+    sql("create table IF NOT EXISTS parquet_table(CELL_NAME string, CGISAI string)" +
+      " stored as parquet")
+    val df = sql("explain extended with grpMainDatathroughput as (select" +
+      " from_unixtime(begin_time, 'yyyyMMdd') as data_time, SAI_CGI_ECGI from carbon_table)," +
+      " grpMainData as (select * from grpMainDatathroughput a JOIN(select CELL_NAME, CGISAI from" +
+      " parquet_table) b ON b.CGISAI=a.SAI_CGI_ECGI) " +
+      "select * from grpMainData a left join grpMainData b on a.cell_name=b.cell_name").collect()
+    assert(df(0).getString(0).contains("carbon_table"))
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists parquet_table")
+  }
+
   test("test data loading CSV file") {
     val testData = s"$resourcesPath/sample.csv"
     checkAnswer(
