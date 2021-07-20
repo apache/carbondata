@@ -88,6 +88,11 @@ public class TableBlockInfo implements Distributable, Serializable {
   private transient DataFileFooter dataFileFooter;
 
   /**
+   * Carbon Data file written version
+   */
+  private String carbonDataFileWrittenVersion = null;
+
+  /**
    * comparator to sort by block size in descending order.
    * Since each line is not exactly the same, the size of a InputSplit may differs,
    * so we allow some deviation for these splits.
@@ -132,6 +137,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
     info.indexWriterPath = indexWriterPath;
+    info.carbonDataFileWrittenVersion = carbonDataFileWrittenVersion;
     return info;
   }
 
@@ -353,4 +359,13 @@ public class TableBlockInfo implements Distributable, Serializable {
     sb.append('}');
     return sb.toString();
   }
+
+  public String getCarbonDataFileWrittenVersion() {
+    return carbonDataFileWrittenVersion;
+  }
+
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+    this.carbonDataFileWrittenVersion = carbonDataFileWrittenVersion;
+  }
+
 }

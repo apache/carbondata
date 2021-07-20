@@ -246,4 +246,9 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
   public CarbonColumnVector getColumnVector() {
     return this.columnVector;
   }
+
+  @Override
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+    this.columnVector.setCarbonDataFileWrittenVersion(carbonDataFileWrittenVersion);
+  }
 }

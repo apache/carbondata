@@ -25,8 +25,16 @@ import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -439,11 +447,116 @@ public final class DataTypeUtil {
     }
   }
 
+  private static long createTimeInstant(String dimensionValue, String dateFormat) {
+    // dateFormat is null, use default carbon timestamp format
+    if (null == dateFormat || dateFormat.trim().isEmpty()) {
+      dateFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT;
+    } else if (!dateFormat.trim().contains(" ")) {
+      // if format doesn't contain time segment for eg., dateFormat = yyyy/MM/dd, then append the
+      // default time segment with format (yyyy/MM/dd HH:mm:ss), else LocalDateTime.parse will fail
+      dateFormat += CarbonCommonConstants.CARBON_TIME_SEGMENT_DEFAULT_FORMAT;
+    }
+    String updatedDim = dimensionValue;
+    // if value doesn't contain time segment data for eg., value = 2018/08/01, then append the
+    // default time segment with dimValue(2018/08/01 00:00:00), else LocalDateTime.parse will fail
+    if (!dimensionValue.trim().contains(" ")) {
+      updatedDim += CarbonCommonConstants.CARBON_TIME_SEGMENT_DATA_DEFAULT_FORMAT;
+    }
+    // If format is yyyy-MM-dd HH:mm:ss and data is 2017-9-02 1:01:01, then parsing will fail,
+    // because the month segment and hour segment data has single digit. Hence, add 0's to data,
+    // if data doesn't matches the format length
+    List<String> dateFormatPattern = new ArrayList<>();
+    List<String> dimensionData = new ArrayList<>();
+    StringBuilder format = new StringBuilder();
+    // convert input data to proper format
+    // separate year, month, day,... format segment's to a list
+    for (int i = 0; i < dateFormat.length(); i++) {
+      char c = dateFormat.charAt(i);
+      if ((c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')) {
+        format.append(c);
+      } else {
+        String value = format.toString();
+        if (value.equals("hh")) {
+          value = "HH";
+        }
+        dateFormatPattern.add(value);
+        dateFormatPattern.add(Character.toString(c));
+        format = new StringBuilder();
+      }
+      if (i + 1 == dateFormat.length()) {
+        dateFormatPattern.add(format.toString());
+      }
+    }
+    format = new StringBuilder();
+    // separate data year, month, day,.. to a list
+    for (int i = 0; i < updatedDim.length(); i++) {
+      char c = updatedDim.charAt(i);
+      if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+        // bad record
+        break;
+      }
+      if (c >= '0' && c <= '9') {
+        format.append(c);
+      } else {
+        dimensionData.add(format.toString());
+        dimensionData.add(Character.toString(c));
+        format = new StringBuilder();
+      }
+      if (i + 1 == updatedDim.length()) {
+        dimensionData.add(format.toString());
+      }
+    }
+    // add 0's to year/month/day.. if the data format size doesn't match format size
+    if (!dimensionData.isEmpty() && !(dimensionData.size() < dateFormatPattern.size())) {
+      int i;
+      for (i = 0; i < dateFormatPattern.size(); i++) {
+        String currentTimestampFormat = dateFormatPattern.get(i);
+        String currentDimData = dimensionData.get(i);
+        if (currentTimestampFormat.length() != currentDimData.length()) {
+          if (currentDimData.length() < currentTimestampFormat.length()) {
+            dimensionData.set(i, "0" + currentDimData);
+          }
+        }
+      }
+      // if format is yyyy/MM/dd HH:mm:ss, and data is 2018/01/01 01:01:01.001, then parsing will
+      // fail. In that case, remove the unnecessary data segment from the list
+      if (dimensionData.size() > dateFormatPattern.size()) {
+        dimensionData.subList(i, dimensionData.size()).clear();
+      }
+      // prepare the final format and data
+      updatedDim = String.join("", dimensionData);
+      dateFormat = String.join("", dateFormatPattern);
+    }
+    // create java instant
+    Instant instant = Instant.from(ZonedDateTime
+        .of(LocalDateTime.parse(updatedDim, DateTimeFormatter.ofPattern(dateFormat)),
+            ZoneId.systemDefault()));
+    validateTimeStampRange(instant.getEpochSecond());
+    long us = Math.multiplyExact(instant.getEpochSecond(), 1000L);
+    // get nanoseconds from instant
+    int nano = instant.getNano();
+    if (nano != 0) {
+      while (nano % 10 == 0) {
+        nano /= 10;
+      }
+    }
+    return Math.addExact(us, nano);
+  }
+
   private static Object parseTimestamp(String dimensionValue, String dateFormat) {
     Date dateToStr;
     DateFormat dateFormatter = null;
     long timeValue;
     try {
+      if (Boolean.parseBoolean(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3,
+              CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3_DEFAULT))) {
+        try {
+          return createTimeInstant(dimensionValue, dateFormat.trim());
+        } catch (DateTimeParseException e) {
+          throw new NumberFormatException(e.getMessage());
+        }
+      }
       if (null != dateFormat && !dateFormat.trim().isEmpty()) {
         dateFormatter = new SimpleDateFormat(dateFormat);
         dateFormatter.setLenient(false);

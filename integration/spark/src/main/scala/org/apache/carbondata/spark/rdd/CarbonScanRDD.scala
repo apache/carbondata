@@ -31,8 +31,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.profiler.{GetPartition, Profiler}
@@ -47,7 +48,9 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexFilter, Segment}
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.ImplicitExpression
@@ -475,6 +478,8 @@ class CarbonScanRDD[T: ClassTag](
       val model = format.createQueryModel(inputSplit, attemptContext, indexFilter)
       // one query id per table
       model.setQueryId(queryId)
+
+      val timeStampProjectionColumns = getTimeStampProjectionColumns(model.getProjectionColumns)
       // get RecordReader by FileFormat
 
       var reader: RecordReader[Void, Object] =
@@ -566,6 +571,25 @@ class CarbonScanRDD[T: ClassTag](
           }
           havePair = false
           val value = reader.getCurrentValue
+          if (CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3,
+                  CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3_DEFAULT).toBoolean &&
+              timeStampProjectionColumns.nonEmpty) {
+            value match {
+              case row: GenericInternalRow if needRebaseTimeValue(reader) =>
+                // rebase timestamp data by converting julian to Gregorian time
+                timeStampProjectionColumns.foreach {
+                  projectionColumnWithIndex =>
+                    val timeStampData = row.get(projectionColumnWithIndex._2,
+                      org.apache.spark.sql.types.DataTypes.TimestampType)
+                    if (null != timeStampData) {
+                      row.update(projectionColumnWithIndex._2,
+                        CarbonToSparkAdapter.rebaseTime(timeStampData.asInstanceOf[Long]))
+                    }
+                }
+              case _ =>
+            }
+          }
           value
         }
 
@@ -579,6 +603,34 @@ class CarbonScanRDD[T: ClassTag](
     }
 
     iterator.asInstanceOf[Iterator[T]]
+  }
+
+  private def getTimeStampProjectionColumns(projectionColumns: Array[CarbonColumn]):
+  Array[(CarbonColumn, Int)] = {
+    // filter timestamp projection columns with index, this will be used to iterate and rebase
+    // timestamp value while reading
+    projectionColumns.zipWithIndex.filter {
+      column =>
+        var isComplexDimension = false
+        // ignore Timestamp complex dimensions
+        column._1 match {
+          case dimension: CarbonDimension =>
+            isComplexDimension = dimension.getComplexParentDimension != null
+          case _ =>
+        }
+        !isComplexDimension && column._1.getDataType == DataTypes.TIMESTAMP
+    }
+  }
+
+  def needRebaseTimeValue(reader: RecordReader[Void, Object]): Boolean = {
+    // carbonDataFileWrittenVersion will be in the format x.x.x-SNAPSHOT
+    // (eg., 2.1.0-SNAPSHOT), get the version name and check if the data file is
+    // written before 2.2.0 version, then rebase timestamp value
+    reader.isInstanceOf[CarbonRecordReader[T]] &&
+    null != reader.asInstanceOf[CarbonRecordReader[T]].getCarbonDataFileWrittenVersion &&
+    reader.asInstanceOf[CarbonRecordReader[T]].getCarbonDataFileWrittenVersion
+      .split(CarbonCommonConstants.HYPHEN).head
+      .compareTo(CarbonCommonConstants.CARBON_SPARK3_VERSION) < 0
   }
 
   private def addTaskCompletionListener(split: Partition,

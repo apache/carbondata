@@ -33,6 +33,11 @@ public class CarbonColumnarBatch {
 
   private int rowsFiltered;
 
+  /**
+   * Carbon Data file written version
+   */
+  private String carbonDataFileWrittenVersion = null;
+
   public CarbonColumnarBatch(CarbonColumnVector[] columnVectors, int batchSize,
       boolean[] filteredRows) {
     this.columnVectors = columnVectors;
@@ -91,5 +96,13 @@ public class CarbonColumnarBatch {
         columnVectors[i].setFilteredRowsExist(true);
       }
     }
+  }
+
+  public String getCarbonDataFileWrittenVersion() {
+    return carbonDataFileWrittenVersion;
+  }
+
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+    this.carbonDataFileWrittenVersion = carbonDataFileWrittenVersion;
   }
 }

@@ -105,6 +105,11 @@ public class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbon
   }
 
   @Override
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+    this.columnVector.setCarbonDataFileWrittenVersion(carbonDataFileWrittenVersion);
+  }
+
+  @Override
   public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       columnVector.putFloat(invertedIndex[rowId++], src[i]);

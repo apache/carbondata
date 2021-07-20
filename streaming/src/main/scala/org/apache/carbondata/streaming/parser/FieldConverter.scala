@@ -24,6 +24,7 @@ import java.util.Base64
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.util.SparkStreamingUtil
 
 object FieldConverter {
 
@@ -125,7 +126,7 @@ object FieldConverter {
             i += 1
           }
           builder.substring(0, builder.length - delimiter.length())
-        case other => other.toString
+        case other => SparkStreamingUtil.checkInstant(other, timeStampFormat)
       }
     }
   }

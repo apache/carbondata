@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.block;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,6 +51,12 @@ public abstract class AbstractIndex implements Cacheable {
    * last fetch delete deltaFile timestamp
    */
   private long deleteDeltaTimestamp;
+
+  public List<TableBlockInfo> getBlockInfos() {
+    return blockInfos;
+  }
+
+  protected List<TableBlockInfo> blockInfos;
 
   /**
    * map of blockletIdAndPageId to deleted rows

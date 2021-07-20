@@ -141,6 +141,11 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     return readSupport.readRow(carbonIterator.next());
   }
 
+  public String getCarbonDataFileWrittenVersion() {
+    ChunkRowIterator iterator = (ChunkRowIterator) carbonIterator;
+    return iterator.getCarbonDataFileWrittenVersion();
+  }
+
   /**
    * get batch result
    *

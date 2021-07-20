@@ -116,6 +116,8 @@ public interface CarbonColumnVector {
 
   void setLazyPage(LazyPageLoader lazyPage);
 
+  void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion);
+
   // Added default implementation for interface,
   // to avoid implementing presto required functions for spark or core module.
   default List<CarbonColumnVector> getChildrenVector() {

@@ -224,6 +224,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           if (null == blockletDetailInfo) {
             blockletDetailInfo = QueryUtil.getBlockletDetailInfo(fileFooter, blockInfo);
           }
+          blockInfo.setCarbonDataFileWrittenVersion(fileFooter.getCarbonDataFileWrittenVersion());
           blockInfo.setDetailInfo(blockletDetailInfo);
         }
         if (null == segmentProperties) {

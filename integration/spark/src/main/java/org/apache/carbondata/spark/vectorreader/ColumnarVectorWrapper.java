@@ -24,6 +24,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
+import org.apache.spark.sql.CarbonToSparkAdapter;
 import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
 import org.apache.spark.sql.types.Decimal;
@@ -47,6 +48,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   private DataType blockDataType;
 
   private CarbonColumnVector dictionaryVector;
+
+  private String carbonDataFileWrittenVersion;
 
   ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector, boolean[] filteredRows,
       int ordinal) {
@@ -119,7 +122,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override
   public void putLong(int rowId, long value) {
     if (!filteredRows[rowId]) {
-      sparkColumnVectorProxy.putLong(counter++, value);
+      sparkColumnVectorProxy
+          .putLong(counter++, CarbonToSparkAdapter.rebaseTime(value, carbonDataFileWrittenVersion));
     }
   }
 
@@ -294,6 +298,11 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override
   public void setFilteredRowsExist(boolean filteredRowsExist) {
     this.filteredRowsExist = filteredRowsExist;
+  }
+
+  @Override
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+    this.carbonDataFileWrittenVersion = carbonDataFileWrittenVersion;
   }
 
   @Override

@@ -56,6 +56,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       updateDataBlockIterator();
       if (dataBlockIterator != null) {
         rowBatch.setRows(dataBlockIterator.next());
+        rowBatch.setCarbonDataFileWrittenVersion(carbonDataFileWrittenVersion);
       }
     }
     return rowBatch;

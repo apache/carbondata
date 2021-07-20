@@ -17,13 +17,26 @@
 
 package org.apache.carbondata.util
 
+import java.text.SimpleDateFormat
+import java.time.Instant
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 
 object SparkStreamingUtil {
 
   def convertInternalRowToRow(expressionEncoder: ExpressionEncoder[Row]): InternalRow => Row = {
     expressionEncoder.createDeserializer().apply
+  }
+
+  def checkInstant(value: Any, timeStampFormat: SimpleDateFormat): String = {
+    value match {
+      case instant: Instant =>
+        // if value is instant, convert instant time to java timestamp
+        timeStampFormat format DateTimeUtils.toJavaTimestamp(DateTimeUtils.instantToMicros(instant))
+      case other => other.toString
+    }
   }
 }

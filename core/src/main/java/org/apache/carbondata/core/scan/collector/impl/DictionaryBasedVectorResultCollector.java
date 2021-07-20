@@ -259,6 +259,8 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       BitSet deltaBitSet) {
     for (int i = 0; i < allColumnInfo.length; i++) {
       allColumnInfo[i].vectorOffset = columnarBatch.getRowCounter();
+      allColumnInfo[i].carbonDataFileWrittenVersion =
+          columnarBatch.getCarbonDataFileWrittenVersion();
       allColumnInfo[i].vector = columnarBatch.columnVectors[i];
       allColumnInfo[i].deletedRows = deltaBitSet;
       if (null != allColumnInfo[i].dimension) {

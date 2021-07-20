@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -73,6 +74,10 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     DataFileFooter dataFileFooter = new DataFileFooter();
     dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) fileHeader.getVersion()));
     dataFileFooter.setNumberOfRows(footer.getNum_rows());
+    if (null != footer.getExtra_info()) {
+      dataFileFooter.setCarbonDataFileWrittenVersion(
+          footer.getExtra_info().get(CarbonCommonConstants.CARBON_WRITTEN_VERSION));
+    }
     dataFileFooter.setSchemaUpdatedTimeStamp(fileHeader.getTime_stamp());
     if (footer.isSetIs_sort()) {
       dataFileFooter.setSorted(footer.isIs_sort());

@@ -83,6 +83,12 @@ trait SparkVersionAdapter {
     DateTimeUtils.timestampToString(timeStamp)
   }
 
+  def rebaseTime(timestamp: Long, carbonWrittenVersion: String = null): Long = {
+    // From spark 3.1, spark will store gregorian micros value for timestamp, hence
+    // rebase is required. For 2.x versions, no need rebase
+    timestamp
+  }
+
   def stringToTime(value: String): java.util.Date = {
     DateTimeUtils.stringToTime(value)
   }

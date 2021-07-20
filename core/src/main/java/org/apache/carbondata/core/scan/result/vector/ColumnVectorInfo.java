@@ -35,6 +35,7 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public int size;
   public CarbonColumnVector vector;
   public int vectorOffset;
+  public String carbonDataFileWrittenVersion;
   public ProjectionDimension dimension;
   public ProjectionMeasure measure;
   public int ordinal;

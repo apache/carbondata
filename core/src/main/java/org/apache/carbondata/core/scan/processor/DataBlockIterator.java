@@ -244,6 +244,9 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
   }
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
+    columnarBatch.setCarbonDataFileWrittenVersion(
+        this.blockExecutionInfo.getDataBlock().getDataRefNode().getTableBlockInfo()
+            .getCarbonDataFileWrittenVersion());
     if (updateScanner()) {
       this.scannerResultAggregator.collectResultInColumnarBatch(scannedResult, columnarBatch);
     }
