@@ -220,6 +220,11 @@ public class ColumnarVectorWrapperDirect implements CarbonColumnVector, Sequenti
   }
 
   @Override
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+    // do nothing here
+  }
+
+  @Override
   public Object getData(int rowId) {
     throw new UnsupportedOperationException(
         "Not supported this opeartion from " + this.getClass().getName());

@@ -51,47 +51,35 @@ class TimestampNoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("select projectjoindate, projectenddate from timestamp_nodictionary") {
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
-      checkAnswer(
-        sql("select projectjoindate, projectenddate from timestamp_nodictionary"),
-        Seq(Row(Timestamp.valueOf("2000-01-29 00:00:00.0"),
-          Timestamp.valueOf("2016-06-29 00:00:00.0")),
-          Row(Timestamp.valueOf("1800-02-17 00:00:00.0"),
-            Timestamp.valueOf("1900-11-29 00:00:00.0")),
-          Row(null, Timestamp.valueOf("2016-05-29 00:00:00.0")),
-          Row(null, Timestamp.valueOf("2016-11-30 00:00:00.0")),
-          Row(Timestamp.valueOf("3000-10-22 00:00:00.0"),
-            Timestamp.valueOf("3002-11-15 00:00:00.0")),
-          Row(Timestamp.valueOf("1802-06-29 00:00:00.0"),
-            Timestamp.valueOf("1902-12-30 00:00:00.0")),
-          Row(null, Timestamp.valueOf("2016-12-30 00:00:00.0")),
-          Row(Timestamp.valueOf("2038-11-14 00:00:00.0"),
-            Timestamp.valueOf("2041-12-29 00:00:00.0")),
-          Row(null, null),
-          Row(Timestamp.valueOf("2014-09-15 00:00:00.0"),
-            Timestamp.valueOf("2016-05-29 00:00:00.0"))
-        )
+    checkAnswer(
+      sql("select projectjoindate, projectenddate from timestamp_nodictionary"),
+      Seq(Row(Timestamp.valueOf("2000-01-29 00:00:00.0"),
+        Timestamp.valueOf("2016-06-29 00:00:00.0")),
+        Row(Timestamp.valueOf("1800-02-17 00:00:00.0"), Timestamp.valueOf("1900-11-29 00:00:00.0")),
+        Row(null, Timestamp.valueOf("2016-05-29 00:00:00.0")),
+        Row(null, Timestamp.valueOf("2016-11-30 00:00:00.0")),
+        Row(Timestamp.valueOf("3000-10-22 00:00:00.0"), Timestamp.valueOf("3002-11-15 00:00:00.0")),
+        Row(Timestamp.valueOf("1802-06-29 00:00:00.0"), Timestamp.valueOf("1902-12-30 00:00:00.0")),
+        Row(null, Timestamp.valueOf("2016-12-30 00:00:00.0")),
+        Row(Timestamp.valueOf("2038-11-14 00:00:00.0"), Timestamp.valueOf("2041-12-29 00:00:00.0")),
+        Row(null, null),
+        Row(Timestamp.valueOf("2014-09-15 00:00:00.0"), Timestamp.valueOf("2016-05-29 00:00:00.0"))
       )
-    }
+    )
   }
-
 
   test("select projectjoindate, projectenddate from timestamp_nodictionary where in filter") {
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
-      checkAnswer(
-        sql("select projectjoindate, projectenddate from timestamp_nodictionary " +
+    checkAnswer(
+      sql("select projectjoindate, projectenddate from timestamp_nodictionary " +
           "where projectjoindate in ('1800-02-17 00:00:00','3000-10-22 00:00:00') or " +
           "projectenddate in ('1900-11-29 00:00:00','3002-11-15 00:00:00','2041-12-29 00:00:00')"),
-        Seq(Row(Timestamp.valueOf("1800-02-17 00:00:00.0"),
-          Timestamp.valueOf("1900-11-29 00:00:00.0")),
-          Row(Timestamp.valueOf("3000-10-22 00:00:00.0"),
-            Timestamp.valueOf("3002-11-15 00:00:00.0")),
-          Row(Timestamp.valueOf("2038-11-14 00:00:00.0"),
-            Timestamp.valueOf("2041-12-29 00:00:00.0")))
-      )
-    }
-  }
+      Seq(Row(Timestamp.valueOf("1800-02-17 00:00:00.0"),
+        Timestamp.valueOf("1900-11-29 00:00:00.0")),
+        Row(Timestamp.valueOf("3000-10-22 00:00:00.0"), Timestamp.valueOf("3002-11-15 00:00:00.0")),
+        Row(Timestamp.valueOf("2038-11-14 00:00:00.0"), Timestamp.valueOf("2041-12-29 00:00:00.0")))
+    )
 
+  }
 
   override def afterAll {
     CarbonProperties.getInstance()

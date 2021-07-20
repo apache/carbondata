@@ -87,6 +87,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
    */
   private QueryStatisticsModel queryStatisticsModel;
 
+  String carbonDataFileWrittenVersion;
+
   AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
     batchSize = CarbonProperties.getQueryBatchSize();
@@ -222,6 +224,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     }
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
+      carbonDataFileWrittenVersion = executionInfo.getDataBlock().getDataRefNode()
+          .getTableBlockInfo().getCarbonDataFileWrittenVersion();
       blockExecutionInfos.remove(executionInfo);
       return new DataBlockIterator(executionInfo, fileReader, batchSize, queryStatisticsModel,
           execService);

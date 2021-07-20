@@ -31,8 +31,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
  */
 public class IndexWrapper extends AbstractIndex {
 
-  private List<TableBlockInfo> blockInfos;
-
   public IndexWrapper(List<TableBlockInfo> blockInfos, SegmentProperties segmentProperties) {
     this.blockInfos = blockInfos;
     this.segmentProperties = segmentProperties;

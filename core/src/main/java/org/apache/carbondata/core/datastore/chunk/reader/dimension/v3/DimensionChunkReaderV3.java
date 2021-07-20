@@ -256,6 +256,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     if (vectorInfo != null) {
       // set encodings of current page in the vectorInfo, used for decoding the complex child page
       vectorInfo.encodings = encodings;
+      vectorInfo.vector.setCarbonDataFileWrittenVersion(vectorInfo.carbonDataFileWrittenVersion);
       decoder
           .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
               nullBitSet, isLocalDictEncodedPage, pageMetadata.numberOfRowsInpage,

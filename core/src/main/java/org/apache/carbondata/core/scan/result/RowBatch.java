@@ -38,6 +38,11 @@ public class RowBatch extends CarbonIterator<Object[]> {
    */
   protected int counter;
 
+  /**
+   * Carbon data file written version
+   */
+  private String carbonDataFileWrittenVersion = null;
+
   public RowBatch() {
     this.rows = new ArrayList<>();
   }
@@ -114,5 +119,13 @@ public class RowBatch extends CarbonIterator<Object[]> {
     }
     counter = counter + rows.size();
     return rows;
+  }
+
+  public String getCarbonDataFileWrittenVersion() {
+    return carbonDataFileWrittenVersion;
+  }
+
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+    this.carbonDataFileWrittenVersion = carbonDataFileWrittenVersion;
   }
 }

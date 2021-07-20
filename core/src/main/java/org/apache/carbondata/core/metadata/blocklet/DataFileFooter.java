@@ -76,6 +76,11 @@ public class DataFileFooter implements Serializable {
   private Boolean isSorted = true;
 
   /**
+   * carbon data file written version
+   */
+  private String carbonDataFileWrittenVersion = null;
+
+  /**
    * @return the versionId
    */
   public ColumnarFormatVersion getVersionId() {
@@ -173,5 +178,13 @@ public class DataFileFooter implements Serializable {
 
   public Boolean isSorted() {
     return isSorted;
+  }
+
+  public String getCarbonDataFileWrittenVersion() {
+    return carbonDataFileWrittenVersion;
+  }
+
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+    this.carbonDataFileWrittenVersion = carbonDataFileWrittenVersion;
   }
 }

@@ -501,6 +501,11 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   }
 
   @Override
+  public void setCarbonDataFileWrittenVersion(String carbonDataFileWrittenVersion) {
+   // do nothing here
+  }
+
+  @Override
   public void putAllByteArray(byte[] data, int offset, int length) {
     byteArr = data;
   }

@@ -69,6 +69,10 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
     return currentChunk.next();
   }
 
+  public String getCarbonDataFileWrittenVersion() {
+    return currentChunk.getCarbonDataFileWrittenVersion();
+  }
+
   /**
    * read next batch
    *

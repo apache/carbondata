@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.util
 
+import java.text.SimpleDateFormat
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
@@ -25,5 +27,9 @@ object SparkStreamingUtil {
 
   def convertInternalRowToRow(expressionEncoder: ExpressionEncoder[Row]): InternalRow => Row = {
     expressionEncoder.fromRow
+  }
+
+  def checkInstant(value: Any, timeStampFormat: SimpleDateFormat): String = {
+    value.toString
   }
 }

@@ -38,7 +38,7 @@ import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, Co
 import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoStatement, Join, JoinHint, LogicalPlan, OneRowRelation, QualifiedColType}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
-import org.apache.spark.sql.catalyst.util.{DateTimeUtils, TimestampFormatter}
+import org.apache.spark.sql.catalyst.util.{DateTimeUtils, RebaseDateTime, TimestampFormatter}
 import org.apache.spark.sql.execution.{ExplainMode, QueryExecution, ShuffledRowRDD, SimpleMode, SparkPlan, SQLExecution, UnaryExecNode}
 import org.apache.spark.sql.execution.command.{ExplainCommand, Field, PartitionerField, RefreshTableCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
@@ -117,6 +117,25 @@ trait SparkVersionAdapter {
 
   def dateToString(date: Int): String = {
     DateTimeUtils.daysToLocalDate(date).toString
+  }
+
+  /**
+   * Rebase the timestamp value from julian to gregorian time micros
+   */
+  def rebaseTime(timestamp: Long): Long = {
+    RebaseDateTime.rebaseJulianToGregorianMicros(timestamp)
+  }
+
+  def rebaseTime(timestamp: Long, carbonDataFileWrittenVersion: String): Long = {
+    // carbonDataFileWrittenVersion will be in the format x.x.x-SNAPSHOT(eg., 2.1.0-SNAPSHOT),
+    // get the version name and check if the data file is written before 2.2.0 version
+    if (null != carbonDataFileWrittenVersion &&
+        carbonDataFileWrittenVersion.split(CarbonCommonConstants.HYPHEN).head
+          .compareTo(CarbonCommonConstants.CARBON_SPARK3_VERSION) < 0) {
+      RebaseDateTime.rebaseJulianToGregorianMicros(timestamp)
+    } else {
+      timestamp
+    }
   }
 
   // Note that due to this scala bug: https://github.com/scala/bug/issues/11016, we need to make
