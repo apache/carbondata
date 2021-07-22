@@ -42,7 +42,7 @@ import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
@@ -1088,7 +1088,8 @@ object AlterTableUtil {
    */
   def validateComplexStructure(oldDimensionList: List[CarbonDimension],
       newDimensionList: List[DataTypeInfo],
-      alteredColumnNamesMap: mutable.LinkedHashMap[String, String]): Unit = {
+      alteredColumnNamesMap: mutable.LinkedHashMap[String, String],
+      alteredDatatypesMap: mutable.LinkedHashMap[String, DataTypeInfo]): Unit = {
     if (oldDimensionList == null && newDimensionList == null) {
       throw new UnsupportedOperationException("Both old and new dimensions are null")
     } else if (oldDimensionList == null || newDimensionList == null) {
@@ -1105,11 +1106,22 @@ object AlterTableUtil {
         val new_column_name = newDimensionInfo
           .columnName.split(CarbonCommonConstants.POINT.toCharArray).last
         val new_column_datatype = newDimensionInfo.dataType
+
+        // check if column datatypes are altered. If altered, validate them
         if (!old_column_datatype.equalsIgnoreCase(new_column_datatype)) {
-          // datatypes of complex children cannot be altered. So throwing exception for now.
-          throw new UnsupportedOperationException(
-            "Altering datatypes of any child column is not supported")
+          this.validateColumnDataType(newDimensionInfo, oldDimensionInfo)
+          alteredDatatypesMap += (oldDimensionInfo.getColName -> newDimensionInfo)
+        } else if (old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.DECIMAL) &&
+                   old_column_datatype.equalsIgnoreCase(new_column_datatype)) {
+          val oldPrecision = oldDimensionInfo.getDataType().asInstanceOf[DecimalType].getPrecision
+          val oldScale = oldDimensionInfo.getDataType().asInstanceOf[DecimalType].getScale
+          if (oldPrecision != newDimensionInfo.precision || oldScale != newDimensionInfo.scale) {
+            this.validateColumnDataType(newDimensionInfo, oldDimensionInfo)
+            alteredDatatypesMap += (oldDimensionInfo.getColName -> newDimensionInfo)
+          }
         }
+
+        // check if column names are altered
         if (!old_column_name.equalsIgnoreCase(new_column_name)) {
           alteredColumnNamesMap += (oldDimensionInfo.getColName -> newDimensionInfo.columnName)
         }
@@ -1122,7 +1134,7 @@ object AlterTableUtil {
                    new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.STRUCT) ||
                    old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.STRUCT)) {
           validateComplexStructure(oldDimensionInfo.getListOfChildDimensions.asScala.toList,
-            newDimensionInfo.getChildren(), alteredColumnNamesMap)
+            newDimensionInfo.getChildren(), alteredColumnNamesMap, alteredDatatypesMap)
         }
       }
     }

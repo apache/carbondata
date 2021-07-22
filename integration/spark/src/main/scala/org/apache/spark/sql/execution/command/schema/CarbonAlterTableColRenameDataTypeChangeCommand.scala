@@ -38,7 +38,7 @@ import org.apache.carbondata.core.metadata.datatype.{DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.events.{AlterTableColRenameAndDataTypeChangePostEvent, AlterTableColRenameAndDataTypeChangePreEvent, OperationContext, OperationListenerBus}
-import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.format.{ColumnSchema, DataType, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 abstract class CarbonAlterTableColumnRenameCommand(oldColumnName: String, newColumnName: String)
@@ -81,6 +81,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
   // stores mapping of altered column names: old-column-name -> new-column-name.
   // Including both parent/table and children columns
   val alteredColumnNamesMap = collection.mutable.LinkedHashMap.empty[String, String]
+  val alteredDatatypesMap = collection.mutable.LinkedHashMap.empty[String, DataTypeInfo]
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -175,7 +176,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
             .toList
           AlterTableUtil.validateComplexStructure(oldChildren,
             alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.getChildren(),
-            alteredColumnNamesMap)
+            alteredColumnNamesMap, alteredDatatypesMap)
         }
       } else {
         if (oldDatatype.isComplexType) {
@@ -188,7 +189,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       // If there is no columnrename and datatype change and comment change
       // return directly without execution
       if (!isColumnRename && !isDataTypeChange && !newColumnComment.isDefined &&
-          alteredColumnNamesMap.isEmpty) {
+          alteredColumnNamesMap.isEmpty && alteredDatatypesMap.isEmpty) {
         return Seq.empty
       }
       // if column datatype change operation is on partition column, then fail the
@@ -273,25 +274,40 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
           }
           addedTableColumnSchema = columnSchema
         } else if (isComplexChild(columnSchema)) {
-          if (alteredColumnNamesMap.contains(columnName)) {
-            // matches exactly
-            val newComplexChildName = alteredColumnNamesMap(columnName)
-            columnSchema.setColumn_name(newComplexChildName)
-            isSchemaEntryRequired = true
-          } else {
-            val alteredParent = checkIfParentIsAltered(columnName)
-            /*
-             * Lets say, if complex schema is: str struct<a: int>
-             * and if parent column is changed from str -> str2
-             * then its child name should also be changed from str.a -> str2.a
-             */
-            if (alteredParent != null) {
-              val newParent = alteredColumnNamesMap(alteredParent)
-              val newComplexChildName = newParent + columnName
-                .split(alteredParent)(1)
+          // check if name is altered
+          if (!alteredColumnNamesMap.isEmpty) {
+            if (alteredColumnNamesMap.contains(columnName)) {
+              // matches exactly
+              val newComplexChildName = alteredColumnNamesMap(columnName)
               columnSchema.setColumn_name(newComplexChildName)
               isSchemaEntryRequired = true
+            } else {
+              val alteredParent = checkIfParentIsAltered(columnName)
+              /*
+               * Lets say, if complex schema is: str struct<a: int>
+               * and if parent column is changed from str -> str2
+               * then its child name should also be changed from str.a -> str2.a
+               */
+              if (alteredParent != null) {
+                val newParent = alteredColumnNamesMap(alteredParent)
+                val newComplexChildName = newParent + columnName
+                  .split(alteredParent)(1)
+                columnSchema.setColumn_name(newComplexChildName)
+                isSchemaEntryRequired = true
+              }
             }
+          }
+
+          // check if datatype is altered
+          if(!alteredDatatypesMap.isEmpty) {
+            val newDatatype = alteredDatatypesMap.get(columnName).get
+            if (newDatatype.dataType.equals(CarbonCommonConstants.LONG)) {
+              columnSchema.setData_type(DataType.LONG)
+            } else if (newDatatype.dataType.equals(CarbonCommonConstants.DECIMAL)) {
+              columnSchema.setPrecision(newDatatype.precision)
+              columnSchema.setScale(newDatatype.scale)
+            }
+            isSchemaEntryRequired = true
           }
         }
 

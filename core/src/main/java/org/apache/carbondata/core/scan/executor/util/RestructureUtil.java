@@ -57,6 +57,9 @@ public class RestructureUtil {
   // existence of incoming query column by matching based on id.
   private static Map<String, String> existingTableColumnIDMap;
 
+  // Stores column-id -> new datatype, post alter change datatype command
+  private static Map<String, DataType> newComplexChildrenDatatypes;
+
   /**
    * Below method will be used to get the updated query dimension update
    * means, after restructuring some dimension will be not present in older
@@ -119,12 +122,15 @@ public class RestructureUtil {
         for (CarbonDimension tableDimension : tableComplexDimension) {
           if (isColumnMatches(isTransactionalTable, queryDimension.getDimension(),
               tableDimension)) {
-            ProjectionDimension currentBlockDimension = null;
+            ProjectionDimension currentBlockDimension;
             // If projection dimension is child of struct field and contains Parent Ordinal
             if (null != queryDimension.getDimension().getComplexParentDimension()) {
               currentBlockDimension = new ProjectionDimension(queryDimension.getDimension());
             } else {
               currentBlockDimension = new ProjectionDimension(tableDimension);
+              newComplexChildrenDatatypes = new HashMap<>();
+              fillNewDatatypesForComplexChildren(queryDimension.getDimension());
+              compareDatatypes(currentBlockDimension.getDimension());
             }
             // TODO: for complex dimension set scale and precision by traversing
             // the child dimensions
@@ -163,6 +169,42 @@ public class RestructureUtil {
     dimensionInfo.setNewComplexColumnCount(newNoDictionaryComplexColumnCount);
     blockExecutionInfo.setDimensionInfo(dimensionInfo);
     return presentDimension;
+  }
+
+  public static void compareDatatypes(CarbonDimension currentDimension) {
+    if (currentDimension == null) {
+      return;
+    }
+    if (currentDimension.isComplex()) {
+      for (CarbonDimension childDimension : currentDimension.getListOfChildDimensions()) {
+        compareDatatypes(childDimension);
+      }
+    } else {
+      // insert datatypes only in case of primitive types, as only they are allowed to be altered.
+      if (newComplexChildrenDatatypes.get(currentDimension.getColumnId()) != null
+          && !(newComplexChildrenDatatypes.get(currentDimension.getColumnId())
+          .equals(currentDimension.getDataType()))) {
+        currentDimension
+            .setDataType(newComplexChildrenDatatypes.get(currentDimension.getColumnId()));
+      }
+    }
+  }
+
+  public static void fillNewDatatypesForComplexChildren(CarbonDimension tableDimension) {
+    if (tableDimension.getListOfChildDimensions() == null) {
+      return;
+    } else {
+      for (CarbonDimension childDimension : tableDimension.getListOfChildDimensions()) {
+        if (childDimension.getDataType().isComplexType()) {
+          fillNewDatatypesForComplexChildren(childDimension);
+        } else {
+          // insert new datatypes only in case of primitive types, as they are allowed to be
+          // altered.
+          newComplexChildrenDatatypes
+              .put(childDimension.getColumnId(), childDimension.getDataType());
+        }
+      }
+    }
   }
 
   public static void fillExistingTableColumnIDMap(CarbonDimension tableColumn) {

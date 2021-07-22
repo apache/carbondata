@@ -1128,22 +1128,26 @@ object CarbonParserUtil {
         val childField = complexField.children.get(0)
         val childType = childField.dataType
         val childName = columnName + CarbonCommonConstants.POINT + childField.name
-        val childValues = childType match {
-          case d: DecimalType => Some(List((d.precision, d.scale)))
-          case _ => None
+        val decimalValues = if (childType.get.contains(CarbonCommonConstants.DECIMAL)) {
+          val decimalInfo = ("""\d+""".r findAllIn childType.get).toList
+          Some(List((decimalInfo(0).toInt, decimalInfo(1).toInt)))
+        } else {
+          None
         }
-        val childDatatypeInfo = parseDataType(childName, childField, childValues)
+        val childDatatypeInfo = parseDataType(childName, childField, decimalValues)
         dataTypeInfo.setChildren(List(childDatatypeInfo))
       case Some(CarbonCommonConstants.STRUCT) =>
         var childTypeInfoList: List[DataTypeInfo] = null
         for (childField <- complexField.children.get) {
           val childType = childField.dataType
           val childName = columnName + CarbonCommonConstants.POINT + childField.name.get
-          val childValues = childType match {
-            case d: DecimalType => Some(List((d.precision, d.scale)))
-            case _ => None
+          val decimalValues = if (childType.get.contains(CarbonCommonConstants.DECIMAL)) {
+            val decimalInfo = ("""\d+""".r findAllIn childType.get).toList
+            Some(List((decimalInfo(0).toInt, decimalInfo(1).toInt)))
+          } else {
+            None
           }
-          val childDatatypeInfo = parseDataType(childName, childField, childValues)
+          val childDatatypeInfo = parseDataType(childName, childField, decimalValues)
           if (childTypeInfoList == null) {
             childTypeInfoList = List(childDatatypeInfo)
           } else {
