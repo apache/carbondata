@@ -120,12 +120,7 @@ public class RestructureUtil {
           if (isColumnMatches(isTransactionalTable, queryDimension.getDimension(),
               tableDimension)) {
             ProjectionDimension currentBlockDimension = null;
-            // If projection dimension is child of struct field and contains Parent Ordinal
-            if (null != queryDimension.getDimension().getComplexParentDimension()) {
-              currentBlockDimension = new ProjectionDimension(queryDimension.getDimension());
-            } else {
-              currentBlockDimension = new ProjectionDimension(tableDimension);
-            }
+            currentBlockDimension = new ProjectionDimension(queryDimension.getDimension());
             // TODO: for complex dimension set scale and precision by traversing
             // the child dimensions
             currentBlockDimension.setOrdinal(queryDimension.getOrdinal());

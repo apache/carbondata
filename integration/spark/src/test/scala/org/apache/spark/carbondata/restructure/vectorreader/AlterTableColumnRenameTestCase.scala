@@ -85,13 +85,6 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE test_rename (str struct<a:int,b:long>, str2 struct<a:int,b:long>, map1 " +
       "map<string, string>, str3 struct<a:int, b:map<string, string>>) STORED AS carbondata")
 
-    val ex1 = intercept[ProcessMetaDataException] {
-      sql("alter table test_rename change str str struct<a:array<int>,b:long>")
-    }
-    assert(ex1.getMessage
-      .contains(
-        "column rename operation failed: Altering datatypes of any child column is not supported"))
-
     val ex2 = intercept[ProcessMetaDataException] {
       sql("alter table test_rename change str str struct<a:int,b:long,c:int>")
     }
@@ -310,17 +303,98 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
            secondRow(2).equals(make(Array("hello11", "world11"))))
   }
 
-  test("validate alter change datatype for complex children columns") {
-    sql("drop table if exists test_rename")
-    sql(
-      "CREATE TABLE test_rename (str struct<a:int,b:long>) STORED AS carbondata")
+  test("test alter change datatype for struct integer") {
+    // create hive table
+    sql("drop table if exists hiveTable")
+    sql("create table if not exists hiveTable(str struct<a:int>)row format delimited " +
+        "fields terminated by ','")
+    sql("insert into hiveTable select named_struct('a',1234)")
+    sql("insert into hiveTable select named_struct('a',3456)")
+    sql("insert into hiveTable select named_struct('a',12345678)")
+    sql("insert into hiveTable select named_struct('a',5647)")
 
-    val ex1 = intercept[ProcessMetaDataException] {
-      sql("alter table test_rename change str str struct<a:long,b:long>")
-    }
-    assert(ex1.getMessage
-      .contains(
-        "column rename operation failed: Altering datatypes of any child column is not supported"))
+    // create carbon table
+    sql("drop table if exists test_rename")
+    sql("CREATE TABLE test_rename (str struct<a:int>) STORED AS carbondata")
+    sql("insert into test_rename values(named_struct('a', 1234))")
+    sql("insert into test_rename values(named_struct('a', 3456))")
+    // sql("select * from test_rename").show(false)
+    // sql("select str.a from test_rename").show(false)
+
+    // only rename operation
+    sql("alter table test_rename change str str1 struct<a1:int>")
+    // both rename and change datatype operation
+    sql("alter table test_rename change str1 str1 struct<a2:long>")
+    // sql("select * from test_rename").show(false)
+    // sql("select str1.a2 from test_rename").show(false)
+
+    sql("insert into test_rename values(named_struct('a2', 12345678))")
+    // sql("select * from test_rename").show(false)
+    // sql("select str1.a2 from test_rename").show(false)
+
+    sql("alter table test_rename change str1 str2 struct<a3:long>")
+    // sql("select * from test_rename").show(false)
+    // sql("select str2.a3 from test_rename").show(false)
+
+    sql("insert into test_rename values(named_struct('a3', 5647))")
+    // sql("select * from test_rename").show(false)
+    // sql("select str2.a3 from test_rename").show(false)
+
+    checkAnswer(sql("select * from test_rename"), sql("select * from hiveTable"))
+    checkAnswer(sql("select str2.a3 from test_rename"), sql("select str.a from hiveTable"))
+  }
+
+  test("test alter change datatype for array integer") {
+    // create hive table
+    sql("drop table if exists hiveTable")
+    sql("create table if not exists hiveTable(arr array<long>)row format delimited " +
+        "fields terminated by ','")
+    sql("insert into hiveTable select array(1,2,3)")
+    sql("insert into hiveTable select array(1234678,1238462,36242754)")
+    sql("insert into hiveTable select array(123467822,3,362427541)")
+
+    // create carbon table
+    sql("drop table if exists test_rename")
+    sql("CREATE TABLE test_rename (arr array<int>) STORED AS carbondata")
+    sql("insert into test_rename values(array(1,2,3))")
+
+    // both rename and change datatype operation
+    sql("alter table test_rename change arr arr1 array<long>")
+    sql("insert into test_rename values(array(1234678,1238462,36242754))")
+
+    sql("alter table test_rename change arr1 arr2 array<long>")
+    sql("insert into test_rename values(array(123467822,3,362427541))")
+
+    checkAnswer(sql("select * from test_rename"), sql("select * from hiveTable"))
+  }
+
+  test("test alter change datatype for complex decimal types") {
+    // create hive table
+    sql("drop table if exists hiveTable")
+    sql("create table if not exists hiveTable(str1 struct<a:decimal(6,2)>)row format " +
+        "delimited fields terminated by ','")
+    sql("insert into hiveTable select named_struct('a',123.45)")
+    sql("insert into hiveTable select named_struct('a',143.44)")
+    sql("insert into hiveTable select named_struct('a',1234.56)")
+    sql("insert into hiveTable select named_struct('a',1334.53)")
+
+    // create carbon table
+    sql("drop table if exists test_rename")
+    sql("CREATE TABLE test_rename (str struct<a:decimal(5,2)>) STORED AS carbondata")
+
+    sql("insert into test_rename values(named_struct('a', 123.45))")
+    sql("insert into test_rename values(named_struct('a', 143.44))")
+
+    // only rename parent column
+    sql("alter table test_rename change str str1 struct<a1:decimal(5,2)>")
+    // rename and change datatype for child column
+    sql("alter table test_rename change str1 str1 struct<a2:decimal(6,2)>")
+    sql("insert into test_rename values(named_struct('a2', 1234.56))")
+    sql("insert into test_rename values(named_struct('a2', 1334.53))")
+
+    checkAnswer(sql("select * from test_rename"), sql("select * from hiveTable"))
+    checkAnswer(sql("select str1.a2 from test_rename"), sql("select str1.a from hiveTable"))
+
   }
 
   test("test change comment in case of complex types") {
