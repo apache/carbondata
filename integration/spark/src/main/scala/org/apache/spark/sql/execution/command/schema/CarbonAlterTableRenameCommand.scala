@@ -124,11 +124,6 @@ private[sql] case class CarbonAlterTableRenameCommand(
       val newCarbonTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
         newTableName, carbonTable.getCarbonTableIdentifier.getTableId)
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
-      var partitions: Seq[CatalogTablePartition] = Seq.empty
-      if (carbonTable.isHivePartitionTable) {
-        partitions =
-          sparkSession.sessionState.catalog.listPartitions(oldTableIdentifier)
-      }
       sparkSession.catalog.refreshTable(oldTableIdentifier.quotedString)
       CarbonSessionCatalogUtil.alterTableRename(
         oldTableIdentifier,

@@ -402,10 +402,19 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
       sql(s"alter table addsegment1 add segment " +
           s"options('path'='${ newPath + i }', 'format'='carbon')").collect()
     }
+
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(80)))
     sql("alter table addsegment1 compact 'minor'").collect()
+    for (i <- 0 until 2) {
+      assert(CarbonTestUtil.getIndexFileCount("default_addsegment1", i.toString,
+        CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
+    }
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(80)))
     sql("clean files for table addsegment1 OPTIONS('force'='true')")
+    for (i <- 0 until 2) {
+      assert(CarbonTestUtil.getIndexFileCount("default_addsegment1", i.toString,
+        CarbonTablePath.MERGE_INDEX_FILE_EXT) == 0)
+    }
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(80)))
     sql(s"alter table addsegment1 add segment " +
         s"options('path'='${ newPath + 0 }', 'format'='carbon')").collect()

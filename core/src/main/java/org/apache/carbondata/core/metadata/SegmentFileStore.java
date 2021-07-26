@@ -1206,9 +1206,11 @@ public class SegmentFileStore {
         FileFactory.getConfiguration());
     Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
     List<String> deletedFiles = new ArrayList<>();
+    for (String indexFilePath : indexOrMergeFiles) {
+      FileFactory.deleteFile(indexFilePath);
+      deletedFiles.add(indexFilePath);
+    }
     for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
-      FileFactory.deleteFile(entry.getKey());
-      deletedFiles.add(entry.getKey());
       for (String file : entry.getValue()) {
         String[] deltaFilePaths =
             updateStatusManager.getDeleteDeltaFilePath(file, segment.getSegmentNo());
