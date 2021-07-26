@@ -187,7 +187,7 @@ public class ExtendedBlocklet extends Blocklet {
       out.writeLong(inputSplit.getIndexRow().getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
       out.writeUTF(inputSplit.getSegmentId());
     } else if (indexInputFormat.getCdcVO() != null) {
-      // In case of CDC, we ust need the filepath and the min max of the blocklet, so just serialize
+      // In case of CDC, we just need the filepath and the min max of the blocklet,so just serialize
       // these data to reduce less network transfer cost and faster cache access from index server.
       out.writeUTF(inputSplit.getFilePath());
       List<Integer> indexesToFetch = indexInputFormat.getCdcVO().getIndexesToFetch();
@@ -247,7 +247,7 @@ public class ExtendedBlocklet extends Blocklet {
     } else if (cdcVO != null) {
       filePath = in.readUTF();
       this.columnToMinMaxMapping = new HashMap<>();
-      for (Map.Entry<String, Integer> entry : cdcVO.getColumnToIndexMap().entrySet()) {
+      for (String column : cdcVO.getColumnToIndexMap().keySet()) {
         List<FilePathMinMaxVO> minMaxOfColumnInList = new ArrayList<>();
         int minLength = in.readInt();
         byte[] minValuesForBlocklets = new byte[minLength];
@@ -257,7 +257,7 @@ public class ExtendedBlocklet extends Blocklet {
         in.readFully(maxValuesForBlocklets);
         minMaxOfColumnInList
             .add(new FilePathMinMaxVO(filePath, minValuesForBlocklets, maxValuesForBlocklets));
-        this.columnToMinMaxMapping.put(entry.getKey(), minMaxOfColumnInList);
+        this.columnToMinMaxMapping.put(column, minMaxOfColumnInList);
       }
       return;
     }

@@ -29,34 +29,30 @@ import org.apache.hadoop.mapreduce.{JobID, TaskAttemptID, TaskID, TaskType}
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, CarbonToSparkAdapter, Column, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonToSparkAdapter, Column, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.avro.AvroFileFormatFactory
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions.{Attribute, EqualTo, Expression, GenericInternalRow}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, GenericInternalRow}
 import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
-import org.apache.spark.sql.execution.{CastExpressionOptimization, LogicalRDD, ProjectExec}
+import org.apache.spark.sql.execution.{LogicalRDD, ProjectExec}
 import org.apache.spark.sql.execution.command.{DataCommand, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.execution.command.mutation.HorizontalCompaction
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.{DateType, IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{AccumulatorContext, AccumulatorMetadata, LongAccumulator}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.index.{IndexChooser, IndexInputFormat, IndexStoreManager, IndexUtil}
-import org.apache.carbondata.core.indexstore.blockletindex.{BlockIndex, BlockletIndexRowIndexes}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.core.mutate.{CdcVO, FilePathMinMaxVO}
+import org.apache.carbondata.core.mutate.FilePathMinMaxVO
 import org.apache.carbondata.core.range.{BlockMinMaxTree, MinMaxNode}
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
 import org.apache.carbondata.core.util.comparator.{Comparator, SerializableComparator}
-import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -163,7 +159,7 @@ case class CarbonMergeDataSetCommand(
     val stats = Stats(createLongAccumulator("insertedRows"),
       createLongAccumulator("updatedRows"),
       createLongAccumulator("deletedRows"))
-    // check if its just upsert/update/delete/insert operation and go to UpsertHandler
+
     var finalCarbonFilesToScan: Array[String] = Array.empty[String]
     // the pruning will happen when the join type is not full_outer, in case of full_outer,
     // we will be needing all the records from left table which is target table, so no need to prune
@@ -174,77 +170,11 @@ case class CarbonMergeDataSetCommand(
     var didNotPrune = false
     breakable {
       if (isMinMaxPruningEnabled && joinType != null && !joinType.equalsIgnoreCase("full_outer")) {
-        // if the index server is enabled, call index server to cache the index and get all the
-        // blocklets of the target table. If the index server disabled, just call the getSplits of
-        // the driver side to cache and get the splits. These CarbonInputSplits basically contain
-        // the filePaths and the min max of each columns.
-        val ssm = new SegmentStatusManager(targetCarbonTable.getAbsoluteTableIdentifier)
-        val isDistributedPruningEnabled: Boolean = CarbonProperties.getInstance
-          .isDistributedPruningEnabled(targetCarbonTable.getDatabaseName,
-            targetCarbonTable.getTableName)
-        val validSegments = ssm.getValidAndInvalidSegments.getValidSegments
-        val defaultIndex = IndexStoreManager.getInstance.getDefaultIndex(targetCarbonTable)
-        // 1. identify if src is partition table, if both src and target target for partition table
-        // on same column(s), then only get the src partitions and send those partitions to scan in
-        // target handling only for carbon src dataset now
-        val srcDataSetRelations = CarbonSparkUtil.collectCarbonRelation(srcDS.logicalPlan)
-        val partitionsToConsider =
-          if (srcDataSetRelations.lengthCompare(1) == 0 &&
-              srcDataSetRelations.head.isInstanceOf[CarbonDatasourceHadoopRelation]) {
-            val srcCarbonTable = srcDataSetRelations.head.carbonRelation.carbonTable
-            if (srcCarbonTable.isHivePartitionTable) {
-              CarbonMergeDataSetUtil.getPartitionSpecToConsiderForPruning(
-                sparkSession,
-                srcCarbonTable,
-                targetCarbonTable)
-            } else {
-              null
-            }
-          } else {
-            val nonCarbonRelations = CarbonSparkUtil.collectNonCarbonRelation(srcDS.logicalPlan)
-            // when the relations are not empty, it means the source dataset is prepared from table
-            if (nonCarbonRelations.nonEmpty &&
-                nonCarbonRelations.head.catalogTable.isDefined &&
-                nonCarbonRelations.head.catalogTable.get.partitionColumnNames != null) {
-              CarbonMergeDataSetUtil.getPartitionSpecToConsiderForPruning(
-                sparkSession,
-                null,
-                targetCarbonTable,
-                nonCarbonRelations.head.catalogTable.get.identifier)
-            } else {
-              null
-            }
-          }
-
         // 1. get all the join columns of equal to conditions or equi joins
-        var targetKeyColumns: mutable.Set[String] = mutable.Set.empty[String]
-        if (mergeMatches != null) {
-          mergeMatches.joinExpr.expr.collect {
-            case EqualTo(left, right) =>
-              left match {
-                case attribute: UnresolvedAttribute if right.isInstanceOf[UnresolvedAttribute] =>
-                  val leftAlias = attribute.nameParts.head
-                  if (targetDsAliasName != null) {
-                    if (targetDsAliasName.equalsIgnoreCase(leftAlias)) {
-                      targetKeyColumns += attribute.nameParts.tail.head
-                    } else {
-                      targetKeyColumns +=
-                      right.asInstanceOf[UnresolvedAttribute].nameParts.tail.head
-                    }
-                  } else {
-                    if (leftAlias.equalsIgnoreCase(targetCarbonTable.getTableName)) {
-                      targetKeyColumns += attribute.nameParts.tail.head
-                    } else {
-                      targetKeyColumns +=
-                      right.asInstanceOf[UnresolvedAttribute].nameParts.tail.head
-                    }
-                  }
-                case _ =>
-              }
-          }
-        } else {
-          targetKeyColumns += keyColumn
-        }
+        val targetKeyColumns = CarbonMergeDataSetUtil.getTargetTableKeyColumns(keyColumn,
+          targetDsAliasName,
+          targetCarbonTable,
+          mergeMatches)
         val joinCarbonColumns = targetKeyColumns.collect {
           case column => targetCarbonTable.getColumnByName(column)
         }
@@ -252,7 +182,7 @@ case class CarbonMergeDataSetCommand(
         LOGGER
           .info(s"Key columns for join are: ${ joinCarbonColumns.map(_.getColName).mkString(",") }")
 
-        var columnToIndexMap: util.Map[String, Integer] = new util.LinkedHashMap[String, Integer]
+        val columnToIndexMap: util.Map[String, Integer] = new util.LinkedHashMap[String, Integer]
         // get the min max cache column and based on that determine the index to check in min-max
         // array or Index Row
         val minMaxColumns = targetCarbonTable.getMinMaxCachedColumnsInCreateOrder
@@ -285,56 +215,16 @@ case class CarbonMergeDataSetCommand(
           }
         }
 
-        var columnMinMaxInBlocklet: util.LinkedHashMap[String, util.List[FilePathMinMaxVO]] = null
-        val colTosplitsFilePathAndMinMaxMap: mutable.Map[String, util.List[FilePathMinMaxVO]] =
-          if (isDistributedPruningEnabled) {
-            val indexFormat = new IndexInputFormat(targetCarbonTable, null, validSegments,
-              Nil.asJava, partitionsToConsider, false, null, false, false)
-            columnMinMaxInBlocklet = new util.LinkedHashMap[String, util.List[FilePathMinMaxVO]]
-            val cdcVO = new CdcVO(columnToIndexMap)
-            indexFormat.setCdcVO(cdcVO)
-            IndexServer.getClient.getSplits(indexFormat)
-              .getExtendedBlocklets(indexFormat)
-              .asScala
-              .flatMap { blocklet =>
-                blocklet.getColumnToMinMaxMapping.asScala.map {
-                  case (columnName, minMaxListWithFilePath) =>
-                    val filePathMinMaxList = columnMinMaxInBlocklet.get(columnName)
-                    if (filePathMinMaxList != null) {
-                      filePathMinMaxList.addAll(minMaxListWithFilePath)
-                      columnMinMaxInBlocklet.put(columnName, filePathMinMaxList)
-                    } else {
-                      columnMinMaxInBlocklet.put(columnName, minMaxListWithFilePath)
-                    }
-                }
-              }
-            columnMinMaxInBlocklet.asScala
-          } else {
-            if (targetCarbonTable.isTransactionalTable) {
-              val indexExprWrapper = IndexChooser.getDefaultIndex(targetCarbonTable, null)
-              IndexUtil.loadIndexes(targetCarbonTable, indexExprWrapper, validSegments)
-            }
-            val blocklets = defaultIndex.prune(validSegments, null, partitionsToConsider).asScala
-            columnMinMaxInBlocklet = new util.LinkedHashMap[String, util.List[FilePathMinMaxVO]]
-            columnToIndexMap.asScala.foreach {
-              case (columnName, index) =>
-                val filePathAndMinMaxList = new util.ArrayList[FilePathMinMaxVO]()
-                blocklets.map { blocklet =>
-                  val filePathMinMax = new FilePathMinMaxVO(blocklet.getFilePath,
-                    CarbonUtil.getMinMaxValue(blocklet
-                      .getInputSplit
-                      .getIndexRow,
-                      BlockletIndexRowIndexes.MIN_VALUES_INDEX)(index),
-                    CarbonUtil.getMinMaxValue(blocklet
-                      .getInputSplit
-                      .getIndexRow,
-                      BlockletIndexRowIndexes.MAX_VALUES_INDEX)(index))
-                  filePathAndMinMaxList.add(filePathMinMax)
-                }
-                columnMinMaxInBlocklet.put(columnName, filePathAndMinMaxList)
-            }
-            columnMinMaxInBlocklet.asScala
-          }
+        // get the splits required, which will also load the cache based on the configuration either
+        // in index server or driver
+        val columnMinMaxInBlocklet: util.LinkedHashMap[String, util.List[FilePathMinMaxVO]] =
+          new util.LinkedHashMap[String, util.List[FilePathMinMaxVO]]
+        val colToSplitsFilePathAndMinMaxMap: mutable.Map[String, util.List[FilePathMinMaxVO]] =
+          CarbonMergeDataSetUtil.getSplitsAndLoadToCache(targetCarbonTable,
+            repartitionedSrcDs,
+            columnMinMaxInBlocklet,
+            columnToIndexMap,
+            sparkSession)
 
         LOGGER.info("Finished getting splits from driver or index server")
 
@@ -363,7 +253,7 @@ case class CarbonMergeDataSetCommand(
         }
 
         // 3. prepare (filepath, (min, max)) at a block level.
-        CarbonMergeDataSetUtil.addFilePathAndMinMaxTuples(colTosplitsFilePathAndMinMaxMap,
+        CarbonMergeDataSetUtil.addFilePathAndMinMaxTuples(colToSplitsFilePathAndMinMaxMap,
           targetCarbonTable,
           joinColumnsToComparatorMap,
           fileMinMaxMapListOfAllJoinColumns)
@@ -389,89 +279,12 @@ case class CarbonMergeDataSetCommand(
 
         // 5.from srcRDD, do map and then for each row search in min max tree prepared above and
         // find the file paths to scan.
-        val timeStampFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-
-        joinCarbonColumns.foreach { joinColumn =>
-          val srcDeduplicatedRDD = repartitionedSrcDs.select(joinColumn.getColName).rdd
-          finalCarbonFilesToScan ++= srcDeduplicatedRDD.mapPartitions { iter =>
-            val filesPerTask = new util.HashSet[String]()
-            new Iterator[util.HashSet[String]] {
-              override def hasNext: Boolean = {
-                iter.hasNext
-              }
-
-              override def next(): util.HashSet[String] = {
-                val row = iter.next()
-                joinColumnToTreeMapping
-                  .foreach { joinColumnWithRangeTree =>
-                    val joinCarbonColumn = joinColumnWithRangeTree._1
-                    val rangeIntervalTree = joinColumnWithRangeTree._2
-                    val joinDataType = joinCarbonColumn.getDataType
-                    val isDimension = joinCarbonColumn.isDimension
-                    val isPrimitiveAndNotDate = DataTypeUtil.isPrimitiveColumn(joinDataType) &&
-                                                (joinDataType != DataTypes.DATE)
-                    val fieldIndex = row.fieldIndex(joinCarbonColumn.getColName)
-                    val fieldValue = if (!row.isNullAt(fieldIndex)) {
-                      if (isDimension) {
-                        if (joinDataType != DataTypes.DATE) {
-                          DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(row
-                            .getAs(fieldIndex)
-                            .toString,
-                            joinDataType, timeStampFormat)
-                        } else {
-                          // if date, then get the key from direct dict generator and then get bytes
-                          val actualValue = row.getAs(fieldIndex)
-                          val dateSurrogateValue = CastExpressionOptimization
-                            .typeCastStringToLong(actualValue, DateType).asInstanceOf[Int]
-                          ByteUtil.convertIntToBytes(dateSurrogateValue)
-                        }
-                      } else {
-                        CarbonUtil.getValueAsBytes(joinDataType, row.getAs(fieldIndex))
-                      }
-                    } else {
-                      // here handling for null values
-                      val value: Long = 0
-                      if (isDimension) {
-                        if (isPrimitiveAndNotDate) {
-                          CarbonCommonConstants.EMPTY_BYTE_ARRAY
-                        } else {
-                          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY
-                        }
-                      } else {
-                        val nullValueForMeasure = if ((joinDataType eq DataTypes.BOOLEAN) ||
-                                                      (joinDataType eq DataTypes.BYTE)) {
-                          value.toByte
-                        } else if (joinDataType eq DataTypes.SHORT) {
-                          value.toShort
-                        } else if (joinDataType eq DataTypes.INT) {
-                          value.toInt
-                        } else if ((joinDataType eq DataTypes.LONG) ||
-                                   (joinDataType eq DataTypes.TIMESTAMP)) {
-                          value
-                        } else if (joinDataType eq DataTypes.DOUBLE) {
-                          0d
-                        } else if (joinDataType eq DataTypes.FLOAT) {
-                          0f
-                        } else if (DataTypes.isDecimal(joinDataType)) {
-                          value
-                        }
-                        CarbonUtil.getValueAsBytes(joinDataType, nullValueForMeasure)
-                      }
-                    }
-                    rangeIntervalTree.getMatchingFiles(fieldValue, filesPerTask)
-                  }
-                filesPerTask
-              }
-            }
-          }.flatMap(_.asScala.toList).map(filePath => (filePath, 0)).reduceByKey((m, n) => m + n)
-            .collect().map(_._1)
-        }
+        finalCarbonFilesToScan = CarbonMergeDataSetUtil.getFilesToScan(joinCarbonColumns,
+          joinColumnToTreeMapping,
+          repartitionedSrcDs)
 
         LOGGER.info(s"Finished min-max pruning. Carbondata files to scan during merge is: ${
-          finalCarbonFilesToScan.length
-        }")
+          finalCarbonFilesToScan.length}")
       }
     }
 

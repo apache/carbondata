@@ -38,12 +38,8 @@ public class CDCBlockImplicitExecutorImpl implements FilterExecutor, ImplicitCol
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
       String uniqueBlockPath, boolean[] isMinMaxSet) {
-    boolean isScanRequired = false;
     BitSet bitSet = new BitSet(1);
     if (blocksToScan.contains(uniqueBlockPath)) {
-      isScanRequired = true;
-    }
-    if (isScanRequired) {
       bitSet.set(0);
     }
     return bitSet;

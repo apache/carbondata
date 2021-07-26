@@ -50,7 +50,7 @@ public class CDCBlockImplicitExpression extends Expression {
 
   @Override
   public void findAndSetChild(Expression oldExpr, Expression newExpr) {
-
+    throw new UnsupportedOperationException("Not allowed on Implicit expression");
   }
 
   @Override
