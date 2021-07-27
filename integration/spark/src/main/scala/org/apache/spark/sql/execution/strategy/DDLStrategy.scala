@@ -183,8 +183,7 @@ object DDLStrategy extends SparkStrategy {
       // database
       case createDb: CreateDatabaseCommand =>
         ExecutedCommandExec(DDLHelper.createDatabase(createDb, sparkSession)) :: Nil
-      case drop@DropDatabaseCommand(dbName, ifExists, _)
-        if CarbonEnv.databaseLocationExists(dbName, sparkSession, ifExists) =>
+      case drop@DropDatabaseCommand(dbName, ifExists, _) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
       // explain
       case explain: ExplainCommand =>

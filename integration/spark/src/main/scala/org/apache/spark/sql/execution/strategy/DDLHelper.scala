@@ -17,9 +17,11 @@
 
 package org.apache.spark.sql.execution.strategy
 
+import org.apache.commons.lang.StringUtils
+import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogUtils}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
@@ -33,7 +35,7 @@ import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
 import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.util.SparkSQLUtil
-import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -51,16 +53,17 @@ object DDLHelper {
       sparkSession: SparkSession): CreateDatabaseCommand = {
     ThreadLocalSessionInfo
       .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
-    if (!EnvHelper.isLegacy(sparkSession)) {
-      val databaseName = createDatabaseCommand.databaseName
-      val dbLocation = try {
-        CarbonEnv.getDatabaseLocation(databaseName, sparkSession)
-      } catch {
-        case _: NoSuchDatabaseException =>
-          CarbonProperties.getStorePath
+    if (!EnvHelper.isLegacy(sparkSession) && !createDatabaseCommand.path.isDefined) {
+      val carbonStorePath = CarbonProperties.getStorePath()
+      val sparkWarehouse = sparkSession.conf.get("spark.sql.warehouse.dir")
+      if (StringUtils.isNotEmpty(carbonStorePath) && StringUtils.isNotEmpty(sparkWarehouse)
+        && !carbonStorePath.equals(sparkWarehouse)) {
+        throw new InvalidOperationException("Create database is prohibited when" +
+          " database locaton is inconsistent, please don't configure " +
+          " carbon.storelocation and spark.sql.warehouse.dir to different values," +
+          s" carbon.storelocation is $carbonStorePath," +
+          s" while spark.sql.warehouse.dir is $sparkWarehouse")
       }
-      FileUtils
-        .createDatabaseDirectory(databaseName, dbLocation, sparkSession.sparkContext)
     }
     createDatabaseCommand
   }

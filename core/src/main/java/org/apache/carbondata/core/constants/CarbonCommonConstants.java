@@ -37,6 +37,7 @@ public final class CarbonCommonConstants {
   /**
    * location of the carbon member, hierarchy and fact files
    */
+  @Deprecated
   @CarbonProperty
   public static final String STORE_LOCATION = "carbon.storelocation";
 

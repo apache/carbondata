@@ -28,12 +28,12 @@ Carbondata relies on Hadoop provided S3 filesystem APIs to access Object stores.
 
 # Writing to Object Storage
 
-To store carbondata files onto Object Store, `carbon.storelocation` property will have 
-to be configured with Object Store path in CarbonProperties file. 
+To store carbondata files onto Object Store, `spark.sql.warehouse.dir` property will have 
+to be configured with Object Store path in spark-default.conf. 
 
 For example:
 ```
-carbon.storelocation=s3a://mybucket/carbonstore
+spark.sql.warehouse.dir=s3a://mybucket/carbonstore
 ```
 
 If the existing store location cannot be changed or only specific tables need to be stored 
