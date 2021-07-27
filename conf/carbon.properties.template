@@ -17,9 +17,6 @@
 #
 
 #################### System Configuration ##################
-##Optional. Location where CarbonData will create the store, and write the data in its own format.
-##If not specified then it takes spark.sql.warehouse.dir path.
-#carbon.storelocation
 #Base directory for Data files
 #carbon.ddl.base.hdfs.url
 #Path where the bad records are stored

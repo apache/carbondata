@@ -42,7 +42,7 @@ This document describes the what a CarbonData table looks like in a HDFS directo
 
 ## File Directory Structure
 
-The CarbonData files are stored in the location specified by the ***carbon.storelocation*** configuration (configured in carbon.properties; if not configured, the default is ../carbon.store).
+The CarbonData files are stored in the location specified by the ***spark.sql.warehouse.dir*** configuration (configured in carbon.properties; if not configured, the default is ../carbon.store).
 
   The file directory structure is as below: 
 

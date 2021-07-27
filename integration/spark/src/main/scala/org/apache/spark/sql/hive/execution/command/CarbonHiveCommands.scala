@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.hive.execution.command
 
+import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
@@ -52,9 +53,10 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
           true
       })
     }
-    var databaseLocation = ""
+
+    var carbonDatabaseLocation = ""
     try {
-      databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
+      carbonDatabaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
     } catch {
       case e: NoSuchDatabaseException =>
         // if database not found and ifExists true return empty
@@ -62,6 +64,18 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
           return rows
         }
     }
+
+    val hiveDatabaseLocation =
+      sparkSession.sessionState.catalog.getDatabaseMetadata(dbName).locationUri.toString
+
+    if (!carbonDatabaseLocation.equals(hiveDatabaseLocation)) {
+      throw new InvalidOperationException("Drop database is prohibited when" +
+        " database locaton is inconsistent, please don't configure " +
+        " carbon.storelocation and spark.sql.warehouse.dir to different values," +
+        s" carbon.storelocation is $carbonDatabaseLocation," +
+        s" while spark.sql.warehouse.dir is $hiveDatabaseLocation")
+    }
+
     // DropHiveDB command will fail if cascade is false and one or more table exists in database
     if (command.cascade && tablesInDB != null) {
       tablesInDB.foreach { tableName =>
@@ -69,7 +83,7 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
       }
     }
     rows = command.run(sparkSession)
-    CarbonUtil.dropDatabaseDirectory(databaseLocation)
+    CarbonUtil.dropDatabaseDirectory(carbonDatabaseLocation)
     rows
   }
 }

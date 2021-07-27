@@ -16,8 +16,15 @@
  */
 package org.apache.carbondata.spark.testsuite.deleteTable
 
+
+import java.io.File
+
+import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * test class for testing the create cube DDL.
@@ -56,6 +63,46 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     assert(intercept[Exception] {
       sql(s"use $dbName")
     }.getMessage.contains("Database 'dropdb_test' not found"))
+  }
+
+  test("test create database when dblocation is inconsistent") {
+    val dbName = "dropdb_test"
+    sql(s"drop database if exists $dbName cascade")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
+      warehouse + File.separator + "carbonwarehouse")
+    val exception = intercept[InvalidOperationException] {
+      sql(s"create database $dbName")
+    }
+    assert(exception.getMessage.contains("Create database is prohibited when" +
+      " database locaton is inconsistent, please don't configure " +
+      " carbon.storelocation and spark.sql.warehouse.dir to different values"))
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, warehouse)
+  }
+
+  test("test create database with location under" +
+    " different configuration of carbonstorelocation and spark.sql.warehouse.dir") {
+    val dbName = "dropdb_test"
+    sql(s"drop database if exists $dbName cascade")
+    val dblocaiton = warehouse + File.separator + dbName
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
+      warehouse + File.separator + "carbonwarehouse")
+    assert(sql(s"create database $dbName location '$dblocaiton'").collect().isEmpty)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, warehouse)
+  }
+
+  test("test drop database when dblocation is inconsistent") {
+    val dbName = "dropdb_test"
+    sql(s"drop database if exists $dbName cascade")
+    sql(s"create database $dbName")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
+      warehouse + File.separator + "carbonwarehouse")
+    val exception = intercept[InvalidOperationException] {
+      sql(s"drop database if exists $dbName")
+    }
+    assert(exception.getMessage.contains("Drop database is prohibited when" +
+      " database locaton is inconsistent, please don't configure " +
+      " carbon.storelocation and spark.sql.warehouse.dir to different values"))
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, warehouse)
   }
 
   test("test drop database cascade command") {
