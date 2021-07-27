@@ -808,7 +808,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         StructType(Seq(StructField("key", StringType),
           StructField("value", IntegerType), StructField("country", StringType))))
     // upsert API
-    target.as("A").merge(cdc.as("B"), "key", "upsert").execute()
+    target.as("A").upsert(cdc.as("B"), "key").execute()
     checkAnswer(sql("select * from target"),
       Seq(Row("a", 7, "CHINA"), Row("b", 1, "UK"), Row("g", null, "UK"), Row("e", 3, "US"),
         Row("c", 2, "INDIA"), Row("d", 3, "US")))
@@ -820,7 +820,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         StructType(Seq(StructField("key", StringType),
           StructField("value", IntegerType), StructField("country", StringType))))
     // delete API
-    target.as("A").merge(cdc.as("B"), "key", "delete").execute()
+    target.as("A").delete(cdc.as("B"), "key").execute()
     checkAnswer(sql("select * from target"),
       Seq(Row("b", 1, "UK"), Row("g", null, "UK"), Row("c", 2, "INDIA"), Row("d", 3, "US")))
     // update API
@@ -830,7 +830,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       ).asJava,
         StructType(Seq(StructField("key", StringType),
           StructField("value", IntegerType), StructField("country", StringType))))
-    target.as("A").merge(cdc.as("B"), "key", "update").execute()
+    target.as("A").update(cdc.as("B"), "key").execute()
     checkAnswer(sql("select * from target"),
       Seq(Row("b", 1, "UK"), Row("g", 8, "RUSSIA"), Row("c", 2, "INDIA"), Row("d", 3, "US")))
     // insert API
@@ -841,7 +841,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       ).asJava,
         StructType(Seq(StructField("key", StringType),
           StructField("value", IntegerType), StructField("country", StringType))))
-    target.as("A").merge(cdc.as("B"), "key", "insert").execute()
+    target.as("A").insert(cdc.as("B"), "key").execute()
     checkAnswer(sql("select * from target"),
       Seq(Row("b", 1, "UK"), Row("g", 8, "RUSSIA"), Row("c", 2, "INDIA"), Row("d", 3, "US"),
         Row("j", 2, "RUSSIA"), Row("k", 0, "INDIA")))
@@ -871,7 +871,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         StructType(Seq(StructField("key", StringType),
           StructField("value", StringType))))
     // upsert API
-    target.as("A").merge(cdc.as("B"), "key", "upsert").execute()
+    target.as("A").upsert(cdc.as("B"), "key").execute()
     checkAnswer(sql("select * from target"),
       Seq(Row("a", "7"), Row("b", null), Row("g", null), Row("e", "3"), Row("c", "2"),
         Row("d", "3")))
@@ -884,7 +884,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         StructType(Seq(StructField("key", StringType),
           StructField("value", StringType))))
     // delete API
-    target.as("A").merge(cdc.as("B"), "key", "delete").execute()
+    target.as("A").delete(cdc.as("B"), "key").execute()
     checkAnswer(sql("select * from target"),
       Seq(Row("b", null), Row("g", null), Row("c", "2"), Row("d", "3")))
 
@@ -895,7 +895,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         StructType(Seq(StructField("key", StringType),
           StructField("value", StringType))))
     // update API
-    target.as("A").merge(cdc.as("B"), "key", "update").execute()
+    target.as("A").update(cdc.as("B"), "key").execute()
     checkAnswer(sql("select * from target"),
       Seq(Row("b", null), Row("g", "56"), Row("c", "2"), Row("d", "3")))
 
@@ -907,7 +907,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         StructType(Seq(StructField("key", StringType),
           StructField("value", StringType))))
     // insert API
-    target.as("A").merge(cdc.as("B"), "key", "insert").execute()
+    target.as("A").insert(cdc.as("B"), "key").execute()
 
     checkAnswer(sql("select * from target"),
       Seq(Row("b", null), Row("g", "56"), Row("c", "2"), Row("d", "3"), Row("z", "234"),

@@ -59,7 +59,7 @@ object UPSERTExample {
           StructField("value", StringType))))
     spark.sql("select * from target").show(false)
     // upsert API updates a and b, inserts e and g
-    target.as("A").merge(cdc.as("B"), "key", "upsert").execute()
+    target.as("A").upsert(cdc.as("B"), "key").execute()
     spark.sql("select * from target").show(false)
 
     cdc =
@@ -70,7 +70,7 @@ object UPSERTExample {
         StructType(Seq(StructField("key", StringType),
           StructField("value", StringType))))
     // delete API, deletes a and e
-    target.as("A").merge(cdc.as("B"), "key", "delete").execute()
+    target.as("A").delete(cdc.as("B"), "key").execute()
     spark.sql("select * from target").show(false)
 
     cdc =
@@ -80,7 +80,7 @@ object UPSERTExample {
         StructType(Seq(StructField("key", StringType),
           StructField("value", StringType))))
     // update API, updates g
-    target.as("A").merge(cdc.as("B"), "key", "update").execute()
+    target.as("A").update(cdc.as("B"), "key").execute()
     spark.sql("select * from target").show(false)
 
     cdc =
@@ -91,7 +91,7 @@ object UPSERTExample {
         StructType(Seq(StructField("key", StringType),
           StructField("value", StringType))))
     // insert API, inserts z and x.
-    target.as("A").merge(cdc.as("B"), "key", "insert").execute()
+    target.as("A").insert(cdc.as("B"), "key"  ).execute()
 
     spark.sql("select * from target").show(false)
   }

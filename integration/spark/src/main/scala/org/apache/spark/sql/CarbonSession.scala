@@ -25,7 +25,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.QueryExecution
-import org.apache.spark.sql.execution.command.mutation.merge.{MergeDataSetBuilder, UpsertBuilder}
+import org.apache.spark.sql.execution.command.mutation.merge.{MergeDataSetBuilder, MergeOperationType, UpsertBuilder}
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -294,7 +294,26 @@ object CarbonSession {
       new MergeDataSetBuilder(ds, srcDS, expr, ds.sparkSession)
     }
 
-    def merge(srcDS: Dataset[Row], keyColumn: String, operationType: String): UpsertBuilder = {
+    def update(srcDS: Dataset[Row], keyColumn: String): UpsertBuilder = {
+      merge(srcDS, keyColumn, MergeOperationType.UPDATE.toString)
+    }
+
+    def delete(srcDS: Dataset[Row], keyColumn: String): UpsertBuilder = {
+      merge(srcDS, keyColumn, MergeOperationType.DELETE.toString)
+    }
+
+    def insert(srcDS: Dataset[Row], keyColumn: String): UpsertBuilder = {
+      merge(srcDS, keyColumn, MergeOperationType.INSERT.toString)
+    }
+
+    def upsert(srcDS: Dataset[Row], keyColumn: String): UpsertBuilder = {
+      merge(srcDS, keyColumn, MergeOperationType.UPSERT.toString)
+    }
+
+    private def merge(
+        srcDS: Dataset[Row],
+        keyColumn: String,
+        operationType: String): UpsertBuilder = {
       new UpsertBuilder(ds, srcDS, keyColumn, operationType, ds.sparkSession)
     }
 
