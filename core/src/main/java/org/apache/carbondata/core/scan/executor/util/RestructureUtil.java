@@ -172,13 +172,16 @@ public class RestructureUtil {
   }
 
   public static void compareDatatypes(CarbonDimension currentDimension) {
+    if (currentDimension == null) {
+      return;
+    }
     if (currentDimension.isComplex()) {
       for (CarbonDimension childDimension : currentDimension.getListOfChildDimensions()) {
         compareDatatypes(childDimension);
       }
     } else {
       // insert datatypes only in case of primitive types, as only they are allowed to be altered.
-      if (newComplexChildrenDatatypes.containsKey(currentDimension.getColumnId())
+      if (newComplexChildrenDatatypes.get(currentDimension.getColumnId()) != null
           && !(newComplexChildrenDatatypes.get(currentDimension.getColumnId())
           .equals(currentDimension.getDataType()))) {
         currentDimension
@@ -188,12 +191,18 @@ public class RestructureUtil {
   }
 
   public static void fillNewDatatypesForComplexChildren(CarbonDimension tableDimension) {
-    for (CarbonDimension childDimension : tableDimension.getListOfChildDimensions()) {
-      if (childDimension.getDataType().isComplexType()) {
-        fillNewDatatypesForComplexChildren(childDimension);
-      } else {
-        // insert new datatypes only in case of primitive types, as they are allowed to be altered.
-        newComplexChildrenDatatypes.put(childDimension.getColumnId(), childDimension.getDataType());
+    if (tableDimension.getListOfChildDimensions() == null) {
+      return;
+    } else {
+      for (CarbonDimension childDimension : tableDimension.getListOfChildDimensions()) {
+        if (childDimension.getDataType().isComplexType()) {
+          fillNewDatatypesForComplexChildren(childDimension);
+        } else {
+          // insert new datatypes only in case of primitive types, as they are allowed to be
+          // altered.
+          newComplexChildrenDatatypes
+              .put(childDimension.getColumnId(), childDimension.getDataType());
+        }
       }
     }
   }
