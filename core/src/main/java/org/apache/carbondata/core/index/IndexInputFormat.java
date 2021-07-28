@@ -105,8 +105,6 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
 
   private CdcVO cdcVO;
 
-  private Boolean isCDCJob;
-
   IndexInputFormat() {
 
   }
@@ -339,8 +337,8 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
         missingSISegments.add(in.readUTF());
       }
     }
-    this.isCDCJob = in.readBoolean();
-    if (this.isCDCJob) {
+    boolean isCDCJob = in.readBoolean();
+    if (isCDCJob) {
       this.cdcVO = new CdcVO();
       cdcVO.readFields(in);
     }

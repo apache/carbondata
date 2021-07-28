@@ -289,7 +289,8 @@ object CarbonFilters {
           columnName, instance))
       case _: BlockPathsUDF =>
         if (children.size > 1) {
-          throw new MalformedCarbonCommandException("Expect one string in polygon")
+          throw new MalformedCarbonCommandException(
+            "Expected one comma separated values of block paths")
         }
         Some(new CDCBlockImplicitExpression(children.head.toString()))
       case _ => None

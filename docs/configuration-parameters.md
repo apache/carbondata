@@ -51,7 +51,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.enable.tablestatus.backup | false | In cloud object store scenario, overwriting table status file is not an atomic operation since it uses rename API. Thus, it is possible that table status is corrupted if process crashed when overwriting the table status file. To protect from file corruption, user can enable this property. |
 | carbon.trash.retention.days | 7 | This parameter specifies the number of days after which the timestamp based subdirectories are expired in the trash folder. Allowed Min value = 0, Allowed Max Value = 365 days|
 | carbon.clean.file.force.allowed | false | This parameter specifies if the clean files operation with force option is allowed or not.|
-| carbon.cdc.minmax.pruning.enabled | false | This parameter defines whether the min max pruning to be performed on the target table based on the source data. Enable it when data is not sparse across target table and when pruning will be better based on use case.|
+| carbon.cdc.minmax.pruning.enabled | false | This parameter defines whether the min max pruning to be performed on the target table based on the source data. It will be useful when data is not sparse across target table which results in better pruning.|
 
 ## Data Loading Configuration
 

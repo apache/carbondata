@@ -888,7 +888,7 @@ public class BlockIndex extends CoarseGrainIndex
     }
   }
 
-  private static boolean[] getMinMaxFlag(IndexRow row, int index) {
+  private boolean[] getMinMaxFlag(IndexRow row, int index) {
     IndexRow minMaxFlagRow = row.getRow(index);
     boolean[] minMaxFlag = new boolean[minMaxFlagRow.getColumnCount()];
     for (int i = 0; i < minMaxFlag.length; i++) {

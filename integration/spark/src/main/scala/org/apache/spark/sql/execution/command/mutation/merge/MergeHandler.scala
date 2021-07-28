@@ -152,7 +152,7 @@ case class UpdateHandler(
     srcDS: DataFrame) extends MergeHandler(sparkSession, frame, targetCarbonTable, stats, srcDS) {
 
   override def handleMerge(): Unit = {
-    assert(frame != null)
+    assert(frame != null, "The dataframe used to perform merge can be only for insert operation")
     val factTimestamp = System.currentTimeMillis()
     val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
     val (deltaRdd, path) = performTagging
@@ -175,7 +175,7 @@ case class DeleteHandler(
     stats: Stats,
     srcDS: DataFrame) extends MergeHandler(sparkSession, frame, targetCarbonTable, stats, srcDS) {
   override def handleMerge(): Unit = {
-    assert(frame != null)
+    assert(frame != null, "The dataframe used to perform merge can be only for insert operation")
     val factTimestamp = System.currentTimeMillis()
     val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
     val (deleteRDD, path) = performTagging
@@ -206,7 +206,7 @@ case class UpsertHandler(
     stats: Stats,
     srcDS: DataFrame) extends MergeHandler(sparkSession, frame, targetCarbonTable, stats, srcDS) {
   override def handleMerge(): Unit = {
-    assert(frame != null)
+    assert(frame != null, "The dataframe used to perform merge can be only for insert operation")
     val factTimestamp = System.currentTimeMillis()
     val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
     val (updateDataRDD, path) = performTagging

@@ -15,7 +15,7 @@
     limitations under the License.
 -->
 
-# Upsert into a Carbon DataSet using Merge 
+# Upsert into a Carbon DataSet using Merge and UPSERT APIs
 
 ## SCD and CDC Scenarios
 Change Data Capture (CDC), is to apply all data changes generated from an external data set 
@@ -25,7 +25,7 @@ table needs to be applied to a target table.
 Slowly Changing Dimensions (SCD), are the dimensions in which the data changes slowly, rather 
 than changing regularly on a time basis.
 
-SCD and CDC data changes can be merged to a carbon dataset online using the data frame level `MERGE` API.
+SCD and CDC data changes can be merged to a carbon dataset online using the data frame level `MERGE`, `UPSERT`, `UPDATE`, `DELETE` and `INSERT` APIs.
 
 #### MERGE API
 
@@ -43,6 +43,38 @@ Below API merges the datasets online and applies the actions as per the conditio
           .execute()
 ```
 
+### UPSERT API
+Below API upsert the input source dataset onto the target carbondata table based on the key column and dataset provided by the user or the application.
+
+```
+  targetDS.upsert(sourceDS, <key_column>)
+          .execute()
+```
+
+### DELETE API
+Below API deletes the data present in the target carbondata table based on the key column and dataset provided by the user or the application.
+
+```
+  targetDS.delete(sourceDS, <key_column>)
+          .execute()
+```
+
+### UPDATE API
+Below API updates the data present in the target carbondata table based on the key column and dataset provided by the user or the application.
+
+```
+  targetDS.update(sourceDS, <key_column>)
+          .execute()
+```
+
+### INSERT API
+Below API inserts the input source dataset onto the target carbondata table based on the key column and dataset provided by the user or the application.
+
+```
+  targetDS.insert(sourceDS, <key_column>)
+          .execute()
+```
+
 #### MERGE API Operation Semantics
 Below is the detailed description of the `merge` API operation.
 * `merge` will merge the datasets based on a condition.
@@ -54,6 +86,10 @@ Below is the detailed description of the `merge` API operation.
 * `whenNotMatched` clause is executed when a source row does not match any target row based on the match condition.
    * `whenNotMatched` clause can have only the `insertExpr` action. The new row is generated based on the specified column and corresponding expressions. Users do not need to specify all the columns in the target table. For unspecified target columns, NULL is inserted.
 * `whenNotMatchedAndExistsOnlyOnTarget` clause is executed when row does not match source and exists only in target. This clause can have only delete action.
+
+#### UPSERT API Operation Semantics
+* `upsert`, `delete`, `insert` and `update` APIs will help to perform specified operations on the target carbondata table.
+* All the APIs expects two parameters source dataset and the key column on which the merge has to be performed.
 
 #### MERGE SQL
 
@@ -90,7 +126,9 @@ clauses can have at most one UPDATE and one DELETE action, These clauses have th
     * To insert all the columns of the target carbondata table with the corresponding columns of the source dataset, use INSERT *. This is equivalent to INSERT (col1 [, col2 ...]) VALUES (source.col1 [, source.col2 ...]) for all the columns of the target carbondata table. Therefore, this action assumes that the source table has the same columns as those in the target table, otherwise the query will throw an error.
 * `not_matched_action` can be INSERT *  | INSERT (column1 [, column2 ...]) VALUES (value1 [, value2 ...])
 
+**Note: Merge SQL is not yet supported for the UPSERT, DELETE, INSERT and UPDATE APIs.**
 ##### Example code to implement cdc/scd scenario
 
-Please refer example class [MergeTestCase](https://github.com/apache/carbondata/blob/master/integration/spark/src/test/scala/org/apache/carbondata/spark/testsuite/merge/MergeTestCase.scala) to understand and implement scd and cdc scenarios using api.
-Please refer example class [DataMergeIntoExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/scala/org/apache/carbondata/examples/DataMergeIntoExample.scala) to understand and implement scd and cdc scenarios using sql.
+* Please refer example class [MergeTestCase](https://github.com/apache/carbondata/blob/master/integration/spark/src/test/scala/org/apache/carbondata/spark/testsuite/merge/MergeTestCase.scala) to understand and implement scd and cdc scenarios using APIs.
+* Please refer example class [DataMergeIntoExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/scala/org/apache/carbondata/examples/DataMergeIntoExample.scala) to understand and implement scd and cdc scenarios using sql. 
+* Please refer example class [DataUPSERTExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/scala/org/apache/carbondata/examples/DataUPSERTExample.scala) to understand and implement cdc using UPSERT APIs.

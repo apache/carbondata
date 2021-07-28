@@ -39,6 +39,9 @@ public class CdcVO implements Serializable, Writable {
    */
   private Map<String, Integer> columnToIndexMap;
 
+  /**
+   * This list will contain the column indexes to fetch from the min max row in blocklet
+   */
   private List<Integer> indexesToFetch;
 
   public CdcVO(Map<String, Integer> columnToIndexMap) {

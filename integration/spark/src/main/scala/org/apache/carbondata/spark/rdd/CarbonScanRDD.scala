@@ -704,6 +704,8 @@ class CarbonScanRDD[T: ClassTag](
     if (indexFilter != null) {
       indexFilter.setTable(CarbonTable.buildFromTableInfo(tableInfo))
       val children = indexFilter.getExpression.getChildren
+      // if the children of the filter contains CDCBlockImplicitExpression, set that to true
+      // expression here, as we don't need this in executor evaluation
       children.asScala.zipWithIndex.foreach { case (child, index) =>
         if (child.isInstanceOf[CDCBlockImplicitExpression]) {
           indexFilter.getExpression.getChildren.set(index, new TrueExpression(null))
