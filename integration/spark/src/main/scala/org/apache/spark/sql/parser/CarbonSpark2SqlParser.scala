@@ -192,7 +192,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val createIndex: Parser[LogicalPlan] =
     CREATE ~> INDEX ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
     ontable ~
-    ("(" ~> repsep(ident, ",") <~ ")") ~
+    ("(" ~> repsep(element, ",") <~ ")") ~
     (AS ~> stringLit) ~
     (WITH ~> DEFERRED ~> REFRESH).? ~
     (PROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {

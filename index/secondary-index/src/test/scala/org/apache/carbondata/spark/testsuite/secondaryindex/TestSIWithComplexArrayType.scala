@@ -351,6 +351,9 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
       sql("create index index_1 on table complextable(country) as 'carbondata'")
     }.getMessage.contains(errMsg))
     assert(intercept[RuntimeException] {
+      sql("create index index_1 on table complextable(country.b) as 'carbondata'")
+    }.getMessage.contains(errMsg))
+    assert(intercept[RuntimeException] {
       sql("create index index_1 on table complextable(id) as 'carbondata'")
     }.getMessage.contains(errMsg))
     assert(intercept[RuntimeException] {
