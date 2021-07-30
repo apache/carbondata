@@ -484,6 +484,9 @@ public final class CarbonCommonConstants {
   // default blocklet size value in MB
   public static final String TABLE_BLOCKLET_SIZE_DEFAULT = "64";
 
+  // does query with latest segment
+  public static final String TABLE_QUERY_LATEST_SEGMENT = "query_latest_segment";
+
   /**
    * set in column level to disable inverted index
    * @Deprecated :This property is deprecated, it is kept just for compatibility
