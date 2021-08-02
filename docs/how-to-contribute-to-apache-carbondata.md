@@ -15,7 +15,25 @@
     limitations under the License.
 -->
 
-[toc]
+- [How to contribute to Apache CarbonData](#how-to-contribute-to-apache-carbondata)
+  * [Engage](#engage)
+    + [Mailing list(s)](#mailing-list-s-)
+    + [Apache JIRA](#apache-jira)
+  * [Design](#design)
+  * [Code](#code)
+    + [Git config](#git-config)
+    + [Fork the repository on GitHub](#fork-the-repository-on-github)
+    + [Clone the repository locally](#clone-the-repository-locally)
+    + [Create a branch in your fork](#create-a-branch-in-your-fork)
+    + [Syncing and pushing your branch](#syncing-and-pushing-your-branch)
+    + [Testing](#testing)
+  * [Review](#review)
+    + [Create a pull request](#create-a-pull-request)
+    + [Code Review and Revision](#code-review-and-revision)
+    + [LGTM](#lgtm)
+    + [Deleting your branch (optional)](#deleting-your-branch--optional-)
+
+
 
 # How to contribute to Apache CarbonData
 
