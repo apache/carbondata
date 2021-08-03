@@ -7,7 +7,7 @@
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,6 +32,7 @@ Spark2.4:
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/13444/badge.svg"/>
 </a>
+
 ## Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema, complex data type etc, and CarbonData has following unique features:
 * Stores data along with index: it can significantly accelerate query performance and reduces the I/O scans and CPU resources, where there are filters in the query.  CarbonData index consists of multiple level of indices, a processing framework can leverage this index to reduce the task it needs to schedule and process, and it can also do skip scan in more finer grain unit (called blocklet) in task side scanning instead of scanning the whole file.
@@ -93,8 +94,17 @@ This guide document introduces [how to contribute to CarbonData](https://github.
 ## Contact us
 To get involved in CarbonData:
 
-* First join by emailing to [dev-subscribe@carbondata.apache.org](mailto:dev-subscribe@carbondata.apache.org),then you can discuss issues by emailing to [dev@carbondata.apache.org](mailto:dev@carbondata.apache.org) or visit http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
-* Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA).
+* First join by emailing to [dev-subscribe@carbondata.apache.org](mailto:dev-subscribe@carbondata.apache.org), then you can discuss issues by emailing to [dev@carbondata.apache.org](mailto:dev@carbondata.apache.org). 
+  Or you can directly visit [Apache CarbonData Dev Mailing List archive](http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com/). If you do not already have an account, sign up [here](http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com/template/NamlServlet.jtp?macro=start_registration_page).
+
+* Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA). If you do not already have an Apache JIRA account, sign up [here](https://issues.apache.org/jira/).
+
+* You can also slack to get in touch with the community. After we invite you, you can use this [Slack Link](https://carbondataworkspace.slack.com/) to sign in to CarbonData.
+
+* Of course, you can scan the QR Code to join in our WeChat Group to get in touch.
+  ![QRCode_WechatGroup](docs/images/QRCode_WechatGroup.png)
+
+  
 
 ## About
 Apache CarbonData is an open source project of The Apache Software Foundation (ASF).
