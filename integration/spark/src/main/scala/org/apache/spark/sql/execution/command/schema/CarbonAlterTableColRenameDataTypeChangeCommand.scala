@@ -151,11 +151,6 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       // set isDataTypeChange flag
       val oldDatatype = oldCarbonColumn.head.getDataType
       val newDatatype = alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.dataType
-      if (isColumnRename && (DataTypes.isMapType(oldDatatype) ||
-                             newDatatype.equalsIgnoreCase(CarbonCommonConstants.MAP))) {
-        throw new UnsupportedOperationException(
-          "Alter rename is unsupported for Map datatype column")
-      }
       if (oldDatatype.getName.equalsIgnoreCase(newDatatype)) {
         val newColumnPrecision =
           alterTableColRenameAndDataTypeChangeModel.dataTypeInfo.precision
@@ -170,7 +165,8 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
              newColumnScale)) {
           isDataTypeChange = true
         }
-        if (DataTypes.isArrayType(oldDatatype) || DataTypes.isStructType(oldDatatype)) {
+        if (DataTypes.isArrayType(oldDatatype) || DataTypes.isStructType(oldDatatype) ||
+            DataTypes.isMapType(oldDatatype)) {
           val oldParent = oldCarbonColumn.head
           val oldChildren = oldParent.asInstanceOf[CarbonDimension].getListOfChildDimensions.asScala
             .toList
@@ -297,9 +293,8 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
               }
             }
           }
-
           // check if datatype is altered
-          if(!alteredDatatypesMap.isEmpty) {
+          if(!alteredDatatypesMap.isEmpty && alteredDatatypesMap.get(columnName)!= None) {
             val newDatatype = alteredDatatypesMap.get(columnName).get
             if (newDatatype.dataType.equals(CarbonCommonConstants.LONG)) {
               columnSchema.setData_type(DataType.LONG)

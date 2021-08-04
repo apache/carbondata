@@ -291,8 +291,13 @@ public class SecondaryIndexQueryResultProcessor {
       } else {
         if (isComplexColumn && complexColumnParentBlockIndexes.length == 0) {
           // After restructure some complex column will not be present in parent block.
-          // In such case, set the SI implicit row value to empty byte array.
-          preparedRow[i] = new byte[0];
+          // In such case, set the SI implicit row value to null or empty byte array.
+          if (DataTypeUtil.isPrimitiveColumn(dims.getDataType())) {
+            // set null value for measures
+            preparedRow[i] = null;
+          } else {
+            preparedRow[i] = new byte[0];
+          }
         } else if (isComplexColumn) {
           // get the flattened data of complex column
           byte[] complexKeyByIndex = wrapper.getComplexKeyByIndex(complexIndex);
@@ -362,6 +367,9 @@ public class SecondaryIndexQueryResultProcessor {
    */
   private Object getData(Object[] data, int index, DataType dataType) {
     if (data == null || data.length == 0) {
+      if (DataTypeUtil.isPrimitiveColumn(dataType)) {
+        return null;
+      }
       return new byte[0];
     } else if (data[0] == null) {
       return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;

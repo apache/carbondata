@@ -775,10 +775,10 @@ CarbonData DDL statements are documented here,which includes:
      ```
      ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DEFAULT.VALUE.a1'='10')
      ```
-      **NOTE:** Adding of only single-level Complex datatype columns(only array and struct) is supported.
-      Example - 
+      Adding of single-level and nested level of Complex datatype columns is supported.
+
       ```
-      ALTER TABLE <table-name> ADD COLUMNS(arrField array<int>, structField struct<id1:string,name1:string>)
+      ALTER TABLE <table-name> ADD COLUMNS(arrField array<array<int>>, structField struct<id1:string,name1:string>, mapField map<string,array<string>>)
       ```
 Users can specify which columns to include and exclude for local dictionary generation after adding new columns. These will be appended with the already existing local dictionary include and exclude columns of main table respectively.
      
@@ -866,6 +866,12 @@ Users can specify which columns to include and exclude for local dictionary gene
      ALTER TABLE test_db.carbon CHANGE oldArray newArray array<int>
      ```
 
+     Example 7: Change column name in column: mapField map\<int, int> from mapField to mapField1.
+
+     ```
+     ALTER TABLE test_db.carbon CHANGE mapField mapField1 map<int, int>
+     ```
+
      **NOTE:** Once the column is renamed, user has to take care about replacing the fileheader with the new name or changing the column header in csv file.
    
    - #### MERGE INDEX
@@ -885,7 +891,6 @@ Users can specify which columns to include and exclude for local dictionary gene
      **NOTE:**
      * Merge index is supported on streaming table from carbondata 2.0.1 version.
      But streaming segments (ROW_V1) cannot create merge index.
-     * Rename column name is not supported for MAP type.
 
 
    - #### SET and UNSET

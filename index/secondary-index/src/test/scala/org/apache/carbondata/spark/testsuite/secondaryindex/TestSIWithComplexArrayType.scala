@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import scala.collection.mutable
+import scala.collection.mutable.WrappedArray.make
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
@@ -59,8 +59,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("insert into complextable select 4,array('India'),'g',array('iron','man','jarvis')")
 
     checkAnswer(sql("select * from complextable where array_contains(arr2,'iron')"),
-      Seq(Row("4", mutable.WrappedArray.make(Array("India")), "g",
-        mutable.WrappedArray.make(Array("iron", "man", "jarvis")))))
+      Seq(Row("4", make(Array("India")), "g", make(Array("iron", "man", "jarvis")))))
     val result1 = sql("select * from complextable where array_contains(arr2,'iron') and name='g'")
     val result2 = sql("select * from complextable where arr2[0]='iron' and name='f'")
     sql("create index index_11 on table complextable(arr2, name) as 'carbondata'")
@@ -87,6 +86,47 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     checkAnswer(result2, df2)
   }
 
+  test("Test restructured array<int> and existing string column as index columns on SI with compaction") {
+    sql("drop table if exists complextable")
+    sql("create table complextable (id string, name string, country array<string>) stored as carbondata")
+    sql("insert into complextable select 3,'f',array('china')")
+    sql("drop index if exists index_11 on complextable")
+    sql("ALTER TABLE complextable ADD COLUMNS(arr2 array<int>)")
+    sql("insert into complextable select 4,'g',array('India'),array(1)")
+    // change datatype
+    sql("alter table complextable change arr2 arr2 array<long>")
+    sql("insert into complextable select 3,'f',array('china'),array(26557544541,2)")
+    sql("insert into complextable select 4,'g',array('India'),array(26557544541,46557544541,3)")
+    checkAnswer(sql("select * from complextable where array_contains(arr2,3)"),
+      Seq(Row("4", "g", make(Array("India")), make(Array(26557544541L, 46557544541L, 3)))))
+    val result1 = sql("select * from complextable where array_contains(arr2,46557544541) and name='g'")
+    val result2 = sql("select * from complextable where arr2[0]=26557544541 and name='f'")
+    sql("create index index_11 on table complextable(arr2, name) as 'carbondata'")
+    sql("alter table complextable compact 'minor'")
+    val df1 = sql(" select * from complextable where array_contains(arr2,46557544541) and name='g'")
+    val df2 = sql(" select * from complextable where arr2[0]=26557544541 and name='f'")
+    if (!isFilterPushedDownToSI(df1.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    if (!isFilterPushedDownToSI(df2.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    val doNotHitSIDf = sql(
+      " select * from complextable where array_contains(arr2,26557544541) and array_contains" +
+      "(arr2,46557544541)")
+    if (isFilterPushedDownToSI(doNotHitSIDf.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result1, df1)
+    checkAnswer(result2, df2)
+  }
+
   test("Test restructured array<string> and string columns as index columns on SI with compaction") {
     sql("drop table if exists complextable")
     sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
@@ -102,8 +142,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("insert into complextable select 4,array('India'),'g',array('iron','man','jarvis'),'India'")
 
     checkAnswer(sql("select * from complextable where array_contains(arr2,'iron')"),
-      Seq(Row("4", mutable.WrappedArray.make(Array("India")), "g",
-        mutable.WrappedArray.make(Array("iron", "man", "jarvis")), "India")))
+      Seq(Row("4", make(Array("India")), "g", make(Array("iron", "man", "jarvis")), "India")))
     val result1 = sql("select * from complextable where array_contains(arr2,'iron') and addr='India'")
     val result2 = sql("select * from complextable where arr2[0]='iron' and addr='china'")
     sql("create index index_11 on table complextable(arr2, addr) as 'carbondata'")

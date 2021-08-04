@@ -89,10 +89,6 @@ public class CarbonColumn implements Serializable {
     return columnSchema.getDataType();
   }
 
-  public void setDataType(DataType dataType) {
-    columnSchema.setDataType(dataType);
-  }
-
   /**
    * @return the colName
    */

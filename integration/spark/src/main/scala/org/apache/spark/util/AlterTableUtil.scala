@@ -1125,14 +1125,12 @@ object AlterTableUtil {
         if (!old_column_name.equalsIgnoreCase(new_column_name)) {
           alteredColumnNamesMap += (oldDimensionInfo.getColName -> newDimensionInfo.columnName)
         }
-        if (old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.MAP) ||
-            new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.MAP)) {
-          throw new UnsupportedOperationException(
-            "Cannot alter complex structure that includes map type column")
-        } else if (new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.ARRAY) ||
+        if (new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.ARRAY) ||
                    old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.ARRAY) ||
                    new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.STRUCT) ||
-                   old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.STRUCT)) {
+                   old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.STRUCT) ||
+                   old_column_datatype.equalsIgnoreCase(CarbonCommonConstants.MAP) ||
+                   new_column_datatype.equalsIgnoreCase(CarbonCommonConstants.MAP)) {
           validateComplexStructure(oldDimensionInfo.getListOfChildDimensions.asScala.toList,
             newDimensionInfo.getChildren(), alteredColumnNamesMap, alteredDatatypesMap)
         }

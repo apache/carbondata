@@ -180,12 +180,12 @@ public class RestructureUtil {
         compareDatatypes(childDimension);
       }
     } else {
+      DataType newComplexChildDataType =
+          newComplexChildrenDatatypes.get(currentDimension.getColumnId());
       // insert datatypes only in case of primitive types, as only they are allowed to be altered.
-      if (newComplexChildrenDatatypes.get(currentDimension.getColumnId()) != null
-          && !(newComplexChildrenDatatypes.get(currentDimension.getColumnId())
+      if (newComplexChildDataType != null && !(newComplexChildDataType
           .equals(currentDimension.getDataType()))) {
-        currentDimension
-            .setDataType(newComplexChildrenDatatypes.get(currentDimension.getColumnId()));
+        currentDimension.getColumnSchema().setDataType(newComplexChildDataType);
       }
     }
   }

@@ -19,6 +19,8 @@ package org.apache.spark.carbondata.restructure.vectorreader
 
 import java.math.BigDecimal
 
+import scala.collection.mutable.WrappedArray.make
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -171,6 +173,48 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
     test_change_data_type()
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     test_change_data_type()
+  }
+
+  test("test alter change datatype for complex types") {
+    sql("drop table if exists test_rename")
+    sql("CREATE TABLE test_rename (name string) STORED AS carbondata")
+    // add complex columns
+    sql("alter table test_rename add columns(mapField1 MAP<int, int>, " +
+        "strField1 struct<a:int,b:decimal(5,2)>, arrField1 array<int>)")
+    sql("insert into test_rename values('df',map(5, 6),named_struct('a',1,'b', 123.45),array(1))")
+    // change datatype operation
+    sql("alter table test_rename change mapField1 mapField1 MAP<int, long>")
+    sql("alter table test_rename change strField1 strField1 struct<a:long,b:decimal(6,2)>")
+    sql("alter table test_rename change arrField1 arrField1 array<long>")
+    sql("insert into test_rename values('sdf',map(7, 26557544541)," +
+        "named_struct('a',26557544541,'b', 1234.45),array(26557544541))")
+    // add nested complex columns
+    sql("alter table test_rename add columns(mapField2 MAP<int, array<int>>, " +
+        "strField2 struct<a:int,b:MAP<int, int>>, arrField2 array<struct<a:int>>)")
+    sql("insert into test_rename values('df',map(7, 26557544541),named_struct" +
+        "('a',26557544541,'b', 1234.45),array(26557544541),map(5, array(1))," +
+        "named_struct('a',1,'b',map(5,6)),array(named_struct('a',1)))")
+    // change datatype operation at nested level
+    sql("alter table test_rename change mapField2 mapField2 MAP<int, array<long>>")
+    sql("alter table test_rename change strField2 strField2 struct<a:int,b:map<int,long>>")
+    sql("alter table test_rename change arrField2 arrField2 array<struct<a:long>>")
+    sql("insert into test_rename values('sdf',map(7, 26557544541),named_struct" +
+        "('a',26557544541,'b', 1234.45),array(26557544541),map(7, array(26557544541))," +
+        "named_struct('a',2,'b', map(7, 26557544541)),array(named_struct('a',26557544541)))")
+    sql("alter table test_rename compact 'minor'")
+    val result1 = java.math.BigDecimal.valueOf(123.45).setScale(2)
+    val result2 = java.math.BigDecimal.valueOf(1234.45).setScale(2)
+    checkAnswer(sql("select * from test_rename"),
+      Seq(
+        Row("df", Map(5 -> 6), Row(1, result1), make(Array(1)), null, null, null),
+        Row("sdf", Map(7 -> 26557544541L), Row(26557544541L, result2), make(Array(26557544541L)),
+          null, null, null),
+        Row("df", Map(7 -> 26557544541L), Row(26557544541L, result2), make(Array(26557544541L)),
+          Map(5 -> make(Array(1))), Row(1, Map(5 -> 6)), make(Array(Row(1)))),
+        Row("sdf", Map(7 -> 26557544541L), Row(26557544541L, result2), make(Array(26557544541L)),
+          Map(7 -> make(Array(26557544541L))), Row(2, Map(7 -> 26557544541L)),
+          make(Array(Row(26557544541L))))
+      ))
   }
 
   override def afterAll {

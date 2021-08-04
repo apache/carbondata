@@ -44,8 +44,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   private boolean isDirectDictionary;
 
-  private boolean altered = false;
-
   public PrimitiveQueryType(String name, String parentName, int columnIndex, DataType dataType,
       boolean isDirectDictionary) {
     super(name, parentName, columnIndex);
@@ -78,7 +76,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   @Override
   public void setParentName(String parentName) {
     this.parentName = parentName;
-
   }
 
   @Override
@@ -137,11 +134,15 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       size = dataBuffer.array().length;
     } else if (child.getDataType() == DataTypes.TIMESTAMP) {
       size = DataTypes.LONG.getSizeInBytes();
+    } else if (dataBuffer.remaining() == DataTypes.INT.getSizeInBytes() && child.getDataType()
+        .equals(DataTypes.LONG)) {
+      // When datatype has been altered,
+      // get the actual data loaded size and then convert to long type.
+      size = DataTypes.INT.getSizeInBytes();
     } else {
       size = child.getDataType().getSizeInBytes();
     }
     actualData = getDataObject(dataBuffer, size);
-
     return actualData;
   }
 
@@ -164,18 +165,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
           size = dataBuffer.getShort();
         }
       }
-      if (size == 8) {
-        if (this.dataType.equals(DataTypes.LONG) && dataBuffer.remaining() == 4) { // query str.a
-          this.dataType = DataTypes.INT;
-          size = 4;
-          altered = true;
-        }
-      } else if (size == 4) {
-        if (this.dataType.equals(DataTypes.LONG)) { // query str
-          this.dataType = DataTypes.INT;
-          altered = true;
-        }
-      }
       byte[] value = new byte[size];
       dataBuffer.get(value, 0, size);
       if (dataType == DataTypes.DATE) {
@@ -191,9 +180,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
         actualData = DataTypeUtil
             .getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType, true, getBytesData);
       }
-    }
-    if (altered) {
-      return (((Integer) actualData).longValue());
     }
     return actualData;
   }

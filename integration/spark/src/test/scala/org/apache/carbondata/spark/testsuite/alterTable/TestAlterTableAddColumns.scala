@@ -221,7 +221,6 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql("ALTER TABLE alter_com ADD COLUMNS(map1 Map<short,int>, map2 Map<long,double>, " +
         "map3 Map<decimal(3,2),string>, map4 Map<char(5),varchar(50)>, map5 Map<boolean,date>, " +
         "map6 Map<string,timestamp>)")
-    sql("")
     sql("insert into alter_com values(1, map(1,2),map(3,2.34), map(1.23,'hello')," +
         "map('abc','def'), map(true,'2017-02-01')," + "map('time','2018-02-01 02:00:00.0')) ")
     sql("select * from alter_com").show(false)
@@ -312,7 +311,6 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql(
       "insert into alter_com values(2,array(9,0),array(1,2,3),array('hello','world'),array(6,7)," +
       "array(8,9), named_struct('a',1,'b','abcde') )")
-    sql("select * from alter_com").show(false)
     checkAnswer(sql("select * from alter_com where array_contains(arr4,6)"),
       Seq(Row(2,
         make(Array(9, 0)),
