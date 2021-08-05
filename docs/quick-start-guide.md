@@ -161,12 +161,23 @@ Start Spark shell by running the following command in the Spark directory:
 ```
 ./bin/spark-shell --conf spark.sql.extensions=org.apache.spark.sql.CarbonExtensions --jars <carbondata assembly jar path>
 ```
+
+In this shell, SparkSession is readily available as `spark` and Spark context is readily available as `sc`.
+
+In order to create a SparkSession we will have to configure it explicitly in the following manner :
+
+* Import the following :
+
+```
+import org.apache.spark.sql.SparkSession
+```
+
 **NOTE** 
  - In this flow, we can use the built-in SparkSession `spark` instead of `carbon`.
    We also can create a new SparkSession instead of the built-in SparkSession `spark` if need. 
    It need to add "org.apache.spark.sql.CarbonExtensions" into spark configuration "spark.sql.extensions". 
    ```
-   SparkSession newSpark = SparkSession
+   val spark = SparkSession
      .builder()
      .config(sc.getConf)
      .enableHiveSupport
@@ -178,6 +189,8 @@ Start Spark shell by running the following command in the Spark directory:
 #### Executing Queries
 
 ###### Creating a Table
+**NOTE** :
+We use the built-in SparkSession `spark` in the following
 
 ```
 carbon.sql(
@@ -205,7 +218,9 @@ We suggest to use CarbonExtensions instead of CarbonSession.
 ###### Loading Data to a Table
 
 ```
-carbon.sql("LOAD DATA INPATH '/path/to/sample.csv' INTO TABLE test_table")
+carbon.sql("LOAD DATA INPATH '/local-path/sample.csv' INTO TABLE test_table")
+
+carbon.sql("LOAD DATA INPATH 'hdfs://hdfs-path/sample.csv' INTO TABLE test_table")
 ```
 
 **NOTE**: Please provide the real file path of `sample.csv` for the above script. 
@@ -250,10 +265,13 @@ carbon.sql(
 
 6. In Spark node[master], configure the properties mentioned in the following table in `$SPARK_HOME/conf/spark-defaults.conf` file.
 
-| Property                        | Value                                                        | Description                                                  |
-| ------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Property                   | Value                                                        | Description                                                  |
+| -------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | spark.driver.extraJavaOptions   | `-Dcarbon.properties.filepath = $SPARK_HOME/conf/carbon.properties` | A string of extra JVM options to pass to the driver. For instance, GC settings or other logging. |
 | spark.executor.extraJavaOptions | `-Dcarbon.properties.filepath = $SPARK_HOME/conf/carbon.properties` | A string of extra JVM options to pass to executors. For instance, GC settings or other logging. **NOTE**: You can enter multiple values separated by space. |
+
+
+**NOTE**: Please provide the real directory file path of "SPARK_HOME" instead of the "$SPARK_HOME" for the above script and there is no space on both sides of `=` in the 'Value' column.
 
 7. Verify the installation. For example:
 
@@ -298,8 +316,8 @@ mv carbondata.tar.gz carbonlib/
 
 4. Configure the properties mentioned in the following table in `$SPARK_HOME/conf/spark-defaults.conf` file.
 
-| Property                        | Description                                                  | Value                                                        |
-| ------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Property                        | Description                                                                                      | Value                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
 | spark.master                    | Set this value to run the Spark in yarn cluster mode.        | Set yarn-client to run the Spark in yarn cluster mode.       |
 | spark.yarn.dist.files           | Comma-separated list of files to be placed in the working directory of each executor. | `$SPARK_HOME/conf/carbon.properties`                         |
 | spark.yarn.dist.archives        | Comma-separated list of archives to be extracted into the working directory of each executor. | `$SPARK_HOME/carbonlib/carbondata.tar.gz`                    |
@@ -307,6 +325,8 @@ mv carbondata.tar.gz carbonlib/
 | spark.executor.extraClassPath   | Extra classpath entries to prepend to the classpath of executors. **NOTE**: If SPARK_CLASSPATH is defined in spark-env.sh, then comment it and append the values in below parameter spark.driver.extraClassPath | `carbondata.tar.gz/carbonlib/*`                              |
 | spark.driver.extraClassPath     | Extra classpath entries to prepend to the classpath of the driver. **NOTE**: If SPARK_CLASSPATH is defined in spark-env.sh, then comment it and append the value in below parameter spark.driver.extraClassPath. | `$SPARK_HOME/carbonlib/*`                                    |
 | spark.driver.extraJavaOptions   | A string of extra JVM options to pass to the driver. For instance, GC settings or other logging. | `-Dcarbon.properties.filepath = $SPARK_HOME/conf/carbon.properties` |
+
+**NOTE**: Please provide the real directory file path of "SPARK_HOME" instead of the "$SPARK_HOME" for the above script and there is no space on both sides of `=` in the 'Value' column.
 
 5. Verify the installation.
 
