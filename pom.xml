@@ -117,6 +117,7 @@
     <module>examples/spark</module>
     <module>examples/flink</module>
     <module>assembly</module>
+    <module>integration/trino</module>
   </modules>
 
   <properties>
