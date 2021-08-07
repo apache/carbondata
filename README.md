@@ -95,8 +95,9 @@ This guide document introduces [how to contribute to CarbonData](https://github.
 To get involved in CarbonData:
 
 * First join by emailing to [dev-subscribe@carbondata.apache.org](mailto:dev-subscribe@carbondata.apache.org), then you can discuss issues by emailing to [dev@carbondata.apache.org](mailto:dev@carbondata.apache.org). 
-  Or you can directly visit [Apache CarbonData Dev Mailing List archive](http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com/). If you do not already have an account, sign up [here](http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com/template/NamlServlet.jtp?macro=start_registration_page).
-
+  You can also directly visit [dev@carbondata.apache.org](https://lists.apache.org/list.html?dev@carbondata.apache.org). 
+  Or you can visit [Apache CarbonData Dev Mailing List archive](http://apache-carbondata-dev-mailing-list-archive.168.s1.nabble.com/). 
+  
 * Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA). If you do not already have an Apache JIRA account, sign up [here](https://issues.apache.org/jira/).
 
 * You can also slack to get in touch with the community. After we invite you, you can use this [Slack Link](https://carbondataworkspace.slack.com/) to sign in to CarbonData.
