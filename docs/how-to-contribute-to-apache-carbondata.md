@@ -7,13 +7,33 @@
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software 
     distributed under the License is distributed on an "AS IS" BASIS, 
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and 
     limitations under the License.
 -->
+
+- [How to contribute to Apache CarbonData](#how-to-contribute-to-apache-carbondata)
+  * [Engage](#engage)
+    + [Mailing list(s)](#mailing-list-s-)
+    + [Apache JIRA](#apache-jira)
+  * [Design](#design)
+  * [Code](#code)
+    + [Git config](#git-config)
+    + [Fork the repository on GitHub](#fork-the-repository-on-github)
+    + [Clone the repository locally](#clone-the-repository-locally)
+    + [Create a branch in your fork](#create-a-branch-in-your-fork)
+    + [Syncing and pushing your branch](#syncing-and-pushing-your-branch)
+    + [Testing](#testing)
+  * [Review](#review)
+    + [Create a pull request](#create-a-pull-request)
+    + [Code Review and Revision](#code-review-and-revision)
+    + [LGTM](#lgtm)
+    + [Deleting your branch (optional)](#deleting-your-branch--optional-)
+
+
 
 # How to contribute to Apache CarbonData
 
@@ -26,12 +46,16 @@ We use a review-then-commit workflow in CarbonData for all contributions.
 
 * Engage -> Design -> Code -> Review -> Commit
 
+  
+
 ## Engage
 
 ### Mailing list(s)
 
 We discuss design and implementation issues on dev@carbondata.apache.org Join by
-emailing dev-subscribe@carbondata.apache.org
+emailing dev-subscribe@carbondata.apache.org. 
+
+Or you can directly visit [Apache CarbonData Dev Mailing List archive](http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com/). If you do not already have an account, sign up [here](http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com/template/NamlServlet.jtp?macro=start_registration_page).
 
 ### Apache JIRA
 
@@ -55,35 +79,44 @@ For moderate or large contributions, you should not start coding or writing a de
 there is a corresponding JIRA issue assigned to you for that work. Simple changes,
 like fixing typos, do not require an associated issue.
 
-### Design
+
+
+
+
+## Design
 
 To clearly express your thoughts and get early feedback from other community members, we encourage you to clearly scope, document the design of non-trivial contributions and discuss with the CarbonData community before you start coding.
 
 Generally, the JIRA issue is the best place to gather relevant design docs, comments, or references. It’s great to explicitly include relevant stakeholders early in the conversation. For designs that may be generally interesting, we also encourage conversations on the developer’s mailing list.
 
-### Code
+
+
+
+
+## Code
 
 We use GitHub’s pull request functionality to review proposed code changes.
 If you do not already have a personal GitHub account, sign up [here](https://github.com).
 
 ### Git config
 
-Ensure to finish the below config(user.email, user.name) before starting PR works.
+Ensure to finish the below config (user.email, user.name) before starting PR works.
 ```
 $ git config --global user.email "you@example.com"
 $ git config --global user.name "Your Name"
 ```
 
-#### Fork the repository on GitHub
+### Fork the repository on GitHub
 
 Go to the [Apache CarbonData GitHub mirror](https://github.com/apache/carbondata) and
 fork the repository to your account.
 This will be your private workspace for staging changes.
 
-#### Clone the repository locally
+### Clone the repository locally
 
 You are now ready to create the development environment on your local machine.
 Clone CarbonData’s read-only GitHub mirror.
+
 ```
 $ git clone https://github.com/apache/carbondata.git
 $ cd carbondata
@@ -94,7 +127,7 @@ $ git remote add <GitHub_user> https://github.com/<GitHub_user>/carbondata.git
 ```
 You are now ready to start developing!
 
-#### Create a branch in your fork
+### Create a branch in your fork
 
 You’ll work on your contribution in a branch in your own (forked) repository. Create a local branch,
 initialized with the state of the branch you expect your changes to be merged into.
@@ -106,10 +139,11 @@ $ git checkout -b <my-branch> origin/master
 ```
 At this point, you can start making and committing changes to this branch in a standard way.
 
-#### Syncing and pushing your branch
+### Syncing and pushing your branch
 
 Periodically while you work, and certainly before submitting a pull request, you should update
 your branch with the most recent changes to the target branch.
+
 ```
 $ git pull --rebase
 ```
@@ -119,7 +153,7 @@ To push your local, committed changes to your (forked) repository on GitHub, run
 ```
 $ git push <GitHub_user> <my-branch>
 ```
-#### Testing
+### Testing
 
 All code should have appropriate unit testing coverage. New code should have new tests in the
 same contribution. Bug fixes should include a regression test to prevent the issue from reoccurring.
@@ -129,7 +163,11 @@ For contributions to the Java code, run unit tests locally via Maven.
 $ mvn clean verify
 ```
 
-### Review
+
+
+
+
+## Review
 
 Once the initial code is complete and the tests pass, it’s time to start the code review process.
 We review and discuss all code, no matter who authors it. It’s a great way to build community,
@@ -137,7 +175,7 @@ since you can learn from other developers, and they become familiar with your co
 It also builds a strong project by encouraging a high-quality bar and keeping code consistent
 throughout the project.
 
-#### Create a pull request
+### Create a pull request
 
 Organize your commits to make your reviewer’s job easier. Use the following command to
 re-order, squash, edit, or change description of individual commits.
@@ -161,7 +199,7 @@ If not, don’t worry, a committer will pick it up.
 Hi @<committer/reviewer name>, can you please take a look?
 ```
 
-#### Code Review and Revision
+### Code Review and Revision
 
 During the code review process, don’t rebase your branch or otherwise modify published commits,
 since this can remove existing comment history and be confusing to the reviewer,
@@ -170,7 +208,7 @@ When you make a revision, always push it into a new commit.
 Our GitHub mirror automatically provides pre-commit testing coverage using Jenkins.
 Please make sure those tests pass, the contribution cannot be merged otherwise.
 
-#### LGTM
+### LGTM
 Once the reviewer is happy with the change, they’ll respond with an LGTM ("looks good to me!").
 At this point, the committer will take over, possibly make some additional touch ups,
 and merge your changes into the codebase.
@@ -180,7 +218,7 @@ Just be sure to communicate clearly whose responsibility it is in this particula
 
 Thank you for your contribution to Apache CarbonData!
 
-#### Deleting your branch(optional)
+### Deleting your branch (optional)
 Once the pull request is merged into the Apache CarbonData repository, you can safely delete the
 branch locally and purge it from your forked repository.
 
