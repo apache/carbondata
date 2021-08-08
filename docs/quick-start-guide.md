@@ -95,7 +95,7 @@ STORED AS carbondata;
 ###### Loading Data to a Table
 
 ```
-LOAD DATA INPATH 'file:///local-path/sample.csv' INTO TABLE test_table;
+LOAD DATA INPATH '/local-path/sample.csv' INTO TABLE test_table;
 
 LOAD DATA INPATH 'hdfs://hdfs-path/sample.csv' INTO TABLE test_table;
 ```
@@ -177,7 +177,7 @@ import org.apache.spark.sql.SparkSession
    We also can create a new SparkSession instead of the built-in SparkSession `spark` if need. 
    It need to add "org.apache.spark.sql.CarbonExtensions" into spark configuration "spark.sql.extensions". 
    ```
-   val newSpark : SparkSession = SparkSession
+   val spark = SparkSession
      .builder()
      .config(sc.getConf)
      .enableHiveSupport
@@ -193,7 +193,7 @@ import org.apache.spark.sql.SparkSession
 We use the built-in SparkSession `spark` in the following
 
 ```
-spark.sql(
+carbon.sql(
            s"""
               | CREATE TABLE IF NOT EXISTS test_table(
               |   id string,
@@ -218,9 +218,9 @@ We suggest to use CarbonExtensions instead of CarbonSession.
 ###### Loading Data to a Table
 
 ```
-spark.sql("LOAD DATA INPATH 'file:///local-path/sample.csv' INTO TABLE test_table")
+carbon.sql("LOAD DATA INPATH '/local-path/sample.csv' INTO TABLE test_table")
 
-spark.sql("LOAD DATA INPATH 'hdfs://hdfs-path/sample.csv' INTO TABLE test_table")
+carbon.sql("LOAD DATA INPATH 'hdfs://hdfs-path/sample.csv' INTO TABLE test_table")
 ```
 
 **NOTE**: Please provide the real file path of `sample.csv` for the above script. 
@@ -229,9 +229,9 @@ If you get "tablestatus.lock" issue, please refer to [FAQ](faq.md)
 ###### Query Data from a Table
 
 ```
-spark.sql("SELECT * FROM test_table").show()
+carbon.sql("SELECT * FROM test_table").show()
 
-spark.sql(
+carbon.sql(
            s"""
               | SELECT city, avg(age), sum(age)
               | FROM test_table
@@ -271,7 +271,7 @@ spark.sql(
 | spark.executor.extraJavaOptions | `-Dcarbon.properties.filepath = $SPARK_HOME/conf/carbon.properties` | A string of extra JVM options to pass to executors. For instance, GC settings or other logging. **NOTE**: You can enter multiple values separated by space. |
 
 
-**NOTE**: Please provide the real directory file path of 'SPARK_HOME' instead of the '$SPARK_HOME' for the above script . 
+**NOTE**: Please provide the real directory file path of "SPARK_HOME" instead of the "$SPARK_HOME" for the above script and there is no space on both sides of `=` in the 'Value' column.
 
 7. Verify the installation. For example:
 
@@ -326,7 +326,7 @@ mv carbondata.tar.gz carbonlib/
 | spark.driver.extraClassPath     | Extra classpath entries to prepend to the classpath of the driver. **NOTE**: If SPARK_CLASSPATH is defined in spark-env.sh, then comment it and append the value in below parameter spark.driver.extraClassPath. | `$SPARK_HOME/carbonlib/*`                                    |
 | spark.driver.extraJavaOptions   | A string of extra JVM options to pass to the driver. For instance, GC settings or other logging. | `-Dcarbon.properties.filepath = $SPARK_HOME/conf/carbon.properties` |
 
-**NOTE**: Please provide the real directory file path of 'SPARK_HOME' instead of the '$SPARK_HOME' for the above script . 
+**NOTE**: Please provide the real directory file path of "SPARK_HOME" instead of the "$SPARK_HOME" for the above script and there is no space on both sides of `=` in the 'Value' column.
 
 5. Verify the installation.
 
