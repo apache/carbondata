@@ -1,0 +1,92 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# For more configuration details:
+# https://docs.codecov.io/docs/codecov-yaml
+
+# Check if this file is valid by running in bash:
+# curl -X POST --data-binary @.codecov.yml https://codecov.io/validate
+
+coverage:
+     precision: 2
+     round: down
+     range: "50...100"
+
+  # Ignoring Paths
+  # --------------
+  # which folders/files to ignore
+ignore:
+  - "examples/spark/src/main/resources"
+  -
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false  # if true: only post the comment if coverage changes
+  require_base: no        # [yes :: must have a base report to post]
+  require_head: no        # [yes :: must have a head report to post]
+  branches:               # https://docs.codecov.io/docs/pull-request-comments#branches
+    - "master"
+
+flags:
+  carbonassembly:
+    paths:
+      - assembly/src/main/
+  carbontools:
+    paths:
+      - tools/cli/src/main/
+  carboncommon:
+    paths:
+      - common/src/main/
+  carboncore:
+    paths:
+      - core/src/main/
+  carbonexamples:
+    paths:
+      - examples/spark/src/main/
+      - examples/flink/src/main/
+  carbonformat:
+    paths:
+      - format/src/main/
+  carbongeo:
+    paths:
+      - geo/src/main/
+  carbonhadoop:
+    paths:
+      - hadoop/src/main/
+  carbonmv:
+    paths:
+      - mv/plan/src/main/
+  carbonindex:
+    paths:
+      - index/bloom/src/main/
+      - index/examples/src/minmaxindex/main/
+      - index/lucene/src/main/
+  carbonintegration:
+    paths:
+      - integration/flink/src/main/
+      - integration/flink-build/src/main/
+      - integration/flink-proxy/src/main/
+      - integration/hive/src/main/
+      - integration/presto/src/main/
+      - integration/spark/src/main
+  carbonprocessing:
+    paths:
+      - processing/src/main/
+  carbonsdk:
+    paths:
+      - sdk/sdk/src/main/
+  carbonstreaming:
+    paths:
+      - streaming/src/main/
