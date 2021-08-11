@@ -744,7 +744,7 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>4.3.1</version>
+                <version>3.3.2</version>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
