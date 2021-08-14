@@ -79,7 +79,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val segmentManagement: Parser[LogicalPlan] =
     deleteSegmentByID | deleteSegmentByLoadDate | deleteStage | cleanFiles | addSegment |
-    showSegments
+    showSegments | deleteSegmentByRemainNumber
 
   protected lazy val restructure: Parser[LogicalPlan] = alterTableDropColumn
 
@@ -506,6 +506,14 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     opt(";") ^^ {
       case dbName ~ tableName ~ loadIds =>
         CarbonDeleteLoadByIdCommand(loadIds, dbName, tableName.toLowerCase())
+    }
+
+  protected lazy val deleteSegmentByRemainNumber: Parser[LogicalPlan] =
+    DELETE ~> FROM ~ TABLE ~> (ident <~ ".").? ~ ident ~
+      (EXPECT ~> (SEGMENT ~ "." ~ REMAIN_NUMBER) ~> "="  ~> number) <~
+      opt(";") ^^ {
+      case dbName ~ tableName ~ remaining =>
+        CarbonDeleteLoadByRemainNumberCommand(remaining, dbName, tableName.toLowerCase())
     }
 
   protected lazy val deleteSegmentByLoadDate: Parser[LogicalPlan] =
