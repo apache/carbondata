@@ -2527,9 +2527,9 @@ public final class CarbonCommonConstants {
 
   /**
    * Default value for SI segment Compaction / merge small files
-   * Making this true degrade the LOAD performance
+   * Making this true degrades the LOAD performance
    * When the number of small files increase for SI segments(it can happen as number of columns will
-   * be less and we store position id and reference columns), user an either set to true which will
+   * be less and we store position id and reference columns), user can either set to true which will
    * merge the data files for upcoming loads or run SI rebuild command which does this job for all
    * segments. (REBUILD INDEX <index_table>)
    */

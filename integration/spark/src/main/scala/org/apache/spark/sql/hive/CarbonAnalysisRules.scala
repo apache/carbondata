@@ -22,7 +22,7 @@ import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, Expression, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.command.LoadDataCommand
 import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.{CarbonPlanHelper, DMLHelper}
+import org.apache.spark.sql.types.NullType
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -267,17 +268,31 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
       child: LogicalPlan,
       containsMultipleInserts: Boolean): LogicalPlan = {
     val carbonDSRelation = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-    if (carbonDSRelation.carbonRelation.output.size > CarbonCommonConstants
+    val carbonTable = carbonDSRelation.carbonRelation.carbonTable
+    val tableProperties = carbonTable.getTableInfo.getFactTable.getTableProperties
+    val spatialProperty = tableProperties.get(CarbonCommonConstants.SPATIAL_INDEX)
+    val expectedOutput = carbonDSRelation.carbonRelation.output
+    if (expectedOutput.size > CarbonCommonConstants
       .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
       CarbonException.analysisException(
         s"Maximum number of columns supported: " +
           s"${CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS}")
     }
+    var newLogicalPlan = child
+    if (spatialProperty != null && !spatialProperty.isEmpty &&
+        child.output.size + 1 == expectedOutput.size) {
+      newLogicalPlan = child.transform {
+        // To support insert sql to automatically generate GeoId if customized input is not given.
+        case p: Project =>
+          val geoId = Alias(Literal(null, NullType).asInstanceOf[Expression], "NULL")()
+          val list = Seq(geoId) ++ p.projectList
+          Project(list, p.child)
+      }
+    }
     // In spark, PreprocessTableInsertion rule has below cast logic.
     // It was missed in carbon when implemented insert into rules.
-    val actualOutput = child.output
-    val expectedOutput = carbonDSRelation.carbonRelation.output
-    var newChildOutput = child.output.zip(expectedOutput)
+    val actualOutput = newLogicalPlan.output
+    var newChildOutput = newLogicalPlan.output.zip(expectedOutput)
       .map {
         case (actual, expected) =>
           if (expected.dataType.sameType(actual.dataType) &&
@@ -292,7 +307,7 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
               explicitMetadata = Option(expected.metadata))
           }
       } ++ actualOutput.takeRight(actualOutput.size - expectedOutput.size)
-    if (newChildOutput.size >= carbonDSRelation.carbonRelation.output.size ||
+    if (newChildOutput.size >= expectedOutput.size ||
         carbonDSRelation.carbonTable.isHivePartitionTable) {
       newChildOutput = newChildOutput.zipWithIndex.map { columnWithIndex =>
         columnWithIndex._1 match {
@@ -301,10 +316,10 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
           case attr => attr
         }
       }
-      val newChild: LogicalPlan = if (newChildOutput == child.output) {
+      val newChild: LogicalPlan = if (newChildOutput == newLogicalPlan.output) {
         throw new UnsupportedOperationException(s"Spark version $SPARK_VERSION is not supported")
       } else {
-        Project(newChildOutput, child)
+        Project(newChildOutput, newLogicalPlan)
       }
 
       val overwrite = CarbonReflectionUtils.getOverWriteOption("overwrite", p)

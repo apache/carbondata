@@ -62,7 +62,8 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
  import java.io.File
  import org.apache.spark.sql.{CarbonEnv, SparkSession}
  import org.apache.spark.sql.CarbonSession._
- import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
+ import org.apache.spark.sql.streaming.Trigger.ProcessingTime
+ import org.apache.spark.sql.streaming.StreamingQuery
  import org.apache.carbondata.core.util.path.CarbonTablePath
  import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
@@ -147,6 +148,8 @@ TBLPROPERTIES('streaming'='true')
  ```sql
  DESC FORMATTED streaming_table
  ```
+
+NOTE: Streaming table doesn't support alter table schema operations such as alter add column, drop column, rename column, change datatype and rename table name.
 
 ## Alter streaming property
 For an old table, use ALTER TABLE command to set the streaming property.

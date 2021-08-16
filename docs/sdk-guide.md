@@ -742,9 +742,7 @@ int i = 0;
 while (reader.hasNext()) {
     Object[] row = (Object[]) reader.readNextRow();
     System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
-        i, row[0], row[1], row[2], row[3], row[4], row[5],
-        new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000), row[8]
-    ));
+        i, row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]));
     i++;
 }
 
