@@ -91,6 +91,15 @@ Note:
 | SPATIAL_INDEX.xxx.conversionRatio | Conversion factor. It allows user to translate longitude and latitude to long. For example, if the data to load is longitude = 13.123456, latitude = 101.12356. User can configure conversion ratio sub-property value as 1000000, and change data to load as longitude = 13123456 and latitude = 10112356. Operations on long is much faster compared to floating-point numbers.|
 | SPATIAL_INDEX.xxx.class | Optional user custom implementation class. Value is fully qualified class name.|
 
+### Load/Insert
+Load/Insert with no geoId column, then geoId will be generated internally.
+```
+insert into source_index select 1,116.285807,40.084087;
+```
+Load/Insert with custom geoId
+```
+insert into source_index select 0, 1,116.285807,40.084087;
+```
 
 ### Select Query
 
