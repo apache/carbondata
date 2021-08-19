@@ -21,6 +21,7 @@ import scala.collection.mutable
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.sql.{CarbonThreadUtil, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, SqlBaseParser}
+import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkSqlAstBuilder, SparkSqlParser}
@@ -130,8 +131,30 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     val tableProperties = convertPropertiesToLowercase(properties)
 
     // validate partition clause
-    val partitionByStructFields = Option(partitionColumns).toSeq
-        .flatMap(x => visitPartitionFieldList(x)._2)
+    // There can be two scenarios for creating partition table with spark 3.1.
+    // Scenario 1: create partition columns with datatype.In this case we get struct fields from
+    // visitPartitionFieldList and the transform list is empty.
+    // Example syntax: create table example(col1 int) partitioned by(col2 int)
+    // Scenario 2: create partition columns using column names from schema. Then struct fields will
+    // be empty as datatype is not given and transform list consists of field references with
+    // partition column names. Search the names in table columns to extract the struct fields.
+    // Example syntax: create table example(col1 int, col2 int) partitioned by(col2)
+    var (partitionTransformList,
+    partitionByStructFields) = visitPartitionFieldList(partitionColumns)
+    if (partitionByStructFields.isEmpty && partitionTransformList.nonEmpty) {
+      val partitionNames = partitionTransformList
+        .flatMap(_.references().flatMap(_.fieldNames()))
+      partitionNames.foreach(partName => {
+        val structFiled = cols.find(x => x.name.equals(partName))
+        if (structFiled != None) {
+          partitionByStructFields = partitionByStructFields :+ structFiled.get
+        } else {
+          operationNotAllowed(s"Partition columns not specified in the schema: " +
+                              partitionNames.mkString("[", ",", "]")
+            , partitionColumns: PartitionFieldListContext)
+        }
+      })
+    }
     val partitionFields = CarbonToSparkAdapter.
       validatePartitionFields(partitionColumns, colNames, tableProperties,
       partitionByStructFields)

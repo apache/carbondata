@@ -233,17 +233,6 @@ trait SparkVersionAdapter {
     val partitionerFields = partitionByStructFields.map { structField =>
       PartitionerField(structField.name, Some(structField.dataType.toString), null)
     }
-    // validate partition clause
-    if (partitionerFields.nonEmpty) {
-      // partition columns should not be part of the schema
-      val badPartCols = partitionerFields.map(_.partitionColumn.toLowerCase).toSet
-        .intersect(colNames.map(_.toLowerCase).toSet)
-      if (badPartCols.nonEmpty) {
-        operationNotAllowed(s"Partition columns should not be specified in the schema: " +
-          badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]")
-          , partitionColumns: PartitionFieldListContext)
-      }
-    }
     partitionerFields
   }
 
@@ -280,7 +269,10 @@ trait SparkVersionAdapter {
     val options = new CarbonOption(properties)
     // validate streaming property
     validateStreamingProperty(options)
-    var fields = parser.getFields(cols ++ partitionByStructFields)
+    // with Spark 3.1, partitioned columns can be already present in schema.
+    // Check and remove from fields and add partition columns at last
+    val updatedCols = cols.filterNot(x => partitionByStructFields.contains(x))
+    var fields = parser.getFields(updatedCols ++ partitionByStructFields)
     // validate for create table as select
     selectQuery match {
       case Some(q) =>

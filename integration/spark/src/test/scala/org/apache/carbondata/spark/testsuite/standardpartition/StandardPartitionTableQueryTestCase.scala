@@ -532,6 +532,27 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists onlyPart")
   }
 
+  if (CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3,
+      CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3_DEFAULT).toBoolean) {
+    test("test create partition on existing table columns") {
+      sql("drop table if exists partitionTable")
+      sql("create table partitionTable(c1 int, c2 int, v1 string, v2 string) " +
+          "stored as carbondata partitioned by (v2,c2)")
+      val descTable = sql(s"describe formatted partitionTable").collect
+      descTable.find(_.get(0).toString.contains("Partition Columns")) match {
+        case Some(row) => assert(row.get(1).toString.contains("v2:STRING, c2:INT"))
+        case None => assert(false)
+      }
+      sql("insert into partitionTable select 1,'sd','sd',2")
+      sql("alter table partitionTable add partition (v2='ke', c2=3) location 'loc1'")
+      checkAnswer(sql("show partitions partitionTable"),
+        Seq(Row("v2=sd/c2=2"), Row("v2=ke/c2=3")))
+      checkAnswer(sql("select *from partitionTable"), Seq(Row(1, "sd", "sd", 2)))
+      sql("drop table if exists partitionTable")
+    }
+  }
+
   private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan
     val scanRDD = plan collect {
