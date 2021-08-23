@@ -48,6 +48,7 @@ import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
@@ -207,15 +208,22 @@ public final class TableIndex extends OperationEventListener {
       Map<Segment, List<Index>> indexes) throws IOException {
     Set<String> missingSISegments = filter.getMissingSISegments();
     for (Segment segment : segments) {
+      List<Index> segmentIndices = indexes.get(segment);
       if (segment == null ||
-          indexes.get(segment) == null || indexes.get(segment).isEmpty()) {
+          segmentIndices == null || segmentIndices.isEmpty()) {
         continue;
       }
       boolean isExternalOrMissingSISegment = segment.isExternalSegment() ||
           (missingSISegments != null && missingSISegments.contains(segment.getSegmentNo()));
       List<Blocklet> pruneBlocklets = new ArrayList<>();
-      SegmentProperties segmentProperties =
-          segmentPropertiesFetcher.getSegmentProperties(segment, partitionLocations);
+      SegmentProperties segmentProperties;
+      if (segmentIndices.get(0) instanceof BlockIndex) {
+        segmentProperties =
+            segmentPropertiesFetcher.getSegmentPropertiesFromIndex(segmentIndices.get(0));
+      } else {
+        segmentProperties =
+            segmentPropertiesFetcher.getSegmentProperties(segment, partitionLocations);
+      }
       if (filter.isResolvedOnSegment(segmentProperties)) {
         FilterExecutor filterExecutor;
         if (!isExternalOrMissingSISegment) {
@@ -227,7 +235,7 @@ public final class TableIndex extends OperationEventListener {
               .getFilterExecutorTree(filter.getExternalSegmentResolver(), segmentProperties, null,
                   table.getMinMaxCacheColumns(segmentProperties), false);
         }
-        for (Index index : indexes.get(segment)) {
+        for (Index index : segmentIndices) {
           if (!isExternalOrMissingSISegment) {
             pruneBlocklets.addAll(index
                 .prune(filter.getResolver(), segmentProperties, filterExecutor, this.table));
@@ -249,7 +257,7 @@ public final class TableIndex extends OperationEventListener {
               new IndexFilter(segmentProperties, table, expression).getExternalSegmentResolver(),
               segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
         }
-        for (Index index : indexes.get(segment)) {
+        for (Index index : segmentIndices) {
           if (!isExternalOrMissingSISegment) {
             pruneBlocklets.addAll(index.prune(
                 filter.getExpression(), segmentProperties, table, filterExecutor));
