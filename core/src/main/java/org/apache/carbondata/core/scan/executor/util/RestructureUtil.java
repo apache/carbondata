@@ -57,9 +57,6 @@ public class RestructureUtil {
   // existence of incoming query column by matching based on id.
   private static Map<String, String> existingTableColumnIDMap;
 
-  // Stores column-id -> new datatype, post alter change datatype command
-  private static Map<String, DataType> newComplexChildrenDatatypes;
-
   /**
    * Below method will be used to get the updated query dimension update
    * means, after restructuring some dimension will be not present in older
@@ -128,11 +125,12 @@ public class RestructureUtil {
               currentBlockDimension = new ProjectionDimension(queryDimension.getDimension());
             } else {
               currentBlockDimension = new ProjectionDimension(tableDimension);
-              newComplexChildrenDatatypes = new HashMap<>();
-              fillNewDatatypesForComplexChildren(queryDimension.getDimension());
-              compareDatatypes(currentBlockDimension.getDimension());
+              // for complex dimension update datatype, set scale and precision by traversing.
+              // Spark requires the resultant row with latest datatype,
+              // update the dimension here to collect the resultant rows with updated datatype.
+              fillNewDatatypesForComplexChildren(currentBlockDimension.getDimension(),
+                  queryDimension.getDimension());
             }
-            // TODO: for complex dimension set scale and precision by traversing
             // the child dimensions
             currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
             presentDimension.add(currentBlockDimension);
@@ -171,37 +169,41 @@ public class RestructureUtil {
     return presentDimension;
   }
 
-  public static void compareDatatypes(CarbonDimension currentDimension) {
-    if (currentDimension == null) {
-      return;
+  public static CarbonDimension getCarbonDimension(String columnId,
+      List<CarbonDimension> dimensions) {
+    CarbonDimension carbonDimension = null;
+    if (dimensions == null) {
+      return carbonDimension;
     }
-    if (currentDimension.isComplex()) {
-      for (CarbonDimension childDimension : currentDimension.getListOfChildDimensions()) {
-        compareDatatypes(childDimension);
-      }
-    } else {
-      DataType newComplexChildDataType =
-          newComplexChildrenDatatypes.get(currentDimension.getColumnId());
-      // insert datatypes only in case of primitive types, as only they are allowed to be altered.
-      if (newComplexChildDataType != null && !(newComplexChildDataType
-          .equals(currentDimension.getDataType()))) {
-        currentDimension.getColumnSchema().setDataType(newComplexChildDataType);
+    for (CarbonDimension dim : dimensions) {
+      if (dim.isComplex()) {
+        carbonDimension = getCarbonDimension(columnId, dim.getListOfChildDimensions());
+      } else if (dim.getColumnId().equalsIgnoreCase(columnId)) {
+        carbonDimension = dim;
+        break;
       }
     }
+    return carbonDimension;
   }
 
-  public static void fillNewDatatypesForComplexChildren(CarbonDimension tableDimension) {
+  public static void fillNewDatatypesForComplexChildren(CarbonDimension currentDimension,
+      CarbonDimension tableDimension) {
     if (tableDimension.getListOfChildDimensions() == null) {
       return;
-    } else {
-      for (CarbonDimension childDimension : tableDimension.getListOfChildDimensions()) {
-        if (childDimension.getDataType().isComplexType()) {
-          fillNewDatatypesForComplexChildren(childDimension);
-        } else {
-          // insert new datatypes only in case of primitive types, as they are allowed to be
-          // altered.
-          newComplexChildrenDatatypes
-              .put(childDimension.getColumnId(), childDimension.getDataType());
+    }
+    for (CarbonDimension childDimension : tableDimension.getListOfChildDimensions()) {
+      if (childDimension.getDataType().isComplexType()) {
+        fillNewDatatypesForComplexChildren(currentDimension, childDimension);
+      } else {
+        // only in case of primitive types, datatype is allowed to be altered.
+        // Find and update the current block dimension datatype.
+        CarbonDimension currentChildDimension = getCarbonDimension(childDimension.getColumnId(),
+            currentDimension.getListOfChildDimensions());
+        if (currentChildDimension != null) {
+          ColumnSchema currentSchema = currentChildDimension.getColumnSchema();
+          currentSchema.setDataType(childDimension.getDataType());
+          currentSchema.setPrecision(childDimension.getColumnSchema().getPrecision());
+          currentSchema.setScale(childDimension.getColumnSchema().getScale());
         }
       }
     }

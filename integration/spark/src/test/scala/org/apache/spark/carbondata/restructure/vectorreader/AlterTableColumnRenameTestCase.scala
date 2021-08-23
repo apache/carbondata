@@ -319,7 +319,11 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql("alter table test_rename change map4 map4 map<string,struct<b2:long>>")
     sql("insert into test_rename values (map(1,2), map('a',array(1,2)), " +
         "map(2,map('hello',1)), map('hi',named_struct('b',26557544541)))")
-    sql("alter table test_rename compact 'minor'")
+    checkAnswer(sql("describe test_rename"),
+      Seq(Row("map11", "map<int,int>", null),
+        Row("map22", "map<string,array<int>>", null),
+        Row("map3", "map<int,map<string,int>>", null),
+        Row("map4", "map<string,struct<b2:bigint>>", null)))
     checkAnswer(sql("select map4['hi']['b2'] from test_rename"),
       Seq(Row(3), Row(3), Row(3), Row(26557544541L)))
   }
@@ -337,7 +341,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     // rename child column
     sql("alter table test_rename change str1 str2 struct<a3:long>")
     sql("insert into test_rename values(named_struct('a3', 26557544541))")
-    sql("alter table test_rename compact 'minor'")
+    checkAnswer(sql("describe test_rename"), Seq(Row("str2", "struct<a3:bigint>", null)))
     checkAnswer(sql("select str2 from test_rename"),
       Seq(Row(Row(1234L)), Row(Row(3456L)), Row(Row(26557544541L)), Row(Row(26557544541L))))
   }
@@ -354,7 +358,9 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     // both rename and change datatype operation
     sql("alter table test_rename change mapField2 mapField3 MAP<int, long>")
     sql("insert into test_rename values('sdf',map(7, 26557544541))")
-    sql("alter table test_rename compact 'minor'")
+    sql("describe test_rename").show(false)
+    checkAnswer(sql("describe test_rename"),
+      Seq(Row("name", "string", null), Row("mapfield3", "map<int,bigint>", null)))
     checkAnswer(sql("select mapField3 from test_rename"),
       Seq(Row(Map(1 -> 2L)), Row(Map(3 -> 4L)), Row(Map(5 -> 6L)), Row(Map(7 -> 26557544541L))))
   }
@@ -370,7 +376,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     // both rename and change datatype operation
     sql("alter table test_rename change arr1 arr2 array<long>")
     sql("insert into test_rename values(array(26557544541,3,46557544541))")
-    sql("alter table test_rename compact 'minor'")
+    checkAnswer(sql("describe test_rename"), Seq(Row("arr2", "array<bigint>", null)))
     checkAnswer(sql("select arr2 from test_rename"),
       Seq(Row(make(Array(1, 2, 3))), Row(make(Array(4, 5, 6))), Row(make(Array(7, 8, 9))),
         Row(make(Array(26557544541L, 3, 46557544541L)))))
@@ -396,6 +402,11 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into test_rename values(named_struct('a', 1234.45),map(2, 1234.45)," +
         "map(2, named_struct('a2', 1234.45)),array(1234.45))")
     sql("alter table test_rename compact 'minor'")
+    checkAnswer(sql("describe test_rename"),
+      Seq(Row("strfield1", "struct<a1:decimal(6,2)>", null),
+        Row("mapfield11", "map<int,decimal(6,2)>", null),
+        Row("mapfield22", "map<int,struct<a2:decimal(6,2)>>", null),
+        Row("arrfield1", "array<decimal(6,2)>", null)))
     val result1 = java.math.BigDecimal.valueOf(123.45).setScale(2)
     val result2 = java.math.BigDecimal.valueOf(1234.45).setScale(2)
     checkAnswer(sql("select strField1,mapField11,mapField22,arrField1 from test_rename"),

@@ -264,7 +264,7 @@ class AlterTableColumnSchemaGenerator(
       allColumns: mutable.Buffer[ColumnSchema],
       longStringCols: mutable.Buffer[ColumnSchema],
       currentSchemaOrdinal: Int): Unit = {
-    if (currField.children.get == null || currField.children.size == 0) {
+    if (currField.children.get == null || currField.children.isEmpty) {
       return
     }
     if (DataTypes.isArrayType(currColumnSchema.getDataType) ||
@@ -272,8 +272,7 @@ class AlterTableColumnSchemaGenerator(
         DataTypes.isMapType(currColumnSchema.getDataType)) {
       val noOfChildren = currField.children.get.size
       currColumnSchema.setNumberOfChild(noOfChildren)
-      for (i <- 0 to noOfChildren - 1) {
-        val childField = currField.children.get(i)
+      currField.children.get.foreach(childField => {
         val childSchema: ColumnSchema = createChildSchema(childField, currentSchemaOrdinal)
         if (childSchema.getDataType == DataTypes.VARCHAR) {
           // put the new long string columns in 'longStringCols'
@@ -285,7 +284,7 @@ class AlterTableColumnSchemaGenerator(
         newCols ++= Seq(childSchema)
         addComplexChildCols(childField, childSchema, newCols, allColumns, longStringCols,
           currentSchemaOrdinal)
-      }
+      })
     }
   }
 

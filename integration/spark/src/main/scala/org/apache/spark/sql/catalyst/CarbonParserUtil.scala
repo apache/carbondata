@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql.catalyst
 
-import scala.:+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, ListBuffer, Map}
@@ -1131,13 +1130,13 @@ object CarbonParserUtil {
         for (childField <- complexField.children.get) {
           val childType = childField.dataType
           val childName = columnName + CarbonCommonConstants.POINT + childField.column
-          val childValues = if (childType.get.contains(CarbonCommonConstants.DECIMAL)) {
-            val decimalInfo = ("""\d+""".r findAllIn childType.get).toList
-            Some(List((decimalInfo(0).toInt, decimalInfo(1).toInt)))
+          val decimalValues = if (childType.get.contains(CarbonCommonConstants.DECIMAL)) {
+            // If datatype is decimal, extract its precision and scale.
+            Some(List(CommonUtil.getScaleAndPrecision(childType.get)))
           } else {
             None
           }
-          val childDatatypeInfo = parseDataType(childName, childField, childValues)
+          val childDatatypeInfo = parseDataType(childName, childField, decimalValues)
           if (childTypeInfoList == null) {
             childTypeInfoList = List(childDatatypeInfo)
           } else {
@@ -1203,22 +1202,16 @@ object CarbonParserUtil {
       case arrayType: ArrayType =>
         val childType: DataType = arrayType.elementType
         val childName = columnName + ".val"
-        val childValues = childType match {
-          case d: DecimalType => Some(List((d.precision, d.scale)))
-          case _ => None
-        }
-        val childDatatypeInfo = parseColumn(childName, childType, childValues)
+        val decimalValues = getDecimalValues(childType)
+        val childDatatypeInfo = parseColumn(childName, childType, decimalValues)
         dataTypeInfo.setChildren(List(childDatatypeInfo))
       case structType: StructType =>
         var childTypeInfoList: List[DataTypeInfo] = null
         for (childField <- structType) {
           val childType = childField.dataType
           val childName = columnName + CarbonCommonConstants.POINT + childField.name
-          val childValues = childType match {
-            case d: DecimalType => Some(List((d.precision, d.scale)))
-            case _ => None
-          }
-          val childDatatypeInfo = CarbonParserUtil.parseColumn(childName, childType, childValues)
+          val decimalValues = getDecimalValues(childType)
+          val childDatatypeInfo = CarbonParserUtil.parseColumn(childName, childType, decimalValues)
           if (childTypeInfoList == null) {
             childTypeInfoList = List(childDatatypeInfo)
           } else {
@@ -1232,22 +1225,25 @@ object CarbonParserUtil {
         var childTypeInfoList: List[DataTypeInfo] = List()
         val childName1 = columnName + ".key"
         val childName2 = columnName + ".value"
-        val keyTypeValues = keyType match {
-          case d: DecimalType => Some(List((d.precision, d.scale)))
-          case _ => None
-        }
-        val valTypeValues = valType match {
-          case d: DecimalType => Some(List((d.precision, d.scale)))
-          case _ => None
-        }
-        val childDatatypeInfo1 = CarbonParserUtil.parseColumn(childName1, keyType, keyTypeValues)
-        val childDatatypeInfo2 = CarbonParserUtil.parseColumn(childName2, valType, valTypeValues)
+        val keyTypeDecimalValues = getDecimalValues(keyType)
+        val valTypeDecimalValues = getDecimalValues(valType)
+        val childDatatypeInfo1 = CarbonParserUtil.parseColumn(childName1,
+          keyType, keyTypeDecimalValues)
+        val childDatatypeInfo2 = CarbonParserUtil.parseColumn(childName2,
+          valType, valTypeDecimalValues)
         childTypeInfoList = childTypeInfoList :+ childDatatypeInfo1
         childTypeInfoList = childTypeInfoList :+ childDatatypeInfo2
         dataTypeInfo.setChildren(childTypeInfoList)
       case _ =>
     }
     dataTypeInfo
+  }
+
+  def getDecimalValues(inputType: DataType): Option[List[(Int, Int)]] = {
+    inputType match {
+      case d: DecimalType => Some(List((d.precision, d.scale)))
+      case _ => None
+    }
   }
 
   def checkFieldDefaultValue(fieldName: String, defaultValueColumnName: String): Boolean = {

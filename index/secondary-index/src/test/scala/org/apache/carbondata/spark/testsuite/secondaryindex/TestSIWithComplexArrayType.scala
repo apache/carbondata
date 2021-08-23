@@ -95,7 +95,7 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("insert into complextable select 4,'g',array('India'),array(1)")
     // change datatype
     sql("alter table complextable change arr2 arr2 array<long>")
-    sql("insert into complextable select 3,'f',array('china'),array(26557544541,2)")
+    sql("insert into complextable select 3,'f',array('china'),array(26557544541,null)")
     sql("insert into complextable select 4,'g',array('India'),array(26557544541,46557544541,3)")
     checkAnswer(sql("select * from complextable where array_contains(arr2,3)"),
       Seq(Row("4", "g", make(Array("India")), make(Array(26557544541L, 46557544541L, 3)))))
@@ -126,6 +126,30 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     checkAnswer(result1, df1)
     checkAnswer(result2, df2)
   }
+
+  test("Test restructured array<timestamp> as index column on SI with compaction") {
+    sql("drop table if exists complextable")
+    sql("create table complextable (name string, time date) stored as carbondata")
+    sql("insert into complextable select 'b', '2017-02-01'")
+    sql("ALTER TABLE complextable ADD COLUMNS(projectdate array<timestamp>)")
+    sql("insert into complextable select 'b', '2017-02-01',array('2017-02-01 00:01:00','')")
+    sql("drop index if exists index_1 on complextable")
+    sql("insert into complextable select 'b', '2017-02-01',array('2017-02-01 00:01:00','2018-02-01 02:00:00')")
+    sql("insert into complextable select 'b', '2017-02-01',array(null,'2018-02-01 02:00:00')")
+    sql("insert into complextable select 'b', '2017-02-01',null")
+    val result = sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01 00:01:00' as timestamp))")
+    sql("create index index_1 on table complextable(projectdate) as 'carbondata'")
+    sql("alter table complextable compact 'minor'")
+    val df = sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01 00:01:00' as timestamp))")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+  }
+
+
 
   test("Test restructured array<string> and string columns as index columns on SI with compaction") {
     sql("drop table if exists complextable")

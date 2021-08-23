@@ -372,6 +372,9 @@ public class SecondaryIndexQueryResultProcessor {
       }
       return new byte[0];
     } else if (data[0] == null) {
+      if (DataTypeUtil.isPrimitiveColumn(dataType)) {
+        return null;
+      }
       return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
     if (dataType == DataTypes.TIMESTAMP && null != data[index]) {

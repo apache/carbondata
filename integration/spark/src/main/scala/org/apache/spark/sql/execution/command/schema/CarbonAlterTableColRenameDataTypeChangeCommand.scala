@@ -39,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.events.{AlterTableColRenameAndDataTypeChangePostEvent, AlterTableColRenameAndDataTypeChangePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{ColumnSchema, DataType, SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.spark.util.DataTypeConverterUtil
+import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
 
 abstract class CarbonAlterTableColumnRenameCommand(oldColumnName: String, newColumnName: String)
   extends MetadataCommand {
@@ -81,7 +81,9 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
   // stores mapping of altered column names: old-column-name -> new-column-name.
   // Including both parent/table and children columns
   val alteredColumnNamesMap = collection.mutable.LinkedHashMap.empty[String, String]
-  val alteredDatatypesMap = collection.mutable.LinkedHashMap.empty[String, DataTypeInfo]
+  // stores mapping of altered column data types: old-column-name -> new-column-datatype.
+  // Including both parent/table and children columns
+  val alteredDatatypesMap = collection.mutable.LinkedHashMap.empty[String, String]
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -165,8 +167,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
              newColumnScale)) {
           isDataTypeChange = true
         }
-        if (DataTypes.isArrayType(oldDatatype) || DataTypes.isStructType(oldDatatype) ||
-            DataTypes.isMapType(oldDatatype)) {
+        if (oldDatatype.isComplexType) {
           val oldParent = oldCarbonColumn.head
           val oldChildren = oldParent.asInstanceOf[CarbonDimension].getListOfChildDimensions.asScala
             .toList
@@ -294,13 +295,14 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
             }
           }
           // check if datatype is altered
-          if(!alteredDatatypesMap.isEmpty && alteredDatatypesMap.get(columnName)!= None) {
+          if (!alteredDatatypesMap.isEmpty && alteredDatatypesMap.get(columnName) != None) {
             val newDatatype = alteredDatatypesMap.get(columnName).get
-            if (newDatatype.dataType.equals(CarbonCommonConstants.LONG)) {
+            if (newDatatype.equals(CarbonCommonConstants.LONG)) {
               columnSchema.setData_type(DataType.LONG)
-            } else if (newDatatype.dataType.equals(CarbonCommonConstants.DECIMAL)) {
-              columnSchema.setPrecision(newDatatype.precision)
-              columnSchema.setScale(newDatatype.scale)
+            } else if (newDatatype.contains(CarbonCommonConstants.DECIMAL)) {
+              val (newPrecision, newScale) = CommonUtil.getScaleAndPrecision(newDatatype)
+              columnSchema.setPrecision(newPrecision)
+              columnSchema.setScale(newScale)
             }
             isSchemaEntryRequired = true
           }

@@ -26,6 +26,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
 
@@ -184,6 +185,13 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
     sql("insert into test_rename values('df',map(5, 6),named_struct('a',1,'b', 123.45),array(1))")
     // change datatype operation
     sql("alter table test_rename change mapField1 mapField1 MAP<int, long>")
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table test_rename change strField1 strField1 struct<a:long,b:decimal(3,2)>")
+    }.getMessage
+      .contains(
+        "operation failed for default.test_rename: Alter table data type change or column rename " +
+        "operation failed: Given column strfield1.b cannot be modified. Specified precision value" +
+        " 3 should be greater than current precision value 5"))
     sql("alter table test_rename change strField1 strField1 struct<a:long,b:decimal(6,2)>")
     sql("alter table test_rename change arrField1 arrField1 array<long>")
     sql("insert into test_rename values('sdf',map(7, 26557544541)," +

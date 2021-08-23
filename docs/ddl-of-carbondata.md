@@ -775,7 +775,6 @@ CarbonData DDL statements are documented here,which includes:
      ```
      ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DEFAULT.VALUE.a1'='10')
      ```
-      Adding of single-level and nested level of Complex datatype columns is supported.
 
       ```
       ALTER TABLE <table-name> ADD COLUMNS(arrField array<array<int>>, structField struct<id1:string,name1:string>, mapField map<string,array<string>>)
@@ -866,13 +865,36 @@ Users can specify which columns to include and exclude for local dictionary gene
      ALTER TABLE test_db.carbon CHANGE oldArray newArray array<int>
      ```
 
-     Example 7: Change column name in column: mapField map\<int, int> from mapField to mapField1.
+     Example 7: Change column name in column: oldMapCol map\<int, int> from oldMapCol to newMapCol.
 
      ```
-     ALTER TABLE test_db.carbon CHANGE mapField mapField1 map<int, int>
+     ALTER TABLE test_db.carbon CHANGE oldMapCol newMapCol map<int, int>
      ```
 
-     **NOTE:** Once the column is renamed, user has to take care about replacing the fileheader with the new name or changing the column header in csv file.
+     Example 8: Change child column type in column: structField struct\<id:int> from int to long.
+
+     ```
+     ALTER TABLE test_db.carbon CHANGE structField structField struct<id:long>
+     ```
+
+     Example 9: Change column name and type in column: oldArray array\<int> from oldArray to newArray and int to long.
+
+     ```
+     ALTER TABLE test_db.carbon CHANGE oldArray newArray array<long>
+     ```
+     Example 10: Change column name and type in column: oldMapCol map\<int, decimal(5,2)> from oldMapCol to newMapCol and decimal(5,2) to decimal(6,2).
+
+     ```
+     ALTER TABLE test_db.carbon CHANGE oldMapCol newMapCol map<int, decimal(6,2)>
+     ```
+
+     Example 11: Change column name and type at nested level of column: structFiled struct\<a:int,b:map\<int,int>> from b to b2 and int to long.
+
+     ```
+     ALTER TABLE test_db.carbon CHANGE structFiled structFiled struct<a:int,b2:map<int,long>>
+     ```
+
+     **NOTE:** Once the column is renamed, user has to take care about replacing the file header with the new name or changing the column header in csv file.
    
    - #### MERGE INDEX
 
