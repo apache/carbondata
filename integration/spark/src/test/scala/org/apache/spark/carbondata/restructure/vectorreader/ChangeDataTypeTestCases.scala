@@ -19,11 +19,15 @@ package org.apache.spark.carbondata.restructure.vectorreader
 
 import java.math.BigDecimal
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
 class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
 
@@ -101,6 +105,56 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
     test_change_int_and_load()
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     test_change_int_and_load()
+  }
+
+  test("test change int datatype of range column and load data") {
+    beforeAll
+    sql("CREATE TABLE changedatatypetest (ID Int, date Timestamp, country String," +
+        " name String, phonetype String, serialname String, salary Int) STORED AS carbondata" +
+        " TBLPROPERTIES ('range_column'='salary')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE changedatatypetest")
+    sql("ALTER TABLE changedatatypetest CHANGE salary salary BIGINT")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE changedatatypetest")
+    checkAnswer(sql("SELECT count(*) FROM changedatatypetest"), Row(200))
+    afterAll
+  }
+
+  test("test change int datatype for bucket column and load data") {
+    beforeAll
+    sql("CREATE TABLE changedatatypetest (ID Int, date Timestamp, country String," +
+      " name String, phonetype String, serialname String, salary Int) STORED AS carbondata" +
+      " TBLPROPERTIES ('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='salary')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE changedatatypetest")
+    sql("ALTER TABLE changedatatypetest CHANGE salary salary BIGINT")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE changedatatypetest")
+    checkAnswer(sql("SELECT count(*) FROM changedatatypetest"), Row(200))
+    afterAll
+  }
+
+  test("perform compaction after altering datatype of bucket column") {
+    beforeAll
+    sql("CREATE TABLE changedatatypetest (ID Int, date Timestamp, country String," +
+        " name String, phonetype String, serialname String, salary Int) STORED AS carbondata" +
+        " TBLPROPERTIES ('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='salary')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE changedatatypetest")
+    sql("ALTER TABLE changedatatypetest CHANGE salary salary BIGINT")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE changedatatypetest")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE changedatatypetest")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE changedatatypetest")
+    sql("ALTER TABLE changedatatypetest COMPACT 'minor'").collect()
+    checkAnswer(sql("SELECT count(*) FROM changedatatypetest"), Row(400))
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME, "changedatatypetest")
+    val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+    val segmentStatusManager: SegmentStatusManager =
+      new SegmentStatusManager(absoluteTableIdentifier)
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala
+      .map(_.getSegmentNo)
+      .toList
+    assert(segments.contains("0.1"))
+    assert(!segments.contains("0"))
+    assert(!segments.contains("1"))
+    afterAll
   }
 
   test("test change decimal datatype and compaction") {
