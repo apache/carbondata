@@ -267,9 +267,7 @@ class AlterTableColumnSchemaGenerator(
     if (currField.children.get == null || currField.children.isEmpty) {
       return
     }
-    if (DataTypes.isArrayType(currColumnSchema.getDataType) ||
-        DataTypes.isStructType(currColumnSchema.getDataType) ||
-        DataTypes.isMapType(currColumnSchema.getDataType)) {
+    if (currColumnSchema.getDataType.isComplexType) {
       val noOfChildren = currField.children.get.size
       currColumnSchema.setNumberOfChild(noOfChildren)
       currField.children.get.foreach(childField => {

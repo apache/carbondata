@@ -294,7 +294,7 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
       sql("insert into alter_struct values(1, named_struct('id1', 'id1','name1','name1'))")
       sql("ALTER TABLE alter_struct ADD COLUMNS(struct1 struct<a:string,b:string>, temp string," +
           " intField int, struct2 struct<c:string,d:string,e:int>, arr array<int>) TBLPROPERTIES " +
-          "('LOCAL_DICTIONARY_INCLUDE'='struct1, struct2')")
+          s"('$dictionary'='struct1, struct2')")
       val schema = sql("describe alter_struct").collect()
       assert(schema.size == 7)
     }

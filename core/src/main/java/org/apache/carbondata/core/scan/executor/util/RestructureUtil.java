@@ -125,13 +125,12 @@ public class RestructureUtil {
               currentBlockDimension = new ProjectionDimension(queryDimension.getDimension());
             } else {
               currentBlockDimension = new ProjectionDimension(tableDimension);
-              // for complex dimension update datatype, set scale and precision by traversing.
-              // Spark requires the resultant row with latest datatype,
+              // for complex dimension update datatype, set scale and precision by traversing
+              // the child dimensions. Spark requires the resultant row with latest datatype,
               // update the dimension here to collect the resultant rows with updated datatype.
               fillNewDatatypesForComplexChildren(currentBlockDimension.getDimension(),
                   queryDimension.getDimension());
             }
-            // the child dimensions
             currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
