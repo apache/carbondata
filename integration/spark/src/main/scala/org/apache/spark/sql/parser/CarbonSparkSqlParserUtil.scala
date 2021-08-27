@@ -215,10 +215,6 @@ object CarbonSparkSqlParserUtil {
       table.identifier.table.toLowerCase()
     )
     val tableInfo = if (isExternal) {
-      if (partitionColumnNames.nonEmpty) {
-        throw new MalformedCarbonCommandException(
-          "Partition is not supported for external table")
-      }
       // read table info from schema file in the provided table path
       val tableInfo = {
         try {
