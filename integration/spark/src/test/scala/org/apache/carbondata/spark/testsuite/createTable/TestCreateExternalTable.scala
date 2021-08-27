@@ -19,7 +19,8 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.File
 
-import org.apache.spark.sql.{AnalysisException, CarbonEnv}
+import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -76,19 +77,22 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
            |STORED AS carbondata
            |LOCATION '$storeLocation/origin'
        """.stripMargin)
-      checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
-
-      checkExistence(sql("describe formatted source"), true, storeLocation + "/origin")
-
-      val carbonTable = CarbonEnv.getCarbonTable(None, "source")(sqlContext.sparkSession)
-      assert(carbonTable.isExternalTable)
-
-      sql("DROP TABLE IF EXISTS source")
-
-      // DROP TABLE should not delete data
-      assert(new File(originDataPath).exists())
-
+      verifyResult()
     }
+  }
+
+  private def verifyResult(): Unit = {
+    checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
+
+    checkExistence(sql("describe formatted source"), true, storeLocation + "/origin")
+
+    val carbonTable = CarbonEnv.getCarbonTable(None, "source")(sqlContext.sparkSession)
+    assert(carbonTable.isExternalTable)
+
+    sql("DROP TABLE IF EXISTS source")
+
+    // DROP TABLE should not delete data
+    assert(new File(originDataPath).exists())
   }
 
   ignore("create external table with specified schema") {
@@ -144,6 +148,66 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
     sql(s"""CREATE EXTERNAL TABLE rsext STORED AS carbondata LOCATION '$storeLocation/rstest1'""")
     sql("insert into rsext select 'shahid', 1")
     checkAnswer(sql("select * from rstest1"), sql("select * from rsext"))
+  }
+
+  test("create external table and non-external table on partition table with location") {
+    sql("set hive.exec.dynamic.partition.mode=nonstrict")
+    sql("drop table if exists origin")
+    // create carbon table and insert data
+    sql("CREATE TABLE origin(a int, b string) partitioned by (c string) STORED AS carbondata")
+    sql("INSERT INTO origin select 100,'spark','test1'")
+    sql("INSERT INTO origin select 200,'hive','test2'")
+
+    // test external table with partition by with location
+    sql("drop table if exists source")
+      sql(
+        s"""
+           |CREATE EXTERNAL TABLE source(a int, b string) partitioned by (c string)
+           |stored as carbondata
+           |LOCATION '$storeLocation/origin'
+       """.stripMargin)
+    verifyResult()
+
+    // test table with partition by with location
+    sql("drop table if exists source")
+    sql(
+      s"""
+         |CREATE TABLE source(a int, b string) partitioned by (c string)
+         |stored as carbondata
+         |LOCATION '$storeLocation/origin'
+       """.stripMargin)
+    FileUtils.deleteDirectory(new File( s"$storeLocation/origin1"))
+    val newStoreLocation = s"$storeLocation/origin1"
+    FileUtils.copyDirectory(new File(s"$storeLocation/origin/c=test1"), new File(newStoreLocation))
+    verifyResult()
+
+    // test without any schema file in location specified
+    sql("drop table if exists source")
+    sql(
+      s"""
+         |CREATE TABLE source(a int, b string) partitioned by (c string)
+         |stored as carbondata
+         |LOCATION '$newStoreLocation'
+       """.stripMargin)
+    checkAnswer(sql("select * from source"), Seq(Row(100, "spark", "test1")))
+    sql("drop table if exists source")
+
+    // test with empty directory
+    FileUtils.deleteDirectory(new File( s"$storeLocation/origin1"))
+    sql("drop table if exists source")
+    sql(
+      s"""
+         |CREATE TABLE source(a int, b string) partitioned by (c string)
+         |stored as carbondata
+         |LOCATION '$newStoreLocation'
+       """.stripMargin)
+    val exception = intercept[Exception] {
+      sql("select * from source").show(false)
+    }
+    assert(exception.getMessage.contains("No Index files are present in the table location"))
+    sql("INSERT INTO source select 100,'spark','test1'")
+    checkAnswer(sql("select * from source"), Seq(Row(100, "spark", "test1")))
+    sql("drop table if exists source")
   }
 
 }
