@@ -119,6 +119,10 @@ public final class CarbonProperties {
     return INSTANCE;
   }
 
+  public Properties getAllPropertiesInstance() {
+    return carbonProperties;
+  }
+
   /**
    * This method is to validate only a specific key added to carbonProperties using addProperty
    *

@@ -24,6 +24,7 @@ import java.time.LocalDateTime
 import scala.collection.JavaConverters._
 import scala.util.Random
 
+import com.beust.jcommander.ParameterException
 import org.apache.spark.sql._
 import org.apache.spark.sql.CarbonSession._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -39,6 +40,7 @@ import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFi
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.streamer.{CarbonDataStreamer, CarbonDataStreamerException}
 
 /**
  * Test Class for carbon merge api
@@ -1421,6 +1423,72 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from target"), Seq(Row(70)))
 
     CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "false")
+  }
+
+  test("test the validations of configurations for dfs source") {
+    var args = "--record-key-field name --source-ordering-field age --source-type dfs"
+    val ex = intercept[ParameterException] {
+      CarbonDataStreamer.main(args.split(" "))
+    }
+    ex.getMessage
+      .equalsIgnoreCase("The following option is required: [--target-table]")
+    args = args.concat(" --target-table test")
+    var exception = intercept[CarbonDataStreamerException] {
+      CarbonDataStreamer.main(args.split(" "))
+    }
+    assert(exception.getMessage
+      .equalsIgnoreCase(
+        "The DFS source path to read and ingest data onto target carbondata table is must in case" +
+        " of DFS source type."))
+
+    args = args.concat(" --dfs-source-input-path /tmp/path --schema-provider-type FileSchema")
+    exception = intercept[CarbonDataStreamerException] {
+      CarbonDataStreamer.main(args.split(" "))
+    }
+    assert(exception.getMessage
+      .equalsIgnoreCase(
+        "Schema file path is must when the schema provider is set as FileSchema. Please configure" +
+        " and retry."))
+  }
+
+  test("test validations for kafka source and schema registry") {
+    // default schema provider is schema registry
+    var args = "--target-table test --record-key-field name --source-ordering-field age " +
+               "--source-type kafka"
+    var exception = intercept[CarbonDataStreamerException] {
+      CarbonDataStreamer.main(args.split(" "))
+    }
+    exception.getMessage
+      .equalsIgnoreCase(
+        "Schema registry URL is must when the schema provider is set as SchemaRegistry. Please " +
+        "configure and retry.")
+
+    args = args.concat(" --schema-registry-url http://localhost:8081")
+    exception = intercept[CarbonDataStreamerException] {
+      CarbonDataStreamer.main(args.split(" "))
+    }
+    exception.getMessage
+      .equalsIgnoreCase(
+        "Kafka topics is must to consume and ingest data onto target carbondata table, in case of" +
+        " KAFKA source type.")
+
+    args = args.concat(" --input-kafka-topic person")
+    exception = intercept[CarbonDataStreamerException] {
+      CarbonDataStreamer.main(args.split(" "))
+    }
+    exception.getMessage
+      .equalsIgnoreCase(
+        "Kafka broker list is must to consume and ingest data onto target carbondata table,in " +
+        "case of KAFKA source type.")
+
+    args = args.concat(" --delete-field-value del")
+    exception = intercept[CarbonDataStreamerException] {
+      CarbonDataStreamer.main(args.split(" "))
+    }
+    exception.getMessage
+      .equalsIgnoreCase(
+        "Either both the values of --delete-operation-field and --delete-field-value should not " +
+        "be configured or both must be configured. Please configure and retry.")
   }
 
   private def getDeleteDeltaFileCount(tableName: String, segment: String): Int = {
