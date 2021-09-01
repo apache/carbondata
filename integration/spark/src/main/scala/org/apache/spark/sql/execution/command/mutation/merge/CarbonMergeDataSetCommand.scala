@@ -85,6 +85,11 @@ case class CarbonMergeDataSetCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val relations = CarbonSparkUtil.collectCarbonRelation(targetDsOri.logicalPlan)
     val st = System.currentTimeMillis()
+    // if the input data is empty, return to avoid unnecessary operations. It can happen in
+    // streaming cases where new data is not pushed to streams.
+    if (srcDS.rdd.isEmpty()) {
+      return Seq()
+    }
     val targetDsAliasName = targetDsOri.logicalPlan match {
       case alias: SubqueryAlias =>
         alias.alias
