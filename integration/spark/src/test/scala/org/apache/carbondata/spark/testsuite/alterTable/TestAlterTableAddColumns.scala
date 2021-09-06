@@ -237,9 +237,10 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("Test alter add complex type and compaction") {
+  test("Test alter add complex type with long string column and compaction") {
     sql("DROP TABLE IF EXISTS alter_com")
-    sql("create table alter_com (a int, b string, arr1 array<string>) stored as carbondata")
+    sql("create table alter_com (a int, b string, arr1 array<string>) stored as carbondata" +
+        " tblproperties('long_string_columns'='b')")
     sql("insert into alter_com select 1,'a',array('hi')")
     sql("insert into alter_com select 2,'b',array('hello','world')")
     sql("ALTER TABLE alter_com ADD COLUMNS(struct1 STRUCT<a:int, b:string>)")
