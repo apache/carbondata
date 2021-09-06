@@ -263,6 +263,7 @@ class AlterTableColumnSchemaGenerator(
       newCols: mutable.Buffer[ColumnSchema],
       allColumns: mutable.Buffer[ColumnSchema],
       longStringCols: mutable.Buffer[ColumnSchema],
+      complexCols: mutable.Buffer[ColumnSchema],
       currentSchemaOrdinal: Int): Unit = {
     if (currField.children.get == null || currField.children.isEmpty) {
       return
@@ -276,12 +277,15 @@ class AlterTableColumnSchemaGenerator(
           // put the new long string columns in 'longStringCols'
           // and add them after old long string columns
           longStringCols ++= Seq(childSchema)
+        } else if (childSchema.getDataType.isComplexType ||
+                   CarbonUtil.isComplexColumn(childSchema.getColumnName)) {
+          complexCols ++= Seq(childSchema)
         } else {
           allColumns ++= Seq(childSchema)
         }
         newCols ++= Seq(childSchema)
         addComplexChildCols(childField, childSchema, newCols, allColumns, longStringCols,
-          currentSchemaOrdinal)
+          complexCols, currentSchemaOrdinal)
       })
     }
   }
@@ -292,6 +296,7 @@ class AlterTableColumnSchemaGenerator(
     // previous maximum column schema ordinal + 1 is the current column schema ordinal
     val currentSchemaOrdinal = tableCols.map(col => col.getSchemaOrdinal).max + 1
     val longStringCols = mutable.Buffer[ColumnSchema]()
+    val complexCols = mutable.Buffer[ColumnSchema]()
     // get all original dimension columns
     // but exclude complex type columns and long string columns
     var allColumns = tableCols.filter(x =>
@@ -322,11 +327,13 @@ class AlterTableColumnSchemaGenerator(
         // put the new long string columns in 'longStringCols'
         // and add them after old long string columns
         longStringCols ++= Seq(columnSchema)
+      } else if (columnSchema.getDataType.isComplexType) {
+        complexCols ++= Seq(columnSchema)
       } else {
         allColumns ++= Seq(columnSchema)
       }
       newCols ++= Seq(columnSchema)
-      addComplexChildCols(field, columnSchema, newCols, allColumns, longStringCols,
+      addComplexChildCols(field, columnSchema, newCols, allColumns, longStringCols, complexCols,
         currentSchemaOrdinal)
     })
     // put the old long string columns
@@ -338,6 +345,8 @@ class AlterTableColumnSchemaGenerator(
     allColumns ++= tableCols.filter(x =>
       (x.isDimensionColumn &&
        (x.getDataType.isComplexType() || x.isComplexColumn() || x.getSchemaOrdinal == -1)))
+    // put the new complex columns after long string columns and at the end of dimension columns
+    allColumns ++= complexCols
     // original measure columns
     allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
     // add new measure columns

@@ -497,7 +497,9 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         }
         if (dimension.getNumberOfChild > 0) {
           val complexChildDims = dimension.getListOfChildDimensions.asScala
-          if (complexChildDims.exists(col => DataTypes.isArrayType(col.getDataType))) {
+          // For complex columns, SI creation on only array of primitive types is allowed.
+          // Check if child column is of complex type and throw exception.
+          if (complexChildDims.exists(col => col.isComplex)) {
             throw new ErrorMessage(
               "SI creation with nested array complex type is not supported yet")
           }

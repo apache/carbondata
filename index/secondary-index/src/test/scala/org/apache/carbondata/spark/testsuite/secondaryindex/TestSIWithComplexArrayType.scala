@@ -425,11 +425,19 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test si creation with array") {
-    sql("create table complextable (id int, name string, country array<array<string>>, add array<int>) stored as carbondata")
+    sql("create table complextable (id int, name string, country array<array<string>>," +
+        " add array<map<int,int>>, code array<struct<a:string,b:int>>) stored as carbondata")
     sql("drop index if exists index_1 on complextable")
+    val errorMessage = "SI creation with nested array complex type is not supported yet"
     assert(intercept[RuntimeException] {
       sql("create index index_1 on table complextable(country) as 'carbondata'")
-    }.getMessage.contains("SI creation with nested array complex type is not supported yet"))
+    }.getMessage.contains(errorMessage))
+    assert(intercept[RuntimeException] {
+      sql("create index index_1 on table complextable(add) as 'carbondata'")
+    }.getMessage.contains(errorMessage))
+    assert(intercept[RuntimeException] {
+      sql("create index index_1 on table complextable(code) as 'carbondata'")
+    }.getMessage.contains(errorMessage))
   }
 
   test("test complex with null and empty data") {
