@@ -992,10 +992,7 @@ object AlterTableUtil {
                                      .equalsIgnoreCase("STRING") &&
                                    !col.getDataType.toString
                                      .equalsIgnoreCase("VARCHAR") &&
-                                   !col.getDataType.toString
-                                     .equalsIgnoreCase("STRUCT") &&
-                                   !col.getDataType.toString
-                                     .equalsIgnoreCase("ARRAY"))) {
+                                   !col.getDataType.isComplexType)) {
         val errMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + dictCol.trim +
                      " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_INCLUDE" +
                      "/LOCAL_DICTIONARY_EXCLUDE should be no " +

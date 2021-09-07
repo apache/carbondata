@@ -298,6 +298,17 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
           s"('$dictionary'='struct1, struct2')")
       val schema = sql("describe alter_struct").collect()
       assert(schema.size == 7)
+    } else if (complexType.equals("MAP")) {
+      sql("DROP TABLE IF EXISTS alter_com")
+      sql(
+        "create table alter_com(roll int, department map<string,string>) STORED " +
+        "AS carbondata")
+      sql("insert into alter_com values(1, map('id1','name1'))")
+      sql("ALTER TABLE alter_com ADD COLUMNS(map1 map<string,string>, " +
+          "map2 map<string,string>)")
+      sql(s"alter table alter_com set tblproperties('$dictionary'='map1, map2')")
+      val schema = sql("describe alter_com").collect()
+      assert(schema.size == 4)
     }
   }
 
@@ -331,6 +342,56 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     // For the previous segments the default value for newly added array column is null
     insertIntoTableForArrayType
     checkRestulForArrayType
+    sql("DROP TABLE IF EXISTS alter_com")
+  }
+
+  def insertIntoTableForMapType(): Unit = {
+    sql("insert into alter_com values(2,map('id2','name2'),map('key1','val1'),map('key2','val2'))")
+    sql("insert into alter_com values(3,map('id3','name3'),map('key3','val3'), map('key4','val4'))")
+    sql("insert into alter_com values(4,map('id4','name4'),map('key5','val5'),map('key6','val6'))")
+  }
+
+  def checkRestulForMapType(): Unit = {
+    val totalRows = sql("select * from alter_com").collect()
+    val a = sql("select * from alter_com where map1['key1']='val1'").collect
+    val b = sql("select * from alter_com where map2['key4']='val4'").collect
+    val c = sql("select * from alter_com where roll = 1").collect
+    assert(totalRows.size == 4)
+    assert(a.size == 1)
+    assert(b.size == 1)
+    // check default value for newly added map columns that is index - 3 and 4
+    assert(c(0)(2) == null && c(0)(3) == null)
+  }
+
+  test("Test alter add for map enabling local dictionary") {
+    createTableForComplexTypes("LOCAL_DICTIONARY_INCLUDE", "MAP")
+    insertIntoTableForMapType()
+    checkRestulForMapType()
+    sql(s"ALTER TABLE alter_com ADD COLUMNS(map3 map<int,int>) ")
+    sql(s"ALTER TABLE alter_com ADD COLUMNS(map4 map<int,int>, str struct<a:int,b:string>) ")
+    sql(
+      "insert into alter_com values(5,map('df','dfg'),map('df','dfg'), map('df','dfg'),map(6,7)," +
+      "map(5,9),named_struct('a',1,'b','abcde'))")
+    sql("alter table alter_com compact 'minor'")
+    assert(sql("select * from alter_com where map3[6]=7").collect().size == 1)
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 5)
+    sql("DROP TABLE IF EXISTS alter_com")
+  }
+
+  test("Test alter add for map disabling local dictionary") {
+    createTableForComplexTypes("LOCAL_DICTIONARY_EXCLUDE", "MAP")
+    insertIntoTableForMapType()
+    checkRestulForMapType()
+    sql(s"ALTER TABLE alter_com ADD COLUMNS(map3 map<int,int>) ")
+    sql(s"ALTER TABLE alter_com ADD COLUMNS(map4 map<int,int>, str struct<a:int,b:string>) ")
+    sql(
+      "insert into alter_com values(5,map('df','dfg'),map('df','dfg'), map('df','dfg'),map(6,7)," +
+      "map(5,9),named_struct('a',1,'b','abcde'))")
+    sql("alter table alter_com compact 'minor'")
+    assert(sql("select * from alter_com where map3[6]=7").collect().size == 1)
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 5)
     sql("DROP TABLE IF EXISTS alter_com")
   }
 
