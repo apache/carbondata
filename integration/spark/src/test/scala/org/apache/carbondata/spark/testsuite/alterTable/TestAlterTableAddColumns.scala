@@ -481,6 +481,17 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_com")
   }
 
+  test("test add column to partition table with complex column") {
+    sql("drop table if exists alter_com")
+    sql("create table alter_com(id int, map1 map<int,int>) " +
+        "partitioned by(name string) stored as carbondata")
+    sql("insert into alter_com values( 1,map(1,2),'sh')")
+    sql("ALTER TABLE alter_com ADD COLUMNS(intF int)")
+    sql("insert into alter_com values(1,map(1,2),1,'df')")
+    checkAnswer(sql("select * from alter_com"),
+      Seq(Row(1, Map(1 -> 2), null, "sh"), Row(1, Map(1 -> 2), 1, "df")))
+  }
+
   test("Validate default values of complex columns added by alter command") {
     sql("DROP TABLE IF EXISTS alter_com")
     sql("CREATE TABLE alter_com(doubleField double, arr1 array<long> ) STORED AS carbondata")
