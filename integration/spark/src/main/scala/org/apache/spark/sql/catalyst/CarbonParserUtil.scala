@@ -91,6 +91,23 @@ object CarbonParserUtil {
     }
   }
 
+  def initializeSpatialIndexInstance(spatialIndexClassName: String, indexName: String,
+      tableProperties: mutable.Map[String, String]): Unit = {
+    val SPATIAL_INDEX_INSTANCE = s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.instance"
+    try {
+      val spatialIndexClass : Class[_] = java.lang.Class.forName(spatialIndexClassName)
+      val instance = spatialIndexClass.newInstance().asInstanceOf[CustomIndex[_]]
+      instance.init(indexName, tableProperties.asJava)
+      tableProperties.put(SPATIAL_INDEX_INSTANCE, CustomIndex.getCustomInstance(instance))
+    } catch {
+      case ex@(_: ClassNotFoundException | _: InstantiationError | _: IllegalAccessException |
+               _: ClassCastException) =>
+        val err = s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property process failed. "
+        LOGGER.error(err, ex)
+        throw new MalformedCarbonCommandException(err, ex)
+    }
+  }
+
   /**
    * The method parses, validates and processes the spatial_index property.
    * @param tableProperties Table properties
@@ -170,18 +187,7 @@ object CarbonParserUtil {
                 s"Unsupported value: ${ spatialIndexType.get } specified for property $TYPE.")
             }
         }
-        try {
-          val spatialIndexClass : Class[_] = java.lang.Class.forName(spatialIndexClassName)
-          val instance = spatialIndexClass.newInstance().asInstanceOf[CustomIndex[_]]
-          instance.init(indexName, tableProperties.asJava)
-          tableProperties.put(SPATIAL_INDEX_INSTANCE, CustomIndex.getCustomInstance(instance))
-        } catch {
-          case ex@(_: ClassNotFoundException | _: InstantiationError | _: IllegalAccessException |
-                   _: ClassCastException) =>
-            val err = s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property process failed. "
-            LOGGER.error(err, ex)
-            throw new MalformedCarbonCommandException(err, ex)
-        }
+        initializeSpatialIndexInstance(spatialIndexClassName, indexName, tableProperties)
         // Insert spatial column as a sort column if it is not already present in it.
         CarbonScalaUtil.insertColumnToSortColumns(indexName, sources, tableProperties)
         fields += Field(indexName, Some("BigInt"), Some(indexName), Some(null), spatialIndex = true)

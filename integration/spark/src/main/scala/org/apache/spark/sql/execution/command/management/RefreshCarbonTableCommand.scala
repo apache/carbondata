@@ -21,12 +21,13 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.CarbonParserUtil.initializeSpatialIndexInstance
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
-import org.apache.spark.util.SparkUtil
+import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -83,6 +84,27 @@ case class RefreshCarbonTableCommand(
       if (FileFactory.isFileExist(schemaFilePath)) {
         // read TableInfo
         val tableInfo = SchemaReader.getTableInfo(identifier)
+        val tableProperties = tableInfo.getFactTable.getTableProperties
+        val spatialIndex = CarbonCommonConstants.SPATIAL_INDEX
+        val indexName = tableProperties.get(spatialIndex)
+        if (indexName != null) {
+          val SPATIAL_INDEX_CLASS = s"$spatialIndex.$indexName.class"
+          val SPATIAL_INDEX_INSTANCE = s"$spatialIndex.$indexName.instance"
+          // For spatial table, To make the instance compatible with previous versions,
+          // initialise and update the index instance in table properties.
+          tableProperties.remove(SPATIAL_INDEX_INSTANCE)
+          initializeSpatialIndexInstance(tableProperties.get(SPATIAL_INDEX_CLASS),
+            indexName, tableProperties.asScala)
+          val tableIdentifier = new TableIdentifier(tableName, Some(tableInfo.getDatabaseName))
+          if (sparkSession.sessionState.catalog.tableExists(tableIdentifier)) {
+            // In direct upgrade scenario, if spatial table already exists then on refresh command,
+            // update the property in metadata and fail table creation.
+            LOGGER.info(s"Updating $SPATIAL_INDEX_INSTANCE table property on $tableName")
+            AlterTableUtil.modifyTableProperties(tableIdentifier,
+              Map(SPATIAL_INDEX_INSTANCE -> tableProperties.get(SPATIAL_INDEX_INSTANCE)),
+              Seq.empty, true)(sparkSession, sparkSession.sessionState.catalog)
+          }
+        }
         // remove mv related info from source table properties
         tableInfo.getFactTable
           .getTableProperties.remove(CarbonCommonConstants.RELATED_MV_TABLES_MAP)
