@@ -35,6 +35,8 @@ import java.util.Map;
  * @param <ReturnType>
  */
 public abstract class CustomIndex<ReturnType> implements Serializable {
+
+  private static final long serialVersionUID = 6529685098267757692L;
   /**
    * Initialize the custom index instance.
    * @param indexName

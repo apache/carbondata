@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.CustomIndex
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{withEvents, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
 
@@ -83,6 +84,23 @@ case class RefreshCarbonTableCommand(
       if (FileFactory.isFileExist(schemaFilePath)) {
         // read TableInfo
         val tableInfo = SchemaReader.getTableInfo(identifier)
+        val tableProperties = tableInfo.getFactTable.getTableProperties
+        val indexName = tableProperties.get(CarbonCommonConstants.SPATIAL_INDEX)
+        if (indexName != null) {
+          val SPATIAL_INDEX_CLASS = s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.class"
+          val SPATIAL_INDEX_INSTANCE = s"${
+            CarbonCommonConstants.SPATIAL_INDEX
+          }.$indexName.instance"
+          // For spatial table, To make the instance compatible with previous versions,
+          // initialise and update the index instance in table properties.
+          tableProperties.remove(SPATIAL_INDEX_INSTANCE)
+          val spatialIndexClass: Class[_] = java.lang.Class.forName(tableProperties
+            .get(SPATIAL_INDEX_CLASS))
+          val instance = spatialIndexClass.newInstance().asInstanceOf[CustomIndex[_]]
+          instance.init(indexName, tableInfo.getFactTable.getTableProperties)
+          tableInfo.getFactTable
+            .getTableProperties.put(SPATIAL_INDEX_INSTANCE, CustomIndex.getCustomInstance(instance))
+        }
         // remove mv related info from source table properties
         tableInfo.getFactTable
           .getTableProperties.remove(CarbonCommonConstants.RELATED_MV_TABLES_MAP)
