@@ -103,7 +103,8 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
       blockletInfoList.add(blockletInfo);
     }
     dataFileFooter.setBlockletList(blockletInfoList);
-    dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList));
+    dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList,
+        dataFileFooter.getColumnInTable()));
     return dataFileFooter;
   }
 

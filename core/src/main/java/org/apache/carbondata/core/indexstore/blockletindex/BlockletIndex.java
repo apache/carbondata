@@ -158,13 +158,15 @@ public class BlockletIndex extends BlockIndex implements Serializable {
       row.setRow(addMinMax(schema[ordinal], minValuesForColumnsToBeCached), ordinal);
       // compute and set task level min values
       addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
-          minValuesForColumnsToBeCached, TASK_MIN_VALUES_INDEX, true);
+          minValuesForColumnsToBeCached, TASK_MIN_VALUES_INDEX,
+              true, fileFooter.getColumnInTable());
       ordinal++;
       taskMinMaxOrdinal++;
       row.setRow(addMinMax(schema[ordinal], maxValuesForColumnsToBeCached), ordinal);
       // compute and set task level max values
       addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
-          maxValuesForColumnsToBeCached, TASK_MAX_VALUES_INDEX, false);
+          maxValuesForColumnsToBeCached, TASK_MAX_VALUES_INDEX,
+              false, fileFooter.getColumnInTable());
       ordinal++;
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
       // add file name

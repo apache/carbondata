@@ -200,6 +200,9 @@ public final class ByteUtil {
      * @param buffer1 value to compare
      * @param buffer2 value to compare
      * @return compare result
+     * Please be careful while using this method as this is valid only for dimension columns.
+     * In case of measure column and for negative and positive buffer values
+     * it will return incorrect result.
      */
     public int compareTo(byte[] buffer1, byte[] buffer2) {
 

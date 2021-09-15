@@ -231,7 +231,8 @@ public abstract class AbstractDataFileFooterConverter {
    * @param blockletIndexList
    * @return blocklet index
    */
-  protected BlockletIndex getBlockletIndexForDataFileFooter(List<BlockletIndex> blockletIndexList) {
+  protected BlockletIndex getBlockletIndexForDataFileFooter(List<BlockletIndex> blockletIndexList,
+        List<ColumnSchema> columnSchemaList) {
     BlockletIndex blockletIndex = new BlockletIndex();
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
     blockletBTreeIndex.setStartKey(blockletIndexList.get(0).getBtreeIndex().getStartKey());
@@ -257,11 +258,22 @@ public abstract class AbstractDataFileFooterConverter {
           currentMinValue[j] = new byte[0];
           continue;
         }
-        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) > 0) {
-          currentMinValue[j] = minValue[j].clone();
-        }
-        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMaxValue[j], maxValue[j]) < 0) {
-          currentMaxValue[j] = maxValue[j].clone();
+        if (columnSchemaList.get(j).isDimensionColumn()) {
+          if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) > 0) {
+            currentMinValue[j] = minValue[j].clone();
+          }
+          if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMaxValue[j], maxValue[j]) < 0) {
+            currentMaxValue[j] = maxValue[j].clone();
+          }
+        } else {
+          if (CarbonUtil.compareMeasureData(currentMinValue[j], minValue[j],
+                  columnSchemaList.get(j).getDataType()) > 0) {
+            currentMinValue[j] = minValue[j].clone();
+          }
+          if (CarbonUtil.compareMeasureData(currentMaxValue[j], maxValue[j],
+                  columnSchemaList.get(j).getDataType()) < 0) {
+            currentMaxValue[j] = maxValue[j].clone();
+          }
         }
       }
     }

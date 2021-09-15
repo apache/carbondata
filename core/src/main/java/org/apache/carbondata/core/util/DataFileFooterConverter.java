@@ -85,7 +85,8 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
         blockletInfoList.add(blockletInfo);
       }
       dataFileFooter.setBlockletList(blockletInfoList);
-      dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList));
+      dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList,
+          dataFileFooter.getColumnInTable()));
     } finally {
       if (null != fileReader) {
         fileReader.finish();
