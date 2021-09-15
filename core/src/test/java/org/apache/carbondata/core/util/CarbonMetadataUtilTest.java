@@ -209,7 +209,7 @@ public class CarbonMetadataUtilTest {
     buffer.flip();
     byte[] r = buffer.array().clone();
 
-    Method method = CarbonMetadataUtil.class
+    Method method = CarbonUtil.class
         .getDeclaredMethod("compareMeasureData", l.getClass(), r.getClass(),
             org.apache.carbondata.core.metadata.datatype.DataType.class);
     method.setAccessible(true);

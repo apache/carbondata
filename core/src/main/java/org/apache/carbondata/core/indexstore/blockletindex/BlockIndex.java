@@ -279,10 +279,11 @@ public class BlockIndex extends CoarseGrainIndex
           BlockletMinMaxIndex currentFooterMinMaxIndex =
               fileFooter.getBlockletIndex().getMinMaxIndex();
           blockMinValues =
-              compareAndUpdateMinMax(currentFooterMinMaxIndex.getMinValues(), blockMinValues, true);
+              compareAndUpdateMinMax(currentFooterMinMaxIndex.getMinValues(),
+                      blockMinValues, true, fileFooter.getColumnInTable());
           blockMaxValues =
               compareAndUpdateMinMax(currentFooterMinMaxIndex.getMaxValues(), blockMaxValues,
-                  false);
+                  false, fileFooter.getColumnInTable());
           updateMinMaxFlag(fileFooter, minMaxFlag);
           updateMinMaxFlag(fileFooter, taskSummaryMinMaxFlag);
           totalBlockletsInOneBlock++;
@@ -391,13 +392,15 @@ public class BlockIndex extends CoarseGrainIndex
     row.setRow(indexRow, ordinal);
     // compute and set task level min values
     addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
-        minValuesForColumnsToBeCached, TASK_MIN_VALUES_INDEX, true);
+        minValuesForColumnsToBeCached, TASK_MIN_VALUES_INDEX,
+            true, fileFooter.getColumnInTable());
     ordinal++;
     taskMinMaxOrdinal++;
     row.setRow(addMinMax(schema[ordinal], maxValuesForColumnsToBeCached), ordinal);
     // compute and set task level max values
     addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
-        maxValuesForColumnsToBeCached, TASK_MAX_VALUES_INDEX, false);
+        maxValuesForColumnsToBeCached, TASK_MAX_VALUES_INDEX,
+            false, fileFooter.getColumnInTable());
     ordinal++;
     // add total rows in one carbondata file
     row.setInt((int) fileFooter.getNumberOfRows(), ordinal++);
@@ -498,7 +501,8 @@ public class BlockIndex extends CoarseGrainIndex
    * @param isMinValueComparison
    */
   protected void addTaskMinMaxValues(IndexRow taskMinMaxRow, CarbonRowSchema[] carbonRowSchema,
-      int taskMinMaxOrdinal, byte[][] minMaxValue, int ordinal, boolean isMinValueComparison) {
+      int taskMinMaxOrdinal, byte[][] minMaxValue, int ordinal,
+      boolean isMinValueComparison, List<ColumnSchema> columnSchemaList) {
     IndexRow row = taskMinMaxRow.getRow(ordinal);
     byte[][] updatedMinMaxValues = null;
     if (null == row) {
@@ -510,7 +514,8 @@ public class BlockIndex extends CoarseGrainIndex
     } else {
       byte[][] existingMinMaxValues = getMinMaxValue(taskMinMaxRow, ordinal);
       updatedMinMaxValues =
-          compareAndUpdateMinMax(minMaxValue, existingMinMaxValues, isMinValueComparison);
+          compareAndUpdateMinMax(minMaxValue, existingMinMaxValues,
+              isMinValueComparison, columnSchemaList);
     }
     int minMaxOrdinal = 0;
     // min/max value adding
@@ -528,13 +533,20 @@ public class BlockIndex extends CoarseGrainIndex
    * @param isMinValueComparison
    */
   public static byte[][] compareAndUpdateMinMax(byte[][] minMaxValueCompare1,
-      byte[][] minMaxValueCompare2, boolean isMinValueComparison) {
+      byte[][] minMaxValueCompare2, boolean isMinValueComparison,
+      List<ColumnSchema> columnSchemaList) {
     // Compare and update min max values
     byte[][] updatedMinMaxValues = new byte[minMaxValueCompare1.length][];
     System.arraycopy(minMaxValueCompare1, 0, updatedMinMaxValues, 0, minMaxValueCompare1.length);
     for (int i = 0; i < minMaxValueCompare1.length; i++) {
-      int compare = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(minMaxValueCompare2[i], minMaxValueCompare1[i]);
+      int compare;
+      if (columnSchemaList.get(i).isDimensionColumn()) {
+        compare = ByteUtil.UnsafeComparer.INSTANCE
+            .compareTo(minMaxValueCompare2[i], minMaxValueCompare1[i]);
+      } else {
+        compare = CarbonUtil.compareMeasureData(minMaxValueCompare2[i],
+            minMaxValueCompare1[i], columnSchemaList.get(i).getDataType());
+      }
       if (isMinValueComparison) {
         if (compare < 0) {
           updatedMinMaxValues[i] = minMaxValueCompare2[i];

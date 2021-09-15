@@ -33,8 +33,6 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.format.BlockIndex;
@@ -267,12 +265,12 @@ public class CarbonMetadataUtil {
             getEncodedColumnPages(encodedBlocklet, false, i));
         minVal = stats.getMeasureMinValue()[j];
         maxVal = stats.getMeasureMaxValue()[j];
-        if (compareMeasureData(measureMaxValue[j], maxVal, carbonMeasureList.get(j).getDataType())
-            < 0) {
+        if (CarbonUtil.compareMeasureData(measureMaxValue[j], maxVal,
+                carbonMeasureList.get(j).getDataType()) < 0) {
           measureMaxValue[j] = maxVal.clone();
         }
-        if (compareMeasureData(measureMinValue[j], minVal, carbonMeasureList.get(j).getDataType())
-            > 0) {
+        if (CarbonUtil.compareMeasureData(measureMinValue[j], minVal,
+                carbonMeasureList.get(j).getDataType()) > 0) {
           measureMinValue[j] = minVal.clone();
         }
       }
@@ -491,51 +489,6 @@ public class CarbonMetadataUtil {
       dataChunksList.add(encodedColumnPage.getPageMetadata());
     }
     return CarbonMetadataUtil.getDataChunk3(dataChunksList, null);
-  }
-
-  private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
-    ByteBuffer firstBuffer = null;
-    ByteBuffer secondBuffer = null;
-    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
-      if (first[0] > second[0]) {
-        return 1;
-      } else if (first[0] < second[0]) {
-        return -1;
-      }
-      return 0;
-    } else if (dataType == DataTypes.DOUBLE) {
-      double firstValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(first).flip())).getDouble();
-      double secondValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(second).flip())).getDouble();
-      if (firstValue > secondValue) {
-        return 1;
-      } else if (firstValue < secondValue) {
-        return -1;
-      }
-      return 0;
-    } else if (dataType == DataTypes.FLOAT) {
-      float firstValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(first).flip())).getFloat();
-      float secondValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(second).flip())).getFloat();
-      if (firstValue > secondValue) {
-        return 1;
-      } else if (firstValue < secondValue) {
-        return -1;
-      }
-      return 0;
-    } else if (dataType == DataTypes.LONG || dataType == DataTypes.INT
-        || dataType == DataTypes.SHORT) {
-      long firstValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(first).flip())).getLong();
-      long secondValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(second).flip())).getLong();
-      if (firstValue > secondValue) {
-        return 1;
-      } else if (firstValue < secondValue) {
-        return -1;
-      }
-      return 0;
-    } else if (DataTypes.isDecimal(dataType)) {
-      return DataTypeUtil.byteToBigDecimal(first).compareTo(DataTypeUtil.byteToBigDecimal(second));
-    } else {
-      throw new IllegalArgumentException("Invalid data type:" + dataType);
-    }
   }
 
   /**

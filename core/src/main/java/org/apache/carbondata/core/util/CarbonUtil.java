@@ -1024,6 +1024,51 @@ public final class CarbonUtil {
         .toPrimitive(isDictionaryDimensions.toArray(new Boolean[isDictionaryDimensions.size()]));
   }
 
+  public static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
+    ByteBuffer firstBuffer = null;
+    ByteBuffer secondBuffer = null;
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      if (first[0] > second[0]) {
+        return 1;
+      } else if (first[0] < second[0]) {
+        return -1;
+      }
+      return 0;
+    } else if (dataType == DataTypes.DOUBLE) {
+      double firstValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(first).flip())).getDouble();
+      double secondValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(second).flip())).getDouble();
+      if (firstValue > secondValue) {
+        return 1;
+      } else if (firstValue < secondValue) {
+        return -1;
+      }
+      return 0;
+    } else if (dataType == DataTypes.FLOAT) {
+      float firstValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(first).flip())).getFloat();
+      float secondValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(second).flip())).getFloat();
+      if (firstValue > secondValue) {
+        return 1;
+      } else if (firstValue < secondValue) {
+        return -1;
+      }
+      return 0;
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.INT
+            || dataType == DataTypes.SHORT) {
+      long firstValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(first).flip())).getLong();
+      long secondValue = ((ByteBuffer) (ByteBuffer.allocate(8).put(second).flip())).getLong();
+      if (firstValue > secondValue) {
+        return 1;
+      } else if (firstValue < secondValue) {
+        return -1;
+      }
+      return 0;
+    } else if (DataTypes.isDecimal(dataType)) {
+      return DataTypeUtil.byteToBigDecimal(first).compareTo(DataTypeUtil.byteToBigDecimal(second));
+    } else {
+      throw new IllegalArgumentException("Invalid data type:" + dataType);
+    }
+  }
+
   /**
    * This method will form one single byte [] for all the high card dims.
    * First it will add all the indexes of variable length byte[] and then the

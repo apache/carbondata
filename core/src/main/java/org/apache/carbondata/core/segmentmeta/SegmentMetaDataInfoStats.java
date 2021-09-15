@@ -19,10 +19,12 @@ package org.apache.carbondata.core.segmentmeta;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -84,7 +86,7 @@ public class SegmentMetaDataInfoStats {
   }
 
   public synchronized void setBlockMetaDataInfo(String tableName, String segmentId,
-      BlockColumnMetaDataInfo currentBlockColumnMetaInfo) {
+      BlockColumnMetaDataInfo currentBlockColumnMetaInfo, List<ColumnSchema> columnSchemaList) {
     // check if tableName is present in tableSegmentMetaDataInfoMap
     if (!this.tableSegmentMetaDataInfoMap.isEmpty() && null != this.tableSegmentMetaDataInfoMap
         .get(tableName) && !this.tableSegmentMetaDataInfoMap.get(tableName).isEmpty()
@@ -94,9 +96,9 @@ public class SegmentMetaDataInfoStats {
           this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId);
       // compare and get updated min and max values
       byte[][] updatedMin = BlockIndex.compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMin(),
-          currentBlockColumnMetaInfo.getMin(), true);
+          currentBlockColumnMetaInfo.getMin(), true, columnSchemaList);
       byte[][] updatedMax = BlockIndex.compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMax(),
-          currentBlockColumnMetaInfo.getMax(), false);
+          currentBlockColumnMetaInfo.getMax(), false, columnSchemaList);
       // update the segment
       this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId)
           .setMinMax(updatedMin, updatedMax);

@@ -428,7 +428,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
             new BlockColumnMetaDataInfo(thriftColumnSchemaList, min, max);
         SegmentMetaDataInfoStats.getInstance()
             .setBlockMetaDataInfo(model.getTableName(), model.getSegmentId(),
-                blockColumnMetaDataInfo);
+                blockColumnMetaDataInfo, this.model.getWrapperColumnSchema());
       }
     }
     String indexFileName;
