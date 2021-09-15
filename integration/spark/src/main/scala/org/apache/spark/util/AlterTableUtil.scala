@@ -485,7 +485,9 @@ object AlterTableUtil {
         // with the newly added/modified comment since thriftTable also holds comment as its
         // direct property.
         lowerCasePropertiesMap.foreach { property =>
-          if (validateTableProperties(property._1)) {
+          if (validateTableProperties(property._1) ||
+              (property._1.startsWith(CarbonCommonConstants.SPATIAL_INDEX) &&
+               property._1.endsWith("instance"))) {
             tblPropertiesMap.put(property._1, property._2)
           } else {
             val errorMessage = "Error: Invalid option(s): " + property._1.toString()

@@ -78,6 +78,8 @@ Note:
    * `mygeohash` in the above example represent the index name.
    * Columns present in spatial_index table properties cannot be altered
     i.e., sourcecolumns: `longitude, latitude` and index column: `mygeohash` in the above example.
+   * To make the spatial instance compatible with previous versions, trigger refresh table command.
+     In direct upgrade scenario, if spatial table already exists then refresh command fails but updates the instance property in metadata.
 
 #### List of spatial index table properties
 
