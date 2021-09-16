@@ -73,7 +73,8 @@ object DataLoadProcessBuilderOnSpark {
       dataFrame: Option[DataFrame],
       model: CarbonLoadModel,
       hadoopConf: Configuration,
-      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]],
+      isCompactionFlow: Boolean = false)
   : Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     var isLoadFromCSV = false
     val originRDD = if (dataFrame.isDefined) {
@@ -121,8 +122,13 @@ object DataLoadProcessBuilderOnSpark {
     // 2. Convert
     val convertRDD = inputRDD.mapPartitionsWithIndex { case (index, rows) =>
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
-      DataLoadProcessorStepOnSpark.convertFunc(rows, index, modelBroadcast, partialSuccessAccum,
-        convertStepRowCounter)
+      DataLoadProcessorStepOnSpark.convertFunc(rows,
+        index,
+        modelBroadcast,
+        partialSuccessAccum,
+        convertStepRowCounter,
+        false,
+        isCompactionFlow)
     }.filter(_ != null) // Filter the bad record
 
     // 3. Sort

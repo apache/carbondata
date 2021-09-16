@@ -594,4 +594,84 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
   }
+
+  test("test the complex columns with global sort compaction") {
+    sql("DROP TABLE IF EXISTS alter_global1")
+    sql("CREATE TABLE alter_global1(intField INT) STORED AS carbondata " +
+        "TBLPROPERTIES('sort_columns'='intField','sort_scope'='global_sort')")
+    sql("insert into alter_global1 values(1)")
+    sql("insert into alter_global1 values(2)")
+    sql("insert into alter_global1 values(3)")
+    sql( "ALTER TABLE alter_global1 ADD COLUMNS(str1 array<int>)")
+    sql("insert into alter_global1 values(4, array(1))")
+    sql("insert into alter_global1 values(5, null)")
+    sql( "ALTER TABLE alter_global1 ADD COLUMNS(str2 array<string>)")
+    sql("insert into alter_global1 values(6, array(1), array('', 'hi'))")
+    sql("insert into alter_global1 values(7, array(1), array('bye', 'hi'))")
+    sql("ALTER TABLE alter_global1 ADD COLUMNS(str3 array<date>, str4 struct<s1:timestamp>)")
+    sql(
+      "insert into alter_global1 values(8, array(1), array('bye', 'hi'), array('2017-02-01'," +
+      "'2018-09-11'),named_struct('s1', '2017-02-01 00:01:00'))")
+    val expected = Seq(Row(1, null, null, null, null),
+      Row(2, null, null, null, null),
+      Row(3, null, null, null, null),
+      Row(4, make(Array(1)), null, null, null),
+      Row(5, null, null, null, null),
+      Row(6, make(Array(1)), make(Array("", "hi")), null, null),
+      Row(7, make(Array(1)), make(Array("bye", "hi")), null, null),
+      Row(8, make(Array(1)), make(Array("bye", "hi")),
+        make(Array(Date.valueOf("2017-02-01"), Date.valueOf("2018-09-11"))),
+        Row(Timestamp.valueOf("2017-02-01 00:01:00"))))
+    checkAnswer(sql("select * from alter_global1"), expected)
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_global1")
+    assert(addedColumns.size == 4)
+    sql("alter table alter_global1 compact 'minor'")
+    checkAnswer(sql("select * from alter_global1"), expected)
+    sql("DROP TABLE IF EXISTS alter_global1")
+  }
+
+  test("test the multi-level complex columns with global sort compaction") {
+    sql("DROP TABLE IF EXISTS alter_global2")
+    sql("CREATE TABLE alter_global2(intField INT) STORED AS carbondata " +
+        "TBLPROPERTIES('sort_columns'='intField','sort_scope'='global_sort')")
+    sql("insert into alter_global2 values(1)")
+    // multi-level nested array
+    sql(
+      "ALTER TABLE alter_global2 ADD COLUMNS(arr1 array<array<int>>, arr2 array<struct<a1:string," +
+      "map1:Map<string, string>>>) ")
+    sql(
+      "insert into alter_global2 values(1, array(array(1,2)), array(named_struct('a1','st'," +
+      "'map1', map('a','b'))))")
+    // multi-level nested struct
+    sql("ALTER TABLE alter_global2 ADD COLUMNS(struct1 struct<s1:string, arr: array<int>>," +
+        " struct2 struct<num:double,contact:map<string,array<int>>>) ")
+    sql("insert into alter_global2 values(1, " +
+        "array(array(1,2)), array(named_struct('a1','st','map1', map('a','b'))), " +
+        "named_struct('s1','hi','arr',array(1,2)), named_struct('num',2.3,'contact',map('ph'," +
+        "array(1,2))))")
+    // multi-level nested map
+    sql(
+      "ALTER TABLE alter_global2 ADD COLUMNS(map1 map<string,array<string>>, map2 map<string," +
+      "struct<d:int, s:struct<im:string>>>)")
+    sql("insert into alter_global2 values(1,  " +
+    "array(array(1,2)), array(named_struct('a1','st','map1', map('a','b'))), " +
+    "named_struct('s1','hi','arr',array(1,2)), named_struct('num',2.3,'contact',map('ph'," +
+    "array(1,2))),map('a',array('hi')), map('a',named_struct('d',23,'s',named_struct('im'," +
+    "'sh'))))")
+    val expected = Seq(Row(1, null, null, null, null, null, null),
+      Row(1, make(Array(make(Array(1, 2)))), make(Array(Row("st", Map("a" -> "b")))),
+        null, null, null, null),
+      Row(1, make(Array(make(Array(1, 2)))), make(Array(Row("st", Map("a" -> "b")))),
+        Row("hi", make(Array(1, 2))), Row(2.3, Map("ph" -> make(Array(1, 2)))), null, null),
+      Row(1, make(Array(make(Array(1, 2)))), make(Array(Row("st", Map("a" -> "b")))),
+        Row("hi", make(Array(1, 2))), Row(2.3, Map("ph" -> make(Array(1, 2)))),
+        Map("a" -> make(Array("hi"))), Map("a" -> Row(23, Row("sh"))))
+    )
+    checkAnswer(sql("select * from alter_global2"), expected)
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_global2")
+    assert(addedColumns.size == 6)
+    sql("alter table alter_global2 compact 'minor'")
+    checkAnswer(sql("select * from alter_global2"), expected)
+    sql("DROP TABLE IF EXISTS alter_global2")
+  }
 }

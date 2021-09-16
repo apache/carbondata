@@ -33,6 +33,16 @@ public class BadRecordsLoggerProvider {
    * @return
    */
   public static BadRecordsLogger createBadRecordLogger(CarbonDataLoadConfiguration configuration) {
+    return createBadRecordLogger(configuration, false);
+  }
+
+  /**
+   * method returns the BadRecordsLogger instance
+   * @param configuration
+   * @return
+   */
+  public static BadRecordsLogger createBadRecordLogger(CarbonDataLoadConfiguration configuration,
+      Boolean isCompactionFlow) {
     boolean badRecordsLogRedirect = false;
     boolean badRecordConvertNullDisable = false;
     boolean isDataLoadFail = false;
@@ -72,7 +82,7 @@ public class BadRecordsLoggerProvider {
     return new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
         identifier.getTableName() + '_' + System.currentTimeMillis(),
         getBadLogStoreLocation(configuration), badRecordsLogRedirect,
-        badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
+        badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail, isCompactionFlow);
   }
 
   public static String getBadLogStoreLocation(CarbonDataLoadConfiguration configuration) {

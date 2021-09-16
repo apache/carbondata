@@ -88,11 +88,13 @@ public class BadRecordsLogger {
 
   private boolean isDataLoadFail;
 
+  private boolean isCompactionFlow;
+
   // private final Object syncObject =new Object();
 
   public BadRecordsLogger(String key, String fileName, String storePath,
       boolean badRecordsLogRedirect, boolean badRecordLoggerEnable,
-      boolean badRecordConvertNullDisable, boolean isDataLoadFail) {
+      boolean badRecordConvertNullDisable, boolean isDataLoadFail, boolean isCompactionFlow) {
     // Initially no bad rec
     taskKey = key;
     this.fileName = fileName;
@@ -101,6 +103,11 @@ public class BadRecordsLogger {
     this.badRecordLoggerEnable = badRecordLoggerEnable;
     this.badRecordConvertNullDisable = badRecordConvertNullDisable;
     this.isDataLoadFail = isDataLoadFail;
+    this.isCompactionFlow = isCompactionFlow;
+  }
+
+  public boolean isCompFlow() {
+    return isCompactionFlow;
   }
 
   /**
