@@ -221,10 +221,11 @@ object DataLoadProcessorStepOnSpark {
       modelBroadcast: Broadcast[CarbonLoadModel],
       partialSuccessAccum: LongAccumulator,
       rowCounter: LongAccumulator,
-      keepActualData: Boolean = false): Iterator[CarbonRow] = {
+      keepActualData: Boolean = false,
+      isCompactionFlow: Boolean = false): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
-    val badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(conf)
+    val badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(conf, isCompactionFlow)
     if (keepActualData) {
       conf.getDataFields.foreach(_.setUseActualData(keepActualData))
     }

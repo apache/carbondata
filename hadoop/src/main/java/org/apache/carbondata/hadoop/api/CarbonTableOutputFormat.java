@@ -365,11 +365,16 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     if (null == complexDelim) {
       complexDelim = ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_1.value() + ","
           + ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_2.value() + ","
-          + ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_3.value();
+          + ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_3.value() + ","
+          + ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_4.value();
     }
     String[] split = complexDelim.split(",");
     model.setComplexDelimiter(split[0]);
-    if (split.length > 2) {
+    if (split.length > 3) {
+      model.setComplexDelimiter(split[1]);
+      model.setComplexDelimiter(split[2]);
+      model.setComplexDelimiter(split[3]);
+    } else if (split.length > 2) {
       model.setComplexDelimiter(split[1]);
       model.setComplexDelimiter(split[2]);
     } else if (split.length > 1) {

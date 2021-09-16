@@ -507,7 +507,8 @@ class CarbonTableCompactor(
         Option(dataFrame),
         outputModel,
         SparkSQLUtil.sessionState(sparkSession).newHadoopConf(),
-        segmentMetaDataAccumulator)
+        segmentMetaDataAccumulator,
+        isCompactionFlow = true)
         .map { row =>
           (row._1, FailureCauses.NONE == row._2._2.failureCauses)
         }

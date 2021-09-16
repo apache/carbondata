@@ -134,13 +134,15 @@ public class RowConverterImpl implements RowConverter {
         if (reason.equalsIgnoreCase(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE)) {
           reason = String.format(reason, this.fields[i].getColumn().getColName());
         }
-        badRecordLogger.addBadRecordsToBuilder(row.getRawData(), reason);
-        if (badRecordLogger.isDataLoadFail()) {
-          String error = "Data load failed due to bad record: " + reason;
-          if (!badRecordLogger.isBadRecordLoggerEnable()) {
-            error += "Please enable bad record logger to know the detail reason.";
+        if (!badRecordLogger.isCompFlow()) {
+          badRecordLogger.addBadRecordsToBuilder(row.getRawData(), reason);
+          if (badRecordLogger.isDataLoadFail()) {
+            String error = "Data load failed due to bad record: " + reason;
+            if (!badRecordLogger.isBadRecordLoggerEnable()) {
+              error += "Please enable bad record logger to know the detail reason.";
+            }
+            throw new BadRecordFoundException(error);
           }
-          throw new BadRecordFoundException(error);
         }
         logHolder.clear();
         logHolder.setLogged(true);
