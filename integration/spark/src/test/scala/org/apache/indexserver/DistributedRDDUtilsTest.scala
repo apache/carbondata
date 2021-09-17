@@ -17,7 +17,7 @@
 
 package org.apache.indexserver
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, Executors}
 
 import scala.collection.JavaConverters._
 
@@ -225,5 +225,29 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
     assert(!FileFactory.isFileExist(tmpPath))
     assert(FileFactory.isFileExist(indexServerTempFolder))
     assert(FileFactory.isFileExist(tmpPathAnother))
+  }
+
+  test("test concurrent assigning of executors") {
+    executorCache.clear()
+    tableCache.clear()
+    // val executorsList: Map[String, Seq[String]]
+    val executorList = Map("EX1" -> Seq("1"), "EX2" -> Seq("2"))
+    val seg = new Segment("5")
+    seg.setIndexSize(10)
+    val executorService = Executors.newFixedThreadPool(8)
+    for (num <- 1 to 8) {
+      executorService.submit(
+        new Runnable {
+          override def run(): Unit = {
+            DistributedRDDUtils.assignExecutor("tablename", seg, executorList)
+          }
+        }).get()
+    }
+    executorService.shutdownNow()
+    assert(executorCache.size() == 1)
+    assert(executorCache.entrySet().iterator().next().getValue
+      .entrySet().iterator().next().getValue == 10)
+    executorCache.clear()
+    tableCache.clear()
   }
 }

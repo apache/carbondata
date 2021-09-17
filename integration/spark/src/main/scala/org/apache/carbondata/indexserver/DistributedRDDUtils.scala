@@ -32,7 +32,7 @@ import org.apache.carbondata.core.indexstore.ExtendedBlockletWrapper
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.readcommitter.{LatestFilesReadCommittedScope, TableStatusReadCommittedScope}
-import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -108,7 +108,20 @@ object DistributedRDDUtils {
           val wrapper: IndexInputSplit = legacySegment
             .asInstanceOf[IndexInputSplitWrapper].getDistributable
           val executor = validExecutorIds(index % validExecutorIds.length)
-          wrapper.setLocations(Array("executor_" + executor))
+          tableToExecutorMapping.putIfAbsent(tableUniqueName,
+            new ConcurrentHashMap[String, String]())
+          val existingSegmentMapping = tableToExecutorMapping.get(tableUniqueName)
+          val oldMapping = existingSegmentMapping.putIfAbsent(wrapper.getSegment.getSegmentNo,
+            s"${executor}")
+          if (oldMapping == null) {
+            val newSegmentMapping = new ConcurrentHashMap[String, String]()
+            newSegmentMapping.put(wrapper.getSegment.getSegmentNo, s"${executor}")
+            tableToExecutorMapping.putIfAbsent(tableUniqueName, newSegmentMapping)
+            wrapper.setLocations(Array("executor_" + executor))
+          } else {
+            wrapper.setLocations(Array("executor_" + existingSegmentMapping
+              .get(wrapper.getSegment.getSegmentNo)))
+          }
           legacySegment
       }
     } else { Seq() }
@@ -161,6 +174,14 @@ object DistributedRDDUtils {
           invalidateTableMapping(tableUniqueName)
         }
       }
+    }
+  }
+
+  def isSegmentInProgress(request: IndexInputFormat, segment: String): Boolean = {
+    request.getReadCommittedScope.getSegmentList.find(_.getLoadName
+      .equalsIgnoreCase(segment)) match {
+      case Some(value) => value.getSegmentStatus.equals(SegmentStatus.INSERT_IN_PROGRESS)
+      case None => false
     }
   }
 
@@ -313,31 +334,34 @@ object DistributedRDDUtils {
           case None => throw new RuntimeException("Could not find any alive executors.")
         }
       }
-      val existingExecutorMapping = executorToCacheSizeMapping.get(newHost)
-      if (existingExecutorMapping != null) {
-        val existingSize = existingExecutorMapping.get(newExecutor)
-        if (existingSize != null) {
-          existingExecutorMapping.put(newExecutor, existingSize + segment.getIndexSize
-            .toInt)
-        } else {
-          existingExecutorMapping.put(newExecutor, segment.getIndexSize
-            .toInt)
-        }
-      } else {
-        val newExecutorMapping = new ConcurrentHashMap[String, Long]()
-        newExecutorMapping.put(newExecutor, segment.getIndexSize)
-        executorToCacheSizeMapping.put(newHost, newExecutorMapping)
-      }
+      tableToExecutorMapping.putIfAbsent(tableUniqueName, new ConcurrentHashMap[String, String]())
       val existingSegmentMapping = tableToExecutorMapping.get(tableUniqueName)
-      if (existingSegmentMapping == null) {
-        val newSegmentMapping = new ConcurrentHashMap[String, String]()
-        newSegmentMapping.put(segment.getSegmentNo, s"${newHost}_$newExecutor")
-        tableToExecutorMapping.putIfAbsent(tableUniqueName, newSegmentMapping)
+      val oldMapping = existingSegmentMapping.putIfAbsent(segment.getSegmentNo,
+        s"${ newHost }_$newExecutor")
+      if (oldMapping == null) {
+        updateCacheSize(newHost, newExecutor, segment)
+        s"executor_${newHost}_$newExecutor"
       } else {
-        existingSegmentMapping.putIfAbsent(segment.getSegmentNo, s"${newHost}_$newExecutor")
-        tableToExecutorMapping.putIfAbsent(tableUniqueName, existingSegmentMapping)
+        s"executor_$oldMapping"
       }
-      s"executor_${newHost}_$newExecutor"
+    }
+  }
+
+  private def updateCacheSize(host: String, executor: String, segment: Segment) = {
+    val existingExecutorMapping = executorToCacheSizeMapping.get(host)
+    if (existingExecutorMapping != null) {
+      val existingSize = existingExecutorMapping.get(executor)
+      if (existingSize != null) {
+        existingExecutorMapping.put(executor, existingSize + segment.getIndexSize
+          .toInt)
+      } else {
+        existingExecutorMapping.put(executor, segment.getIndexSize
+          .toInt)
+      }
+    } else {
+      val newExecutorMapping = new ConcurrentHashMap[String, Long]()
+      newExecutorMapping.put(executor, segment.getIndexSize)
+      executorToCacheSizeMapping.put(host, newExecutorMapping)
     }
   }
 

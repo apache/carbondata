@@ -115,6 +115,17 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       // scalastyle:on
       service.shutdownNow()
       val LOGGER = LogServiceFactory.getLogService(classOf[DistributedPruneRDD].getName)
+      // remove the cache of Inprogress segments, this case is required during the case of
+      // loading to SI. We do get splits of main table in case of Inprogress segment. No
+      // need to load it to the cache.
+      val inProgressSegments = indexInputFormat.getValidSegments.asScala.collect {
+        case seg if DistributedRDDUtils
+          .isSegmentInProgress(indexInputFormat, seg.getSegmentNo) => seg.getSegmentNo
+      }
+      if (inProgressSegments.nonEmpty) {
+        IndexStoreManager.getInstance().clearInvalidSegments(indexInputFormat.getCarbonTable,
+          inProgressSegments.asJava)
+      }
       LOGGER.info(s"Time taken to collect ${ inputSplits.size } blocklets : " +
                   (System.currentTimeMillis() - startTime))
       val cacheSize = if (CacheProvider.getInstance().getCarbonCache != null) {
