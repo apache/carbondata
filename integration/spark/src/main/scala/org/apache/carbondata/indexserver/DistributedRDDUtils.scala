@@ -108,6 +108,11 @@ object DistributedRDDUtils {
           val wrapper: IndexInputSplit = legacySegment
             .asInstanceOf[IndexInputSplitWrapper].getDistributable
           val executor = validExecutorIds(index % validExecutorIds.length)
+          // Below code is used to support concurrent queries on same segment going to
+          // the same executor for caching. Putting a new HashMap in tableToExecutorMapping
+          // and whichever query is able to put entry in existingSegmentMapping decides the
+          // executor which will be used later on. For one thread oldMapping will be null and
+          // for the second it will be the executor returned which will be used.
           tableToExecutorMapping.putIfAbsent(tableUniqueName,
             new ConcurrentHashMap[String, String]())
           val existingSegmentMapping = tableToExecutorMapping.get(tableUniqueName)
@@ -180,7 +185,8 @@ object DistributedRDDUtils {
   def isSegmentInProgress(request: IndexInputFormat, segment: String): Boolean = {
     request.getReadCommittedScope.getSegmentList.find(_.getLoadName
       .equalsIgnoreCase(segment)) match {
-      case Some(value) => value.getSegmentStatus.equals(SegmentStatus.INSERT_IN_PROGRESS)
+      case Some(value) => value.getSegmentStatus.equals(SegmentStatus.INSERT_IN_PROGRESS) || value
+        .getSegmentStatus.equals(SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)
       case None => false
     }
   }
