@@ -357,13 +357,11 @@ object DistributedRDDUtils {
     val existingExecutorMapping = executorToCacheSizeMapping.get(host)
     if (existingExecutorMapping != null) {
       val existingSize = existingExecutorMapping.get(executor)
+      var totalSize = segment.getIndexSize
       if (existingSize != null) {
-        existingExecutorMapping.put(executor, existingSize + segment.getIndexSize
-          .toInt)
-      } else {
-        existingExecutorMapping.put(executor, segment.getIndexSize
-          .toInt)
+        totalSize += existingSize
       }
+      existingExecutorMapping.put(executor, totalSize.toInt)
     } else {
       val newExecutorMapping = new ConcurrentHashMap[String, Long]()
       newExecutorMapping.put(executor, segment.getIndexSize)
