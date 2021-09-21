@@ -86,6 +86,39 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
+  test("test update/delete operation on added segment which required horizontal compaction") {
+    sql("drop table if exists uniqdata")
+    sql("""CREATE TABLE  uniqdata(empname String, designation String, doj Timestamp,
+          |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+          |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+          |  utilization int,salary int, empno int)
+          | STORED AS carbondata""".stripMargin)
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE uniqdata
+           | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+
+    val table = CarbonEnv.getCarbonTable(None, "uniqdata")(sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
+    val newPath = storeLocation + "/" + "addsegtest"
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    CarbonTestUtil.copy(path, newPath)
+
+    sql(s"Alter table uniqdata add segment options ('path'='$newPath','format'='carbon')")
+    // perform update/delete operation after add of new segment
+    sql("delete from uniqdata where empno=11")
+    sql("update uniqdata set (empname)=('nihal') where empno=12")
+
+    checkAnswer(sql("select empname from uniqdata where empno=12"), Seq(Row("nihal"), Row("nihal")))
+    checkAnswer(sql("select count(*) from uniqdata where empno=11"), Seq(Row(0)))
+
+    sql("set carbon.input.segments.default.uniqdata=1")
+    // after update new data will be present in new segment
+    checkAnswer(sql("select count(*) from uniqdata where empno=12"), Seq(Row(0)))
+    checkAnswer(sql("select count(*) from uniqdata where empno=11"), Seq(Row(0)))
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    sql("drop table if exists uniqdata")
+  }
+
   test("test add segment with SI when parent and SI segments are not in sunc") {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")

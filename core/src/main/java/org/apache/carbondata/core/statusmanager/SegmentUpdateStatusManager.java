@@ -366,8 +366,18 @@ public class SegmentUpdateStatusManager {
    */
   public List<String> getDeleteDeltaFilesList(final Segment segment, final String blockName) {
     List<String> deleteDeltaFileList = new ArrayList<>();
-    String segmentPath = CarbonTablePath.getSegmentPath(
-        identifier.getTablePath(), segment.getSegmentNo());
+    String segmentPath = null;
+    if (segment.isExternalSegment()) {
+      for (LoadMetadataDetails details : segmentDetails) {
+        if (details.getLoadName().equals(segment.getSegmentNo())) {
+          segmentPath = details.getPath();
+          break;
+        }
+      }
+    } else {
+      segmentPath = CarbonTablePath.getSegmentPath(
+              identifier.getTablePath(), segment.getSegmentNo());
+    }
 
     for (SegmentUpdateDetails block : updateDetails) {
       if ((block.getBlockName().equalsIgnoreCase(blockName)) &&
@@ -375,8 +385,9 @@ public class SegmentUpdateStatusManager {
           !CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
         Set<String> deltaFileTimestamps = block.getDeltaFileStamps();
         if (deltaFileTimestamps != null && deltaFileTimestamps.size() > 0) {
+          String finalSegmentPath = segmentPath;
           deltaFileTimestamps.forEach(timestamp -> deleteDeltaFileList.add(
-              CarbonUpdateUtil.getDeleteDeltaFilePath(segmentPath, blockName, timestamp)));
+              CarbonUpdateUtil.getDeleteDeltaFilePath(finalSegmentPath, blockName, timestamp)));
         } else {
           // when the deltaFileTimestamps is null, then there is only one delta file
           // and the SegmentUpdateDetails will have same start and end timestamp,
