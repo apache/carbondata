@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.parser
 
-import org.apache.spark.sql.{CarbonEnv, CarbonThreadUtil, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonThreadUtil, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlParser
@@ -57,7 +57,8 @@ class CarbonExtensionSqlParser(
             throw ce
           case at: Throwable =>
             try {
-              val parsedPlan = initialParser.parsePlan(sqlText)
+              val parsedPlan = CarbonToSparkAdapter.getUpdatedPlan(initialParser.parsePlan(sqlText),
+                sqlText)
               CarbonScalaUtil.cleanParserThreadLocals
               parsedPlan
             } catch {

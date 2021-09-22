@@ -194,7 +194,9 @@ object CarbonSparkSqlParserUtil {
       throw new MalformedCarbonCommandException(
         "Creating table without column(s) is not supported")
     }
-    if (isExternal && fields.isEmpty && tableProperties.nonEmpty) {
+    // filter out internally added external keyword property
+    val newTableProperties = tableProperties.filterNot(_._1.equalsIgnoreCase("hasexternalkeyword"))
+    if (isExternal && fields.isEmpty && newTableProperties.nonEmpty) {
       // as fields are always zero for external table, cannot validate table properties.
       throw new MalformedCarbonCommandException(
         "Table properties are not supported for external table")
@@ -232,17 +234,23 @@ object CarbonSparkSqlParserUtil {
         } catch {
           case e: Throwable =>
             if (fields.nonEmpty) {
+              val partitionerFields = fields
+                .filter(field => partitionColumnNames.contains(field.column))
+                .map(field => PartitionerField(field.column, field.dataType, null))
               val tableModel: TableModel = CarbonParserUtil.prepareTableModel(
                 ifNotExists,
                 Some(identifier.getDatabaseName),
                 identifier.getTableName,
                 fields,
-                Seq.empty,
+                partitionerFields,
                 tblProperties,
                 bucketFields,
                 isAlterFlow = false,
                 table.comment
               )
+              if(table.properties.contains("hasexternalkeyword")) {
+                isTransactionalTable = true
+              }
               TableNewProcessor(tableModel)
             } else {
               throw new MalformedCarbonCommandException(
