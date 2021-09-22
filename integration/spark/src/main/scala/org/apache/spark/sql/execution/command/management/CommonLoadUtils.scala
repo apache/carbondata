@@ -922,7 +922,11 @@ object CommonLoadUtils {
               .map(columnName => columnName.toLowerCase())
             attributes.filterNot(a => staticPartCols.contains(a.name.toLowerCase))
           }
-          if (expectedColumns.length != dfAttributes.length) {
+          val spatialProperty = catalogTable.properties.get(CarbonCommonConstants.SPATIAL_INDEX)
+          // For spatial table, dataframe attributes will not contain geoId column.
+          val isSpatialTable = spatialProperty.isDefined && spatialProperty.nonEmpty &&
+                                   dfAttributes.length + 1 == expectedColumns.size
+          if (expectedColumns.length != dfAttributes.length && !isSpatialTable) {
             throw new AnalysisException(
               s"Cannot insert into table $loadParams.tableName because the number of columns are " +
               s"different: " +

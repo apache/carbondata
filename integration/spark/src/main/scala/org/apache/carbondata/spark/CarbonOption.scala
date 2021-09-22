@@ -84,5 +84,27 @@ class CarbonOption(options: Map[String, String]) {
 
   lazy val dateformat: Option[String] = options.get("dateformat")
 
+  lazy val SPATIAL_INDEX: Option[String] = options.get("SPATIAL_INDEX")
+
+  val indexName = SPATIAL_INDEX.getOrElse("")
+
+  lazy val SPATIAL_INDEX_type: Option[String] = options.get(
+    s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.type")
+
+  lazy val SPATIAL_INDEX_sourcecolumns: Option[String] = options.get(
+    s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.sourcecolumns")
+
+  lazy val SPATIAL_INDEX_originLatitude: Option[String] = options.get(
+    s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.originLatitude")
+
+  lazy val SPATIAL_INDEX_gridSize: Option[String] = options.get(
+    s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.gridSize")
+
+  lazy val SPATIAL_INDEX_conversionRatio: Option[String] = options.get(
+    s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.conversionRatio")
+
+  lazy val SPATIAL_INDEX_class: Option[String] = options.get(
+    s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.class")
+
   def toMap: Map[String, String] = options
 }

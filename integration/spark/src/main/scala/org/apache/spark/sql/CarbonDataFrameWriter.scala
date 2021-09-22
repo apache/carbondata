@@ -23,6 +23,7 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonType}
 import org.apache.carbondata.spark.CarbonOption
@@ -82,6 +83,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   }
 
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
+    val indexName = options.indexName
     val property = Map(
       "SORT_COLUMNS" -> options.sortColumns,
       "SORT_SCOPE" -> options.sortScope,
@@ -91,7 +93,18 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       "TABLE_PAGE_SIZE_INMB" -> options.tablePageSizeInMb,
       "STREAMING" -> Option(options.isStreaming.toString),
       "DATEFORMAT" -> options.dateformat,
-      "TIMESTAMPFORMAT" -> options.timestampformat
+      "TIMESTAMPFORMAT" -> options.timestampformat,
+      "SPATIAL_INDEX" -> options.SPATIAL_INDEX,
+      s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.type" -> options.SPATIAL_INDEX_type,
+      s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.sourcecolumns" ->
+      options.SPATIAL_INDEX_sourcecolumns,
+      s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.originLatitude" ->
+      options.SPATIAL_INDEX_originLatitude,
+      s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.gridSize" ->
+      options.SPATIAL_INDEX_gridSize,
+      s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.conversionRatio" ->
+      options.SPATIAL_INDEX_conversionRatio,
+      s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.class" -> options.SPATIAL_INDEX_class
     ).filter(_._2.isDefined)
       .map(property => s"'${property._1}' = '${property._2.get}'").mkString(",")
 
