@@ -21,6 +21,7 @@ import java.io.File
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -201,10 +202,28 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
          |stored as carbondata
          |LOCATION '$newStoreLocation'
        """.stripMargin)
-    val exception = intercept[Exception] {
-      sql("select * from source").show(false)
-    }
-    assert(exception.getMessage.contains("No Index files are present in the table location"))
+    val tableIdentifier = new TableIdentifier("source", Some("default"))
+    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
+    assert(carbonTable.isTransactionalTable && carbonTable.isHivePartitionTable)
+    sql("INSERT INTO source select 100,'spark','test1'")
+    checkAnswer(sql("select * from source"), Seq(Row(100, "spark", "test1")))
+    sql("drop table if exists source")
+  }
+
+  test("test create table with location") {
+    // test non-partition table
+    val newStoreLocation = s"$storeLocation/origin1"
+    FileUtils.deleteDirectory(new File(newStoreLocation))
+    sql("drop table if exists source")
+    sql(
+      s"""
+         |CREATE TABLE source(a int, b string,c string)
+         |stored as carbondata
+         |LOCATION '$newStoreLocation'
+       """.stripMargin)
+    val tableIdentifier = new TableIdentifier("source", Some("default"))
+    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
+    assert(carbonTable.isTransactionalTable)
     sql("INSERT INTO source select 100,'spark','test1'")
     checkAnswer(sql("select * from source"), Seq(Row(100, "spark", "test1")))
     sql("drop table if exists source")

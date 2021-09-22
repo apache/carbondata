@@ -37,7 +37,7 @@ import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.{QueryExecution, ShuffledRowRDD, SparkPlan, SQLExecution, UnaryExecNode}
 import org.apache.spark.sql.execution.command.{ExplainCommand, Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
-import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, RefreshTable}
+import org.apache.spark.sql.execution.datasources.{CreateTable, DataSourceStrategy, RefreshTable}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide}
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
@@ -429,6 +429,22 @@ trait SparkVersionAdapter {
 
   def evaluateWithPredicate(exp: Expression, schema: Seq[Attribute], row: InternalRow): Any = {
     InterpretedPredicate.create(exp, schema).expression.eval(row)
+  }
+
+  def getUpdatedPlan(plan: LogicalPlan, sqlText: String): LogicalPlan = {
+    plan match {
+      case create@CreateTable(tableDesc, mode, query) =>
+        if ( tableDesc.storage.locationUri.isDefined &&
+             !sqlText.toUpperCase.startsWith("CREATE EXTERNAL TABLE ")) {
+          // add a property to differentiate if create table statement has external keyword or not
+          val newProperties = tableDesc.properties. +("hasexternalkeyword" -> "false")
+          val updatedTableDesc = tableDesc.copy(properties = newProperties)
+          CreateTable(updatedTableDesc, mode, query)
+        } else {
+          create
+        }
+      case others => others
+    }
   }
 }
 

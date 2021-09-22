@@ -36,7 +36,7 @@ import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, ColTypeListContext, CreateTableHeaderContext, LocationSpecContext, PartitionFieldListContext, QueryContext, SkewSpecContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan}
-import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoStatement, Join, JoinHint, LogicalPlan, OneRowRelation, QualifiedColType}
+import org.apache.spark.sql.catalyst.plans.logical.{CreateTableStatement, InsertIntoStatement, Join, JoinHint, LogicalPlan, OneRowRelation, QualifiedColType}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.util.{DateTimeUtils, RebaseDateTime, TimestampFormatter}
 import org.apache.spark.sql.execution.{ExplainMode, QueryExecution, ShuffledRowRDD, SimpleMode, SparkPlan, SQLExecution, UnaryExecNode}
@@ -470,6 +470,24 @@ trait SparkVersionAdapter {
       query,
       overwrite,
       ifPartitionNotExists)
+  }
+
+  def getUpdatedPlan(plan: LogicalPlan, sqlText: String): LogicalPlan = {
+    plan match {
+      case create@CreateTableStatement(_, _, _, _, properties, _, _,
+      location, _, _, _, _) =>
+        if ( location.isDefined &&
+             !sqlText.toUpperCase.startsWith("CREATE EXTERNAL TABLE ")) {
+          // add a property to differentiate if create table statement has external keyword or not
+          val newProperties = properties. +("hasexternalkeyword" -> "false")
+          CreateTableStatement(create.tableName, create.tableSchema, create.partitioning,
+            create.bucketSpec, newProperties, create.provider, create.options,
+            location, create.comment, create.serde, create.external, create.ifNotExists)
+        } else {
+          create
+        }
+      case others => others
+    }
   }
 }
 
