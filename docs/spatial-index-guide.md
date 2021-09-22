@@ -74,6 +74,30 @@ create table source_index(id BIGINT, latitude long, longitude long) stored by 'c
 'SPATIAL_INDEX.mygeohash.gridSize'='50',
 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000');
 ```
+
+Create spatial table using spark dataframe
+
+    val geoSchema = StructType(Seq(StructField("timevalue", LongType, nullable = true),
+    StructField("longitude", LongType, nullable = false),
+    StructField("latitude", LongType, nullable = false)))
+
+    val geoDf = sqlContext.read.option("delimeter", ",").option("header", "true").schema(geoSchema)
+      .csv(s"$resourcesPath/geodata.csv")
+
+	geoDf.write
+      .format("carbondata")
+      .option("tableName", "geo1")
+      .option("SPATIAL_INDEX", "mygeohash")
+      .option("SPATIAL_INDEX.mygeohash.type", "geohash")
+      .option("SPATIAL_INDEX.mygeohash.sourcecolumns", "longitude, latitude")
+      .option("SPATIAL_INDEX.mygeohash.originLatitude", "39.832277")
+      .option("SPATIAL_INDEX.mygeohash.gridSize", "50")
+      .option("SPATIAL_INDEX.mygeohash.conversionRatio", "1000000")
+      .option("SPATIAL_INDEX.mygeohash.class", "org.apache.carbondata.geo.GeoHashIndex")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+
 Note: 
    * `mygeohash` in the above example represent the index name.
    * Columns present in spatial_index table properties cannot be altered
@@ -102,6 +126,9 @@ Load/Insert with custom geoId
 ```
 insert into source_index select 0, 1,116.285807,40.084087;
 ```
+
+Note:
+* Load custom geoId values using dataframe is not supported.
 
 ### Select Query
 
