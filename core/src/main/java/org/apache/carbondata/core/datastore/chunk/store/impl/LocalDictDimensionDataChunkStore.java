@@ -72,6 +72,9 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
         int deletedRow = vectorInfo.deletedRows != null ? vectorInfo.deletedRows.cardinality() : 0;
         rowsNum = dataLength - deletedRow;
       } else {
+        // this is not required to be changed in the case of the array because
+        // datalength of the array already taking care of deleted rows in
+        // ColumnVectorInfo.getUpdatedPageSizeForChildVector
         rowsNum = dataLength;
       }
       vector = vectorInfo.vectorStack.peek();

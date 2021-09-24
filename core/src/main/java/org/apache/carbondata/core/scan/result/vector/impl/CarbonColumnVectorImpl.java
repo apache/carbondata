@@ -79,7 +79,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private boolean loaded;
 
-  private List<Integer> childElementsForEachRow;
+  private List<Integer> numberOfChildElementsInEachRow;
 
   private CarbonDictionary localDictionary;
 
@@ -121,41 +121,41 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   }
 
   public List<Integer> getNumberOfChildrenElementsInEachRow() {
-    return childElementsForEachRow;
+    return numberOfChildElementsInEachRow;
   }
 
-  public void setNumberOfChildElementsInEachRow(List<Integer> childrenElements) {
-    this.childElementsForEachRow = childrenElements;
+  public void setNumberOfChildElementsInEachRow(List<Integer> numberOfChildElementsInEachRow) {
+    this.numberOfChildElementsInEachRow = numberOfChildElementsInEachRow;
   }
 
-  public void setNumberOfChildElementsForArray(byte[] parentPageData, int pageSize) {
+  public void setNumberOfElementsInEachRowForArray(byte[] parentPageData, int pageSize) {
     // for complex array type, go through parent page to get the child information
     ByteBuffer childInfoBuffer = ByteBuffer.wrap(parentPageData);
-    List<Integer> childElementsForEachRow = new ArrayList<>();
+    List<Integer> numberOfArrayElementsInEachRow = new ArrayList<>();
     // Parent page array data looks like
     // number of children in each row [4 byte], Offset [4 byte],
     // number of children in each row [4 byte], Offset [4 byte]...
-    while (pageSize != childElementsForEachRow.size()) {
-      // get the number of children in current row
-      childElementsForEachRow.add(childInfoBuffer.getInt());
+    while (pageSize != numberOfArrayElementsInEachRow.size()) {
+      // get the number of array elements in current row
+      numberOfArrayElementsInEachRow.add(childInfoBuffer.getInt());
       // skip offset
       childInfoBuffer.getInt();
     }
-    setNumberOfChildElementsInEachRow(childElementsForEachRow);
+    setNumberOfChildElementsInEachRow(numberOfArrayElementsInEachRow);
   }
 
-  public void setNumberOfChildElementsForStruct(byte[] parentPageData, int pageSize) {
+  public void setNumberOfElementsInEachRowForStruct(byte[] parentPageData, int pageSize) {
     // for complex struct type, go through parent page to get the child information
     ByteBuffer childInfoBuffer = ByteBuffer.wrap(parentPageData);
-    List<Integer> childElementsForEachRow = new ArrayList<>();
+    List<Integer> numberOfStructElementsInEachRow = new ArrayList<>();
     // Parent page struct data looks like
     // number of children in each row [2 byte], number of children in each row [2 byte],
     // number of children in each row [2 byte], number of children in each row [2 byte]...
-    while (pageSize != childElementsForEachRow.size()) {
+    while (pageSize != numberOfStructElementsInEachRow.size()) {
       int elements = childInfoBuffer.getShort();
-      childElementsForEachRow.add(elements);
+      numberOfStructElementsInEachRow.add(elements);
     }
-    setNumberOfChildElementsInEachRow(childElementsForEachRow);
+    setNumberOfChildElementsInEachRow(numberOfStructElementsInEachRow);
   }
 
   public CarbonDictionary getLocalDictionary() {
