@@ -262,12 +262,14 @@ public class DirectCompressCodec implements ColumnPageCodec {
         CarbonColumnVector parentVector = vectorInfo.vectorStack.peek();
         CarbonColumnVectorImpl parentVectorImpl =
             (CarbonColumnVectorImpl) (parentVector.getColumnVector());
+        int deletedRowCount = vectorInfo.deletedRows != null ?
+            vectorInfo.deletedRows.cardinality() : 0;
         // parse the parent page data,
         // save the information about number of child in each row in parent vector
         if (DataTypes.isStructType(parentVectorImpl.getType())) {
-          parentVectorImpl.setNumberOfChildElementsForStruct(pageData, pageSize);
+          parentVectorImpl.setNumberOfChildElementsForStruct(pageData, pageSize - deletedRowCount);
         } else {
-          parentVectorImpl.setNumberOfChildElementsForArray(pageData, pageSize);
+          parentVectorImpl.setNumberOfChildElementsForArray(pageData, pageSize - deletedRowCount);
         }
         for (CarbonColumnVector childVector : parentVector.getColumnVector().getChildrenVector()) {
           // push each child

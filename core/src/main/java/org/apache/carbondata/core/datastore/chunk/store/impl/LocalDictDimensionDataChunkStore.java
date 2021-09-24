@@ -22,6 +22,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -67,8 +68,13 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     int rowsNum = dataLength / columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
     if (vector.getType().isComplexType()) {
+      if (DataTypes.isStructType(vector.getType())) {
+        int deletedRow = vectorInfo.deletedRows != null ? vectorInfo.deletedRows.cardinality() : 0;
+        rowsNum = dataLength - deletedRow;
+      } else {
+        rowsNum = dataLength;
+      }
       vector = vectorInfo.vectorStack.peek();
-      rowsNum = dataLength;
       CarbonColumnVector sliceVector = vector.getColumnVector();
       // use rowsNum as positionCount in order to create dictionary block
       sliceVector.setPositionCount(rowsNum);
@@ -87,6 +93,7 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
             vectorInfo.deletedRows, false, false);
     // this check is in case of array of string type
     if (vectorInfo.vector.getType().isComplexType()
+        && dictionaryVector instanceof CarbonColumnVectorImpl
         && ((CarbonColumnVectorImpl) dictionaryVector).getIntArraySize() < rowsNum) {
       ((CarbonColumnVectorImpl) dictionaryVector).increaseIntArraySize(rowsNum);
     }
