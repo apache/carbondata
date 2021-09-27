@@ -144,7 +144,7 @@ case class CarbonDataSourceScan(
       QueryPlan.normalizePredicates(dataFilters, output),
       null,
       null,
-      null,
+      Seq.empty,
       directScanSupport,
       extraRDD,
       tableIdentifier,

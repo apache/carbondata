@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import java.sql.Date
+
 import mockit.{Mock, MockUp}
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonEnv, Row}
@@ -29,7 +31,6 @@ import org.apache.carbondata.core.locks.AbstractCarbonLock
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.spark.exception.ProcessMetaDataException
 import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
 class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
@@ -112,6 +113,39 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
       "('sort_scope'='global_sort', 'Global_sort_partitions'='-1')"))
       .getMessage
       .contains("Table property global_sort_partitions : -1 is invalid"))
+  }
+
+  test ("test SI with column meta cache") {
+    val timeStampFormat = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
+    try {
+      sql("drop table if exists uniqdataTable")
+      sql("CREATE table uniqdataTable (empno int, empname String, designation String, " +
+        "doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+        "deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
+        " attendance int, utilization int,salary int) STORED AS carbondata " +
+        "TBLPROPERTIES('COLUMN_META_CACHE'='projectjoindate')")
+      sql("create index uniqdataindex1 on table uniqdataTable (projectjoindate) AS 'carbondata'")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE uniqdataTable " +
+        "OPTIONS('DELIMITER'=',')")
+
+      checkAnswer(sql("select max(to_date(projectjoindate)),min(to_date(projectjoindate))," +
+        "count(to_date(projectjoindate)) from uniqdataTable where to_date(projectjoindate)=" +
+        "'2007-02-17' or to_date(projectjoindate)='2011-01-29' union select " +
+        "max(to_date(projectjoindate)), min(to_date(projectjoindate))," +
+        "count(to_date(projectjoindate)) from uniqdataTable where to_date(projectjoindate)=" +
+        "'2007-02-17' or to_date(projectjoindate)='2011-01-29'"), Seq(Row(Date
+        .valueOf("2011-01-29"), Date.valueOf("2007-02-17"), 2)))
+      sql("drop table if exists uniqdataTable")
+    } finally {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeStampFormat)
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    }
   }
 
   test("test create secondary index global sort before insert") {
