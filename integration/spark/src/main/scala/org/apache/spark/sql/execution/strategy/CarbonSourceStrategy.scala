@@ -29,6 +29,7 @@ import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.strategy.CarbonPlanHelper.vectorReaderEnabled
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types._
 
@@ -201,7 +202,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       new TableStatusReadCommittedScope(table.identifier, FileFactory.getConfiguration)
     val extraSegments = MixedFormatHandler.extraSegments(table.identifier, readCommittedScope)
     val extraRDD = MixedFormatHandler.extraRDD(relation, rawProjects, filterPredicates,
-      readCommittedScope, table.identifier, extraSegments)
+      readCommittedScope, table.identifier, extraSegments, vectorReaderEnabled())
     val vectorPushRowFilters =
       vectorPushRowFiltersEnabled(relationPredicates, extraSegments.nonEmpty)
     var directScanSupport = !vectorPushRowFilters
