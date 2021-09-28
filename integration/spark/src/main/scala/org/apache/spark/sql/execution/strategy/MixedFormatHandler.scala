@@ -29,7 +29,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileForm
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression}
-import org.apache.spark.sql.execution.{CodegenSupport, DataSourceScanExec, FilterExec, ProjectExec, SparkPlan}
+import org.apache.spark.sql.execution.{DataSourceScanExec, FilterExec, ProjectExec, SparkPlan}
 import org.apache.spark.sql.execution.datasources.{FileFormat, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
 import org.apache.spark.sql.execution.datasources.json.JsonFileFormat
@@ -217,9 +217,9 @@ object MixedFormatHandler {
 
   def getFileFormat(fileFormat: FileFormatName, supportBatch: Boolean = true): FileFormat = {
     if (fileFormat.equals(new FileFormatName("parquet"))) {
-      new ParquetFileFormat
+      new ExtendedParquetFileFormat(supportBatch)
     } else if (fileFormat.equals(new FileFormatName("orc"))) {
-      new OrcFileFormat
+      new ExtendedOrcFileFormat(supportBatch)
     } else if (fileFormat.equals(new FileFormatName("json"))) {
       new JsonFileFormat
     } else if (fileFormat.equals(new FileFormatName("csv"))) {
@@ -228,6 +228,18 @@ object MixedFormatHandler {
       new TextFileFormat
     } else {
       throw new UnsupportedOperationException("Format not supported " + fileFormat)
+    }
+  }
+
+  private class ExtendedParquetFileFormat(supportBatch: Boolean) extends ParquetFileFormat {
+    override def supportBatch(sparkSession: SparkSession, schema: StructType): Boolean = {
+      super.supportBatch(sparkSession, schema) && supportBatch
+    }
+  }
+
+  private class ExtendedOrcFileFormat(supportBatch: Boolean) extends OrcFileFormat {
+    override def supportBatch(sparkSession: SparkSession, schema: StructType): Boolean = {
+      super.supportBatch(sparkSession, schema) && supportBatch
     }
   }
 

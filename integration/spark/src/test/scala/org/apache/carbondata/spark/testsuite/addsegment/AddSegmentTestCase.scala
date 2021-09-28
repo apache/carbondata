@@ -446,6 +446,34 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
+  test("Test add segment with different formats and vector reader disabled") {
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    createCarbonTable()
+    createParquetTable()
+    createOrcTable()
+
+    val newPath1 = copyseg("addsegment2", "addsegtest1")
+    val newPath2 = copyseg("addsegment3", "addsegtest2")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
+
+    sql("alter table addsegment1 add segment " +
+        s"options('path'='$newPath1', 'format'='parquet')").collect()
+    sql(s"alter table addsegment1 add segment options('path'='$newPath2', 'format'='orc')")
+      .collect()
+    assert(sql("select empname, designation, doj, workgroupcategory, " +
+               "workgroupcategoryname   from addsegment1").collect().length == 30)
+    checkAnswer(sql("select empname from addsegment1 where empname='arvind'"),
+      Seq(Row("arvind"), Row("arvind"), Row("arvind")))
+    checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(30)))
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
+    assert(sql("select deptname, deptno from addsegment1 where empname = 'arvind'")
+             .collect().length == 3)
+    FileFactory.deleteAllFilesOfDir(new File(newPath1))
+    FileFactory.deleteAllFilesOfDir(new File(newPath2))
+    sqlContext.setConf("carbon.enable.vector.reader",
+      CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+  }
+
   test("Test update/delete blocking on mixed format segments") {
     createCarbonTable()
     createParquetTable()

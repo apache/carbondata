@@ -469,6 +469,7 @@
           <findbugsXmlOutput>true</findbugsXmlOutput>
           <xmlOutput>true</xmlOutput>
           <effort>Max</effort>
+          <maxHeap>1024</maxHeap>
         </configuration>
         <executions>
           <execution>
