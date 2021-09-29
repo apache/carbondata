@@ -441,10 +441,13 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
       DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
       try {
-        GenericDataType complextType =
+        GenericDataType complexType =
             dataFieldsWithComplexDataType.get(dataField.getColumn().getOrdinal());
-        complextType
-            .writeByteArray(data[orderedIndex], dataOutputStream, logHolder, isWithoutConverter);
+        boolean isEmptyBadRecord = Boolean.parseBoolean(
+            configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
+                .toString());
+        complexType.writeByteArray(data[orderedIndex], dataOutputStream, logHolder,
+            isWithoutConverter, isEmptyBadRecord);
         dataOutputStream.close();
         newData[index] = byteArray.toByteArray();
       } catch (BadRecordFoundException e) {

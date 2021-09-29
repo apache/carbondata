@@ -32,7 +32,7 @@ import org.apache.commons.lang.ArrayUtils;
  * It is thread safe as the state of class don't change while
  * calling @{@link GenericParser#parse(Object)} method
  */
-public class ArrayParserImpl implements ComplexParser<ArrayObject> {
+public class ArrayParserImpl implements ComplexParser<Object> {
 
   protected Pattern pattern;
 
@@ -46,7 +46,7 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
   }
 
   @Override
-  public ArrayObject parse(Object data) {
+  public Object parse(Object data) {
     if (data != null) {
       String value = data.toString();
       if (!value.isEmpty() && !value.equals(nullFormat)
@@ -61,7 +61,7 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
         }
       } else if (value.isEmpty()) {
         Object[] array = new Object[1];
-        array[0] = child.parse(value);
+        array[0] = value;
         return new ArrayObject(array);
       } else if (value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         // When the data is not array('') but array(), an array with zero size should be returned.
@@ -73,7 +73,7 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
   }
 
   @Override
-  public ArrayObject parseRaw(Object data) {
+  public Object parseRaw(Object data) {
     return new ArrayObject((Object[]) data);
   }
 

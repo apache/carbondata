@@ -38,7 +38,7 @@ public class MapParserImpl extends ArrayParserImpl {
   //The Key for Map will always be a PRIMITIVE type so Set<Object> here will work fine
   //The last occurance of the key, value pair will be added and all others will be overwritten
   @Override
-  public ArrayObject parse(Object data) {
+  public Object parse(Object data) {
     if (data != null) {
       String value = data.toString();
       if (!value.isEmpty() && !value.equals(nullFormat)
@@ -62,6 +62,10 @@ public class MapParserImpl extends ArrayParserImpl {
           }
           return new ArrayObject(array.toArray());
         }
+      } else if (value.isEmpty()) {
+        Object[] array = new Object[1];
+        array[0] = value;
+        return new ArrayObject(array);
       } else if (value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         // When the data is not map('','') but map(), an array with zero size should be returned.
         Object[] array = new Object[0];
@@ -72,7 +76,7 @@ public class MapParserImpl extends ArrayParserImpl {
   }
 
   @Override
-  public ArrayObject parseRaw(Object data) {
+  public Object parseRaw(Object data) {
     Object[] keyValuePairs = ((Object[]) data);
     Object[] objectArray = new Object[keyValuePairs.length];
     for (int i = 0; i < ((Object[]) data).length; i++) {

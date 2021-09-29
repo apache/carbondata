@@ -101,6 +101,52 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  def loadEmptyComplexData(isEmptyBadRecord: Boolean, badRecordsAction: String): Unit = {
+    sql(s"LOAD DATA local inpath '" + resourcesPath +
+        "/complextypeWithEmptyRecords.csv' INTO table complexcarbontable OPTIONS('DELIMITER'=','," +
+        "'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName," +
+        "purchasedate,file,MAC,locationinfo,proddate,gamePointId,contractNumber,st,ar', " +
+        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':', " +
+        s"'bad_records_logger_enable'='true','IS_EMPTY_DATA_BAD_RECORD'='$isEmptyBadRecord' ," +
+        s"'bad_records_action'='$badRecordsAction')")
+  }
+
+  test("Test complex type with empty values and IS_EMPTY_DATA_BAD_RECORD property") {
+    sql("DROP TABLE IF EXISTS complexcarbontable")
+    sql("DROP TABLE IF EXISTS complexhivetable")
+    sql(
+      "create table complexcarbontable(deviceInformationId int, channelsId string, ROMSize " +
+      "string, ROMName String, purchasedate string, file struct<school:array<string>, age:int>," +
+      " MAC map<string, int>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, " +
+      "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, " +
+      "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
+      "double,contractNumber double, st struct<school:struct<a:string,b:int>, age:int>," +
+      "ar array<array<string>>)  STORED AS carbondata")
+    val exception = intercept[Exception] ( loadEmptyComplexData(true, "fail"))
+    assert(exception.getMessage.contains(
+        "The value with column name file.age and column data type INT is not a valid INT type."))
+    loadEmptyComplexData(true, "ignore")
+    checkAnswer(sql("select count(*) from complexcarbontable"), Seq(Row(0)))
+    loadEmptyComplexData(false, "ignore")
+    sql(
+      "create table complexhivetable(deviceInformationId int, channelsId " +
+      "string, ROMSize string, ROMName String, purchasedate string, file " +
+      "struct<school:array<string>, age:int>, MAC map<string, int>, " +
+      "locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, ActiveProvince:string, " +
+      "Activecity:string, ActiveDistrict:string, " +
+      "ActiveStreet:string>>, proddate struct<productionDate:string," +
+      "activeDeactivedate:array<string>>, gamePointId double,contractNumber double," +
+      "st struct<school:struct<a:string,b:int>, age:int>,ar array<array<string>>) row format " +
+      "delimited fields terminated by ',' collection items terminated by '$' map keys terminated " +
+      "by ':'")
+    sql("LOAD DATA local inpath '" + resourcesPath +
+        "/complextypeWithEmptyRecords.csv' INTO table complexhivetable")
+    checkAnswer(sql("select count(*) from complexcarbontable"), Seq(Row(3)))
+    checkAnswer(sql("select * from complexcarbontable"),
+      sql("select * from complexhivetable"))
+    sql("DROP TABLE IF EXISTS complexcarbontable")
+  }
+
    test("select count(*) from empty_timestamp") {
     checkAnswer(
       sql("select count(*) from empty_timestamp"),

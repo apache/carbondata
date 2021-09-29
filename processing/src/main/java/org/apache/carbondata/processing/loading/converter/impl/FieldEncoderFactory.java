@@ -91,7 +91,8 @@ public class FieldEncoderFactory {
             isEmptyBadRecord);
       } else if (dataField.getColumn().isComplex()) {
         return new ComplexFieldConverterImpl(dataField,
-            createComplexDataType(dataField, nullFormat, getBinaryDecoder(binaryDecoder)), index);
+            createComplexDataType(dataField, nullFormat, getBinaryDecoder(binaryDecoder)),
+            index, isEmptyBadRecord);
       } else if (dataField.getColumn().getDataType() == DataTypes.BINARY) {
         BinaryDecoder binaryDecoderObject = getBinaryDecoder(binaryDecoder);
         return new BinaryFieldConverterImpl(dataField, nullFormat,

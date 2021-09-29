@@ -961,7 +961,7 @@ object CommonUtil {
             .writeByteArray(result.asInstanceOf[ArrayObject],
               dataOutputStream,
               badRecordLogHolder,
-              true)
+              true, false)
           dataOutputStream.close()
           data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
         case structType: StructType =>
@@ -973,7 +973,7 @@ object CommonUtil {
             .writeByteArray(result.asInstanceOf[StructObject],
               dataOutputStream,
               badRecordLogHolder,
-              true)
+              true, false)
           dataOutputStream.close()
           data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
         case other =>

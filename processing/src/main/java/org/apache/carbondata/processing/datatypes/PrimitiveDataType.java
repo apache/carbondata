@@ -40,7 +40,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.impl.binary.BinaryDecoder;
 import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
  * Primitive DataType stateless object used in data loading
@@ -237,12 +237,18 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   @Override
   public void writeByteArray(Object input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
+      BadRecordLogHolder logHolder, Boolean isWithoutConverter, boolean isEmptyBadRecord)
+      throws IOException {
     String parsedValue = null;
     // write null value
     if (null == input || ((this.carbonDimension.getDataType() == DataTypes.STRING
         || this.carbonDimension.getDataType() == DataTypes.VARCHAR) && input.equals(nullFormat))) {
       updateNullValue(dataOutputStream, logHolder);
+      return;
+    }
+    if (input.equals("")) {
+      CarbonBadRecordUtil.updateEmptyValue(dataOutputStream, isEmptyBadRecord, logHolder,
+          carbonDimension.getColName(), this.carbonDimension.getDataType());
       return;
     }
     // write null value after converter
@@ -415,13 +421,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException {
     CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream, this.carbonDimension.getDataType());
-    String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
-    if (null == message) {
-      message = CarbonDataProcessorUtil
-          .prepareFailureReason(carbonDimension.getColName(), carbonDimension.getDataType());
-      logHolder.getColumnMessageMap().put(carbonDimension.getColName(), message);
-    }
-    logHolder.setReason(message);
+    CarbonBadRecordUtil.setErrorMessage(logHolder, carbonDimension.getColName(),
+        carbonDimension.getDataType().getName());
   }
 
   @Override

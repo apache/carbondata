@@ -82,6 +82,7 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypeAdapter;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -3538,13 +3539,18 @@ public final class CarbonUtil {
       }
       dataOutputStream.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
     } else {
-      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
-        dataOutputStream.writeInt(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
-      } else {
-        dataOutputStream.writeShort(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
-      }
-      dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
+      updateWithEmptyValueBasedOnDatatype(dataOutputStream, dataType);
     }
+  }
+
+  public static void updateWithEmptyValueBasedOnDatatype(DataOutputStream dataOutputStream,
+      DataType dataType) throws IOException {
+    if (DataTypeUtil.isByteArrayComplexChildColumn(dataType) || dataType instanceof ArrayType) {
+      dataOutputStream.writeInt(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
+    } else {
+      dataOutputStream.writeShort(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
+    }
+    dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
   }
 
   /**

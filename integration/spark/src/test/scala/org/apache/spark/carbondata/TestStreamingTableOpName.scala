@@ -761,7 +761,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     // check one row of streaming data
     assert(result(0).isNullAt(0))
     assert(result(0).getString(1) == "")
-    assert(result(0).isNullAt(9))
+    assert(result(0).getStruct(9).isNullAt(1))
     // check one row of batch loading
     assert(result(50).getInt(0) == 100000001)
     assert(result(50).getString(1) == "batch_1")
@@ -924,12 +924,12 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null order by name"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null),
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null)),
         Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where name = ''"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null)))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and name <> ''"),
@@ -937,7 +937,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where city = ''"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null)))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and city <> ''"),
@@ -945,7 +945,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where salary is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null)))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and salary is not null"),
@@ -953,7 +953,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where tax is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null)))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and tax is not null"),
@@ -961,7 +961,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where percent is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null)))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and salary is not null"),
@@ -969,7 +969,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where birthday is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null)))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and birthday is not null"),
@@ -977,7 +977,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where register is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null)))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and register is not null"),
@@ -985,7 +985,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where updated is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, null)))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(mutable.WrappedArray.make(Array()), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and updated is not null"),
