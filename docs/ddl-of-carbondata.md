@@ -318,7 +318,7 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Caching Min/Max Value for Required Columns
 
-     By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. This feature doesn't support binary data type.
+     By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. This feature doesn't support binary and complex data type.
 
       Following are the valid values for COLUMN_META_CACHE:
       * If you want no column min/max values to be cached in the driver.
@@ -507,7 +507,7 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Range Column
      This property is used to specify a column to partition the input data by range.
      Only one column can be configured. During data loading, you can use "global_sort_partitions" or "scale_factor" to avoid generating small files.
-     This feature doesn't support binary data type.
+     This feature doesn't support binary and complex data type.
 
      ```
      TBLPROPERTIES('RANGE_COLUMN'='col1')

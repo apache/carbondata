@@ -1177,6 +1177,23 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hive_table")
   }
 
+  test("test COLUMN_META_CACHE and RANGE_COLUMN doesn't support complex datatype") {
+    sql("DROP TABLE IF EXISTS test")
+    var exception = intercept[Exception] {
+      sql("CREATE TABLE IF NOT EXISTS test " +
+          "(id INT,mlabel boolean,name STRING,arr1 array<array<int>>,autoLabel boolean)" +
+          " STORED AS carbondata TBLPROPERTIES('COLUMN_META_CACHE'='arr1')")
+    }
+    assert(exception.getMessage.contains("arr1 is a complex type column and complex type " +
+                                         "is not allowed for the option(s): column_meta_cache"))
+    exception = intercept[Exception] {
+      sql("CREATE TABLE IF NOT EXISTS test " +
+          "(id INT,label boolean,name STRING,map1 map<string, array<int>>,autoLabel boolean)" +
+          " STORED AS carbondata TBLPROPERTIES('RANGE_COLUMN'='map1')")
+    }
+    assert(exception.getMessage.contains("RANGE_COLUMN doesn't support map data type: map1"))
+  }
+
   test("test when insert select from a parquet table " +
        "with an struct with binary and custom complex delimiter") {
     var carbonProperties = CarbonProperties.getInstance()
