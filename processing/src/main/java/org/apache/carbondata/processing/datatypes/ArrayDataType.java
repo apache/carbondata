@@ -34,7 +34,7 @@ import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 /**
  * Array DataType stateless object used in data loading
  */
-public class ArrayDataType implements GenericDataType<ArrayObject> {
+public class ArrayDataType implements GenericDataType<Object> {
 
   /**
    * child columns
@@ -171,13 +171,13 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   @Override
-  public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream,
+  public void writeByteArray(Object input, DataOutputStream dataOutputStream,
       BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
-    if (input == null) {
+    if (input == null || input.equals("")) {
       dataOutputStream.writeInt(1);
-      children.writeByteArray(null, dataOutputStream, logHolder, isWithoutConverter);
+      children.writeByteArray(input, dataOutputStream, logHolder, isWithoutConverter);
     } else {
-      Object[] data = input.getData();
+      Object[] data = ((ArrayObject) input).getData();
       dataOutputStream.writeInt(data.length);
       for (Object eachInput : data) {
         children.writeByteArray(eachInput, dataOutputStream, logHolder, isWithoutConverter);
@@ -268,7 +268,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   @Override
-  public GenericDataType<ArrayObject> deepCopy() {
+  public GenericDataType<Object> deepCopy() {
     return new ArrayDataType(this.outputArrayIndex, this.dataCounter, this.children.deepCopy(),
         this.name);
   }

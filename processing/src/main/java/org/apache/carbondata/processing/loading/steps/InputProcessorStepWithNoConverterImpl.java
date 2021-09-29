@@ -105,7 +105,10 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
     }
     dataFieldsWithComplexDataType = new HashMap<>();
-    convertComplexDataType(dataFieldsWithComplexDataType);
+    boolean isEmptyBadRecord = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
+            .toString());
+    convertComplexDataType(dataFieldsWithComplexDataType, isEmptyBadRecord);
 
     dataTypes = new DataType[configuration.getDataFields().length];
     for (int i = 0; i < dataTypes.length; i++) {
@@ -164,7 +167,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
   }
 
-  private void convertComplexDataType(Map<Integer, GenericDataType> dataFieldsWithComplexDataType) {
+  private void convertComplexDataType(Map<Integer, GenericDataType> dataFieldsWithComplexDataType,
+      boolean isEmptyBadRecord) {
     DataField[] srcDataField = configuration.getDataFields();
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
@@ -173,7 +177,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       if (srcDataField[i].getColumn().isComplex()) {
         // create a ComplexDataType
         dataFieldsWithComplexDataType.put(srcDataField[i].getColumn().getOrdinal(),
-            FieldEncoderFactory.createComplexDataType(srcDataField[i], nullFormat, null));
+            FieldEncoderFactory.createComplexDataType(srcDataField[i], nullFormat, null,
+                isEmptyBadRecord));
       }
     }
   }

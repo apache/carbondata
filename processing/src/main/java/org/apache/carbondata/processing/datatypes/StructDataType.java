@@ -34,7 +34,7 @@ import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 /**
  * Struct DataType stateless object used in data loading
  */
-public class StructDataType implements GenericDataType<StructObject> {
+public class StructDataType implements GenericDataType<Object> {
 
   /**
    * children columns
@@ -173,15 +173,15 @@ public class StructDataType implements GenericDataType<StructObject> {
   }
 
   @Override
-  public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
+  public void writeByteArray(Object input, DataOutputStream dataOutputStream,
       BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
     dataOutputStream.writeShort(children.size());
-    if (input == null) {
+    if (input == null || input.equals("")) {
       for (int i = 0; i < children.size(); i++) {
-        children.get(i).writeByteArray(null, dataOutputStream, logHolder, isWithoutConverter);
+        children.get(i).writeByteArray(input, dataOutputStream, logHolder, isWithoutConverter);
       }
     } else {
-      Object[] data = input.getData();
+      Object[] data = ((StructObject) input).getData();
       for (int i = 0; i < data.length && i < children.size(); i++) {
         children.get(i).writeByteArray(data[i], dataOutputStream, logHolder, isWithoutConverter);
       }
@@ -290,7 +290,7 @@ public class StructDataType implements GenericDataType<StructObject> {
   }
 
   @Override
-  public GenericDataType<StructObject> deepCopy() {
+  public GenericDataType<Object> deepCopy() {
     List<GenericDataType> childrenClone = new ArrayList<>();
     for (GenericDataType child : children) {
       childrenClone.add(child.deepCopy());

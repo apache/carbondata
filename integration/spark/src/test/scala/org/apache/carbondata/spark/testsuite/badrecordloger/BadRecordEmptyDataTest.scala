@@ -101,6 +101,47 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("Test complex type with empty values and IS_EMPTY_DATA_BAD_RECORD property") {
+    sql("DROP TABLE IF EXISTS complexcarbontable")
+    sql("DROP TABLE IF EXISTS complexhivetable")
+    sql(
+      "create table complexcarbontable(deviceInformationId int, channelsId string, ROMSize " +
+      "string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:int>, MAC " +
+      "array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, " +
+      "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, " +
+      "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
+      "double,contractNumber double)  STORED AS carbondata")
+    sql("LOAD DATA local inpath '" + resourcesPath +
+      "/complextypeWithEmptyRecords.csv' INTO table complexcarbontable OPTIONS('DELIMITER'=','," +
+      "'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName," +
+      "purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber', " +
+      "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':', " +
+      "'bad_records_logger_enable'='true','IS_EMPTY_DATA_BAD_RECORD'='true' ," +
+      "'bad_records_action'='ignore')")
+    checkAnswer(sql("select count(*) from complexcarbontable"), Seq(Row(0)))
+    sql("LOAD DATA local inpath '" + resourcesPath +
+      "/complextypeWithEmptyRecords.csv' INTO table complexcarbontable OPTIONS('DELIMITER'=','," +
+      "'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName," +
+      "purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber', " +
+      "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':', " +
+      "'bad_records_logger_enable'='true','IS_EMPTY_DATA_BAD_RECORD'='false' ," +
+      "'bad_records_action'='ignore')")
+    sql(
+      "create table complexhivetable(deviceInformationId int, channelsId " +
+      "string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, " +
+      "imsi:int>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, " +
+      "ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, " +
+      "ActiveStreet:string>>, proddate struct<productionDate:string," +
+      "activeDeactivedate:array<string>>, gamePointId double,contractNumber double) row format " +
+      "delimited fields terminated by ',' collection items terminated by '$' map keys terminated " +
+      "by ':'")
+    sql("LOAD DATA local inpath '" + resourcesPath +
+        "/complextypeWithEmptyRecords.csv' INTO table complexhivetable")
+    checkAnswer(sql("select count(*) from complexcarbontable"), Seq(Row(1)))
+    checkAnswer(sql("select * from complexcarbontable"), sql("select * from complexhivetable"))
+    sql("DROP TABLE IF EXISTS complexcarbontable")
+  }
+
    test("select count(*) from empty_timestamp") {
     checkAnswer(
       sql("select count(*) from empty_timestamp"),

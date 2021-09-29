@@ -91,7 +91,8 @@ public class FieldEncoderFactory {
             isEmptyBadRecord);
       } else if (dataField.getColumn().isComplex()) {
         return new ComplexFieldConverterImpl(dataField,
-            createComplexDataType(dataField, nullFormat, getBinaryDecoder(binaryDecoder)), index);
+            createComplexDataType(dataField, nullFormat, getBinaryDecoder(binaryDecoder),
+                isEmptyBadRecord), index);
       } else if (dataField.getColumn().getDataType() == DataTypes.BINARY) {
         BinaryDecoder binaryDecoderObject = getBinaryDecoder(binaryDecoder);
         return new BinaryFieldConverterImpl(dataField, nullFormat,
@@ -134,10 +135,10 @@ public class FieldEncoderFactory {
   /**
    * Create parser for the carbon column.
    */
-  public static GenericDataType createComplexDataType(
-      DataField dataField, String nullFormat, BinaryDecoder binaryDecoder) {
-    return createComplexType(
-        dataField.getColumn(), dataField.getColumn().getColName(), nullFormat, binaryDecoder);
+  public static GenericDataType createComplexDataType(DataField dataField, String nullFormat,
+      BinaryDecoder binaryDecoder, boolean isEmptyBadRecord) {
+    return createComplexType(dataField.getColumn(), dataField.getColumn().getColName(), nullFormat,
+        binaryDecoder, isEmptyBadRecord);
   }
 
   /**
@@ -147,7 +148,7 @@ public class FieldEncoderFactory {
    */
 
   private static GenericDataType createComplexType(CarbonColumn carbonColumn, String parentName,
-      String nullFormat, BinaryDecoder binaryDecoder) {
+      String nullFormat, BinaryDecoder binaryDecoder, boolean isEmptyBadRecord) {
     DataType dataType = carbonColumn.getDataType();
     if (DataTypes.isArrayType(dataType) || DataTypes.isMapType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
@@ -158,7 +159,8 @@ public class FieldEncoderFactory {
               carbonColumn.getDataType() == DataTypes.DATE);
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
-            createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));
+            createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder,
+                isEmptyBadRecord));
       }
       return arrayDataType;
     } else if (DataTypes.isStructType(dataType)) {
@@ -170,12 +172,13 @@ public class FieldEncoderFactory {
               carbonColumn.getDataType() == DataTypes.DATE);
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
-            createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));
+            createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder,
+                isEmptyBadRecord));
       }
       return structDataType;
     } else {
       return new PrimitiveDataType(carbonColumn, parentName, carbonColumn.getColumnId(),
-          (CarbonDimension) carbonColumn, nullFormat, binaryDecoder);
+          (CarbonDimension) carbonColumn, nullFormat, binaryDecoder, isEmptyBadRecord);
     }
   }
 

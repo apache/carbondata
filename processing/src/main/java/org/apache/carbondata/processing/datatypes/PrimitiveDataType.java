@@ -98,6 +98,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private transient BinaryDecoder binaryDecoder;
 
+  private boolean isEmptyBadRecord;
+
   private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
@@ -130,7 +132,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param nullFormat
    */
   public PrimitiveDataType(CarbonColumn carbonColumn, String parentName, String columnId,
-      CarbonDimension carbonDimension, String nullFormat, BinaryDecoder binaryDecoder) {
+      CarbonDimension carbonDimension, String nullFormat, BinaryDecoder binaryDecoder,
+      boolean isEmptyBadRecord) {
     this.name = carbonColumn.getColName();
     this.parentName = parentName;
     this.columnId = columnId;
@@ -139,6 +142,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     this.nullFormat = nullFormat;
     this.binaryDecoder = binaryDecoder;
     this.dataType = carbonColumn.getDataType();
+    this.isEmptyBadRecord = isEmptyBadRecord;
 
     if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
         || carbonColumn.getDataType() == DataTypes.DATE) {
@@ -245,13 +249,24 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       updateNullValue(dataOutputStream, logHolder);
       return;
     }
+    if (input.equals("") && isEmptyBadRecord) {
+      setErrorMessage(logHolder);
+    }
     // write null value after converter
     if (!isWithoutConverter) {
       parsedValue = DataTypeUtil.parseValue(input.toString(), carbonDimension);
       if (null == parsedValue || ((this.carbonDimension.getDataType() == DataTypes.STRING
           || this.carbonDimension.getDataType() == DataTypes.VARCHAR) && parsedValue
           .equals(nullFormat))) {
-        updateNullValue(dataOutputStream, logHolder);
+        if (!input.equals("")) {
+          updateNullValue(dataOutputStream, logHolder);
+        } else {
+          CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream,
+              this.carbonDimension.getDataType());
+          if (isEmptyBadRecord) {
+            setErrorMessage(logHolder);
+          }
+        }
         return;
       }
     }
@@ -415,6 +430,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException {
     CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream, this.carbonDimension.getDataType());
+    setErrorMessage(logHolder);
+  }
+
+  private void setErrorMessage(BadRecordLogHolder logHolder) {
     String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
     if (null == message) {
       message = CarbonDataProcessorUtil
