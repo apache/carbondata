@@ -33,6 +33,7 @@ import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.SparkOptimizer
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
@@ -238,33 +239,21 @@ object CarbonToSparkAdapter extends SparkVersionAdapter {
 }
 
 class CarbonOptimizer(session: SparkSession, optimizer: Optimizer) extends
-  Optimizer(session.sessionState.catalogManager) {
+  SparkOptimizer(session.sessionState.catalogManager,
+    session.sessionState.catalog,
+    session.sessionState.experimentalMethods) {
 
   private lazy val mvRules = Seq(Batch("Materialized View Optimizers", Once,
     Seq(new MVRewriteRule(session)): _*))
 
-  private lazy val iudRule = Batch("IUD Optimizers", fixedPoint,
+  private lazy val iudRule = Batch("IUD Optimizers", Once,
     Seq(new CarbonIUDRule(), new CarbonUDFTransformRule(), new CarbonFileIndexReplaceRule()): _*)
 
   private lazy val secondaryIndexRule = Batch("SI Optimizers", Once,
     Seq(new CarbonSITransformationRule(session)): _*)
 
   override def defaultBatches: Seq[Batch] = {
-    mvRules ++ convertedBatch() :+ iudRule :+ secondaryIndexRule
+    mvRules ++ super.defaultBatches :+ iudRule :+ secondaryIndexRule
   }
 
-  def convertedBatch(): Seq[Batch] = {
-    optimizer.batches.map { batch =>
-      Batch(
-        batch.name,
-        batch.strategy match {
-          case optimizer.Once =>
-            Once
-          case _: optimizer.FixedPoint =>
-            fixedPoint
-        },
-        batch.rules: _*
-      )
-    }
-  }
 }

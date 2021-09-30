@@ -152,7 +152,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     var partitions : (Seq[CatalogTablePartition], Seq[PartitionSpec], Seq[Expression]) =
       (null, null, Seq.empty)
     var filterPredicates = allPredicates
-    if(names.nonEmpty) {
+    if(names.nonEmpty && partitionsFilter.nonEmpty) {
       partitions = CarbonFilters.getCatalogTablePartitions(
         partitionsFilter.filterNot(e => e.find(_.isInstanceOf[PlanExpression[_]]).isDefined),
         SparkSession.getActiveSession.get,
