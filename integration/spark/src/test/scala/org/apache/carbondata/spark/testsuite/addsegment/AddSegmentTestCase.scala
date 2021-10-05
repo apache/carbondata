@@ -470,6 +470,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
              .collect().length == 3)
     FileFactory.deleteAllFilesOfDir(new File(newPath1))
     FileFactory.deleteAllFilesOfDir(new File(newPath2))
+    sqlContext.setConf("carbon.enable.vector.reader",
+      CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
   }
 
   test("Test update/delete blocking on mixed format segments") {
