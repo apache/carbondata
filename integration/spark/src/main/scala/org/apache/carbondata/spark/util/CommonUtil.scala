@@ -961,7 +961,7 @@ object CommonUtil {
             .writeByteArray(result.asInstanceOf[ArrayObject],
               dataOutputStream,
               badRecordLogHolder,
-              true)
+              true, false)
           dataOutputStream.close()
           data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
         case structType: StructType =>
@@ -973,7 +973,7 @@ object CommonUtil {
             .writeByteArray(result.asInstanceOf[StructObject],
               dataOutputStream,
               badRecordLogHolder,
-              true)
+              true, false)
           dataOutputStream.close()
           data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
         case other =>
@@ -1059,14 +1059,11 @@ object CommonUtil {
     val nullFormat = configuration
       .getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
       .toString
-    val isEmptyBadRecord = (configuration
-      .getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
-      .toString).toBoolean
     for (field <- fields) {
       if (field.getColumn.isComplex) {
         dataFieldsWithComplexDataType +=
         (field.getColumn.getColName ->
-         FieldEncoderFactory.createComplexDataType(field, nullFormat, null, isEmptyBadRecord))
+         FieldEncoderFactory.createComplexDataType(field, nullFormat, null))
       }
     }
   }

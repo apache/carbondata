@@ -105,10 +105,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
     }
     dataFieldsWithComplexDataType = new HashMap<>();
-    boolean isEmptyBadRecord = Boolean.parseBoolean(
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
-            .toString());
-    convertComplexDataType(dataFieldsWithComplexDataType, isEmptyBadRecord);
+    convertComplexDataType(dataFieldsWithComplexDataType);
 
     dataTypes = new DataType[configuration.getDataFields().length];
     for (int i = 0; i < dataTypes.length; i++) {
@@ -167,8 +164,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
   }
 
-  private void convertComplexDataType(Map<Integer, GenericDataType> dataFieldsWithComplexDataType,
-      boolean isEmptyBadRecord) {
+  private void convertComplexDataType(Map<Integer, GenericDataType> dataFieldsWithComplexDataType) {
     DataField[] srcDataField = configuration.getDataFields();
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
@@ -177,8 +173,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       if (srcDataField[i].getColumn().isComplex()) {
         // create a ComplexDataType
         dataFieldsWithComplexDataType.put(srcDataField[i].getColumn().getOrdinal(),
-            FieldEncoderFactory.createComplexDataType(srcDataField[i], nullFormat, null,
-                isEmptyBadRecord));
+            FieldEncoderFactory.createComplexDataType(srcDataField[i], nullFormat, null));
       }
     }
   }
@@ -446,10 +441,13 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
       DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
       try {
-        GenericDataType complextType =
+        GenericDataType complexType =
             dataFieldsWithComplexDataType.get(dataField.getColumn().getOrdinal());
-        complextType
-            .writeByteArray(data[orderedIndex], dataOutputStream, logHolder, isWithoutConverter);
+        boolean isEmptyBadRecord = Boolean.parseBoolean(
+            configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
+                .toString());
+        complexType.writeByteArray(data[orderedIndex], dataOutputStream, logHolder,
+            isWithoutConverter, isEmptyBadRecord);
         dataOutputStream.close();
         newData[index] = byteArray.toByteArray();
       } catch (BadRecordFoundException e) {

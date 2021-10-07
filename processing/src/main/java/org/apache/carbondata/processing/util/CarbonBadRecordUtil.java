@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.processing.util;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -27,10 +28,13 @@ import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.commons.lang.StringUtils;
@@ -154,4 +158,22 @@ public class CarbonBadRecordUtil {
     return badRecordsPath;
   }
 
+  public static void updateEmptyValue(DataOutputStream dataOutputStream, boolean isEmptyBadRecord,
+      BadRecordLogHolder logHolder, String parentName, DataType dataType) throws IOException {
+    CarbonUtil.updateWithEmptyValueBasedOnDatatype(dataOutputStream, dataType);
+    if (isEmptyBadRecord) {
+      CarbonBadRecordUtil.setErrorMessage(logHolder, parentName, dataType.getName());
+    }
+  }
+
+  public static void setErrorMessage(BadRecordLogHolder logHolder, String columnName,
+      String datatypeName) {
+    String message = logHolder.getColumnMessageMap().get(columnName);
+    if (null == message) {
+      message = "The value with column name " + columnName + " and column data type " + datatypeName
+          + " is not a valid " + datatypeName + " type.";
+      logHolder.getColumnMessageMap().put(columnName, message);
+    }
+    logHolder.setReason(message);
+  }
 }

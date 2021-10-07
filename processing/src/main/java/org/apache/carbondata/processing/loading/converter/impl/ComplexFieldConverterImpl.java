@@ -33,12 +33,14 @@ public class ComplexFieldConverterImpl implements FieldConverter {
 
   private int index;
   private DataField dataField;
+  private boolean isEmptyBadRecord;
 
-  public ComplexFieldConverterImpl(DataField dataField, GenericDataType genericDataType,
-      int index) {
+  public ComplexFieldConverterImpl(DataField dataField, GenericDataType genericDataType, int index,
+      boolean isEmptyBadRecord) {
     this.genericDataType = genericDataType;
     this.index = index;
     this.dataField = dataField;
+    this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
   @Override
@@ -53,7 +55,7 @@ public class ComplexFieldConverterImpl implements FieldConverter {
     ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
     DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
     try {
-      genericDataType.writeByteArray(value, dataOutputStream, logHolder, false);
+      genericDataType.writeByteArray(value, dataOutputStream, logHolder, false, isEmptyBadRecord);
       dataOutputStream.close();
       return byteArray.toByteArray();
     } catch (Exception e) {

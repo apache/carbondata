@@ -30,6 +30,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
  * Array DataType stateless object used in data loading
@@ -172,15 +173,26 @@ public class ArrayDataType implements GenericDataType<Object> {
 
   @Override
   public void writeByteArray(Object input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
-    if (input == null || input.equals("")) {
+      BadRecordLogHolder logHolder, Boolean isWithoutConverter, boolean isEmptyBadRecord)
+      throws IOException {
+    if (input == null) {
       dataOutputStream.writeInt(1);
-      children.writeByteArray(input, dataOutputStream, logHolder, isWithoutConverter);
+      children.writeByteArray(null, dataOutputStream, logHolder, isWithoutConverter,
+          isEmptyBadRecord);
     } else {
       Object[] data = ((ArrayObject) input).getData();
-      dataOutputStream.writeInt(data.length);
+      if (data.length == 1 && data[0] != null
+          && data[0].equals("") && !(children instanceof PrimitiveDataType)) {
+        // If child complex column is empty, no need to iterate. Fill empty byte array and return.
+        CarbonBadRecordUtil.updateEmptyValue(dataOutputStream, isEmptyBadRecord, logHolder,
+            parentName, DataTypeUtil.valueOf("array"));
+        return;
+      } else {
+        dataOutputStream.writeInt(data.length);
+      }
       for (Object eachInput : data) {
-        children.writeByteArray(eachInput, dataOutputStream, logHolder, isWithoutConverter);
+        children.writeByteArray(eachInput, dataOutputStream, logHolder, isWithoutConverter,
+            isEmptyBadRecord);
       }
     }
   }

@@ -41,10 +41,7 @@ public class MapParserImpl extends ArrayParserImpl {
   public Object parse(Object data) {
     if (data != null) {
       String value = data.toString();
-      if (value.isEmpty()) {
-        return value;
-      }
-      if (!value.equals(nullFormat)
+      if (!value.isEmpty() && !value.equals(nullFormat)
           // && !value.equals(keyValueDelimiter)
           && !value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         String[] split = pattern.split(value, -1);
@@ -65,6 +62,10 @@ public class MapParserImpl extends ArrayParserImpl {
           }
           return new ArrayObject(array.toArray());
         }
+      } else if (value.isEmpty()) {
+        Object[] array = new Object[1];
+        array[0] = value;
+        return new ArrayObject(array);
       } else if (value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         // When the data is not map('','') but map(), an array with zero size should be returned.
         Object[] array = new Object[0];

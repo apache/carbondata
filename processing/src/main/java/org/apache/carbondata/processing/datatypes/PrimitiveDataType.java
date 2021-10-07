@@ -40,7 +40,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.impl.binary.BinaryDecoder;
 import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
  * Primitive DataType stateless object used in data loading
@@ -98,8 +98,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private transient BinaryDecoder binaryDecoder;
 
-  private boolean isEmptyBadRecord;
-
   private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
@@ -132,8 +130,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param nullFormat
    */
   public PrimitiveDataType(CarbonColumn carbonColumn, String parentName, String columnId,
-      CarbonDimension carbonDimension, String nullFormat, BinaryDecoder binaryDecoder,
-      boolean isEmptyBadRecord) {
+      CarbonDimension carbonDimension, String nullFormat, BinaryDecoder binaryDecoder) {
     this.name = carbonColumn.getColName();
     this.parentName = parentName;
     this.columnId = columnId;
@@ -142,7 +139,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     this.nullFormat = nullFormat;
     this.binaryDecoder = binaryDecoder;
     this.dataType = carbonColumn.getDataType();
-    this.isEmptyBadRecord = isEmptyBadRecord;
 
     if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
         || carbonColumn.getDataType() == DataTypes.DATE) {
@@ -241,7 +237,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   @Override
   public void writeByteArray(Object input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
+      BadRecordLogHolder logHolder, Boolean isWithoutConverter, boolean isEmptyBadRecord)
+      throws IOException {
     String parsedValue = null;
     // write null value
     if (null == input || ((this.carbonDimension.getDataType() == DataTypes.STRING
@@ -249,8 +246,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       updateNullValue(dataOutputStream, logHolder);
       return;
     }
-    if (input.equals("") && isEmptyBadRecord) {
-      setErrorMessage(logHolder);
+    if (input.equals("")) {
+      CarbonBadRecordUtil.updateEmptyValue(dataOutputStream, isEmptyBadRecord, logHolder,
+          carbonDimension.getColName(), this.carbonDimension.getDataType());
+      return;
     }
     // write null value after converter
     if (!isWithoutConverter) {
@@ -258,15 +257,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       if (null == parsedValue || ((this.carbonDimension.getDataType() == DataTypes.STRING
           || this.carbonDimension.getDataType() == DataTypes.VARCHAR) && parsedValue
           .equals(nullFormat))) {
-        if (!input.equals("")) {
-          updateNullValue(dataOutputStream, logHolder);
-        } else {
-          CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream,
-              this.carbonDimension.getDataType());
-          if (isEmptyBadRecord) {
-            setErrorMessage(logHolder);
-          }
-        }
+        updateNullValue(dataOutputStream, logHolder);
         return;
       }
     }
@@ -430,17 +421,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException {
     CarbonUtil.updateNullValueBasedOnDatatype(dataOutputStream, this.carbonDimension.getDataType());
-    setErrorMessage(logHolder);
-  }
-
-  private void setErrorMessage(BadRecordLogHolder logHolder) {
-    String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
-    if (null == message) {
-      message = CarbonDataProcessorUtil
-          .prepareFailureReason(carbonDimension.getColName(), carbonDimension.getDataType());
-      logHolder.getColumnMessageMap().put(carbonDimension.getColName(), message);
-    }
-    logHolder.setReason(message);
+    CarbonBadRecordUtil.setErrorMessage(logHolder, carbonDimension.getColName(),
+        carbonDimension.getDataType().getName());
   }
 
   @Override

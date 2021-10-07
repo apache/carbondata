@@ -30,6 +30,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.complexobjects.StructObject;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
  * Struct DataType stateless object used in data loading
@@ -174,21 +175,32 @@ public class StructDataType implements GenericDataType<Object> {
 
   @Override
   public void writeByteArray(Object input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
+      BadRecordLogHolder logHolder, Boolean isWithoutConverter, boolean isEmptyBadRecord)
+      throws IOException {
     dataOutputStream.writeShort(children.size());
     if (input == null || input.equals("")) {
       for (int i = 0; i < children.size(); i++) {
-        children.get(i).writeByteArray(input, dataOutputStream, logHolder, isWithoutConverter);
+        if (input != null && input.equals("") && (children.get(i) instanceof ArrayDataType)) {
+          // If child column is of array type and is empty, no need to iterate.
+          // Fill empty byte array and return.
+          CarbonBadRecordUtil.updateEmptyValue(dataOutputStream, isEmptyBadRecord, logHolder,
+              children.get(i).getParentName(), DataTypeUtil.valueOf("array"));
+        } else {
+          children.get(i).writeByteArray(input, dataOutputStream, logHolder, isWithoutConverter,
+              isEmptyBadRecord);
+        }
       }
     } else {
       Object[] data = ((StructObject) input).getData();
       for (int i = 0; i < data.length && i < children.size(); i++) {
-        children.get(i).writeByteArray(data[i], dataOutputStream, logHolder, isWithoutConverter);
+        children.get(i).writeByteArray(data[i], dataOutputStream, logHolder, isWithoutConverter,
+            isEmptyBadRecord);
       }
 
       // For other children elements which don't have data, write empty
       for (int i = data.length; i < children.size(); i++) {
-        children.get(i).writeByteArray(null, dataOutputStream, logHolder, isWithoutConverter);
+        children.get(i).writeByteArray(null, dataOutputStream, logHolder, isWithoutConverter,
+            isEmptyBadRecord);
       }
     }
   }

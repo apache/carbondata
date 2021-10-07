@@ -61,7 +61,7 @@ public interface GenericDataType<T> extends Serializable {
    * @throws IOException
    */
   void writeByteArray(T input, DataOutputStream dataOutputStream, BadRecordLogHolder logHolder,
-      Boolean isWithoutConverter)
+      Boolean isWithoutConverter, boolean isEmptyBadRecord)
       throws IOException;
 
   /**
