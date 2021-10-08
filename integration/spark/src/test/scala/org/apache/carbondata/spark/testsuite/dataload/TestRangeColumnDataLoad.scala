@@ -908,8 +908,9 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       } else if (2 == lastCol) {
         // Float data generation
         for (i <- start until (start + line)) {
+          val f = ((1990 + i) + (i % 3.14)).toFloat
           write
-            .println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i) + (i % 3.14))
+            .println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + f)
         }
       } else if (3 == lastCol) {
         // Null data generation

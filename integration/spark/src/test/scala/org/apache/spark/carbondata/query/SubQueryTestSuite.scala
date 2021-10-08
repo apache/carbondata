@@ -36,7 +36,7 @@ class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(
       "select * from subquery where id in(select id from subquery where name in(select name from" +
       " subquery where rating=2.0))"),
-      Seq(Row(2, "ghj", 2.0), Row(3, "ghj", 3.0)))
+      Seq(Row(2, "ghj", 2.0f), Row(3, "ghj", 3.0f)))
   }
 
   test("test to check Broad cast filter works") {

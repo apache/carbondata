@@ -163,7 +163,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     for (ProjectionMeasure msr : queryMeasures) {
       DataType dataType = msr.getMeasure().getDataType();
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT || dataType == DataTypes.INT
-          || dataType == DataTypes.LONG) {
+          || dataType == DataTypes.LONG || dataType == DataTypes.FLOAT) {
         fields[msr.getOrdinal()] =
             new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
       } else if (DataTypes.isDecimal(dataType)) {

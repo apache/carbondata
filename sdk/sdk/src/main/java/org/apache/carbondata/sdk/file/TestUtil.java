@@ -115,7 +115,8 @@ public class TestUtil {
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{
-            "robot" + (i % 10), String.valueOf(i % 3000000), String.valueOf((double) i / 2)});
+            "robot" + (i % 10), String.valueOf(i % 3000000), String.valueOf((double) i / 2),
+            String.valueOf((float) i / 2)});
       }
       writer.close();
     } catch (Exception e) {

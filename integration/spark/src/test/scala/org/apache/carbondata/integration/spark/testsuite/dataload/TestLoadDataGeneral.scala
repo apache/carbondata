@@ -400,7 +400,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
         " stored as carbondata" +
         " tblproperties('INVERTED_INDEX'='`a`bc`!!d`', 'SORT_COLUMNS'='`a`bc`!!d`')")
     sql("insert into special_char values('1','joey','hud', 2, 2.2, 2.3456, 5)")
-    checkAnswer(sql("select * from special_char"), Seq(Row("1", "joey", "hud", 2, 2.2, 2.3456, 5)))
+    checkAnswer(sql("select * from special_char"), Seq(Row("1", "joey", "hud", 2, 2.2f, 2.3456, 5)))
     val df = sql("describe formatted special_char").collect()
     assert(df.exists(_.get(0).toString.contains("i#d")))
     assert(df.exists(_.get(0).toString.contains("nam(e")))

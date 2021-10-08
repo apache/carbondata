@@ -7,5 +7,6 @@
 	"boolField": 10,
 	"dateField": 12345,
 	"timeField": 12345,
-	"decimalField" : "String"
+	"decimalField" : "String",
+	"floatField": "string"
 }

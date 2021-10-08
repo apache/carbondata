@@ -76,6 +76,8 @@ public class EqualToExpression extends BinaryConditionalExpression {
       result = val1.getShort().equals(val2.getShort());
     } else if (dataType == DataTypes.INT) {
       result = val1.getInt().equals(val2.getInt());
+    } else if (dataType == DataTypes.FLOAT) {
+      result = FilterUtil.nanSafeEqualsFloats(val1.getFloat(), val2.getFloat());
     } else if (dataType == DataTypes.DOUBLE) {
       result = FilterUtil.nanSafeEqualsDoubles(val1.getDouble(), val2.getDouble());
     } else if (dataType == DataTypes.DATE) {

@@ -43,10 +43,11 @@ public class CarbonIUDTest {
   public void testDelete() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(10, new Schema(fields), path);
     CarbonIUD.getInstance().delete(path, "age", "0").commit();
     CarbonIUD.getInstance().delete(path, "age", "1").delete(path, "name", "robot1").commit();
@@ -58,7 +59,7 @@ public class CarbonIUDTest {
         .delete(path, "name", "robot8").delete(path, "age", "6").delete(path, "age", "7").commit();
 
     CarbonReader reader =
-        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .build();
 
     int i = 0;
@@ -67,6 +68,7 @@ public class CarbonIUDTest {
       assert (((String) row[0]).contains("robot8") || ((String) row[0]).contains("robot9"));
       assert (((int) (row[1])) > 7);
       assert ((double) row[2] > 3.5);
+      assert ((float) row[3] > 3.5);
       i++;
     }
     Assert.assertEquals(i, 2);
@@ -122,10 +124,11 @@ public class CarbonIUDTest {
   public void testDeleteWithConditionalExpressions() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(20, new Schema(fields), path);
     ColumnExpression columnExpression1 = new ColumnExpression("age", DataTypes.INT);
     LessThanExpression lessThanExpression =
@@ -149,7 +152,7 @@ public class CarbonIUDTest {
     CarbonIUD.getInstance().delete(path, greaterThanEqualToExpression);
 
     CarbonReader reader =
-        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .build();
 
     int i = 0;
@@ -167,25 +170,31 @@ public class CarbonIUDTest {
   public void testDeleteWithAndFilter() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(20, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
-    LessThanExpression lessThanExpression1 =
+    LessThanExpression lessThanExpression =
         new LessThanExpression(columnExpression, new LiteralExpression("3.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    LessThanExpression lessThanExpression1 =
+        new LessThanExpression(columnExpression1, new LiteralExpression("3.5", DataTypes.FLOAT));
 
     ColumnExpression columnExpression2 = new ColumnExpression("age", DataTypes.INT);
     LessThanExpression lessThanExpression2 =
         new LessThanExpression(columnExpression2, new LiteralExpression("4", DataTypes.INT));
 
-    AndExpression andExpression = new AndExpression(lessThanExpression1, lessThanExpression2);
+    AndExpression andExpression = new AndExpression(lessThanExpression1,
+        new AndExpression(lessThanExpression1, lessThanExpression2));
     CarbonIUD.getInstance().delete(path, andExpression);
 
     CarbonReader reader =
-        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .build();
 
     int i = 0;
@@ -203,31 +212,37 @@ public class CarbonIUDTest {
   public void testDeleteWithORFilter() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(20, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     LessThanExpression lessThanExpression =
         new LessThanExpression(columnExpression, new LiteralExpression("3.5", DataTypes.DOUBLE));
 
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    LessThanExpression lessThanExpression1 =
+        new LessThanExpression(columnExpression1, new LiteralExpression("3.5", DataTypes.FLOAT));
+
     ColumnExpression columnExpression2 = new ColumnExpression("age", DataTypes.INT);
     GreaterThanExpression greaterThanExpression =
         new GreaterThanExpression(columnExpression2, new LiteralExpression("11", DataTypes.INT));
 
-    OrExpression orExpression = new OrExpression(lessThanExpression, greaterThanExpression);
+    OrExpression orExpression = new OrExpression(lessThanExpression,
+        new OrExpression(lessThanExpression1, greaterThanExpression));
     CarbonIUD.getInstance().delete(path, orExpression);
 
     CarbonReader reader =
-        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .build();
 
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
-      assert (!((int) row[1] > 11 || (double) row[2] < 3.5));
+      assert (!((int) row[1] > 11 || (double) row[2] < 3.5) || (float) row[3] < 3.5);
       i++;
     }
     Assert.assertEquals(i, 5);
@@ -241,17 +256,18 @@ public class CarbonIUDTest {
     String path2 = "./testWriteFiles2";
     FileUtils.deleteDirectory(new File(path1));
     FileUtils.deleteDirectory(new File(path2));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(10, new Schema(fields), path1);
     TestUtil.writeFilesAndVerify(10, new Schema(fields), path2);
     CarbonIUD.getInstance().delete(path1, "age", "2").delete(path2, "age", "3")
         .delete(path1, "name", "robot2").delete(path2, "name", "robot3").commit();
 
     CarbonReader reader1 =
-        CarbonReader.builder(path1).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path1).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .build();
 
     int i = 0;
@@ -260,6 +276,7 @@ public class CarbonIUDTest {
       assert (!(((String) row[0]).contains("robot2")));
       assert (((int) (row[1])) != 2);
       assert ((double) row[2] != 1.0);
+      assert ((float) row[3] != 1.0);
       i++;
     }
     Assert.assertEquals(i, 9);
@@ -267,7 +284,7 @@ public class CarbonIUDTest {
     FileUtils.deleteDirectory(new File(path1));
 
     CarbonReader reader2 =
-        CarbonReader.builder(path2).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path2).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .build();
 
     i = 0;
@@ -276,6 +293,7 @@ public class CarbonIUDTest {
       assert (!(((String) row[0]).contains("robot3")));
       assert (((int) (row[1])) != 3);
       assert ((double) row[2] != 1.5);
+      assert ((float) row[3] != 1.5);
       i++;
     }
     Assert.assertEquals(i, 9);
@@ -287,17 +305,18 @@ public class CarbonIUDTest {
   public void testDeleteInMultipleSegments() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(10, new Schema(fields), path);
     TestUtil.writeFilesAndVerify(10, new Schema(fields), path);
     TestUtil.writeFilesAndVerify(10, new Schema(fields), path);
     CarbonIUD.getInstance().delete(path, "age", "2").delete(path, "name", "robot2").commit();
 
     CarbonReader reader =
-        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .build();
 
     int i = 0;
@@ -306,6 +325,7 @@ public class CarbonIUDTest {
       assert (!(((String) row[0]).contains("robot2")));
       assert (((int) (row[1])) != 2);
       assert ((double) row[2] != 1.0);
+      assert ((float) row[3] != 1.0);
       i++;
     }
     Assert.assertEquals(i, 27);
@@ -317,10 +337,11 @@ public class CarbonIUDTest {
   public void testUpdate() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(20, new Schema(fields), path);
     CarbonIUD.getInstance().update(path, "age", "2", "age", "3").commit();
     CarbonIUD.getInstance().update(path, "name", "robot2", "age", "3")
@@ -331,7 +352,7 @@ public class CarbonIUDTest {
         new EqualToExpression(columnExpression1, new LiteralExpression("3", DataTypes.INT));
 
     CarbonReader reader1 =
-        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .filter(equalToExpression1).build();
 
     int i = 0;
@@ -362,10 +383,11 @@ public class CarbonIUDTest {
   public void testDeleteOnUpdatedRows() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(20, new Schema(fields), path);
     Map<String, String> updateColumnToValue = new HashMap<>();
     updateColumnToValue.put("name", "robot");
@@ -376,13 +398,14 @@ public class CarbonIUDTest {
         new LessThanExpression(columnExpression, new LiteralExpression("10", DataTypes.INT));
     CarbonIUD.getInstance().update(path, lessThanExpression, updateColumnToValue);
     CarbonIUD.getInstance().delete(path, "doubleField", "2.0").commit();
+    CarbonIUD.getInstance().delete(path, "floatField", "1.5").commit();
 
     ColumnExpression columnExpression1 = new ColumnExpression("age", DataTypes.INT);
     EqualToExpression equalToExpression =
         new EqualToExpression(columnExpression1, new LiteralExpression("24", DataTypes.INT));
 
     CarbonReader reader =
-        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .filter(equalToExpression).build();
 
     int i = 0;
@@ -392,7 +415,7 @@ public class CarbonIUDTest {
       assert (((int) (row[1])) == 24);
       i++;
     }
-    Assert.assertEquals(i, 9);
+    Assert.assertEquals(i, 8);
     reader.close();
     FileUtils.deleteDirectory(new File(path));
   }
@@ -401,10 +424,11 @@ public class CarbonIUDTest {
   public void testDeleteAndUpdateTogether() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
     TestUtil.writeFilesAndVerify(20, new Schema(fields), path);
     CarbonIUD.getInstance().delete(path, "name", "robot0").delete(path, "name", "robot1")
         .delete(path, "name", "robot2").delete(path, "age", "0").delete(path, "age", "1")
@@ -412,7 +436,7 @@ public class CarbonIUDTest {
         .commit();
 
     CarbonReader reader =
-        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField" })
+        CarbonReader.builder(path).projection(new String[] { "name", "age", "doubleField", "floatField" })
             .build();
 
     int i = 0;
@@ -431,7 +455,7 @@ public class CarbonIUDTest {
   public void testIUDOnDifferentDataType() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[11];
+    Field[] fields = new Field[12];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("shortField", DataTypes.SHORT);
     fields[2] = new Field("intField", DataTypes.INT);
@@ -443,6 +467,7 @@ public class CarbonIUDTest {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
     fields[9] = new Field("varcharField", DataTypes.VARCHAR);
     fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+    fields[11] = new Field("floatField", DataTypes.FLOAT);
     CarbonWriter writer =
         CarbonWriter.builder().outputPath(path).withLoadOption("complex_delimiter_level_1", "#")
             .withCsvInput(new Schema(fields)).writtenBy("IUDTest").build();
@@ -463,7 +488,7 @@ public class CarbonIUDTest {
           new String[] { "robot" + (i % 10), String.valueOf(i % 10000), String.valueOf(i),
               String.valueOf(Long.MAX_VALUE - i), String.valueOf((double) i / 2),
               String.valueOf(boolValue), dateValue, "2019-02-12 03:03:34", decimalValue,
-              "varchar" + (i % 10), "Hello#World#From#Carbon" };
+              "varchar" + (i % 10), "Hello#World#From#Carbon", String.valueOf((float) i / 2)};
       writer.write(row2);
     }
     writer.close();
@@ -477,6 +502,7 @@ public class CarbonIUDTest {
     CarbonIUD.getInstance().delete(path, "decimalField", "12.37").commit();
     CarbonIUD.getInstance().delete(path, "dateField", "2019-03-03").commit();
     CarbonIUD.getInstance().delete(path, "timeField", "2019-02-12 03:03:34").commit();
+    CarbonIUD.getInstance().delete(path, "floatField", "2.0").commit();
 
     File[] indexFiles = new File(path).listFiles(new FilenameFilter() {
       @Override

@@ -67,10 +67,12 @@ public class DataTypeUtilTest {
     Object resultLong = getMeasureValueBasedOnDataType("1", DataTypes.LONG, carbonMeasure.getScale(), carbonMeasure.getPrecision());
     Object expectedLong = Long.valueOf(1);
     assertEquals(expectedLong, resultLong);
+    Object resultFloat = getMeasureValueBasedOnDataType("1", DataTypes.FLOAT, carbonMeasure.getScale(), carbonMeasure.getPrecision());
+    Object expectedFloat = 1f;
+    assertEquals(expectedFloat, resultFloat);
     Object resultDefault = getMeasureValueBasedOnDataType("1", DataTypes.DOUBLE, carbonMeasure.getScale(), carbonMeasure.getPrecision());
     Double expectedDefault = Double.valueOf(1);
     assertEquals(expectedDefault, resultDefault);
-
   }
 
   @Test public void testNormalizeIntAndLongValues() throws NumberFormatException {

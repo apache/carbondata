@@ -247,6 +247,11 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       b.putLong((long) value);
       b.flip();
       return b.array();
+    } else if (dataType == DataTypes.FLOAT) {
+      b = ByteBuffer.allocate(8);
+      b.putFloat((float) value);
+      b.flip();
+      return b.array();
     } else if (dataType == DataTypes.DOUBLE) {
       b = ByteBuffer.allocate(8);
       b.putDouble((double) value);

@@ -273,7 +273,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     STRING ^^^ "string" |BOOLEAN ^^^ "boolean" | INTEGER ^^^ "integer" |
     TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
     (LONG | BIGINT) ^^^ "bigint" | (SHORT | SMALLINT) ^^^ "smallint" |
-    INT ^^^ "int" | DOUBLE ^^^ "double" | FLOAT ^^^ "double" | decimalType |
+    INT ^^^ "int" | DOUBLE ^^^ "double" | FLOAT ^^^ "float" | decimalType |
     DATE ^^^ "date" | charType
 
   protected lazy val miscType = BINARY ^^^ "binary"

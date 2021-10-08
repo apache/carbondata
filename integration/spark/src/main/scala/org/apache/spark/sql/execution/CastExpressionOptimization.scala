@@ -29,7 +29,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSour
 import org.apache.spark.sql.catalyst.expressions.{Attribute, EmptyRow, EqualTo, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
 import org.apache.spark.sql.optimizer.CarbonFilters.{transformExpression, translateColumn, translateLiteral}
-import org.apache.spark.sql.types.{ArrayType, DateType, DoubleType, IntegerType, ShortType, StringType, TimestampType}
+import org.apache.spark.sql.types.{ArrayType, DateType, DoubleType, FloatType, IntegerType, ShortType, StringType, TimestampType}
 import org.apache.spark.sql.types.{DataType => SparkDataType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -112,11 +112,28 @@ object CastExpressionOptimization {
 
   def typeCastDoubleToIntList(list: Seq[SparkExpression]): Seq[SparkExpression] = {
     val tempList = new util.ArrayList[SparkExpression]()
-    list.foreach { value =>
-      val output = value.asInstanceOf[Double].toInt
-      if (value.asInstanceOf[Double].toInt.equals(output)) {
-        tempList.add(output.asInstanceOf[SparkExpression])
-      }
+    list map {
+      case Literal(value, _) =>
+        val newValue = value.asInstanceOf[Double].toInt
+        if (value.asInstanceOf[Double].toInt.equals(newValue)) {
+          tempList.add(Literal(newValue))
+        }
+    }
+    if (tempList.size() != list.size) {
+      list
+    } else {
+      tempList.asScala
+    }
+  }
+
+  def typeCastDoubleToFloatList(list: Seq[SparkExpression]): Seq[SparkExpression] = {
+    val tempList = new util.ArrayList[SparkExpression]()
+    list map {
+      case Literal(value, _) =>
+        val newValue = value.asInstanceOf[Double].toFloat
+        if (newValue.toString.equals(value.toString)) {
+          tempList.add(Literal(newValue))
+        }
     }
     if (tempList.size() != list.size) {
       list
@@ -152,6 +169,10 @@ object CastExpressionOptimization {
    * Input from Spark : cast (col as double) <> 'Double Literal'
    * Change to        : Column <> 'Int value'
    *
+   * c) Left : Float Column          Right : String Value
+   * Input from Spark : cast (col as double) <> 'Double Literal'
+   * Change to        : Column <> 'Float value'
+   *
    * @param expr
    * @return
    */
@@ -173,6 +194,8 @@ object CastExpressionOptimization {
           updateFilterForInt(value, expr, attributeType)
         case _: ShortType if valueType.sameType(IntegerType) =>
           updateFilterForShort(value, expr, attributeType)
+        case _: FloatType if valueType.sameType(DoubleType) =>
+          updateFilterForFloat(value, expr, attributeType)
         case arr: ArrayType if !nonEqual =>
           checkBinaryExpression(arr.elementType, value, valueType, nonEqual)
         case _ => Some(transformExpression(expr))
@@ -223,6 +246,9 @@ object CastExpressionOptimization {
         case _: ShortType if list.head.dataType.sameType(IntegerType) =>
           checkInValueList(attribute.name, list, typeCastIntToShortList(list), attribute.dataType,
             hasNot)
+        case _: FloatType if list.head.dataType.sameType(DoubleType) =>
+          checkInValueList(attribute.name, list, typeCastDoubleToFloatList(list),
+            attribute.dataType, hasNot)
         case _ => Some(transformExpression(expr))
       }
     }
@@ -289,6 +315,24 @@ object CastExpressionOptimization {
       dt: SparkDataType): Option[Expression] = {
     val newValue = actualValue.asInstanceOf[Double].toInt
     if (newValue.toDouble.equals(actualValue)) {
+      updateFilterBasedOnFilterType(exp, newValue, dt)
+    } else {
+      Some(transformExpression(exp))
+    }
+  }
+
+  /**
+   * the method removes the cast for float type columns
+   *
+   * @param actualValue
+   * @param exp
+   * @return
+   */
+  def updateFilterForFloat(actualValue: Any,
+      exp: SparkExpression,
+      dt: SparkDataType): Option[Expression] = {
+    val newValue = actualValue.asInstanceOf[Double].toFloat
+    if (newValue.toString.equals(actualValue.toString)) {
       updateFilterBasedOnFilterType(exp, newValue, dt)
     } else {
       Some(transformExpression(exp))
