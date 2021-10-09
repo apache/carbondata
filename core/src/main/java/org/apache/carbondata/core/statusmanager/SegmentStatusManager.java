@@ -29,6 +29,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -1033,123 +1034,171 @@ public class SegmentStatusManager {
     return newListMetadata;
   }
 
-  private static class ReturnTuple {
-    LoadMetadataDetails[] details;
-    Set<String> loadsToDelete;
-    ReturnTuple(LoadMetadataDetails[] details, Set<String> loadsToDelete) {
-      this.details = details;
-      this.loadsToDelete = loadsToDelete;
-    }
-  }
-
-  private static ReturnTuple isUpdateRequired(boolean isForceDeletion, CarbonTable carbonTable,
-      AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] details,
-      boolean cleanStaleInProgress) {
-    // Delete marked loads
-    Set<String> loadsToDelete = DeleteLoadFolders
-        .deleteLoadFoldersFromFileSystem(absoluteTableIdentifier, isForceDeletion, details,
-            carbonTable.getMetadataPath(), cleanStaleInProgress);
-    return new ReturnTuple(details, loadsToDelete);
-  }
-
-  public static void deleteLoadsAndUpdateMetadata(CarbonTable carbonTable, boolean isForceDeletion,
-      List<PartitionSpec> partitionSpecs, boolean cleanStaleInprogress,
-      boolean isCleanFilesOperation) throws IOException {
-    LoadMetadataDetails[] metadataDetails =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+  public static void deleteLoadsAndUpdateMetadata(CarbonTable carbonTable,
+      List<String> filterSegmentList, boolean isForceDeletion, List<PartitionSpec> partitionSpecs,
+      boolean cleanStaleInprogress, boolean checkSegmentExistence) throws IOException {
     // delete the expired segment lock files
     CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
-    if (isLoadDeletionRequired(metadataDetails)) {
-      AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
-      boolean updateCompletionStatus = false;
-      Set<String> loadsToDelete = new HashSet<>();
-      LoadMetadataDetails[] newAddedLoadHistoryList = null;
-      ReturnTuple tuple =
-          isUpdateRequired(isForceDeletion, carbonTable, identifier, metadataDetails,
-              cleanStaleInprogress);
-      if (!tuple.loadsToDelete.isEmpty()) {
-        ICarbonLock carbonTableStatusLock =
-            CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
-        boolean locked = false;
-        try {
-          int retryCount = CarbonLockUtil
-              .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-                  CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
-          int maxTimeout = CarbonLockUtil
-              .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-                  CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
-          // Update load metadata file after cleaning deleted nodes
-          locked = carbonTableStatusLock.lockWithRetries(retryCount, maxTimeout);
-          if (locked) {
-            LOG.info("Table status lock has been successfully acquired.");
-            // Again read status and check to verify update required or not.
-            LoadMetadataDetails[] details =
-                SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
-            ReturnTuple tuple2 =
-                isUpdateRequired(isForceDeletion, carbonTable,
-                    identifier, details, cleanStaleInprogress);
-            if (tuple2.loadsToDelete.isEmpty()) {
-              return;
+    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
+    ICarbonLock carbonTableStatusLock =
+        CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
+    boolean locked = false;
+    LoadMetadataDetails[] segmentToBeDeletePhysically = null;
+    try {
+      int retryCount = CarbonLockUtil
+          .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+              CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
+      int maxTimeout = CarbonLockUtil
+          .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+              CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
+      locked = carbonTableStatusLock.lockWithRetries(retryCount, maxTimeout);
+      if (locked) {
+        LOG.info("Table status lock has been successfully acquired.");
+        LoadMetadataDetails[] metadataDetails =
+            SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+        int maxSegmentId = SegmentStatusManager.getMaxSegmentId(metadataDetails);
+        if (filterSegmentList != null) {
+          Map<Boolean, List<LoadMetadataDetails>> metadataMap = Arrays.stream(metadataDetails)
+              .collect(Collectors.partitioningBy(
+                  detail -> filterSegmentList.contains(detail.getLoadName())));
+          List<LoadMetadataDetails> moveToHistoryDetails = metadataMap.get(true);
+          if (checkSegmentExistence) {
+            if (moveToHistoryDetails.isEmpty() && !filterSegmentList.isEmpty()) {
+              String errorMsg = "Clean files request is failed for "
+                  + carbonTable.getQualifiedName() + ". Segment "
+                  + String.join(",", filterSegmentList)
+                  + " are not exists, please retry later or specify other segments.";
+              LOG.error(errorMsg);
+              throw new IOException(errorMsg);
             }
-            // read latest table status again.
-            LoadMetadataDetails[] latestMetadata =
-                SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
-
-            int invisibleSegmentPreserveCnt =
-                CarbonProperties.getInstance().getInvisibleSegmentPreserveCount();
-            int maxSegmentId = SegmentStatusManager.getMaxSegmentId(tuple2.details);
-            int invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(
-                tuple2.details, maxSegmentId);
-            // if execute command 'clean files' or the number of invisible segment info
-            // exceeds the value of 'carbon.invisible.segments.preserve.count',
-            // it need to append the invisible segment list to 'tablestatus.history' file.
-            if (isCleanFilesOperation || invisibleSegmentCnt > invisibleSegmentPreserveCnt) {
-              TableStatusReturnTuple tableStatusReturn = separateVisibleAndInvisibleSegments(
-                  tuple2.details, latestMetadata, invisibleSegmentCnt, maxSegmentId);
-              LoadMetadataDetails[] oldLoadHistoryList = readLoadHistoryMetadata(
-                  carbonTable.getMetadataPath());
-              LoadMetadataDetails[] newLoadHistoryList = appendLoadHistoryList(
-                  oldLoadHistoryList, tableStatusReturn.arrayOfLoadHistoryDetails);
-              writeLoadDetailsIntoFile(
-                  CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()),
-                  tableStatusReturn.arrayOfLoadDetails);
-              writeLoadDetailsIntoFile(
-                  CarbonTablePath.getTableStatusHistoryFilePath(carbonTable.getTablePath()),
-                  newLoadHistoryList);
-              // the segments which will be moved to history file need to be deleted
-              newAddedLoadHistoryList = tableStatusReturn.arrayOfLoadHistoryDetails;
-            } else {
-              // update the metadata details from old to new status.
-              List<LoadMetadataDetails> latestStatus =
-                  updateLoadMetadataFromOldToNew(tuple2.details, latestMetadata);
-              writeLoadDetailsIntoFile(
-                  CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
-                  latestStatus.toArray(new LoadMetadataDetails[0]));
+            List<String> nonExistsFilterSegments = new ArrayList<>();
+            for (String segmentId : filterSegmentList) {
+              boolean found = false;
+              for (LoadMetadataDetails detail : moveToHistoryDetails) {
+                if (detail.getLoadName().equalsIgnoreCase(segmentId)) {
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                nonExistsFilterSegments.add(segmentId);
+              }
             }
-            updateCompletionStatus = true;
-            loadsToDelete = tuple2.loadsToDelete;
-          } else {
-            String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
-            String tableName = identifier.getCarbonTableIdentifier().getTableName();
-            String errorMsg = "Clean files request is failed for " +
-                dbName + "." + tableName +
-                ". Not able to acquire the table status lock due to other operation " +
-                "running in the background.";
+            if (!nonExistsFilterSegments.isEmpty()) {
+              String errorMsg = "Clean files request is failed for "
+                  + carbonTable.getQualifiedName() + ". Segment "
+                  + String.join(",", nonExistsFilterSegments)
+                  + " are not exists, please retry later or specify other segments.";
+              LOG.error(errorMsg);
+              throw new IOException(errorMsg);
+            }
+          }
+          if (moveToHistoryDetails.isEmpty()) {
+            return;
+          }
+          List<String> loadCannotBeDeleted = DeleteLoadFolders.loadsCannotBeDeleted(
+              identifier, moveToHistoryDetails);
+          if (checkSegmentExistence && !loadCannotBeDeleted.isEmpty()) {
+            String errorMsg = "Clean files request is failed for " + carbonTable.getQualifiedName()
+                + ". Segment " + String.join(",", loadCannotBeDeleted)
+                + " cannot be deleted, please retry later or specify other segments.";
             LOG.error(errorMsg);
-            throw new IOException(errorMsg + " Please try after some time.");
+            throw new IOException(errorMsg);
           }
-        } finally {
-          if (locked) {
-            CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
-          }
-          if (updateCompletionStatus) {
-            DeleteLoadFolders
-                .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
-                  isForceDeletion, partitionSpecs, cleanStaleInprogress, loadsToDelete);
+          List<LoadMetadataDetails> retainInStatusDetails = metadataMap.get(false);
+          segmentToBeDeletePhysically =
+              prepareSegmentsToBeDeletedPhysicallyAndSaveMetadataDetails(carbonTable,
+                  moveToHistoryDetails, retainInStatusDetails, maxSegmentId);
+        } else {
+          if (isLoadDeletionRequired(metadataDetails)) {
+            boolean isUpdateRequired = DeleteLoadFolders.deleteLoadFoldersFromFileSystem(identifier,
+                isForceDeletion, metadataDetails, cleanStaleInprogress);
+            if (isUpdateRequired) {
+              int invisibleSegmentPreserveCnt =
+                  CarbonProperties.getInstance().getInvisibleSegmentPreserveCount();
+              int invisibleSegmentCnt =
+                  SegmentStatusManager.countInvisibleSegments(metadataDetails, maxSegmentId);
+              // if execute command 'clean files' or the number of invisible segment info
+              // exceeds the value of 'carbon.invisible.segments.preserve.count',
+              // it needs to append the invisible segment list to 'tablestatus.history' file.
+              if (isForceDeletion || invisibleSegmentCnt > invisibleSegmentPreserveCnt) {
+                Map<Boolean, List<LoadMetadataDetails>> metadataMap =
+                    Arrays.stream(metadataDetails).collect(Collectors.partitioningBy(detail ->
+                        detail.getVisibility().equalsIgnoreCase("false")));
+                List<LoadMetadataDetails> moveToHistoryDetails = metadataMap.get(true);
+                List<LoadMetadataDetails> retainInStatusDetails = metadataMap.get(false);
+                segmentToBeDeletePhysically =
+                    prepareSegmentsToBeDeletedPhysicallyAndSaveMetadataDetails(carbonTable,
+                        moveToHistoryDetails, retainInStatusDetails, maxSegmentId);
+              } else {
+                // even no newly added history details, but the visibility of load may change
+                // during deleteLoadFoldersFromFileSystem method, so need to save the change to disk
+                writeLoadDetailsIntoFile(
+                    CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()),
+                    metadataDetails);
+              }
+            }
           }
         }
+      } else {
+        String errorMsg = "Clean files request is failed for " + carbonTable.getQualifiedName()
+            + ". Not able to acquire the table status lock due to other operation"
+            + "running in the background.";
+        LOG.error(errorMsg);
+      }
+    } finally {
+      if (locked) {
+        CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
+      }
+      if (segmentToBeDeletePhysically != null) {
+        DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(carbonTable,
+            segmentToBeDeletePhysically, partitionSpecs);
       }
     }
+  }
+
+  public static LoadMetadataDetails[] prepareSegmentsToBeDeletedPhysicallyAndSaveMetadataDetails(
+      CarbonTable carbonTable, List<LoadMetadataDetails> moveToHistoryDetails,
+      List<LoadMetadataDetails> retainInStatusDetails, int maxSegmentId) throws IOException {
+    LoadMetadataDetails[] segmentToBeDeletedPhysically =
+        new LoadMetadataDetails[moveToHistoryDetails.size()];
+    Iterator<LoadMetadataDetails> iterator = moveToHistoryDetails.iterator();
+    int i = 0;
+    while (iterator.hasNext()) {
+      LoadMetadataDetails detail = iterator.next();
+      // the segment which will be moved to history file need to be deleted
+      segmentToBeDeletedPhysically[i++] = detail;
+      // segment 0 and segment which max id are special,
+      // should always keep in tablestatus file, so remove them from deleted details lists,
+      // add them back to left details list
+      if (detail.getLoadName().equalsIgnoreCase("0")) {
+        iterator.remove();
+        retainInStatusDetails.add(0, detail);
+      } else if (detail.getLoadName().equalsIgnoreCase(String.valueOf(maxSegmentId))) {
+        iterator.remove();
+        int position = -1;
+        for (int j = retainInStatusDetails.size() - 1; j >= 0; j--) {
+          if (detail.getLoadStartTime() > retainInStatusDetails.get(j).getLoadStartTime()) {
+            position = j;
+            break;
+          }
+        }
+        retainInStatusDetails.add(position + 1, detail);
+      }
+    }
+    writeLoadDetailsIntoFile(
+        CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()),
+        retainInStatusDetails.toArray(new LoadMetadataDetails[0]));
+    if (!moveToHistoryDetails.isEmpty()) {
+      LoadMetadataDetails[] oldLoadHistoryList =
+          readLoadHistoryMetadata(carbonTable.getMetadataPath());
+      LoadMetadataDetails[] newLoadHistoryList = appendLoadHistoryList(
+          oldLoadHistoryList, moveToHistoryDetails.toArray(new LoadMetadataDetails[0]));
+      writeLoadDetailsIntoFile(
+          CarbonTablePath.getTableStatusHistoryFilePath(carbonTable.getTablePath()),
+          newLoadHistoryList);
+    }
+    return segmentToBeDeletedPhysically;
   }
 
   public static void truncateTable(CarbonTable carbonTable)
@@ -1224,56 +1273,6 @@ public class SegmentStatusManager {
       }
     }
     return invisibleSegmentCnt;
-  }
-
-  private static class TableStatusReturnTuple {
-    LoadMetadataDetails[] arrayOfLoadDetails;
-    LoadMetadataDetails[] arrayOfLoadHistoryDetails;
-    TableStatusReturnTuple(LoadMetadataDetails[] arrayOfLoadDetails,
-        LoadMetadataDetails[] arrayOfLoadHistoryDetails) {
-      this.arrayOfLoadDetails = arrayOfLoadDetails;
-      this.arrayOfLoadHistoryDetails = arrayOfLoadHistoryDetails;
-    }
-  }
-
-  /**
-   * Separate visible and invisible segments into two array.
-   */
-  public static TableStatusReturnTuple separateVisibleAndInvisibleSegments(
-      LoadMetadataDetails[] oldList,
-      LoadMetadataDetails[] newList,
-      int invisibleSegmentCnt,
-      int maxSegmentId) {
-    int newSegmentsLength = newList.length;
-    int visibleSegmentCnt = newSegmentsLength - invisibleSegmentCnt;
-    LoadMetadataDetails[] arrayOfVisibleSegments = new LoadMetadataDetails[visibleSegmentCnt];
-    LoadMetadataDetails[] arrayOfInvisibleSegments = new LoadMetadataDetails[invisibleSegmentCnt];
-    int oldSegmentsLength = oldList.length;
-    int visibleIdx = 0;
-    int invisibleIdx = 0;
-    for (int i = 0; i < newSegmentsLength; i++) {
-      LoadMetadataDetails newSegment = newList[i];
-      if (i < oldSegmentsLength) {
-        LoadMetadataDetails oldSegment = oldList[i];
-        if (newSegment.getLoadName().equalsIgnoreCase("0")
-            || newSegment.getLoadName().equalsIgnoreCase(String.valueOf(maxSegmentId))) {
-          newSegment.setVisibility(oldSegment.getVisibility());
-          arrayOfVisibleSegments[visibleIdx] = newSegment;
-          visibleIdx++;
-        } else if ("false".equalsIgnoreCase(oldSegment.getVisibility())) {
-          newSegment.setVisibility("false");
-          arrayOfInvisibleSegments[invisibleIdx] = newSegment;
-          invisibleIdx++;
-        } else {
-          arrayOfVisibleSegments[visibleIdx] = newSegment;
-          visibleIdx++;
-        }
-      } else {
-        arrayOfVisibleSegments[visibleIdx] = newSegment;
-        visibleIdx++;
-      }
-    }
-    return new TableStatusReturnTuple(arrayOfVisibleSegments, arrayOfInvisibleSegments);
   }
 
   /**

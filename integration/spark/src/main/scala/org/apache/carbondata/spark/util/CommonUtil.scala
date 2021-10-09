@@ -1067,4 +1067,8 @@ object CommonUtil {
       }
     }
   }
+
+  def isSegmentId(str: String): Boolean = {
+    CarbonCommonConstants.SEGMENT_ID_PATTERN.r.pattern.matcher(str).matches();
+  }
 }

@@ -41,7 +41,7 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
       .getTablePath
     val trashFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.TRASH_DIR
-    editTableStatusFile(path)
+    assert(editTableStatusFile(path))
     assert(!FileFactory.isFileExist(trashFolderPath))
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
     assert(segmentNumber1 == 4)
@@ -291,7 +291,7 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     sql("""DROP TABLE IF EXISTS CLEANTEST""")
   }
 
-  def editTableStatusFile(carbonTablePath: String) : Unit = {
+  def editTableStatusFile(carbonTablePath: String) : Boolean = {
     // Original Table status file
     val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath))
     // duplicate
@@ -308,6 +308,7 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     // scalastyle:on println
     bufferedSource.close
     w.close()
+    f1.delete();
     f2.renameTo(f1)
   }
 

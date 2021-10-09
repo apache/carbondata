@@ -1996,6 +1996,8 @@ public final class CarbonCommonConstants {
    */
   public static final long SEGMENT_LOAD_TIME_DEFAULT = -1;
 
+  public static final String SEGMENT_ID_PATTERN = "^\\d+(\\.\\d+)?$";
+
   /**
    * default name of data base
    */

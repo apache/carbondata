@@ -49,6 +49,7 @@ object DataTrashManager {
    */
   def cleanGarbageData(
       carbonTable: CarbonTable,
+      filterSegmentList: java.util.List[String],
       isForceDelete: Boolean,
       cleanStaleInProgress: Boolean,
       showStatistics: Boolean,
@@ -88,13 +89,13 @@ object DataTrashManager {
       if (showStatistics) {
         val metadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
         val sizeBeforeCleaning = getPreOpSizeSnapshot(carbonTable, metadataDetails)
-        checkAndCleanExpiredSegments(carbonTable, isForceDelete,
+        checkAndCleanExpiredSegments(carbonTable, filterSegmentList, isForceDelete,
           cleanStaleInProgress, partitionSpecs)
         val sizeAfterCleaning = getPostOpSizeSnapshot(carbonTable, metadataDetails
             .map(a => a.getLoadName).toSet)
         (sizeBeforeCleaning - sizeAfterCleaning + trashFolderSizeStats._1).abs
       } else {
-        checkAndCleanExpiredSegments(carbonTable, isForceDelete,
+        checkAndCleanExpiredSegments(carbonTable, filterSegmentList, isForceDelete,
           cleanStaleInProgress, partitionSpecs)
         0
       }
@@ -192,11 +193,12 @@ object DataTrashManager {
 
   private def checkAndCleanExpiredSegments(
       carbonTable: CarbonTable,
+      filterSegmentList: java.util.List[String],
       isForceDelete: Boolean,
       cleanStaleInProgress: Boolean,
       partitionSpecsOption: Option[Seq[PartitionSpec]]): Unit = {
     val partitionSpecs = partitionSpecsOption.map(_.asJava).orNull
-    SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable,
+    SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable, filterSegmentList,
       isForceDelete, partitionSpecs, cleanStaleInProgress, true)
     if (carbonTable.isHivePartitionTable && partitionSpecsOption.isDefined) {
       SegmentFileStore.cleanSegments(carbonTable, partitionSpecs, isForceDelete)

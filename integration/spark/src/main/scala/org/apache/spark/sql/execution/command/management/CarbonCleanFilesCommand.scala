@@ -30,6 +30,7 @@ import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.ByteUtil
 import org.apache.carbondata.events._
+import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.trash.DataTrashManager
 
 /**
@@ -91,11 +92,23 @@ case class CarbonCleanFilesCommand(
       Seq(Row(ByteUtil.convertByteToReadable(result._1), ByteUtil
           .convertByteToReadable(result._2)))
     } else {
+      val segment_ids = options.get("segment_ids");
+      import collection.JavaConverters._
+      val segmentList: java.util.List[String] = segment_ids match {
+        case Some(str) if str.nonEmpty => str.split(",").map(_.trim).toList.asJava
+        case Some(str) if str.isEmpty => List.empty.asJava
+        case _ => null
+      }
+      if (segmentList != null && !segmentList.isEmpty &&
+          segmentList.asScala.exists(!CommonUtil.isSegmentId(_))) {
+        throw new MalformedCarbonCommandException("Invalid segment id in clean files command.")
+      }
       val preEvent = CleanFilesPreEvent(carbonTable, sparkSession)
-      val postEvent = CleanFilesPostEvent(carbonTable, sparkSession, options)
+      val postEvent = CleanFilesPostEvent(carbonTable, segmentList, sparkSession, options)
       withEvents(preEvent, postEvent) {
          sizeCleaned = DataTrashManager.cleanGarbageData(
           carbonTable,
+           segmentList,
           options.getOrElse("force", "false").toBoolean,
           options.getOrElse("stale_inprogress", "false").toBoolean,
           showStats,
