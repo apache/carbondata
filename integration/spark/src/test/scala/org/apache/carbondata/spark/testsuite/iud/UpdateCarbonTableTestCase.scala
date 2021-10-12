@@ -127,7 +127,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """insert overwrite table iud.updateinpartition
         | partition (dtm=20200908)
-        | select * from iud.updateinpartition where dtm = 20200907""".stripMargin)
+        | select id, sales from iud.updateinpartition where dtm = 20200907""".stripMargin)
     checkAnswer(
       sql(
         """select sales from iud.updateinpartition

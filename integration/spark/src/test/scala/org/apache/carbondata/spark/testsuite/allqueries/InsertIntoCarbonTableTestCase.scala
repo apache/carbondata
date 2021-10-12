@@ -472,7 +472,8 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val e = intercept[Exception] {
       sql("insert into table1 select * from table2")
     }
-    assert(e.getMessage.contains("number of columns are different"))
+    assert(e.getMessage.contains(
+      "requires that the data to be inserted have the same number of columns as the target table"))
   }
 
   test("test insert into partitioned table with int type to double type") {
@@ -484,6 +485,21 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select 10.0, '2020'")
     )
     sql(s"DROP TABLE IF EXISTS table1")
+  }
+
+  test("test insert into partitioned table with static partition") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("DROP TABLE IF EXISTS select_from")
+    sql("CREATE TABLE select_from (i int, b string) stored as carbondata")
+    sql("CREATE TABLE table1 (i int) partitioned by (a int, b string) stored as carbondata")
+    sql("insert into table select_from select 1, 'a'")
+    sql("insert into table table1 partition(a='100',b) select 1, b from select_from")
+    checkAnswer(
+      sql("select * from table1"),
+      sql("select 1, 100, 'a'")
+    )
+    sql("DROP TABLE IF EXISTS table1")
+    sql("DROP TABLE IF EXISTS select_from")
   }
 
   test("test loading data into partitioned table with segment's updateDeltaEndTimestamp not change") {
