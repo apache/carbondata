@@ -172,13 +172,13 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
     sql(
       """insert overwrite table droppartition
         | partition (dtm=20200908)
-        | select * from droppartition
+        | select id, sales from droppartition
         | where dtm = 20200907""".stripMargin)
     // insert overwrite an non-existing partition
     sql(
       """insert overwrite table droppartition
         | partition (dtm=20200909)
-        | select * from droppartition
+        | select id, sales from droppartition
         | where dtm = 20200907""".stripMargin)
 
     // make sure drop one partition won't effect other partitions

@@ -81,22 +81,6 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     )
   }
 
-  test("Inserting and selecting table: create one column boolean table and insert two columns") {
-    // send to old flow, as for one column two values are inserted.
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
-    sql("insert into boolean_one_column values(true,false)")
-    sql("insert into boolean_one_column values(True)")
-    sql("insert into boolean_one_column values(false,true)")
-    checkAnswer(
-      sql("select * from boolean_one_column"),
-      Seq(Row(true), Row(true), Row(false))
-    )
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
-        CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
-  }
-
   test("Inserting and selecting table: two columns boolean and many rows, should support") {
     sql("CREATE TABLE if not exists boolean_table2(" +
         "col1 BOOLEAN, col2 BOOLEAN) STORED AS carbondata")
@@ -441,7 +425,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
       sql("insert into boolean_table2 select * from boolean_table")
     }
     assert(exception_insert.getMessage.contains(
-      "Cannot insert into target table because number of columns mismatch"))
+      "requires that the data to be inserted have the same number of columns as the target table"))
   }
 
   test("Inserting into Hive table from carbon table: support boolean data type and other format") {
@@ -641,26 +625,6 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
       sql("select * from boolean_one_column"),
       Seq(Row(true))
     )
-  }
-
-  test("Inserting overwrite: create one column boolean table and insert two columns") {
-    // send to old flow, as for one column two values are inserted.
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
-    sql("insert overwrite table boolean_one_column values(true,false)")
-    checkAnswer(
-      sql("select * from boolean_one_column"),
-      Seq(Row(true))
-    )
-    sql("insert overwrite table boolean_one_column values(True)")
-    sql("insert overwrite table boolean_one_column values(false,true)")
-    checkAnswer(
-      sql("select * from boolean_one_column"),
-      Seq(Row(false))
-    )
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
-        CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
   }
 
   test("Inserting overwrite: two columns boolean and many rows, should support") {

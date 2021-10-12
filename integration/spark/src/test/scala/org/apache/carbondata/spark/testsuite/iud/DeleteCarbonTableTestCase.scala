@@ -383,7 +383,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """insert overwrite table deleteinpartition
         | partition (dtm=20200908)
-        | select * from deleteinpartition
+        | select id, sales from deleteinpartition
         | where dtm = 20200907""".stripMargin)
     checkAnswer(
       sql("""select count(1), dtm from deleteinpartition group by dtm"""),
@@ -395,7 +395,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """insert overwrite table deleteinpartition
         | partition (dtm=20200909)
-        | select * from deleteinpartition
+        | select id, sales from deleteinpartition
         | where dtm = 20200907""".stripMargin)
     checkAnswer(
       sql("""select count(1), dtm from deleteinpartition group by dtm"""),

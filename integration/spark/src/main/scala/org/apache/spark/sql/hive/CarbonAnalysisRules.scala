@@ -271,7 +271,10 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
     val carbonTable = carbonDSRelation.carbonRelation.carbonTable
     val tableProperties = carbonTable.getTableInfo.getFactTable.getTableProperties
     val spatialProperty = tableProperties.get(CarbonCommonConstants.SPATIAL_INDEX)
-    val expectedOutput = carbonDSRelation.carbonRelation.output
+    val staticParCols = CarbonToSparkAdapter.getPartitionsFromInsert(p)
+      .filter(_._2.isDefined).keySet.map(_.toLowerCase())
+    val expectedOutput = carbonDSRelation.carbonRelation.output.filterNot(
+      a => staticParCols.contains(a.name.toLowerCase()))
     if (expectedOutput.size > CarbonCommonConstants
       .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
       CarbonException.analysisException(
@@ -291,7 +294,15 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
     }
     // In spark, PreprocessTableInsertion rule has below cast logic.
     // It was missed in carbon when implemented insert into rules.
-    val actualOutput = newLogicalPlan.output
+    if (newLogicalPlan.output.size != expectedOutput.size) {
+      CarbonException.analysisException(
+        s"${carbonTable.getTableName} requires that the data to be inserted " +
+        s"have the same number of columns as the target table: " +
+        s"target table has ${p.table.output.size} column(s) but the " +
+        s"inserted data has ${p.query.output.length + staticParCols.size} column(s), " +
+        s"including ${staticParCols.size} partition column(s) having constant value(s)."
+      )
+    }
     var newChildOutput = newLogicalPlan.output.zip(expectedOutput)
       .map {
         case (actual, expected) =>
@@ -306,30 +317,24 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
             Alias(Cast(actual, expected.dataType), expected.name)(
               explicitMetadata = Option(expected.metadata))
           }
-      } ++ actualOutput.takeRight(actualOutput.size - expectedOutput.size)
-    if (newChildOutput.size >= expectedOutput.size ||
-        carbonDSRelation.carbonTable.isHivePartitionTable) {
-      newChildOutput = newChildOutput.zipWithIndex.map { columnWithIndex =>
-        columnWithIndex._1 match {
-          case attr: Attribute =>
-            Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
-          case attr => attr
-        }
       }
-      val newChild: LogicalPlan = if (newChildOutput == newLogicalPlan.output) {
-        throw new UnsupportedOperationException(s"Spark version $SPARK_VERSION is not supported")
-      } else {
-        Project(newChildOutput, newLogicalPlan)
+    newChildOutput = newChildOutput.zipWithIndex.map { columnWithIndex =>
+      columnWithIndex._1 match {
+        case attr: Attribute =>
+          Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
+        case attr => attr
       }
-
-      val overwrite = CarbonReflectionUtils.getOverWriteOption("overwrite", p)
-
-      InsertIntoCarbonTable(carbonDSRelation, CarbonToSparkAdapter.getPartitionsFromInsert(p),
-        newChild, overwrite, ifNotExists = true, containsMultipleInserts = containsMultipleInserts)
-    } else {
-      CarbonException.analysisException(
-        "Cannot insert into target table because number of columns mismatch")
     }
+    val newChild: LogicalPlan = if (newChildOutput == newLogicalPlan.output) {
+      throw new UnsupportedOperationException(s"Spark version $SPARK_VERSION is not supported")
+    } else {
+      Project(newChildOutput, newLogicalPlan)
+    }
+
+    val overwrite = CarbonReflectionUtils.getOverWriteOption("overwrite", p)
+
+    InsertIntoCarbonTable(carbonDSRelation, CarbonToSparkAdapter.getPartitionsFromInsert(p),
+      newChild, overwrite, ifNotExists = true, containsMultipleInserts = containsMultipleInserts)
   }
 }
 
