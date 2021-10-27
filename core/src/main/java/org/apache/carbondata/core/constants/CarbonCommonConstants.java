@@ -2681,4 +2681,58 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_CDC_MINMAX_PRUNING_ENABLED_DEFAULT = "false";
 
+  //////////////////////////////////////////////////////////////////////////////////////////
+  // CDC streamer configs start here
+  //////////////////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Name of the field from source schema whose value can be used for picking the latest updates for
+   * a particular record in the incoming batch in case of duplicates record keys. Useful if the
+   * write operation type is UPDATE or UPSERT. This will be used only if
+   * carbon.streamer.upsert.deduplicate is enabled.
+   */
+  @CarbonProperty public static final String CARBON_STREAMER_SOURCE_ORDERING_FIELD =
+      "carbon.streamer.source.ordering.field";
+
+  public static final String CARBON_STREAMER_SOURCE_ORDERING_FIELD_DEFAULT = "";
+
+  /**
+   * This property specifies if the incoming batch needs to be deduplicated in case of INSERT
+   * operation type. If set to true, the incoming batch will be deduplicated against the existing
+   * data in the target carbondata table.
+   */
+  @CarbonProperty public static final String CARBON_STREAMER_INSERT_DEDUPLICATE =
+      "carbon.streamer.insert.deduplicate";
+
+  public static final String CARBON_STREAMER_INSERT_DEDUPLICATE_DEFAULT = "false";
+
+  /**
+   * This property specifies if the incoming batch needs to be deduplicated (when multiple updates
+   * for the same record key are present in the incoming batch) in case of UPSERT/UPDATE operation
+   * type. If set to true, the user needs to provide proper value for the source ordering field as
+   * well.
+   */
+  @CarbonProperty public static final String CARBON_STREAMER_UPSERT_DEDUPLICATE =
+      "carbon.streamer.upsert.deduplicate";
+
+  public static final String CARBON_STREAMER_UPSERT_DEDUPLICATE_DEFAULT = "true";
+
+  /**
+   * The metadata columns coming from the source stream data, which should not be included in the
+   * target data.
+   */
+  @CarbonProperty public static final String CARBON_STREAMER_META_COLUMNS =
+      "carbon.streamer.meta.columns";
+
+  /**
+   * This flag decides if table schema needs to change as per the incoming batch schema.
+   * If set to true, incoming schema will be validated with existing table schema.
+   * If the schema has evolved, the incoming batch cannot be ingested and
+   * job will simply fail.
+   */
+  @CarbonProperty public static final String CARBON_ENABLE_SCHEMA_ENFORCEMENT =
+      "carbon.enable.schema.enforcement";
+
+  public static final String CARBON_ENABLE_SCHEMA_ENFORCEMENT_DEFAULT = "true";
+
 }

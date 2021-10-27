@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.{JobID, TaskAttemptID, TaskID, TaskType}
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{AnalysisException, CarbonToSparkAdapter, Column, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonToSparkAdapter, Column, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.avro.AvroFileFormatFactory
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -43,6 +43,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructT
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{AccumulatorContext, AccumulatorMetadata, LongAccumulator}
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -98,8 +99,35 @@ case class CarbonMergeDataSetCommand(
       throw new UnsupportedOperationException(
         "Carbon table supposed to be present in merge dataset")
     }
+
+    val properties = CarbonProperties.getInstance()
+    if (operationType != null) {
+      val filterDupes = properties
+        .getProperty(CarbonCommonConstants.CARBON_STREAMER_INSERT_DEDUPLICATE,
+          CarbonCommonConstants.CARBON_STREAMER_INSERT_DEDUPLICATE_DEFAULT).toBoolean
+      val isSchemaEnforcementEnabled = properties
+        .getProperty(CarbonCommonConstants.CARBON_ENABLE_SCHEMA_ENFORCEMENT,
+          CarbonCommonConstants.CARBON_ENABLE_SCHEMA_ENFORCEMENT_DEFAULT).toBoolean
+      if (
+        !MergeOperationType.withName(operationType.toUpperCase).equals(MergeOperationType.INSERT) &&
+        filterDupes) {
+        throw new MalformedCarbonCommandException("property CARBON_STREAMER_INSERT_DEDUPLICATE" +
+                                                  " should only be set with operation type INSERT")
+      }
+      if (isSchemaEnforcementEnabled) {
+        // call the util function to verify if incoming schema matches with target schema
+        CarbonMergeDataSetUtil.verifySourceAndTargetSchemas(targetDsOri, srcDS)
+      } else {
+        CarbonMergeDataSetUtil.handleSchemaEvolution(
+          targetDsOri, srcDS, sparkSession)
+      }
+    }
+
     // Target dataset must be backed by carbondata table.
-    val targetCarbonTable = relations.head.carbonRelation.carbonTable
+    val tgtTable = relations.head.carbonRelation.carbonTable
+    val targetCarbonTable: CarbonTable = CarbonEnv.getCarbonTable(Option(tgtTable.getDatabaseName),
+      tgtTable.getTableName)(sparkSession)
+
     // select only the required columns, it can avoid lot of and shuffling.
     val targetDs = if (mergeMatches == null && operationType != null) {
       targetDsOri.select(keyColumn)
@@ -149,11 +177,29 @@ case class CarbonMergeDataSetCommand(
           joinColumns.map(srcDS.col): _*)
       } else {
       srcDS
-      }
+    }
+
+    // deduplicate the incoming dataset
+    // TODO: handle the case for partial updates
+    val orderingField = properties.getProperty(
+      CarbonCommonConstants.CARBON_STREAMER_SOURCE_ORDERING_FIELD,
+      CarbonCommonConstants.CARBON_STREAMER_SOURCE_ORDERING_FIELD_DEFAULT)
+    val deduplicatedSrcDs = if (keyColumn != null) {
+      CarbonMergeDataSetUtil.deduplicateBeforeWriting(repartitionedSrcDs,
+        targetDs,
+        sparkSession,
+        sourceAliasName,
+        targetDsAliasName,
+        keyColumn,
+        orderingField,
+        targetCarbonTable)
+    } else {
+      repartitionedSrcDs
+    }
 
     // cache the source data as we will be scanning multiple times
-    repartitionedSrcDs.cache()
-    val deDuplicatedRecords = repartitionedSrcDs.count()
+    deduplicatedSrcDs.cache()
+    val deDuplicatedRecords = deduplicatedSrcDs.count()
     LOGGER.info(s"Number of records from source data: $deDuplicatedRecords")
     // Create accumulators to log the stats
     val stats = Stats(createLongAccumulator("insertedRows"),
@@ -221,7 +267,7 @@ case class CarbonMergeDataSetCommand(
           new util.LinkedHashMap[String, util.List[FilePathMinMaxVO]]
         val colToSplitsFilePathAndMinMaxMap: mutable.Map[String, util.List[FilePathMinMaxVO]] =
           CarbonMergeDataSetUtil.getSplitsAndLoadToCache(targetCarbonTable,
-            repartitionedSrcDs,
+            deduplicatedSrcDs,
             columnMinMaxInBlocklet,
             columnToIndexMap,
             sparkSession)
@@ -281,7 +327,7 @@ case class CarbonMergeDataSetCommand(
         // find the file paths to scan.
         finalCarbonFilesToScan = CarbonMergeDataSetUtil.getFilesToScan(joinCarbonColumns,
           joinColumnToTreeMapping,
-          repartitionedSrcDs)
+          deduplicatedSrcDs)
 
         LOGGER.info(s"Finished min-max pruning. Carbondata files to scan during merge is: ${
           finalCarbonFilesToScan.length}")
@@ -298,7 +344,7 @@ case class CarbonMergeDataSetCommand(
           targetDs
             .withColumn(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID, expr("getTupleId()"))
             .where(s"getBlockPaths('${finalCarbonFilesToScan.mkString(",")}')")
-            .join(repartitionedSrcDs.select(keyColumn),
+            .join(deduplicatedSrcDs.select(keyColumn),
               expr(s"$targetDsAliasName.$keyColumn = $sourceAliasName.$keyColumn"),
               joinType)
         } else {
@@ -308,7 +354,7 @@ case class CarbonMergeDataSetCommand(
         if (!isInsertOperation) {
           targetDs
             .withColumn(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID, expr("getTupleId()"))
-            .join(repartitionedSrcDs.select(keyColumn),
+            .join(deduplicatedSrcDs.select(keyColumn),
               expr(s"$targetDsAliasName.$keyColumn = $sourceAliasName.$keyColumn"),
               joinType)
         } else {
@@ -318,13 +364,13 @@ case class CarbonMergeDataSetCommand(
       val mergeHandler: MergeHandler =
         MergeOperationType.withName(operationType.toUpperCase) match {
         case MergeOperationType.UPSERT =>
-          UpsertHandler(sparkSession, frame, targetCarbonTable, stats, repartitionedSrcDs)
+          UpsertHandler(sparkSession, frame, targetCarbonTable, stats, deduplicatedSrcDs)
         case MergeOperationType.UPDATE =>
-          UpdateHandler(sparkSession, frame, targetCarbonTable, stats, repartitionedSrcDs)
+          UpdateHandler(sparkSession, frame, targetCarbonTable, stats, deduplicatedSrcDs)
         case MergeOperationType.DELETE =>
-          DeleteHandler(sparkSession, frame, targetCarbonTable, stats, repartitionedSrcDs)
+          DeleteHandler(sparkSession, frame, targetCarbonTable, stats, deduplicatedSrcDs)
         case MergeOperationType.INSERT =>
-          InsertHandler(sparkSession, frame, targetCarbonTable, stats, repartitionedSrcDs)
+          InsertHandler(sparkSession, frame, targetCarbonTable, stats, deduplicatedSrcDs)
         }
 
       // execute merge handler
@@ -332,7 +378,7 @@ case class CarbonMergeDataSetCommand(
       LOGGER.info(
         " Time taken to merge data  :: " + (System.currentTimeMillis() - st))
       // clear the cached src
-      repartitionedSrcDs.unpersist()
+      deduplicatedSrcDs.unpersist()
       return Seq()
     }
     // validate the merge matches and actions.
@@ -354,7 +400,7 @@ case class CarbonMergeDataSetCommand(
         .withColumn(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID, expr("getTupleId()"))
         .withColumn("exist_on_target", lit(1))
         .where(s"getBlockPaths('${finalCarbonFilesToScan.mkString(",")}')")
-        .join(repartitionedSrcDs.withColumn("exist_on_src", lit(1)),
+        .join(deduplicatedSrcDs.withColumn("exist_on_src", lit(1)),
           mergeMatches.joinExpr,
           joinType)
         .withColumn(status_on_mergeds, condition)
@@ -362,7 +408,7 @@ case class CarbonMergeDataSetCommand(
       targetDs
         .withColumn(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID, expr("getTupleId()"))
         .withColumn("exist_on_target", lit(1))
-        .join(repartitionedSrcDs.withColumn("exist_on_src", lit(1)),
+        .join(deduplicatedSrcDs.withColumn("exist_on_src", lit(1)),
           mergeMatches.joinExpr,
           joinType)
         .withColumn(status_on_mergeds, condition)
@@ -451,7 +497,7 @@ case class CarbonMergeDataSetCommand(
     HorizontalCompaction.tryHorizontalCompaction(
       sparkSession, targetCarbonTable)
     // clear the cached src
-    repartitionedSrcDs.unpersist()
+    deduplicatedSrcDs.unpersist()
     Seq.empty
   }
 
