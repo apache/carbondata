@@ -33,6 +33,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types._
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.{CarbonSchemaException, MalformedCarbonCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -101,7 +102,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     initialize
   }
 
-  private def initializeGloabalSort = {
+  private def initializeGlobalSort = {
     val initframe = generateData(10)
     initframe.write
       .format("carbondata")
@@ -259,7 +260,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test basic merge into the globalsort table") {
     sql("drop table if exists order")
-    val (dwSelframe, odsframe) = initializeGloabalSort
+    val (dwSelframe, odsframe) = initializeGlobalSort
 
     val updateMap = Map("id" -> "A.id",
       "name" -> "B.name",
@@ -718,22 +719,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("check the cdc with partition") {
-    sql("drop table if exists target")
-
-    val initframe = sqlContext.sparkSession.createDataFrame(Seq(
-      Row("a", "0"),
-      Row("b", "1"),
-      Row("c", "2"),
-      Row("d", "3")
-    ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
-
-    initframe.write
-      .format("carbondata")
-      .option("tableName", "target")
-      .option("partitionColumns", "value")
-      .mode(SaveMode.Overwrite)
-      .save()
-    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+    val target = prepareTarget(isPartitioned = true, "value")
     var cdc =
       sqlContext.sparkSession.createDataFrame(Seq(
         Row("a", "10", false, 0),
@@ -748,6 +734,9 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
           StructField("newValue", StringType),
           StructField("deleted", BooleanType), StructField("time", IntegerType))))
     cdc.createOrReplaceTempView("changes")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_SCHEMA_ENFORCEMENT, "false"
+    )
 
     cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT " +
               "key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
@@ -781,23 +770,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test upsert APIs on partition table") {
-    sql("drop table if exists target")
-    val initframe = sqlContext.sparkSession.createDataFrame(Seq(
-      Row("a", 0, "CHINA"),
-      Row("b", 1, "INDIA"),
-      Row("c", 2, "INDIA"),
-      Row("d", 3, "US")
-    ).asJava,
-      StructType(Seq(StructField("key", StringType),
-        StructField("value", IntegerType),
-        StructField("country", StringType))))
-    initframe.write
-      .format("carbondata")
-      .option("tableName", "target")
-      .option("partitionColumns", "country")
-      .mode(SaveMode.Overwrite)
-      .save()
-    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+    val target = prepareTargetWithThreeFields(isPartitioned = true, "country")
     var cdc =
       sqlContext.sparkSession.createDataFrame(Seq(
         Row("a", 7, "CHINA"),
@@ -847,20 +820,222 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         Row("j", 2, "RUSSIA"), Row("k", 0, "INDIA")))
   }
 
-  test("test all the merge APIs UPDATE, DELETE, UPSERT and INSERT") {
+  def prepareTarget(
+      isPartitioned: Boolean = false,
+      partitionedColumn: String = null
+  ): Dataset[Row] = {
     sql("drop table if exists target")
-    val initframe = sqlContext.sparkSession.createDataFrame(Seq(
+    val initFrame = sqlContext.sparkSession.createDataFrame(Seq(
       Row("a", "0"),
       Row("b", "1"),
       Row("c", "2"),
       Row("d", "3")
     ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
-    initframe.write
-      .format("carbondata")
-      .option("tableName", "target")
-      .mode(SaveMode.Overwrite)
-      .save()
-    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+
+    if (isPartitioned) {
+      initFrame.write
+        .format("carbondata")
+        .option("tableName", "target")
+        .option("partitionColumns", partitionedColumn)
+        .mode(SaveMode.Overwrite)
+        .save()
+    } else {
+      initFrame.write
+        .format("carbondata")
+        .option("tableName", "target")
+        .mode(SaveMode.Overwrite)
+        .save()
+    }
+    sqlContext.read.format("carbondata").option("tableName", "target").load()
+  }
+
+  def prepareTargetWithThreeFields(
+      isPartitioned: Boolean = false,
+      partitionedColumn: String = null
+  ): Dataset[Row] = {
+    sql("drop table if exists target")
+    val initFrame = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", 0, "CHINA"),
+      Row("b", 1, "INDIA"),
+      Row("c", 2, "INDIA"),
+      Row("d", 3, "US")
+    ).asJava,
+      StructType(Seq(StructField("key", StringType),
+        StructField("value", IntegerType),
+        StructField("country", StringType))))
+
+    if (isPartitioned) {
+      initFrame.write
+        .format("carbondata")
+        .option("tableName", "target")
+        .option("partitionColumns", partitionedColumn)
+        .mode(SaveMode.Overwrite)
+        .save()
+    } else {
+      initFrame.write
+        .format("carbondata")
+        .option("tableName", "target")
+        .mode(SaveMode.Overwrite)
+        .save()
+    }
+    sqlContext.read.format("carbondata").option("tableName", "target").load()
+  }
+
+  test("test schema enforcement") {
+    val target = prepareTarget()
+    var cdc = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", "1", "ab"),
+      Row("d", "4", "de")
+    ).asJava, StructType(Seq(StructField("key", StringType),
+      StructField("value", StringType)
+      , StructField("new_value", StringType))))
+    val properties = CarbonProperties.getInstance()
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_STREAMER_INSERT_DEDUPLICATE, "false"
+    )
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_SCHEMA_ENFORCEMENT, "true"
+    )
+    target.as("A").upsert(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("a", "1"), Row("b", "1"), Row("c", "2"), Row("d", "4")))
+
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_STREAMER_INSERT_DEDUPLICATE, "true"
+    )
+
+    val exceptionCaught1 = intercept[MalformedCarbonCommandException] {
+      cdc = sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", 1, "ab"),
+        Row("d", 4, "de")
+      ).asJava, StructType(Seq(StructField("key", StringType),
+        StructField("value", IntegerType)
+        , StructField("new_value", StringType))))
+      target.as("A").upsert(cdc.as("B"), "key").execute()
+    }
+    assert(exceptionCaught1.getMessage
+      .contains(
+        "property CARBON_STREAMER_INSERT_DEDUPLICATE should " +
+        "only be set with operation type INSERT"))
+
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_STREAMER_INSERT_DEDUPLICATE, "false"
+    )
+    val exceptionCaught2 = intercept[CarbonSchemaException] {
+      cdc = sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", 1),
+        Row("d", 4)
+      ).asJava, StructType(Seq(StructField("key", StringType),
+        StructField("val", IntegerType))))
+      target.as("A").upsert(cdc.as("B"), "key").execute()
+    }
+    assert(exceptionCaught2.getMessage.contains("source schema does not contain field: value"))
+
+    val exceptionCaught3 = intercept[CarbonSchemaException] {
+      cdc = sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", 1L),
+        Row("d", 4L)
+      ).asJava, StructType(Seq(StructField("key", StringType),
+        StructField("value", LongType))))
+      target.as("A").upsert(cdc.as("B"), "key").execute()
+    }
+
+    assert(exceptionCaught3.getMessage.contains("source schema has different " +
+                                                "data type for field: value"))
+
+    val exceptionCaught4 = intercept[CarbonSchemaException] {
+      cdc = sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", "1", "A"),
+        Row("d", "4", "D")
+      ).asJava, StructType(Seq(StructField("key", StringType),
+        StructField("value", StringType), StructField("Key", StringType))))
+      target.as("A").upsert(cdc.as("B"), "key").execute()
+    }
+
+    assert(exceptionCaught4.getMessage.contains("source schema has similar fields which " +
+                                                "differ only in case sensitivity: key"))
+  }
+
+  test("test schema evolution") {
+    val properties = CarbonProperties.getInstance()
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_STREAMER_INSERT_DEDUPLICATE, "false"
+    )
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_SCHEMA_ENFORCEMENT, "false"
+    )
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_STREAMER_SOURCE_ORDERING_FIELD, "value"
+    )
+    sql("drop table if exists target")
+    var target = prepareTargetWithThreeFields()
+    var cdc = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", 1, "ab", "china"),
+      Row("d", 4, "de", "china"),
+      Row("d", 7, "updated_de", "china_pro")
+    ).asJava, StructType(Seq(StructField("key", StringType),
+      StructField("value", IntegerType)
+      , StructField("new_value", StringType),
+      StructField("country", StringType))))
+    target.as("A").upsert(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("a", 1, "china", "ab"), Row("b", 1, "INDIA", null),
+        Row("c", 2, "INDIA", null), Row("d", 7, "china_pro", "updated_de")))
+
+    target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+
+    cdc = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", 5),
+      Row("d", 5)
+    ).asJava, StructType(Seq(StructField("key", StringType),
+      StructField("value", IntegerType))))
+    target.as("A").upsert(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("a", 5), Row("b", 1),
+        Row("c", 2), Row("d", 5)))
+
+    target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+    cdc = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("b", 50L),
+      Row("d", 50L)
+    ).asJava, StructType(Seq(StructField("key", StringType),
+      StructField("value", LongType))))
+    target.as("A").upsert(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("a", 5), Row("b", 50L),
+        Row("c", 2), Row("d", 50L)))
+  }
+
+  test("test deduplication with existing dataset") {
+    val target = prepareTarget()
+    var cdc = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", "1", "ab"),
+      Row("e", "4", "de"),
+      Row("e", "6", "de1")
+    ).asJava, StructType(Seq(StructField("key", StringType),
+      StructField("value", StringType)
+      , StructField("new_value", StringType))))
+    val properties = CarbonProperties.getInstance()
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_STREAMER_INSERT_DEDUPLICATE, "true"
+    )
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_STREAMER_SOURCE_ORDERING_FIELD, "value"
+    )
+    properties.addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_SCHEMA_ENFORCEMENT, "true"
+    )
+    target.as("A").insert(cdc.as("B"), "key").execute()
+    checkAnswer(sql("select * from target"),
+      Seq(Row("a", "0"), Row("b", "1"),
+        Row("c", "2"), Row("d", "3"), Row("e", "6")))
+  }
+
+  test("test all the merge APIs UPDATE, DELETE, UPSERT and INSERT") {
+    val target = prepareTarget()
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_STREAMER_INSERT_DEDUPLICATE, "false"
+    )
     var cdc =
       sqlContext.sparkSession.createDataFrame(Seq(
         Row("a", "7"),
@@ -976,6 +1151,9 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       Row("d", "3")
     ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
 
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_SCHEMA_ENFORCEMENT, "false"
+    )
     initframe.repartition(1).write
       .format("carbondata")
       .option("tableName", "target")
