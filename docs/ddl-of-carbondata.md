@@ -641,7 +641,7 @@ CarbonData DDL statements are documented here,which includes:
   This function creates a new database. By default the database is created in location 'spark.sql.warehouse.dir', but you can also specify custom location by configuring 'spark.sql.warehouse.dir', the configuration 'carbon.storelocation' has been deprecated.
 
   **Note:**
-    For simplicity, we recommended you remove the configuration of carbon.storelocation. If carbon.storelocaiton and spark.sql.warehouse.dir are configured to different paths, exception will be thrown when CREATE DATABASE and DROP DATABASE to avoid inconsistent database location.
+    For simplicity, we recommended you remove the configuration of carbon.storelocation. If carbon.storelocation and spark.sql.warehouse.dir are configured to different paths, exception will be thrown when CREATE DATABASE and DROP DATABASE to avoid inconsistent database location.
 
 
   ```

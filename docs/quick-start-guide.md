@@ -259,7 +259,7 @@ carbon.sql(
 
 3. Add the carbonlib folder path in the Spark classpath. (Edit `$SPARK_HOME/conf/spark-env.sh` file and modify the value of `SPARK_CLASSPATH` by appending `$SPARK_HOME/carbonlib/*` to the existing value)
 
-4. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`.
+4. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`. All the carbondata related properties are configured in this file.
 
 5. Repeat Step 2 to Step 5 in all the nodes of the cluster.
 
@@ -304,7 +304,7 @@ carbon.sql(
 
    **NOTE**: Create the carbonlib folder if it does not exists inside `$SPARK_HOME` path.
 
-2. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`.
+2. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`. All the carbondata related properties are configured in this file.
 
 3. Create `tar.gz` file of carbonlib folder and move it inside the carbonlib folder.
 
