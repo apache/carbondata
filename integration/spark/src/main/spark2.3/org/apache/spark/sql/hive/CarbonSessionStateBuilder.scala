@@ -58,8 +58,8 @@ class CarbonHiveSessionCatalog(
     parser: ParserInterface,
     functionResourceLoader: FunctionResourceLoader)
   extends HiveSessionCatalog (
-    externalCatalog,
-    globalTempViewManager,
+    () => externalCatalog,
+    () => globalTempViewManager,
     new HiveMetastoreCatalog(sparkSession),
     functionRegistry,
     conf,
@@ -180,7 +180,7 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
    */
   override protected lazy val resourceLoader: HiveSessionResourceLoader = {
     val client: HiveClient = externalCatalog.client.newSession()
-    new HiveSessionResourceLoader(session, client)
+    new HiveSessionResourceLoader(session, () => client)
   }
 
   override protected def analyzer: Analyzer =
