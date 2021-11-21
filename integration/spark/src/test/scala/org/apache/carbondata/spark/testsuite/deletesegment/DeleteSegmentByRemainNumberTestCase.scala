@@ -186,8 +186,10 @@ class DeleteSegmentByRemainNumberTestCase extends QueryTest with BeforeAndAfterA
       s"""LOAD DATA local inpath '$resourcesPath/dataretention2.csv'
          | INTO TABLE deleteSegmentPartitionTable PARTITION (age='40')
          | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
-    sql("show segments on deleteSegmentPartitionTable").show()
     sql("delete from table deleteSegmentPartitionTable expect segment.remain_number = 1")
-    sql("show segments on deleteSegmentPartitionTable").show()
+    val segments = sql("show segments on deleteSegmentPartitionTable").collect()
+    assertResult(SUCCESSFUL_STATUS)(segments(5).get(1))
+    assertResult(SUCCESSFUL_STATUS)(segments(6).get(1))
+    assertResult(SUCCESSFUL_STATUS)(segments(8).get(1))
   }
 }
