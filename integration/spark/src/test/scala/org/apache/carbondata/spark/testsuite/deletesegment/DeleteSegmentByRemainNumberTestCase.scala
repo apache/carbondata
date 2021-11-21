@@ -188,8 +188,8 @@ class DeleteSegmentByRemainNumberTestCase extends QueryTest with BeforeAndAfterA
          | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
     sql("delete from table deleteSegmentPartitionTable expect segment.remain_number = 1")
     val segments = sql("show segments on deleteSegmentPartitionTable").collect()
-    assertResult(SUCCESSFUL_STATUS)(segments(5).get(1))
-    assertResult(SUCCESSFUL_STATUS)(segments(6).get(1))
-    assertResult(SUCCESSFUL_STATUS)(segments(8).get(1))
+    assertResult(SUCCESSFUL_STATUS)(segments(0).get(1))
+    assertResult(SUCCESSFUL_STATUS)(segments(2).get(1))
+    assertResult(SUCCESSFUL_STATUS)(segments(3).get(1))
   }
 }
