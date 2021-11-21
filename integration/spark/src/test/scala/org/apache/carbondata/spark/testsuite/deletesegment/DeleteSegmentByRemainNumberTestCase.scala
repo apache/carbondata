@@ -56,7 +56,11 @@ class DeleteSegmentByRemainNumberTestCase extends QueryTest with BeforeAndAfterA
          | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/dataretention3.csv'
-         | INTO TABLE deleteSegmentPartitionTable PARTITION (age='40')
+         | INTO TABLE deleteSegmentPartitionTable PARTITION (age='20')
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/dataretention3.csv'
+         | INTO TABLE deleteSegmentPartitionTable PARTITION (age='30')
          | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
 
     sql(
@@ -94,8 +98,9 @@ class DeleteSegmentByRemainNumberTestCase extends QueryTest with BeforeAndAfterA
     sql("delete from table deleteSegmentPartitionTable expect segment.remain_number = 1")
     val segments2 = sql("show segments on deleteSegmentPartitionTable").collect()
     assertResult(SUCCESSFUL_STATUS)(segments2(0).get(1))
-    assertResult(DELETED_STATUS)(segments2(1).get(1))
+    assertResult(SUCCESSFUL_STATUS)(segments2(1).get(1))
     assertResult(DELETED_STATUS)(segments2(2).get(1))
+    assertResult(DELETED_STATUS)(segments2(3).get(1))
   }
 
   test("delete segment, remain nothing") {
@@ -141,13 +146,6 @@ class DeleteSegmentByRemainNumberTestCase extends QueryTest with BeforeAndAfterA
     assert(ex4.getMessage.contains("SqlParse"))
   }
 
-  test("delete segment after update") {
-    sql("update deleteSegmentPartitionTable d set (d.country) = ('fr') where d.country = 'aus'")
-    sql("delete from table deleteSegmentPartitionTable expect segment.remain_number = 1")
-    val segments2 = sql("select * from deleteSegmentPartitionTable").collect()
-    segments2.foreach(row => assertResult("fr")(row(2)))
-  }
-
   test("delete segment after delete newest segment by segmentId") {
     sql("delete from table deleteSegmentTable where segment.id in (2)")
     sql("delete from table deleteSegmentTable expect segment.remain_number = 1")
@@ -159,9 +157,37 @@ class DeleteSegmentByRemainNumberTestCase extends QueryTest with BeforeAndAfterA
 
     sql("delete from table deleteSegmentPartitionTable where segment.id in (2)")
     sql("delete from table deleteSegmentPartitionTable expect segment.remain_number = 1")
+    sql("show segments on deleteSegmentPartitionTable").show()
     val segments2 = sql("show segments on deleteSegmentPartitionTable").collect()
-    assertResult(DELETED_STATUS)(segments2(0).get(1))
-    assertResult(SUCCESSFUL_STATUS)(segments2(1).get(1))
+    assertResult(SUCCESSFUL_STATUS)(segments2(0).get(1))
+    assertResult(DELETED_STATUS)(segments2(1).get(1))
     assertResult(DELETED_STATUS)(segments2(2).get(1))
+    assertResult(SUCCESSFUL_STATUS)(segments2(3).get(1))
+  }
+
+  test("delete segment by partition id") {
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/dataretention1.csv'
+         | INTO TABLE deleteSegmentPartitionTable PARTITION (age='20')
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/dataretention2.csv'
+         | INTO TABLE deleteSegmentPartitionTable PARTITION (age='20')
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/dataretention1.csv'
+         | INTO TABLE deleteSegmentPartitionTable PARTITION (age='30')
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/dataretention2.csv'
+         | INTO TABLE deleteSegmentPartitionTable PARTITION (age='40')
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/dataretention2.csv'
+         | INTO TABLE deleteSegmentPartitionTable PARTITION (age='40')
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql("show segments on deleteSegmentPartitionTable").show()
+    sql("delete from table deleteSegmentPartitionTable expect segment.remain_number = 1")
+    sql("show segments on deleteSegmentPartitionTable").show()
   }
 }

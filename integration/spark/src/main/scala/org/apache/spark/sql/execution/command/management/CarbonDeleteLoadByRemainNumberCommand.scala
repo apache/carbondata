@@ -19,12 +19,11 @@ package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
-
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.events.{withEvents, DeleteSegmentByIdPostEvent, DeleteSegmentByIdPreEvent}
+import org.apache.carbondata.events.{DeleteSegmentByIdPostEvent, DeleteSegmentByIdPreEvent, withEvents}
 
 /**
  * A command for delete by remaining number.
@@ -54,16 +53,32 @@ case class CarbonDeleteLoadByRemainNumberCommand(
 
     val segments = CarbonStore.readSegments(carbonTable.getTablePath, showHistory = false, None)
 
-    // Through the remaining number, get the delete id
-    val deleteSegmentIds = segments.filter(segment =>
-      segment.getSegmentStatus == SegmentStatus.SUCCESS ||
-        segment.getSegmentStatus == SegmentStatus.COMPACTED)
-      .sortBy(_.getLoadStartTime)
-      .map(_.getLoadName)
-      .reverse
-      .drop(remaining)
+    var deleteSegmentIds = List[String]()
+    if (carbonTable.isHivePartitionTable) {
+      segments.map(segment =>
+        (CarbonStore.getPartitions(carbonTable.getTablePath, segment), segment))
+        .groupBy(m => m._1)
+        .foreach(elem => {
+          val ids = elem._2.map(p => p._2).filter(segment =>
+            segment.getSegmentStatus == SegmentStatus.SUCCESS ||
+              segment.getSegmentStatus == SegmentStatus.COMPACTED)
+            .sortBy(_.getLoadStartTime)
+            .map(_.getLoadName)
+            .reverse
+            .drop(remaining).toList
+          deleteSegmentIds = List.concat(deleteSegmentIds, ids)
+      })
+    } else {
+      deleteSegmentIds = segments.filter(segment =>
+        segment.getSegmentStatus == SegmentStatus.SUCCESS ||
+          segment.getSegmentStatus == SegmentStatus.COMPACTED)
+        .sortBy(_.getLoadStartTime)
+        .map(_.getLoadName)
+        .reverse
+        .drop(remaining).toList
+    }
 
-    if (deleteSegmentIds.length == 0) {
+    if (deleteSegmentIds.isEmpty) {
       return Seq.empty
     }
 
