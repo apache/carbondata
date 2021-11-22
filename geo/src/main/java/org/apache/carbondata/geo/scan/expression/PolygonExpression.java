@@ -37,6 +37,7 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
+
 import org.apache.carbondata.core.util.CustomIndex;
 import org.apache.carbondata.geo.GeoHashUtils;
 import org.apache.carbondata.geo.scan.filter.executor.PolygonFilterExecutorImpl;
