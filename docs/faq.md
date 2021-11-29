@@ -29,7 +29,7 @@
 * [Why different time zone result for select query output when query SDK writer output?](#why-different-time-zone-result-for-select-query-output-when-query-sdk-writer-output)
 * [How to check LRU cache memory footprint?](#how-to-check-lru-cache-memory-footprint)
 * [How to deal with the trailing task in query?](#How-to-deal-with-the-trailing-task-in-query)
-* [How to manage mix file format in carbon table?](#How-to-manage-mix-file-format-in-carbon-table)
+* [How to manage mix file format in carbondata table?](#How-to-manage-mix-file-format-in-carbondata-table)
 
 # TroubleShooting
 
