@@ -38,6 +38,7 @@ object CleanFiles {
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
     DataTrashManager.cleanGarbageData(
       carbonTable,
+      null,
       isForceDeletion,
       cleanStaleInProgress,
       false,

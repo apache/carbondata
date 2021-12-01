@@ -102,3 +102,11 @@ clean files operation, the user can disable that option by using ```statistics =
    CLEAN FILES FOR TABLE TABLE_NAME options('statistics'='false')
    ```
   
+### SEGMENT_IDS
+Clean files operation can specify segments to be deleted instead of delete all the Marked For Delete and Compacted segments after the number of theses segments reaches carbon.invisible.segments.preserve.count.
+User can specify segments with option ```segment_ids```. Value of this option is the segment ids user wants to delete. Only Marked for Delete and Compacted segment ids are valid. If invalid ids are given, operation will fail directly.
+If segments are specified, ```force``` option will be ignored.
+
+   ```
+   CLEAN FILES FOR TABLE TABLE_NAME options('segment_ids'='0,1,2')
+   ```

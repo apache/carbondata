@@ -73,7 +73,7 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
       .getTablePath
     val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
-    editTableStatusFile(path)
+    assert(editTableStatusFile(path))
     assert(!FileFactory.isFileExist(trashFolderPath))
 
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
@@ -531,7 +531,7 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  def editTableStatusFile(carbonTablePath: String) : Unit = {
+  def editTableStatusFile(carbonTablePath: String) : Boolean = {
     // original table status file
     val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath))
     val f2 = new File(CarbonTablePath.getMetadataPath(carbonTablePath) + CarbonCommonConstants
@@ -547,6 +547,7 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     // scalastyle:on println
     bufferedSource.close()
     w.close()
+    f1.delete();
     f2.renameTo(f1)
   }
 

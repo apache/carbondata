@@ -54,6 +54,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
         cleanFilesForIndex(
           cleanFilesPostEvent.sparkSession,
           cleanFilesPostEvent.carbonTable,
+          cleanFilesPostEvent.filterSegmentList,
           cleanFilesPostEvent.options.getOrElse("force", "false").toBoolean,
           cleanFilesPostEvent.options.getOrElse("stale_inprogress", "false").toBoolean)
 
@@ -67,6 +68,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
   private def cleanFilesForIndex(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
+      filterSegmentList: java.util.List[String],
       isForceDelete: Boolean,
       cleanStaleInProgress: Boolean): Unit = {
     val indexTables = CarbonIndexUtil
@@ -76,10 +78,11 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
         Seq.empty[Expression],
         sparkSession,
         indexTable)
-      SegmentStatusManager.deleteLoadsAndUpdateMetadata(
-        indexTable, isForceDelete, partitions.map(_.asJava).orNull, cleanStaleInProgress,
-        true)
-      cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
+      SegmentStatusManager.deleteLoadsAndUpdateMetadata(indexTable, filterSegmentList,
+        isForceDelete, partitions.map(_.asJava).orNull, cleanStaleInProgress, false)
+      if (filterSegmentList == null) {
+        cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
+      }
     }
   }
 

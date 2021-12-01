@@ -25,6 +25,7 @@ case class CleanFilesPreEvent(carbonTable: CarbonTable, sparkSession: SparkSessi
 
 case class CleanFilesPostEvent(
     carbonTable: CarbonTable,
+    filterSegmentList: java.util.List[String],
     sparkSession: SparkSession,
     options: Map[String, String])
   extends Event with CleanFilesEventInfo
