@@ -40,7 +40,7 @@ Users can add the existing data as a segment to the carbon table provided the sc
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | [PATH](#path)           | User external old table path         |
 | [FORMAT](#format)       | User external old table file format             |
-| [PARTITION](#partition) | Extract partition info for partition table , should be form of "a:int, b:string"             |
+| [PARTITION](#partition) | Partition info for partition table , should be form of "a:int, b:string"             |
 
 
 -
@@ -60,7 +60,7 @@ Users can add the existing data as a segment to the carbon table provided the sc
     OPTIONS('FORMAT'='parquet')
     ```
   - ##### PARTITION:
-   Extract partition info for partition table , should be form of "a:int, b:string"
+   Partition info for partition table , should be form of "a:int, b:string"
 
     ```
     OPTIONS('PARTITION'='a:int, b:string')
@@ -95,8 +95,8 @@ LOCATION 'hdfs://bieremayi/user/hive/warehouse/log_parquet_par';
 Parquet File Location : 
 
 ```
-25.1 K  75.2 K  /user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0
-8.7 K   26.2 K  /user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=1
+/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0
+/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=1
 ```
 
 
@@ -117,8 +117,8 @@ LOCATION 'hdfs://bieremayi/user/hive/warehouse/log_orc_par';
 Orc File Location : 
 
 ```
-19.4 K  58.2 K  /user/hive/warehouse/log_orc_par/day=20211123/hour=12/type=0
-7.1 K   21.4 K  /user/hive/warehouse/log_orc_par/day=20211123/hour=12/type=1
+/user/hive/warehouse/log_orc_par/day=20211123/hour=12/type=0
+/user/hive/warehouse/log_orc_par/day=20211123/hour=12/type=1
 ```
 
 **Steps:**
@@ -156,13 +156,13 @@ step3:  Result check.
 SHOW SEGMENTS FOR TABLE default.log_carbon_par;
 ```
 
-|SegmentSequenceId|Status|Load Time|Elapsed Time |Partition|Data Size|Index Size|File Format|
+| ID  |  Status  |     Load Start Time      | Load Time Taken  |              Partition              | Data Size  | Index Size  | File Format  |
 |:---|:---|:---|:---|:---|:---|:---|:---|
-|4       |Success |2021-11-29 17:59:40.819 |7.026S  |{day=20211123,hour=12,type=1}, ...      |29.86KB| 4.80KB  |columnar_v3|
-|3       |Success |2021-11-29 16:34:28.106 |0.418S  |{day=20211123,hour=12,type=0}   |19.40KB |NA     | orc|
-|2       |Success |2021-11-29 16:34:27.733 |0.222S  |{day=20211123,hour=12,type=1}   |7.12KB  |NA     | orc|
-|1       |Success |2021-11-29 16:30:17.207 |0.275S  |{day=20211123,hour=12,type=0}   |25.08KB |NA     | parquet|
-|0       |Success |2021-11-29 16:30:16.48  |0.452S  |{day=20211123,hour=12,type=1}   |8.72KB  |NA     | parquet|
+|4       |Success |2021-11-29 17:59:40.819 |7.026S  |{day=20211123,hour=12,type=1}, ...      |xxx| xxx  |columnar_v3|
+|3       |Success |2021-11-29 16:34:28.106 |0.418S  |{day=20211123,hour=12,type=0}   |xxx |NA     | orc|
+|2       |Success |2021-11-29 16:34:27.733 |0.222S  |{day=20211123,hour=12,type=1}   |xxx  |NA     | orc|
+|1       |Success |2021-11-29 16:30:17.207 |0.275S  |{day=20211123,hour=12,type=0}   |xxx |NA     | parquet|
+|0       |Success |2021-11-29 16:30:16.48  |0.452S  |{day=20211123,hour=12,type=1}   |xxx  |NA     | parquet|
 
 
 ### Changes to tablestatus file
