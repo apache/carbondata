@@ -173,7 +173,9 @@ object CarbonToSparkAdapter extends SparkVersionAdapter {
       }
   }
 
-  def getDataFilter(partitionSet: AttributeSet, filter: Seq[Expression]): Seq[Expression] = {
+  def getDataFilter(partitionSet: AttributeSet,
+      filter: Seq[Expression],
+      partitionFilter: Seq[Expression]): Seq[Expression] = {
     filter
   }
 
