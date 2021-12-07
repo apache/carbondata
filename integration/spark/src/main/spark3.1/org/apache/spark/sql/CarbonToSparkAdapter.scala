@@ -180,9 +180,12 @@ object CarbonToSparkAdapter extends SparkVersionAdapter {
       }
   }
 
-  def getDataFilter(partitionSet: AttributeSet, filter: Seq[Expression]): Seq[Expression] = {
+  def getDataFilter(partitionSet: AttributeSet, filter: Seq[Expression],
+      partitionFilter: Seq[Expression]): Seq[Expression] = {
     filter.filter {
-      case _: DynamicPruningSubquery => false
+      case dp: DynamicPruningSubquery =>
+        // if filter does not exists in partition filter, then push down the filter to spark
+        !partitionFilter.exists(_.semanticEquals(dp))
       case _ => true
     }
   }

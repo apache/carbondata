@@ -158,9 +158,10 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
         SparkSession.getActiveSession.get,
         relation.catalogTable.get.identifier
       )
-      // remove dynamic partition filter from predicates
-      filterPredicates = CarbonToSparkAdapter.getDataFilter(partitionSet, allPredicates)
     }
+    // remove dynamic partition filter from predicates
+    filterPredicates = CarbonToSparkAdapter.getDataFilter(partitionSet,
+      allPredicates, partitionsFilter)
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val projects = rawProjects.map {p =>
       p.transform {
@@ -232,7 +233,6 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
       output,
       partitionsFilter.filterNot(SubqueryExpression.hasSubquery),
       handledPredicates,
-      readCommittedScope,
       getCarbonProjection(relationPredicates, requiredColumns, projects),
       pushedFilters,
       directScanSupport,
