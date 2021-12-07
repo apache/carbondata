@@ -29,6 +29,7 @@
 * [Why different time zone result for select query output when query SDK writer output?](#why-different-time-zone-result-for-select-query-output-when-query-sdk-writer-output)
 * [How to check LRU cache memory footprint?](#how-to-check-lru-cache-memory-footprint)
 * [How to deal with the trailing task in query?](#How-to-deal-with-the-trailing-task-in-query)
+* [How to manage hybrid file format in carbondata table?](#How-to-manage-hybrid-file-format-in-carbondata-table)
 
 # TroubleShooting
 
@@ -212,6 +213,10 @@ spark.locality control data locality the value of 500 is used to shorten the wai
 spark.speculation is a group of configuration, that can monitor trailing tasks and start new tasks when conditions are met.
 
 spark.blacklist.enabled, avoid reduction of available executors due to blacklist mechanism.
+
+## How to manage hybrid file format in carbondata table
+
+Refer [Heterogeneous format segments in carbondata](./addsegment-guide.md)
 
 ## Getting tablestatus.lock issues When loading data
 
