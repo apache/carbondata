@@ -25,7 +25,6 @@ concept which helps to maintain consistency of data and easy transaction managem
 - [Delete Segment by ID](#delete-segment-by-id)
 - [Delete Segment by Date](#delete-segment-by-date)
 - [Query Data with Specified Segments](#query-data-with-specified-segments)
-- [Add Segment](./addsegment-guide.md)
 
 ### SHOW SEGMENT
 

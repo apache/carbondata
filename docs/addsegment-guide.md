@@ -27,46 +27,10 @@ Heterogeneous format segments aims to solve this problem by avoiding data conver
 ### Add segment with path and format
 Users can add the existing data as a segment to the carbon table provided the schema of the data
  and the carbon table should be the same. 
- 
- Syntax
- 
-   ```
-   ALTER TABLE [db_name.]table_name ADD SEGMENT OPTIONS(property_name=property_value, ...)
-   ```
 
-**Supported properties:**
-
-| Property                                                     | Description                                                  |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| [PATH](#path)           | User external old table path         |
-| [FORMAT](#format)       | User external old table file format             |
-| [PARTITION](#partition) | Extract partition info for partition table , should be form of "a:int, b:string"             |
-
-
--
-  You can use the following options to add segment:
-
-  - ##### PATH: 
-    User old table path.
-    
-    ``` 
-    OPTIONS('PATH'='hdfs://usr/oldtable')
-    ```
-
-  - ##### FORMAT:
-   User old table file format. eg : json, parquet, jdbc, orc, csv, text
-
-    ```
-    OPTIONS('FORMAT'='parquet')
-    ```
-  - ##### PARTITION:
-   Extract partition info for partition table , should be form of "a:int, b:string"
-
-    ```
-    OPTIONS('PARTITION'='a:int, b:string')
-    ```
-  
-
+```
+alter table table_name add segment options ('path'= 'hdfs://usr/oldtable','format'='parquet')
+```
 In the above command user can add the existing data to the carbon table as a new segment and also
  can provide the data format.
 
