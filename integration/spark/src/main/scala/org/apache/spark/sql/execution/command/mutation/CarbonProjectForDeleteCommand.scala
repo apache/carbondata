@@ -94,6 +94,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
         LockUsage.UPDATE_LOCK)
     var lockStatus = false
     var hasException = false
+    var deletedRows = 0L;
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
@@ -118,6 +119,8 @@ private[sql] case class CarbonProjectForDeleteCommand(
         isUpdateOperation = false,
         executorErrors)
 
+      deletedRows = deletedRowCount;
+
       // Check for any failures occurred during delete delta execution
       if (executorErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executorErrors.errorMsg)
@@ -141,14 +144,16 @@ private[sql] case class CarbonProjectForDeleteCommand(
       val deleteFromTablePostEvent: DeleteFromTablePostEvent =
         DeleteFromTablePostEvent(sparkSession, carbonTable)
       OperationListenerBus.getInstance.fireEvent(deleteFromTablePostEvent, operationContext)
-      Seq(Row(deletedRowCount))
+      Seq(Row(deletedRows))
     } catch {
       case e: HorizontalCompactionException =>
         LOGGER.error("Delete operation passed. Exception in Horizontal Compaction." +
                      " Please check logs. " + e.getMessage)
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
         hasException = true
-        Seq(Row(0L))
+        // if just the horizontal compaction fails, return the deleted count as it will be
+        // successful.
+        Seq(Row(deletedRows))
 
       case e: Exception =>
         LOGGER.error("Exception in Delete data operation " + e.getMessage, e)

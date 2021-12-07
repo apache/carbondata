@@ -19,6 +19,7 @@ package org.apache.carbondata.core.statusmanager;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -33,6 +34,7 @@ import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
@@ -364,13 +366,33 @@ public class SegmentUpdateStatusManager {
    * @param blockName the specified block of the segment
    * @return delete delta file list of the block
    */
-  public List<String> getDeleteDeltaFilesList(final Segment segment, final String blockName) {
+  public List<String> getDeleteDeltaFilesList(final Segment segment, final String blockName)
+      throws IOException {
     List<String> deleteDeltaFileList = new ArrayList<>();
     String segmentPath = null;
     if (segment.isExternalSegment()) {
       for (LoadMetadataDetails details : segmentDetails) {
         if (details.getLoadName().equals(segment.getSegmentNo())) {
           segmentPath = details.getPath();
+          break;
+        }
+      }
+    } else if (isPartitionTable) {
+      String segmentFileName = Arrays.stream(segmentDetails).filter(
+          loadMetaDataDetail -> loadMetaDataDetail.getLoadName()
+              .equalsIgnoreCase(segment.getSegmentNo())).collect(Collectors.toList()).get(0)
+          .getSegmentFile();
+      SegmentFileStore segmentFileStore =
+          new SegmentFileStore(identifier.getTablePath(), segmentFileName);
+      segmentFileStore.readIndexFiles(SegmentStatus.SUCCESS, false, FileFactory.getConfiguration());
+      for (Map.Entry<String, List<String>> entry : segmentFileStore.getIndexFilesMap().entrySet()) {
+        List<String> matchedBlocksInPartition = entry.getValue().stream().filter(blockFile -> {
+          String blockFileName = blockFile.substring(blockFile.lastIndexOf(File.separator) + 1);
+          return blockName.equalsIgnoreCase(CarbonUpdateUtil.getBlockName(blockFileName));
+        }).collect(Collectors.toList());
+        if (matchedBlocksInPartition.size() > 0) {
+          segmentPath = matchedBlocksInPartition.get(0)
+              .substring(0, matchedBlocksInPartition.get(0).lastIndexOf(File.separator));
           break;
         }
       }
