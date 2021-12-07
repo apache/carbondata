@@ -875,13 +875,11 @@ public final class CarbonDataMergerUtil {
   /**
    * method gets the segments list which get qualified for IUD compaction.
    * @param segments
-   * @param absoluteTableIdentifier
-   * @param compactionTypeIUD
    * @return
    */
   public static List<String> getSegListIUDCompactionQualified(List<Segment> segments,
-      AbsoluteTableIdentifier absoluteTableIdentifier,
-      SegmentUpdateStatusManager segmentUpdateStatusManager, CompactionType compactionTypeIUD) {
+      SegmentUpdateStatusManager segmentUpdateStatusManager)
+      throws IOException {
 
     List<String> validSegments = new ArrayList<>();
 
@@ -906,7 +904,8 @@ public final class CarbonDataMergerUtil {
    * @return block list of the segment
    */
   private static List<String> checkDeleteDeltaFilesInSeg(Segment seg,
-      SegmentUpdateStatusManager segmentUpdateStatusManager, int numberDeltaFilesThreshold) {
+      SegmentUpdateStatusManager segmentUpdateStatusManager, int numberDeltaFilesThreshold)
+      throws IOException {
 
     List<String> blockLists = new ArrayList<>();
     Set<String> uniqueBlocks = new HashSet<String>();

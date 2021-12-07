@@ -112,9 +112,7 @@ object HorizontalCompaction {
     val db = carbonTable.getDatabaseName
     val table = carbonTable.getTableName
     val deletedBlocksList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
-      absTableIdentifier,
-      segmentUpdateStatusManager,
-      compactionTypeIUD)
+      segmentUpdateStatusManager)
     if (LOG.isDebugEnabled) {
       LOG.debug(s"The segment list for Horizontal Update Compaction is $deletedBlocksList")
     }
