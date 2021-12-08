@@ -1005,10 +1005,9 @@ public class SegmentFileStore {
    * @param uniqueId
    * @throws IOException
    */
-  public void dropPartitions(Segment segment, List<PartitionSpec> partitionSpecs,
+  public void dropPartitions(String segmentNo, List<String> partitionLocations,
       String uniqueId, List<String> toBeDeletedSegments, List<String> toBeUpdatedSegments)
       throws IOException {
-    readSegment(tablePath, segment.getSegmentFileName());
     boolean updateSegment = false;
     for (Map.Entry<String, FolderDetails> entry : segmentFile.getLocationMap().entrySet()) {
       String location = entry.getKey();
@@ -1017,9 +1016,9 @@ public class SegmentFileStore {
       }
       Path path = new Path(location);
       // Update the status to delete if path equals
-      if (null != partitionSpecs) {
-        for (PartitionSpec spec : partitionSpecs) {
-          if (path.equals(spec.getLocation())) {
+      if (null != partitionLocations) {
+        for (String partitionLocation : partitionLocations) {
+          if (path.toString().equals(partitionLocation)) {
             entry.getValue().setStatus(SegmentStatus.MARKED_FOR_DELETE.getMessage());
             updateSegment = true;
             break;
@@ -1031,7 +1030,7 @@ public class SegmentFileStore {
       String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath);
       writePath =
           writePath + CarbonCommonConstants.FILE_SEPARATOR +
-              SegmentFileStore.genSegmentFileName(segment.getSegmentNo(),  String.valueOf(uniqueId))
+              SegmentFileStore.genSegmentFileName(segmentNo,  String.valueOf(uniqueId))
               + CarbonTablePath.SEGMENT_EXT;
       writeSegmentFile(segmentFile, writePath);
     }
@@ -1044,10 +1043,10 @@ public class SegmentFileStore {
       }
     }
     if (deleteSegment) {
-      toBeDeletedSegments.add(segment.getSegmentNo());
+      toBeDeletedSegments.add(segmentNo);
     }
     if (updateSegment) {
-      toBeUpdatedSegments.add(segment.getSegmentNo());
+      toBeUpdatedSegments.add(segmentNo);
     }
   }
 

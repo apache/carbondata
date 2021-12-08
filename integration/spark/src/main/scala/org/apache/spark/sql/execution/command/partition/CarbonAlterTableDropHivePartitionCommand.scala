@@ -21,6 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -29,6 +30,7 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
@@ -61,7 +63,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
     operationContext: OperationContext = new OperationContext)
   extends AtomicRunnableCommand {
 
-  var carbonPartitionsTobeDropped : util.List[PartitionSpec] = _
+  var carbonPartitionsTobeDropped : util.List[String] = _
   var table: CarbonTable = _
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   lazy val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
@@ -85,15 +87,10 @@ case class CarbonAlterTableDropHivePartitionCommand(
         val partitions =
           specs.flatMap(f => sparkSession.sessionState.catalog.listPartitions(tableName,
             Some(CarbonSparkSqlParserUtil.copyTablePartition(f))))
-        val carbonPartitions = partitions.map { partition =>
-          new PartitionSpec(
-            new util.ArrayList[String](
-              partition.spec.seq.map { case (column, value) =>
-                column.toLowerCase + "=" + value
-              }.toList.asJava),
-            partition.location)
+        val partitionLocations = partitions.map { partition =>
+          FileFactory.getUpdatedFilePath(new Path(partition.location).toString)
         }
-        carbonPartitionsTobeDropped = new util.ArrayList[PartitionSpec](carbonPartitions.asJava)
+        carbonPartitionsTobeDropped = new util.ArrayList[String](partitionLocations.asJava)
         withEvents(operationContext,
           PreAlterTableHivePartitionCommandEvent(sparkSession, table),
           PostAlterTableHivePartitionCommandEvent(sparkSession, table)) {

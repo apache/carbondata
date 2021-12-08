@@ -517,19 +517,25 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME), tableName)(sqlContext.sparkSession)
     val dt1 = "dt1"
     sql(s"insert overwrite table $tableName partition(dt='$dt1') select 1, 'a'")
-    val dt1Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
-    assert(dt1Metas.length == 1)
-    val dt1Seg1 = dt1Metas(0)
 
     val dt2 = "dt2"
     sql(s"insert overwrite table $tableName partition(dt='$dt2') select 1, 'a'")
-    val dt2Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
-    assert(dt2Metas.length == 2)
-    val dt2Seg1 = dt2Metas(0)
-    val dt2Seg2 = dt2Metas(1)
+    val dt1Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
 
-    assert(dt1Seg1.getUpdateDeltaEndTimestamp == dt2Seg1.getUpdateDeltaEndTimestamp)
-    assert(dt1Seg1.getUpdateDeltaEndTimestamp != dt2Seg2.getUpdateDeltaEndTimestamp)
+    assert(dt1Metas.length == 2)
+    val dt1Seg1 = dt1Metas(0)
+    val dt2Seg1 = dt1Metas(1)
+
+    sql(s"insert overwrite table $tableName partition(dt='$dt2') select 5, 'z'")
+    val dt2Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    assert(dt2Metas.length == 3)
+    val dt2Seg30 = dt2Metas(0)
+    val dt2Seg31 = dt2Metas(1)
+    val dt2Seg2OverWrite = dt2Metas(2)
+
+    assert(dt1Seg1.getUpdateDeltaEndTimestamp == dt2Seg30.getUpdateDeltaEndTimestamp)
+    assert(dt2Seg1.getUpdateDeltaEndTimestamp == dt2Seg31.getUpdateDeltaEndTimestamp)
+    assert(dt2Seg31.getUpdateDeltaEndTimestamp != dt2Seg2OverWrite.getUpdateDeltaEndTimestamp)
     sql(s"drop table if exists $tableName")
   }
 

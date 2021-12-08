@@ -46,7 +46,7 @@ class CarbonDropPartitionRDD(
     @transient private val ss: SparkSession,
     tablePath: String,
     segments: Seq[Segment],
-    partitions: util.List[PartitionSpec],
+    partitionLocations: util.List[String],
     uniqueId: String)
   extends CarbonRDD[(String, String)](ss, Nil) {
 
@@ -67,8 +67,8 @@ class CarbonDropPartitionRDD(
       new SegmentFileStore(
         tablePath,
         split.segment.getSegmentFileName).dropPartitions(
-        split.segment,
-        partitions,
+        split.segment.getSegmentNo,
+        partitionLocations,
         uniqueId,
         toBeDeletedSegments,
         toBeUpdateSegments)

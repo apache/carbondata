@@ -1078,11 +1078,6 @@ object CommonLoadUtils {
       CarbonThreadUtil.threadUnset("partition.operationcontext")
       if (loadParams.isOverwriteTable) {
         IndexStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
-        // Clean the overwriting segments if any.
-        SegmentFileStore.cleanSegments(
-          table,
-          null,
-          false)
       }
       if (partitionsLen > 1) {
         // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call
