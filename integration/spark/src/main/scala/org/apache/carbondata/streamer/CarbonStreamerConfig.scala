@@ -76,16 +76,6 @@ class CarbonStreamerConfig() extends Serializable {
   var kafkaInitialOffsetType: String = CarbonCommonConstants
     .CARBON_STREAMER_KAFKA_INITIAL_OFFSET_TYPE_DEFAULT
 
-  @Parameter(names = Array("--key-deserializer"),
-    description = "Key deserializer for kafka. Mandatory for Kafka source.",
-    required = false)
-  var keyDeserializer: String = CarbonCommonConstants.KAFKA_KEY_DESERIALIZER_DEFAULT
-
-  @Parameter(names = Array("--value-deserializer"),
-    description = "value deserializer for kafka. Mandatory for Kafka source.",
-    required = false)
-  var valueDeserializer: String = CarbonCommonConstants.KAFKA_VALUE_DESERIALIZER_DEFAULT
-
   @Parameter(names = Array("--schema-registry-url"),
     description = "Schema registry url, in case schema registry is selected as schema provider.",
     required = false)
@@ -266,10 +256,6 @@ class CarbonStreamerConfig() extends Serializable {
       streamerConfig.inputKafkaTopic)
     carbonPropertiesInstance.addProperty(CarbonCommonConstants.KAFKA_BROKERS,
       streamerConfig.kafkaBrokerList)
-    carbonPropertiesInstance.addProperty(CarbonCommonConstants.KAFKA_KEY_DESERIALIZER,
-      streamerConfig.keyDeserializer)
-    carbonPropertiesInstance.addProperty(CarbonCommonConstants.KAFKA_VALUE_DESERIALIZER,
-      streamerConfig.valueDeserializer)
     carbonPropertiesInstance.addProperty(CarbonCommonConstants.KAFKA_ENABLE_AUTO_COMMIT,
       CarbonCommonConstants.KAFKA_ENABLE_AUTO_COMMIT_DEFAULT)
     carbonPropertiesInstance.addProperty(CarbonCommonConstants.KAFKA_GROUP_ID,

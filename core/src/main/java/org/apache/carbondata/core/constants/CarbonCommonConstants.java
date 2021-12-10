@@ -2745,25 +2745,6 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_STREAMER_KAFKA_INITIAL_OFFSET_TYPE_DEFAULT = "earliest";
 
-  /**
-   * Key deserializer for kafka. Mandatory for Kafka source.
-   */
-  @CarbonProperty
-  public static final String KAFKA_KEY_DESERIALIZER = "key.deserializer";
-
-  // TODO: check how to take this value, class name or one wrapper above the deserializer
-  public static final String KAFKA_KEY_DESERIALIZER_DEFAULT =
-      "org.apache.kafka.common.serialization.StringDeserializer";
-
-  /**
-   * Value deserializer for Kafka. Mandatory for Kafka source
-   */
-  @CarbonProperty
-  public static final String KAFKA_VALUE_DESERIALIZER = "value.deserializer";
-
-  public static final String KAFKA_VALUE_DESERIALIZER_DEFAULT =
-      "io.confluent.kafka.serializers.KafkaAvroDeserializer";
-
   public static final String AVRO_SCHEMA = "carbon.streamer.avro.schema.deserialize";
 
   /**
@@ -2831,7 +2812,7 @@ public final class CarbonCommonConstants {
 
   /**
    * Name of the field from source schema whose value can be used for picking the latest updates for
-   * a particular record in the incoming batch in case of duplicates record keys. Useful if the
+   * a particular record in the incoming batch in case of duplicate record keys. Useful if the
    * write operation type is UPDATE or UPSERT. This will be used only if
    * carbon.streamer.upsert.deduplicate is enabled.
    */
