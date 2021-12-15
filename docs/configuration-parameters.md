@@ -179,6 +179,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.update.storage.level | MEMORY_AND_DISK | Storage level to persist dataset of a RDD/dataframe. Applicable when ***carbon.update.persist.enable*** is **true**, if user's executor has less memory, set this parameter to 'MEMORY_AND_DISK_SER' or other storage level to correspond to different environment. [See detail](http://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence). |
 | carbon.update.check.unique.value | true | By default this property is true, so update will validate key value mapping. This validation might have slight degrade in performance of update query. If user knows that key value mapping is correct, can disable this validation for better update performance by setting this property to false. |
 
+
 ##  Dynamic Configuration In CarbonData Using SET-RESET
 
 **SET/RESET** commands are used to add, update, display, or reset the carbondata properties dynamically without restarting the driver.

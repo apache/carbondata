@@ -147,7 +147,7 @@ Streamer tool exposes below configs for users to cater to their CDC use cases -
 
 | Parameter                         | Default Value                                              | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 |-----------------------------------|------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| carbon.streamer.target.database   | (none)                                                     | The database name where the target table is present to merge the incoming data. If not given by user, system will take the current database in the spark session.                                                                                                                                                                                                                                                                                                                                          |
+| carbon.streamer.target.database   | Current database from spark session                        | The database name where the target table is present to merge the incoming data. If not given by user, system will take the current database in the spark session.                                                                                                                                                                                                                                                                                                                                          |
 | carbon.streamer.target.table      | (none)                                                     | The target carbondata table where the data has to be merged. If this is not configured by user, the operation will fail.                                                                                                                                                                                                                                                                                                                                                                                   |
 | carbon.streamer.source.type       | kafka                                                      | Streamer tool currently supports two types of data sources. One can ingest data from either kafka or DFS into target carbondata table using streamer tool.                                                                                                                                                                                                                                                                                                                                        |
 | carbon.streamer.dfs.input.path    | (none)                                                     | An absolute path on a given file system from where data needs to be read to ingest into the target carbondata table. Mandatory if the ingestion source type is DFS.                                                                                                                                                                                                                                                                                                                                        |
@@ -155,8 +155,6 @@ Streamer tool exposes below configs for users to cater to their CDC use cases -
 | carbon.streamer.input.kafka.topic | (none)                                                     | This is a mandatory property to be set in case kafka is chosen as the source of data. This property defines the topics from where streamer tool will consume the data.                                                                                                                                                                                                                                                                                                                                     |
 | bootstrap.servers                 | (none)                                                     | This is another mandatory property in case kafka is chosen as the source of data. This defines the end points for kafka brokers.                                                                                                                                                                                                                                                                                                                                                                           |
 | auto.offset.reset | earliest                                                   | Streamer tool maintains checkpoints to keep a track of the incoming messages which are already consumed. In case of first ingestion using kafka source, this property defines the offset from where ingestion will start. This property can take only 2 valid values - `latest` and `earliest`                                                                                                                                                                                                             |
-| key.deserializer | `org.apache.kafka.common.serialization.StringDeserializer` | Any message in kafka is ultimately a key value pair in the form of serialized bytes. This property defines the deserializer to deserialize the key of a message.                                                                                                                                                                                                                                                                                                                                           |
-| value.deserializer | `io.confluent.kafka.serializers.KafkaAvroDeserializer`     | This property defines the class which will be used for deserializing the values present in kafka topic.                                                                                                                                                                                                                                                                                                                                                                                                    |
 | enable.auto.commit | false                                                      | Kafka maintains an internal topic for storing offsets corresponding to the consumer groups. This property determines if kafka should actually go forward and commit the offsets consumed in this internal topic. We recommend to keep it as false since we use spark streaming checkpointing to take care of the same.                                                                                                                                                                                     |
 | group.id | (none)                                                     | Streamer tool is ultimately a consumer for kafka. This property determines the consumer group id streamer tool belongs to.                                                                                                                                                                                                                                                                                                                                                                                 |
 | carbon.streamer.input.payload.format | avro                                                       | This determines the format of the incoming messages from source. Currently only avro is supported. We have plans to extend this support to json as well in near future. Avro is the most preferred format for CDC use cases since it helps in making the message size very compact and has good support for schema evolution use cases as well.                                                                                                                                                            |
@@ -178,17 +176,17 @@ Streamer tool exposes below configs for users to cater to their CDC use cases -
 
 ```
 bin/spark-submit --class org.apache.carbondata.streamer.CarbonDataStreamer \
---master spark://root1-ThinkPad-T490s:7077 \
-jars/apache-carbondata-2.3.0-SNAPSHOT-bin-spark2.4.5-hadoop2.7.2.jar \
+--master <spark_master_url> \
+<carbondata_assembly_jar_path> \
 --database-name testdb \
 --target-table target \
 --record-key-field name \
 --source-ordering-field age \
 --source-type kafka \
 --deduplicate false \
---input-kafka-topic dbserver1.inventory.source \
---brokers http://localhost:9092 \
---schema-registry-url http://localhost:8081 \
+--input-kafka-topic test_topic \
+--brokers <comma_separated_list_of_brokers> \
+--schema-registry-url <schema_registry_url> \
 --group-id testgroup \
 --meta-columns __table,__db,__ts_ms,__file,__pos,__deleted
 ```
@@ -197,8 +195,8 @@ jars/apache-carbondata-2.3.0-SNAPSHOT-bin-spark2.4.5-hadoop2.7.2.jar \
 
 ```
 bin/spark-submit --class org.apache.carbondata.streamer.CarbonDataStreamer \
---master spark://root1-ThinkPad-T490s:7077 \
-jars/apache-carbondata-2.3.0-SNAPSHOT-bin-spark2.4.5-hadoop2.7.2.jar \
+--master <spark_master_url> \
+<carbondata_assembly_jar_path> \
 --database-name carbondb \
 --target-table test \
 --record-key-field name \
