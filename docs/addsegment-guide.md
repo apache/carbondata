@@ -60,7 +60,7 @@ Users can add the existing data as a segment to the carbon table provided the sc
     OPTIONS('FORMAT'='parquet')
     ```
   - ##### PARTITION:
-   Partition info for partition table , should be form of "a:int, b:string"
+    Partition info for partition table , should be form of "a:int, b:string"
 
     ```
     OPTIONS('PARTITION'='a:int, b:string')
