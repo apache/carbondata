@@ -54,7 +54,7 @@ Users can add the existing data as a segment to the carbon table provided the sc
     ```
 
   - ##### FORMAT:
-   User old table file format. eg : parquet, orc
+    User old table file format. eg : parquet, orc
 
     ```
     OPTIONS('FORMAT'='parquet')
