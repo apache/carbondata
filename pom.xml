@@ -165,10 +165,16 @@
       <releases>
         <enabled>true</enabled>
       </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
     <repository>
       <id>confluent</id>
       <url>https://packages.confluent.io/maven/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
   </repositories>
 
