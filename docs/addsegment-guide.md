@@ -27,15 +27,143 @@ Heterogeneous format segments aims to solve this problem by avoiding data conver
 ### Add segment with path and format
 Users can add the existing data as a segment to the carbon table provided the schema of the data
  and the carbon table should be the same. 
+ 
+ Syntax
+ 
+   ```
+   ALTER TABLE [db_name.]table_name ADD SEGMENT OPTIONS(property_name=property_value, ...)
+   ```
 
-```
-alter table table_name add segment options ('path'= 'hdfs://usr/oldtable','format'='parquet')
-```
+**Supported properties:**
+
+| Property                                                     | Description                                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [PATH](#path)           | User external old table path         |
+| [FORMAT](#format)       | User external old table file format             |
+| [PARTITION](#partition) | Partition info for partition table , should be form of "a:int, b:string"             |
+
+
+-
+  You can use the following options to add segment:
+
+  - ##### PATH: 
+    User old table path.
+    
+    ``` 
+    OPTIONS('PATH'='hdfs://usr/oldtable')
+    ```
+
+  - ##### FORMAT:
+    User old table file format. eg : parquet, orc
+
+    ```
+    OPTIONS('FORMAT'='parquet')
+    ```
+  - ##### PARTITION:
+    Partition info for partition table , should be form of "a:int, b:string"
+
+    ```
+    OPTIONS('PARTITION'='a:int, b:string')
+    ```
+  
+
 In the above command user can add the existing data to the carbon table as a new segment and also
  can provide the data format.
 
 During add segment, it will infer the schema from data and validates the schema against the carbon table. 
 If the schema doesn’t match it throws an exception.
+
+**Example:**
+
+Exist old hive partition table , stored as orc or parquet file format:
+
+
+```sql
+CREATE TABLE default.log_parquet_par (
+	id BIGINT,
+	event_time BIGINT,
+	ip STRING
+)PARTITIONED BY (                              
+	day INT,                                    
+	hour INT,                                   
+	type INT                                    
+)                                              
+STORED AS parquet
+LOCATION 'hdfs://bieremayi/user/hive/warehouse/log_parquet_par';
+```
+
+Parquet File Location : 
+
+```
+/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0
+/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=1
+```
+
+
+```sql
+CREATE TABLE default.log_orc_par (
+	id BIGINT,
+	event_time BIGINT,
+	ip STRING
+)PARTITIONED BY (                              
+	day INT,                                    
+	hour INT,                                   
+	type INT                                    
+)                                              
+STORED AS orc
+LOCATION 'hdfs://bieremayi/user/hive/warehouse/log_orc_par';
+```
+
+Orc File Location : 
+
+```
+/user/hive/warehouse/log_orc_par/day=20211123/hour=12/type=0
+/user/hive/warehouse/log_orc_par/day=20211123/hour=12/type=1
+```
+
+**Steps:**
+
+step1: Create carbondata format table with the same schema.
+
+```sql
+CREATE TABLE default.log_carbon_par (
+	id BIGINT,
+	event_time BIGINT,
+	ip STRING
+)PARTITIONED BY (                              
+	day INT,                                    
+	hour INT,                                   
+	type INT                                    
+)                                              
+STORED AS carbondata
+LOCATION 'hdfs://bieremayi/user/hive/warehouse/log_carbon_par';
+```
+
+step2: Execute add segment sql.
+
+|SQL|Is Success|Error Message|
+|:---|:---|:---|
+|alter table default.log_carbon_par add segment options ('path'= 'hdfs://bieremayi/user/hive/warehouse/log_parquet_par/','format'='parquet','partition'='day:int,hour:int,type:int');|Yes|/|
+|alter table default.log_carbon_par add segment options ('path'= 'hdfs://bieremayi/user/hive/warehouse/log_orc_par/','format'='orc','partition'='day:int,hour:int,type:int');|Yes|/|
+|alter table default.log_carbon_par add segment options ('path'= 'hdfs://bieremayi/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0','format'='parquet','partition'='day=20211123 and hour=12 and type=0');|No|Error in query: invalid partition option: Map(path -> hdfs://bieremayi/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0, format -> parquet, partition -> day=20211123 and hour=12 and type=0)|
+|alter table default.log_carbon_par add segment options ('path'= 'hdfs://bieremayi/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0','format'='parquet','partition'='day=20211123,hour=12,type=0');|No|Error in query: invalid partition option: Map(path -> hdfs://bieremayi/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0, format -> parquet, partition -> day=20211123,hour=12,type=0)|
+|alter table default.log_carbon_par add segment options ('path'= 'hdfs://bieremayi/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0','format'='parquet');|No|Error in query: partition option is required when adding segment to partition table|
+|alter table default.log_carbon_par add segment options ('path'= 'hdfs://bieremayi/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0','format'='parquet','partition'='day:int,hour:int,type:int');|No|ERROR SparkSQLDriver: Failed in [alter table default.log_carbon_par add segment options ('path'= 'hdfs://bieremayi/user/hive/warehouse/log_parquet_par/day=20211123/hour=12/type=0','format'='parquet','partition'='day:int,hour:int,type:int')]|
+
+step3:  Result check.
+
+```sql
+SHOW SEGMENTS FOR TABLE default.log_carbon_par;
+```
+
+| ID  |  Status  |     Load Start Time      | Load Time Taken  |              Partition              | Data Size  | Index Size  | File Format  |
+|:---|:---|:---|:---|:---|:---|:---|:---|
+|4       |Success |2021-11-29 17:59:40.819 |7.026S  |{day=20211123,hour=12,type=1}, ...      |xxx| xxx  |columnar_v3|
+|3       |Success |2021-11-29 16:34:28.106 |0.418S  |{day=20211123,hour=12,type=0}   |xxx |NA     | orc|
+|2       |Success |2021-11-29 16:34:27.733 |0.222S  |{day=20211123,hour=12,type=1}   |xxx  |NA     | orc|
+|1       |Success |2021-11-29 16:30:17.207 |0.275S  |{day=20211123,hour=12,type=0}   |xxx |NA     | parquet|
+|0       |Success |2021-11-29 16:30:16.48  |0.452S  |{day=20211123,hour=12,type=1}   |xxx  |NA     | parquet|
+
 
 ### Changes to tablestatus file
 Carbon adds the new segment by adding segment information to tablestatus file. In order to add the path and format information to tablestatus, we are going to add `segmentPath`  and `format`  to the tablestatus file. 
