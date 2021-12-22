@@ -26,6 +26,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -289,6 +290,73 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     sql("show segments for table cleantest").show()
     sql("show segments for table si_cleantest").show()
     sql("""DROP TABLE IF EXISTS CLEANTEST""")
+  }
+
+  test("Test clean files after horizontal compaction") {
+    sql("drop table if exists partition_hc")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql(
+      "create table partition_hc (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) " +
+        "STORED AS carbondata")
+    sql(
+      "insert into partition_hc values ('a',1,'aaa','aa'),('a',5,'aaa','aa'),('a',9,'aaa'," +
+        "'aa'),('a',4,'aaa','aa'),('a',2,'aaa','aa'),('a',3,'aaa'," +
+        "'aa')")
+    sql(
+      "insert into partition_hc values ('a',1,'aaa','bb'),('a',5,'aaa','bb'),('a',9,'aaa'," +
+        "'bb'),('a',4,'aaa','bb'),('a',2,'aaa','bb'),('a',3,'aaa'," +
+        "'bb')")
+
+    sql("delete from partition_hc where c2 = 1").show()
+    sql("delete from partition_hc where c2 = 5").show()
+
+    // verify if the horizontal compaction happened or not
+    val carbonTable = CarbonEnv.getCarbonTable(None, "partition_hc")(sqlContext
+      .sparkSession)
+    val partitionPath1 = carbonTable.getTablePath + "/c3=aa"
+    val partitionPath2 = carbonTable.getTablePath + "/c3=bb"
+    val deltaFilesPre1 = FileFactory.getCarbonFile(partitionPath1).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+      }
+    })
+    val deltaFilesPre2 = FileFactory.getCarbonFile(partitionPath2).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+      }
+    })
+    assert(deltaFilesPre1.size + deltaFilesPre2.size == 6)
+    val updateStatusFilesPre = FileFactory.getCarbonFile(CarbonTablePath.getMetadataPath(carbonTable
+      .getTablePath)).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.startsWith(CarbonCommonConstants.TABLEUPDATESTATUS_FILENAME)
+      }
+    })
+    assert(updateStatusFilesPre.size == 3)
+
+    sql(s"CLEAN FILES FOR TABLE partition_hc OPTIONS('force'='true')").collect()
+
+    val deltaFilesPost1 = FileFactory.getCarbonFile(partitionPath1).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+      }
+    })
+    val deltaFilesPost2 = FileFactory.getCarbonFile(partitionPath2).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+      }
+    })
+    assert(deltaFilesPost1.size + deltaFilesPost2.size == 2)
+    val updateStatusFilesPost = FileFactory.getCarbonFile(CarbonTablePath
+      .getMetadataPath(carbonTable.getTablePath)).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.startsWith(CarbonCommonConstants.TABLEUPDATESTATUS_FILENAME)
+      }
+    })
+    assert(updateStatusFilesPost.size == 1)
+
+    sql("drop table if exists partition_hc")
   }
 
   def editTableStatusFile(carbonTablePath: String) : Unit = {

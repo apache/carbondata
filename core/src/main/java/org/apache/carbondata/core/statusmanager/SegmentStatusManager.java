@@ -855,6 +855,26 @@ public class SegmentStatusManager {
     }
   }
 
+  /**
+   * This API will return the update status file name.
+   * @param segmentList
+   * @return
+   */
+  public String getUpdateStatusFileName(LoadMetadataDetails[] segmentList) {
+    if (segmentList.length == 0) {
+      return "";
+    }
+    else {
+      for (LoadMetadataDetails eachSeg : segmentList) {
+        // file name stored in 0th segment.
+        if (eachSeg.getLoadName().equalsIgnoreCase("0")) {
+          return eachSeg.getUpdateStatusFileName();
+        }
+      }
+    }
+    return "";
+  }
+
   public static class ValidAndInvalidSegmentsInfo {
     private final List<Segment> listOfValidSegments;
     private final List<Segment> listOfValidUpdatedSegments;
