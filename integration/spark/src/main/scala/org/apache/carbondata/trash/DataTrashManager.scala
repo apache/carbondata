@@ -30,6 +30,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CleanFilesUtil, DeleteLoadFolders, TrashUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -82,6 +83,13 @@ object DataTrashManager {
           isDryRun = false, showStatistics)
       // step 2: move stale segments which are not exists in metadata into .Trash
       moveStaleSegmentsToTrash(carbonTable)
+      // clean all the stale delete delta files, which are generated as the part of
+      // horizontal compaction
+      val deltaFileSize = if (isForceDelete) {
+        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
+      } else {
+        0
+      }
       // step 3: clean expired segments(MARKED_FOR_DELETE, Compacted, In Progress)
       // Since calculating the the size before and after clean files can be a costly operation
       // have exposed an option where user can change this behaviour.
@@ -92,7 +100,7 @@ object DataTrashManager {
           cleanStaleInProgress, partitionSpecs)
         val sizeAfterCleaning = getPostOpSizeSnapshot(carbonTable, metadataDetails
             .map(a => a.getLoadName).toSet)
-        (sizeBeforeCleaning - sizeAfterCleaning + trashFolderSizeStats._1).abs
+        (sizeBeforeCleaning - sizeAfterCleaning + trashFolderSizeStats._1 + deltaFileSize).abs
       } else {
         checkAndCleanExpiredSegments(carbonTable, isForceDelete,
           cleanStaleInProgress, partitionSpecs)
@@ -158,11 +166,17 @@ object DataTrashManager {
     // get size freed from the trash folder
     val trashFolderSizeStats = checkAndCleanTrashFolder(carbonTable, isForceDelete,
         isDryRun = true, showStats)
+    // get the size of stale delete delta files that will be deleted in case any
+    val deleteDeltaFileSize = if (isForceDelete) {
+      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
+    } else {
+      0
+    }
     // get size that will be deleted (MFD, COmpacted, Inprogress segments)
     val expiredSegmentsSizeStats = dryRunOnExpiredSegments(carbonTable, isForceDelete,
       cleanStaleInProgress)
-    (trashFolderSizeStats._1 + expiredSegmentsSizeStats._1, trashFolderSizeStats._2 +
-        expiredSegmentsSizeStats._2)
+    (trashFolderSizeStats._1 + expiredSegmentsSizeStats._1 + deleteDeltaFileSize,
+      trashFolderSizeStats._2 + expiredSegmentsSizeStats._2)
   }
 
   private def checkAndCleanTrashFolder(carbonTable: CarbonTable, isForceDelete: Boolean,

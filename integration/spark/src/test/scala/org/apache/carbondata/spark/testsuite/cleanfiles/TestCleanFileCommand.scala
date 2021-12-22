@@ -530,6 +530,40 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists cleantest")
   }
 
+  test("Test clean files after horizontal compaction") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+
+    sql("drop table if exists cleantest")
+    sql(
+      """
+        | CREATE TABLE cleantest (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE cleantest OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+
+    sql("delete from cleantest where deptno='10'").show()
+    sql("delete from cleantest where deptno='11'").show()
+    val table = CarbonEnv.getCarbonTable(None, "cleantest") (sqlContext.sparkSession)
+    val segment0Path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
+    val allSegmentFilesPreCleanFiles = FileFactory.getCarbonFile(segment0Path).listFiles()
+      .filter(a => a.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
+    assert(allSegmentFilesPreCleanFiles.length == 3)
+
+    sql(s"CLEAN FILES FOR TABLE cleantest OPTIONS('force'='true')").collect()
+    val allSegmentFilesPostCleanFiles = FileFactory.getCarbonFile(segment0Path).listFiles()
+      .filter(a => a.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
+    assert(allSegmentFilesPostCleanFiles.length == 1)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED,
+        CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED_DEFAULT)
+    sql("drop table if exists cleantest")
+  }
 
   def editTableStatusFile(carbonTablePath: String) : Unit = {
     // original table status file

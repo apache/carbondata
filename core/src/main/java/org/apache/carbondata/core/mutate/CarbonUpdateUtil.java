@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -688,4 +689,125 @@ public class CarbonUpdateUtil {
     }
     return latestTimestamp;
   }
+
+
+  /**
+   * Handling of the clean up of old carbondata files, index files , delete delta,
+   * update status files.
+   *
+   * @param table       clean up will be handled on this table.
+   * @param isDryRun if clean files dryRun selected, then only size will be shown,
+   *                files will not be deleted.
+   */
+  public static long cleanUpDeltaFiles(CarbonTable table, boolean isDryRun) throws IOException {
+
+    SegmentStatusManager ssm = new SegmentStatusManager(table.getAbsoluteTableIdentifier());
+    LoadMetadataDetails[] details =
+            SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
+    long totalSizeDeleted = 0;
+    ArrayList<CarbonFile> filesToBeDeleted = new ArrayList<>();
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(table);
+    SegmentUpdateDetails[] segmentUpdateDetails = updateStatusManager.getUpdateStatusDetails();
+    // hold all the segments updated so that wen can check the delta files in them, ne need to
+    // check the others.
+    Set<String> updatedSegments = new HashSet<>();
+    for (SegmentUpdateDetails updateDetails : segmentUpdateDetails) {
+      updatedSegments.add(updateDetails.getSegmentName());
+    }
+    boolean isInvalidFile = false;
+    // take the update status file name from 0th segment.
+    String validUpdateStatusFile = ssm.getUpdateStatusFileName(details);
+    // scan through each segment.
+
+    if (table.isHivePartitionTable()) {
+      List<CarbonFile> partitionList = Arrays.stream(FileFactory.getCarbonFile(table
+              .getTablePath()).listFiles()).filter(partitionName -> partitionName.getName()
+              .contains("=")).collect(Collectors.toList());
+
+      List<CarbonFile> totalDeltaFiles = new ArrayList<>();
+
+      for (CarbonFile carbonFile : partitionList) {
+        totalDeltaFiles.addAll(carbonFile.listFiles(true).stream().filter(fileName -> fileName
+                .getName().endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
+                .collect(Collectors.toList()));
+      }
+      SegmentUpdateDetails[] updateDetails = updateStatusManager.readLoadMetadata();
+      for (SegmentUpdateDetails block : updateDetails) {
+        totalDeltaFiles.stream().filter(fileName -> fileName.getName().endsWith(block
+                .getDeleteDeltaStartTimestamp() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
+                .collect(Collectors.toList()).forEach(fileName -> totalDeltaFiles.remove(fileName));
+      }
+      for (CarbonFile invalidFile: totalDeltaFiles) {
+        totalSizeDeleted += invalidFile.getSize();
+        filesToBeDeleted.add(invalidFile);
+      }
+    } else {
+      for (LoadMetadataDetails segment : details) {
+        // if this segment is valid then only we will go for delta file deletion.
+        // if the segment is mark for delete or compacted then any way it will get deleted.
+        if (segment.getSegmentStatus() == SegmentStatus.SUCCESS
+                || segment.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
+          // when there is no update operations done on table, then no need to go ahead. So
+          // just check the update delta start timestamp and proceed if not empty
+          if (!segment.getUpdateDeltaStartTimestamp().isEmpty()
+                  || updatedSegments.contains(segment.getLoadName())) {
+            // take the list of files from this segment.
+            String segmentPath = CarbonTablePath.getSegmentPath(
+                    table.getAbsoluteTableIdentifier().getTablePath(), segment.getLoadName());
+            CarbonFile segDir =
+                    FileFactory.getCarbonFile(segmentPath);
+            CarbonFile[] allSegmentFiles = segDir.listFiles();
+            SegmentUpdateDetails[] updateDetails = updateStatusManager.readLoadMetadata();
+            for (SegmentUpdateDetails block : updateDetails) {
+              CarbonFile[] invalidDeleteDeltaFiles;
+              if (!block.getSegmentName().equalsIgnoreCase(segment.getLoadName())) {
+                continue;
+              }
+              invalidDeleteDeltaFiles = updateStatusManager.getDeleteDeltaInvalidFilesList(block,
+                      false, allSegmentFiles, isInvalidFile);
+              for (CarbonFile invalidFile : invalidDeleteDeltaFiles) {
+                totalSizeDeleted += invalidFile.getSize();
+                filesToBeDeleted.add(invalidFile);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // delete the update table status files which are old.
+    if (null != validUpdateStatusFile && !validUpdateStatusFile.isEmpty()) {
+
+      final String updateStatusTimestamp = validUpdateStatusFile
+              .substring(validUpdateStatusFile.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1);
+
+      String tablePath = table.getAbsoluteTableIdentifier().getTablePath();
+      CarbonFile metaFolder = FileFactory.getCarbonFile(
+              CarbonTablePath.getMetadataPath(tablePath));
+
+      CarbonFile[] invalidUpdateStatusFiles = metaFolder.listFiles(new CarbonFileFilter() {
+        @Override
+        public boolean accept(CarbonFile file) {
+          if (file.getName().startsWith(CarbonCommonConstants.TABLEUPDATESTATUS_FILENAME)) {
+            // CHECK if this is valid or not.
+            // we only send invalid ones to delete.
+            return !file.getName().endsWith(updateStatusTimestamp);
+          }
+          return false;
+        }
+      });
+
+      for (CarbonFile invalidFile : invalidUpdateStatusFiles) {
+        totalSizeDeleted += invalidFile.getSize();
+        filesToBeDeleted.add(invalidFile);
+      }
+    }
+    if (!isDryRun) {
+      for (CarbonFile invalidFile : filesToBeDeleted) {
+        invalidFile.deleteFile();
+      }
+    }
+    return totalSizeDeleted;
+  }
 }
+
