@@ -359,6 +359,89 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partition_hc")
   }
 
+  test("test clean files after IUD Horizontal Compaction when" +
+    " CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION > 1") {
+
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION, "3")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
+    sql("drop table if exists origintable")
+
+    sql(
+      """
+        | CREATE TABLE origintable
+        | (id Int,
+        | vin String,
+        | logdate Date,
+        | phonenumber Long,
+        | area String,
+        | salary Int) PARTITIONED BY(country String)
+        | STORED AS carbondata
+      """.stripMargin)
+
+    val rootPath = new File(this.getClass.getResource("/").getPath
+      + "../../../..").getCanonicalPath
+    val testData = s"$rootPath/integration/spark/src/test/resources/" +
+      s"partition_data_example.csv"
+
+    sql(
+      s"""
+       LOAD DATA LOCAL INPATH '$testData' into table origintable
+       """)
+
+    sql("delete from origintable where salary = 10000").show()
+    sql("delete from origintable where salary = 10001").show()
+    sql("delete from origintable where salary = 10003").show()
+    var preCleanFiles = sql("select * from origintable").count()
+    sql(s"CLEAN FILES FOR TABLE origintable OPTIONS('force'='true')").collect()
+    var postCleanFiles = sql("select * from origintable").count()
+    assert(preCleanFiles == postCleanFiles)
+    sql("delete from origintable where salary = 10005").show()
+
+    // verify if the horizontal compaction happened or not
+    val carbonTable = CarbonEnv.getCarbonTable(None, "origintable")(sqlContext
+      .sparkSession)
+    val partitionPath = carbonTable.getTablePath + "/country=China"
+    val deltaFilesPre = FileFactory.getCarbonFile(partitionPath).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+      }
+    })
+    assert(deltaFilesPre.size == 5)
+    val updateStatusFilesPre = FileFactory.getCarbonFile(CarbonTablePath.getMetadataPath(carbonTable
+      .getTablePath)).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.startsWith(CarbonCommonConstants.TABLEUPDATESTATUS_FILENAME)
+      }
+    })
+    assert(updateStatusFilesPre.size == 3)
+
+    preCleanFiles = sql("select * from origintable").count()
+    sql(s"CLEAN FILES FOR TABLE origintable OPTIONS('force'='true')").collect()
+    postCleanFiles = sql("select * from origintable").count()
+    assert(preCleanFiles == postCleanFiles)
+
+    val deltaFilesPost = FileFactory.getCarbonFile(partitionPath).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+      }
+    })
+    assert(deltaFilesPost.size ==  1)
+    val updateStatusFilesPost = FileFactory.getCarbonFile(CarbonTablePath
+      .getMetadataPath(carbonTable.getTablePath)).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.startsWith(CarbonCommonConstants.TABLEUPDATESTATUS_FILENAME)
+      }
+    })
+    assert(updateStatusFilesPost.size == 1)
+
+    sql("drop table if exists origintable")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
+      .DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION,
+        CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
+  }
+
   def editTableStatusFile(carbonTablePath: String) : Unit = {
     // Original Table status file
     val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath))
