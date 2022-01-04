@@ -733,9 +733,21 @@ public class CarbonUpdateUtil {
       }
       SegmentUpdateDetails[] updateDetails = updateStatusManager.readLoadMetadata();
       for (SegmentUpdateDetails block : updateDetails) {
-        totalDeltaFiles.stream().filter(fileName -> fileName.getName().endsWith(block
-                .getDeleteDeltaStartTimestamp() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
-                .collect(Collectors.toList()).forEach(fileName -> totalDeltaFiles.remove(fileName));
+        // Case 1: When deleteDeltaStartTimestamp = deleteDeltaEndTimestamp. in this case only 1
+        // delta file is present and deltaFileStamps is NULL
+        // Case 2: When deleteDeltaStartTimestamp != deleteDeltaEndTimestamp. in thios case more
+        // than 1 delta files are present, then can blindly read deltaFilesStamps variable
+        if (block.getDeleteDeltaStartTimestamp().equals(block.getDeleteDeltaEndTimestamp())) {
+          totalDeltaFiles.stream().filter(fileName -> fileName.getName().endsWith(block
+                  .getDeleteDeltaStartTimestamp() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
+                  .collect(Collectors.toList()).forEach(totalDeltaFiles::remove);
+        } else {
+          for (String deltaFile: block.getDeltaFileStamps()) {
+            totalDeltaFiles.stream().filter(fileName -> fileName.getName().endsWith(
+                    deltaFile + CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
+                    .collect(Collectors.toList()).forEach(totalDeltaFiles::remove);
+          }
+        }
       }
       for (CarbonFile invalidFile: totalDeltaFiles) {
         totalSizeDeleted += invalidFile.getSize();
