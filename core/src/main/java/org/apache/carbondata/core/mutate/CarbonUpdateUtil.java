@@ -732,21 +732,21 @@ public class CarbonUpdateUtil {
                 .collect(Collectors.toList()));
       }
       SegmentUpdateDetails[] updateDetails = updateStatusManager.readLoadMetadata();
-      for (SegmentUpdateDetails block : updateDetails) {
-        // Case 1: When deleteDeltaStartTimestamp = deleteDeltaEndTimestamp. in this case only 1
-        // delta file is present and deltaFileStamps is NULL
-        // Case 2: When deleteDeltaStartTimestamp != deleteDeltaEndTimestamp. in this case more
-        // than 1 delta files are present, then can blindly read deltaFilesStamps variable
+
+      // Case 1: When deleteDeltaStartTimestamp = deleteDeltaEndTimestamp. in this case only 1
+      // delta file is present and deltaFileStamps is NULL
+      // Case 2: When deleteDeltaStartTimestamp != deleteDeltaEndTimestamp. in this case more
+      // than 1 delta files are present, then can blindly read deltaFilesStamps variable
+      Arrays.stream(updateDetails).forEach(block -> {
         if (block.getDeleteDeltaStartTimestamp().equals(block.getDeleteDeltaEndTimestamp())) {
-          totalDeltaFiles.stream().filter(fileName -> fileName.getName().endsWith(block
-                  .getDeleteDeltaStartTimestamp() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
-                  .collect(Collectors.toList()).forEach(totalDeltaFiles::remove);
+          totalDeltaFiles.removeIf(filter -> filter.getName().endsWith(block
+              .getDeleteDeltaEndTimestamp() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT));
         } else {
           block.getDeltaFileStamps().stream().forEach(fileName -> totalDeltaFiles
-                  .removeIf(filter -> filter.getName().endsWith(fileName +
-                          CarbonCommonConstants.DELETE_DELTA_FILE_EXT)));
+              .removeIf(filter -> filter.getName().endsWith(fileName +
+              CarbonCommonConstants.DELETE_DELTA_FILE_EXT)));
         }
-      }
+      });
       for (CarbonFile invalidFile: totalDeltaFiles) {
         totalSizeDeleted += invalidFile.getSize();
         filesToBeDeleted.add(invalidFile);
