@@ -437,8 +437,9 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     assert(updateStatusFilesPost.size == 1)
 
     sql("drop table if exists origintable")
-    CarbonProperties.getInstance()
-      .removeProperty(CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
+      .DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION,
+        CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
   }
 
   def editTableStatusFile(carbonTablePath: String) : Unit = {
