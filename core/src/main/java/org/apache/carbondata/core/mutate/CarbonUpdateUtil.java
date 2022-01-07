@@ -739,11 +739,11 @@ public class CarbonUpdateUtil {
       // than 1 delta files are present, then can blindly read deltaFilesStamps variable
       Arrays.stream(updateDetails).forEach(block -> {
         if (block.getDeleteDeltaStartTimestamp().equals(block.getDeleteDeltaEndTimestamp())) {
-          totalDeltaFiles.removeIf(filter -> filter.getName().endsWith(block
+          totalDeltaFiles.removeIf(deltaFile -> deltaFile.getName().endsWith(block
               .getDeleteDeltaEndTimestamp() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT));
         } else {
           block.getDeltaFileStamps().stream().forEach(fileName -> totalDeltaFiles
-              .removeIf(filter -> filter.getName().endsWith(fileName +
+              .removeIf(deltaFile -> deltaFile.getName().endsWith(fileName +
               CarbonCommonConstants.DELETE_DELTA_FILE_EXT)));
         }
       });
