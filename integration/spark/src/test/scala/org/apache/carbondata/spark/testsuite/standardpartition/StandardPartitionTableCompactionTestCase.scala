@@ -140,6 +140,59 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     }
   }
 
+  test("data insert and compaction for local sort partition table based on task id ") {
+    sql("drop table if exists partitionthree")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL, "TRUE")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, "2,3")
+    try {
+      sql("""
+            | CREATE TABLE partitionthree (empno int, doj Timestamp,
+            |  workgroupcategoryname String, deptno int, deptname String,
+            |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+            |  utilization int,salary int)
+            | PARTITIONED BY (workgroupcategory int, empname String, designation String)
+            | STORED AS carbondata
+            | tblproperties('sort_scope'='local_sort', 'sort_columns'='deptname,empname')
+      """.stripMargin)
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+      assert(getPartitionDataFilesCount("partitionthree", "/workgroupcategory=1/empname=arvind/designation=SE/") == 1)
+      sql("drop table if exists partitionthree_hive")
+      sql("CREATE TABLE partitionthree_hive (empno int, doj Timestamp, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int, utilization int,salary int) PARTITIONED BY (workgroupcategory int, empname String, designation String)")
+      sql("set hive.exec.dynamic.partition.mode=nonstrict")
+      sql("insert into partitionthree_hive select * from partitionthree")
+      sql("insert into partitionthree_hive select * from partitionthree")
+      sql("insert into partitionthree_hive select * from partitionthree")
+
+      sql("insert into partitionthree select * from partitionthree_hive")
+      assert(getPartitionDataFilesCount("partitionthree", "/workgroupcategory=1/empname=arvind/designation=SE/") == 2)
+      sql("ALTER TABLE partitionthree COMPACT 'MINOR'").collect()
+      sql("clean files for table partitionthree options('force'='true')")
+      assert(getPartitionDataFilesCount("partitionthree", "/workgroupcategory=1/empname=arvind/designation=SE/") == 1)
+      checkExistence(sql("show segments for table partitionthree"), true, "0.1")
+      checkAnswer(sql(
+        "select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, " +
+        "deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization," +
+        " salary from partitionthree where workgroupcategory=1 and empname='arvind' and " +
+        "designation='SE' order by empno"),
+        sql(
+          "select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, " +
+          "deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, " +
+          "utilization, salary from originTable where workgroupcategory=1 and empname='arvind' " +
+          "and designation='SE' order by empno"))
+    } finally {
+      sql("drop table if exists partitionthree")
+      sql("drop table if exists partitionthree_hive")
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL,
+          CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL_DEFAULT)
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+          CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+    }
+  }
+
   private def getPartitionDataFilesCount(tableName: String, partition: String) = {
     val table: CarbonTable = CarbonEnv.getCarbonTable(None, tableName)(sqlContext.sparkSession)
     FileFactory.getCarbonFile(table.getTablePath + partition)
@@ -280,6 +333,7 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql("drop table if exists partitionone")
     sql("drop table if exists partitiontwo")
     sql("drop table if exists partitionthree")
+    sql("drop table if exists partitionthree_hive")
     sql("drop table if exists partitionmajor")
     sql("drop table if exists staticpartition")
     sql("drop table if exists staticpartitioncompaction")
