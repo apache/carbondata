@@ -19,7 +19,7 @@ package org.apache.carbondata.mv.plans.modular
 
 import scala.collection._
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, ExprId, Literal, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Expression, ExprId, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.types.DataType
 
@@ -66,6 +66,18 @@ trait AggregatePushDown { // self: ModularPlan =>
     } else {
       map
     }
+  }
+
+  // creates alias for Average aggregate.
+  def getAliasMapForAvgAggregate(exp: Expression,
+      avg: AggregateExpression,
+      aliasInfo: Option[(String, ExprId)]): (NamedExpression, Seq[NamedExpression]) = {
+    val avg1 = AggregateExpression(Average(exp), avg.mode, isDistinct = false)
+    val alias = Alias(avg1, avg1.toString)()
+    val tAvg = avg.copy(Max(alias.toAttribute), avg.mode,
+      isDistinct = false, resultId = avg.resultId)
+    val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
+    (Alias(tAvg, name)(exprId = id), Seq(alias))
   }
 
   private def transformAggregate(aggregate: AggregateExpression,
@@ -174,16 +186,22 @@ trait AggregatePushDown { // self: ModularPlan =>
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val savg = AggregateExpression(Sum(tAttr), avg.mode, isDistinct = false)
-          val cavg = AggregateExpression(Count(tAttr), avg.mode, isDistinct = false)
-          val sAvg = Alias(savg, savg.toString)()
-          val cAvg = Alias(cavg, cavg.toString)()
-          val tAvg = Divide(sAvg.toAttribute, cAvg.toAttribute)
-          val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))
-          map += (ith -> (Alias(tAvg, name)(exprId = id), Seq(sAvg, cAvg)))
+          map += (ith ->  getAliasMapForAvgAggregate(tAttr, avg, aliasInfo))
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
+      case avg@MatchAggregateExpression(Average(cast@MatchCast(expr, dataType)), _, false, _, _) =>
+        val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
+          .asInstanceOf[Attribute]
+        if (fact.outputSet.contains(tAttr)) {
+          map += (ith -> getAliasMapForAvgAggregate(cast, avg, aliasInfo))
+        } else {
+          Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
+        }
+      case avg: AggregateExpression if avg.aggregateFunction.isInstanceOf[Average] &&
+                                       avg.aggregateFunction.children.head.isInstanceOf[Literal] =>
+        map +=
+        (ith -> getAliasMapForAvgAggregate(avg.aggregateFunction.children.head, avg, aliasInfo))
       case _ => Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
     }
   }

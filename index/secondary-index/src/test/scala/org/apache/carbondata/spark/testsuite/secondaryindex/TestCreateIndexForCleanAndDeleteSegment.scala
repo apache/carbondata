@@ -73,7 +73,7 @@ class TestCreateIndexForCleanAndDeleteSegment extends QueryTest with BeforeAndAf
     assert(preDeleteSegmentsByDate == postDeleteSegmentsByDate)
     val result = sql("show materialized views on table delete_segment_by_id").collectAsList()
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(3).toString.equalsIgnoreCase("full"))
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
     assert(result.get(0).get(4).toString.equalsIgnoreCase("on_commit"))
     dryRun = sql("clean files for table delete_segment_by_id" +
       " OPTIONS('dryrun'='true', 'force'='true')").collect()

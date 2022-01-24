@@ -18,6 +18,7 @@ package org.apache.carbondata.view
 
 import java.io.File
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -145,6 +146,150 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
     checkAnswer(df, sql("select empname, avg(salary) from fact_table group by empname"))
     sql(s"drop materialized view mv1")
     sql("drop table source")
+  }
+
+  test("test create mv on carbon table with avg aggregate") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("create table source(empname string, salary long) stored as carbondata")
+    sql("insert into source select 'sd',20")
+    sql("insert into source select 'sd',200")
+    sql("create materialized view mv1 as select empname, avg(salary) from source group by empname")
+    sql("insert into source select 'sd',30")
+    val result = sql("show materialized views on table source").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    val df = sql("select empname, avg(salary) from source group by empname")
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, Seq(Row("sd", 83.33334)))
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  test("test create mv with avg on carbon partition table") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("create table source(a string, empname string) stored as carbondata partitioned by(salary long)")
+    sql("insert into source select 'sd','sd',20")
+    sql("insert into source select 'sdf','sd',200")
+    sql("create materialized view mv1 as select empname, avg(salary) from source group by empname")
+    sql("insert into source select 'dsf','sd',30")
+    val result = sql("show materialized views on table source").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    val df = sql("select empname, avg(salary) from source group by empname")
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, Seq(Row("sd", 83.33334)))
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  test("test create mv with avg and compaction") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("create table source(a string, empname string, salary long) stored as carbondata")
+    sql("insert into source select 'sd','sd',20")
+    sql("insert into source select 'sdf','sd',200")
+    sql("create materialized view mv1 as select empname, avg(salary) from source group by empname")
+    sql("insert into source select 'dsf','sd',30")
+    sql("insert into source select 'dsf','sd',10")
+    sql("alter table source compact 'minor'")
+    val result = sql("show materialized views on table source").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    val df = sql("select empname, avg(salary) from source group by empname")
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, Seq(Row("sd", 65)))
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  test("test create MV with average of floor") {
+    sql("drop table if exists source")
+    sql(
+      "create table if not exists source (tags_id STRING, value DOUBLE) stored as carbondata")
+    sql("insert into source values ('xyz-e01',3.34)")
+    sql("insert into source values ('xyz-e01',1.25)")
+    val mvQuery = "select tags_id, avg(floor(value)) from source group by tags_id"
+    sql("drop materialized view if exists dm1")
+    sql(s"create materialized view dm1  as $mvQuery")
+    sql("insert into source values ('xyz-e01',3.54)")
+    val df = sql("select tags_id, avg(floor(value)) as sum_val from source group by tags_id")
+    val result = sql("show materialized views on table source").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "dm1"))
+    checkAnswer(df, Seq(Row("xyz-e01", 2.33334)))
+    sql("drop materialized view if exists dm1")
+    sql("drop table if exists source")
+  }
+
+  test("test create mv on carbon table with avg inside other function") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("create table source(a string, empname string, salary long) stored as carbondata")
+    sql("insert into source select 'sd','sd',20")
+    sql("insert into source select 'sdf','sd',200")
+    sql("create materialized view mv1 as select empname,round(avg(salary),0) from source group by empname")
+    sql("insert into source select 'dsf','sd',30")
+    val df = sql("select empname, round(avg(salary),0) from source group by empname")
+    val result = sql("show materialized views on table source").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("full"))
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, Seq(Row("sd", 83)))
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  test("test average MV with sum and count columns") {
+    sql("drop table if exists source")
+    sql("create table if not exists source (tags_id STRING, value DOUBLE) stored as carbondata")
+    sql("insert into source values ('xyz-e01',3)")
+    sql("insert into source values ('xyz-e01',1)")
+    var mvQuery = "select tags_id ,sum(value), avg(value) from source group by tags_id"
+    sql("drop materialized view if exists dm1")
+    sql(s"create materialized view dm1  as $mvQuery")
+    var result = sql("show materialized views on table source").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    sql("insert into source values ('xyz-e01',3)")
+    var df = sql(mvQuery)
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "dm1"))
+    checkAnswer(df, Seq(Row("xyz-e01", 7, 2.33334)))
+
+    mvQuery = "select tags_id ,sum(value), avg(value),count(value) from source group by tags_id"
+    sql("drop materialized view if exists dm1")
+    sql(s"create materialized view dm1  as $mvQuery")
+    result = sql("show materialized views on table source").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    sql("insert into source values ('xyz-e01',3)")
+    df = sql(mvQuery)
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "dm1"))
+    checkAnswer(df, Seq(Row("xyz-e01", 10, 2.5, 4)))
+
+    mvQuery = "select tags_id , avg(value),count(value),max(value) from source group by tags_id"
+    sql("drop materialized view if exists dm1")
+    sql(s"create materialized view dm1  as $mvQuery")
+    result = sql("show materialized views on table source").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    sql("insert into source values ('xyz-e01',3)")
+    df = sql(mvQuery)
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "dm1"))
+    checkAnswer(df, Seq(Row("xyz-e01", 2.6, 5, 3)))
+    sql("drop materialized view if exists dm1")
+    sql("drop table if exists source")
+  }
+
+  test("test create MV with average and query with sum column") {
+    sql("drop table if exists source")
+    sql(
+      "create table if not exists source (tags_id STRING, value DOUBLE) stored as carbondata")
+    sql("insert into source values ('xyz-e01',3)")
+    sql("insert into source values ('xyz-e01',1)")
+    val mvQuery = "select tags_id, avg(value) from source group by tags_id"
+    sql("drop materialized view if exists dm1")
+    sql(s"create materialized view dm1  as $mvQuery")
+    sql("insert into source values ('xyz-e01',3)")
+    val df = sql("select tags_id, sum(value) from source group by tags_id")
+    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "dm1"))
+    checkAnswer(df, Seq(Row("xyz-e01", 7)))
+    sql("drop materialized view if exists dm1")
+    sql("drop table if exists source")
   }
 
   test("test create mv fail because of name used") {

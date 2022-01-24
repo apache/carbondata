@@ -139,13 +139,42 @@ case class CarbonCreateMVCommand(
 
   override protected def opName: String = "CREATE MATERIALIZED VIEW"
 
+  def checkIfAvgAggregatePresent(logicalPlan: LogicalPlan): Boolean = {
+    var isAvgPresent = false
+    logicalPlan.transformAllExpressions {
+      case aggregate: AggregateExpression =>
+        val avgExist = aggregate.aggregateFunction match {
+          case _: Average => true
+          case _ => false
+        }
+        isAvgPresent = avgExist || isAvgPresent
+        aggregate
+    }
+    isAvgPresent
+  }
+
   private def doCreate(session: SparkSession,
       tableIdentifier: TableIdentifier,
       viewManager: MVManagerInSpark,
       viewCatalog: MVCatalogInSpark): MVSchema = {
-    val logicalPlan = MVHelper.dropDummyFunction(
+    var logicalPlan = MVHelper.dropDummyFunction(
       MVQueryParser.getQueryPlan(queryString, session))
-      // check if mv with same query already exists
+    val relatedTables = getRelatedTables(logicalPlan)
+    val viewRefreshMode = if (checkIsQueryNeedFullRefresh(logicalPlan) ||
+                              checkIsHasNonCarbonTable(relatedTables)) {
+      MVProperty.REFRESH_MODE_FULL
+    } else {
+      MVProperty.REFRESH_MODE_INCREMENTAL
+    }
+    var modifiedQueryString = queryString
+    if (viewRefreshMode.equalsIgnoreCase(MVProperty.REFRESH_MODE_INCREMENTAL) &&
+      checkIfAvgAggregatePresent(logicalPlan)) {
+      // Check if average aggregate is used and derive logical plan from modified query string.
+      modifiedQueryString = MVQueryParser.checkForAvgAndModifySql(queryString)
+      logicalPlan = MVHelper.dropDummyFunction(
+        MVQueryParser.getQueryPlan(modifiedQueryString, session))
+    }
+    // check if mv with same query already exists
     val mvSchemaWrapper = viewCatalog.getMVWithSameQueryPresent(logicalPlan)
     if (mvSchemaWrapper.nonEmpty) {
       val mvWithSameQuery = mvSchemaWrapper.get.viewSchema.getIdentifier.getTableName
@@ -154,7 +183,6 @@ case class CarbonCreateMVCommand(
     }
     val modularPlan = checkQuery(logicalPlan)
     val viewSchema = getOutputSchema(logicalPlan)
-    val relatedTables = getRelatedTables(logicalPlan)
     val relatedTableList = toCarbonTables(session, relatedTables)
     val inputCols = logicalPlan.output.map(x =>
       x.name
@@ -192,13 +220,6 @@ case class CarbonCreateMVCommand(
             "Cannot create mv when insert is in progress on table " + table.getTableUniqueName)
         }
         relatedTableNames.add(table.getTableName)
-    }
-
-    val viewRefreshMode = if (checkIsQueryNeedFullRefresh(logicalPlan) ||
-      checkIsHasNonCarbonTable(relatedTables)) {
-      MVProperty.REFRESH_MODE_FULL
-    } else {
-      MVProperty.REFRESH_MODE_INCREMENTAL
     }
     val viewRefreshTriggerMode = if (deferredRefresh) {
       MVProperty.REFRESH_TRIGGER_MODE_ON_MANUAL
@@ -325,6 +346,9 @@ case class CarbonCreateMVCommand(
       schema.setTimeSeries(true)
     }
     schema.setQuery(queryString)
+    if (!viewRefreshMode.equals(MVProperty.REFRESH_MODE_FULL)) {
+      schema.setModifiedQuery(modifiedQueryString)
+    }
     try {
       viewManager.createSchema(schema.getIdentifier.getDatabaseName, schema)
     } catch {
@@ -564,14 +588,7 @@ case class CarbonCreateMVCommand(
     var needFullRefresh = false
     logicalPlan.transformAllExpressions {
       case alias: Alias => alias
-      case aggregate: AggregateExpression =>
-        // If average function present then go for full refresh
-        val reload = aggregate.aggregateFunction match {
-          case _: Average => true
-          case _ => false
-        }
-        needFullRefresh = reload || needFullRefresh
-        aggregate
+      case aggregate: AggregateExpression => aggregate
       case cast: Cast =>
         needFullRefresh = cast.child.find {
           case _: AggregateExpression => false

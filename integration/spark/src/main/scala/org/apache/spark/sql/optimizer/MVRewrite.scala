@@ -28,20 +28,21 @@ import scala.util.control.Breaks.{break, breakable}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, Literal, NamedExpression, ScalaUDF, SortOrder}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Cast, Divide, Expression, Literal, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan}
 import org.apache.spark.sql.catalyst.trees.{CurrentOrigin, TreeNode}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.{DataType, DataTypes}
+import org.apache.spark.sql.types.{DataTypes, DoubleType}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum
 import org.apache.carbondata.mv.expressions.modular.{ModularSubquery, ScalarModularSubquery}
 import org.apache.carbondata.mv.plans.modular.{ExpressionHelper, GroupBy, HarmonizedRelation, LeafNode, Matchable, ModularPlan, ModularRelation, Select, SimpleModularizer}
 import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
-import org.apache.carbondata.view.{MVCatalogInSpark, MVPlanWrapper, MVTimeGranularity, TimeSeriesFunction}
+import org.apache.carbondata.view.{MVCatalogInSpark, MVHelper, MVPlanWrapper, MVSchemaWrapper, MVTimeGranularity, TimeSeriesFunction}
 
 /**
  * The primary workflow for rewriting relational queries using Spark libraries.
@@ -408,8 +409,8 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
           LOGGER.info("Query matching has been initiated with available mv schema's")
           val rewrittenPlans =
             for {schemaWrapper <- catalog.lookupFeasibleSchemas(plan).toStream
-                 subsumer <- SimpleModularizer.modularize(
-                   BirdcageOptimizer.execute(schemaWrapper.logicalPlan)).map(_.semiHarmonized)
+                 subsumer <- SimpleModularizer.modularize(BirdcageOptimizer.execute(
+                   getLogicalPlan(schemaWrapper, plan))).map(_.semiHarmonized)
                  subsumee <- unifySubsumee(plan)
                  rewrittenPlan <- rewriteWithSchemaWrapper0(
                    unifySubsumer2(
@@ -431,6 +432,27 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
       getRolledUpModularPlan(rewrittenPlan)
     } else {
       Some(rewrittenPlan)
+    }
+  }
+
+  // To get the logical plan based on user query.
+  // 1. modifiedLogicalPlan: It is created from modified MV query.
+  // If user query has sum or count but not avg, modifiedLogicalPlan can be used to derive results.
+  // Suppose, if user query has both sum and avg of column, then we cannot use modifiedLogicalPlan,
+  // as it doesn't have avg attribute.
+  // 2. logicalPlan: It is created from original MV query.
+  // Use this if avg aggregate is present in user query and in all other cases.
+  private def getLogicalPlan(schemaWrapper: MVSchemaWrapper,
+      plan: ModularPlan): LogicalPlan = {
+    val outputCols = plan.output
+    val sumOrCountCol = outputCols.find(x => x.sql.contains(CarbonCommonConstants.SUM + "(") ||
+                                              x.sql.contains(CarbonCommonConstants.COUNT + "("))
+    if (!schemaWrapper.logicalPlan.equals(schemaWrapper.modifiedLogicalPlan) &&
+        !outputCols.exists(x => x.sql.contains(CarbonCommonConstants.AVERAGE + "("))
+        && sumOrCountCol.isDefined) {
+      schemaWrapper.modifiedLogicalPlan
+    } else {
+      schemaWrapper.logicalPlan
     }
   }
 
@@ -734,10 +756,10 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
         case Seq(groupBy: GroupBy) if groupBy.modularPlan.isDefined =>
           val planWrapper = groupBy.modularPlan.get.asInstanceOf[MVPlanWrapper]
           val plan = planWrapper.modularPlan.asInstanceOf[Select]
-          val aliasMap = getAliasMap(plan.outputList, groupBy.outputList)
-          // Update the flagSpec as per the mv table attributes.
-          val updatedFlagSpec = updateFlagSpec(select, plan, aliasMap, keepAlias = false)
           if (!planWrapper.viewSchema.isRefreshIncremental) {
+            val aliasMap = getAliasMap(plan.outputList, groupBy.outputList)
+            // Update the flagSpec as per the mv table attributes.
+            val updatedFlagSpec = updateFlagSpec(select, plan, aliasMap, keepAlias = false)
             val updatedPlanOutputList = getUpdatedOutputList(plan.outputList, groupBy.modularPlan)
             val outputList =
               for ((output1, output2) <- groupBy.outputList zip updatedPlanOutputList) yield {
@@ -786,6 +808,9 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
                       other
                   }
               }
+            val aliasMap = getAliasMap(child.outputList, groupBy.outputList)
+            // Update the flagSpec as per the mv table attributes.
+            val updatedFlagSpec = updateFlagSpec(select, plan, aliasMap, keepAlias = false)
             // TODO Remove the unnecessary columns from selection.
             // Only keep columns which are required by parent.
             select.copy(
@@ -800,7 +825,67 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
         val planWrapper = groupBy.modularPlan.get.asInstanceOf[MVPlanWrapper]
         val plan = planWrapper.modularPlan.asInstanceOf[Select]
         val updatedPlanOutputList = getUpdatedOutputList(plan.outputList, groupBy.modularPlan)
-        val outputListMapping = groupBy.outputList zip updatedPlanOutputList
+        // columnIndex is used to iterate over updatedPlanOutputList. For each avg attribute,
+        // updatedPlanOutputList has 2 attributes (sum and count) and
+        // by maintaining index we can increment and access when needed.
+        var columnIndex = -1
+
+        def getColumnName(expression: Expression): String = {
+          expression match {
+            case attributeReference: AttributeReference => attributeReference.name
+            case literal: Literal => literal.value.toString
+            case _ => ""
+          }
+        }
+        // get column from list having the given aggregate and column name.
+        def getColumnFromOutputList(updatedPlanOutputList: Seq[NamedExpression], aggregate: String,
+            colName: String): NamedExpression = {
+          val nextIndex = columnIndex + 1
+          if ((nextIndex) < updatedPlanOutputList.size &&
+              updatedPlanOutputList(nextIndex).name.contains(aggregate) &&
+              updatedPlanOutputList(nextIndex).name.contains(colName)) {
+            columnIndex += 1
+            updatedPlanOutputList(columnIndex)
+          } else {
+            updatedPlanOutputList.find(x => x.name.contains(aggregate) &&
+                                            x.name.contains(colName)).get
+          }
+        }
+
+        val outputListMapping = if (groupBy.outputList
+          .exists(_.sql.contains(CarbonCommonConstants.AVERAGE + "("))) {
+          // for each avg attribute, updatedPlanOutputList has 2 attributes (sum and count),
+          // so direct mapping of groupBy.outputList and updatedPlanOutputList is not possible.
+          // If query has avg, then get the sum, count attributes in the list and map accordingly.
+          for (exp <- groupBy.outputList) yield {
+            exp match {
+              case Alias(aggregateExpression: AggregateExpression, _)
+                if aggregateExpression.aggregateFunction.isInstanceOf[Average] =>
+                val colName = getColumnName(aggregateExpression.collectLeaves().head)
+                val sumAttr = getColumnFromOutputList(updatedPlanOutputList,
+                  CarbonCommonConstants.SUM, colName)
+                val countAttr = getColumnFromOutputList(updatedPlanOutputList,
+                  CarbonCommonConstants.COUNT, colName)
+                (exp, sumAttr, Some(countAttr))
+              case Alias(aggregateExpression: AggregateExpression, _)
+                if aggregateExpression.aggregateFunction.isInstanceOf[Sum] ||
+                   aggregateExpression.aggregateFunction.isInstanceOf[Count] =>
+                // If query contains avg aggregate and also sum or count of column,
+                // duplicate column creation is avoided. The column might have already mapped
+                // with avg, so search from output list to find the column and map.
+                val colName = getColumnName(aggregateExpression.collectLeaves().head)
+                val colAttr = getColumnFromOutputList(updatedPlanOutputList,
+                  aggregateExpression.aggregateFunction.prettyName, colName)
+                (exp, colAttr, None)
+              case _ =>
+                columnIndex += 1
+                (exp, updatedPlanOutputList(columnIndex), None)
+            }
+          }
+        } else {
+          (groupBy.outputList, updatedPlanOutputList, List.fill(updatedPlanOutputList.size)(None))
+            .zipped.toList
+        }
         val (outputList: Seq[NamedExpression], updatedPredicates: Seq[Expression]) =
           getUpdatedOutputAndPredicateList(
           groupBy,
@@ -816,7 +901,8 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
           val planWrapper = select.modularPlan.get.asInstanceOf[MVPlanWrapper]
           val plan = planWrapper.modularPlan.asInstanceOf[Select]
           val updatedPlanOutputList = getUpdatedOutputList(plan.outputList, select.modularPlan)
-          val outputListMapping = groupBy.outputList zip updatedPlanOutputList
+          val outputListMapping = (groupBy.outputList, updatedPlanOutputList, List.fill(
+            updatedPlanOutputList.size)(None)).zipped.toList
           val (outputList: Seq[NamedExpression], updatedPredicates: Seq[Expression]) =
             getUpdatedOutputAndPredicateList(
               groupBy,
@@ -834,9 +920,9 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
   }
 
   private def getUpdatedOutputAndPredicateList(groupBy: GroupBy,
-      outputListMapping: Seq[(NamedExpression, NamedExpression)]):
+      outputListMapping: Seq[(NamedExpression, NamedExpression, Option[NamedExpression])]):
   (Seq[NamedExpression], Seq[Expression]) = {
-    val outputList = for ((output1, output2) <- outputListMapping) yield {
+    val outputList = for ((output1, output2, output3) <- outputListMapping) yield {
       output1 match {
         case Alias(aggregateExpression: AggregateExpression, _)
           if aggregateExpression.aggregateFunction.isInstanceOf[Sum] =>
@@ -844,6 +930,13 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
           val uFun = aggregate.copy(child = output2)
           Alias(aggregateExpression.copy(aggregateFunction = uFun),
             output1.name)(exprId = output1.exprId)
+        case Alias(aggregateExpression: AggregateExpression, _)
+          if aggregateExpression.aggregateFunction.isInstanceOf[Average] =>
+          val uFunSum = Sum(output2)
+          val uFunCount = Sum(output3.get)
+          val uFunDivide = Divide(Cast(uFunSum, DoubleType), Cast(uFunCount, DoubleType))
+          Alias(Cast(uFunDivide, DoubleType), output1.name)(exprId = output1.exprId)
+
         case Alias(aggregateExpression: AggregateExpression, _)
           if aggregateExpression.aggregateFunction.isInstanceOf[Max] =>
           val max = aggregateExpression.aggregateFunction.asInstanceOf[Max]
@@ -881,7 +974,7 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
     val updatedPredicates = groupBy.predicateList.map {
       predicate =>
         outputListMapping.find {
-          case (output1, _) =>
+          case (output1, _, _) =>
             output1 match {
               case alias: Alias if predicate.isInstanceOf[Alias] =>
                 alias.child.semanticEquals(predicate.children.head)
@@ -891,7 +984,7 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
                 other.semanticEquals(predicate)
             }
         } match {
-          case Some((_, output2)) => output2
+          case Some((_, output2, _)) => output2
           case _ => predicate
         }
     }
