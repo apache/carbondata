@@ -23,10 +23,12 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.rdd.RDD
+import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, DataLoadPartitionWrap, RDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
@@ -36,6 +38,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.UpdateTableModel
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FindDataSourceTable, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
+import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -896,6 +899,9 @@ object CommonLoadUtils {
       Array[String]()
     }
     var persistedRDD: Option[RDD[InternalRow]] = None
+    val partitionBasedOnLocality = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL,
+        CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL_DEFAULT).toBoolean
     try {
       val query: LogicalPlan = if ((loadParams.dataFrame.isDefined) ||
                                    loadParams.scanResultRDD.isDefined) {
@@ -982,9 +988,26 @@ object CommonLoadUtils {
           persistedRDD = persistedRDDLocal
           transformedPlan
         } else {
+          val rdd = loadParams.scanResultRDD.get
+          val newRdd =
+            if (sortScope == SortScopeOptions.SortScope.LOCAL_SORT && partitionBasedOnLocality) {
+              val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]] { p =>
+                DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
+              }.distinct.length
+              val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(
+                nodeNumOfData,
+                loadParams.sparkSession.sqlContext.sparkContext)
+              val coalescedRdd = new DataLoadCoalescedRDD[InternalRow](
+                loadParams.sparkSession,
+                rdd,
+                nodes.toArray.distinct)
+              new DataLoadCoalescedUnwrapRDD(coalescedRdd)
+            } else {
+              rdd
+            }
           val (transformedPlan, partitions, persistedRDDLocal) =
             CommonLoadUtils.transformQueryWithInternalRow(
-              loadParams.scanResultRDD.get,
+              newRdd,
               loadParams.sparkSession,
               loadParams.carbonLoadModel,
               partitionValues,
@@ -999,9 +1022,6 @@ object CommonLoadUtils {
         }
       } else {
         val columnCount = loadParams.carbonLoadModel.getCsvHeaderColumns.length
-        val partitionBasedOnLocality = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL,
-            CarbonCommonConstants.CARBON_PARTITION_DATA_BASED_ON_TASK_LEVEL_DEFAULT).toBoolean
         val rdd =
           if (sortScope == SortScopeOptions.SortScope.LOCAL_SORT && partitionBasedOnLocality) {
             CsvRDDHelper.csvFileScanRDDForLocalSort(
@@ -1207,4 +1227,49 @@ object CommonLoadUtils {
     }
     segmentMetaDataInfo
   }
+}
+
+/**
+ *  It unwraps partitions from DataLoadPartitionWrap
+ */
+class DataLoadCoalescedUnwrapRDD[T: ClassTag](@transient var prev: RDD[T])
+  extends RDD[InternalRow](prev) {
+  override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
+    new Iterator[InternalRow] {
+
+      final val partitionIterator = firstParent[DataLoadPartitionWrap[InternalRow]].iterator(split,
+        context)
+      private var rddIter: Iterator[InternalRow] = null
+
+      override def hasNext: Boolean = {
+        // If rddIter is already initialised, check and return
+        if (rddIter != null && rddIter.hasNext) {
+          true
+        } else {
+          internalHasNext()
+        }
+      }
+
+      def internalHasNext(): Boolean = {
+        if (partitionIterator.hasNext) {
+          val value = partitionIterator.next()
+          rddIter = value.rdd.iterator(value.partition, context)
+          var hasNext = rddIter.hasNext
+          // If iterator is finished then check for next iterator.
+          if (!hasNext) {
+            hasNext = internalHasNext()
+          }
+          hasNext
+        } else {
+          false
+        }
+      }
+
+      override def next(): InternalRow = {
+        rddIter.next()
+      }
+    }
+  }
+
+  override protected def getPartitions: Array[Partition] = prev.partitions
 }
