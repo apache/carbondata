@@ -710,7 +710,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view mv36")
   }
 
-  test("test create materialized view with agg push join with sub group by ") {
+  test("test create materialized view with sum agg push join with sub group by ") {
     sql("drop materialized view if exists mv37")
     sql("create materialized view mv37 as select empname, designation, sum(utilization) from fact_table1 group by empname, designation")
     val frame = sql(
@@ -718,6 +718,40 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "where t1.empname = t2.empname group by t1.empname")
     assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv37"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
+                           "where t1.empname = t2.empname group by t1.empname, t1.designation"))
+    sql(s"drop materialized view mv37")
+  }
+
+  test("test create materialized view with avg agg push join with sub group by") {
+    sql("drop materialized view if exists mv37")
+    sql(
+      "create materialized view mv37 as select empname, designation,avg(utilization), avg(1) from" +
+      " fact_table1 group by empname, designation")
+    val frame = sql(
+      "select t1.empname, avg(t1.utilization), avg(1) from fact_table1 t1,fact_table2 t2  " +
+      "where t1.empname = t2.empname group by t1.empname")
+    val result = sql("show materialized views on table fact_table1").collectAsList()
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv37"))
+    checkAnswer(frame,
+      sql("select t1.empname, avg(t1.utilization), avg(1) from fact_table3 t1,fact_table4 t2  " +
+          "where t1.empname = t2.empname group by t1.empname, t1.designation"))
+    sql(s"drop materialized view mv37")
+  }
+
+  test("test create materialized view with avg agg push join with sub group on hive") {
+    sql("drop materialized view if exists mv37")
+    sql("create table source1 as select * from fact_table1")
+    sql("create table source2 as select * from fact_table2")
+    sql("create table source3 as select * from fact_table3")
+    sql("create table source4 as select * from fact_table4")
+    sql("create materialized view mv37 as select empname, designation, avg(utilization) " +
+        "from source1 group by empname, designation")
+    val frame = sql(
+      "select t1.empname, avg(t1.utilization) from source1 t1,source2 t2  " +
+      "where t1.empname = t2.empname group by t1.empname")
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv37"))
+    checkAnswer(frame, sql("select t1.empname, avg(t1.utilization) from source3 t1,source4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
     sql(s"drop materialized view mv37")
   }
@@ -1378,6 +1412,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   def drop(): Unit = {
+    sql("drop table IF EXISTS source1")
+    sql("drop table IF EXISTS source2")
+    sql("drop table IF EXISTS source3")
+    sql("drop table IF EXISTS source4")
     sql("drop table IF EXISTS fact_table1")
     sql("drop table IF EXISTS fact_table2")
     sql("drop table IF EXISTS fact_table3")

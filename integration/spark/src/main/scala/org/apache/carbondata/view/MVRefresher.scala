@@ -166,11 +166,15 @@ object MVRefresher {
                                newLoadName: String,
                                segmentMap: java.util.Map[String, java.util.List[String]],
                                session: SparkSession): Boolean = {
-    val query = viewSchema.getQuery
+    val isFullRefresh = !viewSchema.isRefreshIncremental
+    var query = viewSchema.getQuery
+    if (!isFullRefresh) {
+      // query is modified internally if average aggregate is used with incremental load.
+      query = viewSchema.getModifiedQuery
+    }
     if (query != null) {
       val viewIdentifier = viewSchema.getIdentifier
       val updatedQuery = MVQueryParser.getQuery(query, session)
-      val isFullRefresh = !viewSchema.isRefreshIncremental
       // Set specified segments for incremental load
       val segmentMapIterator = segmentMap.entrySet().iterator()
       while (segmentMapIterator.hasNext) {

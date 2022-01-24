@@ -27,4 +27,5 @@ case class MVSchemaWrapper(
     viewSignature: Option[Signature],
     viewSchema: MVSchema,
     logicalPlan: LogicalPlan,
+    modifiedLogicalPlan: LogicalPlan,
     modularPlan: ModularPlan)

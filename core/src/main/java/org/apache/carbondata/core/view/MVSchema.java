@@ -57,6 +57,12 @@ public class MVSchema implements Serializable, Writable {
   private String query;
 
   /**
+   * SQL modified query string.
+   * In case of MV with avg incremental mode, the original query is modified.
+   */
+  private String modifiedQuery;
+
+  /**
    * Properties provided by user
    */
   protected Map<String, String> properties;
@@ -99,8 +105,16 @@ public class MVSchema implements Serializable, Writable {
     return query;
   }
 
+  public String getModifiedQuery() {
+    return modifiedQuery;
+  }
+
   public void setQuery(String query) {
     this.query = query;
+  }
+
+  public void setModifiedQuery(String modifiedQuery) {
+    this.modifiedQuery = modifiedQuery;
   }
 
   public Map<String, String> getProperties() {

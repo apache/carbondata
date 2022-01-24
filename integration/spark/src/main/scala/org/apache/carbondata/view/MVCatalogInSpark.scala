@@ -111,6 +111,21 @@ case class MVCatalogInSpark(session: SparkSession)
         // So setting back to current database.
         session.catalog.setCurrentDatabase(currentDatabase)
       }
+      // Currently, the user query is modified if it contains avg aggregate.
+      // Create modifiedLogicalPlan from modified query which can be used to derive sum or count
+      // columns from MV in case avg is not present.
+      val modifiedLogicalPlan = if (mvSchema.getModifiedQuery != null &&
+                                    !mvSchema.getModifiedQuery
+                                      .equalsIgnoreCase(mvSchema.getQuery)) {
+        try {
+          session.catalog.setCurrentDatabase(mvSchema.getIdentifier.getDatabaseName)
+          MVHelper.dropDummyFunction(MVQueryParser.getQueryPlan(mvSchema.getModifiedQuery, session))
+        } finally {
+          session.catalog.setCurrentDatabase(currentDatabase)
+        }
+      } else {
+        logicalPlan
+      }
       val mvSignature = SimpleModularizer.modularize(
         BirdcageOptimizer.execute(logicalPlan)).next().semiHarmonized.signature
       val mvIdentifier = mvSchema.getIdentifier
@@ -143,6 +158,7 @@ case class MVCatalogInSpark(session: SparkSession)
         mvSignature,
         mvSchema,
         logicalPlan,
+        modifiedLogicalPlan,
         MVPlanWrapper(modularPlan, mvSchema))
     }
   }
@@ -172,7 +188,7 @@ case class MVCatalogInSpark(session: SparkSession)
         val modularPlan = SimpleModularizer.modularize(
             BirdcageOptimizer.execute(logicalPlan)).next().semiHarmonized
         val signature = modularPlan.signature
-        viewSchemas += MVSchemaWrapper(signature, null, logicalPlan, null)
+        viewSchemas += MVSchemaWrapper(signature, null, logicalPlan, logicalPlan, null)
       }
     }
   }

@@ -28,6 +28,7 @@ import org.apache.spark.sql.optimizer.MVRewriteRule
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.view.MVFunctions
 
 class MVQueryParser extends StandardTokenParsers with PackratParsers {
@@ -101,6 +102,39 @@ object MVQueryParser {
     SparkSQLUtil
       .execute(getQueryPlan(query, session), session)
       .drop(MVFunctions.DUMMY_FUNCTION)
+  }
+
+  // In the mv query string, check if avg of column is present and
+  // replace it with sum and count of same column.
+  // Check for duplicates and replace column if its not present already.
+  def checkForAvgAndModifySql(sql: String): String = {
+    val (avg, sum, count) = (CarbonCommonConstants.AVERAGE,
+      CarbonCommonConstants.SUM, CarbonCommonConstants.COUNT)
+    var modifiedSql: String = sql.toLowerCase
+    val pattern = """select(.*)from""".r
+    for (column <- pattern.findFirstMatchIn(modifiedSql).get.group(1).split(",")) {
+      if (column.contains(avg + "(")) {
+        val sumStr = column.replace(avg, sum)
+        val countStr = column.replace(avg, count)
+        val queryContainsSum = modifiedSql.contains(sumStr.trim)
+        val queryContainsCount = modifiedSql.contains(countStr.trim)
+        if (queryContainsSum && !queryContainsCount) {
+          modifiedSql = modifiedSql.replace(column, s"$countStr")
+        } else if (!queryContainsSum && queryContainsCount) {
+          modifiedSql = modifiedSql.replace(column, s"$sumStr")
+        } else if (!queryContainsSum && !queryContainsCount) {
+          modifiedSql = modifiedSql.replace(column, s"$sumStr,$countStr")
+        } else {
+          modifiedSql = ("\\s*" + Regex.quote(column.trim) + "\\s*,").r
+            .replaceAllIn(modifiedSql, "")
+          modifiedSql = (",\\s*" + Regex.quote(column.trim) + "\\s*,").r
+            .replaceAllIn(modifiedSql, ",")
+          modifiedSql = (",\\s*" + Regex.quote(column.trim) + "\\s*").r
+            .replaceAllIn(modifiedSql, "")
+        }
+      }
+    }
+    modifiedSql.trim
   }
 
   def getQueryPlan(query: String, session: SparkSession): LogicalPlan = {
