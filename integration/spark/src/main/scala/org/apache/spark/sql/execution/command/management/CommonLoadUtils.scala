@@ -928,7 +928,8 @@ object CommonLoadUtils {
               .map(columnName => columnName.toLowerCase())
             attributes.filterNot(a => staticPartCols.contains(a.name.toLowerCase))
           }
-          val spatialProperty = catalogTable.properties.get(CarbonCommonConstants.SPATIAL_INDEX)
+          val spatialProperty = catalogTable.storage
+            .properties.get(CarbonCommonConstants.SPATIAL_INDEX)
           // For spatial table, dataframe attributes will not contain geoId column.
           val isSpatialTable = spatialProperty.isDefined && spatialProperty.nonEmpty &&
                                    dfAttributes.length + 1 == expectedColumns.size
