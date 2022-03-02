@@ -50,6 +50,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
     logicalPlan match {
       case _: Command => return logicalPlan
       case _: LocalRelation => return logicalPlan
+      case _: DeserializeToObject => return logicalPlan
       case _ =>
     }
     try {
@@ -105,7 +106,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
     if (!canApply) {
       return logicalPlan
     }
-    val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
+    val viewCatalog = MVManagerInSpark.getMVCatalog(session)
     if (viewCatalog != null && hasSuitableMV(logicalPlan, viewCatalog)) {
       LOGGER.debug(s"Query Rewrite has been initiated for the plan: " +
                    s"${ logicalPlan.toString().trim }")

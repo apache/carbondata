@@ -181,32 +181,48 @@ public abstract class MVManager {
    */
   public MVCatalog<?> getCatalog(
       MVCatalogFactory<?> catalogFactory,
-      boolean reload) throws IOException {
+      List<MVSchema> currSchemas) throws IOException {
     MVCatalog<?> catalog = this.catalog;
-    if (reload || catalog == null) {
-      synchronized (lock) {
-        catalog = this.catalog;
-        if (reload || catalog == null) {
-          catalog = catalogFactory.newCatalog();
-          List<MVSchema> schemas = getSchemas();
-          if (null == catalog) {
-            throw new RuntimeException("Internal Error.");
+    synchronized (lock) {
+      catalog = this.catalog;
+      if (catalog == null) {
+        catalog = catalogFactory.newCatalog();
+      }
+      List<MVSchema> schemas = getSchemas();
+      if (schemas.size() == currSchemas.size() && currSchemas.containsAll(schemas)) {
+        return catalog;
+      }
+      for (MVSchema schema : schemas) {
+        try {
+          // register the schemas that are not already present in catalog.
+          if (!currSchemas.contains(schema)) {
+            catalog.registerSchema(schema);
           }
-          for (MVSchema schema : schemas) {
-            try {
-              catalog.registerSchema(schema);
-            } catch (Exception e) {
-              // Ignore the schema
-              LOGGER.error("Error while registering schema for mv: " + schema.getIdentifier()
-                  .getTableName());
-              if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(e.getMessage());
-              }
-            }
+        } catch (Exception e) {
+          // Ignore the schema
+          LOGGER.error(
+              "Error while registering schema for mv: " + schema.getIdentifier().getTableName());
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(e.getMessage());
           }
-          this.catalog = catalog;
         }
       }
+      for (MVSchema currSchema : currSchemas) {
+        try {
+          // deregister the schemas from catalog if not present in the path.
+          if (!schemas.contains(currSchema)) {
+            catalog.deregisterSchema(currSchema.getIdentifier());
+          }
+        } catch (Exception e) {
+          // Ignore the schema
+          LOGGER.error("Error while deregistering schema for mv: " + currSchema.getIdentifier()
+              .getTableName());
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(e.getMessage());
+          }
+        }
+      }
+      this.catalog = catalog;
     }
     return catalog;
   }
