@@ -93,7 +93,7 @@ case class CarbonCreateMVCommand(
     withEvents(CreateMVPreExecutionEvent(session, systemDirectoryPath, identifier),
       CreateMVPostExecutionEvent(session, systemDirectoryPath, identifier)) {
       // get mv catalog
-      val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
+      val viewCatalog = MVManagerInSpark.getMVCatalog(session)
       val schema = doCreate(session, identifier, viewManager, viewCatalog)
 
       // Update the related mv tables property to mv fact tables

@@ -48,7 +48,7 @@ case class CarbonRefreshMVCommand(
         throw new MalformedMVCommandException(
           s"Materialized view $databaseName.$mvName does not exist")
       }
-      val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
+      val viewCatalog = MVManagerInSpark.getMVCatalog(session)
       if (!viewCatalog.getAllSchemas.exists(_.viewSchema.getIdentifier.getTableName
           .equals(schema.getIdentifier.getTableName))) {
         try {

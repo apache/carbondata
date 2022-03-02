@@ -83,21 +83,25 @@ object MVManagerInSpark {
   }
 
   /**
-   * when first time MVCatalogs are initialized, it stores session info also,
-   * but when carbon session is newly created, catalog map will not be cleared,
-   * so if session info is different, remove the entry from map.
+   * when first time MVCatalogs are initialized, it stores with session info.
+   * but when mv schemas are updated in other sessions or carbon session is newly created,
+   * need to update the schemas of existing catalog or create new catalog and load entries.
    */
-  def getOrReloadMVCatalog(sparkSession: SparkSession): MVCatalogInSpark = {
+  def getMVCatalog(sparkSession: SparkSession): MVCatalogInSpark = {
     val catalogFactory = new MVCatalogFactory[MVSchemaWrapper] {
       override def newCatalog(): MVCatalog[MVSchemaWrapper] = {
         new MVCatalogInSpark(sparkSession)
       }
     }
     val viewManager = MVManagerInSpark.get(sparkSession)
-    var viewCatalog = viewManager.getCatalog(catalogFactory, false).asInstanceOf[MVCatalogInSpark]
-    if (!viewCatalog.session.equals(sparkSession)) {
-      viewCatalog = viewManager.getCatalog(catalogFactory, true).asInstanceOf[MVCatalogInSpark]
+    var currSchemas: util.List[MVSchema] = new util.ArrayList[MVSchema]()
+    var viewCatalog = viewManager.getCatalog
+    if (viewCatalog != null) {
+      currSchemas = viewCatalog.asInstanceOf[MVCatalogInSpark]
+        .getAllSchemas.toStream.map(_.viewSchema).toList.asJava
     }
-    viewCatalog
+    // update the schemas in catalog
+    viewCatalog = viewManager.getCatalog(catalogFactory, currSchemas)
+    viewCatalog.asInstanceOf[MVCatalogInSpark]
   }
 }
