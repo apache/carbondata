@@ -19,8 +19,10 @@ package org.apache.spark.sql.parser
 
 import scala.language.implicitConversions
 
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.management.RefreshCarbonTableCommand
+import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
@@ -51,7 +53,8 @@ class CarbonExtensionSpark2SqlParser extends CarbonSpark2SqlParser {
     (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
     (PARTITION ~> "(" ~> repsep(partitions, ",") <~ ")").? ~
     (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")") <~ opt(";") ^^ {
-      case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList =>
+      case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList
+        if CarbonPlanHelper.isCarbonTable(TableIdentifier(table._2, table._1)) =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
         }

@@ -495,7 +495,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
     (PARTITION ~> "(" ~> repsep(partitions, ",") <~ ")").? ~
     (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
-      case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList =>
+      case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList
+        if CarbonPlanHelper.isCarbonTable(TableIdentifier(table._2, table._1)) =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
         }
