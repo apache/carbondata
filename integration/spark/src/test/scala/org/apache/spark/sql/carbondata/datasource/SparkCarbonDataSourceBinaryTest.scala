@@ -21,7 +21,7 @@ import java.io.File
 
 import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
@@ -655,6 +655,23 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
     }
     assert(exception.getMessage.contains("only CarbonData table support delete operation")
     || exception.getMessage.contains("DELETE TABLE is not supported temporarily."))
+  }
+
+  test("test load on parquet table") {
+    sql("drop table if exists parquet_table")
+    sql("create table parquet_table(empno int, empname string, projdate Date) using parquet")
+    var ex = intercept[AnalysisException] {
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE parquet_table
+          """.stripMargin)
+    }
+    assert(ex.getMessage
+      .contains("LOAD DATA is not supported for datasource tables: `default`.`parquet_table`"))
+    ex = intercept[AnalysisException] {
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE parquet_table
+           |OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    }
+    assert(ex.getMessage.contains("mismatched input"))
+    sql("drop table if exists parquet_table")
   }
 
   test("test array of binary data type with sparkfileformat ") {
