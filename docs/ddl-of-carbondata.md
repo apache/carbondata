@@ -60,12 +60,11 @@ CarbonData DDL statements are documented here,which includes:
   * [REFRESH TABLE](#refresh-table)
   * [COMMENTS](#table-and-column-comment)
 * [PARTITION](#partition)
-  * [STANDARD PARTITION(HIVE)](#standard-partition)
-    * [INSERT OVERWRITE PARTITION](#insert-overwrite)
+  * [CREATE PARTITION](#create-partition-table)
   * [SHOW PARTITIONS](#show-partitions)
-  * [ADD PARTITION](#add-a-new-partition)
-  * [SPLIT PARTITION](#split-a-partition)
-  * [DROP PARTITION](#drop-a-partition)
+  * [ADD PARTITION](#add-partition)
+  * [DROP PARTITION](#drop-partition)
+  * [INSERT OVERWRITE PARTITION](#insert-overwrite)
 * [BUCKETING](#bucketing)
 * [CACHE](#cache)
 
@@ -1085,9 +1084,20 @@ Users can specify which columns to include and exclude for local dictionary gene
   SHOW PARTITIONS [db_name.]table_name
   ```
 
+### Add Partition
+
+  This command adds the specified Hive partition.
+  ```
+  ALTER TABLE [db_name].table_name ADD PARTITION(part_spec, ...)
+  ```
+  Example:
+  ```
+  ALTER TABLE locationTable ADD PARTITION (country = 'US');
+  ```
+
 #### Drop Partition
 
-  This command drops the specified Hive partition only.
+  This command drops the specified Hive partition.
   ```
   ALTER TABLE table_name DROP [IF EXISTS] PARTITION (part_spec, ...)
   ```
@@ -1114,47 +1124,6 @@ Users can specify which columns to include and exclude for local dictionary gene
   SELECT * FROM another_user au 
   WHERE au.country = 'US';
   ```
-
-### Show Partitions
-
-  The following command is executed to get the partition information of the table
-
-  ```
-  SHOW PARTITIONS [db_name.]table_name
-  ```
-
-### Add a new partition
-
-  ```
-  ALTER TABLE [db_name].table_name ADD PARTITION('new_partition')
-  ```
-
-### Drop a partition
-
-  Only drop partition definition, but keep data
-  ```
-  ALTER TABLE [db_name].table_name DROP PARTITION(partition_id)
-  ```
-
-  Drop both partition definition and data
-  ```
-  ALTER TABLE [db_name].table_name DROP PARTITION(partition_id) WITH DATA
-  ```
-
-  **NOTE:**
-  * Hash partition table is not supported for ADD, SPLIT and DROP commands.
-  * Partition Id: in CarbonData like the hive, folders are not used to divide partitions instead partition id is used to replace the task id. It could make use of the characteristic and meanwhile reduce some metadata.
-
-  ```
-  SegmentDir/0_batchno0-0-1502703086921.carbonindex
-            ^
-  SegmentDir/part-0-0_batchno0-0-1502703086921.carbondata
-                     ^
-  ```
-
-  Here are some useful tips to improve query performance of carbonData partition table:
-  * The partitioned column can be excluded from SORT_COLUMNS, this will let other columns to do the efficient sorting.
-  * When writing SQL on a partition table, try to use filters on the partition column.
 
 ## BUCKETING
 
