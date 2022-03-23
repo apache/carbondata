@@ -24,6 +24,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafExecNode
 import org.apache.spark.sql.optimizer.CarbonFilters
@@ -54,17 +55,29 @@ case class CarbonCountStar(
     CarbonInputFormat.setQuerySegment(job.getConfiguration, carbonTable)
 
     // get row count
-    var rowCount = CarbonUpdateUtil.getRowCount(
-      tableInputFormat.getBlockRowCount(
-        job,
-        carbonTable,
-        CarbonFilters.getPartitions(
-          Seq.empty,
-          sparkSession,
-          TableIdentifier(
-            carbonTable.getTableName,
-            Some(carbonTable.getDatabaseName))).map(_.toList.asJava).orNull, false),
-      carbonTable)
+    var rowCount = try {
+      CarbonUpdateUtil.getRowCount(
+        tableInputFormat.getBlockRowCount(
+          job,
+          carbonTable,
+          CarbonFilters.getPartitions(
+            Seq.empty,
+            sparkSession,
+            TableIdentifier(
+              carbonTable.getTableName,
+              Some(carbonTable.getDatabaseName))).map(_.toList.asJava).orNull, false),
+        carbonTable)
+    } catch {
+      case ex: NoSuchTableException =>
+        if (carbonTable.isExternalTable && carbonTable.isTransactionalTable) {
+          // In case, external table is created on transactional table location and if the original
+          // table is dropped, then while trying to read schema, it will error exception, as file
+          // does not exists. In that case, just return 0
+         0L
+        } else {
+          throw ex
+        }
+    }
 
     if (CarbonProperties.isQueryStageInputEnabled) {
       // check for number of row for stage input

@@ -152,7 +152,7 @@ case class CarbonDropTableCommand(
     // clear driver side index and dictionary cache
     if (!EnvHelper.isLegacy(sparkSession)
         && carbonTable != null
-        && !(carbonTable.isMV && !dropChildTable)) {
+        && !(carbonTable.isMV && !dropChildTable) && !carbonTable.isExternalTable) {
       // delete the table folder
       CarbonInternalMetastore.deleteTableDirectory(carbonTable)
       // Delete lock directory if external lock path is specified.

@@ -319,6 +319,12 @@ class CarbonFileMetastore extends CarbonMetaStore {
             schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
           schemaRefreshTime = FileFactory
             .getCarbonFile(tableMetadataFile).getLastModifiedTime
+          // set external property to table info from catalog table properties
+          if (parameters.contains("isExternal")) {
+            wrapperTableInfo.getFactTable
+              .getTableProperties
+              .put("_external", parameters("isExternal"))
+          }
           Some(wrapperTableInfo)
         } else {
           None
