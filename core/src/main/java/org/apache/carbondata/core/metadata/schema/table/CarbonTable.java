@@ -880,8 +880,7 @@ public class CarbonTable implements Serializable, Writable {
    * an internal table property set during table creation)
    */
   public boolean isExternalTable() {
-    String external = tableInfo.getFactTable().getTableProperties().get("_external");
-    return external != null && external.equalsIgnoreCase("true");
+    return tableInfo.isExternal();
   }
 
   public boolean isFileLevelFormat() {

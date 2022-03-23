@@ -262,7 +262,7 @@ object CarbonSparkSqlParserUtil {
       if (provider.equalsIgnoreCase("'carbonfile'")) {
         tableInfo.getFactTable.getTableProperties.put("_filelevelformat", "true")
         tableInfo.getFactTable.getTableProperties.put("_external", "false")
-      } else {
+      } else if (!table.properties.contains("hasexternalkeyword")) {
         tableInfo.getFactTable.getTableProperties.put("_external", "true")
         tableInfo.getFactTable.getTableProperties.put("_filelevelformat", "false")
       }

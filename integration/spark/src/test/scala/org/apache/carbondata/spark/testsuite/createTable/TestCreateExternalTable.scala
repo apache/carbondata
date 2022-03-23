@@ -27,6 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
@@ -227,6 +228,112 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
     sql("INSERT INTO source select 100,'spark','test1'")
     checkAnswer(sql("select * from source"), Seq(Row(100, "spark", "test1")))
     sql("drop table if exists source")
+  }
+
+  test("test create external table on transactional table location") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("DROP TABLE IF EXISTS table2")
+    sql("DROP TABLE IF EXISTS table3")
+    try {
+      sql("create table table1 (roll string) STORED AS carbondata")
+      sql("insert into table1 values('abc')")
+      val table1 = CarbonEnv.getCarbonTable(Some("default"), "table1")(sqlContext.sparkSession)
+      val lastMdtFileTable1 = FileFactory
+        .getCarbonFile(FileFactory.getUpdatedFilePath(table1.getTablePath + "/Metadata/schema"))
+        .getLastModifiedTime
+      sql(
+        s"""CREATE EXTERNAL TABLE table2 STORED AS carbondata
+           | LOCATION
+           |'${ table1.getTablePath }' """.stripMargin)
+      val table2 = CarbonEnv.getCarbonTable(Some("default"), "table2")(sqlContext.sparkSession)
+      val lastMdtFileTable2 = FileFactory
+        .getCarbonFile(FileFactory.getUpdatedFilePath(table2.getTablePath + "/Metadata/schema"))
+        .getLastModifiedTime
+      assert(lastMdtFileTable1 == lastMdtFileTable2)
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // verify insert into table1 and check results of table1 and table2
+      sql("insert into table1 values('abcd')")
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // verify delete from table1 and check results of table1 and table2
+      sql("delete from table1 where roll='abc'")
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // verify insert into table2 and check results of table1 and table2
+      sql("insert into table2 values('abcde')")
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // verify delete from table2 and check results of table1 and table2
+      sql("delete from table1 where roll='abcde'")
+      val res = sql("select * from table1")
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // drop table2 and test result of table1
+      sql("DROP TABLE IF EXISTS table2")
+      checkAnswer(sql("select count(*) from table1"), Seq(Row(1)))
+      checkAnswer(sql("select * from table1"), res)
+      sql(
+        s"""CREATE EXTERNAL TABLE table3 STORED AS carbondata
+           | LOCATION
+           |'${ table1.getTablePath }' """.stripMargin)
+      checkAnswer(sql("select * from table1"), sql("select * from table3"))
+      // drop table1 and test result of table3
+      sql("DROP TABLE IF EXISTS table1")
+      checkAnswer(sql("select count(*) from table3"), Seq(Row(0)))
+    } finally {
+      sql("DROP TABLE IF EXISTS table1")
+      sql("DROP TABLE IF EXISTS table2")
+      sql("DROP TABLE IF EXISTS table3")
+    }
+  }
+
+  test("test create external table on transactional partition table location") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("DROP TABLE IF EXISTS table2")
+    sql("DROP TABLE IF EXISTS table3")
+    try {
+      sql("create table table1 (name string) partitioned by (dept int) STORED AS carbondata")
+      sql("insert into table1 values('abc', 1)")
+      val table1 = CarbonEnv.getCarbonTable(Some("default"), "table1")(sqlContext.sparkSession)
+      val lastMdtFileTable1 = FileFactory
+        .getCarbonFile(FileFactory.getUpdatedFilePath(table1.getTablePath + "/Metadata/schema"))
+        .getLastModifiedTime
+      sql(
+        s"""CREATE EXTERNAL TABLE table2(name string) partitioned by (dept int) STORED AS carbondata
+           | LOCATION
+           |'${ table1.getTablePath }' """.stripMargin)
+      val table2 = CarbonEnv.getCarbonTable(Some("default"), "table2")(sqlContext.sparkSession)
+      val lastMdtFileTable2 = FileFactory
+        .getCarbonFile(FileFactory.getUpdatedFilePath(table2.getTablePath + "/Metadata/schema"))
+        .getLastModifiedTime
+      assert(lastMdtFileTable1 == lastMdtFileTable2)
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // verify insert into table1 and check results of table1 and table2
+      sql("insert into table1 values('abcd', 2)")
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // verify delete from table1 and check results of table1 and table2
+      sql("delete from table1 where name='abc'")
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // verify insert into table2 and check results of table1 and table2
+      sql("insert into table2 values('abcde', 2)")
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // verify delete from table2 and check results of table1 and table2
+      sql("delete from table1 where name='abcde'")
+      val res = sql("select * from table1")
+      checkAnswer(sql("select * from table1"), sql("select * from table2"))
+      // drop table2 and test result of table1
+      sql("DROP TABLE IF EXISTS table2")
+      checkAnswer(sql("select count(*) from table1"), Seq(Row(1)))
+      checkAnswer(sql("select * from table1"), res)
+      sql(
+        s"""CREATE EXTERNAL TABLE table3(name string) partitioned by (dept int) STORED AS carbondata
+           | LOCATION
+           |'${ table1.getTablePath }' """.stripMargin)
+      checkAnswer(sql("select * from table1"), sql("select * from table3"))
+      // drop table1 and test result of table3
+      sql("DROP TABLE IF EXISTS table1")
+      checkAnswer(sql("select count(*) from table3"), Seq(Row(0)))
+    } finally {
+      sql("DROP TABLE IF EXISTS table1")
+      sql("DROP TABLE IF EXISTS table2")
+      sql("DROP TABLE IF EXISTS table3")
+    }
   }
 
 }

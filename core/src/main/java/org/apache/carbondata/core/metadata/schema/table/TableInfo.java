@@ -289,6 +289,10 @@ public class TableInfo implements Serializable, Writable {
     return isTransactionalTable;
   }
 
+  public boolean isExternal() {
+    return Boolean.parseBoolean(factTable.getTableProperties().getOrDefault("_external", "false"));
+  }
+
   public void setTransactionalTable(boolean transactionalTable) {
     isTransactionalTable = transactionalTable;
   }

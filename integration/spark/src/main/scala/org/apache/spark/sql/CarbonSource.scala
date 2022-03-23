@@ -425,7 +425,9 @@ object CarbonSource {
    */
   def saveCarbonSchemaFile(
       metaStore: CarbonMetaStore, ignoreIfExists: Boolean, tableInfo: TableInfo): Unit = {
-    if (!metaStore.isReadFromHiveMetaStore && tableInfo.isTransactionalTable) {
+    // if table is external transactional table, do not overwrite schema
+    if (!metaStore.isReadFromHiveMetaStore && tableInfo.isTransactionalTable &&
+        !tableInfo.isExternal) {
       try {
         metaStore.saveToDisk(tableInfo, tableInfo.getTablePath)
       } catch {
