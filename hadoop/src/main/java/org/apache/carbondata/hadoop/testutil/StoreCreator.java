@@ -228,10 +228,7 @@ public class StoreCreator {
 
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     org.apache.carbondata.format.TableInfo thriftTableInfo =
-        schemaConverter.fromWrapperToExternalTableInfo(
-            tableInfo,
-            tableInfo.getDatabaseName(),
-            tableInfo.getFactTable().getTableName());
+        schemaConverter.fromWrapperToExternalTableInfo(tableInfo);
     org.apache.carbondata.format.SchemaEvolutionEntry schemaEvolutionEntry =
         new org.apache.carbondata.format.SchemaEvolutionEntry(tableInfo.getLastUpdatedTime());
     thriftTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history()

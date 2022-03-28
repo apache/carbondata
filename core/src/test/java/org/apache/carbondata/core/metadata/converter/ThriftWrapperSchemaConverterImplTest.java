@@ -1425,7 +1425,7 @@ public class ThriftWrapperSchemaConverterImplTest {
     org.apache.carbondata.format.TableSchema thriftFactTable =
         new org.apache.carbondata.format.TableSchema("tableId", thriftColumnSchemas, schemaEvol);
     org.apache.carbondata.format.TableInfo actualResult = thriftWrapperSchemaConverter
-        .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName);
+        .fromWrapperToExternalTableInfo(wrapperTableInfo);
     org.apache.carbondata.format.TableInfo expectedResult =
         new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<org.apache
             .carbondata.format.TableSchema>());

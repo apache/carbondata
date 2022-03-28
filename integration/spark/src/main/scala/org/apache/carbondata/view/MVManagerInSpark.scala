@@ -22,7 +22,9 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, CarbonThreadUtil, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.view.{MVCatalog, MVCatalogFactory, MVManager, MVSchema, MVStatus}
@@ -31,7 +33,8 @@ class MVManagerInSpark(session: SparkSession) extends MVManager {
   override def getDatabases: util.List[String] = {
     CarbonThreadUtil.threadSet(CarbonCommonConstants.CARBON_ENABLE_MV, "true")
     try {
-      session.sessionState.catalog.listDatabases().asJava
+      CatalogFactory.getInstance()
+        .getCatalog(classOf[CarbonCatalog]).listDatabases()(session).asJava
     } finally {
       CarbonThreadUtil.threadUnset(CarbonCommonConstants.CARBON_ENABLE_MV)
     }

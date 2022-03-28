@@ -2876,4 +2876,10 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_ENABLE_SCHEMA_ENFORCEMENT_DEFAULT = "true";
 
+  @CarbonProperty
+  public static final String CARBON_CATALOG_IMPL = "carbon.catalog.impl";
+
+  @CarbonProperty public static final String CARBON_CATALOG_IMPL_DEFAULT =
+      "org.apache.spark.sql.catalog.CarbonCatalogImpl";
+
 }

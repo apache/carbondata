@@ -23,11 +23,13 @@ import scala.collection.JavaConverters._
 
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.SchemaReader
@@ -52,15 +54,15 @@ case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: Str
     setAuditTable(databaseName, indexTableName)
     setAuditInfo(Map("Parent TableName" -> parentTable))
     // 1. check if the main and index table exist
-    if (!sparkSession.sessionState.catalog.tableExists(
-      TableIdentifier(parentTable, Some(databaseName)))) {
+    if (!CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog]).tableExists(
+      TableIdentifier(parentTable, Some(databaseName)))(sparkSession)) {
       val message: String = s"Secondary Index Table registration for table [$indexTableName] with" +
                             s" table [$databaseName.$parentTable] failed." +
                             s"Table [$parentTable] does not exists under database [$databaseName]"
       CarbonException.analysisException(message)
     }
-    if (!sparkSession.sessionState.catalog.tableExists(
-      TableIdentifier(indexTableName, Some(databaseName)))) {
+    if (!CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog]).tableExists(
+      TableIdentifier(indexTableName, Some(databaseName)))(sparkSession)) {
       val message: String = s"Secondary Index Table registration for table [$indexTableName] with" +
                             s" table [$databaseName.$parentTable] failed." +
                             s"Secondary Index Table [$indexTableName] does not exists under" +

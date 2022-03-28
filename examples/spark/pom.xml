@@ -199,15 +199,6 @@
       </properties>
     </profile>
     <profile>
-      <id>spark-2.3</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <spark.binary.version>2.3</spark.binary.version>
-      </properties>
-    </profile>
-    <profile>
       <id>spark-2.4</id>
       <properties>
         <spark.binary.version>2.4</spark.binary.version>
@@ -215,6 +206,9 @@
     </profile>
     <profile>
       <id>spark-3.1</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.binary.version>3.1</spark.binary.version>
         <dep.jackson.version>2.10.0</dep.jackson.version>

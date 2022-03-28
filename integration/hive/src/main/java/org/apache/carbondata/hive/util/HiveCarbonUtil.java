@@ -255,8 +255,7 @@ public class HiveCarbonUtil {
     ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
     thriftWriter.open(FileWriteOperation.OVERWRITE);
     thriftWriter.write(schemaConverter
-        .fromWrapperToExternalTableInfo(tableInfo, tableInfo.getDatabaseName(),
-            tableInfo.getFactTable().getTableName()));
+        .fromWrapperToExternalTableInfo(tableInfo));
     thriftWriter.close();
   }
 

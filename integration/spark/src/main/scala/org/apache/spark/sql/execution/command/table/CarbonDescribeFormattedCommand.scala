@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.spark.sql.{CarbonEnv, EnvHelper, Row, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
@@ -35,6 +36,7 @@ import org.apache.spark.sql.types.{ArrayType, MapType, MetadataBuilder, StringTy
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
@@ -119,10 +121,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
     } else {
       "false"
     }
-
-    val catalog = sparkSession.sessionState.catalog
-    val catalogTable = catalog.getTableMetadata(tblIdentifier)
-
+    val catalogTable = CatalogFactory.getInstance()
+      .getCatalog(classOf[CarbonCatalog]).getTableMetadata(tblIdentifier)(sparkSession)
     val pageSizeInMb: String = if (tblProps.get(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB)
       .isDefined) {
       tblProps(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB)

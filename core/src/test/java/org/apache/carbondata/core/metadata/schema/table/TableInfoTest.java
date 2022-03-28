@@ -93,8 +93,7 @@ public class TableInfoTest extends TestCase {
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
     ThriftWrapperSchemaConverterImpl schemaConverter = new ThriftWrapperSchemaConverterImpl();
     org.apache.carbondata.format.TableInfo thriftTable = schemaConverter
-        .fromWrapperToExternalTableInfo(carbonTable.getTableInfo(), carbonTable.getDatabaseName(),
-            carbonTable.getTableName());
+        .fromWrapperToExternalTableInfo(carbonTable.getTableInfo());
     assertTrue(null != thriftTable);
   }
 
@@ -135,8 +134,7 @@ public class TableInfoTest extends TestCase {
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
     ThriftWrapperSchemaConverterImpl schemaConverter = new ThriftWrapperSchemaConverterImpl();
     org.apache.carbondata.format.TableInfo thriftTable = schemaConverter
-        .fromWrapperToExternalTableInfo(carbonTable.getTableInfo(), carbonTable.getDatabaseName(),
-            carbonTable.getTableName());
+        .fromWrapperToExternalTableInfo(carbonTable.getTableInfo());
     assertTrue(null != thriftTable);
   }
 

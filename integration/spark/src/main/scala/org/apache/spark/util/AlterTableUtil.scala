@@ -385,8 +385,7 @@ object AlterTableUtil {
     // read the latest schema file
     val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(thriftTableInfo,
       carbonTable.getDatabaseName, carbonTable.getTableName, carbonTable.getTablePath)
-    schemaConverter.fromWrapperToExternalTableInfo(
-      wrapperTableInfo, carbonTable.getDatabaseName, carbonTable.getTableName)
+    schemaConverter.fromWrapperToExternalTableInfo(wrapperTableInfo)
   }
 
   /**
@@ -399,8 +398,8 @@ object AlterTableUtil {
    * @param sparkSession
    */
   def modifyTableProperties(tableIdentifier: TableIdentifier, properties: Map[String, String],
-      propKeys: Seq[String], set: Boolean)
-    (sparkSession: SparkSession, catalog: SessionCatalog): Unit = {
+                            propKeys: Seq[String], set: Boolean)
+                           (sparkSession: SparkSession, catalog: SessionCatalog): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
@@ -486,8 +485,8 @@ object AlterTableUtil {
         // direct property.
         lowerCasePropertiesMap.foreach { property =>
           if (validateTableProperties(property._1) ||
-              (property._1.startsWith(CarbonCommonConstants.SPATIAL_INDEX) &&
-               property._1.endsWith("instance"))) {
+            (property._1.startsWith(CarbonCommonConstants.SPATIAL_INDEX) &&
+              property._1.endsWith("instance"))) {
             tblPropertiesMap.put(property._1, property._2)
           } else {
             val errorMessage = "Error: Invalid option(s): " + property._1.toString()
@@ -518,7 +517,7 @@ object AlterTableUtil {
                 .put(propKey.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
             } else if (propKey.equalsIgnoreCase(CarbonCommonConstants.SORT_COLUMNS)) {
               val errorMessage = "Error: Invalid option(s): " + propKey +
-                                 ", please set SORT_COLUMNS as empty instead of unset"
+                ", please set SORT_COLUMNS as empty instead of unset"
               throw new MalformedCarbonCommandException(errorMessage)
             } else {
               tblPropertiesMap.remove(propKey.toLowerCase)

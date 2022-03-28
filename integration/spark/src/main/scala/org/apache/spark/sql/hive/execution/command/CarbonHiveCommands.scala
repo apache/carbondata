@@ -19,6 +19,7 @@ package org.apache.spark.sql.hive.execution.command
 
 import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -27,6 +28,7 @@ import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, SessionParams}
 
@@ -41,9 +43,10 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
     var rows: Seq[Row] = Seq()
     val dbName = command.databaseName
     var tablesInDB: Seq[TableIdentifier] = null
-    if (sparkSession.sessionState.catalog.listDatabases().exists(_.equalsIgnoreCase(dbName))) {
-      tablesInDB = sparkSession.sessionState.catalog.listTables(dbName)
-      .filterNot(table => try {
+    if (CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog])
+      .listDatabases()(sparkSession).exists(_.equalsIgnoreCase(dbName))) {
+      tablesInDB = CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog])
+        .listTables(dbName)(sparkSession).filterNot(table => try {
         CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession).isIndexTable
       } catch {
         case ex: NoSuchTableException =>
@@ -66,7 +69,8 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
     }
 
     val hiveDatabaseLocation =
-      sparkSession.sessionState.catalog.getDatabaseMetadata(dbName).locationUri.toString
+      CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog])
+        .getDatabaseMetadata(dbName)(sparkSession).locationUri.toString
 
     if (!carbonDatabaseLocation.equals(hiveDatabaseLocation)) {
       throw new InvalidOperationException("Drop database is prohibited when" +

@@ -50,6 +50,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.catalog.CatalogFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
@@ -101,7 +102,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTable
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
-import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -2015,13 +2015,7 @@ public final class CarbonUtil {
   public static org.apache.carbondata.format.TableInfo readSchemaFile(String schemaFilePath,
       Configuration conf)
       throws IOException {
-    TBaseCreator createTBase = org.apache.carbondata.format.TableInfo::new;
-    ThriftReader thriftReader = new ThriftReader(schemaFilePath, createTBase, conf);
-    thriftReader.open();
-    org.apache.carbondata.format.TableInfo tableInfo =
-        (org.apache.carbondata.format.TableInfo) thriftReader.read();
-    thriftReader.close();
-    return tableInfo;
+    return CatalogFactory.getInstance().getCatalog().getSchema(schemaFilePath);
   }
 
   public static ColumnSchema thriftColumnSchemaToWrapperColumnSchema(

@@ -20,10 +20,9 @@ package org.apache.spark.sql
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.internal.config.ConfigEntry
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
-import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
 import org.apache.spark.sql.execution.command.CreateFunctionCommand
 import org.apache.spark.sql.execution.command.mutation.merge.udf.BlockPathsUDF
@@ -34,6 +33,7 @@ import org.apache.spark.sql.secondaryindex.events._
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
@@ -342,8 +342,8 @@ object CarbonEnv {
    */
   def getDatabaseLocation(dbName: String, sparkSession: SparkSession): String = {
     var databaseLocation =
-      sparkSession.sessionState.catalog.asInstanceOf[SessionCatalog].getDatabaseMetadata(dbName)
-        .locationUri.toString
+      CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog])
+        .getDatabaseMetadata(dbName)(sparkSession).locationUri.toString
     // for default database and db ends with .db
     // check whether the carbon store and hive store is same or different.
     if ((!EnvHelper.isLegacy(sparkSession)) &&

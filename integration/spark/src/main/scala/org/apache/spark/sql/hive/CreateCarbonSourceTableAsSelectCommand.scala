@@ -20,12 +20,15 @@ package org.apache.spark.sql.hive
 import java.net.URI
 
 import org.apache.spark.sql.{AnalysisException, Dataset, Row, SaveMode, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType, CatalogUtils}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AlterTableRecoverPartitionsCommand, AtomicRunnableCommand}
 import org.apache.spark.sql.execution.datasources.{DataSource, HadoopFsRelation}
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.util.CarbonReflectionUtils
+
+import org.apache.carbondata.core.catalog.CatalogFactory
 
 /**
  * Create table 'using carbondata' and insert the query result into it.
@@ -56,7 +59,8 @@ case class CreateCarbonSourceTableAsSelectCommand(
     val tableName = tableIdentWithDB.unquotedString
     setAuditTable(db, table.identifier.table)
 
-    if (sessionState.catalog.tableExists(tableIdentWithDB)) {
+    if (CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog])
+      .tableExists(tableIdentWithDB)(sparkSession)) {
       assert(mode != SaveMode.Overwrite,
         s"Expect the table $tableName has been dropped when the save mode is Overwrite")
 

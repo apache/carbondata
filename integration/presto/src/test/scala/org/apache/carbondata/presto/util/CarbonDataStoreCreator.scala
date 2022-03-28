@@ -153,10 +153,7 @@ object CarbonDataStoreCreator {
     val schemaConverter: SchemaConverter =
       new ThriftWrapperSchemaConverterImpl()
     val thriftTableInfo: TableInfo =
-      schemaConverter.fromWrapperToExternalTableInfo(
-        tableInfo,
-        tableInfo.getDatabaseName,
-        tableInfo.getFactTable.getTableName)
+      schemaConverter.fromWrapperToExternalTableInfo(tableInfo)
     val schemaEvolutionEntry: SchemaEvolutionEntry =
       new org.apache.carbondata.format.SchemaEvolutionEntry(
         tableInfo.getLastUpdatedTime)
