@@ -18,11 +18,13 @@ package org.apache.spark.sql.hive
 
 import org.apache.hadoop.hive.ql.exec.UDF
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -49,7 +51,8 @@ object CarbonHiveIndexMetadataUtil {
       sparkSession: SparkSession): Unit = {
     try {
       val tableIdentifier = TableIdentifier(tableName, Some(databaseName))
-      sparkSession.sessionState.catalog.dropTable(tableIdentifier, true, false)
+      CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog]).dropTable(tableIdentifier,
+        ignoreIfNotExists = true, purge = false)(sparkSession)
     } catch {
       case e: Exception =>
         LOGGER.error(

@@ -21,8 +21,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSource, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTablePartition, CatalogTableType, ExternalCatalogUtils}
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -31,7 +32,7 @@ import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 import org.apache.spark.util.{CarbonReflectionUtils, PartitionCacheKey, PartitionCacheManager}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.converter.SparkDataTypeConverterImpl
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
@@ -117,8 +118,9 @@ object CarbonSessionUtil {
     val allPartitions = PartitionCacheManager.get(PartitionCacheKey(carbonTable.getTableId,
       carbonTable.getTablePath, CarbonUtil.getExpiration_time(carbonTable))).asScala
     ExternalCatalogUtils.prunePartitionsByFilter(
-      sparkSession.sessionState.catalog.getTableMetadata(TableIdentifier(carbonTable.getTableName,
-        Some(carbonTable.getDatabaseName))),
+      CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog])
+        .getTableMetadata(TableIdentifier(carbonTable.getTableName,
+        Some(carbonTable.getDatabaseName)))(sparkSession),
       allPartitions,
       partitionFilters,
       sparkSession.sessionState.conf.sessionLocalTimeZone
@@ -163,6 +165,9 @@ object CarbonSessionUtil {
         colArray += structFiled
       }
     )
+
+    // TODO: Fix for spark3.0
+
     // Alter the data schema of a table identified by the provided database and table name.
     // updated schema should contain all the existing data columns. This alterTableDataSchema API
     // should be called after any alter with existing schema which updates the catalog table with

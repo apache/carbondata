@@ -80,12 +80,6 @@
 
   <profiles>
     <profile>
-      <id>spark-2.3</id>
-      <properties>
-        <spark.binary.version>2.3</spark.binary.version>
-      </properties>
-    </profile>
-    <profile>
       <id>spark-2.4</id>
       <properties>
         <spark.binary.version>2.4</spark.binary.version>

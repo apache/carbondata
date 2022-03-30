@@ -19,6 +19,7 @@ package org.apache.spark.sql
 
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.{CatalogTablePartition, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression => SparkExpression, PlanExpression}
@@ -30,6 +31,7 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.vectorized.ColumnarBatch
 
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.scan.expression.Expression
@@ -116,7 +118,8 @@ abstract class CarbonDataSourceScanHelper(relation: CarbonDatasourceHadoopRelati
           // prune dynamic partitions based on filter
           val sparkExpression = SparkSQLUtil.getSparkSession
           val runtimePartitions = ExternalCatalogUtils.prunePartitionsByFilter(
-            sparkExpression.sessionState.catalog.getTableMetadata(tableIdentifier.get),
+            CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog])
+              .getTableMetadata(tableIdentifier.get)(sparkExpression),
             selectedCatalogPartitions,
             dynamicFilter,
             sparkExpression.sessionState.conf.sessionLocalTimeZone

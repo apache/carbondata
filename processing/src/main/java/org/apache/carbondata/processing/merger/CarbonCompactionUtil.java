@@ -249,11 +249,8 @@ public class CarbonCompactionUtil {
           + CarbonCommonConstants.majorCompactionRequiredFile;
     }
     try {
-      if (FileFactory
-          .isFileExist(compactionRequiredFile)) {
-        if (FileFactory
-            .getCarbonFile(compactionRequiredFile)
-            .delete()) {
+      if (FileFactory.isFileExist(compactionRequiredFile)) {
+        if (FileFactory.getCarbonFile(compactionRequiredFile).delete()) {
           LOGGER.info("Deleted the compaction request file " + compactionRequiredFile);
           return true;
         } else {

@@ -33,6 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.events._
 import org.apache.carbondata.events.exception.PostEventException
 import org.apache.carbondata.format.TableInfo

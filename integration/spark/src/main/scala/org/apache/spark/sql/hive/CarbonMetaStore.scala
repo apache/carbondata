@@ -75,20 +75,7 @@ trait CarbonMetaStore {
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      carbonStorePath: String)(sparkSession: SparkSession): String
-
-  /**
-   * This method will overwrite the existing schema and update it with the given details
-   *
-   * @param newTableIdentifier
-   * @param thriftTableInfo
-   * @param carbonStorePath
-   * @param sparkSession
-   */
-  def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
-      oldTableIdentifier: CarbonTableIdentifier,
-      thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      carbonStorePath: String)(sparkSession: SparkSession): String
+      carbonStorePath: String)(sparkSession: SparkSession): Unit
 
   /**
    * This method will is used to remove the evolution entry in case of failure.
@@ -101,13 +88,13 @@ trait CarbonMetaStore {
   def revertTableSchemaInAlterFailure(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       absoluteTableIdentifier: AbsoluteTableIdentifier)
-    (sparkSession: SparkSession): String
+    (sparkSession: SparkSession): Unit
 
 
   /**
    * Prepare Thrift Schema from wrapper TableInfo and write to disk
    */
-  def saveToDisk(tableInfo: schema.table.TableInfo, tablePath: String)
+  def saveToDisk(tableInfo: schema.table.TableInfo, tablePath: String): Unit
 
   /**
    * Generates schema string to save it in hive metastore
@@ -129,8 +116,6 @@ trait CarbonMetaStore {
   def updateMetadataByThriftTable(schemaFilePath: String,
       tableInfo: org.apache.carbondata.format.TableInfo,
       dbName: String, tableName: String, tablePath: String): Unit
-
-  def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
 
   def dropTable(tableIdentifier: AbsoluteTableIdentifier)
     (sparkSession: SparkSession)

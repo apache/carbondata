@@ -19,12 +19,14 @@ package org.apache.spark.sql.execution.command.table
 
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSource, Row, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
-import org.apache.spark.sql.execution.command.{CreateDataSourceTableCommand, DropTableCommand, MetadataCommand}
+import org.apache.spark.sql.execution.command.{DropTableCommand, MetadataCommand}
 import org.apache.spark.sql.execution.datasources.PartitioningUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 
 /**
  * this command wrap schema generation and CreateDataSourceTableCommand
@@ -41,7 +43,8 @@ case class CarbonCreateDataSourceTableCommand(
     assert(table.tableType != CatalogTableType.VIEW)
     assert(table.provider.isDefined)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    if (sparkSession.sessionState.catalog.tableExists(table.identifier)) {
+    if (CatalogFactory.getInstance()
+      .getCatalog(classOf[CarbonCatalog]).tableExists(table.identifier)(sparkSession)) {
       if (ignoreIfExists) {
         return Seq.empty[Row]
       } else {

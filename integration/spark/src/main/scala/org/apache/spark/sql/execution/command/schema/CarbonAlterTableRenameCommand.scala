@@ -18,8 +18,8 @@
 package org.apache.spark.sql.execution.command.schema
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil, MockClassForAlterRevertTests}
 import org.apache.spark.sql.index.CarbonIndexUtil
@@ -27,6 +27,7 @@ import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.index.IndexStoreManager
@@ -58,7 +59,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
     if (!oldDatabaseName.equalsIgnoreCase(newDatabaseName)) {
       throw new MalformedCarbonCommandException("Database name should be same for both tables")
     }
-    val tableExists = sparkSession.catalog.tableExists(oldDatabaseName, newTableIdentifier.table)
+    val tableExists = CatalogFactory.getInstance()
+      .getCatalog(classOf[CarbonCatalog]).tableExists(newTableIdentifier)(sparkSession)
     if (tableExists) {
       throw new MalformedCarbonCommandException(s"Table with name $newTableIdentifier " +
                                                 s"already exists")

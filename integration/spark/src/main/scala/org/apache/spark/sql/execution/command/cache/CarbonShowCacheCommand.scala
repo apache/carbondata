@@ -20,8 +20,8 @@ package org.apache.spark.sql.execution.command.cache
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
@@ -30,6 +30,7 @@ import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
@@ -158,7 +159,8 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       }
     }
     var carbonTables = mutable.ArrayBuffer[CarbonTable]()
-    sparkSession.sessionState.catalog.listTables(currentDatabase).foreach {
+    CatalogFactory.getInstance()
+      .getCatalog(classOf[CarbonCatalog]).listTables(currentDatabase)(sparkSession).foreach {
       tableIdent =>
         try {
           val carbonTable = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)

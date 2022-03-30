@@ -18,13 +18,14 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.index.{DropIndexCommand, ShowIndexesCommand}
-import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand}
+import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
 import org.apache.spark.sql.execution.command.mutation.CarbonTruncateCommand
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDropTableCommand, CarbonShowCreateTableCommand, CarbonShowTablesCommand}
@@ -36,6 +37,7 @@ import org.apache.spark.sql.secondaryindex.command.CarbonCreateSecondaryIndexCom
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 
 /**
  * Carbon strategies for ddl commands
@@ -200,7 +202,7 @@ object DDLStrategy extends SparkStrategy {
             indexModel, tableProperties, ifNotExists, isDeferredRefresh, isCreateSIndex)) :: Nil
         } else {
           sys.error(s"Operation not allowed because either table " +
-            s"${indexModel.tableName} doesn't exist or not a carbon table.")
+                    s"${ indexModel.tableName } doesn't exist or not a carbon table.")
         }
       case showIndex@ShowIndexesCommand(_, _) =>
         try {
@@ -211,7 +213,8 @@ object DDLStrategy extends SparkStrategy {
         }
       case dropIndex@DropIndexCommand(ifExistsSet, databaseNameOp, parentTableName, tableName, _) =>
         val tableIdentifier = TableIdentifier(parentTableName, databaseNameOp)
-        val isParentTableExists = sparkSession.sessionState.catalog.tableExists(tableIdentifier)
+        val isParentTableExists = CatalogFactory.getInstance().getCatalog(classOf[CarbonCatalog])
+          .tableExists(tableIdentifier)(sparkSession)
         if (!isParentTableExists) {
           if (!ifExistsSet) {
             sys.error(s"Table $tableIdentifier does not exist")

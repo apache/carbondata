@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.CarbonParserUtil.initializeSpatialIndexInstance
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -30,6 +31,7 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -96,7 +98,8 @@ case class RefreshCarbonTableCommand(
           initializeSpatialIndexInstance(tableProperties.get(SPATIAL_INDEX_CLASS),
             indexName, tableProperties.asScala)
           val tableIdentifier = new TableIdentifier(tableName, Some(tableInfo.getDatabaseName))
-          if (sparkSession.sessionState.catalog.tableExists(tableIdentifier)) {
+          if (CatalogFactory.getInstance()
+            .getCatalog(classOf[CarbonCatalog]).tableExists(tableIdentifier)(sparkSession)) {
             // In direct upgrade scenario, if spatial table already exists then on refresh command,
             // update the property in metadata and fail table creation.
             LOGGER.info(s"Updating $SPATIAL_INDEX_INSTANCE table property on $tableName")

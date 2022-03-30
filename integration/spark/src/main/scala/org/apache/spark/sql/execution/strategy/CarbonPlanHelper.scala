@@ -19,8 +19,9 @@ package org.apache.spark.sql.execution.strategy
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, CustomDeterministicExpression, InsertIntoCarbonTable, SparkSession, SQLContext}
+import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, NamedExpression, Rand}
@@ -35,6 +36,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
 
@@ -145,7 +147,8 @@ object CarbonPlanHelper {
   def isTableExists(tableIdent: TableIdentifier, sparkSession: SparkSession): Boolean = {
     val dbOption = tableIdent.database.map(_.toLowerCase)
     val tableIdentifier = TableIdentifier(tableIdent.table.toLowerCase(), dbOption)
-    sparkSession.sessionState.catalog.tableExists(tableIdentifier)
+    CatalogFactory.getInstance()
+      .getCatalog(classOf[CarbonCatalog]).tableExists(tableIdentifier)(sparkSession)
   }
 
   /**

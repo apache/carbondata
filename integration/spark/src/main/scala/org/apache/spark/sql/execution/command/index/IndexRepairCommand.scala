@@ -20,12 +20,14 @@ package org.apache.spark.sql.execution.command.index
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalog.CarbonCatalog
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.catalog.CatalogFactory
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 
@@ -51,7 +53,8 @@ extends DataCommand {
       triggerRepair(tableIdentifier.table, databaseName, indexnameOp, segments, sparkSession)
     } else {
       // repairing si for all  index tables in the mentioned database in the repair command
-      sparkSession.sessionState.catalog.listTables(dbName).foreach {
+      CatalogFactory.getInstance()
+        .getCatalog(classOf[CarbonCatalog]).listTables(dbName)(sparkSession).foreach {
         tableIdent =>
           triggerRepair(tableIdent.table, dbName, indexnameOp, segments, sparkSession)
       }

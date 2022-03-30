@@ -89,7 +89,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
       newCols = newCols.filter(x => !x.isComplexColumn)
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
-        .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
+        .fromWrapperToExternalTableInfo(wrapperTableInfo)
       // carbon columns based on schema order
       val carbonColumns = carbonTable.getCreateOrderColumn().asScala
         .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
