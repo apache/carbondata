@@ -111,9 +111,14 @@ case class MVCatalogInSpark(session: SparkSession)
         // So setting back to current database.
         session.catalog.setCurrentDatabase(currentDatabase)
       }
-      // Currently, the user query is modified if it contains avg aggregate.
-      // Create modifiedLogicalPlan from modified query which can be used to derive sum or count
-      // columns from MV in case avg is not present.
+      // The MV query is modified by replacing avg with sum and count columns.
+      // Here, create modifiedLogicalPlan from modified query, so that even though MV is not created
+      // with sum or count columns, we could still derive the columns.
+      // For example, Consider MV creation statement:
+      // create materialized view mv1 as select empname, avg(salary) from source group by empname;
+      // and here if user queries:
+      // Select empname, sum(salary) from source group by empname;
+      // we can use modifiedLogicalPlan for query matching and rewrite steps.
       val modifiedLogicalPlan = if (mvSchema.getModifiedQuery != null &&
                                     !mvSchema.getModifiedQuery
                                       .equalsIgnoreCase(mvSchema.getQuery)) {

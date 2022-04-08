@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Coalesce, Expression, Literal, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Average}
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, Limit, LogicalPlan, Sort}
+import org.apache.spark.sql.catalyst.plans.logical.{Join, Limit, LogicalPlan, Sort}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -140,17 +140,17 @@ case class CarbonCreateMVCommand(
   override protected def opName: String = "CREATE MATERIALIZED VIEW"
 
   def checkIfAvgAggregatePresent(logicalPlan: LogicalPlan): Boolean = {
-    if (logicalPlan.isInstanceOf[Aggregate]) {
-      logicalPlan.asInstanceOf[Aggregate].aggregateExpressions.exists(exp => {
-        exp match {
-          case Alias(aggregateExpression: AggregateExpression, _)
-            if aggregateExpression.aggregateFunction.isInstanceOf[Average] => true
+    var isAvgPresent = false
+    logicalPlan.transformAllExpressions {
+      case aggregate: AggregateExpression =>
+        val avgExist = aggregate.aggregateFunction match {
+          case _: Average => true
           case _ => false
         }
-      })
-    } else {
-      false
+        isAvgPresent = avgExist || isAvgPresent
+        aggregate
     }
+    isAvgPresent
   }
 
   private def doCreate(session: SparkSession,
@@ -588,12 +588,7 @@ case class CarbonCreateMVCommand(
     var needFullRefresh = false
     logicalPlan.transformAllExpressions {
       case alias: Alias => alias
-      case aggregate: AggregateExpression =>
-        val reload = aggregate.aggregateFunction match {
-          case _ => false
-        }
-        needFullRefresh = reload || needFullRefresh
-        aggregate
+      case aggregate: AggregateExpression => aggregate
       case cast: Cast =>
         needFullRefresh = cast.child.find {
           case _: AggregateExpression => false

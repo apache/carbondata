@@ -33,7 +33,6 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan}
 import org.apache.spark.sql.catalyst.trees.{CurrentOrigin, TreeNode}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.parser.MVQueryParser
 import org.apache.spark.sql.types.{DataTypes, DoubleType}
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -436,16 +435,20 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
     }
   }
 
-  // Currently, the user query is modified if it contains avg aggregate.
-  // modifiedLogicalPlan is created from modified query which can be used to derive sum or count
-  // columns from MV in case avg is not present.
+  // To get the logical plan based on user query.
+  // 1. modifiedLogicalPlan: It is created from modified MV query.
+  // If user query has sum or count but not avg, modifiedLogicalPlan can be used to derive results.
+  // Suppose, if user query has both sum and avg of column, then we cannot use modifiedLogicalPlan,
+  // as it doesn't have avg attribute.
+  // 2. logicalPlan: It is created from original MV query.
+  // Use this if avg aggregate is present in user query and in all other cases.
   private def getLogicalPlan(schemaWrapper: MVSchemaWrapper,
       plan: ModularPlan): LogicalPlan = {
-    val queryOutput = plan.output
-    val sumOrCountCol = queryOutput.find(x => x.sql.contains(CarbonCommonConstants.SUM + "(") ||
+    val outputCols = plan.output
+    val sumOrCountCol = outputCols.find(x => x.sql.contains(CarbonCommonConstants.SUM + "(") ||
                                               x.sql.contains(CarbonCommonConstants.COUNT + "("))
     if (!schemaWrapper.logicalPlan.equals(schemaWrapper.modifiedLogicalPlan) &&
-        !queryOutput.exists(x => x.sql.contains(CarbonCommonConstants.AVERAGE + "("))
+        !outputCols.exists(x => x.sql.contains(CarbonCommonConstants.AVERAGE + "("))
         && sumOrCountCol.isDefined) {
       schemaWrapper.modifiedLogicalPlan
     } else {
@@ -822,15 +825,16 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
         val planWrapper = groupBy.modularPlan.get.asInstanceOf[MVPlanWrapper]
         val plan = planWrapper.modularPlan.asInstanceOf[Select]
         val updatedPlanOutputList = getUpdatedOutputList(plan.outputList, groupBy.modularPlan)
+        // columnIndex is used to iterate over updatedPlanOutputList. For each avg attribute,
+        // updatedPlanOutputList has 2 attributes (sum and count) and
+        // by maintaining index we can increment and access when needed.
         var columnIndex = -1
 
         def getColumnName(expression: Expression): String = {
-          if (expression.isInstanceOf[AttributeReference]) {
-            expression.asInstanceOf[AttributeReference].name
-          } else if (expression.isInstanceOf[Literal]) {
-            expression.asInstanceOf[Literal].value.toString
-          } else {
-            ""
+          expression match {
+            case attributeReference: AttributeReference => attributeReference.name
+            case literal: Literal => literal.value.toString
+            case _ => ""
           }
         }
         // get column from list having the given aggregate and column name.
@@ -847,7 +851,9 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
                                             x.name.contains(colName)).get
           }
         }
-        val outputListMapping = if (groupBy.outputList.exists(_.sql.contains("avg("))) {
+
+        val outputListMapping = if (groupBy.outputList
+          .exists(_.sql.contains(CarbonCommonConstants.AVERAGE + "("))) {
           // for each avg attribute, updatedPlanOutputList has 2 attributes (sum and count),
           // so direct mapping of groupBy.outputList and updatedPlanOutputList is not possible.
           // If query has avg, then get the sum, count attributes in the list and map accordingly.
@@ -856,8 +862,10 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
               case Alias(aggregateExpression: AggregateExpression, _)
                 if aggregateExpression.aggregateFunction.isInstanceOf[Average] =>
                 val colName = getColumnName(aggregateExpression.collectLeaves().head)
-                val sumAttr = getColumnFromOutputList(updatedPlanOutputList, "sum", colName)
-                val countAttr = getColumnFromOutputList(updatedPlanOutputList, "count", colName)
+                val sumAttr = getColumnFromOutputList(updatedPlanOutputList,
+                  CarbonCommonConstants.SUM, colName)
+                val countAttr = getColumnFromOutputList(updatedPlanOutputList,
+                  CarbonCommonConstants.COUNT, colName)
                 (exp, sumAttr, Some(countAttr))
               case Alias(aggregateExpression: AggregateExpression, _)
                 if aggregateExpression.aggregateFunction.isInstanceOf[Sum] ||
