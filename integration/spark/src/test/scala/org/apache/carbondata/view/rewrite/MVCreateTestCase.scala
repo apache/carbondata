@@ -290,6 +290,31 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view mv1")
   }
 
+  test("test create materialized view with simple and same projection with alias name") {
+    sql("drop materialized view if exists mv_alias")
+    // case 1: alias in mv create query and actual query with no alias
+    sql("create materialized view mv_alias as select empname as e1, designation from fact_table1")
+    var df1 = sql("select empname,designation from fact_table1")
+    assert(df1.queryExecution.sparkPlan.output.toList.head.toString().contains("empname"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv_alias"))
+    checkAnswer(df1, sql("select empname,designation from fact_table2"))
+
+    val df2 = sql("select empname as e2,designation from fact_table1")
+    assert(df2.queryExecution.sparkPlan.output.toList.head.toString().contains("e2"))
+    assert(TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "mv_alias"))
+    checkAnswer(df2, sql("select empname,designation from fact_table2"))
+
+    sql(s"drop materialized view mv_alias")
+
+    // case 1: alias in actual query and mv query with no alias
+    sql("create materialized view mv_alias as select empname, designation from fact_table1")
+    df1 = sql("select empname as e1 ,designation from fact_table1")
+    assert(df1.queryExecution.sparkPlan.output.toList.head.toString().contains("e1"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv_alias"))
+    checkAnswer(df1, sql("select empname,designation from fact_table2"))
+    sql(s"drop materialized view mv_alias")
+  }
+
   test("test create materialized view with simple and sub projection") {
     sql("drop materialized view if exists mv2")
     sql("create materialized view mv2 as select empname, designation from fact_table1")
