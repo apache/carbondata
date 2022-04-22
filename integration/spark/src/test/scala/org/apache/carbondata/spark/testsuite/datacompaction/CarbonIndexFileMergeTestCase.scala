@@ -259,15 +259,15 @@ class CarbonIndexFileMergeTestCase
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE fileSize OPTIONS('header'='false')")
     val table = CarbonMetadata.getInstance().getCarbonTable("default", "fileSize")
-    var loadMetadataDetails = SegmentStatusManager
-      .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(table.getTablePath))
+    var loadMetadataDetails = SegmentStatusManager.readTableStatusFile(
+      CarbonTablePath.getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion))
     var segment0 = loadMetadataDetails.filter(x => x.getLoadName.equalsIgnoreCase("0"))
     Assert
       .assertEquals(getIndexOrMergeIndexFileSize(table, "0", CarbonTablePath.INDEX_FILE_EXT),
         segment0.head.getIndexSize.toLong)
     sql("Alter table fileSize compact 'segment_index'")
-    loadMetadataDetails = SegmentStatusManager
-      .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(table.getTablePath))
+    loadMetadataDetails = SegmentStatusManager.readTableStatusFile(
+      CarbonTablePath.getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion))
     segment0 = loadMetadataDetails.filter(x => x.getLoadName.equalsIgnoreCase("0"))
     Assert
       .assertEquals(getIndexOrMergeIndexFileSize(table, "0", CarbonTablePath.MERGE_INDEX_FILE_EXT),

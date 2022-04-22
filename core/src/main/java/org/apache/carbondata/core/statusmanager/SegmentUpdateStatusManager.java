@@ -104,7 +104,8 @@ public class SegmentUpdateStatusManager {
       segmentDetails = new LoadMetadataDetails[0];
     } else {
       segmentDetails = SegmentStatusManager.readLoadMetadata(
-          CarbonTablePath.getMetadataPath(identifier.getTablePath()));
+          CarbonTablePath.getMetadataPath(identifier.getTablePath()),
+          table.getTableStatusVersion());
     }
     this.isPartitionTable = table.isHivePartitionTable();
     if (segmentDetails.length != 0) {

@@ -265,9 +265,9 @@ public class Segment implements Serializable, Writable {
    * @param tablePath
    * @return
    */
-  public static Segment getSegment(String segmentNo, String tablePath) {
+  public static Segment getSegment(String segmentNo, String tablePath, String version) {
     LoadMetadataDetails[] loadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath));
+        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath), version);
     return getSegment(segmentNo, loadMetadataDetails);
   }
 

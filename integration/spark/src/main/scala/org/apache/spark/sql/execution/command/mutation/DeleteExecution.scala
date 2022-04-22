@@ -64,7 +64,8 @@ object DeleteExecution {
       dataRdd: RDD[Row],
       timestamp: String,
       isUpdateOperation: Boolean,
-      executorErrors: ExecutionErrors): (Seq[Segment], Long) = {
+      executorErrors: ExecutionErrors,
+      version: String): (Seq[Segment], Long) = {
 
     val (res, blockMappingVO) = deleteDeltaExecutionInternal(databaseNameOp,
       tableName, sparkSession, dataRdd, timestamp, isUpdateOperation, executorErrors)
@@ -79,7 +80,7 @@ object DeleteExecution {
     segmentsTobeDeleted =
       checkAndUpdateStatusFiles(executorErrors,
         res, carbonTable, timestamp,
-        blockMappingVO, isUpdateOperation)
+        blockMappingVO, isUpdateOperation, version)
 
     if (executorErrors.failureCauses == FailureCauses.NONE) {
       operatedRowCount = res.flatten.map(_._2._3).sum
@@ -164,7 +165,8 @@ object DeleteExecution {
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)
     val metadataDetails = SegmentStatusManager.readTableStatusFile(
-      CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
+      CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath,
+        carbonTable.getTableStatusVersion))
     val isStandardTable = CarbonUtil.isStandardCarbonTable(carbonTable)
     val rowContRdd =
       sparkSession.sparkContext.parallelize(
@@ -360,7 +362,8 @@ object DeleteExecution {
       carbonTable: CarbonTable,
       timestamp: String,
       blockMappingVO: BlockMappingVO,
-      isUpdateOperation: Boolean): Seq[Segment] = {
+      isUpdateOperation: Boolean,
+      version: String): Seq[Segment] = {
     val blockUpdateDetailsList = new util.ArrayList[SegmentUpdateDetails]()
     val segmentDetails = new util.HashSet[Segment]()
     res.foreach(resultOfSeg => resultOfSeg.foreach(
@@ -406,7 +409,8 @@ object DeleteExecution {
             timestamp,
             !isUpdateOperation,
             !isUpdateOperation,
-            listOfSegmentToBeMarkedDeleted)
+            listOfSegmentToBeMarkedDeleted,
+            version)
     ) {
       LOGGER.info(s"Delete data operation is successful for " +
                   s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
@@ -475,8 +479,10 @@ object DeleteExecution {
         carbonTable.getDatabaseName, carbonTable.getTableName)
       val prePrimingEnabled = CarbonProperties.getInstance().isIndexServerPrePrimingEnabled()
       if (indexServerEnabled && prePrimingEnabled) {
-        val readCommittedScope = new TableStatusReadCommittedScope(AbsoluteTableIdentifier.from(
-          carbonTable.getTablePath), FileFactory.getConfiguration)
+        val readCommittedScope = new TableStatusReadCommittedScope(
+          AbsoluteTableIdentifier.from(carbonTable.getTablePath),
+          FileFactory.getConfiguration,
+          carbonTable.getTableStatusVersion)
         deletedSegments.foreach(_.setReadCommittedScope(readCommittedScope))
         LOGGER.info(s"Loading segments for table: ${ carbonTable.getTableName } in the cache")
         val indexServerLoadEvent: IndexServerLoadEvent =

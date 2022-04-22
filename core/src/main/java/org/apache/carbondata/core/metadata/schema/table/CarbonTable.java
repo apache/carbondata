@@ -1285,4 +1285,8 @@ public class CarbonTable implements Serializable, Writable {
     return allIndexes;
   }
 
+  public String getTableStatusVersion() {
+    return this.tableInfo.getFactTable().getTableProperties().getOrDefault("latestversion", "");
+  }
+
 }

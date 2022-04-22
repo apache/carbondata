@@ -57,7 +57,9 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName)
     val partitionPath =
       CarbonTablePath.getPartitionDir(carbonTable.getAbsoluteTableIdentifier.getTablePath)
-    val segment = Segment.getSegment(segmentId, carbonTable.getAbsoluteTableIdentifier.getTablePath)
+    val segment = Segment.getSegment(segmentId,
+      carbonTable.getAbsoluteTableIdentifier.getTablePath,
+      carbonTable.getTableStatusVersion)
     segment != null
   }
 
@@ -352,7 +354,8 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     sql("create table stale(a string) STORED AS carbondata")
     sql("insert into stale values('k')")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "stale")
-    val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
+    val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath,
+      carbonTable.getTableStatusVersion)
     FileFactory.getCarbonFile(tableStatusFile).delete()
     sql("insert into stale values('k')")
     // if table lose tablestatus file, the system should keep all data.

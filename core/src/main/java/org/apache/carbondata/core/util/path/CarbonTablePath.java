@@ -209,6 +209,17 @@ public class CarbonTablePath {
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + TABLE_STATUS_FILE;
   }
 
+  /**
+   * Return absolute path of table status file
+   */
+  public static String getTableStatusFilePath(String tablePath, String version) {
+    String tableStatusPath = getTableStatusFilePath(tablePath);
+    if (version.isEmpty()) {
+      return tableStatusPath;
+    }
+    return tableStatusPath + CarbonCommonConstants.UNDERSCORE + version;
+  }
+
   public static String getTableStatusFilePathWithUUID(String tablePath, String uuid) {
     if (!uuid.isEmpty()) {
       return getTableStatusFilePath(tablePath) + CarbonCommonConstants.UNDERSCORE + uuid;

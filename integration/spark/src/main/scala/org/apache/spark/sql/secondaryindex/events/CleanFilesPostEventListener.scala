@@ -116,10 +116,14 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
       indexTableLocked = indexTableStatusLock.lockWithRetries()
       if (mainTableLocked && indexTableLocked) {
         val mainTableMetadataDetails =
-          SegmentStatusManager.readLoadMetadata(mainTable.getMetadataPath).toSet ++
+          SegmentStatusManager
+            .readLoadMetadata(mainTable.getMetadataPath, mainTable.getTableStatusVersion)
+            .toSet ++
           SegmentStatusManager.readLoadHistoryMetadata(mainTable.getMetadataPath).toSet
         val indexTableMetadataDetails =
-          SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath).toSet
+          SegmentStatusManager
+            .readLoadMetadata(indexTable.getMetadataPath, indexTable.getTableStatusVersion)
+            .toSet
         val segToStatusMap = mainTableMetadataDetails
           .map(detail => detail.getLoadName -> detail.getSegmentStatus).toMap
 

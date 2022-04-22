@@ -224,14 +224,16 @@ object StreamHandoffRDD {
                     s" ${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
         // handoff streaming segment one by one
         do {
-          val segmentStatusManager = new SegmentStatusManager(identifier)
+          val segmentStatusManager = new SegmentStatusManager(identifier,
+            carbonTable.getTableStatusVersion)
           var loadMetadataDetails: Array[LoadMetadataDetails] = null
           // lock table to read table status file
           val statusLock = segmentStatusManager.getTableStatusLock
           try {
             if (statusLock.lockWithRetries()) {
               loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(identifier.getTablePath))
+                CarbonTablePath.getMetadataPath(identifier.getTablePath),
+                carbonTable.getTableStatusVersion)
             }
           } finally {
             if (null != statusLock) {
@@ -374,8 +376,10 @@ object StreamHandoffRDD {
     if (!FileFactory.isFileExist(metadataPath)) {
       FileFactory.mkdirs(metadataPath)
     }
-    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath)
-    val segmentStatusManager = new SegmentStatusManager(identifier)
+    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath,
+      loadModel.getCarbonDataLoadSchema.getCarbonTable.getTableStatusVersion)
+    val segmentStatusManager = new SegmentStatusManager(identifier,
+      loadModel.getCarbonDataLoadSchema.getCarbonTable.getTableStatusVersion)
     val carbonLock = segmentStatusManager.getTableStatusLock
     try {
       if (carbonLock.lockWithRetries()) {
@@ -383,7 +387,8 @@ object StreamHandoffRDD {
           "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
           + " for table status update")
         val listOfLoadFolderDetailsArray =
-          SegmentStatusManager.readLoadMetadata(metaDataFilepath)
+          SegmentStatusManager.readLoadMetadata(metaDataFilepath,
+            loadModel.getCarbonDataLoadSchema.getCarbonTable.getTableStatusVersion)
 
         // update new columnar segment to success status
         val newSegment =

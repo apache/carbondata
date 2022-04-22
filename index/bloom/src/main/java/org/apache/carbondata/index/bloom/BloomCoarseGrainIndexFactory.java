@@ -377,7 +377,8 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   @Override
   public void deleteIndexData() {
     SegmentStatusManager ssm =
-        new SegmentStatusManager(getCarbonTable().getAbsoluteTableIdentifier());
+        new SegmentStatusManager(getCarbonTable().getAbsoluteTableIdentifier(),
+            getCarbonTable().getTableStatusVersion());
     try {
       List<Segment> validSegments =
           ssm.getValidAndInvalidSegments(getCarbonTable().isMV()).getValidSegments();

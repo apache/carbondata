@@ -425,7 +425,8 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     sql(s"alter table addsegment1 add segment " +
         s"options('path'='${ newPath + 0 }', 'format'='carbon')").collect()
     // testing for in progress segments
-    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(table.getTablePath)
+    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(table.getTablePath,
+      table.getTableStatusVersion)
     val segments = SegmentStatusManager.readTableStatusFile(tableStatusPath)
     segments.foreach(segment => if (segment.getLoadName.equals("9")) {
       segment.setSegmentStatus(SegmentStatus.INSERT_IN_PROGRESS)

@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.io.{DataInputStream, File, InputStreamReader, IOException}
+
 import java.util
 import java.util.Collections
 import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
@@ -30,6 +31,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -233,7 +235,7 @@ case class CarbonInsertFromStageCommand(
     var executorService: ExecutorService = null
     try {
       val segments = SegmentStatusManager.readTableStatusFile(
-        CarbonTablePath.getTableStatusFilePath(table.getTablePath)
+        CarbonTablePath.getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion)
       )
       val matchedSegment = segments.filter(_.getLoadName.equals(segmentId))
       if (matchedSegment.length != 1) {
@@ -266,7 +268,7 @@ case class CarbonInsertFromStageCommand(
             s"segment entry and load again")
           val segmentToWrite = segments.filterNot(_.getLoadName.equals(segmentId))
           SegmentStatusManager.writeLoadDetailsIntoFile(
-            CarbonTablePath.getTableStatusFilePath(table.getTablePath),
+            CarbonTablePath.getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion),
             segmentToWrite)
       }
     } finally {
@@ -330,6 +332,8 @@ case class CarbonInsertFromStageCommand(
           loadModel,
           segmentMetaDataAccumulator)
       }
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+        spark, loadModel.getLatestTableStatusVersion)
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 
       // 4) write segment file and update the segment entry to SUCCESS
@@ -361,7 +365,8 @@ case class CarbonInsertFromStageCommand(
         table, loadModel.getSegmentId, segmentFileName,
         table.getCarbonTableIdentifier.getTableId,
         new SegmentFileStore(table.getTablePath, segmentFileName),
-        SegmentStatus.SUCCESS)
+        SegmentStatus.SUCCESS,
+        loadModel.getLatestTableStatusVersion)
 
       // trigger load post events
       if (status) {

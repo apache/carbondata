@@ -93,6 +93,7 @@ with Serializable {
         CompressorFactory.getInstance().getCompressor.getName)
     model.setColumnCompressor(columnCompressor)
     model.setMetrics(new DataLoadMetrics())
+    model.setLatestTableStatusVersion(options.getOrElse("latestversion", ""))
 
     val carbonProperty = CarbonProperties.getInstance()
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)
@@ -174,7 +175,8 @@ with Serializable {
       if (!isLoadDetailsContainTheCurrentEntry(
         model.getLoadMetadataDetails.asScala.toArray, loadEntry)) {
         val details =
-          SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(model.getTablePath))
+          SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(model.getTablePath),
+            table.getTableStatusVersion)
         val list = new util.ArrayList[LoadMetadataDetails](details.toList.asJava)
         list.add(loadEntry)
         model.setLoadMetadataDetails(list)

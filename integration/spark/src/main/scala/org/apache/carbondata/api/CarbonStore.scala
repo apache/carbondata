@@ -50,13 +50,14 @@ object CarbonStore {
   def readSegments(
       tablePath: String,
       showHistory: Boolean,
-      limit: Option[Int]): Array[LoadMetadataDetails] = {
+      limit: Option[Int],
+      tableStatusVersion: String): Array[LoadMetadataDetails] = {
     val metaFolder = CarbonTablePath.getMetadataPath(tablePath)
     var segmentsMetadataDetails = if (showHistory) {
-      SegmentStatusManager.readLoadMetadata(metaFolder) ++
+      SegmentStatusManager.readLoadMetadata(metaFolder, tableStatusVersion) ++
       SegmentStatusManager.readLoadHistoryMetadata(metaFolder)
     } else {
-      SegmentStatusManager.readLoadMetadata(metaFolder)
+      SegmentStatusManager.readLoadMetadata(metaFolder, tableStatusVersion)
     }
     if (!showHistory) {
       segmentsMetadataDetails = segmentsMetadataDetails
@@ -303,7 +304,10 @@ object CarbonStore {
 
     try {
       val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
-        carbonTable.getAbsoluteTableIdentifier, loadIds.asJava, path).asScala
+        carbonTable.getAbsoluteTableIdentifier,
+        loadIds.asJava,
+        path,
+        carbonTable.getTableStatusVersion).asScala
       if (invalidLoadIds.isEmpty) {
         LOGGER.info(s"Delete segment by Id is successful for $dbName.$tableName.")
       } else {
@@ -332,7 +336,8 @@ object CarbonStore {
           carbonTable.getAbsoluteTableIdentifier,
           timestamp,
           path,
-          time).asScala
+          time,
+          carbonTable.getTableStatusVersion).asScala
       if (invalidLoadTimestamps.isEmpty) {
         LOGGER.info(s"Delete segment by date is successful for $dbName.$tableName.")
       } else {
@@ -349,11 +354,12 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       storePath: String,
-      segmentId: String): Boolean = {
+      segmentId: String,
+      version: String): Boolean = {
     val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName, tableName)
     val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
         SegmentStatusManager(
-          identifier).getValidAndInvalidSegments
+          identifier, version).getValidAndInvalidSegments
     validAndInvalidSegments.getValidSegments.contains(segmentId)
   }
 

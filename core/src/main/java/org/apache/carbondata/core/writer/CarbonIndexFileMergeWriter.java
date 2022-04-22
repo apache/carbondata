@@ -80,7 +80,7 @@ public class CarbonIndexFileMergeWriter {
   private String mergeCarbonIndexFilesOfSegment(String segmentId, String tablePath,
       List<String> indexFileNamesTobeAdded, boolean isOldStoreIndexFilesPresent, String uuid,
       String partitionPath) {
-    Segment segment = Segment.getSegment(segmentId, tablePath);
+    Segment segment = Segment.getSegment(segmentId, tablePath, table.getTableStatusVersion());
     String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     try {
       List<CarbonFile> indexFiles = new ArrayList<>();
@@ -239,9 +239,11 @@ public class CarbonIndexFileMergeWriter {
     }
     Map<String, Map<String, byte[]>> indexLocationMap =
         groupIndexesBySegment(fileStore.getCarbonIndexMapWithFullPath());
-    List<PartitionSpec> partitionSpecs = SegmentFileStore
-        .getPartitionSpecs(segmentId, table.getTablePath(), SegmentStatusManager
-            .readLoadMetadata(CarbonTablePath.getMetadataPath(table.getTablePath())));
+    List<PartitionSpec> partitionSpecs =
+        SegmentFileStore.getPartitionSpecs(segmentId, table.getTablePath(),
+            SegmentStatusManager.readLoadMetadata(
+                CarbonTablePath.getMetadataPath(table.getTablePath()),
+                table.getTableStatusVersion()));
     List<String> mergeIndexFiles = new ArrayList<>();
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
       String mergeIndexFile = writeMergeIndexFile(indexFileNamesTobeAdded,
@@ -284,8 +286,9 @@ public class CarbonIndexFileMergeWriter {
     if (table.isIndexTable()) {
       // To maintain same segment file name mapping between parent and SI table.
       IndexMetadata indexMetadata = table.getIndexMetadata();
-      LoadMetadataDetails[] loadDetails = SegmentStatusManager
-          .readLoadMetadata(CarbonTablePath.getMetadataPath(indexMetadata.getParentTablePath()));
+      LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(
+          CarbonTablePath.getMetadataPath(indexMetadata.getParentTablePath()),
+          table.getTableStatusVersion());
       LoadMetadataDetails loadMetaDetail = Arrays.stream(loadDetails)
           .filter(loadDetail -> loadDetail.getLoadName().equals(segmentId)).findFirst().get();
       newSegmentFileName = loadMetaDetail.getSegmentFile();
@@ -310,7 +313,8 @@ public class CarbonIndexFileMergeWriter {
         throw ex;
       }
       boolean status = SegmentFileStore.updateTableStatusFile(table, segmentId, newSegmentFileName,
-          table.getCarbonTableIdentifier().getTableId(), segmentFileStore);
+          table.getCarbonTableIdentifier().getTableId(), segmentFileStore,
+          table.getTableStatusVersion());
       if (!status) {
         throw new IOException("Table status update with mergeIndex file has failed");
       }

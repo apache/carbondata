@@ -143,7 +143,8 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extend
 
     def readTableStatusFile(model: CarbonLoadModel): Array[LoadMetadataDetails] = {
       val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetadataPath
-      val details = SegmentStatusManager.readLoadMetadata(metadataPath)
+      val details = SegmentStatusManager.readLoadMetadata(metadataPath,
+        model.getCarbonDataLoadSchema.getCarbonTable.getTableStatusVersion)
       details
     }
 
@@ -156,7 +157,8 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extend
       indexTable: CarbonTable): java.util.List[LoadMetadataDetails] = {
       val loadMetadataDetails: java.util.List[LoadMetadataDetails] = new java.util
         .ArrayList[LoadMetadataDetails]
-      val metadata = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath).toSeq
+      val metadata = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath,
+        indexTable.getTableStatusVersion).toSeq
         .map(loadMetadataDetail => loadMetadataDetail.getLoadName)
       details.foreach(loadMetadataDetail => {
         if (!metadata.contains(loadMetadataDetail.getLoadName) &&

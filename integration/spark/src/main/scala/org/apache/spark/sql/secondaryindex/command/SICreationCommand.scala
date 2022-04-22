@@ -256,7 +256,8 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       val indexTablePath = CarbonTablePath
         .getMetadataPath(absoluteTableIdentifier.getTablePath)
       val mainTblLoadMetadataDetails: Array[LoadMetadataDetails] =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+          carbonTable.getTableStatusVersion)
       var siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
         SegmentStatusManager.readLoadMetadata(indexTablePath)
       if (isRegisterIndex) {

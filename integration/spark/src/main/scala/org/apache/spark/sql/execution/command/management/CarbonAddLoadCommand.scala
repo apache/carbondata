@@ -18,8 +18,9 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.io.File
-import java.util
+import java.util.UUID
 
+import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
@@ -29,7 +30,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSour
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -99,7 +100,8 @@ case class CarbonAddLoadCommand(
     val inputPath = givenPath
 
     // If a path is already added then we should block the adding of the same path again.
-    val allSegments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val allSegments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)
     // If the segment has been already loaded from the same path or the segment is already present
     // in the table and its status is SUCCESS orPARTIALLY_SUCCESS, throw an exception as we should
     // block the adding of the same path again.
@@ -235,6 +237,7 @@ case class CarbonAddLoadCommand(
     model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
     model.setDatabaseName(carbonTable.getDatabaseName)
     model.setTableName(carbonTable.getTableName)
+    model.setLatestTableStatusVersion(UUID.randomUUID().toString)
     val operationContext = new OperationContext
     operationContext.setProperty("isLoadOrCompaction", false)
     val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(sparkSession,
@@ -354,10 +357,15 @@ case class CarbonAddLoadCommand(
         segment.getSegmentFileName,
         carbonTable.getCarbonTableIdentifier.getTableId,
         new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName),
-        SegmentStatus.SUCCESS)
+        SegmentStatus.SUCCESS,
+        model.getLatestTableStatusVersion)
     } else {
       false
     }
+
+    CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+      sparkSession,
+      model.getLatestTableStatusVersion)
 
     val postExecutionEvent = if (success) {
       val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =

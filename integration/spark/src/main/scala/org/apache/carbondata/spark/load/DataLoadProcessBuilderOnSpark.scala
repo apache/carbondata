@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.load
 
-import java.util.Comparator
+import java.util.{Comparator, UUID}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -546,6 +546,7 @@ object DataLoadProcessBuilderOnSpark {
     if (globalSortPartitions != null) {
       loadModel.setGlobalSortPartitions(globalSortPartitions)
     }
+    loadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
     loadModel
   }
 

@@ -171,7 +171,7 @@ public class CleanFilesUtil {
       return;
     }
     LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(carbonTable
-        .getMetadataPath());
+        .getMetadataPath(), carbonTable.getTableStatusVersion());
     if (details == null || details.length == 0) {
       return;
     }

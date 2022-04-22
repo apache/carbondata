@@ -520,14 +520,14 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     val dt2 = "dt2"
     sql(s"insert overwrite table $tableName partition(dt='$dt2') select 1, 'a'")
-    val dt1Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val dt1Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath, carbonTable.getTableStatusVersion)
 
     assert(dt1Metas.length == 2)
     val dt1Seg1 = dt1Metas(0)
     val dt2Seg1 = dt1Metas(1)
 
     sql(s"insert overwrite table $tableName partition(dt='$dt2') select 5, 'z'")
-    val dt2Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val dt2Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath, carbonTable.getTableStatusVersion)
     assert(dt2Metas.length == 3)
     val dt2Seg30 = dt2Metas(0)
     val dt2Seg31 = dt2Metas(1)

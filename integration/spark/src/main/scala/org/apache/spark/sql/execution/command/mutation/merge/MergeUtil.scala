@@ -114,14 +114,16 @@ object MergeUtil {
    */
   def updateStatusIfJustDeleteOperation(targetCarbonTable: CarbonTable,
       factTimestamp: Long): Boolean = {
-    val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
-      .getTableStatusFilePath(targetCarbonTable.getTablePath))
+    val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(
+      CarbonTablePath.getTableStatusFilePath(targetCarbonTable.getTablePath,
+        targetCarbonTable.getTableStatusVersion))
     CarbonUpdateUtil.updateTableMetadataStatus(loadMetaDataDetails.map(loadMetadataDetail =>
       new Segment(loadMetadataDetail.getMergedLoadName,
         loadMetadataDetail.getSegmentFile)).toSet.asJava,
       targetCarbonTable,
       factTimestamp.toString,
       true,
-      true, new util.ArrayList[Segment]())
+      true, new util.ArrayList[Segment](),
+      targetCarbonTable.getTableStatusVersion)
   }
 }

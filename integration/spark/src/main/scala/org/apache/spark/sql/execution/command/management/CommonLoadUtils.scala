@@ -18,7 +18,9 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.text.SimpleDateFormat
+
 import java.util
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -38,7 +40,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.UpdateTableModel
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FindDataSourceTable, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
-import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, DistributionUtil}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -168,6 +170,8 @@ object CommonLoadUtils {
         javaPartition(k) = v.get
       }
     }
+    // generate new timestamp for tablestatus version
+    carbonLoadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
     new CarbonLoadModelBuilder(table).build(
       options.asJava,
       optionsFinal,
@@ -706,6 +710,7 @@ object CommonLoadUtils {
     }
     val options = new mutable.HashMap[String, String]()
     options ++= catalogTable.storage.properties
+    options += (("latestversion", loadModel.getLatestTableStatusVersion))
     options += (("overwrite", overWrite.toString))
     if (partition.nonEmpty) {
       val staticPartitionStr = ObjectSerializationUtil.convertObjectToString(
@@ -1065,6 +1070,9 @@ object CommonLoadUtils {
       // Create and ddd the segment to the tablestatus.
       CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadParams.carbonLoadModel,
         loadParams.isOverwriteTable)
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+        loadParams.sparkSession,
+        loadParams.carbonLoadModel.getLatestTableStatusVersion)
       val convertRelation = convertToLogicalRelation(
         catalogTable,
         loadParams.sizeInBytes,

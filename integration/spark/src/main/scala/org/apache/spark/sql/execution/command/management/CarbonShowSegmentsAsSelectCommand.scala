@@ -119,7 +119,7 @@ case class CarbonShowSegmentsAsSelectCommand(
       }
     }
 
-    val segments = readSegments(tablePath, showHistory, limit)
+    val segments = readSegments(tablePath, showHistory, limit, carbonTable.getTableStatusVersion)
     makeDfFromRows(sparkSession, tempViewName,
       carbonTable, segments, rows)
   }

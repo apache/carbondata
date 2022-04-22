@@ -31,6 +31,7 @@ import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
@@ -104,6 +105,36 @@ case class RefreshCarbonTableCommand(
               Map(SPATIAL_INDEX_INSTANCE -> tableProperties.get(SPATIAL_INDEX_INSTANCE)),
               Seq.empty, true)(sparkSession, sparkSession.sessionState.catalog)
           }
+        }
+        val metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath)
+        val tableStatusPath = CarbonTablePath.getTableStatusFilePath(metadataPath)
+        if(!FileFactory.isFileExist(tableStatusPath)) {
+          // in case, if table has multi-versioned table status files, then get the latest table
+          // version and add it to tableproperties
+          val tableStatusFiles = FileFactory.getCarbonFile(metadataPath).listFiles(new CarbonFileFilter {
+            override def accept(file: CarbonFile): Boolean = file.getName.startsWith(CarbonTablePath
+              .TABLE_STATUS_FILE)
+          })
+          var latestTableStatusVersion = ""
+          var lastMdtTime: Long = 0L
+          tableStatusFiles.foreach { tableStatusFile =>
+            if (latestTableStatusVersion.isEmpty) {
+              latestTableStatusVersion = tableStatusFile.getName
+            } else {
+              if (lastMdtTime == 0L) {
+                lastMdtTime = tableStatusFile.getLastModifiedTime
+              } else if (lastMdtTime < tableStatusFile.getLastModifiedTime) {
+                lastMdtTime = tableStatusFile.getLastModifiedTime
+                latestTableStatusVersion = tableStatusFile.getName
+              }
+            }
+          }
+          val version = latestTableStatusVersion.substring(
+            latestTableStatusVersion.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
+            latestTableStatusVersion.length)
+          tableInfo.getFactTable
+            .getTableProperties
+            .put("latestversion", version)
         }
         // remove mv related info from source table properties
         tableInfo.getFactTable

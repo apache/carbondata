@@ -347,8 +347,8 @@ object SecondaryIndexCreator {
           indexCarbonTable.getTablePath,
           indexCarbonTable, mergeIndexProperty = false)
 
-        val loadMetadataDetails = SegmentStatusManager
-          .readLoadMetadata(indexCarbonTable.getMetadataPath)
+        val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
+          indexCarbonTable.getMetadataPath, indexCarbonTable.getTableStatusVersion)
           .filter(loadMetadataDetail => successSISegments.contains(loadMetadataDetail.getLoadName))
 
         val carbonLoadModelForMergeDataFiles = SecondaryIndexUtil
@@ -366,8 +366,8 @@ object SecondaryIndexCreator {
             loadMetadataDetails.toList.asJava, carbonLoadModelForMergeDataFiles)(sc)
 
         if (isInsertOverwrite) {
-          val overriddenSegments = SegmentStatusManager
-          .readLoadMetadata(indexCarbonTable.getMetadataPath)
+          val overriddenSegments = SegmentStatusManager.readLoadMetadata(
+            indexCarbonTable.getMetadataPath, indexCarbonTable.getTableStatusVersion)
             .filter(loadMetadata => !successSISegments.contains(loadMetadata.getLoadName))
             .map(_.getLoadName).toList
           FileInternalUtil

@@ -174,7 +174,8 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    * this method will delete the index folders during drop index
    */
   private void deleteIndex() throws MalformedIndexCommandException {
-    SegmentStatusManager ssm = new SegmentStatusManager(tableIdentifier);
+    SegmentStatusManager ssm =
+        new SegmentStatusManager(tableIdentifier, getCarbonTable().getTableStatusVersion());
     try {
       List<Segment> validSegments =
           ssm.getValidAndInvalidSegments(getCarbonTable().isMV()).getValidSegments();

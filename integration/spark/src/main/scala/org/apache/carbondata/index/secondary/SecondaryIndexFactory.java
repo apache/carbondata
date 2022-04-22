@@ -103,7 +103,8 @@ public class SecondaryIndexFactory extends CoarseGrainIndexFactory {
             allSegmentIds, positionReferenceInfo, segment.getConfiguration()));
     secondaryIndex.setDefaultIndexPrunedBlocklet(segment.getDefaultIndexPrunedBlocklets());
     secondaryIndex.validateSegmentList(getCarbonTable().getTablePath()
-        .replace(getCarbonTable().getTableName(), getIndexSchema().getIndexName()));
+            .replace(getCarbonTable().getTableName(), getIndexSchema().getIndexName()),
+        getCarbonTable().getTableStatusVersion());
     indexes.add(secondaryIndex);
     return indexes;
   }

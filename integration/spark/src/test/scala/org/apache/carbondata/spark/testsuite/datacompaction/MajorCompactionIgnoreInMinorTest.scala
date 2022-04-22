@@ -82,7 +82,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     )
 
     val carbonTablePath = carbonTable.getMetadataPath
-    val segs = SegmentStatusManager.readLoadMetadata(carbonTablePath)
+    val segs = SegmentStatusManager.readLoadMetadata(carbonTablePath,
+      carbonTable.getTableStatusVersion)
 
     // status should remain as compacted.
     assertResult(SegmentStatus.COMPACTED)(segs(3).getSegmentStatus)
@@ -102,7 +103,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       "ignoremajor"
     )
     val carbontablePath = carbonTable.getMetadataPath
-    val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
+    val segs = SegmentStatusManager.readLoadMetadata(carbontablePath,
+      carbonTable.getTableStatusVersion)
 
     // status should remain as compacted for segment 2.
     assertResult(SegmentStatus.COMPACTED)(segs(3).getSegmentStatus)
@@ -125,7 +127,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val absoluteTableIdentifier = carbonTable
       .getAbsoluteTableIdentifier
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier)
+      absoluteTableIdentifier, carbonTable.getTableStatusVersion)
 
     // merged segment should not be there
     val segments = segmentStatusManager
@@ -171,7 +173,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     )
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier)
+      absoluteTableIdentifier, carbonTable.getTableStatusVersion)
 
     // merged segment should not be there
     val segments = segmentStatusManager
@@ -240,7 +242,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME, "minor_threshold")
     val carbonTablePath = carbonTable.getMetadataPath
-    val segments = SegmentStatusManager.readLoadMetadata(carbonTablePath);
+    val segments = SegmentStatusManager.readLoadMetadata(carbonTablePath,
+      carbonTable.getTableStatusVersion)
     assertResult(SegmentStatus.SUCCESS)(segments(3).getSegmentStatus)
     assertResult(100030)(sql("select count(*) from minor_threshold").collect().head.get(0))
 
@@ -254,7 +257,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     // do minor compaction
     sql("alter table minor_threshold compact 'minor'")
     // check segment 3 whose size not exceed the new threshold limit should be compacted now
-    val segments2 = SegmentStatusManager.readLoadMetadata(carbonTablePath);
+    val segments2 = SegmentStatusManager.readLoadMetadata(
+      carbonTablePath, carbonTable.getTableStatusVersion)
     assertResult(SegmentStatus.COMPACTED)(segments2(3).getSegmentStatus)
     assertResult(400030)(sql("select count(*) from minor_threshold").collect().head.get(0))
 
@@ -313,7 +317,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME, "minor_threshold_partition")
     val carbonTablePath2 = carbonTable.getMetadataPath
-    val segments = SegmentStatusManager.readLoadMetadata(carbonTablePath2);
+    val segments = SegmentStatusManager.readLoadMetadata(carbonTablePath2,
+      carbonTable.getTableStatusVersion)
     assertResult(SegmentStatus.SUCCESS)(segments(3).getSegmentStatus)
     assertResult(100030)(sql("select count(*) from " +
       "minor_threshold_partition").collect().head.get(0))

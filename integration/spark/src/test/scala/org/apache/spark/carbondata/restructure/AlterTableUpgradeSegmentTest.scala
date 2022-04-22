@@ -36,13 +36,13 @@ class AlterTableUpgradeSegmentTest extends QueryTest with BeforeAndAfterAll {
 
   private def removeDataAndIndexSizeFromTableStatus(table: CarbonTable): Unit = {
     val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
-      .getTableStatusFilePath(table.getTablePath))
+      .getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion))
     loadMetaDataDetails.foreach { loadMetaDataDetail =>
       loadMetaDataDetail.setIndexSize("0")
       loadMetaDataDetail.setDataSize("0")
     }
     SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath
-      .getTableStatusFilePath(table.getTablePath), loadMetaDataDetails)
+      .getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion), loadMetaDataDetails)
   }
 
   test("test alter table upgrade segment test") {
@@ -50,12 +50,12 @@ class AlterTableUpgradeSegmentTest extends QueryTest with BeforeAndAfterAll {
       CarbonEnv.getCarbonTable(TableIdentifier("altertest"))(sqlContext.sparkSession)
     removeDataAndIndexSizeFromTableStatus(carbonTable)
     val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
-      .getTableStatusFilePath(carbonTable.getTablePath))
+      .getTableStatusFilePath(carbonTable.getTablePath, carbonTable.getTableStatusVersion))
     loadMetaDataDetails.foreach(detail => assert(detail.getIndexSize.toInt + detail.getDataSize
       .toInt == 0))
     sql("alter table altertest compact 'upgrade_segment'")
     val loadMetaDataDetailsNew = SegmentStatusManager.readTableStatusFile(CarbonTablePath
-      .getTableStatusFilePath(carbonTable.getTablePath))
+      .getTableStatusFilePath(carbonTable.getTablePath, carbonTable.getTableStatusVersion))
     loadMetaDataDetailsNew.foreach{detail =>
       assert(detail.getIndexSize.toInt != 0)
       assert(detail.getDataSize.toInt != 0)}

@@ -17,11 +17,14 @@
 
 package org.apache.spark.sql.execution.command.mutation
 
+import java.util.UUID
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.types.LongType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -60,7 +63,8 @@ private[sql] case class CarbonProjectForDeleteCommand(
     }
 
     // Block the delete operation for non carbon formats
-    if (MixedFormatHandler.otherFormatSegmentsExist(carbonTable.getMetadataPath)) {
+    if (MixedFormatHandler.otherFormatSegmentsExist(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)) {
       throw new MalformedCarbonCommandException(
         s"Unsupported delete operation on table containing mixed format segments")
     }
@@ -110,6 +114,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       }
       val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
 
+      val version = UUID.randomUUID().toString
       val (deletedSegments, deletedRowCount) = DeleteExecution.deleteDeltaExecution(
         databaseNameOp,
         tableName,
@@ -117,7 +122,10 @@ private[sql] case class CarbonProjectForDeleteCommand(
         dataRdd,
         timestamp,
         isUpdateOperation = false,
-        executorErrors)
+        executorErrors,
+        version)
+
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable, sparkSession, version)
 
       deletedRows = deletedRowCount;
 

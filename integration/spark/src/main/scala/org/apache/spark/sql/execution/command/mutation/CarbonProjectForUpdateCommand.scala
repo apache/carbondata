@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.command.mutation
 
+import java.util.UUID
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
@@ -25,6 +27,7 @@ import org.apache.spark.sql.execution.command.management.CarbonInsertIntoWithDf
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.types.{ArrayType, LongType}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AlterTableUtil
@@ -95,7 +98,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
     }
 
     // Block the update operation for non carbon formats
-    if (MixedFormatHandler.otherFormatSegmentsExist(carbonTable.getMetadataPath)) {
+    if (MixedFormatHandler.otherFormatSegmentsExist(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)) {
       throw new MalformedCarbonCommandException(
         s"Unsupported update operation on table containing mixed format segments")
     }
@@ -170,7 +174,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
             dataSet.rdd,
             currentTime + "",
             isUpdateOperation = true,
-            executionErrors)
+            executionErrors,
+            "")
 
           if (executionErrors.failureCauses != FailureCauses.NONE) {
             throw new Exception(executionErrors.errorMsg)

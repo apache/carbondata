@@ -616,9 +616,10 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
-      String segmentFile, String tableId, SegmentFileStore segmentFileStore) throws IOException {
+      String segmentFile, String tableId, SegmentFileStore segmentFileStore, String version)
+      throws IOException {
     return updateTableStatusFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore,
-        null);
+        null, version);
   }
 
   /**
@@ -629,17 +630,19 @@ public class SegmentFileStore {
    */
   public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore,
-      SegmentStatus segmentStatus) throws IOException {
+      SegmentStatus segmentStatus, String version) throws IOException {
     boolean status = false;
     String tablePath = carbonTable.getTablePath();
-    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
+    String tableStatusPath =
+        CarbonTablePath.getTableStatusFilePath(tablePath, version);
     if (!FileFactory.isFileExist(tableStatusPath)) {
       return status;
     }
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
     AbsoluteTableIdentifier absoluteTableIdentifier =
         AbsoluteTableIdentifier.from(tablePath, null, null, tableId);
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(absoluteTableIdentifier, carbonTable.getTableStatusVersion());
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil
         .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
@@ -651,7 +654,8 @@ public class SegmentFileStore {
       if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
         LOGGER.info("Acquired lock for table path" + tablePath + " for table status update");
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-            SegmentStatusManager.readLoadMetadata(metadataPath);
+            SegmentStatusManager.readLoadMetadata(
+                metadataPath, version);
 
         for (LoadMetadataDetails detail : listOfLoadFolderDetailsArray) {
           // if the segments is in the list of marked for delete then update the status.
@@ -1064,8 +1068,9 @@ public class SegmentFileStore {
       String uuid) throws IOException {
     if (toBeDeleteSegments.size() > 0 || toBeUpdatedSegments.size() > 0) {
       Set<Segment> segmentSet = new HashSet<>(
-          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-              .getValidAndInvalidSegments(carbonTable.isMV()).getValidSegments());
+          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
+              carbonTable.getTableStatusVersion()).getValidAndInvalidSegments(carbonTable.isMV())
+              .getValidSegments());
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId,
           true, false,
           Segment.toSegmentList(toBeDeleteSegments, null),
@@ -1159,7 +1164,8 @@ public class SegmentFileStore {
    */
   public static void cleanSegments(CarbonTable table, List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
-    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath(),
+        table.getTableStatusVersion());
     cleanSegments(table, details, partitionSpecs, forceDelete);
   }
 
@@ -1176,8 +1182,9 @@ public class SegmentFileStore {
       Set<String> segments,
       List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
-    LoadMetadataDetails[] details = Arrays
-        .stream(SegmentStatusManager.readLoadMetadata(table.getMetadataPath()))
+    LoadMetadataDetails[] details = Arrays.stream(
+            SegmentStatusManager.readLoadMetadata(table.getMetadataPath(),
+                table.getTableStatusVersion()))
         .filter(detail -> segments.contains(detail.getLoadName()))
         .toArray(LoadMetadataDetails[]::new);
     cleanSegments(table, details, partitionSpecs, forceDelete);

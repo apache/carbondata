@@ -244,8 +244,10 @@ public final class CarbonLoaderUtil {
         FileFactory.mkdirs(metadataPath);
       }
     }
-    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
+    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(),
+        loadModel.getLatestTableStatusVersion());
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier,
+        loadModel.getCarbonDataLoadSchema().getCarbonTable().getTableStatusVersion());
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil
         .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
@@ -258,9 +260,15 @@ public final class CarbonLoaderUtil {
         LOGGER.info(
             "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
                 + " for table status updation");
+        String version = loadModel.getLatestTableStatusVersion();
+        if (newMetaEntry.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS
+            || newMetaEntry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+          version =
+              loadModel.getCarbonDataLoadSchema().getCarbonTable().getTableStatusVersion();
+        }
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
             SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(identifier.getTablePath()));
+                CarbonTablePath.getMetadataPath(identifier.getTablePath()), version);
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
@@ -1198,7 +1206,8 @@ public final class CarbonLoaderUtil {
         carbonTable.getDatabaseName(),
         carbonTable.getTablePath(),
         carbonTable.getMetadataPath(),
-        status);
+        status,
+        carbonTable.getTableStatusVersion());
   }
 
   /**
@@ -1206,15 +1215,17 @@ public final class CarbonLoaderUtil {
    */
   public static void updateTableStatusInCaseOfFailure(String loadName,
       AbsoluteTableIdentifier absoluteTableIdentifier, String tableName, String databaseName,
-      String tablePath, String metaDataPath, SegmentStatus status) throws IOException {
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+      String tablePath, String metaDataPath, SegmentStatus status, String version)
+      throws IOException {
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(absoluteTableIdentifier, version);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       if (carbonLock.lockWithRetries()) {
         LOGGER.info("Acquired lock for table" + databaseName + "." + tableName
             + " for table status updation");
         LoadMetadataDetails[] loadMetadataDetails =
-            SegmentStatusManager.readLoadMetadata(metaDataPath);
+            SegmentStatusManager.readLoadMetadata(metaDataPath, version);
         boolean ifTableStatusUpdateRequired = false;
         for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
           if (loadMetadataDetail.getSegmentStatus() == status && loadName
@@ -1226,7 +1237,7 @@ public final class CarbonLoaderUtil {
         }
         if (ifTableStatusUpdateRequired) {
           SegmentStatusManager
-              .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
+              .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath, version),
                   loadMetadataDetails);
         }
       } else {

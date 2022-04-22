@@ -174,10 +174,11 @@ class QueryTest extends PlanTest {
   }
 
   def removeSegmentEntryFromTableStatusFile(carbonTable: CarbonTable, segmentNo: String) : Unit = {
-    val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val details = SegmentStatusManager.readLoadMetadata(
+      carbonTable.getMetadataPath, carbonTable.getTableStatusVersion)
       .filter(as => as.getLoadName != segmentNo)
     SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
-      carbonTable.getTablePath), details)
+      carbonTable.getTablePath, carbonTable.getTableStatusVersion), details)
   }
 
   def printTable(table: String, database: String = "default"): Unit = {

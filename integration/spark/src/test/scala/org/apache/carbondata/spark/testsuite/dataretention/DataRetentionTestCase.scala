@@ -40,6 +40,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   var absoluteTableIdentifierForLock: AbsoluteTableIdentifier = null
   var absoluteTableIdentifierForRetention: AbsoluteTableIdentifier = null
   var carbonTablePath : String = null
+  var version: String = ""
   var carbonDateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
   var defaultDateFormat = new SimpleDateFormat(CarbonCommonConstants
     .CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -78,6 +79,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     absoluteTableIdentifierForRetention = carbonTable2.getAbsoluteTableIdentifier
     carbonTablePath = CarbonTablePath
       .getMetadataPath(absoluteTableIdentifierForRetention.getTablePath)
+    version = carbonTable2.getTableStatusVersion
     carbonTableStatusLock = CarbonLockFactory
       .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.TABLE_STATUS_LOCK)
     carbonDeleteSegmentLock = CarbonLockFactory
@@ -130,7 +132,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest_DeleteSegmentsByLoadTime") {
     val segments: Array[LoadMetadataDetails] =
-      SegmentStatusManager.readLoadMetadata(carbonTablePath)
+      SegmentStatusManager.readLoadMetadata(carbonTablePath, version)
     // check segment length, it should be 3 (loads)
     if (segments.length != 2) {
       assert(false)

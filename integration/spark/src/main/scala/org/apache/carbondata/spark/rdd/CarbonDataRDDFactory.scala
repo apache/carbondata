@@ -32,7 +32,7 @@ import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession, SQLContext
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
-import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, DistributionUtil}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.{CarbonException, SparkSQLUtil}
 import org.apache.spark.util.CollectionAccumulator
@@ -433,6 +433,9 @@ object CarbonDataRDDFactory {
           }
         }
       }
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+        sqlContext.sparkSession,
+        carbonLoadModel.getLatestTableStatusVersion)
     } catch {
       case ex: Throwable =>
         loadStatus = SegmentStatus.LOAD_FAILURE
@@ -742,7 +745,8 @@ object CarbonDataRDDFactory {
         carbonLoadModel.getFactTimeStamp.toString,
         true,
         true,
-        updateModel.get.deletedSegments.asJava)
+        updateModel.get.deletedSegments.asJava,
+        carbonLoadModel.getLatestTableStatusVersion)
     }
     done = done && CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
       overwriteTable, uuid, false)

@@ -89,7 +89,8 @@ public class CarbonInternalLoaderUtil {
     boolean status = false;
     String metaDataFilepath = carbonTable.getMetadataPath();
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(absoluteTableIdentifier, carbonTable.getTableStatusVersion());
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       int retryCount = CarbonLockUtil
@@ -108,7 +109,7 @@ public class CarbonInternalLoaderUtil {
         }
 
         LoadMetadataDetails[] currentLoadMetadataDetails = SegmentStatusManager.readLoadMetadata(
-            metaDataFilepath);
+            metaDataFilepath, carbonTable.getTableStatusVersion());
 
         List<LoadMetadataDetails> updatedLoadMetadataDetails = new ArrayList<>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -166,7 +167,8 @@ public class CarbonInternalLoaderUtil {
                     indexTable, newSegmentDetailsListForIndexTable);
 
             SegmentStatusManager.writeLoadDetailsIntoFile(
-                CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath()),
+                CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath(),
+                    indexTable.getTableStatusVersion()),
                 indexTableDetailsList.toArray(new LoadMetadataDetails[0]));
           }
         } else if (carbonTable.isIndexTable()) {
@@ -219,7 +221,7 @@ public class CarbonInternalLoaderUtil {
     boolean isIndexTableSegmentsCompacted = false;
     if (null != currentIndexTable) {
       LoadMetadataDetails[] existingLoadMetaDataDetails = SegmentStatusManager.readLoadMetadata(
-          currentIndexTable.getMetadataPath());
+          currentIndexTable.getMetadataPath(), currentIndexTable.getTableStatusVersion());
       for (LoadMetadataDetails existingLoadMetaDataDetail : existingLoadMetaDataDetails) {
         for (LoadMetadataDetails newLoadMetadataDetail : newLoadMetadataDetails) {
           if (existingLoadMetaDataDetail.getLoadName().equalsIgnoreCase(
@@ -249,7 +251,7 @@ public class CarbonInternalLoaderUtil {
     boolean tableStatusUpdateStatus = false;
     List<String> loadMergeList = new ArrayList<>(Arrays.asList(loadsToMerge));
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
-        indexCarbonTable.getAbsoluteTableIdentifier());
+        indexCarbonTable.getAbsoluteTableIdentifier(), indexCarbonTable.getTableStatusVersion());
 
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
 
@@ -258,7 +260,7 @@ public class CarbonInternalLoaderUtil {
         LOGGER.info("Acquired lock for the table " + indexCarbonTable.getDatabaseName() + "."
             + indexCarbonTable.getTableName() + " for table status update ");
         LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(
-            indexCarbonTable.getMetadataPath());
+            indexCarbonTable.getMetadataPath(), indexCarbonTable.getTableStatusVersion());
 
         long modificationOrDeletionTimeStamp = CarbonUpdateUtil.readCurrentTime();
         for (LoadMetadataDetails loadDetail : loadDetails) {
@@ -306,7 +308,8 @@ public class CarbonInternalLoaderUtil {
         List<LoadMetadataDetails> updatedDetailsList = new ArrayList<>(Arrays.asList(loadDetails));
 
         SegmentStatusManager.writeLoadDetailsIntoFile(
-            CarbonTablePath.getTableStatusFilePath(indexCarbonTable.getTablePath()),
+            CarbonTablePath.getTableStatusFilePath(indexCarbonTable.getTablePath(),
+                indexCarbonTable.getTableStatusVersion()),
             updatedDetailsList.toArray(new LoadMetadataDetails[0]));
         tableStatusUpdateStatus = true;
       } else {

@@ -181,14 +181,16 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assert(sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
              .collect()
              .length == 10)
-    var detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    var detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)
     var historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
     assert(detail.length == 10)
     assert(historyDetail.length == 0)
     sql(s"clean files for table ${tableName} options('force'='true')")
     assert(sql(s"show segments on ${tableName}").collect().length == 2)
     assert(sql(s"show segments on ${tableName} limit 1").collect().length == 1)
-    detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)
     historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
     assert(detail.length == 4)
     assert(historyDetail.length == 6)

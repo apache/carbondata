@@ -397,8 +397,8 @@ object MixedFormatHandler {
   /**
    * Returns true if any other non-carbon format segment exists
    */
-  def otherFormatSegmentsExist(metadataPath: String): Boolean = {
-    val allSegments = SegmentStatusManager.readLoadMetadata(metadataPath)
+  def otherFormatSegmentsExist(metadataPath: String, tableStatusVersion: String): Boolean = {
+    val allSegments = SegmentStatusManager.readLoadMetadata(metadataPath, tableStatusVersion)
     allSegments.exists(a => a.getFileFormat != null && !a.isCarbonFormat)
   }
 }

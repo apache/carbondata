@@ -63,7 +63,9 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
           }
         })
     } else {
-      val segment = Segment.getSegment("0", carbonTable.getTablePath)
+      val segment = Segment.getSegment("0",
+        carbonTable.getTablePath,
+        carbonTable.getTableStatusVersion)
       val store = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
       store.readIndexFiles(new Configuration(false))
       store.getIndexCarbonFiles.asScala.map(f => new File(f.getAbsolutePath)).toArray

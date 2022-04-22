@@ -184,8 +184,8 @@ object SecondaryIndexUtil {
       maxSegmentColumnSchemaList = null,
       currentPartitions = partitions)
     carbonLoadModel.setTablePath(carbonMergerMapping.hdfsStoreLocation)
-    carbonLoadModel.setLoadMetadataDetails(
-      SegmentStatusManager.readLoadMetadata(indexCarbonTable.getMetadataPath).toList.asJava)
+    carbonLoadModel.setLoadMetadataDetails(SegmentStatusManager.readLoadMetadata(
+      indexCarbonTable.getMetadataPath, indexCarbonTable.getTableStatusVersion).toList.asJava)
 
     val mergedSegments: util.Set[LoadMetadataDetails] = new util.HashSet[LoadMetadataDetails]()
     var rebuiltSegments: Set[String] = Set[String]()
@@ -502,20 +502,23 @@ object SecondaryIndexUtil {
    */
   def updateTableStatusForIndexTables(parentCarbonTable: CarbonTable,
       indexTables: java.util.List[CarbonTable]): Unit = {
-    val loadFolderDetailsArrayMainTable =
-      SegmentStatusManager.readLoadMetadata(parentCarbonTable.getMetadataPath)
+    val loadFolderDetailsArrayMainTable = SegmentStatusManager.readLoadMetadata(
+      parentCarbonTable.getMetadataPath, parentCarbonTable.getTableStatusVersion)
     indexTables.asScala.foreach { indexTable =>
       val statusLock =
-        new SegmentStatusManager(indexTable.getAbsoluteTableIdentifier).getTableStatusLock
+        new SegmentStatusManager(indexTable.getAbsoluteTableIdentifier,
+          parentCarbonTable.getTableStatusVersion).getTableStatusLock
       try {
         if (statusLock.lockWithRetries()) {
-          val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath)
+          val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath,
+            indexTable.getTableStatusVersion)
           if (CarbonUtil.isFileExists(tableStatusFilePath)) {
             val loadFolderDetailsArray = SegmentStatusManager.readLoadMetadata(indexTable
-              .getMetadataPath);
+              .getMetadataPath, indexTable.getTableStatusVersion)
             if (null != loadFolderDetailsArray && loadFolderDetailsArray.nonEmpty) {
               SegmentStatusManager.writeLoadDetailsIntoFile(
-                CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath),
+                CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath,
+                  indexTable.getTableStatusVersion),
                 updateTimeStampForIndexTable(loadFolderDetailsArrayMainTable,
                   loadFolderDetailsArray))
             }
@@ -636,7 +639,8 @@ object SecondaryIndexUtil {
     val carbonDataLoadSchema = new CarbonDataLoadSchema(carbonTable)
     carbonLoadModel.setCarbonDataLoadSchema(carbonDataLoadSchema)
     val compactionSize = CarbonDataMergerUtil.getCompactionSize(compactionType, carbonLoadModel)
-    val segments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val segments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)
     (carbonLoadModel, compactionSize, segments)
   }
 

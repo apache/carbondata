@@ -134,7 +134,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         throw new IOException(e);
       }
     }
-    this.readCommittedScope = getReadCommitted(job, carbonTable.getAbsoluteTableIdentifier());
+    this.readCommittedScope = getReadCommitted(job, carbonTable);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
     String updateDeltaVersion = job.getConfiguration().get(UPDATE_DELTA_VERSION);
     SegmentUpdateStatusManager updateStatusManager;
@@ -150,7 +150,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     // get all valid segments and set them into the configuration
     SegmentStatusManager segmentStatusManager =
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
-            readCommittedScope.getConfiguration());
+            readCommittedScope.getConfiguration(), carbonTable.getTableStatusVersion());
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments = segmentStatusManager
         .getValidAndInvalidSegments(carbonTable.isMV(), loadMetadataDetails,
             this.readCommittedScope);
@@ -446,15 +446,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
 
-    ReadCommittedScope readCommittedScope = getReadCommitted(job, identifier);
+    ReadCommittedScope readCommittedScope = getReadCommitted(job, table);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
 
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(
         table, loadMetadataDetails);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
-        new SegmentStatusManager(identifier, readCommittedScope.getConfiguration())
-            .getValidAndInvalidSegments(table.isMV(), loadMetadataDetails,
-                readCommittedScope);
+        new SegmentStatusManager(identifier, readCommittedScope.getConfiguration(),
+            table.getTableStatusVersion()).getValidAndInvalidSegments(table.isMV(),
+            loadMetadataDetails, readCommittedScope);
     Map<String, Long> blockRowCountMapping = new HashMap<>();
     Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
     Map<String, String> blockToSegmentMapping = new HashMap<>();
@@ -566,12 +566,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     return blockMappingVO;
   }
 
-  public ReadCommittedScope getReadCommitted(JobContext job, AbsoluteTableIdentifier identifier)
+  public ReadCommittedScope getReadCommitted(JobContext job, CarbonTable table)
       throws IOException {
+    AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
     if (readCommittedScope == null) {
       ReadCommittedScope readCommittedScope;
       if (job.getConfiguration().getBoolean(CARBON_TRANSACTIONAL_TABLE, true)) {
-        readCommittedScope = new TableStatusReadCommittedScope(identifier, job.getConfiguration());
+        String version = table.getTableStatusVersion();
+        readCommittedScope =
+            new TableStatusReadCommittedScope(identifier, job.getConfiguration(), version);
       } else {
         readCommittedScope = getReadCommittedScope(job.getConfiguration());
         if (readCommittedScope == null) {

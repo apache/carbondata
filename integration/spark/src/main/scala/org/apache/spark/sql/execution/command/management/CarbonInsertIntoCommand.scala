@@ -30,6 +30,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference,
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, UpdateTableModel}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.util.CausedBy
 
@@ -231,6 +232,11 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
           carbonLoadModel,
           isOverwriteTable)
         isUpdateTableStatusRequired = true
+      }
+      if (isUpdateTableStatusRequired) {
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonLoadModel
+          .getCarbonDataLoadSchema
+          .getCarbonTable, sparkSession, carbonLoadModel.getLatestTableStatusVersion)
       }
       if (isOverwriteTable) {
         LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")
@@ -488,6 +494,9 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         updateModel,
         operationContext)
     }
+    CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+      loadParams.sparkSession,
+      loadParams.carbonLoadModel.getLatestTableStatusVersion)
     (rows, loadResult)
   }
 

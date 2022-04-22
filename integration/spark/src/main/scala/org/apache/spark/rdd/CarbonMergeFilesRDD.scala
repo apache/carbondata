@@ -198,7 +198,7 @@ object CarbonMergeFilesRDD {
           // when compact segment_index, update table status with new segment file name
           val status = SegmentFileStore.updateTableStatusFile(carbonTable, segmentId,
             newSegmentFileName + CarbonTablePath.SEGMENT_EXT,
-            carbonTable.getCarbonTableIdentifier.getTableId, sfs)
+            carbonTable.getCarbonTableIdentifier.getTableId, sfs, carbonTable.getTableStatusVersion)
           if (!status) {
             throw new IOException("Table status update with mergeIndex file has failed")
           }

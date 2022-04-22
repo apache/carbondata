@@ -19,6 +19,7 @@ package org.apache.spark.sql.execution.command.management
 
 import java.io.{File, IOException}
 import java.util
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -112,7 +113,7 @@ case class CarbonAlterTableCompactionCommand(
       try {
         if (tableStatusLock.lockWithRetries()) {
           val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
-            .getTableStatusFilePath(table.getTablePath))
+            .getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion))
           loadMetaDataDetails.foreach { loadMetaDataDetail =>
             // "0" check is added to reproduce a scenario similar to 1.1 store where the size
             // would be null. For test case in the new version it would be set to 0.
@@ -123,8 +124,9 @@ case class CarbonAlterTableCompactionCommand(
                   table)
             }
           }
-          SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath
-            .getTableStatusFilePath(table.getTablePath), loadMetaDataDetails)
+          SegmentStatusManager.writeLoadDetailsIntoFile(
+            CarbonTablePath.getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion),
+            loadMetaDataDetails)
         } else {
           throw new ConcurrentOperationException(table.getDatabaseName,
             table.getTableName, "table status update", "upgrade segments")
@@ -175,6 +177,7 @@ case class CarbonAlterTableCompactionCommand(
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
       carbonLoadModel.setMetrics(new DataLoadMetrics())
+      carbonLoadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
 
       var storeLocation = System.getProperty("java.io.tmpdir")
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()

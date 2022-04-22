@@ -94,7 +94,8 @@ object DataTrashManager {
       // Since calculating the the size before and after clean files can be a costly operation
       // have exposed an option where user can change this behaviour.
       if (showStatistics) {
-        val metadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+        val metadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+          carbonTable.getTableStatusVersion)
         val sizeBeforeCleaning = getPreOpSizeSnapshot(carbonTable, metadataDetails)
         checkAndCleanExpiredSegments(carbonTable, isForceDelete,
           cleanStaleInProgress, partitionSpecs)
@@ -140,7 +141,8 @@ object DataTrashManager {
    * clean files operation.
    */
   def getPostOpSizeSnapshot(carbonTable: CarbonTable, metadataDetails: Set[String]): Long = {
-    val finalMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val finalMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)
     var size: Long = 0
     val segmentFileLocation = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)
     if (FileFactory.isFileExist(segmentFileLocation)) {
@@ -228,7 +230,8 @@ object DataTrashManager {
       cleanStaleInProgress: Boolean): (Long, Long) = {
     var sizeFreed: Long = 0
     var trashSizeRemaining: Long = 0
-    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)
     if (SegmentStatusManager.isLoadDeletionRequired(loadMetadataDetails)) {
       loadMetadataDetails.foreach { oneLoad =>
         if (!oneLoad.getVisibility.equalsIgnoreCase("false")) {
@@ -305,7 +308,8 @@ object DataTrashManager {
       factTimestamp: Long,
       partitionSpecs: Option[Seq[PartitionSpec]]): Unit = {
     val metadataFolderPath = CarbonTablePath.getMetadataPath(carbonTable.getTablePath)
-    val details = SegmentStatusManager.readLoadMetadata(metadataFolderPath)
+    val details = SegmentStatusManager.readLoadMetadata(metadataFolderPath,
+      carbonTable.getTableStatusVersion)
     if (details == null || details.isEmpty) {
       return
     }

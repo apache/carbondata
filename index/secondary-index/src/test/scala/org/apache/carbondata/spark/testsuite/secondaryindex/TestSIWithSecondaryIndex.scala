@@ -306,7 +306,8 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("create index ud_index1 on table uniqdata (workgroupcategoryname) AS 'carbondata'")
     val indexTable = CarbonEnv.getCarbonTable(Some("default"), "ud_index1")(sqlContext.sparkSession)
     val carbontable = CarbonEnv.getCarbonTable(Some("default"), "uniqdata")(sqlContext.sparkSession)
-    val details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
+    val details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath,
+      indexTable.getTableStatusVersion)
     val failSegments = List("3", "4")
     sql(s"""set carbon.si.repair.limit = 2""")
     var loadMetadataDetailsList = Array[LoadMetadataDetails]()
