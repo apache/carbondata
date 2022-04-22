@@ -52,7 +52,8 @@ case class CarbonDeleteLoadByIdCommand(
         loadIds,
         CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
         tableName,
-        carbonTable
+        carbonTable,
+        sparkSession
       )
     }
     Seq.empty

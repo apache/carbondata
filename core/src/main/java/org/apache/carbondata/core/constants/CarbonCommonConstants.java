@@ -2876,4 +2876,15 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_ENABLE_SCHEMA_ENFORCEMENT_DEFAULT = "true";
 
+  /**
+   * This property will enable creating multi-versioned table status files. The information about
+   * the latest version will be stored in table properties
+   */
+  @CarbonProperty
+  public static final String CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS =
+      "carbon.enable.multi.version.table.status";
+
+  public static final String CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT = "false";
+
+
 }

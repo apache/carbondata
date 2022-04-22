@@ -25,6 +25,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SerializableWritable, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
@@ -224,14 +225,16 @@ object StreamHandoffRDD {
                     s" ${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
         // handoff streaming segment one by one
         do {
-          val segmentStatusManager = new SegmentStatusManager(identifier)
+          val segmentStatusManager = new SegmentStatusManager(identifier,
+            carbonTable.getTableStatusVersion)
           var loadMetadataDetails: Array[LoadMetadataDetails] = null
           // lock table to read table status file
           val statusLock = segmentStatusManager.getTableStatusLock
           try {
             if (statusLock.lockWithRetries()) {
               loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(identifier.getTablePath))
+                CarbonTablePath.getMetadataPath(identifier.getTablePath),
+                carbonTable.getTableStatusVersion)
             }
           } finally {
             if (null != statusLock) {
@@ -348,6 +351,10 @@ object StreamHandoffRDD {
 
       val done = updateLoadMetadata(handoffSegmentId, carbonLoadModel)
 
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonLoadModel
+        .getCarbonDataLoadSchema
+        .getCarbonTable, sparkSession, carbonLoadModel.getLatestTableStatusWriteVersion)
+
       val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
         new LoadTablePostStatusUpdateEvent(carbonLoadModel)
       OperationListenerBus.getInstance()
@@ -374,8 +381,10 @@ object StreamHandoffRDD {
     if (!FileFactory.isFileExist(metadataPath)) {
       FileFactory.mkdirs(metadataPath)
     }
-    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath)
-    val segmentStatusManager = new SegmentStatusManager(identifier)
+    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath,
+      loadModel.getLatestTableStatusWriteVersion)
+    val segmentStatusManager = new SegmentStatusManager(identifier,
+      loadModel.getLatestTableStatusWriteVersion)
     val carbonLock = segmentStatusManager.getTableStatusLock
     try {
       if (carbonLock.lockWithRetries()) {
@@ -383,7 +392,8 @@ object StreamHandoffRDD {
           "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
           + " for table status update")
         val listOfLoadFolderDetailsArray =
-          SegmentStatusManager.readLoadMetadata(metaDataFilepath)
+          SegmentStatusManager.readLoadMetadata(metaDataFilepath,
+            loadModel.getLatestTableStatusWriteVersion)
 
         // update new columnar segment to success status
         val newSegment =

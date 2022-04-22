@@ -28,6 +28,7 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 
 import org.apache.carbondata.common.Maps
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -106,8 +107,15 @@ object StreamSinkFactory {
       None,
       operationContext)
     // prepare the stream segment
-    val segmentId = getStreamSegmentId(carbonTable)
+    val segmentId = getStreamSegmentId(carbonTable,
+      carbonLoadModel)
     carbonLoadModel.setSegmentId(segmentId)
+
+    if (carbonLoadModel.getLatestTableStatusWriteVersion.nonEmpty) {
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+        sparkSession,
+        carbonLoadModel.getLatestTableStatusWriteVersion)
+    }
 
     // default is carbon appended stream sink
     val carbonAppendableStreamSink = new CarbonAppendableStreamSink(
@@ -150,8 +158,9 @@ object StreamSinkFactory {
    * get current stream segment id
    * @return
    */
-  private def getStreamSegmentId(carbonTable: CarbonTable): String = {
-    val segmentId = StreamSegment.open(carbonTable)
+  private def getStreamSegmentId(carbonTable: CarbonTable,
+      loadModel: CarbonLoadModel): String = {
+    val segmentId = StreamSegment.open(carbonTable, loadModel)
     val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
     val metadataPath = CarbonTablePath.getMetadataPath(carbonTable.getTablePath)
     if (!FileFactory.isFileExist(metadataPath)) {

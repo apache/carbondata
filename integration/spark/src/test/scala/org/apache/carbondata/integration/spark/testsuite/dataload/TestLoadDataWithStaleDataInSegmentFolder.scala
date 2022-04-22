@@ -198,7 +198,8 @@ class TestLoadDataWithStaleDataInSegmentFolder extends QueryTest with BeforeAndA
 
   private def mockStaleDataByRemoveTablestatus(tableName: String): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
-    val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
+    val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath,
+      carbonTable.getTableStatusVersion)
     FileFactory.getCarbonFile(tableStatusFile).delete()
   }
 

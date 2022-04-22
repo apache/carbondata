@@ -493,7 +493,8 @@ public final class IndexStoreManager {
 
     TableSegmentRefresher(CarbonTable table) {
       SegmentStatusManager segmentStatusManager =
-          new SegmentStatusManager(table.getAbsoluteTableIdentifier());
+          new SegmentStatusManager(table.getAbsoluteTableIdentifier(),
+              table.getTableStatusVersion());
       List<Segment> validSegments;
       try {
         validSegments = segmentStatusManager.getValidAndInvalidSegments().getValidSegments();

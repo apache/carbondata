@@ -39,10 +39,10 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
     // do not send the segment folders to trash
     createParitionTable()
     loadData()
-    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
-      .getTablePath
+    val table = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
+    val path = table.getTablePath
     val trashFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.TRASH_DIR
-    editTableStatusFile(path)
+    editTableStatusFile(path, table.getTableStatusVersion)
     assert(!FileFactory.isFileExist(trashFolderPath))
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
     assert(segmentNumber1 == 4)
@@ -442,9 +442,9 @@ class TestCleanFilesCommandPartitionTable extends QueryTest with BeforeAndAfterA
         CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
   }
 
-  def editTableStatusFile(carbonTablePath: String) : Unit = {
+  def editTableStatusFile(carbonTablePath: String, version: String) : Unit = {
     // Original Table status file
-    val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath))
+    val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath, version ))
     // duplicate
     val f2 = new File(CarbonTablePath.getMetadataPath(carbonTablePath) + CarbonCommonConstants
       .FILE_SEPARATOR + CarbonCommonConstants.FILE_SEPARATOR + "tmp")

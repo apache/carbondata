@@ -177,7 +177,7 @@ class CarbonAppendableStreamSink(
    */
   private def checkOrHandOffSegment(): Unit = {
     // get streaming segment, if not exists, create new streaming segment
-    val segmentId = StreamSegment.open(carbonTable)
+    val segmentId = StreamSegment.open(carbonTable, carbonLoadModel)
     if (segmentId.equals(currentSegmentId)) {
       val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
       if (segmentMaxSize <= StreamSegment.size(segmentDir)) {

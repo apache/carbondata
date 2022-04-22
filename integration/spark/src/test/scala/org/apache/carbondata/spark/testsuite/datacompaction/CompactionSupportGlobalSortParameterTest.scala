@@ -595,7 +595,9 @@ class CompactionSupportGlobalSortParameterTest
     if (FileFactory.isFileExist(segmentDir)) {
       new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir).size()
     } else {
-      val segment = Segment.getSegment(segmentNo, carbonTable.getTablePath)
+      val segment = Segment.getSegment(segmentNo,
+        carbonTable.getTablePath,
+        carbonTable.getTableStatusVersion)
       new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
         .getIndexCarbonFiles.size()
     }

@@ -109,8 +109,8 @@ object Compactor {
           indexCarbonTable.getTablePath,
           indexCarbonTable, mergeIndexProperty = false)
 
-        val loadMetadataDetails = SegmentStatusManager
-          .readLoadMetadata(indexCarbonTable.getMetadataPath)
+        val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
+          indexCarbonTable.getMetadataPath, indexCarbonTable.getTableStatusVersion)
           .filter(loadMetadataDetail => validSegments.head
             .equalsIgnoreCase(loadMetadataDetail.getLoadName))
 

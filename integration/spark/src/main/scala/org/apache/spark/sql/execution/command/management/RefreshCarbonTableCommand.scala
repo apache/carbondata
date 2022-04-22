@@ -31,6 +31,7 @@ import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
@@ -41,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{withEvents, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * Command to register carbon table from existing carbon table data
@@ -105,6 +107,14 @@ case class RefreshCarbonTableCommand(
               Seq.empty, true)(sparkSession, sparkSession.sessionState.catalog)
           }
         }
+        val tblStatusVersion = CarbonScalaUtil.getLatestTableStatusVersion(identifier.getTablePath)
+        // in case of multi-version table status file enabled, get the latest version and save to
+        // table properties
+        if (tblStatusVersion.nonEmpty) {
+          tableInfo.getFactTable
+            .getTableProperties
+            .put("latestversion", tblStatusVersion)
+        }
         // remove mv related info from source table properties
         tableInfo.getFactTable
           .getTableProperties.remove(CarbonCommonConstants.RELATED_MV_TABLES_MAP)
@@ -116,7 +126,7 @@ case class RefreshCarbonTableCommand(
         // Register partitions to hive metastore in case of hive partitioning carbon table
         if (tableInfo.getFactTable.getPartitionInfo != null &&
             tableInfo.getFactTable.getPartitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
-          registerAllPartitionsToHive(identifier, sparkSession)
+          registerAllPartitionsToHive(identifier, sparkSession, tblStatusVersion)
         }
       }
     }
@@ -216,10 +226,11 @@ case class RefreshCarbonTableCommand(
    */
   private def registerAllPartitionsToHive(
       absIdentifier: AbsoluteTableIdentifier,
-      sparkSession: SparkSession): Unit = {
+      sparkSession: SparkSession,
+      version: String): Unit = {
     val metadataDetails =
       SegmentStatusManager.readLoadMetadata(
-        CarbonTablePath.getMetadataPath(absIdentifier.getTablePath))
+        CarbonTablePath.getMetadataPath(absIdentifier.getTablePath), version)
     // First read all partition information from each segment.
     val allpartitions = metadataDetails.map{ metadata =>
       if (metadata.getSegmentStatus == SegmentStatus.SUCCESS ||

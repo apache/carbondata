@@ -30,6 +30,7 @@
 * [How to check LRU cache memory footprint?](#how-to-check-lru-cache-memory-footprint)
 * [How to deal with the trailing task in query?](#How-to-deal-with-the-trailing-task-in-query)
 * [How to manage hybrid file format in carbondata table?](#How-to-manage-hybrid-file-format-in-carbondata-table)
+* [How to recover table status file if lost?](#How-to-recover-table-status-file-if-lost)
 
 # TroubleShooting
 
@@ -465,3 +466,19 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
   **Procedure**
 
   Drop that particular index using Drop Index command so as to clear the stale folders.
+
+## How to recover Table status file if lost
+When `carbon.enable.multi.version.table.status` property if enabled, table will have multiple versions of table status files in the metadata directory. If the current version file is lost, then user can run `TableStatusRecovery` tool to recover the table status file.
+
+**Example:**
+
+```
+TableStatusRecovery.main(args) --> args is of length two: 1. Database Name 2. Table Name
+```
+
+**Note:** 
+
+TableStatus Recovery tool cannot recover table status version files for the below two scenarios
+1. After compaction, if table status file is lost, cannot recover compacted commit transaction, as the lost version file only has merged load details.
+2. After Delete segment by Id/Date, if table status file is lost, cannot recover deleted segment commit transaction, as the lost version file only has the segment status as deleted.
+3. Table status recovery on materialized view table is not supported.

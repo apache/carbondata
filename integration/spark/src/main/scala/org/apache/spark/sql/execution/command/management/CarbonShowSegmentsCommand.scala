@@ -67,7 +67,7 @@ case class CarbonShowSegmentsCommand(
       rows = CarbonShowSegmentsCommand.showStages(tableStagePath)
     }
 
-    val segments = readSegments(tablePath, showHistory, limit)
+    val segments = readSegments(tablePath, showHistory, limit, carbonTable.getTableStatusVersion)
     rows ++ showBasic(segments, tablePath, carbonTable.isHivePartitionTable)
   }
 

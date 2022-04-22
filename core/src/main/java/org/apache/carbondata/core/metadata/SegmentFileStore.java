@@ -616,9 +616,10 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
-      String segmentFile, String tableId, SegmentFileStore segmentFileStore) throws IOException {
+      String segmentFile, String tableId, SegmentFileStore segmentFileStore,
+      String tblStatusReadVersion) throws IOException {
     return updateTableStatusFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore,
-        null);
+        null, tblStatusReadVersion);
   }
 
   /**
@@ -629,17 +630,19 @@ public class SegmentFileStore {
    */
   public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore,
-      SegmentStatus segmentStatus) throws IOException {
+      SegmentStatus segmentStatus, String tblStatusReadVersion) throws IOException {
     boolean status = false;
     String tablePath = carbonTable.getTablePath();
-    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
+    String tableStatusPath =
+        CarbonTablePath.getTableStatusFilePath(tablePath, tblStatusReadVersion);
     if (!FileFactory.isFileExist(tableStatusPath)) {
       return status;
     }
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
     AbsoluteTableIdentifier absoluteTableIdentifier =
         AbsoluteTableIdentifier.from(tablePath, null, null, tableId);
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(absoluteTableIdentifier, carbonTable.getTableStatusVersion());
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil
         .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
@@ -651,7 +654,7 @@ public class SegmentFileStore {
       if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
         LOGGER.info("Acquired lock for table path" + tablePath + " for table status update");
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-            SegmentStatusManager.readLoadMetadata(metadataPath);
+            SegmentStatusManager.readLoadMetadata(metadataPath, tblStatusReadVersion);
 
         for (LoadMetadataDetails detail : listOfLoadFolderDetailsArray) {
           // if the segments is in the list of marked for delete then update the status.
@@ -1059,18 +1062,22 @@ public class SegmentFileStore {
    * @param toBeDeleteSegments
    * @throws IOException
    */
-  public static void commitDropPartitions(CarbonTable carbonTable, String uniqueId,
-      List<String> toBeUpdatedSegments, List<String> toBeDeleteSegments,
-      String uuid) throws IOException {
+  public static String commitDropPartitions(CarbonTable carbonTable, String uniqueId,
+      List<String> toBeUpdatedSegments, List<String> toBeDeleteSegments, String uuid)
+      throws IOException {
+    String tblStatusWriteVersion = "";
     if (toBeDeleteSegments.size() > 0 || toBeUpdatedSegments.size() > 0) {
       Set<Segment> segmentSet = new HashSet<>(
-          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-              .getValidAndInvalidSegments(carbonTable.isMV()).getValidSegments());
-      CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId,
-          true, false,
-          Segment.toSegmentList(toBeDeleteSegments, null),
-          Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
+          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
+              carbonTable.getTableStatusVersion()).getValidAndInvalidSegments(carbonTable.isMV())
+              .getValidSegments());
+      Map<String, String> returnTuple =
+          CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true, false,
+              Segment.toSegmentList(toBeDeleteSegments, null),
+              Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
+      tblStatusWriteVersion = returnTuple.getOrDefault("tblStatusWriteVersion", "");
     }
+    return tblStatusWriteVersion;
   }
 
   /**
@@ -1159,7 +1166,8 @@ public class SegmentFileStore {
    */
   public static void cleanSegments(CarbonTable table, List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
-    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath(),
+        table.getTableStatusVersion());
     cleanSegments(table, details, partitionSpecs, forceDelete);
   }
 
@@ -1176,8 +1184,9 @@ public class SegmentFileStore {
       Set<String> segments,
       List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
-    LoadMetadataDetails[] details = Arrays
-        .stream(SegmentStatusManager.readLoadMetadata(table.getMetadataPath()))
+    LoadMetadataDetails[] details = Arrays.stream(
+            SegmentStatusManager.readLoadMetadata(table.getMetadataPath(),
+                table.getTableStatusVersion()))
         .filter(detail -> segments.contains(detail.getLoadName()))
         .toArray(LoadMetadataDetails[]::new);
     cleanSegments(table, details, partitionSpecs, forceDelete);

@@ -115,7 +115,9 @@ object CarbonSessionUtil {
       sparkSession: SparkSession,
       carbonTable: CarbonTable): Seq[CatalogTablePartition] = {
     val allPartitions = PartitionCacheManager.get(PartitionCacheKey(carbonTable.getTableId,
-      carbonTable.getTablePath, CarbonUtil.getExpiration_time(carbonTable))).asScala
+      carbonTable.getTablePath,
+      CarbonUtil.getExpiration_time(carbonTable),
+      carbonTable.getTableStatusVersion)).asScala
     ExternalCatalogUtils.prunePartitionsByFilter(
       sparkSession.sessionState.catalog.getTableMetadata(TableIdentifier(carbonTable.getTableName,
         Some(carbonTable.getDatabaseName))),

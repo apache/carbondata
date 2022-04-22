@@ -200,7 +200,9 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     val filterCondition = unhandledPredicates.reduceLeftOption(expressions.And)
 
     val readCommittedScope =
-      new TableStatusReadCommittedScope(table.identifier, FileFactory.getConfiguration)
+      new TableStatusReadCommittedScope(table.identifier,
+        FileFactory.getConfiguration,
+        table.carbonTable.getTableStatusVersion)
     val extraSegments = MixedFormatHandler.extraSegments(table.identifier, readCommittedScope)
     val extraRDD = MixedFormatHandler.extraRDD(relation, rawProjects, filterPredicates,
       readCommittedScope, table.identifier, extraSegments, vectorReaderEnabled())

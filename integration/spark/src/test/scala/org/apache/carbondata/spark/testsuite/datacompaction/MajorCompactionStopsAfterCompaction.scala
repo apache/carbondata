@@ -83,7 +83,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-        absoluteTableIdentifier)
+        absoluteTableIdentifier, carbonTable.getTableStatusVersion)
 
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 //      segments.foreach(seg =>
@@ -119,7 +119,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier)
+      absoluteTableIdentifier, carbonTable.getTableStatusVersion)
 
     // merged segment should not be there
     val segments = segmentStatusManager

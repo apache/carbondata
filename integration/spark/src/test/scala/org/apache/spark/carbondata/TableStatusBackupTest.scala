@@ -33,6 +33,8 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 class TableStatusBackupTest extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
     CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS, "false")
+    CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.ENABLE_TABLE_STATUS_BACKUP, "true")
     sql("drop table if exists source")
     sql("create table source(a string) stored as carbondata")
@@ -42,12 +44,16 @@ class TableStatusBackupTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists source")
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.ENABLE_TABLE_STATUS_BACKUP, "false")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS,
+      CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT)
   }
 
   test("backup table status file") {
     sql("insert into source values ('A'), ('B')")
-    val tablePath = CarbonEnv.getCarbonTable(None, "source")(sqlContext.sparkSession).getTablePath
-    val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(tablePath)
+    val table = CarbonEnv.getCarbonTable(None, "source")(sqlContext.sparkSession)
+    val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(table.getTablePath,
+      table.getTableStatusVersion)
     val oldTableStatus = SegmentStatusManager.readTableStatusFile(tableStatusFilePath)
 
     var mock = new MockUp[SegmentStatusManager]() {

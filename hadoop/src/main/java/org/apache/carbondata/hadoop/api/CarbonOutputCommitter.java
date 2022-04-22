@@ -236,8 +236,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         (context.getConfiguration().get(CarbonTableOutputFormat.UPDATE_TIMESTAMP) != null);
     if (updateTime != null) {
       CarbonUpdateUtil.updateTableMetadataStatus(Collections.singleton(loadModel.getSegment()),
-          carbonTable, updateTime, true,
-          isUpdateStatusFileUpdateRequired, segmentDeleteList);
+          carbonTable, updateTime, true, isUpdateStatusFileUpdateRequired,
+          segmentDeleteList, carbonTable.getTableStatusVersion());
     }
   }
 

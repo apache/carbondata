@@ -29,6 +29,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -336,10 +337,16 @@ public abstract class MVManager {
         setStatus(schema.identifier, MVStatus.DISABLED);
       }
       RelationIdentifier relationIdentifier = schema.getIdentifier();
+      CarbonTable carbonTable = CarbonMetadata.getInstance()
+          .getCarbonTable(relationIdentifier.getDatabaseName(), relationIdentifier.getTableName());
+      String tblStatusVersion = "";
+      if (null != carbonTable) {
+        tblStatusVersion = carbonTable.getTableStatusVersion();
+      }
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(AbsoluteTableIdentifier
           .from(relationIdentifier.getTablePath(),
               relationIdentifier.getDatabaseName(),
-              relationIdentifier.getTableName()));
+              relationIdentifier.getTableName()), tblStatusVersion);
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {
         if (carbonLock.lockWithRetries()) {
@@ -348,13 +355,13 @@ public abstract class MVManager {
           String metaDataPath =
               CarbonTablePath.getMetadataPath(relationIdentifier.getTablePath());
           LoadMetadataDetails[] loadMetadataDetails =
-              SegmentStatusManager.readLoadMetadata(metaDataPath);
+              SegmentStatusManager.readLoadMetadata(metaDataPath, tblStatusVersion);
           for (LoadMetadataDetails entry : loadMetadataDetails) {
             entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
           }
           SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(relationIdentifier.getTablePath()),
-              loadMetadataDetails);
+              CarbonTablePath.getTableStatusFilePath(relationIdentifier.getTablePath(),
+                  tblStatusVersion), loadMetadataDetails);
         } else {
           LOGGER.error("Not able to acquire the lock for Table status update for table "
               + relationIdentifier.getDatabaseName() + "." + relationIdentifier

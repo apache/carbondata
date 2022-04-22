@@ -70,9 +70,9 @@ public class StreamSegment {
   /**
    * get stream segment or create new stream segment if not exists
    */
-  public static String open(CarbonTable table) throws IOException {
+  public static String open(CarbonTable table, CarbonLoadModel loadModel) throws IOException {
     SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(table.getAbsoluteTableIdentifier());
+        new SegmentStatusManager(table.getAbsoluteTableIdentifier(), table.getTableStatusVersion());
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       if (carbonLock.lockWithRetries()) {
@@ -80,9 +80,8 @@ public class StreamSegment {
             "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                 + " for stream table get or create segment");
 
-        LoadMetadataDetails[] details =
-            SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(table.getTablePath()));
+        LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(
+            CarbonTablePath.getMetadataPath(table.getTablePath()), table.getTableStatusVersion());
         LoadMetadataDetails streamSegment = null;
         for (LoadMetadataDetails detail : details) {
           if (FileFormat.ROW_V1.equals(detail.getFileFormat())) {
@@ -93,7 +92,8 @@ public class StreamSegment {
           }
         }
         if (null == streamSegment) {
-          return createNewSegment(table, details);
+          loadModel.setLatestTableStatusWriteVersion(String.valueOf(System.currentTimeMillis()));
+          return createNewSegment(table, details, loadModel.getLatestTableStatusWriteVersion());
         } else {
           return streamSegment.getLoadName();
         }
@@ -115,8 +115,8 @@ public class StreamSegment {
     }
   }
 
-  private static String createNewSegment(CarbonTable table, LoadMetadataDetails[] details)
-      throws IOException {
+  private static String createNewSegment(CarbonTable table, LoadMetadataDetails[] details,
+      String latestTblStatusVersion) throws IOException {
     int segmentId = SegmentStatusManager.createNewSegmentId(details);
     LoadMetadataDetails newDetail = new LoadMetadataDetails();
     newDetail.setLoadName(String.valueOf(segmentId));
@@ -130,9 +130,9 @@ public class StreamSegment {
       newDetails[i] = details[i];
     }
     newDetails[i] = newDetail;
-    SegmentStatusManager
-        .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(table.getTablePath()),
-            newDetails);
+    SegmentStatusManager.writeLoadDetailsIntoFile(
+        CarbonTablePath.getTableStatusFilePath(table.getTablePath(), latestTblStatusVersion),
+        newDetails);
     return newDetail.getLoadName();
   }
 
@@ -142,7 +142,7 @@ public class StreamSegment {
   public static String close(CarbonTable table, String segmentId)
       throws IOException {
     SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(table.getAbsoluteTableIdentifier());
+        new SegmentStatusManager(table.getAbsoluteTableIdentifier(), table.getTableStatusVersion());
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       if (carbonLock.lockWithRetries()) {
@@ -150,9 +150,8 @@ public class StreamSegment {
             "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                 + " for stream table finish segment");
 
-        LoadMetadataDetails[] details =
-            SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(table.getTablePath()));
+        LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(
+            CarbonTablePath.getMetadataPath(table.getTablePath()), table.getTableStatusVersion());
         for (LoadMetadataDetails detail : details) {
           if (segmentId.equals(detail.getLoadName())) {
             detail.setLoadEndTime(System.currentTimeMillis());
@@ -160,7 +159,7 @@ public class StreamSegment {
             break;
           }
         }
-        return createNewSegment(table, details);
+        return createNewSegment(table, details, table.getTableStatusVersion());
       } else {
         LOGGER.error(
             "Not able to acquire the status update lock for streaming table " + table
@@ -189,7 +188,8 @@ public class StreamSegment {
     try {
       if (statusLock.lockWithRetries()) {
         LoadMetadataDetails[] details =
-            SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+            SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath(),
+                carbonTable.getTableStatusVersion());
         boolean updated = false;
         for (LoadMetadataDetails detail : details) {
           if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
@@ -200,8 +200,8 @@ public class StreamSegment {
         }
         if (updated) {
           SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()),
-              details);
+              CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath(),
+                  carbonTable.getTableStatusVersion()), details);
         }
       } else {
         String msg = "Failed to acquire table status lock of " + carbonTable.getDatabaseName()

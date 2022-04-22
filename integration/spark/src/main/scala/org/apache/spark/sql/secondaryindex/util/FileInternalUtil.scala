@@ -28,6 +28,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
 /**
@@ -37,7 +38,7 @@ object FileInternalUtil {
 
   def updateTableStatus(
     validSegments: List[String],
-    databaseName: String,
+    carbonLoadModel: CarbonLoadModel,
     tableName: String,
     loadStatus: SegmentStatus,
     segmentIdToLoadStartTimeMapping: scala.collection.mutable.Map[String, java.lang.Long],
@@ -74,6 +75,7 @@ object FileInternalUtil {
       CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(loadMetadataDetail, segmentId, carbonTable)
       loadMetadataDetailsList +:= loadMetadataDetail
     }
+    val isRebuiltSegments = rebuiltSegments.nonEmpty
     val indexTables = CarbonIndexUtil
       .getIndexCarbonTables(carbonTable, sparkSession)
     val status = CarbonInternalLoaderUtil.recordLoadMetadata(
@@ -81,8 +83,10 @@ object FileInternalUtil {
       validSegments.asJava,
       carbonTable,
       indexTables.toList.asJava,
-      databaseName,
-      tableName
+      carbonLoadModel,
+      tableName,
+      loadStatus,
+      isRebuiltSegments
     )
     status
   }

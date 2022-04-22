@@ -63,6 +63,9 @@ case class CarbonCreateTableLikeCommand(
     // remove mv related info from source table tblProperties
     dstTableSchema.getTableProperties.remove(CarbonCommonConstants.RELATED_MV_TABLES_MAP)
 
+    // remove table_status version property of source table
+    dstTableSchema.getTableProperties.remove("latestversion")
+
     val schemaEvol: SchemaEvolution = new SchemaEvolution
     val schEntryList: util.List[SchemaEvolutionEntry] = new util.ArrayList[SchemaEvolutionEntry]
     schemaEvol.setSchemaEvolutionEntryList(schEntryList)

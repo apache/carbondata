@@ -349,7 +349,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
       if (table.isTransactionalTable()) {
         this.readCommittedScope =
             new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier(),
-                FileFactory.getConfiguration());
+                FileFactory.getConfiguration(), table.getTableStatusVersion());
       } else {
         this.readCommittedScope =
             new LatestFilesReadCommittedScope(table.getTablePath(),

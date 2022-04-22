@@ -34,11 +34,13 @@ import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.index.IndexInputSplit;
 import org.apache.carbondata.core.index.IndexMeta;
+import org.apache.carbondata.core.index.IndexStoreManager;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.index.dev.IndexBuilder;
 import org.apache.carbondata.core.index.dev.IndexWriter;
 import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndex;
 import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndexFactory;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
@@ -102,8 +104,14 @@ public class SecondaryIndexFactory extends CoarseGrainIndexFactory {
         new SecondaryIndexModel(getIndexSchema().getIndexName(), segment.getSegmentNo(),
             allSegmentIds, positionReferenceInfo, segment.getConfiguration()));
     secondaryIndex.setDefaultIndexPrunedBlocklet(segment.getDefaultIndexPrunedBlocklets());
-    secondaryIndex.validateSegmentList(getCarbonTable().getTablePath()
-        .replace(getCarbonTable().getTableName(), getIndexSchema().getIndexName()));
+    String indexTablePath = getCarbonTable().getTablePath()
+        .replace(getCarbonTable().getTableName(), getIndexSchema().getIndexName());
+    AbsoluteTableIdentifier identifier =
+        AbsoluteTableIdentifier.from(indexTablePath, getCarbonTable().getDatabaseName(),
+            getIndexSchema().getIndexName());
+    String tblStatusVersion =
+        IndexStoreManager.getInstance().getCarbonTable(identifier).getTableStatusVersion();
+    secondaryIndex.validateSegmentList(indexTablePath, tblStatusVersion);
     indexes.add(secondaryIndex);
     return indexes;
   }

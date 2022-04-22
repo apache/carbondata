@@ -66,7 +66,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
       TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName)))
     assert(partitions.get.length == partition)
     val details = SegmentStatusManager.readLoadMetadata(
-      CarbonTablePath.getMetadataPath(carbonTable.getTablePath))
+      CarbonTablePath.getMetadataPath(carbonTable.getTablePath), carbonTable.getTableStatusVersion)
     val segLoad = details.find(_.getLoadName.equals(segmentId)).get
     val seg = new SegmentFileStore(carbonTable.getTablePath, segLoad.getSegmentFile)
     assert(seg.getIndexAndMergeFiles.size == indexes)

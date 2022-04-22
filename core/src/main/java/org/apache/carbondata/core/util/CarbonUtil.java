@@ -2433,7 +2433,8 @@ public final class CarbonUtil {
         .getProperty(CarbonCommonConstants.ENABLE_CALCULATE_SIZE,
             CarbonCommonConstants.DEFAULT_ENABLE_CALCULATE_SIZE);
     if (isCalculated.equalsIgnoreCase("true")) {
-      SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
+      SegmentStatusManager segmentStatusManager =
+          new SegmentStatusManager(identifier, carbonTable.getTableStatusVersion());
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {
         boolean lockAcquired = true;
@@ -2444,7 +2445,8 @@ public final class CarbonUtil {
           LOGGER.debug("Acquired lock for table for table status update");
           String metadataPath = carbonTable.getMetadataPath();
           LoadMetadataDetails[] loadMetadataDetails =
-              SegmentStatusManager.readLoadMetadata(metadataPath);
+              SegmentStatusManager.readLoadMetadata(metadataPath,
+                  carbonTable.getTableStatusVersion());
 
           for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
             SegmentStatus loadStatus = loadMetadataDetail.getSegmentStatus();
@@ -2467,14 +2469,14 @@ public final class CarbonUtil {
               totalIndexSize += Long.parseLong(indexSize);
             }
           }
+          String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(),
+              carbonTable.getTableStatusVersion());
           // If it contains old segment, write new load details
           if (needUpdate && updateSize) {
             SegmentStatusManager.writeLoadDetailsIntoFile(
-                CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
+                tableStatusPath,
                 loadMetadataDetails);
           }
-          String tableStatusPath =
-              CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
           if (FileFactory.isFileExist(tableStatusPath)) {
             lastUpdateTime =
                 FileFactory.getCarbonFile(tableStatusPath).getLastModifiedTime();
@@ -3173,7 +3175,8 @@ public final class CarbonUtil {
     } else {
       // get the valid segments
       SegmentStatusManager segmentStatusManager =
-          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
+          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
+              carbonTable.getTableStatusVersion());
       SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
           segmentStatusManager.getValidAndInvalidSegments(carbonTable.isMV());
       List<Segment> validSegments = validAndInvalidSegmentsInfo.getValidSegments();

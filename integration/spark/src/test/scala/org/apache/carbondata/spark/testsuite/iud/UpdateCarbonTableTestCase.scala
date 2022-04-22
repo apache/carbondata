@@ -271,7 +271,8 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest22""")
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("iud", "dest22")
-    val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
+    val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath,
+      carbonTable.getTableStatusVersion)
     FileFactory.getCarbonFile(tableStatusFile).delete()
 
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest22""")

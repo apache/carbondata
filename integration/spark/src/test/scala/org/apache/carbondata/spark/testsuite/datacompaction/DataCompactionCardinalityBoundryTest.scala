@@ -23,7 +23,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -69,12 +69,17 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
   test("check if compaction is completed or not and  verify select query.") {
     var status = true
     var noOfRetries = 0
+    val version = CarbonMetadata
+      .getInstance()
+      .getCarbonTable("default_cardinalityTest")
+      .getTableStatusVersion
     while (status && noOfRetries < 10) {
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
         AbsoluteTableIdentifier.from(
-          CarbonProperties.getStorePath(),
+          storeLocation + "/cardinalitytest",
           new CarbonTableIdentifier("default", "cardinalityTest", "1")
-        )
+        ),
+        version
       )
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 

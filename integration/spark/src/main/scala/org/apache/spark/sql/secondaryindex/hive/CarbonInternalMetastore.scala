@@ -134,6 +134,20 @@ object CarbonInternalMetastore {
     }
   }
 
+  def refreshTableStatusVersion(carbonTable: CarbonTable)(sparkSession: SparkSession): Unit = {
+    if (!carbonTable.isTransactionalTable || carbonTable.isExternalTable) {
+      return
+    }
+    if (null == carbonTable.getTableInfo.getFactTable.getTableProperties.get("latestversion")) {
+      val hiveTable = sparkSession.sessionState
+        .catalog.getTableMetadata(TableIdentifier(carbonTable.getTableName,
+        Some(carbonTable.getDatabaseName)))
+      val version = hiveTable.storage.properties.getOrElse(
+        "latestversion", "")
+      carbonTable.getTableInfo.getFactTable.getTableProperties.put("latestversion", version)
+    }
+  }
+
   def refreshIndexInfo(dbName: String, tableName: String,
       carbonTable: CarbonTable, needLock: Boolean = true)(sparkSession: SparkSession): Unit = {
     // check if secondary index table exists

@@ -50,8 +50,8 @@ class DeleteSegmentByDateListener extends OperationEventListener with Logging {
           val table = metastore
             .lookupRelation(Some(carbonTable.getDatabaseName), tableName)(sparkSession)
             .asInstanceOf[CarbonRelation].carbonTable
-          CarbonStore
-            .deleteLoadByDate(loadDates, carbonTable.getDatabaseName, table.getTableName, table)
+          CarbonStore.deleteLoadByDate(loadDates, carbonTable.getDatabaseName,
+            table.getTableName, table, sparkSession)
         }
     }
   }

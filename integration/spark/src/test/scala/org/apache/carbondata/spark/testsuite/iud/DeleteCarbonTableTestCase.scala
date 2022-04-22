@@ -228,12 +228,17 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val files = FileFactory.getCarbonFile(metaPath)
     val result = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.getClass
     if (result.getCanonicalName.contains("CarbonFileMetastore")) {
-      assert(files.listFiles(new CarbonFileFilter {
+      val length = files.listFiles(new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = !file.isDirectory
-      }).length == 2)
+      }).length
+      if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+        assert(length == 6)
+      } else {
+        assert(length == 2)
+      }
     }
     else {
-      assert(files.listFiles().length == 2)
+      assert(files.listFiles().length == 6)
     }
     sql("drop table update_status_files")
   }

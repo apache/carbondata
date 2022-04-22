@@ -49,6 +49,7 @@ import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -352,8 +353,14 @@ public class MVProvider {
     boolean isViewCanBeEnabled = true;
     String viewMetadataPath =
         CarbonTablePath.getMetadataPath(schema.getIdentifier().getTablePath());
+    CarbonTable table = CarbonMetadata.getInstance()
+        .getCarbonTable(schema.identifier.getDatabaseName(), schema.identifier.getTableName());
+    String tblStatusVersion = "";
+    if (null != table) {
+      tblStatusVersion = table.getTableStatusVersion();
+    }
     LoadMetadataDetails[] viewLoadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(viewMetadataPath);
+        SegmentStatusManager.readLoadMetadata(viewMetadataPath, tblStatusVersion);
     Map<String, List<String>> viewSegmentMap = new HashMap<>();
     for (LoadMetadataDetails loadMetadataDetail : viewLoadMetadataDetails) {
       if (loadMetadataDetail.getSegmentStatus() == SegmentStatus.SUCCESS) {
@@ -372,8 +379,14 @@ public class MVProvider {
     }
     List<RelationIdentifier> relatedTables = schema.getRelatedTables();
     for (RelationIdentifier relatedTable : relatedTables) {
+      CarbonTable carbonTable = CarbonMetadata.getInstance()
+          .getCarbonTable(relatedTable.getDatabaseName(), relatedTable.getTableName());
+      String parentTblVersion = "";
+      if (null != carbonTable) {
+        parentTblVersion = carbonTable.getTableStatusVersion();
+      }
       SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
-          SegmentStatusManager.getValidAndInvalidSegmentsInfo(relatedTable);
+          SegmentStatusManager.getValidAndInvalidSegmentsInfo(relatedTable, parentTblVersion);
       List<String> relatedTableSegmentList =
           SegmentStatusManager.getValidSegmentList(validAndInvalidSegmentsInfo);
       if (!relatedTableSegmentList.isEmpty()) {

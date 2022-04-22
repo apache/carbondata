@@ -87,7 +87,9 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty
       .asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable
     assert(carbonTable.getTableInfo.isSchemaModified == isSchemaModified)
-    val segment: Segment = Segment.getSegment(segmentId, carbonTable.getTablePath)
+    val segment: Segment = Segment.getSegment(segmentId,
+      carbonTable.getTablePath,
+      carbonTable.getTableStatusVersion)
     val defaultIndex: TableIndex = IndexStoreManager.getInstance()
       .getDefaultIndex(carbonTable)
     defaultIndex.getIndexFactory.getIndexes(segment).asScala.toList
@@ -296,7 +298,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty
       new IndexFilter(carbonTable, andExpression).getResolver()
     val exprWrapper = IndexChooser.getDefaultIndex(carbonTable, resolveFilter)
     val segment = new Segment("0", new TableStatusReadCommittedScope(carbonTable
-      .getAbsoluteTableIdentifier, new Configuration(false)))
+      .getAbsoluteTableIdentifier, new Configuration(false), carbonTable.getTableStatusVersion))
     // get the pruned blocklets
     val prunedBlocklets = exprWrapper.prune(List(segment).asJava, null)
     prunedBlocklets.asScala.foreach { blocklet =>

@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -35,7 +35,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
 
   val absoluteTableIdentifier: AbsoluteTableIdentifier =
       AbsoluteTableIdentifier.from(
-        storeLocation,
+        storeLocation + "/compactionlocktesttable",
         new CarbonTableIdentifier(
           CarbonCommonConstants.DATABASE_DEFAULT_NAME, "compactionlocktesttable", "1")
       )
@@ -91,9 +91,11 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
    * Compaction should fail as lock is being held purposefully
    */
   test("check if compaction is failed or not.") {
-
+    val version = CarbonMetadata.getInstance()
+      .getCarbonTable(absoluteTableIdentifier.getDatabaseName, absoluteTableIdentifier.getTableName)
+      .getTableStatusVersion
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier
+      absoluteTableIdentifier, version
     )
     val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 

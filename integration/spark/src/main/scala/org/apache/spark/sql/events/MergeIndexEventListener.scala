@@ -110,8 +110,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
           if (lock.lockWithRetries()) {
             LOGGER.info("Acquired the compaction lock for table" +
                         s" ${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName}")
-            val loadFolderDetailsArray = SegmentStatusManager
-              .readLoadMetadata(carbonMainTable.getMetadataPath)
+            val loadFolderDetailsArray = SegmentStatusManager.readLoadMetadata(carbonMainTable
+              .getMetadataPath, carbonMainTable.getTableStatusVersion)
             val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String,
               String]()
             var streamingSegment: Set[String] = Set[String]()
