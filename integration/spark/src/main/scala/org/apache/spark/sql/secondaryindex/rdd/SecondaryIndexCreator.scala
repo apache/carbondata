@@ -29,6 +29,7 @@ import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFuncti
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical.Project
 import org.apache.spark.sql.execution.command.ExecutionErrors
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.SecondaryIndexModel
 import org.apache.spark.sql.secondaryindex.events.{LoadTableSIPostExecutionEvent, LoadTableSIPreExecutionEvent}
@@ -140,6 +141,10 @@ object SecondaryIndexCreator {
       } else {
         SegmentStatus.INSERT_IN_PROGRESS
       }
+      indexCarbonTable.getTableInfo
+        .getFactTable
+        .getTableProperties
+        .put("tablestatusversion", secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
       FileInternalUtil
         .updateTableStatus(validSegmentList,
           secondaryIndexModel.carbonLoadModel.getDatabaseName,
@@ -151,6 +156,9 @@ object SecondaryIndexCreator {
             String](),
           indexCarbonTable,
           sc.sparkSession)
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(indexCarbonTable,
+        sc.sparkSession,
+        secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
       var execInstance = "1"
       // in case of non dynamic executor allocation, number of executors are fixed.
       if (sc.sparkContext.getConf.contains("spark.executor.instances")) {
@@ -357,6 +365,8 @@ object SecondaryIndexCreator {
             System.currentTimeMillis(),
             CarbonIndexUtil
               .getCompressorForIndexTable(indexCarbonTable, secondaryIndexModel.carbonTable))
+        carbonLoadModelForMergeDataFiles.setLatestTableStatusVersion(secondaryIndexModel
+          .carbonLoadModel.getLatestTableStatusVersion)
 
         // merge the data files of the loaded segments and take care of
         // merging the index files inside this if needed
@@ -370,6 +380,10 @@ object SecondaryIndexCreator {
             indexCarbonTable.getMetadataPath, indexCarbonTable.getTableStatusVersion)
             .filter(loadMetadata => !successSISegments.contains(loadMetadata.getLoadName))
             .map(_.getLoadName).toList
+          indexTable.getTableInfo.getFactTable
+            .getTableProperties
+            .put("tablestatusversion",
+              secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
           FileInternalUtil
             .updateTableStatus(
               overriddenSegments,
@@ -387,6 +401,10 @@ object SecondaryIndexCreator {
               .writeSegmentFile(indexCarbonTable, loadMetadata.getLoadName,
                 String.valueOf(loadMetadata.getLoadStartTime))
           }
+          indexCarbonTable.getTableInfo.getFactTable
+            .getTableProperties
+            .put("tablestatusversion",
+              secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
           tableStatusUpdateForSuccess = FileInternalUtil.updateTableStatus(
             successSISegments,
             secondaryIndexModel.carbonLoadModel.getDatabaseName,
@@ -416,6 +434,10 @@ object SecondaryIndexCreator {
       // all the segments of marked for delete and re-triggers the load to same segments again in
       // that event
       if (failedSISegments.nonEmpty && !isCompactionCall) {
+        indexCarbonTable.getTableInfo.getFactTable
+          .getTableProperties
+          .put("tablestatusversion",
+            secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
         tableStatusUpdateForFailure = FileInternalUtil.updateTableStatus(
           failedSISegments,
           secondaryIndexModel.carbonLoadModel.getDatabaseName,
@@ -430,6 +452,10 @@ object SecondaryIndexCreator {
       if (failedSISegments.nonEmpty) {
         LOGGER.error("Dataload to secondary index creation has failed")
       }
+
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(indexCarbonTable,
+        secondaryIndexModel.sqlContext.sparkSession,
+        secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
 
       if (!isCompactionCall) {
         val loadTableSIPostExecutionEvent: LoadTableSIPostExecutionEvent =
@@ -452,6 +478,10 @@ object SecondaryIndexCreator {
         if (isCompactionCall) {
           segmentLocks.foreach(segmentLock => segmentLock.unlock())
         }
+        indexCarbonTable.getTableInfo.getFactTable
+          .getTableProperties
+          .put("tablestatusversion",
+            secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
         FileInternalUtil
           .updateTableStatus(validSegmentList,
             secondaryIndexModel.carbonLoadModel.getDatabaseName,

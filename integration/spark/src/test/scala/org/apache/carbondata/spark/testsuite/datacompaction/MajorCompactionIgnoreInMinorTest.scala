@@ -239,7 +239,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     // do minor compaction
     sql("alter table minor_threshold compact 'minor'")
     // check segment 3 whose size exceed the limit should not be compacted but success
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+    var carbonTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME, "minor_threshold")
     val carbonTablePath = carbonTable.getMetadataPath
     val segments = SegmentStatusManager.readLoadMetadata(carbonTablePath,
@@ -257,6 +257,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     // do minor compaction
     sql("alter table minor_threshold compact 'minor'")
     // check segment 3 whose size not exceed the new threshold limit should be compacted now
+    carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME, "minor_threshold")
     val segments2 = SegmentStatusManager.readLoadMetadata(
       carbonTablePath, carbonTable.getTableStatusVersion)
     assertResult(SegmentStatus.COMPACTED)(segments2(3).getSegmentStatus)

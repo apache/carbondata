@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.io.{DataInputStream, File, InputStreamReader, IOException}
-
 import java.util
 import java.util.Collections
 import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}

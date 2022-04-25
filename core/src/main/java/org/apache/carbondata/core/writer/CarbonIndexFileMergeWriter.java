@@ -35,12 +35,14 @@ import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.MergedBlockIndex;
@@ -286,9 +288,15 @@ public class CarbonIndexFileMergeWriter {
     if (table.isIndexTable()) {
       // To maintain same segment file name mapping between parent and SI table.
       IndexMetadata indexMetadata = table.getIndexMetadata();
+      String parentTableVersion = "";
+      if (CarbonProperties.isTableStatusMultiVersionEnabled()) {
+        parentTableVersion = CarbonMetadata.getInstance()
+            .getCarbonTable(table.getDatabaseName(), indexMetadata.getParentTableName())
+            .getTableStatusVersion();
+      }
       LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(
           CarbonTablePath.getMetadataPath(indexMetadata.getParentTablePath()),
-          table.getTableStatusVersion());
+          parentTableVersion);
       LoadMetadataDetails loadMetaDetail = Arrays.stream(loadDetails)
           .filter(loadDetail -> loadDetail.getLoadName().equals(segmentId)).findFirst().get();
       newSegmentFileName = loadMetaDetail.getSegmentFile();

@@ -70,9 +70,9 @@ public class StreamSegment {
   /**
    * get stream segment or create new stream segment if not exists
    */
-  public static String open(CarbonTable table) throws IOException {
+  public static String open(CarbonTable table, String latestTblStatusVersion) throws IOException {
     SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(table.getAbsoluteTableIdentifier(), table.getTableStatusVersion());
+        new SegmentStatusManager(table.getAbsoluteTableIdentifier(), latestTblStatusVersion);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       if (carbonLock.lockWithRetries()) {
@@ -92,7 +92,7 @@ public class StreamSegment {
           }
         }
         if (null == streamSegment) {
-          return createNewSegment(table, details);
+          return createNewSegment(table, details, latestTblStatusVersion);
         } else {
           return streamSegment.getLoadName();
         }
@@ -114,8 +114,8 @@ public class StreamSegment {
     }
   }
 
-  private static String createNewSegment(CarbonTable table, LoadMetadataDetails[] details)
-      throws IOException {
+  private static String createNewSegment(CarbonTable table, LoadMetadataDetails[] details,
+      String latestTblStatusVersion) throws IOException {
     int segmentId = SegmentStatusManager.createNewSegmentId(details);
     LoadMetadataDetails newDetail = new LoadMetadataDetails();
     newDetail.setLoadName(String.valueOf(segmentId));
@@ -130,7 +130,7 @@ public class StreamSegment {
     }
     newDetails[i] = newDetail;
     SegmentStatusManager.writeLoadDetailsIntoFile(
-        CarbonTablePath.getTableStatusFilePath(table.getTablePath(), table.getTableStatusVersion()),
+        CarbonTablePath.getTableStatusFilePath(table.getTablePath(), latestTblStatusVersion),
         newDetails);
     return newDetail.getLoadName();
   }
@@ -158,7 +158,7 @@ public class StreamSegment {
             break;
           }
         }
-        return createNewSegment(table, details);
+        return createNewSegment(table, details, table.getTableStatusVersion());
       } else {
         LOGGER.error(
             "Not able to acquire the status update lock for streaming table " + table

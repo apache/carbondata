@@ -66,9 +66,7 @@ object CarbonHiveIndexMetadataUtil {
   def updateTableStatusVersion(carbonTable: CarbonTable,
       sparkSession: SparkSession,
       latestVersion: String): Unit = {
-    val isMultiVersionEnabled = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS,
-        CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT).toBoolean
+    val isMultiVersionEnabled = CarbonProperties.isTableStatusMultiVersionEnabled
     if (isMultiVersionEnabled) {
       val sql =
         s"""ALTER TABLE `${ carbonTable.getDatabaseName }`.`${ carbonTable.getTableName }`

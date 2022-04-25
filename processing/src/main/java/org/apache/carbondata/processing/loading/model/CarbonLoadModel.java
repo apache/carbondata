@@ -231,7 +231,7 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean skipParsers = false;
 
-  private String latestTableStatusVersion;
+  private String latestTableStatusVersion = "";
 
   public void setSkipParsers() {
     skipParsers = true;
@@ -917,10 +917,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getLatestTableStatusVersion() {
-    boolean isMultiVersionEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS,
-            CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT));
-    if (!isMultiVersionEnabled) {
+    if (!CarbonProperties.isTableStatusMultiVersionEnabled()) {
       return "";
     }
     return latestTableStatusVersion;

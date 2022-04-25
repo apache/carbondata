@@ -65,7 +65,7 @@ object DeleteExecution {
       timestamp: String,
       isUpdateOperation: Boolean,
       executorErrors: ExecutionErrors,
-      version: String): (Seq[Segment], Long) = {
+      version: String): (Seq[Segment], Long, Boolean) = {
 
     val (res, blockMappingVO) = deleteDeltaExecutionInternal(databaseNameOp,
       tableName, sparkSession, dataRdd, timestamp, isUpdateOperation, executorErrors)
@@ -73,19 +73,20 @@ object DeleteExecution {
     var operatedRowCount = 0L
     // if no loads are present then no need to do anything.
     if (res.flatten.isEmpty) {
-      return (segmentsTobeDeleted, operatedRowCount)
+      return (segmentsTobeDeleted, operatedRowCount, false)
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     // update new status file
-    segmentsTobeDeleted =
+    val (segmentsTobeDeletedNew, isUpdateRequired) =
       checkAndUpdateStatusFiles(executorErrors,
         res, carbonTable, timestamp,
         blockMappingVO, isUpdateOperation, version)
+    segmentsTobeDeleted = segmentsTobeDeletedNew
 
     if (executorErrors.failureCauses == FailureCauses.NONE) {
       operatedRowCount = res.flatten.map(_._2._3).sum
     }
-    (segmentsTobeDeleted, operatedRowCount)
+    (segmentsTobeDeleted, operatedRowCount, isUpdateRequired)
   }
 
   /**
@@ -363,7 +364,8 @@ object DeleteExecution {
       timestamp: String,
       blockMappingVO: BlockMappingVO,
       isUpdateOperation: Boolean,
-      version: String): Seq[Segment] = {
+      version: String): (Seq[Segment], Boolean) = {
+    var isUpdateRequired = false
     val blockUpdateDetailsList = new util.ArrayList[SegmentUpdateDetails]()
     val segmentDetails = new util.HashSet[Segment]()
     res.foreach(resultOfSeg => resultOfSeg.foreach(
@@ -391,7 +393,7 @@ object DeleteExecution {
             executorErrors.errorMsg = errorMsg
           }
           LOGGER.error(errorMsg)
-          return Seq.empty[Segment]
+          return (Seq.empty[Segment], isUpdateRequired)
         }
       }))
 
@@ -412,6 +414,7 @@ object DeleteExecution {
             listOfSegmentToBeMarkedDeleted,
             version)
     ) {
+      isUpdateRequired = true
       LOGGER.info(s"Delete data operation is successful for " +
                   s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
     } else {
@@ -423,7 +426,7 @@ object DeleteExecution {
       executorErrors.failureCauses = FailureCauses.STATUS_FILE_UPDATION_FAILURE
       executorErrors.errorMsg = errorMessage
     }
-    segmentsTobeDeleted
+    (segmentsTobeDeleted, isUpdateRequired)
   }
 
   // all or none : update status file, only if complete delete operation is successful.

@@ -289,6 +289,9 @@ object SecondaryIndexUtil {
           // For compaction call, we can directly update table status with Compacted/Success
           // with logic present in CarbonTableCompactor.
           if (compactionType == null) {
+            indexCarbonTable.getTableInfo.getFactTable
+              .getTableProperties
+              .put("tablestatusversion", carbonLoadModel.getLatestTableStatusVersion)
             FileInternalUtil.updateTableStatus(
               rebuiltSegments.toList,
               carbonLoadModel.getDatabaseName,
@@ -758,6 +761,7 @@ object SecondaryIndexUtil {
       }
     CarbonTableOutputFormat.setInputSchema(conf, new StructType(fieldList.asJava))
     val loadModel = CarbonTableOutputFormat.getLoadModel(conf)
+    loadModel.setLatestTableStatusVersion(carbonTable.getTableStatusVersion)
     loadModel
   }
 

@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{withEvents, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * Command to register carbon table from existing carbon table data
@@ -106,32 +107,8 @@ case class RefreshCarbonTableCommand(
               Seq.empty, true)(sparkSession, sparkSession.sessionState.catalog)
           }
         }
-        val metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath)
-        val tableStatusPath = CarbonTablePath.getTableStatusFilePath(metadataPath)
-        if(!FileFactory.isFileExist(tableStatusPath)) {
-          // in case, if table has multi-versioned table status files, then get the latest table
-          // version and add it to tableproperties
-          val tableStatusFiles = FileFactory.getCarbonFile(metadataPath).listFiles(new CarbonFileFilter {
-            override def accept(file: CarbonFile): Boolean = file.getName.startsWith(CarbonTablePath
-              .TABLE_STATUS_FILE)
-          })
-          var latestTableStatusVersion = ""
-          var lastMdtTime: Long = 0L
-          tableStatusFiles.foreach { tableStatusFile =>
-            if (latestTableStatusVersion.isEmpty) {
-              latestTableStatusVersion = tableStatusFile.getName
-            } else {
-              if (lastMdtTime == 0L) {
-                lastMdtTime = tableStatusFile.getLastModifiedTime
-              } else if (lastMdtTime < tableStatusFile.getLastModifiedTime) {
-                lastMdtTime = tableStatusFile.getLastModifiedTime
-                latestTableStatusVersion = tableStatusFile.getName
-              }
-            }
-          }
-          val version = latestTableStatusVersion.substring(
-            latestTableStatusVersion.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
-            latestTableStatusVersion.length)
+        val version = CarbonScalaUtil.getLatestTableStatusVersion(identifier.getTablePath)
+        if (version.nonEmpty) {
           tableInfo.getFactTable
             .getTableProperties
             .put("latestversion", version)
@@ -147,7 +124,7 @@ case class RefreshCarbonTableCommand(
         // Register partitions to hive metastore in case of hive partitioning carbon table
         if (tableInfo.getFactTable.getPartitionInfo != null &&
             tableInfo.getFactTable.getPartitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
-          registerAllPartitionsToHive(identifier, sparkSession)
+          registerAllPartitionsToHive(identifier, sparkSession, version)
         }
       }
     }
@@ -247,10 +224,11 @@ case class RefreshCarbonTableCommand(
    */
   private def registerAllPartitionsToHive(
       absIdentifier: AbsoluteTableIdentifier,
-      sparkSession: SparkSession): Unit = {
+      sparkSession: SparkSession,
+      version: String): Unit = {
     val metadataDetails =
       SegmentStatusManager.readLoadMetadata(
-        CarbonTablePath.getMetadataPath(absIdentifier.getTablePath))
+        CarbonTablePath.getMetadataPath(absIdentifier.getTablePath), version)
     // First read all partition information from each segment.
     val allpartitions = metadataDetails.map{ metadata =>
       if (metadata.getSegmentStatus == SegmentStatus.SUCCESS ||

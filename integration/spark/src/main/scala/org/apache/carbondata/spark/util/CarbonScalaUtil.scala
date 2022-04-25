@@ -41,12 +41,15 @@ import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
@@ -778,6 +781,39 @@ object CarbonScalaUtil {
     val response = f
     val endTime = System.currentTimeMillis() - startTime
     (response, endTime)
+  }
+
+  def getLatestTableStatusVersion(tablePath: String): String = {
+    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath)
+    if (!FileFactory.isFileExist(tableStatusPath)) {
+      // in case, if table has multi-versioned table status files, then get the latest table
+      // version and add it to tableproperties
+      val tableStatusFiles = FileFactory.getCarbonFile(CarbonTablePath.getMetadataPath(tablePath))
+        .listFiles(new CarbonFileFilter {
+          override def accept(file: CarbonFile): Boolean = {
+            file.getName.startsWith(CarbonTablePath
+              .TABLE_STATUS_FILE)
+          }
+        })
+      var latestTableStatusVersion = ""
+      var lastMdtTime: Long = 0L
+      tableStatusFiles.foreach { tableStatusFile =>
+        if (latestTableStatusVersion.isEmpty) {
+          latestTableStatusVersion = tableStatusFile.getName
+          lastMdtTime = tableStatusFile.getLastModifiedTime
+        } else {
+          if (lastMdtTime <= tableStatusFile.getLastModifiedTime) {
+            lastMdtTime = tableStatusFile.getLastModifiedTime
+            latestTableStatusVersion = tableStatusFile.getName
+          }
+        }
+      }
+      latestTableStatusVersion.substring(
+        latestTableStatusVersion.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
+        latestTableStatusVersion.length)
+    } else {
+      ""
+    }
   }
 
 }

@@ -19,6 +19,7 @@ package org.apache.carbondata.streaming
 
 import java.io.IOException
 import java.util
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -28,6 +29,7 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 
 import org.apache.carbondata.common.Maps
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -61,7 +63,7 @@ object StreamSinkFactory {
                   "." + carbonTable.getTableName)
     } else {
       LOGGER.error("Not able to acquire the streaming lock for stream table:" +
-        carbonTable.getDatabaseName + "." + carbonTable.getTableName)
+                   carbonTable.getDatabaseName + "." + carbonTable.getTableName)
       throw new IOException(
         "Not able to acquire the streaming lock for stream table: " +
         carbonTable.getDatabaseName + "." + carbonTable.getTableName)
@@ -106,8 +108,12 @@ object StreamSinkFactory {
       None,
       operationContext)
     // prepare the stream segment
-    val segmentId = getStreamSegmentId(carbonTable)
+    val segmentId = getStreamSegmentId(carbonTable, carbonLoadModel.getLatestTableStatusVersion)
     carbonLoadModel.setSegmentId(segmentId)
+
+    CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+      sparkSession,
+      carbonLoadModel.getLatestTableStatusVersion)
 
     // default is carbon appended stream sink
     val carbonAppendableStreamSink = new CarbonAppendableStreamSink(
@@ -148,10 +154,12 @@ object StreamSinkFactory {
 
   /**
    * get current stream segment id
+   *
    * @return
    */
-  private def getStreamSegmentId(carbonTable: CarbonTable): String = {
-    val segmentId = StreamSegment.open(carbonTable)
+  private def getStreamSegmentId(carbonTable: CarbonTable,
+      latestTableStatusVersion: String): String = {
+    val segmentId = StreamSegment.open(carbonTable, latestTableStatusVersion)
     val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
     val metadataPath = CarbonTablePath.getMetadataPath(carbonTable.getTablePath)
     if (!FileFactory.isFileExist(metadataPath)) {
@@ -206,6 +214,7 @@ object StreamSinkFactory {
       carbonLoadModel,
       hadoopConf)
     carbonLoadModel.setSegmentId(segmentId)
+    carbonLoadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
     val columnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.COMPRESSOR,
         CompressorFactory.getInstance().getCompressor.getName)

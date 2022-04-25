@@ -230,10 +230,10 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     if (result.getCanonicalName.contains("CarbonFileMetastore")) {
       assert(files.listFiles(new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = !file.isDirectory
-      }).length == 2)
+      }).length == 6)
     }
     else {
-      assert(files.listFiles().length == 2)
+      assert(files.listFiles().length == 6)
     }
     sql("drop table update_status_files")
   }

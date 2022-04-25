@@ -34,6 +34,7 @@ import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.view.MVManagerInSpark
@@ -114,18 +115,25 @@ private[sql] case class CarbonProjectForDeleteCommand(
       }
       val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
 
-      val version = UUID.randomUUID().toString
-      val (deletedSegments, deletedRowCount) = DeleteExecution.deleteDeltaExecution(
-        databaseNameOp,
-        tableName,
-        sparkSession,
-        dataRdd,
-        timestamp,
-        isUpdateOperation = false,
-        executorErrors,
-        version)
+      val version = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+        UUID.randomUUID().toString
+      } else {
+        ""
+      }
+      val (deletedSegments, deletedRowCount, isUpdateRequired) =
+        DeleteExecution.deleteDeltaExecution(
+          databaseNameOp,
+          tableName,
+          sparkSession,
+          dataRdd,
+          timestamp,
+          isUpdateOperation = false,
+          executorErrors,
+          version)
 
-      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable, sparkSession, version)
+      if (isUpdateRequired) {
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable, sparkSession, version)
+      }
 
       deletedRows = deletedRowCount;
 

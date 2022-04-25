@@ -373,6 +373,9 @@ object CarbonSource {
     map.put("tableName", tableInfo.getFactTable.getTableName)
     map.put("isTransactional", tableInfo.isTransactionalTable.toString)
     map.put("isExternal", isExternalTable.toString)
+    if (tableInfo.getFactTable.getTableProperties.containsKey("latestversion")) {
+      map.put("latestversion", tableInfo.getFactTable.getTableProperties.get("latestversion"))
+    }
     map.asScala.toMap
   }
 

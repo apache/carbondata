@@ -176,11 +176,11 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop table if exists ${tableName}")
     sql(s"create table ${tableName} (name String, age int) STORED AS carbondata "
         + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
-    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
     insertTestDataIntoTable(tableName)
     assert(sql(s"show segments on ${ tableName } as select * from ${ tableName }_segments")
              .collect()
              .length == 10)
+    var carbonTable = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
     var detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
       carbonTable.getTableStatusVersion)
     var historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
@@ -189,6 +189,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"clean files for table ${tableName} options('force'='true')")
     assert(sql(s"show segments on ${tableName}").collect().length == 2)
     assert(sql(s"show segments on ${tableName} limit 1").collect().length == 1)
+    carbonTable = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
     detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
       carbonTable.getTableStatusVersion)
     historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)

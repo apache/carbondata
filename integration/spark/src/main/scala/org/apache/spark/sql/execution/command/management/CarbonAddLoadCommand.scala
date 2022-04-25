@@ -18,9 +18,9 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.io.File
+import java.util
 import java.util.UUID
 
-import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 

@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.execution.command.mutation
 
-import java.util.UUID
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
@@ -27,7 +25,6 @@ import org.apache.spark.sql.execution.command.management.CarbonInsertIntoWithDf
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.types.{ArrayType, LongType}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AlterTableUtil
@@ -73,7 +70,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     if (res.isEmpty) {
       return Array(Row(updatedRowCount)).toSeq
     }
-    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    var carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> plan.prettyJson))
     // Do not allow spatial index and its source columns to be updated.
@@ -167,7 +164,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
           }
 
           // do delete operation.
-          val (segmentsToBeDeleted, updatedRowCountTemp) = DeleteExecution.deleteDeltaExecution(
+          val (segmentsToBeDeleted, updatedRowCountTemp, isUpdateRequired) = DeleteExecution
+            .deleteDeltaExecution(
             databaseNameOp,
             tableName,
             sparkSession,
@@ -206,7 +204,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
       if (executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
       }
-
+      if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+        carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+      }
       // Do IUD Compaction.
       HorizontalCompaction.tryHorizontalCompaction(
         sparkSession, carbonTable)

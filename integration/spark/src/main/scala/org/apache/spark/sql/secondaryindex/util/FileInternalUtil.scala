@@ -76,13 +76,16 @@ object FileInternalUtil {
     }
     val indexTables = CarbonIndexUtil
       .getIndexCarbonTables(carbonTable, sparkSession)
+    val version = carbonTable.getTableInfo.getFactTable.getTableProperties.get("tablestatusversion")
     val status = CarbonInternalLoaderUtil.recordLoadMetadata(
       loadMetadataDetailsList.toList.asJava,
       validSegments.asJava,
       carbonTable,
       indexTables.toList.asJava,
       databaseName,
-      tableName
+      tableName,
+      version,
+      loadStatus
     )
     status
   }

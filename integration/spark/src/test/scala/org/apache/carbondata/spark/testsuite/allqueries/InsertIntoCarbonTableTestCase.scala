@@ -442,8 +442,10 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   private def checkSegment(tableName: String): Boolean = {
-    val storePath_t1 = s"$storeLocation/${tableName.toLowerCase()}"
-    val detailses = SegmentStatusManager.readTableStatusFile(CarbonTablePath.getTableStatusFilePath(storePath_t1))
+    val storePath_t1 = s"$storeLocation/${ tableName.toLowerCase() }"
+    val table = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
+    val detailses = SegmentStatusManager.readTableStatusFile(CarbonTablePath.getTableStatusFilePath(
+      storePath_t1, table.getTableStatusVersion))
     detailses.map(_.getSegmentStatus == SegmentStatus.SUCCESS).exists(f => f)
   }
 
@@ -520,14 +522,18 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     val dt2 = "dt2"
     sql(s"insert overwrite table $tableName partition(dt='$dt2') select 1, 'a'")
-    val dt1Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath, carbonTable.getTableStatusVersion)
+    var version = CarbonEnv.getCarbonTable(
+      Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME), tableName)(sqlContext.sparkSession).getTableStatusVersion
+    val dt1Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath, version)
 
     assert(dt1Metas.length == 2)
     val dt1Seg1 = dt1Metas(0)
     val dt2Seg1 = dt1Metas(1)
 
     sql(s"insert overwrite table $tableName partition(dt='$dt2') select 5, 'z'")
-    val dt2Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath, carbonTable.getTableStatusVersion)
+    version = CarbonEnv.getCarbonTable(
+      Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME), tableName)(sqlContext.sparkSession).getTableStatusVersion
+    val dt2Metas = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath, version)
     assert(dt2Metas.length == 3)
     val dt2Seg30 = dt2Metas(0)
     val dt2Seg31 = dt2Metas(1)

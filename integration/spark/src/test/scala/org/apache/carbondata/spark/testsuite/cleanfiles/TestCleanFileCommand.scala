@@ -45,10 +45,10 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     // do not send the segment folders to trash
     createTable()
     loadData()
-    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
-      .getTablePath
+    val table = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
+    val path = table.getTablePath
     val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
-    editTableStatusFile(path)
+    editTableStatusFile(path, table.getTableStatusVersion)
     assert(!FileFactory.isFileExist(trashFolderPath))
 
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
@@ -70,10 +70,10 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     // do not send the segment folders to trash
     createTable()
     loadData()
-    val path = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
-      .getTablePath
+    val table = CarbonEnv.getCarbonTable(Some("default"), "cleantest")(sqlContext.sparkSession)
+    val path = table.getTablePath
     val trashFolderPath = CarbonTablePath.getTrashFolderPath(path)
-    editTableStatusFile(path)
+    editTableStatusFile(path, table.getTableStatusVersion)
     assert(!FileFactory.isFileExist(trashFolderPath))
 
     val segmentNumber1 = sql(s"""show segments for table cleantest""").count()
@@ -566,9 +566,9 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists cleantest")
   }
 
-  def editTableStatusFile(carbonTablePath: String) : Unit = {
+  def editTableStatusFile(carbonTablePath: String, version: String) : Unit = {
     // original table status file
-    val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath))
+    val f1 = new File(CarbonTablePath.getTableStatusFilePath(carbonTablePath, version))
     val f2 = new File(CarbonTablePath.getMetadataPath(carbonTablePath) + CarbonCommonConstants
         .FILE_SEPARATOR + CarbonCommonConstants.FILE_SEPARATOR + "tmp")
     val w = new PrintWriter(f2)

@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.partition
 
 import java.util
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
@@ -27,6 +28,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AlterTableModel, AtomicRunnableCommand}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -115,6 +117,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
         loadModel.setColumnCompressor(columnCompressor)
         loadModel.setCarbonTransactionalTable(true)
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
+        loadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
         // create operationContext to fire load events
         val operationContext: OperationContext = new OperationContext
         var hasIndexFiles = false
@@ -139,6 +142,9 @@ case class CarbonAlterTableAddHivePartitionCommand(
       if (hasIndexFiles) {
         // Create new entry in tablestatus file
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, false)
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+          sparkSession,
+          loadModel.getLatestTableStatusVersion)
         // Normally, application will use Carbon SDK to write files into a partition folder, then
         // add the folder to partitioned carbon table.
         // If there are many threads writes to the same partition folder, there will be many

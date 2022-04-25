@@ -1258,6 +1258,12 @@ public final class CarbonProperties {
         CarbonCommonConstants.ENABLE_TABLE_STATUS_BACKUP_DEFAULT).equalsIgnoreCase("true");
   }
 
+  public static boolean isTableStatusMultiVersionEnabled() {
+    return getInstance().getProperty(CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS,
+            CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT)
+        .equalsIgnoreCase("true");
+  }
+
   /**
    * Validate the restrictions
    *
