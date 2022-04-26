@@ -273,17 +273,19 @@ object BroadCastSIFilterPushJoin {
     val identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val readCommittedScope: ReadCommittedScope = carbonTableInputFormat.getReadCommitted(job,
       identifier)
-    val segmentsToAccess: Array[Segment] = carbonTableInputFormat.getSegmentsToAccess(job,
-      readCommittedScope)
-    val segmentsToAccessSet: util.Set[Segment] = new util.HashSet[Segment]
-    for (segId <- segmentsToAccess) {
-      segmentsToAccessSet.add(segId)
-    }
     // get all valid segments and set them into the configuration
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
     val segments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = segmentStatusManager
       .getValidAndInvalidSegments(carbonTable.isMV)
     val validSegments: util.List[Segment] = segments.getValidSegments
+
+    val segmentsToAccess: Array[Segment] = carbonTableInputFormat.getSegmentsToAccess (job,
+      readCommittedScope, validSegments)
+    val segmentsToAccessSet: util.Set[Segment] = new util.HashSet[Segment]
+    for (segId <- segmentsToAccess) {
+      segmentsToAccessSet.add(segId)
+    }
+
     // if no segments in table
     val validSegmentsToAccess: util.List[Segment] = new util.ArrayList[Segment]
     if (validSegments.size == 0) {

@@ -18,13 +18,7 @@
 package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -222,7 +216,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    */
   private List<Segment> getFilteredSegment(JobContext job, List<Segment> validSegments,
       boolean validationRequired, ReadCommittedScope readCommittedScope) throws IOException {
-    Segment[] segmentsToAccess = getSegmentsToAccess(job, readCommittedScope);
+    // first check for mapreduce.input.carboninputformat.segmentnumbers
+    // second check for table property of latest_segment for query
+    Segment[] segmentsToAccess = getSegmentsToAccess(job, readCommittedScope, validSegments);
     if (segmentsToAccess.length == 0 || segmentsToAccess[0].getSegmentNo().equalsIgnoreCase("*")) {
       return validSegments;
     }
@@ -421,9 +417,11 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
   /**
    * return valid segment to access
+   * check for SET carbon.input.segments.<database_name>.<table_name>
    */
   public Segment[] getSegmentsToAccess(JobContext job, ReadCommittedScope readCommittedScope) {
     String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
+
     if (segmentString.trim().isEmpty()) {
       return new Segment[0];
     }
@@ -601,4 +599,60 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     return CarbonCommonConstants.INVALID_SEGMENT_ID;
   }
+
+  /**
+   * return valid segment to access
+   * first check for mapreduce.input.carboninputformat.segmentnumbers"
+   * second check for table property of latest_segment for query
+   */
+  public Segment[] getSegmentsToAccess(JobContext job, ReadCommittedScope readCommittedScope,
+                                       List<Segment> validSegments) {
+    String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
+    boolean queryLatestSegment = false;
+    if (null != carbonTable) {
+      queryLatestSegment = Boolean.parseBoolean(carbonTable.getTableInfo()
+              .getFactTable().getTableProperties()
+              .getOrDefault(CarbonCommonConstants.TABLE_QUERY_LATEST_SEGMENT, "false"));
+    }
+    if (segmentString.trim().isEmpty()) {
+      if (!queryLatestSegment) {
+        return new Segment[0];
+      } else {
+        List<Segment> segments = getLatestSegment(validSegments);
+        return  segments.toArray(new Segment[0]);
+      }
+    } else {
+      List<Segment> segments = Segment.toSegmentList(segmentString.split(","), readCommittedScope);
+      if (!queryLatestSegment) {
+        return segments.toArray(new Segment[0]);
+      } else {
+        List<Segment> latestSegment;
+        if (segments.size() > 0 && segments.get(0).getSegmentNo().equalsIgnoreCase("*")) {
+          latestSegment = getLatestSegment(validSegments);
+        } else {
+          latestSegment = getLatestSegment(segments);
+        }
+        return latestSegment.toArray(new Segment[0]);
+      }
+    }
+  }
+
+  /**
+   * get the latest segment
+   * @param validSegments the in put segment for search
+   * @return the latest segment for query
+   */
+  public List<Segment> getLatestSegment(List<Segment> validSegments) {
+    if (validSegments.isEmpty()) {
+      return Collections.emptyList();
+    } else {
+      Segment segment = validSegments.stream().max((a, b) -> {
+        double aNo = Double.parseDouble(a.getSegmentNo());
+        double bNo = Double.parseDouble(b.getSegmentNo());
+        return Double.compare(aNo, bNo);
+      }).get();
+      return Collections.singletonList(segment);
+    }
+  }
+
 }
