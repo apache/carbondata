@@ -26,6 +26,7 @@ import com.google.gson.Gson
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonThreadUtil, SparkSession}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.parser.MVQueryParser
 
 import org.apache.carbondata.common.exceptions.sql.NoSuchMVException
@@ -36,6 +37,7 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager.ValidAndInvalidSegmentsInfo
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -137,10 +139,16 @@ object MVRefresher {
       loadMetadataDetail.setExtraInfo(segmentMap)
       loadMetadataDetailList.add(loadMetadataDetail)
       newLoadName = segmentId
+      val timestamp = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+        System.currentTimeMillis().toString
+      } else {
+        ""
+      }
       SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
-        viewSchema.getIdentifier.getTablePath, viewTable.getTableStatusVersion),
+        viewSchema.getIdentifier.getTablePath, timestamp),
         loadMetadataDetailList.toArray(new Array[LoadMetadataDetails](loadMetadataDetailList
           .size)))
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(viewTable, session, timestamp)
     } else {
       LOGGER.error("Not able to acquire the lock for table status update for table " +
                    viewSchema.getIdentifier.getDatabaseName + "." +

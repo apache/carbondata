@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.secondaryindex.command
 
-import java.util.UUID
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
@@ -74,7 +72,7 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extend
       carbonLoadModel.setTableName(relation.carbonTable.getTableName)
       carbonLoadModel.setDatabaseName(relation.carbonTable.getDatabaseName)
       carbonLoadModel.setTablePath(relation.carbonTable.getTablePath)
-      carbonLoadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
+      carbonLoadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
       val sortScope = relation.carbonTable.getTableInfo.getFactTable
         .getTableProperties
         .get(CarbonCommonConstants.SORT_SCOPE)

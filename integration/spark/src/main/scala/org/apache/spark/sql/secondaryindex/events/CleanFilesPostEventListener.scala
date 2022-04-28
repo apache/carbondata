@@ -145,9 +145,9 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
           detail.setSegmentStatus(segToStatusMap(detail.getLoadName))
           detail.setVisibility("false")
         }
-        SegmentStatusManager.writeLoadDetailsIntoFile(
-          indexTable.getMetadataPath + CarbonCommonConstants.FILE_SEPARATOR +
-            CarbonTablePath.TABLE_STATUS_FILE, indexTableMetadataDetails.toArray)
+        SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
+          indexTable.getTablePath, indexTable.getTableStatusVersion),
+          indexTableMetadataDetails.toArray)
       } else {
         LOGGER.error("Unable to get the lock file for main/Index table. Please try again later")
       }

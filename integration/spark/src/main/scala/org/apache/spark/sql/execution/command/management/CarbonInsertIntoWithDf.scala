@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSession}
 import org.apache.spark.sql.execution.command.UpdateTableModel
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.util.CausedBy
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -112,6 +113,9 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
           carbonLoadModel,
           isOverwriteTable)
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+          sparkSession,
+          carbonLoadModel.getLatestTableStatusVersion)
         isUpdateTableStatusRequired = true
       }
       if (isOverwriteTable) {

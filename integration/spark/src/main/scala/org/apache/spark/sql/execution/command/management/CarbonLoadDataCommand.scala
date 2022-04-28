@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataLoadTableFileMapping}
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.types.{DateType, IntegerType, LongType, StringType, StructType, TimestampType}
 import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 
@@ -128,6 +129,9 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
           carbonLoadModel,
           isOverwriteTable)
         isUpdateTableStatusRequired = true
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+          sparkSession,
+          carbonLoadModel.getLatestTableStatusVersion)
       }
       if (isOverwriteTable) {
         LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")

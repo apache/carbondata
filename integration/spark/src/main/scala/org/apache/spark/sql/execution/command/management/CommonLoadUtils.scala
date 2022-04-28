@@ -19,7 +19,6 @@ package org.apache.spark.sql.execution.command.management
 
 import java.text.SimpleDateFormat
 import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -152,9 +151,9 @@ object CommonLoadUtils {
     val carbonLoadModel = new CarbonLoadModel()
     carbonLoadModel.setFactFilePath(factPath)
     carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
-    carbonLoadModel.setAggLoadRequest(
-      internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
-        CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean)
+    val isInternalLoadCall = internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
+      CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean
+    carbonLoadModel.setAggLoadRequest(isInternalLoadCall)
     carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
     val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.COMPRESSOR,
@@ -170,7 +169,12 @@ object CommonLoadUtils {
       }
     }
     // generate new timestamp for tablestatus version
-    carbonLoadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
+    if(!isInternalLoadCall) {
+      carbonLoadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
+    } else {
+      carbonLoadModel.setLatestTableStatusVersion(table.getTableStatusVersion)
+    }
+
     new CarbonLoadModelBuilder(table).build(
       options.asJava,
       optionsFinal,

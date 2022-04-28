@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.command.partition
 
 import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
@@ -117,7 +116,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
         loadModel.setColumnCompressor(columnCompressor)
         loadModel.setCarbonTransactionalTable(true)
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
-        loadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
+        loadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
         // create operationContext to fire load events
         val operationContext: OperationContext = new OperationContext
         var hasIndexFiles = false

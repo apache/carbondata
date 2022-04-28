@@ -19,7 +19,6 @@ package org.apache.spark.sql.execution.command.management
 
 import java.io.File
 import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -237,7 +236,7 @@ case class CarbonAddLoadCommand(
     model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
     model.setDatabaseName(carbonTable.getDatabaseName)
     model.setTableName(carbonTable.getTableName)
-    model.setLatestTableStatusVersion(UUID.randomUUID().toString)
+    model.setLatestTableStatusVersion(System.currentTimeMillis().toString)
     val operationContext = new OperationContext
     operationContext.setProperty("isLoadOrCompaction", false)
     val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(sparkSession,

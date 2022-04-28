@@ -795,22 +795,19 @@ object CarbonScalaUtil {
               .TABLE_STATUS_FILE)
           }
         })
-      var latestTableStatusVersion = ""
-      var lastMdtTime: Long = 0L
+      if (tableStatusFiles.isEmpty) {
+        return ""
+      }
+      var latestTableStatusVersion = 0L
       tableStatusFiles.foreach { tableStatusFile =>
-        if (latestTableStatusVersion.isEmpty) {
-          latestTableStatusVersion = tableStatusFile.getName
-          lastMdtTime = tableStatusFile.getLastModifiedTime
-        } else {
-          if (lastMdtTime <= tableStatusFile.getLastModifiedTime) {
-            lastMdtTime = tableStatusFile.getLastModifiedTime
-            latestTableStatusVersion = tableStatusFile.getName
-          }
+        val versionTimeStamp = tableStatusFile.getName
+          .substring(tableStatusFile.getName.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
+            tableStatusFile.getName.length).toLong
+        if (latestTableStatusVersion <= versionTimeStamp) {
+          latestTableStatusVersion = versionTimeStamp
         }
       }
-      latestTableStatusVersion.substring(
-        latestTableStatusVersion.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
-        latestTableStatusVersion.length)
+      latestTableStatusVersion.toString
     } else {
       ""
     }

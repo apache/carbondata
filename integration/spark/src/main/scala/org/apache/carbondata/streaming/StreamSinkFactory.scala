@@ -19,7 +19,6 @@ package org.apache.carbondata.streaming
 
 import java.io.IOException
 import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -214,7 +213,7 @@ object StreamSinkFactory {
       carbonLoadModel,
       hadoopConf)
     carbonLoadModel.setSegmentId(segmentId)
-    carbonLoadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
+    carbonLoadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
     val columnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.COMPRESSOR,
         CompressorFactory.getInstance().getCompressor.getName)

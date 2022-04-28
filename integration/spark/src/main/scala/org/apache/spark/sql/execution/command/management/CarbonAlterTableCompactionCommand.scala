@@ -19,7 +19,6 @@ package org.apache.spark.sql.execution.command.management
 
 import java.io.{File, IOException}
 import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -177,7 +176,7 @@ case class CarbonAlterTableCompactionCommand(
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
       carbonLoadModel.setMetrics(new DataLoadMetrics())
-      carbonLoadModel.setLatestTableStatusVersion(UUID.randomUUID().toString)
+      carbonLoadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
 
       var storeLocation = System.getProperty("java.io.tmpdir")
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
