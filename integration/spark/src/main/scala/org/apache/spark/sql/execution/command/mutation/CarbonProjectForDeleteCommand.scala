@@ -116,7 +116,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
 
       val version = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
-        UUID.randomUUID().toString
+       System.currentTimeMillis().toString
       } else {
         ""
       }
