@@ -36,8 +36,6 @@
 
   * String Types
     * STRING
-    * CHAR
-    * VARCHAR
 
     **NOTE**: For string longer than 32000 characters, use `LONG_STRING_COLUMNS` in table property.
     Please refer to TBLProperties in [CreateTable](./ddl-of-carbondata.md#create-table) for more information.
