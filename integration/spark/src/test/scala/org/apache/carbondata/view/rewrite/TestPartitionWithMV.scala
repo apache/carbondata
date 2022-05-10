@@ -54,9 +54,11 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
         | STORED AS carbondata
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql("set carbon.enable.mv = true")
   }
 
   override def afterAll(): Unit = {
+    sql("set carbon.enable.mv = false")
     sql("drop database if exists partition_mv cascade")
     sql("use default")
     CarbonProperties.getInstance()

@@ -35,6 +35,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterEach {
     sql("drop database if exists carbon cascade")
     sql("drop database if exists carbon1 cascade")
     sql("drop database if exists carbon2 cascade")
+    sql("set carbon.enable.mv = true")
   }
 
   private def restoreData(dblocation: String, tableName: String) = {
@@ -271,6 +272,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterEach {
   }
 
   override def afterEach {
+    sql("set carbon.enable.mv = false")
     sql("use default")
     sql("drop database if exists carbon cascade")
     sql("drop database if exists carbon1 cascade")

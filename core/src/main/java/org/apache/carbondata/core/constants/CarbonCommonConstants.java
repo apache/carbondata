@@ -1231,7 +1231,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_ENABLE_MV = "carbon.enable.mv";
 
-  public static final String CARBON_ENABLE_MV_DEFAULT = "true";
+  public static final String CARBON_ENABLE_MV_DEFAULT = "false";
 
   /**
    * Related mv table's map for a fact table

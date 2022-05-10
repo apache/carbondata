@@ -51,6 +51,7 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql("set carbon.enable.mv = true")
   }
 
   test("test create mv on hive table") {
@@ -76,19 +77,18 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
 
     // 2.  test disable mv with carbon.properties
     // 2.1 disable MV when set carbon.enable.mv = false in the carbonproperties
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_MV, "false")
+    sql("set carbon.enable.mv = false")
     df = sql("select empname, avg(salary) from source group by empname")
     assert(!isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
-
     // 2.2 enable MV when configuared value is invalid
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_MV, "invalidvalue")
     df = sql("select empname, avg(salary) from source group by empname")
-    assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
+    assert(!isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
 
     // 2.3 enable mv when set carbon.enable.mv = true in the carbonproperties
+    sql("set carbon.enable.mv = true")
     df = sql("select empname, avg(salary) from source group by empname")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_MV, "true")
     assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
 
     // 3.  test disable mv with sessionparam
@@ -107,9 +107,6 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
     sql("set carbon.enable.mv = true")
     df = sql("select empname, avg(salary) from source group by empname")
     assert(isTableAppearedInPlan(df.queryExecution.optimizedPlan, "mv1"))
-
-    ThreadLocalSessionInfo.getCarbonSessionInfo.
-      getSessionParams.removeProperty(CarbonCommonConstants.CARBON_ENABLE_MV)
   }
 
   test("test create mv on orc table") {
@@ -392,6 +389,7 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    sql("set carbon.enable.mv = false")
   }
 
   def drop(): Unit = {

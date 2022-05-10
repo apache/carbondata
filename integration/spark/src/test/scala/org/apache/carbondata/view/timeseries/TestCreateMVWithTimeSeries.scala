@@ -41,6 +41,7 @@ class TestCreateMVWithTimeSeries extends QueryTest with BeforeAndAfterAll {
         "deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int, utilization int,salary int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE maintable  OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql("set carbon.enable.mv = true")
   }
 
   def drop(): Unit = {
@@ -235,6 +236,7 @@ class TestCreateMVWithTimeSeries extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     drop()
+    sql("set carbon.enable.mv = false")
     if (null != timestampFormat) {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timestampFormat)

@@ -25,6 +25,7 @@ class MVInvalidTestCase  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     drop
     sql("create table main_table (name string,age int,height int) STORED AS carbondata")
+    sql("set carbon.enable.mv = true")
   }
 
   def drop {
@@ -45,5 +46,6 @@ class MVInvalidTestCase  extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     drop
+    sql("set carbon.enable.mv = false")
   }
 }
