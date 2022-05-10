@@ -44,6 +44,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists products1")
     sql("drop table if exists sales1")
     sql("drop materialized view if exists mv1")
+    sql("set carbon.enable.mv = true")
   }
 
   test("test Incremental Loading on refresh MV") {
@@ -335,6 +336,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     val df = sql("select a, sum(c) from main_table  group by a")
     assert(!TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     defaultConfig()
+    sql("set carbon.enable.mv = true")
     sqlContext.sparkSession.conf.unset("carbon.input.segments.default.main_table")
     checkAnswer(sql("select a, sum(c) from main_table  group by a"), Seq(Row("a", 1), Row("b", 2)))
     val df1 = sql("select a, sum(c) from main_table  group by a")
@@ -656,6 +658,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS test_table1")
     sql("drop table IF EXISTS main_table")
     sql("drop table IF EXISTS dimensiontable")
+    sql("set carbon.enable.mv = false")
   }
 
   private def createTableFactTable(tableName: String) = {

@@ -39,7 +39,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists sample cascade")
     sql("create database sample")
     sql("use sample")
-
+    sql("set carbon.enable.mv = true")
     createTables.map(sql)
 
   }
@@ -150,6 +150,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     drop()
+    sql("set carbon.enable.mv = false")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

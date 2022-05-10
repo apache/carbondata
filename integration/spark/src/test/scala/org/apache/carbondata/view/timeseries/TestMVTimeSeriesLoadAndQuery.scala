@@ -31,6 +31,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     drop()
     createTable()
+    sql("set carbon.enable.mv = true")
   }
 
   test("create MV timeseries materialized view with simple projection and aggregation and filter") {
@@ -367,6 +368,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     drop()
+    sql("set carbon.enable.mv = false")
   }
 
   def drop(): Unit = {

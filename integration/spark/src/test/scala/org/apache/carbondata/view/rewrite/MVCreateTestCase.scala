@@ -104,6 +104,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql("set carbon.enable.mv = true")
   }
 
   test("test if partial query with group by hits mv when all columns present in mv") {
@@ -1567,6 +1568,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     drop()
+    sql("set carbon.enable.mv = false")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

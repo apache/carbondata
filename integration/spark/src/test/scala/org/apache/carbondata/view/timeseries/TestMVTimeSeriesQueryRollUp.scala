@@ -28,10 +28,12 @@ class TestMVTimeSeriesQueryRollUp extends QueryTest with BeforeAndAfterAll {
     drop()
     createTable()
     loadData("maintable")
+    sql("set carbon.enable.mv = true")
   }
 
   override def afterAll(): Unit = {
     drop()
+    sql("set carbon.enable.mv = false")
   }
 
   test("test timeseries query rollup with simple projection") {
