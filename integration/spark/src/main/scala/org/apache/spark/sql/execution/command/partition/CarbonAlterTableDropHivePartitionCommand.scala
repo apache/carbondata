@@ -26,6 +26,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AtomicRunnableCommand}
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.util.AlterTableUtil
 
@@ -164,12 +165,15 @@ case class CarbonAlterTableDropHivePartitionCommand(
           tobeDeletedSegs.add(tobeDeleted.split(",")(0))
         }
       }
+      val tblStatusWriteVersion = System.currentTimeMillis().toString
       withEvents(operationContext,
         AlterTableDropPartitionPreStatusEvent(table, sparkSession),
         AlterTableDropPartitionPostStatusEvent(table)) {
         SegmentFileStore.commitDropPartitions(table, uniqueId, tobeUpdatedSegs, tobeDeletedSegs,
-          table.getTableStatusVersion)
+          tblStatusWriteVersion)
       }
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+        sparkSession, tblStatusWriteVersion)
       IndexStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
       tobeCleanSegs.addAll(tobeUpdatedSegs)
       tobeCleanSegs.addAll(tobeDeletedSegs)

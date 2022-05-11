@@ -27,7 +27,8 @@ import scala.util.control.Breaks.{break, breakable}
 
 import com.google.gson.Gson
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -296,7 +297,9 @@ object CarbonStore {
       loadIds: Seq[String],
       dbName: String,
       tableName: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      tblStatusVersion: String,
+      session: SparkSession): Unit = {
 
     validateLoadIds(loadIds)
 
@@ -307,7 +310,9 @@ object CarbonStore {
         carbonTable.getAbsoluteTableIdentifier,
         loadIds.asJava,
         path,
-        carbonTable.getTableStatusVersion).asScala
+        carbonTable.getTableStatusVersion,
+        tblStatusVersion).asScala
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable, session, tblStatusVersion)
       if (invalidLoadIds.isEmpty) {
         LOGGER.info(s"Delete segment by Id is successful for $dbName.$tableName.")
       } else {
@@ -325,7 +330,9 @@ object CarbonStore {
       timestamp: String,
       dbName: String,
       tableName: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      tblStatusWriteVersion: String,
+      sparkSession: SparkSession): Unit = {
 
     val time = validateTimeFormat(timestamp)
     val path = carbonTable.getMetadataPath
@@ -337,7 +344,10 @@ object CarbonStore {
           timestamp,
           path,
           time,
-          carbonTable.getTableStatusVersion).asScala
+          carbonTable.getTableStatusVersion,
+          tblStatusWriteVersion).asScala
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+        sparkSession, tblStatusWriteVersion)
       if (invalidLoadTimestamps.isEmpty) {
         LOGGER.info(s"Delete segment by date is successful for $dbName.$tableName.")
       } else {

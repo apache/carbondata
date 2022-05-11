@@ -46,13 +46,16 @@ case class CarbonDeleteLoadByLoadDateCommand(
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
     }
+    val tblStatusWriteVersion = System.currentTimeMillis().toString
     withEvents(DeleteSegmentByDatePreEvent(carbonTable, loadDate, sparkSession),
       DeleteSegmentByDatePostEvent(carbonTable, loadDate, sparkSession)) {
       CarbonStore.deleteLoadByDate(
         loadDate,
         CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
         tableName,
-        carbonTable)
+        carbonTable,
+        tblStatusWriteVersion,
+        sparkSession)
     }
     Seq.empty
   }

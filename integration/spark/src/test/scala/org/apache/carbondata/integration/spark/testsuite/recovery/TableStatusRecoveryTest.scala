@@ -24,6 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.recovery.tablestatus.TableStatusRecovery
+import org.apache.carbondata.sdk.file.CarbonWriter
 
 class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
 
@@ -35,24 +36,39 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS table1")
   }
 
+  test("test table status recovery if file is lost after first insert") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata")
+    sql("insert into table1 values('abc',1, 1)")
+    checkAnswer(sql("select * from table1"), Seq(Row("abc", 1, 1)))
+    deleteTableStatusVersionFile
+    checkAnswer(sql("select count(*) from table1"), Seq(Row(0)))
+    val args = "default table1"
+    TableStatusRecovery.main(args.split(" "))
+    checkAnswer(sql("select * from table1"), Seq(Row("abc", 1, 1)))
+  }
+
+  test("test table status recovery if file is lost after delete segment") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata")
+    verifyScenario_Delete_Segment()
+  }
+
   test("test table status recovery if file is lost after insert") {
     sql("DROP TABLE IF EXISTS table1")
-    sql("create table table1 (c1 string,c2 int, c3 int)" +
-      "STORED AS carbondata")
+    sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata")
     verifyScenario_Insert()
   }
 
   test("test table status recovery if file is lost after update & delete") {
     sql("DROP TABLE IF EXISTS table1")
-    sql("create table table1 (c1 string,c2 int, c3 int)" +
-        "STORED AS carbondata")
+    sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata")
     verifyScenario_IUD()
   }
 
   test("test table status recovery if file is lost after compaction") {
     sql("DROP TABLE IF EXISTS table1")
-    sql("create table table1 (c1 string,c2 int, c3 int)" +
-        "STORED AS carbondata")
+    sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata")
     verifyScenario_Compaction()
   }
 
@@ -77,27 +93,65 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     verifyScenario_Compaction()
   }
 
-  private def verifyScenario_Insert(): Unit = {
-    sql("insert into table1 values('abc',1, 1)")
-    sql("insert into table1 values('abc', 2, 1)")
-    sql("insert into table1 values('abc', 3, 2)")
-    checkAnswer(sql("select * from table1"),
-      Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
+  test("test table status recovery if file is lost after add & drop partition") {
+    sql("drop table if exists table1")
+    sql("create table table1 (id int,name String) partitioned by(email string) " +
+        "stored as carbondata")
+    sql("insert into table1 select 1,'blue','abc'")
+    val schemaFile =
+      CarbonTablePath.getSchemaFilePath(
+        CarbonEnv.getCarbonTable(None, "table1")(sqlContext.sparkSession).getTablePath)
+    val sdkWritePath = target + "/" + "def"
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
+    val writer = CarbonWriter.builder()
+      .outputPath(sdkWritePath)
+      .writtenBy("test")
+      .withSchemaFile(schemaFile)
+      .withCsvInput()
+      .build()
+    writer.write(Seq("2", "red", "def").toArray)
+    writer.write(Seq("3", "black", "def").toArray)
+    writer.close()
+    sql(s"alter table table1 add partition (email='def') location '$sdkWritePath'")
+    deleteTableStatusVersionFile
+    checkAnswer(sql("select count(*) from table1"), Seq(Row(0)))
+    val args = "default table1"
+    TableStatusRecovery.main(args.split(" "))
+    checkAnswer(sql("select name from table1"), Seq(Row("blue"), Row("red"), Row("black")))
+    sql("alter table table1 drop partition(email='def')")
+    checkAnswer(sql("select name from table1"), Seq(Row("blue")))
+    deleteTableStatusVersionFile
+    TableStatusRecovery.main(args.split(" "))
+    sql("select name from table1").show(false)
+  }
+
+  private def deleteTableStatusVersionFile: Unit = {
     val table = CarbonEnv.getCarbonTable(Some("default"), "table1")(sqlContext.sparkSession)
     val currVersion = table.getTableStatusVersion
     val status = FileFactory.getCarbonFile(CarbonTablePath.getTableStatusFilePath(
       table.getTablePath, currVersion)).deleteFile()
     assert(status.equals(true))
+  }
+
+  private def verifyScenario_Insert(): Unit = {
+    insertData()
+    deleteTableStatusVersionFile
     val args = "default table1"
     TableStatusRecovery.main(args.split(" "))
     checkAnswer(sql("select * from table1"),
       Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
   }
 
-  def verifyScenario_IUD(): Unit = {
+  private def insertData(): Unit = {
     sql("insert into table1 values('abc',1, 1)")
     sql("insert into table1 values('abc', 2, 1)")
     sql("insert into table1 values('abc', 3, 2)")
+    checkAnswer(sql("select * from table1"),
+      Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
+  }
+
+  def verifyScenario_IUD(): Unit = {
+    insertData()
     sql("update table1 set(c2)=(5) where c2=3").show()
     checkAnswer(sql("select * from table1"),
       Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 5, 2)))
@@ -127,19 +181,24 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
   }
 
   private def verifyScenario_Compaction(): Unit = {
-    sql("insert into table1 values('abc',1, 1)")
-    sql("insert into table1 values('abc', 2, 1)")
-    sql("insert into table1 values('abc', 3, 2)")
-    checkAnswer(sql("select * from table1"),
-      Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
+    insertData()
     sql("alter table table1 compact 'major'")
-    val table = CarbonEnv.getCarbonTable(Some("default"), "table1")(sqlContext.sparkSession)
-    val currVersion = table.getTableStatusVersion
-    val status = FileFactory.getCarbonFile(CarbonTablePath.getTableStatusFilePath(
-      table.getTablePath, currVersion)).deleteFile()
-    assert(status.equals(true))
+    deleteTableStatusVersionFile
     val args = "default table1"
     TableStatusRecovery.main(args.split(" "))
+    checkAnswer(sql("select * from table1"),
+      Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
+  }
+
+  private def verifyScenario_Delete_Segment(): Unit = {
+    insertData()
+    sql("DELETE FROM TABLE table1 WHERE SEGMENT.ID IN(0)")
+    checkAnswer(sql("select * from table1"),
+      Seq(Row("abc", 2, 1), Row("abc", 3, 2)))
+    deleteTableStatusVersionFile
+    val args = "default table1"
+    TableStatusRecovery.main(args.split(" "))
+    // cannot recover deleted segment, as the delete info exists only in table status file
     checkAnswer(sql("select * from table1"),
       Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
   }

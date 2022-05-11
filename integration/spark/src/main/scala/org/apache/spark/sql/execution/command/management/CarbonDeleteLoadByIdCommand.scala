@@ -46,13 +46,16 @@ case class CarbonDeleteLoadByIdCommand(
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
     }
 
+    val tblStatusWriteVersion = System.currentTimeMillis().toString
     withEvents(DeleteSegmentByIdPreEvent(carbonTable, loadIds, sparkSession),
       DeleteSegmentByIdPostEvent(carbonTable, loadIds, sparkSession)) {
       CarbonStore.deleteLoadById(
         loadIds,
         CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
         tableName,
-        carbonTable
+        carbonTable,
+        tblStatusWriteVersion,
+        sparkSession
       )
     }
     Seq.empty

@@ -35,7 +35,9 @@ object DeleteSegmentById {
       segmentIds: Seq[String]): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
-    CarbonStore.deleteLoadById(segmentIds, dbName, tableName, carbonTable)
+    val tblStatusWriteVersion = System.currentTimeMillis().toString
+    CarbonStore.deleteLoadById(segmentIds, dbName, tableName,
+      carbonTable, tblStatusWriteVersion, spark)
   }
 
   def main(args: Array[String]): Unit = {

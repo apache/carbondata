@@ -37,23 +37,35 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 
 object TableStatusRecovery {
   def main(args: Array[String]): Unit = {
+    // check the argument contains database name and tablename to recover table status file
     assert(args.length == 2)
     createCarbonSession()
     val sparkSession = SparkSQLUtil.getSparkSession
     val tableName = args(1)
     val databaseName = args(0)
+    // get carbon table to start table status recovery
     val carbonTable = try {
       CarbonEnv.getCarbonTable(Some(databaseName), tableName)(sparkSession)
     } catch {
       case ex: Exception =>
         throw ex
     }
+
+    /**
+     * 1. get the current table status version file name associated with carbon table
+     * 2. Check if the current table status version file exists
+     * 3. If does not exists, then read all the old table status version files and find the last
+     *    recent version file and get the load metadata details. For the lost load metadata,
+     *    read the segment files and table status update files to recover the lost
+     *    load metadata entry and add it to previous version load metadata details list.
+     * 4. Write the load metadata details list with version name as [Step:1]
+     * */
     val tableStatusVersion = carbonTable.getTableStatusVersion
     if (tableStatusVersion.nonEmpty) {
       val tableStatusPath = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath,
         tableStatusVersion)
-      val tableStatusFile = FileFactory.getCarbonFile(FileFactory.getUpdatedFilePath
-      (tableStatusPath))
+      val tableStatusFile = FileFactory.getCarbonFile(
+        FileFactory.getUpdatedFilePath(tableStatusPath))
       if (!tableStatusFile.exists()) {
         // case where the current version table status file is lost, then get the previous table
         // status version file and update it as the current table status version
@@ -64,9 +76,36 @@ object TableStatusRecovery {
               .TABLE_STATUS_FILE)
           }
         })
+        // read the segment files in the Metadata directory
+        val segmentFileDir = FileFactory.getCarbonFile(FileFactory.getUpdatedFilePath(
+          CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)))
+        val segmentFiles = segmentFileDir.listFiles()
+          .map(_.getName)
+          .filter(segmentFileName => segmentFileName.endsWith(CarbonTablePath.SEGMENT_EXT))
+          .toList
         if (tableStatusFiles.isEmpty) {
-          throw new Exception("Table Status Version Files are missing")
+          if (segmentFiles.isEmpty) {
+            // no metadata found to recover table status file
+            throw new Exception(
+              "Table Status Version File/ Segment Files does not exists to recover load metadata")
+          }
         }
+        // prepare segment to latest timestamp version map. This is required, in case of drop
+        // partition, where there can be multiple segment files for same segment Id
+        val segToTimeStampMap = new util.HashMap[String, String]()
+        segmentFiles.foreach { segmentFile =>
+          val segmentToTimestamp = segmentFile.trim.split(CarbonCommonConstants.UNDERSCORE).toList
+          if (!segToTimeStampMap.containsKey(segmentToTimestamp.head)) {
+            segToTimeStampMap.put(segmentToTimestamp.head, segmentToTimestamp.last)
+          } else {
+            val timeStamp = segToTimeStampMap.get(segmentToTimestamp.head)
+            if (timeStamp <= segmentToTimestamp.last) {
+              segToTimeStampMap.put(segmentToTimestamp.head, segmentToTimestamp.last)
+            }
+          }
+        }
+        // iterate the available table status version files and find the most recent table status
+        // version file
         var latestTableStatusVersion = 0L
         tableStatusFiles.foreach { tableStatusFile =>
           val versionTimeStamp = tableStatusFile.getName
@@ -76,8 +115,15 @@ object TableStatusRecovery {
             latestTableStatusVersion = versionTimeStamp
           }
         }
+        val latestTableStatusVersionStr = if (latestTableStatusVersion == 0L) {
+          ""
+        } else {
+          latestTableStatusVersion.toString
+        }
+
+        // read the load metadata details with the identified table status version file
         var loadMetaDetails = SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(
-          carbonTable.getTablePath), latestTableStatusVersion.toString).toList
+          carbonTable.getTablePath), latestTableStatusVersionStr).toList
 
         var updateMetaDetails: Array[SegmentUpdateDetails] = Array.empty
 
@@ -88,6 +134,8 @@ object TableStatusRecovery {
           }
         })
 
+        // if table has table update status files, iterate and identify the latest table status
+        // update file
         if (tableUpdateStatusFiles.nonEmpty) {
           var latestTableUpdateStatusVersion = 0L
           tableUpdateStatusFiles.foreach { tableStatusFile =>
@@ -104,23 +152,24 @@ object TableStatusRecovery {
         }
 
         // check which segment is missing from lost table status version
-          val segmentFileDir = FileFactory.getCarbonFile(FileFactory.getUpdatedFilePath(
-            CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)))
-          val segmentFiles = segmentFileDir.listFiles()
-            .map(_.getName)
-            .filter(segmentFileName => segmentFileName.endsWith(CarbonTablePath.SEGMENT_EXT))
-            .toList
-          val missedLoadMetaDetails: util.List[LoadMetadataDetails] = new util
-          .ArrayList[LoadMetadataDetails]()
-          segmentFiles.foreach { segmentFileStr =>
-            val segmentId = segmentFileStr.substring(0,
-              segmentFileStr.indexOf(CarbonCommonConstants.UNDERSCORE, 0))
+          val missedLoadMetaDetails: util.List[LoadMetadataDetails] =
+            new util.ArrayList[LoadMetadataDetails]()
+          segToTimeStampMap.asScala.foreach { segmentFileEntry =>
+            val segmentFileName = segmentFileEntry._1 + CarbonCommonConstants.UNDERSCORE +
+                                  segmentFileEntry._2
+            val segmentId = segmentFileEntry._1
             val segmentUpdateDetail = updateMetaDetails
               .filter(_.getSegmentName.equalsIgnoreCase(segmentId))
-            if (!loadMetaDetails.exists(_.getLoadName.equalsIgnoreCase(segmentId)) &&
+            // check if the segment Id from segment file entry exists in load metadata details list.
+            // If does not exist, or if the segment file mapped to the load metadata entry and the
+            // latest segment file timestamp is not same, then prepare new load metadata.
+            if ((!loadMetaDetails.exists(_.getLoadName.equalsIgnoreCase(segmentId))
+                 || !loadMetaDetails.filter(_.getLoadName.equalsIgnoreCase(segmentId))
+                   .head.getSegmentFile.equalsIgnoreCase(segmentFileName)) &&
                 !segmentId.contains(CarbonCommonConstants.POINT)) {
               val segFilePath = CarbonTablePath.getSegmentFilePath(
-                carbonTable.getTablePath, segmentFileStr)
+                carbonTable.getTablePath, segmentFileName)
+              // read segment file and prepare load metadata
               val segmentFile = SegmentFileStore.readSegmentFile(segFilePath)
               val loadMetadataDetail = new LoadMetadataDetails()
               val segmentInfo = segmentFile.getLocationMap.asScala.head._2
@@ -132,9 +181,9 @@ object TableStatusRecovery {
                 loadMetadataDetail.setSegmentStatus(getSegmentStatus(segmentInfo.getStatus))
               }
               loadMetadataDetail.setLoadName(segmentId)
-              loadMetadataDetail.setSegmentFile(segmentFileStr)
+              loadMetadataDetail.setSegmentFile(segmentFileName)
               val dataIndexSize = CarbonUtil.getDataSizeAndIndexSize(carbonTable
-                .getTablePath, new Segment(segmentId, segmentFileStr))
+                .getTablePath, new Segment(segmentId, segmentFileName))
               loadMetadataDetail.setDataSize(dataIndexSize
                 .get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString)
               loadMetadataDetail.setIndexSize(dataIndexSize
@@ -143,7 +192,13 @@ object TableStatusRecovery {
                 .getCarbonFile(segFilePath)
                 .getLastModifiedTime)
               missedLoadMetaDetails.add(loadMetadataDetail)
+              if (loadMetaDetails.exists(_.getLoadName.equalsIgnoreCase(segmentId))) {
+                loadMetaDetails = loadMetaDetails.filterNot(_.getLoadName
+                  .equalsIgnoreCase(segmentId))
+              }
             } else if (!segmentUpdateDetail.isEmpty) {
+              // in case of Update/delete, update the already existing load metadata entry with the
+              // latest segment update detail
               val loadMetadataDetail = loadMetaDetails
                 .filter(_.getLoadName.equalsIgnoreCase(segmentId))
                 .head
@@ -155,6 +210,7 @@ object TableStatusRecovery {
             }
           }
           missedLoadMetaDetails.addAll(loadMetaDetails.asJava)
+          // write new table status file with lost table status version name
           SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
             carbonTable.getTablePath, tableStatusVersion),
             missedLoadMetaDetails.toArray(new Array[LoadMetadataDetails](missedLoadMetaDetails

@@ -451,7 +451,8 @@ public class SegmentStatusManager {
    * @return
    */
   public static List<String> updateDeletionStatus(AbsoluteTableIdentifier identifier,
-      List<String> loadIds, String tableFolderPath, String version) throws Exception {
+      List<String> loadIds, String tableFolderPath, String readVersion, String writeVersion)
+      throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonCleanFilesLock =
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.CLEAN_FILES_LOCK);
@@ -468,7 +469,7 @@ public class SegmentStatusManager {
         if (carbonCleanFilesLock.lockWithRetries()) {
           LOG.info("Clean Files lock has been successfully acquired");
           String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier
-              .getTablePath(), version);
+              .getTablePath(), readVersion);
           LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
           if (!FileFactory.isFileExist(dataLoadLocation)) {
             // log error.
@@ -476,7 +477,7 @@ public class SegmentStatusManager {
             return loadIds;
           }
           // read existing metadata details in load metadata.
-          listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath, version);
+          listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath, readVersion);
           if (listOfLoadFolderDetailsArray.length != 0) {
             updateDeletionStatus(identifier, loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
             if (invalidLoadIds.isEmpty()) {
@@ -486,8 +487,9 @@ public class SegmentStatusManager {
                 // To handle concurrency scenarios, always take latest metadata before writing
                 // into status file.
                 LoadMetadataDetails[] latestLoadMetadataDetails =
-                    readLoadMetadata(tableFolderPath, version);
-                writeLoadDetailsIntoFile(dataLoadLocation, updateLatestTableStatusDetails(
+                    readLoadMetadata(tableFolderPath, readVersion);
+                writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(identifier
+                    .getTablePath(), writeVersion), updateLatestTableStatusDetails(
                     listOfLoadFolderDetailsArray, latestLoadMetadataDetails).stream()
                     .toArray(LoadMetadataDetails[]::new));
               } else {
@@ -539,8 +541,8 @@ public class SegmentStatusManager {
    * @return
    */
   public static List<String> updateDeletionStatus(AbsoluteTableIdentifier identifier,
-      String loadDate, String tableFolderPath, Long loadStartTime, String version)
-      throws Exception {
+      String loadDate, String tableFolderPath, Long loadStartTime, String readVersion,
+      String writeVersion) throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonCleanFilesLock =
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.CLEAN_FILES_LOCK);
@@ -557,7 +559,7 @@ public class SegmentStatusManager {
         if (carbonCleanFilesLock.lockWithRetries()) {
           LOG.info("Clean Files lock has been successfully acquired");
           String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier
-              .getTablePath(), version);
+              .getTablePath(), readVersion);
           LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
 
           if (!FileFactory.isFileExist(dataLoadLocation)) {
@@ -566,7 +568,7 @@ public class SegmentStatusManager {
             return invalidLoadTimestamps;
           }
           // read existing metadata details in load metadata.
-          listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath, version);
+          listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath, readVersion);
           if (listOfLoadFolderDetailsArray.length != 0) {
             updateDeletionStatus(identifier, loadDate, listOfLoadFolderDetailsArray,
                 invalidLoadTimestamps, loadStartTime);
@@ -576,8 +578,9 @@ public class SegmentStatusManager {
                 // To handle concurrency scenarios, always take latest metadata before writing
                 // into status file.
                 LoadMetadataDetails[] latestLoadMetadataDetails =
-                    readLoadMetadata(tableFolderPath, version);
-                writeLoadDetailsIntoFile(dataLoadLocation, updateLatestTableStatusDetails(
+                    readLoadMetadata(tableFolderPath, readVersion);
+                writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(identifier
+                    .getTablePath(), writeVersion), updateLatestTableStatusDetails(
                     listOfLoadFolderDetailsArray, latestLoadMetadataDetails).stream()
                     .toArray(LoadMetadataDetails[]::new));
               } else {

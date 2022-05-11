@@ -31,7 +31,9 @@ object DeleteSegmentByDate {
       dateValue: String): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
-    CarbonStore.deleteLoadByDate(dateValue, dbName, tableName, carbonTable)
+    val tblStatusWriteVersion = System.currentTimeMillis().toString
+    CarbonStore.deleteLoadByDate(dateValue, dbName, tableName,
+      carbonTable, tblStatusWriteVersion, spark)
   }
 
   def main(args: Array[String]): Unit = {

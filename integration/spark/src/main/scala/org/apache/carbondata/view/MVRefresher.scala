@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 
 import com.google.gson.Gson
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonThreadUtil, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonThreadUtil, SparkSession}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.parser.MVQueryParser
@@ -33,7 +33,6 @@ import org.apache.carbondata.common.exceptions.sql.NoSuchMVException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.ICarbonLock
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager.ValidAndInvalidSegmentsInfo
@@ -109,7 +108,8 @@ object MVRefresher {
         }
       }
       if (viewSchema.isRefreshIncremental) {
-        if (!getSpecificSegmentsTobeLoaded(viewSchema, segmentMapping, loadMetadataDetailList)) {
+        if (!getSpecificSegmentsTobeLoaded(
+          viewSchema, segmentMapping, loadMetadataDetailList, session)) {
           return false
         }
       } else {
@@ -117,7 +117,7 @@ object MVRefresher {
           val relatedTableIds =
             viewSchema.getRelatedTables.asScala.filter(_.isCarbonDataTable)
           for (relatedTableId <- relatedTableIds) {
-            val parentTblVersion: String = getTableStatusVersion(relatedTableId)
+            val parentTblVersion: String = getTableStatusVersion(relatedTableId, session)
             val validAndInvalidSegmentsInfo =
               SegmentStatusManager.getValidAndInvalidSegmentsInfo(relatedTableId, parentTblVersion)
             val relatedTableSegmentList: util.List[String] = SegmentStatusManager
@@ -248,14 +248,15 @@ object MVRefresher {
   @throws[IOException]
   private def getSpecificSegmentsTobeLoaded(schema: MVSchema,
       segmentMapping: util.Map[String, util.List[String]],
-      listOfLoadFolderDetails: util.List[LoadMetadataDetails]): Boolean = {
+      listOfLoadFolderDetails: util.List[LoadMetadataDetails],
+      sparkSession: SparkSession): Boolean = {
     val relationIdentifiers: util.List[RelationIdentifier] = schema.getRelatedTables
     // invalidSegmentList holds segment list which needs to be marked for delete
     val invalidSegmentList: util.HashSet[String] = new util.HashSet[String]
     if (listOfLoadFolderDetails.isEmpty) {
       // If segment Map is empty, load all valid segments from main tables to mv
       for (relationIdentifier <- relationIdentifiers.asScala) {
-        val parentTblVersion: String = getTableStatusVersion(relationIdentifier)
+        val parentTblVersion: String = getTableStatusVersion(relationIdentifier, sparkSession)
         val validAndInvalidSegmentsInfo =
           SegmentStatusManager.getValidAndInvalidSegmentsInfo(relationIdentifier, parentTblVersion)
         val mainTableSegmentList: util.List[String] = SegmentStatusManager
@@ -271,7 +272,7 @@ object MVRefresher {
       for (relationIdentifier <- relationIdentifiers.asScala) {
         val segmentList: util.List[String] = new util.ArrayList[String]
         // Get all segments for parent relationIdentifier
-        val parentTblVersion: String = getTableStatusVersion(relationIdentifier)
+        val parentTblVersion: String = getTableStatusVersion(relationIdentifier, sparkSession)
         val validAndInvalidSegmentsInfo =
           SegmentStatusManager.getValidAndInvalidSegmentsInfo(relationIdentifier, parentTblVersion)
         val mainTableSegmentList: util.List[String] = SegmentStatusManager
@@ -312,7 +313,7 @@ object MVRefresher {
         segmentList.removeAll(mainTableSegmentList)
         mainTableSegmentList.removeAll(originSegmentList)
         if (ifTableStatusUpdateRequired && mainTableSegmentList.isEmpty) {
-          val version = getTableStatusVersion(schema.getIdentifier)
+          val version = getTableStatusVersion(schema.getIdentifier, sparkSession)
           SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
             schema.getIdentifier.getTablePath, version),
             listOfLoadFolderDetails.toArray(new Array[LoadMetadataDetails](listOfLoadFolderDetails
@@ -368,9 +369,9 @@ object MVRefresher {
     true
   }
 
-  def getTableStatusVersion(identifier: RelationIdentifier): String = {
-    val carbonTable = CarbonMetadata.getInstance
-      .getCarbonTable(identifier.getDatabaseName, identifier.getTableName)
+  def getTableStatusVersion(identifier: RelationIdentifier, sparkSession: SparkSession): String = {
+    val carbonTable = CarbonEnv.getCarbonTable(Some(identifier.getDatabaseName),
+      identifier.getTableName)(sparkSession)
     var parentTblVersion = ""
     if (null != carbonTable) {
       parentTblVersion = carbonTable.getTableStatusVersion
