@@ -62,7 +62,7 @@ object StreamSinkFactory {
                   "." + carbonTable.getTableName)
     } else {
       LOGGER.error("Not able to acquire the streaming lock for stream table:" +
-                   carbonTable.getDatabaseName + "." + carbonTable.getTableName)
+        carbonTable.getDatabaseName + "." + carbonTable.getTableName)
       throw new IOException(
         "Not able to acquire the streaming lock for stream table: " +
         carbonTable.getDatabaseName + "." + carbonTable.getTableName)
@@ -153,7 +153,6 @@ object StreamSinkFactory {
 
   /**
    * get current stream segment id
-   *
    * @return
    */
   private def getStreamSegmentId(carbonTable: CarbonTable,

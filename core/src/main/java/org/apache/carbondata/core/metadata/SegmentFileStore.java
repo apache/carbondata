@@ -616,10 +616,10 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
-      String segmentFile, String tableId, SegmentFileStore segmentFileStore, String version)
-      throws IOException {
+      String segmentFile, String tableId, SegmentFileStore segmentFileStore,
+      String tblStatusVersion) throws IOException {
     return updateTableStatusFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore,
-        null, version);
+        null, tblStatusVersion);
   }
 
   /**
@@ -630,11 +630,11 @@ public class SegmentFileStore {
    */
   public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore,
-      SegmentStatus segmentStatus, String version) throws IOException {
+      SegmentStatus segmentStatus, String tblStatusVersion) throws IOException {
     boolean status = false;
     String tablePath = carbonTable.getTablePath();
     String tableStatusPath =
-        CarbonTablePath.getTableStatusFilePath(tablePath, version);
+        CarbonTablePath.getTableStatusFilePath(tablePath, tblStatusVersion);
     if (!FileFactory.isFileExist(tableStatusPath)) {
       return status;
     }
@@ -655,7 +655,7 @@ public class SegmentFileStore {
         LOGGER.info("Acquired lock for table path" + tablePath + " for table status update");
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
             SegmentStatusManager.readLoadMetadata(
-                metadataPath, version);
+                metadataPath, tblStatusVersion);
 
         for (LoadMetadataDetails detail : listOfLoadFolderDetailsArray) {
           // if the segments is in the list of marked for delete then update the status.

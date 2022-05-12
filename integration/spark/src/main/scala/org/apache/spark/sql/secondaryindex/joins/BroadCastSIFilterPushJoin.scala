@@ -89,11 +89,11 @@ case class BroadCastSIFilterPushJoin(
     if (partitions.nonEmpty && secondaryIndexRDD.nonEmpty) {
       secondaryIndexRDD.foreach {
         case value: CarbonScanRDD[InternalRow] =>
-          val version = value.getTableInfo.getFactTable
+          val tblStatusVersion = value.getTableInfo.getFactTable
             .getTableProperties.getOrDefault("latestversion", "")
           val siSegments = SegmentStatusManager
             .readLoadMetadata(CarbonTablePath.getMetadataPath(value
-              .getTableInfo.getTablePath), version)
+              .getTableInfo.getTablePath), tblStatusVersion)
               .filter(loadMetadataDetail =>
                 loadMetadataDetail.getSegmentStatus == SegmentStatus.SUCCESS
                   || loadMetadataDetail.getSegmentStatus == SegmentStatus.MARKED_FOR_UPDATE
@@ -273,7 +273,7 @@ object BroadCastSIFilterPushJoin {
     setQuerySegmentForIndexTable(job.getConfiguration, carbonTable)
     val identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val readCommittedScope: ReadCommittedScope = carbonTableInputFormat.getReadCommitted(job,
-      carbonTable)
+      carbonTable.getAbsoluteTableIdentifier, carbonTable.getTableStatusVersion)
     val segmentsToAccess: Array[Segment] = carbonTableInputFormat.getSegmentsToAccess(job,
       readCommittedScope)
     val segmentsToAccessSet: util.Set[Segment] = new util.HashSet[Segment]

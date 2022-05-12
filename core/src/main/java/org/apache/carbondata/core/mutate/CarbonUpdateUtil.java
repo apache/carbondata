@@ -254,10 +254,11 @@ public class CarbonUpdateUtil {
    */
   public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
-      boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted, String version) {
+      boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted,
+      String tblStatusVersion) {
     return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
         isTimestampUpdateRequired, isUpdateStatusFileUpdateRequired,
-        segmentsToBeDeleted, new ArrayList<Segment>(), version);
+        segmentsToBeDeleted, new ArrayList<Segment>(), tblStatusVersion);
   }
 
   /**

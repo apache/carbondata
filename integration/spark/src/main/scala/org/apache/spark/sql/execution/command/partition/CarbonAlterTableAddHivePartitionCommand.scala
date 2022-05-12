@@ -39,7 +39,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
-import org.apache.carbondata.core.util.{CarbonUtil, ObjectSerializationUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ObjectSerializationUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{withEvents, AlterTableMergeIndexEvent, OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -142,8 +142,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
         // Create new entry in tablestatus file
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, false)
         CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
-          sparkSession,
-          loadModel.getLatestTableStatusVersion)
+          sparkSession, loadModel.getLatestTableStatusVersion)
         // Normally, application will use Carbon SDK to write files into a partition folder, then
         // add the folder to partitioned carbon table.
         // If there are many threads writes to the same partition folder, there will be many

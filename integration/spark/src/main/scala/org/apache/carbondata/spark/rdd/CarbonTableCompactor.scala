@@ -229,10 +229,11 @@ class CarbonTableCompactor(
       maxSegmentColumnSchemaList = null,
       currentPartitions = partitions)
     carbonLoadModel.setTablePath(carbonMergerMapping.hdfsStoreLocation)
-    // here
-    val version = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getTableStatusVersion
+    val tblStatusVersion = carbonLoadModel.getCarbonDataLoadSchema
+      .getCarbonTable.getTableStatusVersion
     carbonLoadModel.setLoadMetadataDetails(
-      SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath, version).toList.asJava)
+      SegmentStatusManager
+        .readLoadMetadata(carbonTable.getMetadataPath, tblStatusVersion).toList.asJava)
     // trigger event for compaction
     val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
       AlterTableCompactionPreEvent(sqlContext.sparkSession,

@@ -430,7 +430,8 @@ class IndexRebuildRDD[K, V](
     // MultiBlockSplit are used for bloom reading. This means 1 task for 1 shard(unique block path).
     val splits = format.getSplits(job)
     val carbonTable = CarbonTable.buildFromTableInfo(getTableInfo)
-    readCommittedScope = format.getReadCommitted(job, carbonTable)
+    readCommittedScope = format.getReadCommitted(
+      job, carbonTable.getAbsoluteTableIdentifier, carbonTable.getTableStatusVersion)
     splits.asScala
       .map(_.asInstanceOf[CarbonInputSplit])
       .groupBy(p => (p.getSegmentId, p.taskId, p.getBlockPath))

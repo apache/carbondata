@@ -72,10 +72,11 @@ public final class DeleteLoadFolders {
       boolean isForceDelete,
       List<PartitionSpec> specs,
       boolean cleanStaleInProgress,
-      Set<String> loadsToDelete) {
+      Set<String> loadsToDelete,
+      String tblStatusVersion) {
     LoadMetadataDetails[] currentDetails =
         SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath(),
-            carbonTable.getTableStatusVersion());
+            tblStatusVersion);
     physicalFactAndMeasureMetadataDeletion(carbonTable,
         currentDetails,
         isForceDelete,

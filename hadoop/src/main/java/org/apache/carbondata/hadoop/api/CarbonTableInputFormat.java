@@ -134,7 +134,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         throw new IOException(e);
       }
     }
-    this.readCommittedScope = getReadCommitted(job, carbonTable);
+    this.readCommittedScope = getReadCommitted(job, carbonTable.getAbsoluteTableIdentifier(),
+        carbonTable.getTableStatusVersion());
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
     String updateDeltaVersion = job.getConfiguration().get(UPDATE_DELTA_VERSION);
     SegmentUpdateStatusManager updateStatusManager;
@@ -446,7 +447,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
 
-    ReadCommittedScope readCommittedScope = getReadCommitted(job, table);
+    ReadCommittedScope readCommittedScope =
+        getReadCommitted(job, table.getAbsoluteTableIdentifier(), table.getTableStatusVersion());
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
 
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(
@@ -566,15 +568,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     return blockMappingVO;
   }
 
-  public ReadCommittedScope getReadCommitted(JobContext job, CarbonTable table)
-      throws IOException {
-    AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
+  public ReadCommittedScope getReadCommitted(JobContext job, AbsoluteTableIdentifier identifier,
+      String tblStatusVersion) throws IOException {
     if (readCommittedScope == null) {
       ReadCommittedScope readCommittedScope;
       if (job.getConfiguration().getBoolean(CARBON_TRANSACTIONAL_TABLE, true)) {
-        String version = table.getTableStatusVersion();
         readCommittedScope =
-            new TableStatusReadCommittedScope(identifier, job.getConfiguration(), version);
+            new TableStatusReadCommittedScope(identifier, job.getConfiguration(), tblStatusVersion);
       } else {
         readCommittedScope = getReadCommittedScope(job.getConfiguration());
         if (readCommittedScope == null) {

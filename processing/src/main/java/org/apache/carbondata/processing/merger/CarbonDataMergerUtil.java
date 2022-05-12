@@ -239,7 +239,6 @@ public final class CarbonDataMergerUtil {
         updatedDetailsList.add(loadMetadataDetails);
 
         try {
-          // here
           SegmentStatusManager.writeLoadDetailsIntoFile(statusFilePath,
               updatedDetailsList.toArray(new LoadMetadataDetails[updatedDetailsList.size()]));
           tableStatusUpdationStatus = true;

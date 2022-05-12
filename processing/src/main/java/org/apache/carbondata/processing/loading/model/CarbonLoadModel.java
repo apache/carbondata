@@ -813,13 +813,13 @@ public class CarbonLoadModel implements Serializable {
    * Read segments metadata from table status file and set it to this load model object
    */
   public void readAndSetLoadMetadataDetails() {
-    String version = carbonDataLoadSchema.getCarbonTable().getTableStatusVersion();
+    String tblStatusVersion = carbonDataLoadSchema.getCarbonTable().getTableStatusVersion();
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
     LoadMetadataDetails[] details;
-    if (version.isEmpty()) {
+    if (tblStatusVersion.isEmpty()) {
       details = SegmentStatusManager.readLoadMetadata(metadataPath);
     } else {
-      details = SegmentStatusManager.readLoadMetadata(metadataPath, version);
+      details = SegmentStatusManager.readLoadMetadata(metadataPath, tblStatusVersion);
     }
     setLoadMetadataDetails(Arrays.asList(details));
   }

@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.execution.command.mutation
 
-import java.util.UUID
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan

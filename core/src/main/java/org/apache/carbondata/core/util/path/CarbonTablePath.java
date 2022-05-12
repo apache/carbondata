@@ -212,12 +212,12 @@ public class CarbonTablePath {
   /**
    * Return absolute path of table status file
    */
-  public static String getTableStatusFilePath(String tablePath, String version) {
+  public static String getTableStatusFilePath(String tablePath, String tblStatusVersion) {
     String tableStatusPath = getTableStatusFilePath(tablePath);
-    if (version.isEmpty()) {
+    if (tblStatusVersion.isEmpty()) {
       return tableStatusPath;
     }
-    return tableStatusPath + CarbonCommonConstants.UNDERSCORE + version;
+    return tableStatusPath + CarbonCommonConstants.UNDERSCORE + tblStatusVersion;
   }
 
   public static String getTableStatusFilePathWithUUID(String tablePath, String uuid) {

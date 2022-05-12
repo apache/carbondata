@@ -24,6 +24,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.command.management.CarbonCleanFilesCommand
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 
@@ -34,7 +35,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{CleanFilesPostEvent, Event, OperationContext, OperationEventListener}
 import org.apache.carbondata.view.MVManagerInSpark
@@ -76,9 +77,19 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
         Seq.empty[Expression],
         sparkSession,
         indexTable)
-      SegmentStatusManager.deleteLoadsAndUpdateMetadata(
+      val tblStatusVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+        System.currentTimeMillis().toString
+      } else {
+        ""
+      }
+      val isUpdateComplete = SegmentStatusManager.deleteLoadsAndUpdateMetadata(
         indexTable, isForceDelete, partitions.map(_.asJava).orNull, cleanStaleInProgress,
-        true)
+        true, tblStatusVersion)
+      if (isUpdateComplete) {
+        // if clean files update is complete, then update the table status version to index table
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(indexTable,
+          sparkSession, tblStatusVersion)
+      }
       cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
     }
   }

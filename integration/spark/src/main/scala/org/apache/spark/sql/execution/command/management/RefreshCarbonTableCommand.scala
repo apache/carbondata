@@ -107,11 +107,13 @@ case class RefreshCarbonTableCommand(
               Seq.empty, true)(sparkSession, sparkSession.sessionState.catalog)
           }
         }
-        val version = CarbonScalaUtil.getLatestTableStatusVersion(identifier.getTablePath)
-        if (version.nonEmpty) {
+        val tblStatusVersion = CarbonScalaUtil.getLatestTableStatusVersion(identifier.getTablePath)
+        // in case of multi-version table status file enabled, get the latest version and save to
+        // table properties
+        if (tblStatusVersion.nonEmpty) {
           tableInfo.getFactTable
             .getTableProperties
-            .put("latestversion", version)
+            .put("latestversion", tblStatusVersion)
         }
         // remove mv related info from source table properties
         tableInfo.getFactTable
@@ -124,7 +126,7 @@ case class RefreshCarbonTableCommand(
         // Register partitions to hive metastore in case of hive partitioning carbon table
         if (tableInfo.getFactTable.getPartitionInfo != null &&
             tableInfo.getFactTable.getPartitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
-          registerAllPartitionsToHive(identifier, sparkSession, version)
+          registerAllPartitionsToHive(identifier, sparkSession, tblStatusVersion)
         }
       }
     }

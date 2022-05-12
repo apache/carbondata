@@ -483,6 +483,12 @@ trait SparkVersionAdapter {
           CreateTableStatement(create.tableName, create.tableSchema, create.partitioning,
             create.bucketSpec, newProperties, create.provider, create.options,
             location, create.comment, create.serde, create.external, create.ifNotExists)
+        } else if (create.options.contains("latestversion")) {
+          // remove latestversion property in options if present
+          val newOptions = create.options.filterNot(_._1.equalsIgnoreCase("latestversion"))
+          CreateTableStatement(create.tableName, create.tableSchema, create.partitioning,
+            create.bucketSpec, properties, create.provider, newOptions,
+            location, create.comment, create.serde, create.external, create.ifNotExists)
         } else {
           create
         }

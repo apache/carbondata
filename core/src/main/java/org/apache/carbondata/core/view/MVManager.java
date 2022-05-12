@@ -339,14 +339,14 @@ public abstract class MVManager {
       RelationIdentifier relationIdentifier = schema.getIdentifier();
       CarbonTable carbonTable = CarbonMetadata.getInstance()
           .getCarbonTable(relationIdentifier.getDatabaseName(), relationIdentifier.getTableName());
-      String version = "";
+      String tblStatusVersion = "";
       if (null != carbonTable) {
-        version = carbonTable.getTableStatusVersion();
+        tblStatusVersion = carbonTable.getTableStatusVersion();
       }
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(AbsoluteTableIdentifier
           .from(relationIdentifier.getTablePath(),
               relationIdentifier.getDatabaseName(),
-              relationIdentifier.getTableName()), version);
+              relationIdentifier.getTableName()), tblStatusVersion);
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {
         if (carbonLock.lockWithRetries()) {
@@ -355,13 +355,13 @@ public abstract class MVManager {
           String metaDataPath =
               CarbonTablePath.getMetadataPath(relationIdentifier.getTablePath());
           LoadMetadataDetails[] loadMetadataDetails =
-              SegmentStatusManager.readLoadMetadata(metaDataPath, version);
+              SegmentStatusManager.readLoadMetadata(metaDataPath, tblStatusVersion);
           for (LoadMetadataDetails entry : loadMetadataDetails) {
             entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
           }
           SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(relationIdentifier.getTablePath(), version),
-              loadMetadataDetails);
+              CarbonTablePath.getTableStatusFilePath(relationIdentifier.getTablePath(),
+                  tblStatusVersion), loadMetadataDetails);
         } else {
           LOGGER.error("Not able to acquire the lock for Table status update for table "
               + relationIdentifier.getDatabaseName() + "." + relationIdentifier

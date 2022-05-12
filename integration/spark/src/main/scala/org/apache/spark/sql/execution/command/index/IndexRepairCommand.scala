@@ -74,6 +74,7 @@ extends DataCommand {
     carbonLoadModel.setTableName(tableName)
     carbonLoadModel.setTablePath(mainCarbonTable.getTablePath)
     carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(mainCarbonTable))
+    carbonLoadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
     val indexMetadata = mainCarbonTable.getIndexMetadata
     val secondaryIndexProvider = IndexType.SI.getIndexProviderName
     if (null != indexMetadata && null != indexMetadata.getIndexesMap &&

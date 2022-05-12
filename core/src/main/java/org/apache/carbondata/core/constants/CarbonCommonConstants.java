@@ -2884,7 +2884,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS =
       "carbon.enable.multi.version.table.status";
 
-  public static final String CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT = "true";
+  public static final String CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT = "false";
 
 
 }

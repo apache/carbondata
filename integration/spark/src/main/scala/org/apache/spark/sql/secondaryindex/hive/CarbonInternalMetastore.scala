@@ -135,7 +135,7 @@ object CarbonInternalMetastore {
   }
 
   def refreshTableStatusVersion(carbonTable: CarbonTable)(sparkSession: SparkSession): Unit = {
-    if (!carbonTable.isTransactionalTable) {
+    if (!carbonTable.isTransactionalTable || carbonTable.isExternalTable) {
       return
     }
     if (null == carbonTable.getTableInfo.getFactTable.getTableProperties.get("latestversion")) {

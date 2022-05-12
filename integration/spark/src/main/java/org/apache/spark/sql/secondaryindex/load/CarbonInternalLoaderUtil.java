@@ -85,12 +85,13 @@ public class CarbonInternalLoaderUtil {
    */
   public static boolean recordLoadMetadata(List<LoadMetadataDetails> newLoadMetadataDetails,
       List<String> validSegments, CarbonTable carbonTable, List<CarbonTable> indexCarbonTables,
-      String databaseName, String tableName, String version, SegmentStatus segmentStatus) {
+      String databaseName, String tableName, String tableStatusVersion,
+      SegmentStatus segmentStatus) {
     boolean status = false;
     String metaDataFilepath = carbonTable.getMetadataPath();
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(absoluteTableIdentifier, version);
+        new SegmentStatusManager(absoluteTableIdentifier, tableStatusVersion);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       int retryCount = CarbonLockUtil
@@ -108,7 +109,7 @@ public class CarbonInternalLoaderUtil {
           return false;
         }
 
-        String tblStatusVersion = version;
+        String tblStatusVersion = tableStatusVersion;
         if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS
             || segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
           tblStatusVersion = carbonTable.getTableStatusVersion();
@@ -173,12 +174,13 @@ public class CarbonInternalLoaderUtil {
                     indexTable, newSegmentDetailsListForIndexTable);
 
             SegmentStatusManager.writeLoadDetailsIntoFile(
-                CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath(), version),
-                indexTableDetailsList.toArray(new LoadMetadataDetails[0]));
+                CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath(),
+                    tableStatusVersion), indexTableDetailsList.toArray(new LoadMetadataDetails[0]));
           }
         } else if (carbonTable.isIndexTable()) {
           SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath(), version),
+              CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath(),
+                  tableStatusVersion),
               updatedLoadMetadataDetails.toArray(new LoadMetadataDetails[0]));
         }
         status = true;

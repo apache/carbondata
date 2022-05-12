@@ -98,7 +98,7 @@ case class CarbonCleanFilesCommand(
           carbonTable,
           options.getOrElse("force", "false").toBoolean,
           options.getOrElse("stale_inprogress", "false").toBoolean,
-          showStats,
+          showStats, sparkSession,
           CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, carbonTable))
       }
       if (showStats) {

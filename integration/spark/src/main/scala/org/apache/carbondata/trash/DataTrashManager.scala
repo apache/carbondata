@@ -20,6 +20,8 @@ package org.apache.carbondata.trash
 import scala.collection.JavaConverters._
 
 import org.apache.commons.lang.StringUtils
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -34,6 +36,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CleanFilesUtil, DeleteLoadFolders, TrashUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 object DataTrashManager {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -53,6 +56,7 @@ object DataTrashManager {
       isForceDelete: Boolean,
       cleanStaleInProgress: Boolean,
       showStatistics: Boolean,
+      sparkSession: SparkSession,
       partitionSpecs: Option[Seq[PartitionSpec]] = None) : Long = {
     // if isForceDelete = true need to throw exception if CARBON_CLEAN_FILES_FORCE_ALLOWED is false
     if (isForceDelete && !CarbonProperties.getInstance().isCleanFilesForceAllowed) {
@@ -90,6 +94,9 @@ object DataTrashManager {
       } else {
         0
       }
+      if (isForceDelete) {
+        cleanUpTableStatusVersionFiles(carbonTable: CarbonTable)
+      }
       // step 3: clean expired segments(MARKED_FOR_DELETE, Compacted, In Progress)
       // Since calculating the the size before and after clean files can be a costly operation
       // have exposed an option where user can change this behaviour.
@@ -98,13 +105,13 @@ object DataTrashManager {
           carbonTable.getTableStatusVersion)
         val sizeBeforeCleaning = getPreOpSizeSnapshot(carbonTable, metadataDetails)
         checkAndCleanExpiredSegments(carbonTable, isForceDelete,
-          cleanStaleInProgress, partitionSpecs)
+          cleanStaleInProgress, partitionSpecs, sparkSession)
         val sizeAfterCleaning = getPostOpSizeSnapshot(carbonTable, metadataDetails
             .map(a => a.getLoadName).toSet)
         (sizeBeforeCleaning - sizeAfterCleaning + trashFolderSizeStats._1 + deltaFileSize).abs
       } else {
         checkAndCleanExpiredSegments(carbonTable, isForceDelete,
-          cleanStaleInProgress, partitionSpecs)
+          cleanStaleInProgress, partitionSpecs, sparkSession)
         0
       }
     } finally {
@@ -113,6 +120,31 @@ object DataTrashManager {
       }
       if (carbonDeleteSegmentLock != null) {
         CarbonLockUtil.fileUnlock(carbonDeleteSegmentLock, LockUsage.DELETE_SEGMENT_LOCK)
+      }
+    }
+  }
+
+  def cleanUpTableStatusVersionFiles(carbonTable: CarbonTable): Unit = {
+    // delete old version files except the current version file and the previous version file
+    val tableStatusFiles = CarbonScalaUtil.getTableStatusVersionFiles(carbonTable.getTablePath)
+      .filterNot(_.getName.endsWith(carbonTable.getTableStatusVersion))
+    // delete old version files except the most recent one for recovery
+    var prevTableStatusVersion = 0L
+    var tableStatusVersionFile: CarbonFile = null
+    tableStatusFiles.foreach { tableStatusFile =>
+      if (!tableStatusFile.getName.endsWith(CarbonTablePath.TABLE_STATUS_FILE)) {
+        val versionTimeStamp = tableStatusFile.getName
+          .substring(tableStatusFile.getName.lastIndexOf(CarbonCommonConstants.UNDERSCORE) + 1,
+            tableStatusFile.getName.length).toLong
+        if (prevTableStatusVersion <= versionTimeStamp) {
+          prevTableStatusVersion = versionTimeStamp
+          if (null != tableStatusVersionFile) {
+            tableStatusVersionFile.delete()
+          }
+          tableStatusVersionFile = tableStatusFile
+        } else {
+          tableStatusFile.delete()
+        }
       }
     }
   }
@@ -174,6 +206,9 @@ object DataTrashManager {
     } else {
       0
     }
+    if (isForceDelete) {
+      cleanUpTableStatusVersionFiles(carbonTable: CarbonTable)
+    }
     // get size that will be deleted (MFD, COmpacted, Inprogress segments)
     val expiredSegmentsSizeStats = dryRunOnExpiredSegments(carbonTable, isForceDelete,
       cleanStaleInProgress)
@@ -210,10 +245,21 @@ object DataTrashManager {
       carbonTable: CarbonTable,
       isForceDelete: Boolean,
       cleanStaleInProgress: Boolean,
-      partitionSpecsOption: Option[Seq[PartitionSpec]]): Unit = {
+      partitionSpecsOption: Option[Seq[PartitionSpec]],
+      sparkSession: SparkSession): Unit = {
     val partitionSpecs = partitionSpecsOption.map(_.asJava).orNull
-    SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable,
-      isForceDelete, partitionSpecs, cleanStaleInProgress, true)
+    val tblStatusVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+      System.currentTimeMillis().toString
+    } else {
+      ""
+    }
+    val isUpdateComplete = SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable,
+      isForceDelete, partitionSpecs, cleanStaleInProgress, true, tblStatusVersion)
+    if (isUpdateComplete) {
+      // if clean files update is complete, then update the table status version to table
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+        sparkSession, tblStatusVersion)
+    }
     if (carbonTable.isHivePartitionTable && partitionSpecsOption.isDefined) {
       SegmentFileStore.cleanSegments(carbonTable, partitionSpecs, isForceDelete)
     }

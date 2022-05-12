@@ -41,6 +41,7 @@ object CleanFiles {
       isForceDeletion,
       cleanStaleInProgress,
       false,
+      spark,
       CarbonFilters.getPartitions(Seq.empty[Expression], spark, carbonTable))
   }
 

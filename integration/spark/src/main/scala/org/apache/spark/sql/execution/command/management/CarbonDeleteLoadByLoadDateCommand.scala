@@ -24,6 +24,7 @@ import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{withEvents, DeleteSegmentByDatePostEvent, DeleteSegmentByDatePreEvent}
 
 case class CarbonDeleteLoadByLoadDateCommand(
@@ -46,7 +47,11 @@ case class CarbonDeleteLoadByLoadDateCommand(
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
     }
-    val tblStatusWriteVersion = System.currentTimeMillis().toString
+    val tblStatusWriteVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+      System.currentTimeMillis().toString
+    } else {
+      ""
+    }
     withEvents(DeleteSegmentByDatePreEvent(carbonTable, loadDate, sparkSession),
       DeleteSegmentByDatePostEvent(carbonTable, loadDate, sparkSession)) {
       CarbonStore.deleteLoadByDate(

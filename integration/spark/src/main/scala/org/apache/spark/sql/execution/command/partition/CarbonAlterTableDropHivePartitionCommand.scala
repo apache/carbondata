@@ -38,6 +38,7 @@ import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events._
 import org.apache.carbondata.spark.rdd.CarbonDropPartitionRDD
 
@@ -165,7 +166,11 @@ case class CarbonAlterTableDropHivePartitionCommand(
           tobeDeletedSegs.add(tobeDeleted.split(",")(0))
         }
       }
-      val tblStatusWriteVersion = System.currentTimeMillis().toString
+      val tblStatusWriteVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+        System.currentTimeMillis().toString
+      } else {
+        ""
+      }
       withEvents(operationContext,
         AlterTableDropPartitionPreStatusEvent(table, sparkSession),
         AlterTableDropPartitionPostStatusEvent(table)) {

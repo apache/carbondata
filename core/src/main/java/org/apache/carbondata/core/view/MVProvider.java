@@ -355,12 +355,12 @@ public class MVProvider {
         CarbonTablePath.getMetadataPath(schema.getIdentifier().getTablePath());
     CarbonTable table = CarbonMetadata.getInstance()
         .getCarbonTable(schema.identifier.getDatabaseName(), schema.identifier.getTableName());
-    String version = "";
+    String tblStatusVersion = "";
     if (null != table) {
-      version = table.getTableStatusVersion();
+      tblStatusVersion = table.getTableStatusVersion();
     }
     LoadMetadataDetails[] viewLoadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(viewMetadataPath, version);
+        SegmentStatusManager.readLoadMetadata(viewMetadataPath, tblStatusVersion);
     Map<String, List<String>> viewSegmentMap = new HashMap<>();
     for (LoadMetadataDetails loadMetadataDetail : viewLoadMetadataDetails) {
       if (loadMetadataDetail.getSegmentStatus() == SegmentStatus.SUCCESS) {

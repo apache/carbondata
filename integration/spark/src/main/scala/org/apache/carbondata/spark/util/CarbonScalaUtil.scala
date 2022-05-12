@@ -787,29 +787,41 @@ object CarbonScalaUtil {
     val tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath)
     if (!FileFactory.isFileExist(tableStatusPath)) {
       // in case, if table has multi-versioned table status files, then get the latest table
-      // version and add it to tableproperties
-      val tableStatusFiles = FileFactory.getCarbonFile(CarbonTablePath.getMetadataPath(tablePath))
-        .listFiles(new CarbonFileFilter {
-          override def accept(file: CarbonFile): Boolean = {
-            file.getName.startsWith(CarbonTablePath
-              .TABLE_STATUS_FILE)
-          }
-        })
+      // version and add it to table properties
+      val tableStatusFiles = getTableStatusVersionFiles(tablePath)
       if (tableStatusFiles.isEmpty) {
         return ""
       }
-      var latestTableStatusVersion = 0L
-      tableStatusFiles.foreach { tableStatusFile =>
-        val versionTimeStamp = tableStatusFile.getName
-          .substring(tableStatusFile.getName.indexOf(CarbonCommonConstants.UNDERSCORE) + 1,
-            tableStatusFile.getName.length).toLong
-        if (latestTableStatusVersion <= versionTimeStamp) {
-          latestTableStatusVersion = versionTimeStamp
-        }
-      }
-      latestTableStatusVersion.toString
+      getLatestTblStatusVersionBasedOnTimestamp(tableStatusFiles)
     } else {
       ""
+    }
+  }
+
+  def getTableStatusVersionFiles(tablePath: String): Array[CarbonFile] = {
+    FileFactory.getCarbonFile(CarbonTablePath.getMetadataPath(tablePath))
+      .listFiles(new CarbonFileFilter {
+        override def accept(file: CarbonFile): Boolean = {
+          file.getName.startsWith(CarbonTablePath
+            .TABLE_STATUS_FILE)
+        }
+      }).filterNot(_.getName.contains(CarbonTablePath.TABLE_STATUS_HISTORY_FILE))
+  }
+
+  def getLatestTblStatusVersionBasedOnTimestamp(tableStatusFiles: Array[CarbonFile]): String = {
+    var latestTableStatusVersion = 0L
+    tableStatusFiles.foreach { tableStatusFile =>
+      val versionTimeStamp = tableStatusFile.getName
+        .substring(tableStatusFile.getName.lastIndexOf(CarbonCommonConstants.UNDERSCORE) + 1,
+          tableStatusFile.getName.length).toLong
+      if (latestTableStatusVersion <= versionTimeStamp) {
+        latestTableStatusVersion = versionTimeStamp
+      }
+    }
+    if (latestTableStatusVersion == 0L) {
+      ""
+    } else {
+      latestTableStatusVersion.toString
     }
   }
 

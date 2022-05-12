@@ -321,10 +321,8 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
       }
     }
 
-    SegmentStatusManager.writeLoadDetailsIntoFile(
-      indexTable.getMetadataPath + CarbonCommonConstants.FILE_SEPARATOR +
-      CarbonTablePath.TABLE_STATUS_FILE,
-      loadMetadataDetailsList)
+    SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
+      indexTable.getTablePath, indexTable.getTableStatusVersion), loadMetadataDetailsList)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     sql(s"CLEAN FILES FOR TABLE ud_index1  OPTIONS('stale_inprogress'='true','force'='true')")

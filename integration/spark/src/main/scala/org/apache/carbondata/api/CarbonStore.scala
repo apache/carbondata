@@ -307,13 +307,10 @@ object CarbonStore {
 
     try {
       val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
-        carbonTable.getAbsoluteTableIdentifier,
-        loadIds.asJava,
-        path,
-        carbonTable.getTableStatusVersion,
-        tblStatusVersion).asScala
-      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable, session, tblStatusVersion)
+        carbonTable.getAbsoluteTableIdentifier, loadIds.asJava,
+        path, carbonTable.getTableStatusVersion, tblStatusVersion).asScala
       if (invalidLoadIds.isEmpty) {
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable, session, tblStatusVersion)
         LOGGER.info(s"Delete segment by Id is successful for $dbName.$tableName.")
       } else {
         sys.error(s"Delete segment by Id is failed. Invalid ID is: ${invalidLoadIds.mkString(",")}")
@@ -346,9 +343,9 @@ object CarbonStore {
           time,
           carbonTable.getTableStatusVersion,
           tblStatusWriteVersion).asScala
-      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
-        sparkSession, tblStatusWriteVersion)
       if (invalidLoadTimestamps.isEmpty) {
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+          sparkSession, tblStatusWriteVersion)
         LOGGER.info(s"Delete segment by date is successful for $dbName.$tableName.")
       } else {
         sys.error("Delete segment by date is failed. No matching segment found.")
@@ -365,11 +362,10 @@ object CarbonStore {
       tableName: String,
       storePath: String,
       segmentId: String,
-      version: String): Boolean = {
+      tableStatusVersion: String): Boolean = {
     val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName, tableName)
     val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
-        SegmentStatusManager(
-          identifier, version).getValidAndInvalidSegments
+        SegmentStatusManager(identifier, tableStatusVersion).getValidAndInvalidSegments
     validAndInvalidSegments.getValidSegments.contains(segmentId)
   }
 

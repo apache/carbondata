@@ -67,7 +67,8 @@ object CarbonHiveIndexMetadataUtil {
       sparkSession: SparkSession,
       latestVersion: String): Unit = {
     val isMultiVersionEnabled = CarbonProperties.isTableStatusMultiVersionEnabled
-    if (isMultiVersionEnabled) {
+    if (isMultiVersionEnabled || carbonTable.getTableStatusVersion.nonEmpty) {
+      // save to hive table metadata and update carbon table
       val sql =
         s"""ALTER TABLE `${ carbonTable.getDatabaseName }`.`${ carbonTable.getTableName }`
            | SET SERDEPROPERTIES ('latestversion'='$latestVersion')""".stripMargin
@@ -85,7 +86,6 @@ object CarbonHiveIndexMetadataUtil {
         propkeys)
       refreshTable(carbonTable.getDatabaseName, carbonTable.getTableName, sparkSession)
       CarbonMetadata.getInstance.removeTable(carbonTable.getDatabaseName, carbonTable.getTableName)
-
       CarbonMetadata.getInstance.loadTableMetadata(carbonTable.getTableInfo)
     }
   }
