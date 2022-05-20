@@ -332,7 +332,7 @@ case class CarbonInsertFromStageCommand(
           segmentMetaDataAccumulator)
       }
       CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
-        spark, loadModel.getLatestTableStatusVersion)
+        spark, loadModel.getLatestTableStatusWriteVersion)
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 
       // 4) write segment file and update the segment entry to SUCCESS
@@ -365,7 +365,7 @@ case class CarbonInsertFromStageCommand(
         table.getCarbonTableIdentifier.getTableId,
         new SegmentFileStore(table.getTablePath, segmentFileName),
         SegmentStatus.SUCCESS,
-        loadModel.getLatestTableStatusVersion)
+        loadModel.getLatestTableStatusWriteVersion)
 
       // trigger load post events
       if (status) {

@@ -60,13 +60,8 @@ class DeleteSegmentByIdListener extends OperationEventListener with Logging {
             // this check is added to verify if the table status file for the index table exists
             // or not. Delete on index tables is only to be called if the table status file exists.
             if (FileFactory.isFileExist(tableStatusFilePath)) {
-              val tblStatusWriteVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
-                System.currentTimeMillis().toString
-              } else {
-                ""
-              }
               CarbonStore.deleteLoadById(loadIds, carbonTable.getDatabaseName,
-                table.getTableName, table, tblStatusWriteVersion, sparkSession)
+                table.getTableName, table, sparkSession)
             }
           }
         }

@@ -353,7 +353,7 @@ object StreamHandoffRDD {
 
       CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonLoadModel
         .getCarbonDataLoadSchema
-        .getCarbonTable, sparkSession, carbonLoadModel.getLatestTableStatusVersion)
+        .getCarbonTable, sparkSession, carbonLoadModel.getLatestTableStatusWriteVersion)
 
       val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
         new LoadTablePostStatusUpdateEvent(carbonLoadModel)
@@ -382,9 +382,9 @@ object StreamHandoffRDD {
       FileFactory.mkdirs(metadataPath)
     }
     val tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath,
-      loadModel.getLatestTableStatusVersion)
+      loadModel.getLatestTableStatusWriteVersion)
     val segmentStatusManager = new SegmentStatusManager(identifier,
-      loadModel.getLatestTableStatusVersion)
+      loadModel.getLatestTableStatusWriteVersion)
     val carbonLock = segmentStatusManager.getTableStatusLock
     try {
       if (carbonLock.lockWithRetries()) {
@@ -393,7 +393,7 @@ object StreamHandoffRDD {
           + " for table status update")
         val listOfLoadFolderDetailsArray =
           SegmentStatusManager.readLoadMetadata(metaDataFilepath,
-            loadModel.getLatestTableStatusVersion)
+            loadModel.getLatestTableStatusWriteVersion)
 
         // update new columnar segment to success status
         val newSegment =

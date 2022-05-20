@@ -176,7 +176,6 @@ case class CarbonAlterTableCompactionCommand(
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
       carbonLoadModel.setMetrics(new DataLoadMetrics())
-      carbonLoadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
 
       var storeLocation = System.getProperty("java.io.tmpdir")
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()

@@ -17,10 +17,8 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.api.CarbonStore
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * delete segments by id list
@@ -36,13 +34,7 @@ object DeleteSegmentById {
       segmentIds: Seq[String]): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
-    val tblStatusWriteVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
-      System.currentTimeMillis().toString
-    } else {
-      ""
-    }
-    CarbonStore.deleteLoadById(segmentIds, dbName, tableName,
-      carbonTable, tblStatusWriteVersion, spark)
+    CarbonStore.deleteLoadById(segmentIds, dbName, tableName, carbonTable, spark)
   }
 
   def main(args: Array[String]): Unit = {

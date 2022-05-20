@@ -27,7 +27,6 @@ import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DeleteSegmentByDatePostEvent, Event, OperationContext, OperationEventListener}
 
 class DeleteSegmentByDateListener extends OperationEventListener with Logging {
@@ -51,13 +50,8 @@ class DeleteSegmentByDateListener extends OperationEventListener with Logging {
           val table = metastore
             .lookupRelation(Some(carbonTable.getDatabaseName), tableName)(sparkSession)
             .asInstanceOf[CarbonRelation].carbonTable
-          val tblStatusWriteVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
-            System.currentTimeMillis().toString
-          } else {
-            ""
-          }
           CarbonStore.deleteLoadByDate(loadDates, carbonTable.getDatabaseName,
-            table.getTableName, table, tblStatusWriteVersion, sparkSession)
+            table.getTableName, table, sparkSession)
         }
     }
   }

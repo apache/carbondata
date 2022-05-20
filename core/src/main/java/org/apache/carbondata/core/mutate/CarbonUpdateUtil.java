@@ -252,13 +252,13 @@ public class CarbonUpdateUtil {
    * @param segmentsToBeDeleted
    * @return
    */
-  public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+  public static Map<String, String> updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
       boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted,
-      String tblStatusVersion) {
+      String tblStatusWriteVersion) {
     return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
         isTimestampUpdateRequired, isUpdateStatusFileUpdateRequired,
-        segmentsToBeDeleted, new ArrayList<Segment>(), tblStatusVersion);
+        segmentsToBeDeleted, new ArrayList<Segment>(), tblStatusWriteVersion);
   }
 
   /**
@@ -270,12 +270,13 @@ public class CarbonUpdateUtil {
    * @param segmentsToBeDeleted
    * @return
    */
-  public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+  public static Map<String, String> updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
       boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted,
       List<Segment> segmentFilesTobeUpdated, String uuid) {
 
     boolean status = false;
+    Map<String, String> tuple = new HashMap<>();
     String metaDataFilepath = table.getMetadataPath();
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
     String tableStatusPath =
@@ -291,6 +292,12 @@ public class CarbonUpdateUtil {
         LOGGER.info("Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
              + " for table status update");
 
+        if (uuid.isEmpty() && CarbonProperties.isTableStatusMultiVersionEnabled()) {
+          String tblStatusWriteVersion = String.valueOf(System.currentTimeMillis());
+          tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(),
+              tblStatusWriteVersion);
+          tuple.put("tblStatusWriteVersion", tblStatusWriteVersion);
+        }
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
             SegmentStatusManager.readLoadMetadata(metaDataFilepath, table.getTableStatusVersion());
         // to update table status only when required.
@@ -342,7 +349,8 @@ public class CarbonUpdateUtil {
                 .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
           }
         } catch (IOException e) {
-          return false;
+          tuple.put("status", "false");
+          return tuple;
         }
 
         status = true;
@@ -363,7 +371,8 @@ public class CarbonUpdateUtil {
         }
       }
     }
-    return status;
+    tuple.put("status", String.valueOf(status));
+    return tuple;
 
   }
 

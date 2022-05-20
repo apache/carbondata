@@ -79,8 +79,17 @@ object MVRefresher {
       LOGGER.info("Acquired lock for mv " + viewIdentifier + " for table status update")
       val viewTableMetadataPath: String =
         CarbonTablePath.getMetadataPath(viewIdentifier.getTablePath)
-      val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(viewTableMetadataPath,
-        viewTable.getTableStatusVersion)
+      val loadMetadataDetails = try {
+        SegmentStatusManager.readLoadMetadata(viewTableMetadataPath,
+          viewTable.getTableStatusVersion)
+      } catch {
+        case ex: RuntimeException =>
+          if (ex.getMessage.contains("Table Status Version file")) {
+            new Array[LoadMetadataDetails](0)
+          } else {
+            throw ex
+          }
+      }
       val loadMetadataDetailList: util.List[LoadMetadataDetails] =
         new util.ArrayList[LoadMetadataDetails](CarbonCommonConstants.DEFAULT_COLLECTION_SIZE)
       // Mark for delete all stale loadMetataDetail
@@ -139,16 +148,17 @@ object MVRefresher {
       loadMetadataDetail.setExtraInfo(segmentMap)
       loadMetadataDetailList.add(loadMetadataDetail)
       newLoadName = segmentId
-      val timestamp = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+      val tblStatusWriteVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
         System.currentTimeMillis().toString
       } else {
         ""
       }
       SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
-        viewSchema.getIdentifier.getTablePath, timestamp),
+        viewSchema.getIdentifier.getTablePath, tblStatusWriteVersion),
         loadMetadataDetailList.toArray(new Array[LoadMetadataDetails](loadMetadataDetailList
           .size)))
-      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(viewTable, session, timestamp)
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(viewTable,
+        session, tblStatusWriteVersion)
     } else {
       LOGGER.error("Not able to acquire the lock for table status update for table " +
                    viewSchema.getIdentifier.getDatabaseName + "." +

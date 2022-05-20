@@ -546,7 +546,6 @@ object DataLoadProcessBuilderOnSpark {
     if (globalSortPartitions != null) {
       loadModel.setGlobalSortPartitions(globalSortPartitions)
     }
-    loadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
     loadModel
   }
 

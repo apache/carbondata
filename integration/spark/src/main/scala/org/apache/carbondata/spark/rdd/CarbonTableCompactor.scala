@@ -422,7 +422,7 @@ class CarbonTableCompactor(
       }
       CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
         sc.sparkSession,
-        carbonLoadModel.getLatestTableStatusVersion)
+        carbonLoadModel.getLatestTableStatusWriteVersion)
 
       val compactionLoadStatusPostEvent = AlterTableCompactionPostStatusUpdateEvent(sc.sparkSession,
         carbonTable,

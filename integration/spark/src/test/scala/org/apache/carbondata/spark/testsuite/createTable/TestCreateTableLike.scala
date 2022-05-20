@@ -19,6 +19,8 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.util
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
@@ -94,7 +96,9 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     assert(checkColumns(fact_src.getListOfColumns, fact_dst.getListOfColumns))
 
     // check table properties same
-    assert(fact_src.getTableProperties.equals(fact_dst.getTableProperties))
+    val srcTblProp = fact_src.getTableProperties.asScala.filterNot(_._1.equals("latestversion"))
+    val dstTblProp = fact_dst.getTableProperties.asScala.filterNot(_._1.equals("latestversion"))
+    assert(srcTblProp.equals(dstTblProp))
 
     // check transaction same
     assert(!(info_src.isTransactionalTable ^ info_dst.isTransactionalTable))

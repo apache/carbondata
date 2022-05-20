@@ -93,7 +93,7 @@ with Serializable {
         CompressorFactory.getInstance().getCompressor.getName)
     model.setColumnCompressor(columnCompressor)
     model.setMetrics(new DataLoadMetrics())
-    model.setLatestTableStatusVersion(options.getOrElse("latestversion", ""))
+    model.setLatestTableStatusWriteVersion(options.getOrElse("latestversion", ""))
 
     val carbonProperty = CarbonProperties.getInstance()
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)

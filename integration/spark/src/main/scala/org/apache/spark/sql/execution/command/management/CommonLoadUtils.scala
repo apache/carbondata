@@ -169,10 +169,8 @@ object CommonLoadUtils {
       }
     }
     // generate new timestamp for tablestatus version
-    if(!isInternalLoadCall) {
-      carbonLoadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
-    } else {
-      carbonLoadModel.setLatestTableStatusVersion(table.getTableStatusVersion)
+    if(isInternalLoadCall) {
+      carbonLoadModel.setLatestTableStatusWriteVersion(table.getTableStatusVersion)
     }
 
     new CarbonLoadModelBuilder(table).build(
@@ -713,7 +711,7 @@ object CommonLoadUtils {
     }
     val options = new mutable.HashMap[String, String]()
     options ++= catalogTable.storage.properties
-    options += (("latestversion", loadModel.getLatestTableStatusVersion))
+    options += (("latestversion", loadModel.getLatestTableStatusWriteVersion))
     options += (("overwrite", overWrite.toString))
     if (partition.nonEmpty) {
       val staticPartitionStr = ObjectSerializationUtil.convertObjectToString(
@@ -1075,7 +1073,7 @@ object CommonLoadUtils {
         loadParams.isOverwriteTable)
       CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
         loadParams.sparkSession,
-        loadParams.carbonLoadModel.getLatestTableStatusVersion)
+        loadParams.carbonLoadModel.getLatestTableStatusWriteVersion)
       val convertRelation = convertToLogicalRelation(
         catalogTable,
         loadParams.sizeInBytes,

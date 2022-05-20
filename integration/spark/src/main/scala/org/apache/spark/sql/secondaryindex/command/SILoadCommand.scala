@@ -72,7 +72,6 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extend
       carbonLoadModel.setTableName(relation.carbonTable.getTableName)
       carbonLoadModel.setDatabaseName(relation.carbonTable.getDatabaseName)
       carbonLoadModel.setTablePath(relation.carbonTable.getTablePath)
-      carbonLoadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
       val sortScope = relation.carbonTable.getTableInfo.getFactTable
         .getTableProperties
         .get(CarbonCommonConstants.SORT_SCOPE)

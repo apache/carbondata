@@ -50,7 +50,7 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata")
     sql("insert into table1 values('abc',1, 1)")
     checkAnswer(sql("select * from table1"), Seq(Row("abc", 1, 1)))
-    val version = deleteTableStatusVersionFile
+    val version = deleteTableStatusVersionFile("table1")
     var err = intercept[RuntimeException] {
       sql("select count(*) from table1").show()
     }
@@ -61,6 +61,73 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     val args = "default table1"
     TableStatusRecovery.main(args.split(" "))
     checkAnswer(sql("select * from table1"), Seq(Row("abc", 1, 1)))
+  }
+
+  test("test table status recovery for table with global sort") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata " +
+        "tblproperties('sort_scope'='global_sort', 'sort_columns'='c3')")
+    insertData()
+    checkAnswer(sql("select * from table1"),
+      Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
+    deleteTableStatusVersionFile("table1")
+    val args = "default table1"
+    TableStatusRecovery.main(args.split(" "))
+    sql("alter table table1 compact 'major'")
+    checkAnswer(sql("select * from table1"),
+      Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
+  }
+
+  test("test table status recovery on secondary index table") {
+    def checkResults(): Unit = {
+      checkAnswer(sql("select * from table1 where c1='abc'"),
+        Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2)))
+      checkAnswer(sql("select count(*) from si_index "), Seq(Row(3)))
+    }
+    sql("DROP TABLE IF EXISTS table1")
+    sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata")
+    sql("DROP INDEX IF EXISTS si_index on table1")
+    sql("CREATE INDEX si_index on table table1 (c1) AS 'carbondata' ")
+    insertData()
+    checkResults()
+    val version = deleteTableStatusVersionFile("si_index")
+    var err = intercept[RuntimeException] {
+      sql("SHOW SEGMENTS FOR TABLE si_index").show()
+    }
+    assertException(version, err)
+    err = intercept[RuntimeException] {
+      sql("select * from si_index").show()
+    }
+    assertException(version, err)
+    val args = "default si_index"
+    TableStatusRecovery.main(args.split(" "))
+    checkResults()
+  }
+
+  test("test table status recovery on mv table -- not supported") {
+    def checkResults(): Unit = {
+      checkAnswer(sql("select c2, c3 from table1"),
+        Seq(Row(1, 1), Row(2, 1), Row(3, 2)))
+      checkAnswer(sql("select count(*) from view1"), Seq(Row(3)))
+    }
+    sql("DROP TABLE IF EXISTS table1")
+    sql("create table table1 (c1 string,c2 int, c3 int) STORED AS carbondata")
+    sql("drop MATERIALIZED VIEW if exists view1")
+    sql("CREATE MATERIALIZED VIEW view1 AS SELECT c2, c3 FROM table1")
+    insertData()
+    checkResults()
+    val version = deleteTableStatusVersionFile("view1")
+    var err = intercept[RuntimeException] {
+      sql("select * from view1").show()
+    }
+    assertException(version, err)
+    val args = "default view1"
+    err = intercept[UnsupportedOperationException] {
+      TableStatusRecovery.main(args.split(" "))
+    }
+    assert(err.getMessage.contains("Unsupported operation on Materialized view table"))
+    sql("refresh materialized view view1")
+    checkResults()
   }
 
   private def assertException(version: String,
@@ -82,7 +149,7 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     sql("insert into table1 values('abcd',11, 12)")
     checkAnswer(sql("select * from table1"),
       Seq(Row("abc", 1, 1), Row("abc", 2, 1), Row("abc", 3, 2), Row("abcd", 11, 12)))
-    deleteTableStatusVersionFile
+    deleteTableStatusVersionFile("table1")
     val args = "default table1"
     TableStatusRecovery.main(args.split(" "))
     CarbonProperties.getInstance().addProperty(
@@ -200,7 +267,7 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     writer.write(Seq("3", "black", "def").toArray)
     writer.close()
     sql(s"alter table table1 add partition (email='def') location '$sdkWritePath'")
-    val version = deleteTableStatusVersionFile
+    val version = deleteTableStatusVersionFile("table1")
     val err = intercept[RuntimeException] {
       sql("select count(*) from table1").show()
     }
@@ -210,13 +277,13 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select name from table1"), Seq(Row("blue"), Row("red"), Row("black")))
     sql("alter table table1 drop partition(email='def')")
     checkAnswer(sql("select name from table1"), Seq(Row("blue")))
-    deleteTableStatusVersionFile
+    deleteTableStatusVersionFile("table1")
     TableStatusRecovery.main(args.split(" "))
     checkAnswer(sql("select name from table1"), Seq(Row("blue")))
   }
 
-  private def deleteTableStatusVersionFile: String = {
-    val table = CarbonEnv.getCarbonTable(Some("default"), "table1")(sqlContext.sparkSession)
+  private def deleteTableStatusVersionFile(tblName: String): String = {
+    val table = CarbonEnv.getCarbonTable(Some("default"), tblName)(sqlContext.sparkSession)
     val currVersion = table.getTableStatusVersion
     val status = FileFactory.getCarbonFile(CarbonTablePath.getTableStatusFilePath(
       table.getTablePath, currVersion)).deleteFile()
@@ -226,7 +293,7 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
 
   private def verifyScenario_Insert(): Unit = {
     insertDataAndCheckResult()
-    deleteTableStatusVersionFile
+    deleteTableStatusVersionFile("table1")
     val args = "default table1"
     TableStatusRecovery.main(args.split(" "))
     checkAnswer(sql("select * from table1"),
@@ -278,7 +345,7 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
   private def verifyScenario_Compaction(): Unit = {
     insertData()
     sql("alter table table1 compact 'major'")
-    deleteTableStatusVersionFile
+    deleteTableStatusVersionFile("table1")
     val args = "default table1"
     TableStatusRecovery.main(args.split(" "))
     assert(!sql("Show segments for table table1").collect().map(_.get(0)).contains("0.1"))
@@ -290,7 +357,7 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     insertDataAndCheckResult()
     sql("alter table table1 compact 'major'")
     sql("clean files for table table1 options('force'='true')")
-    deleteTableStatusVersionFile
+    deleteTableStatusVersionFile("table1")
     val args = "default table1"
     TableStatusRecovery.main(args.split(" "))
     assert(sql("Show segments for table table1").collect().map(_.get(0)).contains("0.1"))
@@ -303,7 +370,7 @@ class TableStatusRecoveryTest extends QueryTest with BeforeAndAfterAll {
     sql("DELETE FROM TABLE table1 WHERE SEGMENT.ID IN(0)")
     checkAnswer(sql("select * from table1"),
       Seq(Row("abc", 2, 1), Row("abc", 3, 2)))
-    deleteTableStatusVersionFile
+    deleteTableStatusVersionFile("table1")
     val args = "default table1"
     TableStatusRecovery.main(args.split(" "))
     // cannot recover deleted segment, as the delete info exists only in table status file

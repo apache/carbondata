@@ -178,8 +178,11 @@ public final class CarbonDataMergerUtil {
         LOGGER.info("Acquired lock for the table " + carbonLoadModel.getDatabaseName() + "."
             + carbonLoadModel.getTableName() + " for table status updation ");
 
+        carbonLoadModel.setLatestTableStatusWriteVersion(
+            String.valueOf(System.currentTimeMillis()));
+
         String statusFilePath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(),
-            carbonLoadModel.getLatestTableStatusVersion());
+            carbonLoadModel.getLatestTableStatusWriteVersion());
 
         LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(metaDataFilepath,
             carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getTableStatusVersion());

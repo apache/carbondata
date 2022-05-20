@@ -298,7 +298,6 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       carbonTable: CarbonTable,
-      tblStatusVersion: String,
       session: SparkSession): Unit = {
 
     validateLoadIds(loadIds)
@@ -306,11 +305,18 @@ object CarbonStore {
     val path = carbonTable.getMetadataPath
 
     try {
-      val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
+      val tuple = SegmentStatusManager.updateDeletionStatus(
         carbonTable.getAbsoluteTableIdentifier, loadIds.asJava,
-        path, carbonTable.getTableStatusVersion, tblStatusVersion).asScala
+        path, carbonTable.getTableStatusVersion).asScala
+      val invalidLoadIds = tuple("invalidLoadIds").asScala
       if (invalidLoadIds.isEmpty) {
-        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable, session, tblStatusVersion)
+        val tblStatusWriteVersion = if (tuple.contains("tblStatusWriteVersion")) {
+          tuple("tblStatusWriteVersion").get(0)
+        } else {
+          ""
+        }
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+          session, tblStatusWriteVersion)
         LOGGER.info(s"Delete segment by Id is successful for $dbName.$tableName.")
       } else {
         sys.error(s"Delete segment by Id is failed. Invalid ID is: ${invalidLoadIds.mkString(",")}")
@@ -328,22 +334,26 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       carbonTable: CarbonTable,
-      tblStatusWriteVersion: String,
       sparkSession: SparkSession): Unit = {
 
     val time = validateTimeFormat(timestamp)
     val path = carbonTable.getMetadataPath
 
     try {
-      val invalidLoadTimestamps =
+      val tuple =
         SegmentStatusManager.updateDeletionStatus(
           carbonTable.getAbsoluteTableIdentifier,
           timestamp,
           path,
           time,
-          carbonTable.getTableStatusVersion,
-          tblStatusWriteVersion).asScala
+          carbonTable.getTableStatusVersion).asScala
+      val invalidLoadTimestamps = tuple("invalidLoadTimestamps")
       if (invalidLoadTimestamps.isEmpty) {
+        val tblStatusWriteVersion = if (tuple.contains("tblStatusWriteVersion")) {
+          tuple("tblStatusWriteVersion").get(0)
+        } else {
+          ""
+        }
         CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
           sparkSession, tblStatusWriteVersion)
         LOGGER.info(s"Delete segment by date is successful for $dbName.$tableName.")

@@ -113,12 +113,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       }
       val executorErrors = ExecutionErrors(FailureCauses.NONE, "")
 
-      val version = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
-       System.currentTimeMillis().toString
-      } else {
-        ""
-      }
-      val (deletedSegments, deletedRowCount, isUpdateRequired) =
+      val (deletedSegments, deletedRowCount, isUpdateRequired, tblStatusWriteVersion) =
         DeleteExecution.deleteDeltaExecution(
           databaseNameOp,
           tableName,
@@ -126,11 +121,11 @@ private[sql] case class CarbonProjectForDeleteCommand(
           dataRdd,
           timestamp,
           isUpdateOperation = false,
-          executorErrors,
-          version)
+          executorErrors)
 
       if (isUpdateRequired) {
-        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable, sparkSession, version)
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+          sparkSession, tblStatusWriteVersion)
       }
 
       deletedRows = deletedRowCount;

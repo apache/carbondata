@@ -115,7 +115,7 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
           isOverwriteTable)
         CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
           sparkSession,
-          carbonLoadModel.getLatestTableStatusVersion)
+          carbonLoadModel.getLatestTableStatusWriteVersion)
         isUpdateTableStatusRequired = true
       }
       if (isOverwriteTable) {

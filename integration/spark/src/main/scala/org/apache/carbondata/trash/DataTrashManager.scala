@@ -248,17 +248,12 @@ object DataTrashManager {
       partitionSpecsOption: Option[Seq[PartitionSpec]],
       sparkSession: SparkSession): Unit = {
     val partitionSpecs = partitionSpecsOption.map(_.asJava).orNull
-    val tblStatusVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
-      System.currentTimeMillis().toString
-    } else {
-      ""
-    }
-    val isUpdateComplete = SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable,
-      isForceDelete, partitionSpecs, cleanStaleInProgress, true, tblStatusVersion)
-    if (isUpdateComplete) {
+    val newTblStatusVersion = SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable,
+      isForceDelete, partitionSpecs, cleanStaleInProgress, true)
+    if (newTblStatusVersion.nonEmpty) {
       // if clean files update is complete, then update the table status version to table
       CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
-        sparkSession, tblStatusVersion)
+        sparkSession, newTblStatusVersion)
     }
     if (carbonTable.isHivePartitionTable && partitionSpecsOption.isDefined) {
       SegmentFileStore.cleanSegments(carbonTable, partitionSpecs, isForceDelete)

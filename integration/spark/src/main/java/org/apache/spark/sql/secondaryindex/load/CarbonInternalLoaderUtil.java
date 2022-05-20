@@ -38,6 +38,7 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 import org.apache.log4j.Logger;
@@ -85,13 +86,14 @@ public class CarbonInternalLoaderUtil {
    */
   public static boolean recordLoadMetadata(List<LoadMetadataDetails> newLoadMetadataDetails,
       List<String> validSegments, CarbonTable carbonTable, List<CarbonTable> indexCarbonTables,
-      String databaseName, String tableName, String tableStatusVersion,
-      SegmentStatus segmentStatus) {
+      CarbonLoadModel loadModel, String tableName, SegmentStatus segmentStatus,
+      boolean isRebuiltSegments) {
+    String databaseName = loadModel.getDatabaseName();
     boolean status = false;
     String metaDataFilepath = carbonTable.getMetadataPath();
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
-    SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(absoluteTableIdentifier, tableStatusVersion);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier,
+        loadModel.getLatestTableStatusWriteVersion());
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       int retryCount = CarbonLockUtil
@@ -109,9 +111,10 @@ public class CarbonInternalLoaderUtil {
           return false;
         }
 
-        String tblStatusVersion = tableStatusVersion;
+        loadModel.setLatestTableStatusWriteVersion(String.valueOf(System.currentTimeMillis()));
+        String tblStatusVersion = loadModel.getLatestTableStatusWriteVersion();
         if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS
-            || segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+            || segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS || isRebuiltSegments) {
           tblStatusVersion = carbonTable.getTableStatusVersion();
         }
 
@@ -175,12 +178,13 @@ public class CarbonInternalLoaderUtil {
 
             SegmentStatusManager.writeLoadDetailsIntoFile(
                 CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath(),
-                    tableStatusVersion), indexTableDetailsList.toArray(new LoadMetadataDetails[0]));
+                    loadModel.getLatestTableStatusWriteVersion()),
+                indexTableDetailsList.toArray(new LoadMetadataDetails[0]));
           }
         } else if (carbonTable.isIndexTable()) {
           SegmentStatusManager.writeLoadDetailsIntoFile(
               CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath(),
-                  tableStatusVersion),
+                  loadModel.getLatestTableStatusWriteVersion()),
               updatedLoadMetadataDetails.toArray(new LoadMetadataDetails[0]));
         }
         status = true;

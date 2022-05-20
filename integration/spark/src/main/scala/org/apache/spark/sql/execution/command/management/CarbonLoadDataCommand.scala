@@ -131,7 +131,7 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
         isUpdateTableStatusRequired = true
         CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
           sparkSession,
-          carbonLoadModel.getLatestTableStatusVersion)
+          carbonLoadModel.getLatestTableStatusWriteVersion)
       }
       if (isOverwriteTable) {
         LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")

@@ -236,7 +236,7 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
       if (isUpdateTableStatusRequired) {
         CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonLoadModel
           .getCarbonDataLoadSchema
-          .getCarbonTable, sparkSession, carbonLoadModel.getLatestTableStatusVersion)
+          .getCarbonTable, sparkSession, carbonLoadModel.getLatestTableStatusWriteVersion)
       }
       if (isOverwriteTable) {
         LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")
@@ -494,9 +494,12 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         updateModel,
         operationContext)
     }
-    CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
-      loadParams.sparkSession,
-      loadParams.carbonLoadModel.getLatestTableStatusVersion)
+    if (!table.getTableStatusVersion
+      .equals(loadParams.carbonLoadModel.getLatestTableStatusWriteVersion)) {
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+        loadParams.sparkSession,
+        loadParams.carbonLoadModel.getLatestTableStatusWriteVersion)
+    }
     (rows, loadResult)
   }
 

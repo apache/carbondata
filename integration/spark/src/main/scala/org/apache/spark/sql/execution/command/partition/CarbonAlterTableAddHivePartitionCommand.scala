@@ -116,7 +116,6 @@ case class CarbonAlterTableAddHivePartitionCommand(
         loadModel.setColumnCompressor(columnCompressor)
         loadModel.setCarbonTransactionalTable(true)
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
-        loadModel.setLatestTableStatusVersion(System.currentTimeMillis().toString)
         // create operationContext to fire load events
         val operationContext: OperationContext = new OperationContext
         var hasIndexFiles = false
@@ -142,7 +141,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
         // Create new entry in tablestatus file
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, false)
         CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
-          sparkSession, loadModel.getLatestTableStatusVersion)
+          sparkSession, loadModel.getLatestTableStatusWriteVersion)
         // Normally, application will use Carbon SDK to write files into a partition folder, then
         // add the folder to partitioned carbon table.
         // If there are many threads writes to the same partition folder, there will be many

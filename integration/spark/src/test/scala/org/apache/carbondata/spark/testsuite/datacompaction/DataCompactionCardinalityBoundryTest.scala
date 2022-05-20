@@ -76,7 +76,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     while (status && noOfRetries < 10) {
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
         AbsoluteTableIdentifier.from(
-          CarbonProperties.getStorePath(),
+          storeLocation + "/cardinalitytest",
           new CarbonTableIdentifier("default", "cardinalityTest", "1")
         ),
         version

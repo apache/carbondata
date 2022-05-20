@@ -124,6 +124,6 @@ object MergeUtil {
       factTimestamp.toString,
       true,
       true, new util.ArrayList[Segment](),
-      targetCarbonTable.getTableStatusVersion)
+      targetCarbonTable.getTableStatusVersion).get("status").toBoolean
   }
 }

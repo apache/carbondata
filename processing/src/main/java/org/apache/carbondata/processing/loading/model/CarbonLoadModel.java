@@ -231,7 +231,7 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean skipParsers = false;
 
-  private String latestTableStatusVersion = "";
+  private String latestTableStatusWriteVersion = "";
 
   public void setSkipParsers() {
     skipParsers = true;
@@ -488,7 +488,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.metrics = metrics;
     copyObj.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copyObj.isLoadWithoutConverterWithoutReArrangeStep = isLoadWithoutConverterWithoutReArrangeStep;
-    copyObj.latestTableStatusVersion = latestTableStatusVersion;
+    copyObj.latestTableStatusWriteVersion = latestTableStatusWriteVersion;
     return copyObj;
   }
 
@@ -916,14 +916,16 @@ public class CarbonLoadModel implements Serializable {
     this.nonSchemaColumnsPresent = nonSchemaColumnsPresent;
   }
 
-  public String getLatestTableStatusVersion() {
+  public String getLatestTableStatusWriteVersion() {
     if (!CarbonProperties.isTableStatusMultiVersionEnabled()) {
       return "";
     }
-    return latestTableStatusVersion;
+    return latestTableStatusWriteVersion;
   }
 
-  public void setLatestTableStatusVersion(String latestTableStatusVersion) {
-    this.latestTableStatusVersion = latestTableStatusVersion;
+  public void setLatestTableStatusWriteVersion(String latestTableStatusWriteVersion) {
+    if (this.latestTableStatusWriteVersion.isEmpty()) {
+      this.latestTableStatusWriteVersion = latestTableStatusWriteVersion;
+    }
   }
 }

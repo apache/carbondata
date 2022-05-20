@@ -70,9 +70,9 @@ public class StreamSegment {
   /**
    * get stream segment or create new stream segment if not exists
    */
-  public static String open(CarbonTable table, String latestTblStatusVersion) throws IOException {
+  public static String open(CarbonTable table, CarbonLoadModel loadModel) throws IOException {
     SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(table.getAbsoluteTableIdentifier(), latestTblStatusVersion);
+        new SegmentStatusManager(table.getAbsoluteTableIdentifier(), table.getTableStatusVersion());
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       if (carbonLock.lockWithRetries()) {
@@ -92,7 +92,8 @@ public class StreamSegment {
           }
         }
         if (null == streamSegment) {
-          return createNewSegment(table, details, latestTblStatusVersion);
+          loadModel.setLatestTableStatusWriteVersion(String.valueOf(System.currentTimeMillis()));
+          return createNewSegment(table, details, loadModel.getLatestTableStatusWriteVersion());
         } else {
           return streamSegment.getLoadName();
         }

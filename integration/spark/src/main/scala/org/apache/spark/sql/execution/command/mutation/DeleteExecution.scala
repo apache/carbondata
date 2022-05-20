@@ -64,8 +64,7 @@ object DeleteExecution {
       dataRdd: RDD[Row],
       timestamp: String,
       isUpdateOperation: Boolean,
-      executorErrors: ExecutionErrors,
-      version: String): (Seq[Segment], Long, Boolean) = {
+      executorErrors: ExecutionErrors): (Seq[Segment], Long, Boolean, String) = {
 
     val (res, blockMappingVO) = deleteDeltaExecutionInternal(databaseNameOp,
       tableName, sparkSession, dataRdd, timestamp, isUpdateOperation, executorErrors)
@@ -73,20 +72,19 @@ object DeleteExecution {
     var operatedRowCount = 0L
     // if no loads are present then no need to do anything.
     if (res.flatten.isEmpty) {
-      return (segmentsTobeDeleted, operatedRowCount, false)
+      return (segmentsTobeDeleted, operatedRowCount, false, "")
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     // update new status file
-    val (segmentsTobeDeletedNew, isUpdateRequired) =
+    val (segmentsTobeDeletedNew, isUpdateRequired, tblStatusWriteVersion) =
       checkAndUpdateStatusFiles(executorErrors,
-        res, carbonTable, timestamp,
-        blockMappingVO, isUpdateOperation, version)
+        res, carbonTable, timestamp, blockMappingVO, isUpdateOperation)
     segmentsTobeDeleted = segmentsTobeDeletedNew
 
     if (executorErrors.failureCauses == FailureCauses.NONE) {
       operatedRowCount = res.flatten.map(_._2._3).sum
     }
-    (segmentsTobeDeleted, operatedRowCount, isUpdateRequired)
+    (segmentsTobeDeleted, operatedRowCount, isUpdateRequired, tblStatusWriteVersion)
   }
 
   /**
@@ -363,9 +361,9 @@ object DeleteExecution {
       carbonTable: CarbonTable,
       timestamp: String,
       blockMappingVO: BlockMappingVO,
-      isUpdateOperation: Boolean,
-      version: String): (Seq[Segment], Boolean) = {
+      isUpdateOperation: Boolean): (Seq[Segment], Boolean, String) = {
     var isUpdateRequired = false
+    var tblStatusWriteVersion = "";
     val blockUpdateDetailsList = new util.ArrayList[SegmentUpdateDetails]()
     val segmentDetails = new util.HashSet[Segment]()
     res.foreach(resultOfSeg => resultOfSeg.foreach(
@@ -393,7 +391,7 @@ object DeleteExecution {
             executorErrors.errorMsg = errorMsg
           }
           LOGGER.error(errorMsg)
-          return (Seq.empty[Segment], isUpdateRequired)
+          return (Seq.empty[Segment], isUpdateRequired, tblStatusWriteVersion)
         }
       }))
 
@@ -404,19 +402,21 @@ object DeleteExecution {
 
     // this is delete flow so no need of putting timestamp in the status file.
     if (CarbonUpdateUtil
-          .updateSegmentStatus(blockUpdateDetailsList, carbonTable, timestamp, false, false) &&
-        CarbonUpdateUtil
-          .updateTableMetadataStatus(segmentDetails,
-            carbonTable,
-            timestamp,
-            !isUpdateOperation,
-            !isUpdateOperation,
-            listOfSegmentToBeMarkedDeleted,
-            version)
-    ) {
-      isUpdateRequired = true
-      LOGGER.info(s"Delete data operation is successful for " +
-                  s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
+      .updateSegmentStatus(blockUpdateDetailsList, carbonTable, timestamp, false, false)) {
+      val tuple = CarbonUpdateUtil
+        .updateTableMetadataStatus(segmentDetails,
+          carbonTable,
+          timestamp,
+          !isUpdateOperation,
+          !isUpdateOperation,
+          listOfSegmentToBeMarkedDeleted,
+          "")
+      if (tuple.get("status").toBoolean) {
+        tblStatusWriteVersion = tuple.getOrDefault("tblStatusWriteVersion", "")
+        isUpdateRequired = true
+        LOGGER.info(s"Delete data operation is successful for " +
+                    s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
+      }
     } else {
       // In case of failure , clean all related delete delta files
       CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
@@ -426,7 +426,7 @@ object DeleteExecution {
       executorErrors.failureCauses = FailureCauses.STATUS_FILE_UPDATION_FAILURE
       executorErrors.errorMsg = errorMessage
     }
-    (segmentsTobeDeleted, isUpdateRequired)
+    (segmentsTobeDeleted, isUpdateRequired, tblStatusWriteVersion)
   }
 
   // all or none : update status file, only if complete delete operation is successful.

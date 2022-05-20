@@ -481,3 +481,4 @@ TableStatusRecovery.main(args) --> args is of length two: 1. Database Name 2. Ta
 TableStatus Recovery tool cannot recover table status version files for the below two scenarios
 1. After compaction, if table status file is lost, cannot recover compacted commit transaction, as the lost version file only has merged load details.
 2. After Delete segment by Id/Date, if table status file is lost, cannot recover deleted segment commit transaction, as the lost version file only has the segment status as deleted.
+3. Table status recovery on materialized view table is not supported.

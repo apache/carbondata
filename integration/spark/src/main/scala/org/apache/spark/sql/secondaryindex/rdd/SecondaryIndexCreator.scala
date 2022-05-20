@@ -141,13 +141,9 @@ object SecondaryIndexCreator {
       } else {
         SegmentStatus.INSERT_IN_PROGRESS
       }
-      indexCarbonTable.getTableInfo
-        .getFactTable
-        .getTableProperties
-        .put("tablestatusversion", secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
       FileInternalUtil
         .updateTableStatus(validSegmentList,
-          secondaryIndexModel.carbonLoadModel.getDatabaseName,
+          secondaryIndexModel.carbonLoadModel,
           secondaryIndexModel.secondaryIndex.indexName,
           segmentStatus,
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
@@ -158,7 +154,7 @@ object SecondaryIndexCreator {
           sc.sparkSession)
       CarbonHiveIndexMetadataUtil.updateTableStatusVersion(indexCarbonTable,
         sc.sparkSession,
-        secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
+        secondaryIndexModel.carbonLoadModel.getLatestTableStatusWriteVersion)
       var execInstance = "1"
       // in case of non dynamic executor allocation, number of executors are fixed.
       if (sc.sparkContext.getConf.contains("spark.executor.instances")) {
@@ -365,8 +361,8 @@ object SecondaryIndexCreator {
             System.currentTimeMillis(),
             CarbonIndexUtil
               .getCompressorForIndexTable(indexCarbonTable, secondaryIndexModel.carbonTable))
-        carbonLoadModelForMergeDataFiles.setLatestTableStatusVersion(secondaryIndexModel
-          .carbonLoadModel.getLatestTableStatusVersion)
+        carbonLoadModelForMergeDataFiles.setLatestTableStatusWriteVersion(secondaryIndexModel
+          .carbonLoadModel.getLatestTableStatusWriteVersion)
 
         // merge the data files of the loaded segments and take care of
         // merging the index files inside this if needed
@@ -380,14 +376,10 @@ object SecondaryIndexCreator {
             indexCarbonTable.getMetadataPath, indexCarbonTable.getTableStatusVersion)
             .filter(loadMetadata => !successSISegments.contains(loadMetadata.getLoadName))
             .map(_.getLoadName).toList
-          indexTable.getTableInfo.getFactTable
-            .getTableProperties
-            .put("tablestatusversion",
-              secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
           FileInternalUtil
             .updateTableStatus(
               overriddenSegments,
-              secondaryIndexModel.carbonLoadModel.getDatabaseName,
+              secondaryIndexModel.carbonLoadModel,
               secondaryIndexModel.secondaryIndex.indexName,
               SegmentStatus.MARKED_FOR_DELETE,
               secondaryIndexModel.segmentIdToLoadStartTimeMapping,
@@ -401,13 +393,9 @@ object SecondaryIndexCreator {
               .writeSegmentFile(indexCarbonTable, loadMetadata.getLoadName,
                 String.valueOf(loadMetadata.getLoadStartTime))
           }
-          indexCarbonTable.getTableInfo.getFactTable
-            .getTableProperties
-            .put("tablestatusversion",
-              secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
           tableStatusUpdateForSuccess = FileInternalUtil.updateTableStatus(
             successSISegments,
-            secondaryIndexModel.carbonLoadModel.getDatabaseName,
+            secondaryIndexModel.carbonLoadModel,
             secondaryIndexModel.secondaryIndex.indexName,
             SegmentStatus.SUCCESS,
             secondaryIndexModel.segmentIdToLoadStartTimeMapping,
@@ -434,13 +422,9 @@ object SecondaryIndexCreator {
       // all the segments of marked for delete and re-triggers the load to same segments again in
       // that event
       if (failedSISegments.nonEmpty && !isCompactionCall) {
-        indexCarbonTable.getTableInfo.getFactTable
-          .getTableProperties
-          .put("tablestatusversion",
-            secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
         tableStatusUpdateForFailure = FileInternalUtil.updateTableStatus(
           failedSISegments,
-          secondaryIndexModel.carbonLoadModel.getDatabaseName,
+          secondaryIndexModel.carbonLoadModel,
           secondaryIndexModel.secondaryIndex.indexName,
           SegmentStatus.MARKED_FOR_DELETE,
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
@@ -455,7 +439,7 @@ object SecondaryIndexCreator {
 
       CarbonHiveIndexMetadataUtil.updateTableStatusVersion(indexCarbonTable,
         secondaryIndexModel.sqlContext.sparkSession,
-        secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
+        secondaryIndexModel.carbonLoadModel.getLatestTableStatusWriteVersion)
 
       if (!isCompactionCall) {
         val loadTableSIPostExecutionEvent: LoadTableSIPostExecutionEvent =
@@ -478,13 +462,9 @@ object SecondaryIndexCreator {
         if (isCompactionCall) {
           segmentLocks.foreach(segmentLock => segmentLock.unlock())
         }
-        indexCarbonTable.getTableInfo.getFactTable
-          .getTableProperties
-          .put("tablestatusversion",
-            secondaryIndexModel.carbonLoadModel.getLatestTableStatusVersion)
         FileInternalUtil
           .updateTableStatus(validSegmentList,
-            secondaryIndexModel.carbonLoadModel.getDatabaseName,
+            secondaryIndexModel.carbonLoadModel,
             secondaryIndexModel.secondaryIndex.indexName,
             SegmentStatus.MARKED_FOR_DELETE,
             secondaryIndexModel.segmentIdToLoadStartTimeMapping,

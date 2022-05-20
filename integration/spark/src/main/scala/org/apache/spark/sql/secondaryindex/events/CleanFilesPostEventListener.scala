@@ -77,18 +77,13 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
         Seq.empty[Expression],
         sparkSession,
         indexTable)
-      val tblStatusVersion = if (CarbonProperties.isTableStatusMultiVersionEnabled) {
-        System.currentTimeMillis().toString
-      } else {
-        ""
-      }
-      val isUpdateComplete = SegmentStatusManager.deleteLoadsAndUpdateMetadata(
+      val newTblStatusVersion = SegmentStatusManager.deleteLoadsAndUpdateMetadata(
         indexTable, isForceDelete, partitions.map(_.asJava).orNull, cleanStaleInProgress,
-        true, tblStatusVersion)
-      if (isUpdateComplete) {
+        true)
+      if (newTblStatusVersion.nonEmpty) {
         // if clean files update is complete, then update the table status version to index table
         CarbonHiveIndexMetadataUtil.updateTableStatusVersion(indexTable,
-          sparkSession, tblStatusVersion)
+          sparkSession, newTblStatusVersion)
       }
       cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
     }

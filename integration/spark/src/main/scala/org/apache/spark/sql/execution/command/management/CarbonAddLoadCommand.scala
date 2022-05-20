@@ -236,7 +236,6 @@ case class CarbonAddLoadCommand(
     model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
     model.setDatabaseName(carbonTable.getDatabaseName)
     model.setTableName(carbonTable.getTableName)
-    model.setLatestTableStatusVersion(System.currentTimeMillis().toString)
     val operationContext = new OperationContext
     operationContext.setProperty("isLoadOrCompaction", false)
     val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(sparkSession,
@@ -357,14 +356,14 @@ case class CarbonAddLoadCommand(
         carbonTable.getCarbonTableIdentifier.getTableId,
         new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName),
         SegmentStatus.SUCCESS,
-        model.getLatestTableStatusVersion)
+        model.getLatestTableStatusWriteVersion)
     } else {
       false
     }
 
     CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
       sparkSession,
-      model.getLatestTableStatusVersion)
+      model.getLatestTableStatusWriteVersion)
 
     val postExecutionEvent = if (success) {
       val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =

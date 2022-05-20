@@ -461,9 +461,8 @@ public class SegmentStatusManager {
    * @param tableFolderPath
    * @return
    */
-  public static List<String> updateDeletionStatus(AbsoluteTableIdentifier identifier,
-      List<String> loadIds, String tableFolderPath, String readVersion, String writeVersion)
-      throws Exception {
+  public static Map<String, List<String>> updateDeletionStatus(AbsoluteTableIdentifier identifier,
+      List<String> loadIds, String tableFolderPath, String tblStatusReadVersion) throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonCleanFilesLock =
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.CLEAN_FILES_LOCK);
@@ -473,22 +472,26 @@ public class SegmentStatusManager {
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
     String tableDetails =
         carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
+    String tblStatusWriteVersion = "";
+    Map<String, List<String>> tuple = new HashMap<>();
     List<String> invalidLoadIds = new ArrayList<String>(0);
+    tuple.put("invalidLoadIds", invalidLoadIds);
     try {
       if (carbonDeleteSegmentLock.lockWithRetries()) {
         LOG.info("Delete segment lock has been successfully acquired");
         if (carbonCleanFilesLock.lockWithRetries()) {
           LOG.info("Clean Files lock has been successfully acquired");
           String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier
-              .getTablePath(), readVersion);
+              .getTablePath(), tblStatusReadVersion);
           LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
           if (!FileFactory.isFileExist(dataLoadLocation)) {
             // log error.
             LOG.error("Load metadata file is not present.");
-            return loadIds;
+            tuple.put("invalidLoadIds", invalidLoadIds);
+            return tuple;
           }
           // read existing metadata details in load metadata.
-          listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath, readVersion);
+          listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath, tblStatusReadVersion);
           if (listOfLoadFolderDetailsArray.length != 0) {
             updateDeletionStatus(identifier, loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
             if (invalidLoadIds.isEmpty()) {
@@ -498,9 +501,15 @@ public class SegmentStatusManager {
                 // To handle concurrency scenarios, always take latest metadata before writing
                 // into status file.
                 LoadMetadataDetails[] latestLoadMetadataDetails =
-                    readLoadMetadata(tableFolderPath, readVersion);
+                    readLoadMetadata(tableFolderPath, tblStatusReadVersion);
+                if (CarbonProperties.isTableStatusMultiVersionEnabled()) {
+                  tblStatusWriteVersion = String.valueOf(System.currentTimeMillis());
+                  List<String> versionList = new ArrayList<>();
+                  versionList.add(tblStatusWriteVersion);
+                  tuple.put("tblStatusWriteVersion", versionList);
+                }
                 writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(identifier
-                    .getTablePath(), writeVersion), updateLatestTableStatusDetails(
+                    .getTablePath(), tblStatusWriteVersion), updateLatestTableStatusDetails(
                     listOfLoadFolderDetailsArray, latestLoadMetadataDetails).stream()
                     .toArray(LoadMetadataDetails[]::new));
               } else {
@@ -512,12 +521,14 @@ public class SegmentStatusManager {
               }
 
             } else {
-              return invalidLoadIds;
+              tuple.put("invalidLoadIds", invalidLoadIds);
+              return tuple;
             }
 
           } else {
             LOG.error("Delete segment by Id is failed. No matching segment id found.");
-            return loadIds;
+            tuple.put("invalidLoadIds", loadIds);
+            return tuple;
           }
         } else {
           String errorMsg = "Delete segment by id is failed for " + tableDetails
@@ -541,7 +552,7 @@ public class SegmentStatusManager {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK);
     }
 
-    return invalidLoadIds;
+    return tuple;
   }
 
   /**
@@ -551,9 +562,9 @@ public class SegmentStatusManager {
    * @param tableFolderPath
    * @return
    */
-  public static List<String> updateDeletionStatus(AbsoluteTableIdentifier identifier,
-      String loadDate, String tableFolderPath, Long loadStartTime, String readVersion,
-      String writeVersion) throws Exception {
+  public static Map<String, List<String>> updateDeletionStatus(AbsoluteTableIdentifier identifier,
+      String loadDate, String tableFolderPath, Long loadStartTime, String readVersion)
+      throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonCleanFilesLock =
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.CLEAN_FILES_LOCK);
@@ -563,12 +574,21 @@ public class SegmentStatusManager {
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
     String tableDetails =
         carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
+    String tblStatusWriteVersion = "";
+    Map<String, List<String>> tuple = new HashMap<>();
     List<String> invalidLoadTimestamps = new ArrayList<String>(0);
+    tuple.put("invalidLoadTimestamps", invalidLoadTimestamps);
     try {
       if (carbonDeleteSegmentLock.lockWithRetries()) {
         LOG.info("Delete segment lock has been successfully acquired");
         if (carbonCleanFilesLock.lockWithRetries()) {
           LOG.info("Clean Files lock has been successfully acquired");
+          if (CarbonProperties.isTableStatusMultiVersionEnabled()) {
+            tblStatusWriteVersion = String.valueOf(System.currentTimeMillis());
+            List<String> versionList = new ArrayList<>();
+            versionList.add(tblStatusWriteVersion);
+            tuple.put("tblStatusWriteVersion", versionList);
+          }
           String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier
               .getTablePath(), readVersion);
           LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
@@ -576,7 +596,8 @@ public class SegmentStatusManager {
           if (!FileFactory.isFileExist(dataLoadLocation)) {
             // Table status file is not present, maybe table is empty, ignore this operation
             LOG.warn("Trying to update table metadata file which is not present.");
-            return invalidLoadTimestamps;
+            tuple.put("invalidLoadTimestamps", invalidLoadTimestamps);
+            return tuple;
           }
           // read existing metadata details in load metadata.
           listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath, readVersion);
@@ -591,7 +612,7 @@ public class SegmentStatusManager {
                 LoadMetadataDetails[] latestLoadMetadataDetails =
                     readLoadMetadata(tableFolderPath, readVersion);
                 writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(identifier
-                    .getTablePath(), writeVersion), updateLatestTableStatusDetails(
+                    .getTablePath(), tblStatusWriteVersion), updateLatestTableStatusDetails(
                     listOfLoadFolderDetailsArray, latestLoadMetadataDetails).stream()
                     .toArray(LoadMetadataDetails[]::new));
               } else {
@@ -604,13 +625,15 @@ public class SegmentStatusManager {
 
               }
             } else {
-              return invalidLoadTimestamps;
+              tuple.put("invalidLoadTimestamps", invalidLoadTimestamps);
+              return tuple;
             }
 
           } else {
             LOG.error("Delete segment by date is failed. No matching segment found.");
             invalidLoadTimestamps.add(loadDate);
-            return invalidLoadTimestamps;
+            tuple.put("invalidLoadTimestamps", invalidLoadTimestamps);
+            return tuple;
           }
         } else {
           String errorMsg = "Delete segment by id is failed for " + tableDetails
@@ -634,7 +657,7 @@ public class SegmentStatusManager {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK);
     }
 
-    return invalidLoadTimestamps;
+    return tuple;
   }
 
   /**
@@ -1098,12 +1121,14 @@ public class SegmentStatusManager {
     return new ReturnTuple(details, loadsToDelete);
   }
 
-  public static boolean deleteLoadsAndUpdateMetadata(CarbonTable carbonTable,
+  public static String deleteLoadsAndUpdateMetadata(CarbonTable carbonTable,
       boolean isForceDeletion, List<PartitionSpec> partitionSpecs, boolean cleanStaleInprogress,
-      boolean isCleanFilesOperation, String tblStatusVersion) throws IOException {
+      boolean isCleanFilesOperation) throws IOException {
     LoadMetadataDetails[] metadataDetails =
         SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath(),
             carbonTable.getTableStatusVersion());
+    String tblStatusWriteVersion = "";
+    boolean isTblStatusMultiVersionEnabled = CarbonProperties.isTableStatusMultiVersionEnabled();
     boolean updateCompletionStatus = false;
     // delete the expired segment lock files
     CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
@@ -1137,7 +1162,7 @@ public class SegmentStatusManager {
                 isUpdateRequired(isForceDeletion, carbonTable,
                     identifier, details, cleanStaleInprogress);
             if (tuple2.loadsToDelete.isEmpty()) {
-              return false;
+              return tblStatusWriteVersion;
             }
             // read latest table status again.
             LoadMetadataDetails[] latestMetadata =
@@ -1159,9 +1184,13 @@ public class SegmentStatusManager {
                   carbonTable.getMetadataPath());
               LoadMetadataDetails[] newLoadHistoryList = appendLoadHistoryList(oldLoadHistoryList,
                   tableStatusReturn.arrayOfLoadHistoryDetails);
+
+              if (isTblStatusMultiVersionEnabled) {
+                tblStatusWriteVersion = String.valueOf(System.currentTimeMillis());
+              }
               writeLoadDetailsIntoFile(
                   CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath(),
-                      tblStatusVersion), tableStatusReturn.arrayOfLoadDetails);
+                      tblStatusWriteVersion), tableStatusReturn.arrayOfLoadDetails);
               writeLoadDetailsIntoFile(
                   CarbonTablePath.getTableStatusHistoryFilePath(carbonTable.getTablePath()),
                   newLoadHistoryList);
@@ -1171,9 +1200,12 @@ public class SegmentStatusManager {
               // update the metadata details from old to new status.
               List<LoadMetadataDetails> latestStatus =
                   updateLoadMetadataFromOldToNew(tuple2.details, latestMetadata);
+              if (isTblStatusMultiVersionEnabled) {
+                tblStatusWriteVersion = String.valueOf(System.currentTimeMillis());
+              }
               writeLoadDetailsIntoFile(
                   CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(),
-                      tblStatusVersion),
+                      tblStatusWriteVersion),
                   latestStatus.toArray(new LoadMetadataDetails[0]));
             }
             updateCompletionStatus = true;
@@ -1195,12 +1227,12 @@ public class SegmentStatusManager {
           if (updateCompletionStatus) {
             DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(carbonTable,
                 newAddedLoadHistoryList, isForceDeletion, partitionSpecs, cleanStaleInprogress,
-                loadsToDelete, tblStatusVersion);
+                loadsToDelete, tblStatusWriteVersion);
           }
         }
       }
     }
-    return updateCompletionStatus;
+    return tblStatusWriteVersion;
   }
 
   public static void truncateTable(CarbonTable carbonTable)

@@ -102,7 +102,7 @@ class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
   test("delete segment by id") {
     DeleteSegmentById.main(Array(s"${ location }", "carbon_table", "0"))
     assert(!CarbonStore.isSegmentValid("default", "carbon_table",
-      location, "0",
+      location + "/carbon_table", "0",
       CarbonMetadata.getInstance().getCarbonTable("default", "carbon_table").getTableStatusVersion
     ))
   }
@@ -114,7 +114,8 @@ class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
     val version = CarbonMetadata.getInstance()
       .getCarbonTable("default", "carbon_table2")
       .getTableStatusVersion
-    assert(!CarbonStore.isSegmentValid("default", "carbon_table2", location, "0", version))
+    assert(!CarbonStore.isSegmentValid("default",
+      "carbon_table2", location + "/carbon_table2", "0", version))
     dropTable("carbon_table2")
   }
 

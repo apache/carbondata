@@ -52,6 +52,11 @@ object TableStatusRecovery {
         throw ex
     }
 
+    if (carbonTable.isMV) {
+      // not supported
+      throw new UnsupportedOperationException("Unsupported operation on Materialized view table")
+    }
+
     /**
      * 1. get the current table status version file name associated with carbon table
      * 2. Check if the current table status version file exists
@@ -74,21 +79,21 @@ object TableStatusRecovery {
       val segmentFileDir = FileFactory.getCarbonFile(FileFactory.getUpdatedFilePath(
         CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)))
       val segmentFiles = segmentFileDir.listFiles()
-        .map(_.getName)
-        .filter(segmentFileName => segmentFileName.endsWith(CarbonTablePath.SEGMENT_EXT))
+        .filter(segmentFile => segmentFile.getName.endsWith(CarbonTablePath.SEGMENT_EXT))
         .toList
       if (tableStatusFiles.isEmpty) {
         if (segmentFiles.isEmpty) {
           // no metadata found to recover table status file
           throw new Exception(
-            "Table Status Version File/ Segment Files does not exists to recover load metadata")
+            "Segment Files does not exists to recover load metadata")
         }
       }
       // prepare segment to latest timestamp version map. This is required, in case of drop
       // partition, where there can be multiple segment files for same segment Id
       val segToTimeStampMap = new util.HashMap[String, String]()
       segmentFiles.foreach { segmentFile =>
-        val segmentToTimestamp = segmentFile.trim.split(CarbonCommonConstants.UNDERSCORE).toList
+        val segFileName = segmentFile.getName
+        val segmentToTimestamp = segFileName.trim.split(CarbonCommonConstants.UNDERSCORE).toList
         if (!segToTimeStampMap.containsKey(segmentToTimestamp.head)) {
           segToTimeStampMap.put(segmentToTimestamp.head, segmentToTimestamp.last)
         } else {
@@ -182,7 +187,7 @@ object TableStatusRecovery {
           // in case of Update/delete, update the already existing load metadata entry with the
           // latest segment update detail
           val loadMetadataDetail = loadMetaDetails
-            .filter(_.getLoadName.equalsIgnoreCase(segmentId))
+            .find(_.getLoadName.equalsIgnoreCase(segmentId))
             .head
           loadMetadataDetail.setSegmentStatus(segmentUpdateDetail.head.getSegmentStatus)
           loadMetadataDetail.setModificationOrDeletionTimestamp(segmentUpdateDetail.head

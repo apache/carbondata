@@ -50,25 +50,25 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
 
   private AbsoluteTableIdentifier identifier;
 
-  private String tblStatusVersion = "";
+  private String tblStatusReadVersion = "";
 
   private transient Configuration configuration;
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
-      Configuration configuration, String tblStatusVersion) throws IOException {
+      Configuration configuration, String tblStatusReadVersion) throws IOException {
     this.identifier = identifier;
     this.configuration = configuration;
-    this.tblStatusVersion = tblStatusVersion;
+    this.tblStatusReadVersion = tblStatusReadVersion;
     takeCarbonIndexFileSnapShot();
   }
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
       LoadMetadataDetails[] loadMetadataDetails, Configuration configuration,
-      String tblStatusVersion) {
+      String tblStatusReadVersion) {
     this.identifier = identifier;
     this.configuration = configuration;
     this.loadMetadataDetails = loadMetadataDetails;
-    this.tblStatusVersion = tblStatusVersion;
+    this.tblStatusReadVersion = tblStatusReadVersion;
   }
 
   @Override
@@ -141,7 +141,7 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     // Only Segment Information is updated.
     // File information will be fetched on the fly according to the fetched segment info.
     this.loadMetadataDetails = SegmentStatusManager.readTableStatusFile(
-        CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(), tblStatusVersion));
+        CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(), tblStatusReadVersion));
   }
 
   @Override

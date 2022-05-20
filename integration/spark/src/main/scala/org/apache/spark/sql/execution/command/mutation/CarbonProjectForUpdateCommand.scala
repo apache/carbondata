@@ -164,16 +164,15 @@ private[sql] case class CarbonProjectForUpdateCommand(
           }
 
           // do delete operation.
-          val (segmentsToBeDeleted, updatedRowCountTemp, isUpdateRequired) = DeleteExecution
-            .deleteDeltaExecution(
-            databaseNameOp,
-            tableName,
-            sparkSession,
-            dataSet.rdd,
-            currentTime + "",
-            isUpdateOperation = true,
-            executionErrors,
-            "")
+          val (segmentsToBeDeleted, updatedRowCountTemp, isUpdateRequired, tblStatusVersion) =
+            DeleteExecution.deleteDeltaExecution(
+              databaseNameOp,
+              tableName,
+              sparkSession,
+              dataSet.rdd,
+              currentTime + "",
+              isUpdateOperation = true,
+              executionErrors)
 
           if (executionErrors.failureCauses != FailureCauses.NONE) {
             throw new Exception(executionErrors.errorMsg)
