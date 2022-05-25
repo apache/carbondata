@@ -99,7 +99,7 @@ public class CarbonInternalLoaderUtil {
           .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
               CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
       if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
-        LOGGER.info("Acquired lock for table" + databaseName + "." + tableName
+        LOGGER.info("Acquired lock for table '" + databaseName + "." + tableName
             + " for table status update");
 
         if (isSegmentsAlreadyCompactedForNewMetaDataDetails(indexCarbonTables, tableName,
