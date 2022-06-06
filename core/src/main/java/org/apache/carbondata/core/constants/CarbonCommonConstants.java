@@ -2886,5 +2886,15 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT = "false";
 
+  /**
+   * Enable this property to move the dropped partition data to trash on
+   * ALTER DROP PARTITION operation
+   * By default it is disabled if user want to move partition data to trash
+   * then enable this feature.
+   */
+  @CarbonProperty
+  public static final String CARBON_ENABLE_PARTITION_DATA_TRASH =
+      "carbon.enable.partitiondata.trash";
 
+  public static final String CARBON_ENABLE_PARTITION_DATA_TRASH_DEFAULT = "false";
 }

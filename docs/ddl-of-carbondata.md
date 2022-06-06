@@ -1107,6 +1107,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   ALTER TABLE locationTable DROP PARTITION (country = 'US');
   ```
 
+   **NOTE:** Enable [carbon.enable.partitiondata.trash](./configuration-parameters.md#system-configuration) to move dropped partition data to trash during alter table DROP PARTITION.
 #### Insert OVERWRITE
 
   This command allows you to insert or load overwrite on a specific partition.

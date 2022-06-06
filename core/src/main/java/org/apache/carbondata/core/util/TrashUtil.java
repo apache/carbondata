@@ -268,4 +268,45 @@ public final class TrashUtil {
       timeStampSubFolder + CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath
       .SEGMENT_PREFIX + segmentNumber;
   }
+
+  /**
+   * This will give the complete path of the trash folder with the timestamp and the partition name
+   *
+   * @param tablePath          absolute table path
+   * @param timeStampSubFolder the timestamp for the clean files operation
+   * @param partitionName      partition name for which files are moved to the trash folder
+   */
+  public static String getCompleteTrashFolderPathForPartition(String tablePath,
+      long timeStampSubFolder, String partitionName) {
+    return CarbonTablePath.getTrashFolderPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
+        + timeStampSubFolder + CarbonCommonConstants.FILE_SEPARATOR
+        + partitionName;
+  }
+
+  /**
+   * The below method copies dropped partition files to the trash folder.
+   *
+   * @param filesToCopy              absolute path of the files to copy to the trash folder
+   * @param trashFolderWithTimestamp trashfolderpath with complete timestamp and segment number
+   */
+  public static void copyPartitionDataToTrash(String filesToCopy, String trashFolderWithTimestamp) {
+    try {
+      if (!FileFactory.isFileExist(trashFolderWithTimestamp)) {
+        FileFactory.mkdirs(trashFolderWithTimestamp);
+      }
+      // check if file exists before copying
+      if (FileFactory.isFileExist(filesToCopy)) {
+        CarbonFile folder = FileFactory.getCarbonFile(filesToCopy);
+        CarbonFile[] dataFiles = folder.listFiles();
+        for (CarbonFile carbonFile : dataFiles) {
+          copyFileToTrashFolder(carbonFile.getAbsolutePath(), trashFolderWithTimestamp);
+        }
+      } else {
+        LOGGER.warn("Folder not copied to trash as partition folder does not exist");
+      }
+    } catch (IOException e) {
+      // If file is already moved or not found then continue with other files
+      LOGGER.warn("Unable to copy file to trash folder as file not found.", e);
+    }
+  }
 }

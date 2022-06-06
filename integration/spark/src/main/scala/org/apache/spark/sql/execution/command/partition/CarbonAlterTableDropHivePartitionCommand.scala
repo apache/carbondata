@@ -31,13 +31,15 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CleanFilesUtil, TrashUtil}
 import org.apache.carbondata.events._
 import org.apache.carbondata.spark.rdd.CarbonDropPartitionRDD
 
@@ -106,6 +108,32 @@ case class CarbonAlterTableDropHivePartitionCommand(
             ifExists,
             purge,
             retainData).run(sparkSession)
+          val isPartitionDataTrashEnabled = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_ENABLE_PARTITION_DATA_TRASH,
+              CarbonCommonConstants.CARBON_ENABLE_PARTITION_DATA_TRASH_DEFAULT).toBoolean
+          if (isPartitionDataTrashEnabled) {
+            // move  the partition files to trash folder which are dropped
+            val droppedPartitionNames = partitions.map { partition =>
+              partition.spec.map { specs => specs._1 + CarbonCommonConstants.EQUALS + specs._2 }
+            }
+            val timeStamp = System.currentTimeMillis()
+            droppedPartitionNames.zipWithIndex.foreach { partitionName =>
+              val droppedPartitionName = droppedPartitionNames(partitionName._2).mkString("/")
+              TrashUtil.copyPartitionDataToTrash(carbonPartitionsTobeDropped.get(partitionName._2),
+                TrashUtil.getCompleteTrashFolderPathForPartition(
+                  table.getTablePath,
+                  timeStamp,
+                  droppedPartitionName))
+            }
+            // Delete partition folder after copy to trash
+            carbonPartitionsTobeDropped.asScala.foreach(delPartition => {
+              val partitionPath = FileFactory.getCarbonFile(delPartition)
+              CarbonUtil.deleteFoldersAndFiles(partitionPath)
+            })
+            // Finally delete empty partition folders.
+            CleanFilesUtil.deleteEmptyPartitionFoldersRecursively(FileFactory
+              .getCarbonFile(table.getTablePath))
+          }
         }
       } catch {
         case e: Exception =>
