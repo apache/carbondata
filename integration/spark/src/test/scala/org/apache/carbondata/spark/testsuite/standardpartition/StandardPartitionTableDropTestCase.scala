@@ -17,18 +17,22 @@
 
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import java.io.File
 import java.nio.file.{Files, LinkOption, Paths}
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAll {
   // scalastyle:off lineLength
+  var count = 0
   override def beforeAll {
     dropTable
 
@@ -216,6 +220,146 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
     checkAnswer(
       sql(s"""select count (*) from partitionallcompaction"""),
       Seq(Row(0)))
+  }
+
+  test("dropping partition with moving data to trash") {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_PARTITION_DATA_TRASH, "true")
+    sql("drop table if exists dropPartition1")
+    sql(
+      """
+        | CREATE TABLE dropPartition1 (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE dropPartition1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE dropPartition1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE dropPartition1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE dropPartition1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    checkAnswer(sql(s"""select count (*) from dropPartition1"""), Seq(Row(40)))
+    sql(s"""ALTER TABLE dropPartition1 DROP PARTITION(deptname='Learning')""")
+    checkAnswer(sql(s"""select count (*) from dropPartition1"""), Seq(Row(32)))
+    sql(s"""ALTER TABLE dropPartition1 DROP PARTITION(deptname='configManagement')""")
+    checkAnswer(sql(s"""select count (*) from dropPartition1"""), Seq(Row(28)))
+    sql(s"""ALTER TABLE dropPartition1 DROP PARTITION(deptname='network')""")
+    checkAnswer(sql(s"""select count (*) from dropPartition1"""), Seq(Row(16)))
+    sql(s"""ALTER TABLE dropPartition1 DROP PARTITION(deptname='protocol')""")
+    checkAnswer(sql(s"""select count (*) from dropPartition1"""), Seq(Row(8)))
+    sql(s"""ALTER TABLE dropPartition1 DROP PARTITION(deptname='security')""")
+    checkAnswer(sql(s"""select count (*) from dropPartition1"""), Seq(Row(0)))
+    val table = CarbonEnv.getCarbonTable(Option("default"), "dropPartition1")(sqlContext
+      .sparkSession)
+    val tablePath = table.getTablePath
+    val deptname = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("deptname=Learning")
+    }
+    assert(deptname.length == 0)
+    val configManagement = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("deptname=configManagement")
+    }
+    assert(configManagement.length == 0)
+    val network = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("deptname=network")
+    }
+    assert(network.length == 0)
+    val protocol = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("deptname=protocol")
+    }
+    assert(protocol.length == 0)
+    val security = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("deptname=security")
+    }
+    assert(security.length == 0)
+    sql("drop table if exists dropPartition1")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_PARTITION_DATA_TRASH,
+      CarbonCommonConstants.CARBON_ENABLE_PARTITION_DATA_TRASH_DEFAULT)
+  }
+
+  test("dropping partition with moving data to trash and count check") {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_PARTITION_DATA_TRASH,
+      "true")
+    sql("drop table if exists dropPartition2")
+    sql(
+      """
+        | CREATE TABLE dropPartition2 (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE dropPartition2 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE dropPartition2 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    val table = CarbonEnv.getCarbonTable(Option("default"), "dropPartition2")(sqlContext
+      .sparkSession)
+    val tablePath = table.getTablePath
+
+    // check partition folder before dropping the partition
+    var deptname = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("deptname=Learning")
+    }
+    assert(deptname.length > 0)
+    var configManagement = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("deptname=configManagement")
+    }
+    assert(configManagement.length > 0)
+    // check the partitin folder after dropping the partition
+    sql(s"""ALTER TABLE dropPartition2 DROP PARTITION(deptname='Learning')""")
+    sql(s"""ALTER TABLE dropPartition2 DROP PARTITION(deptname='configManagement')""")
+
+    deptname = FileFactory.getCarbonFile(tablePath).listFiles().filter {
+      file => file.getName.equalsIgnoreCase("deptname=Learning")
+    }
+    assert(deptname.length == 0)
+    configManagement = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("deptname=configManagement")
+    }
+    assert(configManagement.length == 0)
+    // check the file count at trash folder
+    val trashFolderPath = tablePath + CarbonCommonConstants.FILE_SEPARATOR +
+                          CarbonTablePath.TRASH_DIR
+    assert(FileFactory.isFileExist(trashFolderPath))
+    count = 0
+    val list = getFileCountInTrashFolder(trashFolderPath)
+    // carbondata files are added to the trash
+    assert(list > 0)
+    sql("drop table if exists dropPartition2")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_ENABLE_PARTITION_DATA_TRASH,
+      CarbonCommonConstants.CARBON_ENABLE_PARTITION_DATA_TRASH_DEFAULT)
+  }
+
+  def getFileCountInTrashFolder(dirPath: String) : Int = {
+    val fileName = new File(dirPath)
+    val files = fileName.listFiles()
+    if (files != null) {
+      files.foreach(file => {
+        if (file.isFile) {
+          count = count + 1
+        }
+        if (file.isDirectory()) {
+          getFileCountInTrashFolder(file.getAbsolutePath())
+        }
+      })
+    }
+    count
   }
 
   test("test dropping on partition table for int partition column") {

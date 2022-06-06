@@ -31,6 +31,7 @@
 * [How to deal with the trailing task in query?](#How-to-deal-with-the-trailing-task-in-query)
 * [How to manage hybrid file format in carbondata table?](#How-to-manage-hybrid-file-format-in-carbondata-table)
 * [How to recover table status file if lost?](#How-to-recover-table-status-file-if-lost)
+* [Why deleted partition data still showing in file system?](#why-deleted-partition-data-still-showing-in-file-system)
 
 # TroubleShooting
 
@@ -482,3 +483,7 @@ TableStatus Recovery tool cannot recover table status version files for the belo
 1. After compaction, if table status file is lost, cannot recover compacted commit transaction, as the lost version file only has merged load details.
 2. After Delete segment by Id/Date, if table status file is lost, cannot recover deleted segment commit transaction, as the lost version file only has the segment status as deleted.
 3. Table status recovery on materialized view table is not supported.
+
+## Why deleted partition data still showing in file system
+By default, the dropped partition data will not be physically removed from the table store until the table is dropped. 
+Enable carbon.enable.partitiondata.trash property to move all the dropped partitions data to trash during alter table DROP PARTITION operation itself.

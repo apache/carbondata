@@ -206,10 +206,12 @@ public class CleanFilesUtil {
   /**
    * This method will delete all the empty partition folders starting from the table path
    */
-  private static void deleteEmptyPartitionFoldersRecursively(CarbonFile tablePath) {
+  public static void deleteEmptyPartitionFoldersRecursively(CarbonFile tablePath) {
     CarbonFile[] listOfFiles = tablePath.listFiles();
     if (listOfFiles.length == 0) {
       tablePath.delete();
+      // if parent file folder also empty then delete that too.
+      deleteEmptyPartitionFoldersRecursively(tablePath.getParentFile());
     } else {
       for (CarbonFile file: listOfFiles) {
         if (file.isDirectory() && file.getName().contains("=")) {
