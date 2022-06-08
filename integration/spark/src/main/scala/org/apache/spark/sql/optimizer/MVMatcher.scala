@@ -19,14 +19,13 @@ package org.apache.spark.sql.optimizer
 
 import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.{CarbonToSparkAdapter, CarbonUnaryExpression}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Expression, PredicateHelper, _}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, AggregateFunction, Average, Count, Max, Min, NoOp, Sum}
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
 import org.apache.spark.sql.types.{DataType, Metadata}
 import org.apache.spark.unsafe.types.UTF8String
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.mv.plans.modular.{JoinEdge, Matchable, ModularPlan, _}
 import org.apache.carbondata.mv.plans.modular
@@ -1562,7 +1561,7 @@ private object SelectSelectGroupbyChildDelta
   }
 
 
-  case class AliasWrapper(alias: Alias) extends UnaryExpression {
+  case class AliasWrapper(alias: Alias) extends CarbonUnaryExpression {
     override def child: Expression = null
 
     override protected def doGenCode(ctx: CodegenContext,

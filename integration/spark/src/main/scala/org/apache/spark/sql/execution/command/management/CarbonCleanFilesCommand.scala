@@ -18,12 +18,11 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types.StringType
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
@@ -40,7 +39,7 @@ case class CarbonCleanFilesCommand(
     tableName: String,
     options: Map[String, String] = Map.empty,
     isInternalCleanCall: Boolean = false)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   val isDryRun: Boolean = options.getOrElse("dryrun", "false").toBoolean

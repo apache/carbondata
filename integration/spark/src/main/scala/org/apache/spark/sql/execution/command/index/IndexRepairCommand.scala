@@ -18,13 +18,11 @@
 package org.apache.spark.sql.execution.command.index
 
 import scala.collection.JavaConverters._
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -36,7 +34,7 @@ case class IndexRepairCommand(
   indexnameOp: Option[String], tableIdentifier: TableIdentifier,
   dbName: String,
   segments: Option[List[String]])
-extends DataCommand {
+extends CarbonDataCommands {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 

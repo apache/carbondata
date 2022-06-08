@@ -17,9 +17,8 @@
 
 package org.apache.spark.sql.execution.command.stream
 
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, Row, SparkSession}
 import org.apache.spark.sql.execution.command.MetadataCommand
-
 import org.apache.carbondata.stream.StreamJobManager
 
 /**
@@ -28,7 +27,7 @@ import org.apache.carbondata.stream.StreamJobManager
 case class CarbonDropStreamCommand(
     streamName: String,
     ifExists: Boolean
-) extends MetadataCommand {
+) extends CarbonCommands {
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     setAuditInfo(Map("streamName" -> streamName))
     StreamJobManager.stopStream(streamName, ifExists)

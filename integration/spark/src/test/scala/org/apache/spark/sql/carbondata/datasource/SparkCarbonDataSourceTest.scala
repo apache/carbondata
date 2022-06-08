@@ -1297,7 +1297,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
 
     sql("create table par (c1 string, c2 double, n int) using parquet")
     sql("create table car (c1 string, c2 double, n int) using carbon")
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+    if (!sqlContext.sparkContext.version.startsWith("3.3")) {
       sql("insert into par select 'a', 1.7986931348623157E308, 215565665556")
       sql("insert into car select 'a', 1.7986931348623157E308, 215565665556")
     } else {

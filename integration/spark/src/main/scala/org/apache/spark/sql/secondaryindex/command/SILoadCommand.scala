@@ -18,14 +18,12 @@
 package org.apache.spark.sql.secondaryindex.command
 
 import scala.collection.JavaConverters._
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, CarbonRunnableCommand, Row, SQLContext, SparkSession}
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.spark.sql.secondaryindex.rdd.SecondaryIndexCreator
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -50,7 +48,7 @@ case class SecondaryIndexModel(sqlContext: SQLContext,
  *
  */
 private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extends
-  RunnableCommand {
+  CarbonRunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val tableName = indexModel.tableName

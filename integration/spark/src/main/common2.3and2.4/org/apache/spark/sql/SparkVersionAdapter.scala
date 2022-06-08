@@ -18,7 +18,6 @@
 package org.apache.spark.sql
 
 import scala.collection.mutable
-
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
@@ -26,28 +25,27 @@ import org.apache.spark.serializer.Serializer
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeSeq, Expression, InterpretedPredicate, NamedExpression, SortOrder}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeSeq, Expression, InterpretedPredicate, NamedExpression, SortOrder, UnaryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{BucketSpecContext, ColTypeListContext, CreateTableHeaderContext, LocationSpecContext, QueryContext, SkewSpecContext, TablePropertyListContext}
-import org.apache.spark.sql.catalyst.plans.{logical, JoinType, QueryPlan}
-import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, Join, LogicalPlan, OneRowRelation}
+import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan, logical}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, InsertIntoTable, Join, LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.execution.{QueryExecution, ShuffledRowRDD, SparkPlan, SQLExecution, UnaryExecNode}
-import org.apache.spark.sql.execution.command.{ExplainCommand, Field, PartitionerField, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.{QueryExecution, SQLExecution, ShuffledRowRDD, SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataCommand, DataWritingCommand, ExplainCommand, Field, MetadataCommand, PartitionerField, RunnableCommand, ShowPartitionsCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
-import org.apache.spark.sql.execution.datasources.{CreateTable, DataSourceStrategy, RefreshTable}
+import org.apache.spark.sql.execution.datasources.{CreateTable, DataSource, DataSourceStrategy, FilePartition, FileScanRDD, OutputWriter, PartitionedFile, RefreshTable}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide}
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateColumnExists, convertDbNameToLowerCase, validateStreamingProperty}
-import org.apache.spark.sql.sources.Filter
-import org.apache.spark.sql.types.{DataType, StructField}
+import org.apache.spark.sql.sources.{BaseRelation, Filter}
+import org.apache.spark.sql.types.{DataType, StructField, StructType}
 import org.apache.spark.unsafe.types.UTF8String
-
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -57,8 +55,12 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.mv.plans.modular.ModularPlan
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
+
+import scala.collection.mutable.ArrayBuffer
 
 trait SparkVersionAdapter {
 
@@ -451,6 +453,47 @@ trait SparkVersionAdapter {
       case others => others
     }
   }
+
+  def showPartitionsCommand(spec: Option[TablePartitionSpec],
+    showPartitionsCommand: ShowPartitionsCommand): ShowPartitionsCommand = {
+    ShowPartitionsCommand(showPartitionsCommand.tableName, spec)
+  }
+
+  def invokeWriteAndReadMethod(dataSourceObj: DataSource,
+    dataFrame: DataFrame,
+    data: LogicalPlan,
+    session: SparkSession,
+    mode: SaveMode,
+    query: LogicalPlan,
+    physicalPlan: SparkPlan): BaseRelation = {
+    dataSourceObj.writeAndRead(mode, query, query.output.map(_.name), physicalPlan)
+  }
+
+  /**
+   * Parse a key-value map from a [[TablePropertyListContext]], assuming all values are specified.
+   *
+   * @param ctx   Instance of TablePropertyListContext defining parser rule for the table
+   *              properties.
+   * @param props <Map[String, String]> Map of table property list
+   * @return <Map[String, String]> Map of transformed table property.
+   */
+  def visitPropertyKeyValues(ctx: TablePropertyListContext,
+                             props: Map[String, String]): Map[String, String] = {
+    val badKeys = props.filter { case (_, v) => v == null }.keys
+    if (badKeys.nonEmpty) {
+      operationNotAllowed(
+        s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
+    }
+    props.map { case (key, value) =>
+      (key.toLowerCase, value)
+    }
+  }
+
+  def getFileScanRDD(spark: SparkSession, readFunction: PartitionedFile => Iterator[InternalRow],
+      partitions: ArrayBuffer[FilePartition]) : FileScanRDD = {
+    new FileScanRDD(spark, readFunction, partitions)
+  }
+
 }
 
 case class CarbonBuildSide(buildSide: BuildSide) {
@@ -468,3 +511,43 @@ abstract class CarbonTakeOrderedAndProjectExecHelper(sortOrder: Seq[SortOrder],
       s"skipMapOrder=$skipMapOrder, readFromHead=$readFromHead, output=$outputString)"
   }
 }
+
+trait CarbonMergeIntoSQLCommandCarbon extends AtomicRunnableCommand {
+}
+
+trait MvPlanWrapperCarbon extends ModularPlan {
+}
+
+trait CarbonProjectForUpdate extends LogicalPlan {
+}
+
+trait CarbonUpdateTable extends LogicalPlan {
+}
+
+trait CarbonDeleteRecords extends LogicalPlan {
+}
+
+trait CarbonInsertIntoCarbonTable extends Command {
+}
+
+trait CarbonCustomDeterministicExpression extends Expression {
+}
+
+abstract class OutputWriterCarbon(paths: String) extends OutputWriter {
+}
+
+trait CarbonCommands extends MetadataCommand{
+}
+
+trait CarbonAtomicRunnableCommands extends AtomicRunnableCommand{
+}
+
+trait CarbonDataCommands extends DataCommand {
+}
+
+trait CarbonDataWritingCommand extends DataWritingCommand {
+}
+
+trait CarbonUnaryExpression extends UnaryExpression {
+}
+

@@ -19,12 +19,10 @@ package org.apache.spark.sql.execution.command.management
 
 import java.text.SimpleDateFormat
 import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonToSparkAdapter, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonAtomicRunnableCommands, CarbonEnv, CarbonToSparkAdapter, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
@@ -33,7 +31,6 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.util.CausedBy
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -67,7 +64,7 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     var partition: Map[String, Option[String]] = Map.empty,
     var operationContext: OperationContext = new OperationContext,
     var updateModel: Option[UpdateTableModel] = None)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   var table: CarbonTable = _
 

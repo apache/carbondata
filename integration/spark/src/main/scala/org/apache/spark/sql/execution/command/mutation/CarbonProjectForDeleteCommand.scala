@@ -46,7 +46,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
     databaseNameOp: Option[String],
     tableName: String,
     timestamp: String)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   override val output: Seq[Attribute] = {
     Seq(AttributeReference("Deleted Row Count", LongType, nullable = false)())

@@ -17,9 +17,8 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.MetadataCommand
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.streaming.segment.StreamSegment
@@ -30,7 +29,7 @@ import org.apache.carbondata.streaming.segment.StreamSegment
 case class CarbonAlterTableFinishStreaming(
     dbName: Option[String],
     tableName: String)
-  extends MetadataCommand {
+  extends CarbonCommands {
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(dbName, tableName)(sparkSession)
     setAuditTable(carbonTable)

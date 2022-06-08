@@ -55,7 +55,7 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
     isOverwriteTable: Boolean,
     partition: Map[String, Option[String]] = Map.empty,
     var operationContext: OperationContext = new OperationContext)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   var table: CarbonTable = _
 

@@ -193,7 +193,8 @@ class SparkCarbonFileFormat extends FileFormat
    */
   private class CarbonOutputWriter(path: String,
       context: TaskAttemptContext,
-      fieldTypes: Array[StructField]) extends OutputWriter with AbstractCarbonOutputWriter {
+      fieldTypes: Array[StructField]) extends OutputWriterCarbon(path)
+    with AbstractCarbonOutputWriter {
 
     private val writable = new ObjectArrayWritable
 
@@ -311,6 +312,7 @@ class SparkCarbonFileFormat extends FileFormat
     override def close(): Unit = {
       recordWriter.close(context)
     }
+
   }
 
   override def shortName(): String = "carbon"

@@ -36,7 +36,7 @@ case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attr
 case class ProjectForUpdate(
     table: UnresolvedRelation,
     columns: List[String],
-    children: Seq[LogicalPlan]) extends LogicalPlan {
+    children: Seq[LogicalPlan]) extends CarbonProjectForUpdate {
   override def output: Seq[Attribute] = Seq.empty
 }
 
@@ -45,7 +45,7 @@ case class UpdateTable(
     columns: List[String],
     selectStmt: String,
     alias: Option[String] = None,
-    filer: String) extends LogicalPlan {
+    filer: String) extends CarbonUpdateTable {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[Attribute] = Seq.empty
 }
@@ -53,7 +53,7 @@ case class UpdateTable(
 case class DeleteRecords(
     statement: String,
     alias: Option[String] = None,
-    table: UnresolvedRelation) extends LogicalPlan {
+    table: UnresolvedRelation) extends CarbonDeleteRecords {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[AttributeReference] = Seq.empty
 }
@@ -69,7 +69,7 @@ case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     overwrite: Boolean,
     ifNotExists: Boolean,
     containsMultipleInserts: Boolean)
-  extends Command {
+  extends CarbonInsertIntoCarbonTable {
 
     override def output: Seq[Attribute] = {
       Seq(AttributeReference("Segment ID", StringType, nullable = false)())
@@ -78,6 +78,7 @@ case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     // This is the expected schema of the table prepared to be inserted into
     // including dynamic partition columns.
     val tableOutput = table.carbonRelation.output
+
 }
 
 /**

@@ -17,18 +17,14 @@
 
 package org.apache.spark.sql.execution.command.mutation
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.execution.command.{Checker, DataCommand, TruncateTableCommand}
-import org.apache.spark.sql.optimizer.CarbonFilters
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.execution.command.{Checker, TruncateTableCommand}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.trash.DataTrashManager
 
-case class CarbonTruncateCommand(child: TruncateTableCommand) extends DataCommand {
+case class CarbonTruncateCommand(child: TruncateTableCommand) extends CarbonDataCommands {
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     Checker.validateTableExists(child.tableName.database, child.tableName.table, sparkSession)

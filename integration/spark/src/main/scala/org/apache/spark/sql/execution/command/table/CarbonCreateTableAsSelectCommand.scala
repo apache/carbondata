@@ -17,13 +17,12 @@
 
 package org.apache.spark.sql.execution.command.table
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonAtomicRunnableCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
-import org.apache.spark.sql.execution.command.management.{CarbonInsertIntoCommand}
-
+import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 
 /**
@@ -39,7 +38,7 @@ case class CarbonCreateTableAsSelectCommand(
     tableInfo: TableInfo,
     query: LogicalPlan,
     ifNotExistsSet: Boolean = false,
-    tableLocation: Option[String] = None) extends AtomicRunnableCommand {
+    tableLocation: Option[String] = None) extends CarbonAtomicRunnableCommands {
 
   var insertIntoCommand: CarbonInsertIntoCommand = _
 

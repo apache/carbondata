@@ -18,19 +18,16 @@
 package org.apache.spark.sql.execution.command.index
 
 import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 import org.apache.spark.sql.types.StringType
-
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -45,7 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 case class ShowIndexesCommand(
     dbNameOp: Option[String],
     tableName: String)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 

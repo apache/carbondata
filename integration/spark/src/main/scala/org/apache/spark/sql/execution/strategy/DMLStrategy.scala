@@ -23,7 +23,7 @@ import scala.collection.mutable
 
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, CarbonToSparkAdapter, CountStarPlan, InsertIntoCarbonTable, SparkSession, SparkVersionAdapter}
+import org.apache.spark.sql.{CarbonCountStar, CarbonDatasourceHadoopRelation, CarbonToSparkAdapter, CountStarPlan, InsertIntoCarbonTable, SQLContext, SparkSession, SparkVersionAdapter}
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAlias
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, Attribute, AttributeReference, Cast, Descending, Expression, IntegerLiteral, Literal, NamedExpression, ScalaUDF, SortOrder, UnsafeProjection}
@@ -94,8 +94,8 @@ object DMLStrategy extends SparkStrategy {
           val dataType = StringType
           var children: Seq[Expression] = mutable.Seq.empty
           val geoHashColumn = condition.get.children.head match {
-            case Cast(attr: AttributeReference, _, _) =>
-              attr
+            case c: Cast if c.child.isInstanceOf[AttributeReference] =>
+              c.child.asInstanceOf[AttributeReference]
             case attr: AttributeReference =>
               attr
           }
@@ -169,7 +169,7 @@ object DMLStrategy extends SparkStrategy {
           )
           condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
         }
-      case CarbonExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, right)
+      case CarbonExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, _, left, right)
         if isCarbonPlan(left) && CarbonIndexUtil.checkIsIndexTable(right) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
         val carbon = CarbonSourceStrategy.apply(left).head
@@ -205,7 +205,7 @@ object DMLStrategy extends SparkStrategy {
           planLater(right),
           condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
-      case CarbonExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
+      case CarbonExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, conditionOnJoin, left,
       right)
         if isCarbonPlan(right) && CarbonIndexUtil.checkIsIndexTable(left) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
@@ -220,7 +220,7 @@ object DMLStrategy extends SparkStrategy {
             carbon,
             condition)
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
-      case CarbonExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition,
+      case CarbonExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition, conditionOnJoin,
       left, right)
         if isLeftSemiExistPushDownEnabled &&
           isAllCarbonPlan(left) && isAllCarbonPlan(right) =>
@@ -247,12 +247,12 @@ object DMLStrategy extends SparkStrategy {
 
   object CarbonExtractEquiJoinKeys {
     def unapply(plan: LogicalPlan): Option[(JoinType, Seq[Expression], Seq[Expression],
-      Option[Expression], LogicalPlan, LogicalPlan)] = {
+      Option[Expression], Option[Expression], LogicalPlan, LogicalPlan)] = {
       plan match {
         case join: Join =>
           ExtractEquiJoinKeys.unapply(join) match {
               // TODO: Spark is using hints now, carbon also should use join hints
-            case Some(x) => Some(x._1, x._2, x._3, x._4, x._5, x._6)
+            case Some(x) => Option(x._1, x._2, x._3, x._4, x._5, x._6, x._7)
             case None => None
           }
         case _ => None
@@ -395,7 +395,8 @@ case class UnionCommandExec(cmd: RunnableCommand) extends LeafExecNode {
 
   protected[sql] lazy val sideEffectResult: Seq[InternalRow] = {
     val converter = CatalystTypeConverters.createToCatalystConverter(schema)
-    val internalRow = cmd.run(sqlContext.sparkSession).map(converter(_).asInstanceOf[InternalRow])
+    val internalRow = cmd.run(SQLContext.getOrCreate(sparkContext).sparkSession)
+      .map(converter(_).asInstanceOf[InternalRow])
     val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
     // To make GenericInternalRow to UnsafeRow
     val row = unsafeProjection(internalRow.head)
@@ -405,7 +406,7 @@ case class UnionCommandExec(cmd: RunnableCommand) extends LeafExecNode {
   override def output: Seq[Attribute] = cmd.output
 
   protected override def doExecute(): RDD[InternalRow] = {
-    sqlContext.sparkContext.parallelize(sideEffectResult, 1)
+    SQLContext.getOrCreate(sparkContext).sparkContext.parallelize(sideEffectResult, 1)
   }
 }
 

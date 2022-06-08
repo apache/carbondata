@@ -62,7 +62,7 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
     catalogTable: Option[CatalogTable],
     fileIndex: Option[FileIndex],
     outputColumnNames: Seq[String])
-  extends DataWritingCommand {
+  extends CarbonDataWritingCommand {
   import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils.escapePathName
 
   override def run(sparkSession: SparkSession, child: SparkPlan): Seq[Row] = {

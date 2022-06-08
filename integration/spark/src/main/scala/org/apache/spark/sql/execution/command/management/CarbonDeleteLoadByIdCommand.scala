@@ -17,20 +17,19 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
-
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.events.{withEvents, DeleteSegmentByIdPostEvent, DeleteSegmentByIdPreEvent}
+import org.apache.carbondata.events.{DeleteSegmentByIdPostEvent, DeleteSegmentByIdPreEvent, withEvents}
 
 case class CarbonDeleteLoadByIdCommand(
     loadIds: Seq[String],
     databaseNameOp: Option[String],
     tableName: String)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)

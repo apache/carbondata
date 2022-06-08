@@ -18,15 +18,12 @@
 package org.apache.spark.sql.secondaryindex.command
 
 import java.util
-
 import scala.collection.JavaConverters._
-
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.util.CarbonException
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -42,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
  */
 case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: String,
     parentTable: String)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   val LOGGER: Logger =
     LogServiceFactory.getLogService(this.getClass.getName)

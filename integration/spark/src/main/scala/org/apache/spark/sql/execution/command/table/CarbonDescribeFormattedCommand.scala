@@ -18,11 +18,9 @@
 package org.apache.spark.sql.execution.command.table
 
 import java.util.Date
-
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
-
-import org.apache.spark.sql.{CarbonEnv, EnvHelper, Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, EnvHelper, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
@@ -31,7 +29,6 @@ import org.apache.spark.sql.execution.command.Checker
 import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.{ArrayType, MapType, MetadataBuilder, StringType, StructField, StructType}
-
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -47,7 +44,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     override val output: Seq[Attribute],
     partitionSpec: TablePartitionSpec,
     tblIdentifier: TableIdentifier)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
@@ -391,7 +388,7 @@ case class CarbonDescribeColumnCommand(
     databaseNameOp: Option[String],
     tableName: String,
     inputFieldNames: java.util.List[String])
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override val output: Seq[Attribute] = Seq(
     // Column names are based on Hive.
@@ -506,7 +503,7 @@ case class CarbonDescribeColumnCommand(
 case class CarbonDescribeShortCommand(
     databaseNameOp: Option[String],
     tableName: String)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override val output: Seq[Attribute] = Seq(
     // Column names are based on Hive.

@@ -19,16 +19,14 @@ package org.apache.spark.sql.secondaryindex.joins
 
 import java.io.IOException
 import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.JobContext
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonBuildSide, CarbonToSparkAdapter, SparkSession}
+import org.apache.spark.sql.{CarbonBinaryExecNode, CarbonBuildSide, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, BindReferences, Expression, In, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
@@ -41,7 +39,6 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.unsafe.types.UTF8String
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.{IndexChooser, IndexFilter, IndexInputFormat, IndexStoreManager, IndexUtil, Segment}
@@ -64,7 +61,7 @@ case class BroadCastSIFilterPushJoin(
     buildSide: CarbonToSparkAdapter.CarbonBuildSideType,
     left: SparkPlan,
     right: SparkPlan,
-    condition: Option[Expression]) extends BinaryExecNode with CarbonCodegenSupport {
+    condition: Option[Expression]) extends CarbonBinaryExecNode with CarbonCodegenSupport {
 
   override def output: Seq[Attribute] = carbonScan.output
 

@@ -18,14 +18,12 @@
 package org.apache.spark.sql.hive
 
 import java.net.URI
-
-import org.apache.spark.sql.{AnalysisException, Dataset, Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonAtomicRunnableCommands, CarbonToSparkAdapter, Dataset, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType, CatalogUtils}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.{AlterTableRecoverPartitionsCommand, AtomicRunnableCommand}
+import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, RepairTableCommand}
 import org.apache.spark.sql.execution.datasources.{DataSource, HadoopFsRelation}
 import org.apache.spark.sql.sources.BaseRelation
-import org.apache.spark.util.CarbonReflectionUtils
 
 /**
  * Create table 'using carbondata' and insert the query result into it.
@@ -40,7 +38,7 @@ case class CreateCarbonSourceTableAsSelectCommand(
     table: CatalogTable,
     mode: SaveMode,
     query: LogicalPlan)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     Seq.empty
@@ -85,7 +83,8 @@ case class CreateCarbonSourceTableAsSelectCommand(
         case fs: HadoopFsRelation if table.partitionColumnNames.nonEmpty &&
                                      sparkSession.sqlContext.conf.manageFilesourcePartitions =>
           // Need to recover partitions into the metastore so our saved data is visible.
-          sessionState.executePlan(AlterTableRecoverPartitionsCommand(table.identifier)).toRdd
+          sessionState.executePlan(RepairTableCommand(table.identifier, enableAddPartitions = true
+            , enableDropPartitions = false)).toRdd
       }
     }
 
@@ -115,7 +114,7 @@ case class CreateCarbonSourceTableAsSelectCommand(
 
     try {
       val physicalPlan = session.sessionState.executePlan(data).executedPlan
-      CarbonReflectionUtils.invokeWriteAndReadMethod(dataSource,
+      CarbonToSparkAdapter.invokeWriteAndReadMethod(dataSource,
         Dataset.ofRows(session, query),
         data,
         session,

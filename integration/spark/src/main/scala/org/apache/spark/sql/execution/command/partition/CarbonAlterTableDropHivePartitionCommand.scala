@@ -18,18 +18,15 @@
 package org.apache.spark.sql.execution.command.partition
 
 import java.util
-
 import scala.collection.JavaConverters._
-
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonAtomicRunnableCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AtomicRunnableCommand}
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.util.AlterTableUtil
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.IndexStoreManager
@@ -62,7 +59,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
     purge: Boolean,
     retainData: Boolean,
     operationContext: OperationContext = new OperationContext)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   var carbonPartitionsTobeDropped : util.List[String] = _
   var table: CarbonTable = _

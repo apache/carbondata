@@ -19,12 +19,10 @@ package org.apache.spark.sql.execution.command.schema
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, MetadataCommand}
 import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.apache.spark.util.{AlterTableUtil, SparkUtil}
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -39,7 +37,7 @@ import org.apache.carbondata.format.SchemaEvolutionEntry
 
 private[sql] case class CarbonAlterTableDropColumnCommand(
     alterTableDropColumnModel: AlterTableDropColumnModel)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

@@ -19,19 +19,16 @@ package org.apache.spark.sql.execution.command.management
 
 import java.io.File
 import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-
 import org.apache.hadoop.fs.FileStatus
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertSparkToCarbonDataType
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.types.StructType
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -67,7 +64,7 @@ case class CarbonAddLoadCommand(
     databaseNameOp: Option[String],
     tableName: String,
     options: Map[String, String])
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

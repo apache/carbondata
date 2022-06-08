@@ -76,7 +76,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
     ifNotExists: Boolean,
     isDeferredRefresh: Boolean,
     var isCreateSIndex: Boolean = true)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

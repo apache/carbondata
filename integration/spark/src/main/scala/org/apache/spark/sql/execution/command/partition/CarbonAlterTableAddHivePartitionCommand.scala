@@ -18,18 +18,15 @@
 package org.apache.spark.sql.execution.command.partition
 
 import java.util
-
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonAtomicRunnableCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AlterTableModel, AtomicRunnableCommand}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
@@ -41,7 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ObjectSerializationUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{withEvents, AlterTableMergeIndexEvent, OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
+import org.apache.carbondata.events.{AlterTableMergeIndexEvent, OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent, withEvents}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
@@ -53,7 +50,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
     tableName: TableIdentifier,
     partitionSpecsAndLocs: Seq[(TablePartitionSpec, Option[String])],
     ifNotExists: Boolean)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   var partitionSpecsAndLocsTobeAdded : util.List[PartitionSpec] = _
   var table: CarbonTable = _

@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.command.schema
 
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.util.AlterTableUtil
@@ -28,7 +28,7 @@ private[sql] case class CarbonAlterTableUnsetCommand(
     propKeys: Seq[String],
     ifExists: Boolean,
     isView: Boolean)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     setAuditTable(tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase),

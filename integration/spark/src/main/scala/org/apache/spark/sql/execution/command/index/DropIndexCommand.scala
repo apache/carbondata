@@ -18,15 +18,13 @@
 package org.apache.spark.sql.execution.command.index
 
 import scala.collection.mutable.ArrayBuffer
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonRunnableCommand, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonMetaStore, CarbonRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
-
 import org.apache.carbondata.common.exceptions.sql.{MalformedIndexCommandException, NoSuchIndexException}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.index.IndexStoreManager
@@ -44,7 +42,7 @@ private[sql] case class DropIndexCommand(
     parentTableName: String = null,
     indexName: String,
     needLock: Boolean = true)
-  extends RunnableCommand {
+  extends CarbonRunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     var isSecondaryIndex = false

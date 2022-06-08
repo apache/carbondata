@@ -19,15 +19,12 @@ package org.apache.spark.sql.execution.command.cache
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.{AnalysisException, CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.types.StringType
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.index.IndexStoreManager
@@ -44,7 +41,7 @@ import org.apache.carbondata.spark.util.CommonUtil.bytesToDisplaySize
 case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     tableIdentifier: Option[TableIdentifier],
     internalCall: Boolean = false)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   private lazy val cacheResult: Seq[(String, Int, Long, String)] = {
     executeJobToGetCache(List(), showExecutorCache)

@@ -17,10 +17,9 @@
 
 package org.apache.spark.sql.execution.command.view
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
-
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.view.MVStatus
 import org.apache.carbondata.events.withEvents
@@ -33,7 +32,7 @@ import org.apache.carbondata.view.{MVHelper, MVManagerInSpark, MVRefresher, Refr
  */
 case class CarbonRefreshMVCommand(
     databaseNameOption: Option[String],
-    mvName: String) extends DataCommand {
+    mvName: String) extends CarbonDataCommands {
 
   override def processData(session: SparkSession): Seq[Row] = {
     val databaseName =

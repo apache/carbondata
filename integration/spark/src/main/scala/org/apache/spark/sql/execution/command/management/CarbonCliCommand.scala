@@ -18,14 +18,11 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.util
-
 import scala.collection.JavaConverters._
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
-
 import org.apache.carbondata.tool.CarbonCli
 
 /**
@@ -38,7 +35,7 @@ case class CarbonCliCommand(
     databaseNameOp: Option[String],
     tableName: String,
     commandOptions: String)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   override def output: Seq[Attribute] = {
       Seq(AttributeReference("CarbonCli", StringType, nullable = false)())

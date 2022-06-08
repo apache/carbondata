@@ -18,15 +18,12 @@
 package org.apache.spark.sql.execution.command.view
 
 import java.util
-
 import scala.collection.JavaConverters._
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.{BooleanType, StringType}
-
 import org.apache.carbondata.core.view.{MVProperty, MVSchema}
 import org.apache.carbondata.view.MVManagerInSpark
 
@@ -35,7 +32,7 @@ import org.apache.carbondata.view.MVManagerInSpark
  */
 case class CarbonShowMVCommand(
     databaseNameOption: Option[String],
-    relatedTableIdentifier: Option[TableIdentifier]) extends DataCommand {
+    relatedTableIdentifier: Option[TableIdentifier]) extends CarbonDataCommands {
 
   override def output: Seq[Attribute] = {
     Seq(

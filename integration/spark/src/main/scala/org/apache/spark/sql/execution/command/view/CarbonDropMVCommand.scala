@@ -18,11 +18,10 @@
 package org.apache.spark.sql.execution.command.view
 
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{CarbonAtomicRunnableCommands, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
-
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -40,7 +39,7 @@ case class CarbonDropMVCommand(
     ifExistsSet: Boolean,
     forceDrop: Boolean = false,
     isLockAcquiredOnFactTable: String = null)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   private val logger = CarbonDropMVCommand.LOGGER
 

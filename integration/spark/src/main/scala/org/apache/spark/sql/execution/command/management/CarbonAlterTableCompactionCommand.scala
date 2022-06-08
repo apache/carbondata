@@ -19,10 +19,8 @@ package org.apache.spark.sql.execution.command.management
 
 import java.io.{File, IOException}
 import java.util
-
 import scala.collection.JavaConverters._
-
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{AnalysisException, CarbonAtomicRunnableCommands, CarbonEnv, Row, SQLContext, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CompactionModel}
@@ -30,7 +28,6 @@ import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.AlterTableUtil
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -58,7 +55,8 @@ import org.apache.carbondata.view.MVManagerInSpark
 case class CarbonAlterTableCompactionCommand(
     alterTableModel: AlterTableModel,
     tableInfoOp: Option[TableInfo] = None,
-    val operationContext: OperationContext = new OperationContext ) extends AtomicRunnableCommand {
+    val operationContext: OperationContext = new OperationContext )
+  extends CarbonAtomicRunnableCommands {
 
   var table: CarbonTable = _
 

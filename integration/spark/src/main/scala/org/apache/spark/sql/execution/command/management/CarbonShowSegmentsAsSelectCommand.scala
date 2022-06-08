@@ -17,13 +17,12 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonDataCommands, CarbonEnv, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.Project
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.{ArrayType, DataType, DataTypes, LongType, StringType}
-
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.api.CarbonStore.readSegments
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -42,7 +41,7 @@ case class CarbonShowSegmentsAsSelectCommand(
     limit: Option[Int],
     showHistory: Boolean = false,
     withStage: Boolean = false)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   private lazy val sparkSession = SparkSession.getActiveSession.get
   private lazy val carbonTable = {

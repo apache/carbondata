@@ -19,9 +19,8 @@ package org.apache.spark.sql.execution.joins
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.{CarbonBinaryExecNode, CarbonToSparkAdapter}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, BindReferences, Expression, JoinedRow, Literal, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.JoinType
@@ -32,7 +31,6 @@ import org.apache.spark.sql.execution.joins.BroadCastPolygonFilterPushJoin.addPo
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.unsafe.types.UTF8String
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -48,7 +46,7 @@ case class BroadCastPolygonFilterPushJoin(
     condition: Option[Expression],
     left: SparkPlan,
     right: SparkPlan
-) extends BinaryExecNode {
+) extends CarbonBinaryExecNode {
 
   // BuildSide will be BuildRight
   protected lazy val (buildPlan, streamedPlan) = (right, left)

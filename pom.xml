@@ -126,11 +126,11 @@
     <hadoop.version>2.7.2</hadoop.version>
     <httpclient.version>4.3.4</httpclient.version>
     <httpcore.version>4.3-alpha1</httpcore.version>
-    <scala.binary.version>2.11</scala.binary.version>
-    <scala.version>2.11.8</scala.version>
+    <scala.binary.version>2.12</scala.binary.version>
+    <scala.version>2.12.8</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
-    <spark.version>2.3.4</spark.version>
-    <spark.binary.version>2.3</spark.binary.version>
+    <spark.version>3.3.0</spark.version>
+    <spark.binary.version>3.3</spark.binary.version>
     <antlr4.version>4.8</antlr4.version>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
@@ -454,7 +454,7 @@
             <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
             <sourceDirectory>${basedir}/src/main/spark${spark.binary.version}</sourceDirectory>
             <sourceDirectory>${basedir}/src/main/common2.3and2.4</sourceDirectory>
-            <sourceDirectory>${basedir}/src/main/common2.4and3.1</sourceDirectory>
+            <sourceDirectory>${basedir}/src/main/common2.4and3.3</sourceDirectory>
           </sourceDirectories>
           <testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>
           <configLocation>scalastyle-config.xml</configLocation>
@@ -574,9 +574,6 @@
     </profile>
     <profile>
       <id>spark-2.3</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.binary.version>2.3</spark.binary.version>
         <spark.version>2.3.4</spark.version>
@@ -705,7 +702,7 @@
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/spark2.4</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/common2.3and2.4</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark/src/main/common2.4and3.1</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/common2.4and3.3</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
@@ -723,10 +720,13 @@
       </build>
     </profile>
     <profile>
-      <id>spark-3.1</id>
+      <id>spark-3.3</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
-        <spark.binary.version>3.1</spark.binary.version>
-        <spark.version>3.1.1</spark.version>
+        <spark.binary.version>3.3</spark.binary.version>
+        <spark.version>3.3.0</spark.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala.version>2.12.8</scala.version>
         <dep.jackson.version>2.10.0</dep.jackson.version>
@@ -778,8 +778,8 @@
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark/src/main/spark3.1</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark/src/main/common2.4and3.1</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/spark3.3</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/common2.4and3.3</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
