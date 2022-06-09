@@ -22,8 +22,8 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, MetadataCommand}
-import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
-import org.apache.spark.util.{AlterTableUtil, SparkUtil}
+import org.apache.spark.sql.hive.MockClassForAlterRevertTests
+import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -32,7 +32,6 @@ import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.events.{AlterTableDropColumnPostEvent, AlterTableDropColumnPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
@@ -177,25 +176,9 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         carbonTable,
         schemaEvolutionEntry,
         tableInfo)(sparkSession)
-      // get the columns in schema order and filter the dropped column in the column set
-      val cols = carbonTable.getCreateOrderColumn.asScala
-        .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
-        .filterNot(column => delCols.contains(column))
-      // When we call
-      // alterExternalCatalogForTableWithUpdatedSchema to update the new schema to external catalog
-      // in case of drop column, spark gets the catalog table and then it itself adds the partition
-      // columns if the table is partition table for all the new data schema sent by carbon,
-      // so there will be duplicate partition columns, so send the columns without partition columns
-      val columns = if (carbonTable.isHivePartitionTable) {
-        val partitionColumns = partitionInfo.getColumnSchemaList.asScala
-        val carbonColumnsWithoutPartition = cols.filterNot(col => partitionColumns.contains(col))
-        Some(carbonColumnsWithoutPartition)
-      } else {
-        Some(cols)
-      }
-      CarbonSessionCatalogUtil.alterDropColumns(
-        tableIdentifier, columns, sparkSession)
-      sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
+      AlterTableUtil.deleteColsAndUpdateSchema(carbonTable,
+        delCols, tableIdentifier, sparkSession)
+      new MockClassForAlterRevertTests().mockForAlterAddColRevertTest()
       // TODO: 1. add check for deletion of index tables
 
       // event will be fired before dropping the columns

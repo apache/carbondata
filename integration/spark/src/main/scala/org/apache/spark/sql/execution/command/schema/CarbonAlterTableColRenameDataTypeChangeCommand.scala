@@ -25,7 +25,7 @@ import scala.collection.mutable
 import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, DataTypeInfo, MetadataCommand}
-import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
+import org.apache.spark.sql.hive.{CarbonSessionCatalogUtil, MockClassForAlterRevertTests}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -312,9 +312,11 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         if (isSchemaEntryRequired) {
           addedColumnsList ++= List(columnSchema)
           deletedColumnsList ++= List(deletedColumnSchema)
+          timeStamp = System.currentTimeMillis()
           schemaEvolutionEntry = AlterTableUtil.addNewSchemaEvolutionEntry(schemaEvolutionEntry,
             addedColumnsList,
-            deletedColumnsList)
+            deletedColumnsList,
+            timeStamp)
         }
       }
 
@@ -330,6 +332,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         addedTableColumnSchema,
         schemaEvolutionEntry,
         oldCarbonColumn.head)
+      new MockClassForAlterRevertTests().mockForAlterAddColRevertTest()
       val alterTableColRenameAndDataTypeChangePostEvent
       : AlterTableColRenameAndDataTypeChangePostEvent =
         AlterTableColRenameAndDataTypeChangePostEvent(sparkSession, carbonTable,
@@ -349,7 +352,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         if (carbonTable != null) {
           if (carbonTable.isTransactionalTable) {
             AlterTableUtil
-              .revertColumnRenameAndDataTypeChanges(dbName, tableName, timeStamp)(sparkSession)
+              .revertColumnRenameAndDataTypeChanges(carbonTable, timeStamp)(sparkSession)
           }
         }
         if (isDataTypeChange) {

@@ -20,7 +20,7 @@ package org.apache.spark.carbondata.restructure
 import java.io.File
 
 import mockit.{Mock, MockUp}
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.hive.MockClassForAlterRevertTests
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
@@ -32,13 +32,7 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll() {
-    new MockUp[MockClassForAlterRevertTests]() {
-      @Mock
-      @throws[ProcessMetaDataException]
-      def mockForAlterRevertTest(): Unit = {
-        throw new ProcessMetaDataException("default", "reverttest", "thrown in mock")
-      }
-    }
+    mock()
     sql("drop table if exists reverttest")
     sql(
       "CREATE TABLE reverttest(intField int,stringField string,timestampField timestamp," +
@@ -98,14 +92,78 @@ class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  override def afterAll() {
-    new MockUp[MockClassForAlterRevertTests]() {
-      @Mock
-      def mockForAlterRevertTest(): Unit = {
+  test("alter add operations revert testcase") {
+    unMock()
+    try {
+      sql("drop table if exists reverttest")
+      sql(
+        "CREATE TABLE reverttest(intField int,stringField string) using carbondata")
+      sql("insert into reverttest select 1, 'abc'")
+      sql(
+        "Alter table reverttest add columns(newField1 string) TBLPROPERTIES" +
+        "('DEFAULT.VALUE.newField1'='def')")
+      new MockUp[MockClassForAlterRevertTests]() {
+        @Mock
+        @throws[ProcessMetaDataException]
+        def mockForAlterAddColRevertTest(): Unit = {
+          throw new ProcessMetaDataException("default", "reverttest", "thrown in mock")
+        }
       }
+      // check revert schema with alter add column
+      intercept[ProcessMetaDataException] {
+        sql(
+          "Alter table reverttest add columns(newField2 string) TBLPROPERTIES" +
+          "('DEFAULT.VALUE.newField2'='def')")
+      }
+      checkAnswerAfterAlter()
+      // check revert schema with alter drop column
+      intercept[ProcessMetaDataException] {
+        sql("Alter table reverttest drop columns(newField1)")
+      }
+      checkAnswerAfterAlter()
+      // check revert schema with alter change column
+      intercept[ProcessMetaDataException] {
+        sql("alter table reverttest change newField1 newField2 string")
+      }
+      checkAnswerAfterAlter()
+
+      def checkAnswerAfterAlter(): Unit = {
+        val desCols = sql("desc reverttest").collect()
+        assert(desCols.length == 3)
+        assert(desCols.mkString("Array(", ", ", ")").contains("newfield1"))
+        checkAnswer(sql("select intField,stringField,newField1 from reverttest"),
+          Seq(Row(1, "abc", "def")))
+      }
+    } finally {
+      mock()
     }
+  }
+
+  override def afterAll() {
+    unMock()
     sql("drop table if exists reverttest")
     sql("drop table if exists reverttest_fail")
   }
 
+  private def mock(): Unit = {
+    new MockUp[MockClassForAlterRevertTests]() {
+      @Mock
+      @throws[ProcessMetaDataException]
+      def mockForAlterRevertTest(): Unit = {
+        throw new ProcessMetaDataException("default", "reverttest", "thrown in mock")
+      }
+    }
+  }
+
+  private def unMock(): Unit = {
+    new MockUp[MockClassForAlterRevertTests]() {
+      @Mock
+      def mockForAlterRevertTest(): Unit = {
+      }
+
+      @Mock
+      def mockForAlterAddColRevertTest(): Unit = {
+      }
+    }
+  }
 }

@@ -159,4 +159,7 @@ object CarbonSessionCatalogUtil {
 class MockClassForAlterRevertTests {
   def mockForAlterRevertTest(): Unit = {
   }
+
+  def mockForAlterAddColRevertTest(): Unit = {
+  }
 }
