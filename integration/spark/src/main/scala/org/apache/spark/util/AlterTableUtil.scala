@@ -288,13 +288,21 @@ object AlterTableUtil {
     (sparkSession: SparkSession): Unit = {
     revertSchema(dbName, tableName, timeStamp, sparkSession) { (thriftTable, evolutionEntryList) =>
       val removedSchemas = evolutionEntryList.get(evolutionEntryList.size() - 1).removed
+      val schemaConverter = new ThriftWrapperSchemaConverterImpl
+      val columnSchemaList = new util.ArrayList[ColumnSchema]
       thriftTable.fact_table.table_columns.asScala.foreach { columnSchema =>
         removedSchemas.asScala.foreach { removedSchemas =>
           if (columnSchema.invisible && removedSchemas.column_id == columnSchema.column_id) {
             columnSchema.setInvisible(false)
           }
         }
+        columnSchemaList.add(schemaConverter.fromExternalToWrapperColumnSchema(columnSchema))
       }
+      // add back the dropped columns to catalog table in case of failure
+      val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
+      CarbonSessionCatalogUtil.alterAddColumns(tableIdentifier,
+        Some(columnSchemaList.asScala),
+        sparkSession)
     }
   }
 
@@ -306,20 +314,33 @@ object AlterTableUtil {
    * @param timeStamp
    * @param sparkSession
    */
-  def revertColumnRenameAndDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
+  def revertColumnRenameAndDataTypeChanges(carbonTable: CarbonTable, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    revertSchema(dbName, tableName, timeStamp, sparkSession) { (thriftTable, evolutionEntryList) =>
-      val removedColumns = evolutionEntryList.get(evolutionEntryList.size() - 1).removed
+    val tableIdentifier = TableIdentifier(
+      carbonTable.getTableName, Some(carbonTable.getDatabaseName))
+    revertSchema(carbonTable.getDatabaseName,
+      carbonTable.getTableName, timeStamp, sparkSession) { (thriftTable, evolutionEntryList) =>
+      val removedColumns: java.util.List[org.apache.carbondata.format.ColumnSchema] =
+        evolutionEntryList.get(evolutionEntryList.size() - 1).removed
       thriftTable.fact_table.table_columns.asScala.foreach { columnSchema =>
         removedColumns.asScala.foreach { removedColumn =>
           if (columnSchema.column_id.equalsIgnoreCase(removedColumn.column_id) &&
               !columnSchema.isInvisible) {
+            columnSchema.setColumn_name(removedColumn.column_name)
             columnSchema.setData_type(removedColumn.data_type)
             columnSchema.setPrecision(removedColumn.precision)
             columnSchema.setScale(removedColumn.scale)
+            val carbonColumns = carbonTable.getCreateOrderColumn().asScala
+              .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn
+                .getColumnSchema
+              }
+            // add back the original columns before rename to catalog table in case of failure
+            CarbonSessionCatalogUtil.alterColumnChangeDataTypeOrRename(
+              tableIdentifier, Some(carbonColumns), sparkSession)
           }
         }
       }
+      sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
     }
   }
 
@@ -365,8 +386,8 @@ object AlterTableUtil {
   def addNewSchemaEvolutionEntry(
       schemaEvolutionEntry: SchemaEvolutionEntry,
       addedColumnsList: List[org.apache.carbondata.format.ColumnSchema],
-      deletedColumnsList: List[org.apache.carbondata.format.ColumnSchema]): SchemaEvolutionEntry = {
-    val timeStamp = System.currentTimeMillis()
+      deletedColumnsList: List[org.apache.carbondata.format.ColumnSchema],
+      timeStamp: Long): SchemaEvolutionEntry = {
     val newSchemaEvolutionEntry = if (schemaEvolutionEntry == null) {
       new SchemaEvolutionEntry(timeStamp)
     } else {
@@ -1189,6 +1210,37 @@ object AlterTableUtil {
                     s"Only Int and Decimal data types are allowed for modification")
         }
     }
+  }
+
+  /**
+   * Removes the columns specified in params from the catalog table and refresh catalog table
+   * @param carbonTable for which the columns needs to be updated
+   * @param deleteCols to be removed from schema
+   * @param tableIdentifier for the table which requires schema update
+   * @param sparkSession instance
+   */
+  def deleteColsAndUpdateSchema(carbonTable: CarbonTable, deleteCols: Seq[ColumnSchema],
+      tableIdentifier: TableIdentifier, sparkSession: SparkSession): Unit = {
+    // get the columns in schema order and filter the dropped column in the column set
+    val newColsAfterDrop = carbonTable.getCreateOrderColumn.asScala
+      .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
+      .filterNot(column => deleteCols.contains(column))
+    // When we call
+    // alterExternalCatalogForTableWithUpdatedSchema to update the new schema to external catalog
+    // in case of drop column, spark gets the catalog table and then it itself adds the partition
+    // columns if the table is partition table for all the new data schema sent by carbon,
+    // so there will be duplicate partition columns, so send the columns without partition columns
+    val updatedNewColsAfterDrop = if (carbonTable.isHivePartitionTable) {
+      val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList.asScala
+      val carbonColumnsWithoutPartition =
+        newColsAfterDrop.filterNot(col => partitionColumns.contains(col))
+      Some(carbonColumnsWithoutPartition)
+    } else {
+      Some(newColsAfterDrop)
+    }
+    CarbonSessionCatalogUtil.alterDropColumns(tableIdentifier,
+      updatedNewColsAfterDrop, sparkSession)
+    sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }
 
 }

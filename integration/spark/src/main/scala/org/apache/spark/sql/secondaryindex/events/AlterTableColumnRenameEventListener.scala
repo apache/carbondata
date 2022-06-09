@@ -136,8 +136,7 @@ class AlterTableColumnRenameEventListener extends OperationEventListener with Lo
               val evolutionEntryList = thriftTable.fact_table.schema_evolution
                 .schema_evolution_history
               AlterTableUtil
-                .revertColumnRenameAndDataTypeChanges(indexCarbonTable.getDatabaseName,
-                  indexCarbonTable.getTableName,
+                .revertColumnRenameAndDataTypeChanges(indexCarbonTable,
                   evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp)(
                   alterTableColRenameAndDataTypeChangePostEvent.sparkSession)
             }
