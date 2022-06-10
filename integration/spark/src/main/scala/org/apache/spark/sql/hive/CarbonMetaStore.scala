@@ -180,7 +180,7 @@ object CarbonMetaStoreFactory {
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.hive.CarbonMetaStoreFactory")
 
   def createCarbonMetaStore(conf: RuntimeConfig): CarbonMetaStore = {
-    val readSchemaFromHiveMetaStore = readSchemaFromHive(conf)
+    val readSchemaFromHiveMetaStore = true
     if (readSchemaFromHiveMetaStore) {
       LOGGER.info("Hive based carbon metastore is enabled")
       new CarbonHiveMetaStore()

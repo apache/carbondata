@@ -18,7 +18,7 @@ package org.apache.spark.sql.hive
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
@@ -29,6 +29,7 @@ import org.apache.carbondata.core.metadata.schema
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.format
+
 import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -156,11 +157,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     val dbName = newTableIdentifier.getDatabaseName
     val tableName = newTableIdentifier.getTableName
     val schemaParts = CarbonUtil.convertToMultiGsonStrings(wrapperTableInfo, "=", "'", "")
-    val hiveClient = sparkSession
-      .sessionState
-      .catalog
-      .externalCatalog.asInstanceOf[HiveExternalCatalog]
-      .client
+    val hiveClient = CarbonSessionCatalogUtil.getClient(sparkSession)
     hiveClient.runSqlHive(s"ALTER TABLE `$dbName`.`$tableName` SET SERDEPROPERTIES($schemaParts)")
 
     sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
