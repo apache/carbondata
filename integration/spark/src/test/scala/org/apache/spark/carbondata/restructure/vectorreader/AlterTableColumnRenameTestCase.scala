@@ -780,6 +780,21 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test_alter")
   }
 
+  test("test alter rename table and drop index") {
+    sql("drop table if exists test_rename")
+    sql("drop index if exists si on test_rename1")
+    sql("CREATE TABLE test_rename (name string,id int) STORED AS carbondata")
+    sql("insert into test_rename values('a',1)")
+    sql("insert into test_rename values('v',2)")
+    sql(s"create index si on test_rename(name) as 'carbondata'")
+    // only rename operation
+    sql("alter table test_rename rename to test_rename1")
+    checkAnswer(sql("select id from test_rename1"),
+      Seq(Row(1), Row(2)))
+    sql("drop index if exists si on test_rename1")
+    sql("drop table if exists test_rename1")
+  }
+
   override def afterAll(): Unit = {
     dropTable()
   }
@@ -788,6 +803,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS rename")
     sql("DROP TABLE IF EXISTS rename_partition")
     sql("DROP TABLE IF EXISTS test_rename")
+    sql("drop table if exists test_rename1")
     sql("DROP TABLE IF EXISTS test_rename_compact")
     sql("DROP TABLE IF EXISTS test_alter")
     sql("DROP TABLE IF EXISTS simple_table")

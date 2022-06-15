@@ -51,11 +51,13 @@ class AlterTableRenameEventListener extends OperationEventListener with Logging 
           .lookupRelation(Some(oldDatabaseName), newTableName)(sparkSession)
           .asInstanceOf[CarbonRelation].carbonTable
         table.getIndexTableNames(IndexType.SI.getIndexProviderName)
-          .asScala.map {
+          .asScala.foreach {
           entry =>
             CarbonSessionCatalogUtil.getClient(sparkSession).runSqlHive(
               s"ALTER TABLE $oldDatabaseName.${ entry } " +
               s"SET SERDEPROPERTIES ('parentTableName'='$newTableName')")
+            CarbonEnv.getInstance(sparkSession).carbonMetaStore
+              .removeTableFromMetadata(oldDatabaseName, entry)
         }
     }
   }
