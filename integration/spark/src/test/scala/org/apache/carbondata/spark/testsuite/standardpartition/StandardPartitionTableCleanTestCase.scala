@@ -200,6 +200,87 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     assert(sql(s"show segments for table partitionalldeleteseg").count == 3)
   }
 
+  test("test clean files and overwrite partitions with 0th segment being deleted segment") {
+    sql("drop table if exists part_clean")
+    sql(
+      """
+        | CREATE TABLE part_clean (empno int, empname String, designation String, doj Timestamp,
+        |  workgroupcategoryname String, deptno int, deptname String, projectcode int,
+        |  projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (workgroupcategory int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE part_clean OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE part_clean OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE part_clean OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql("delete from table part_clean where SEGMENT.ID IN(0,1)")
+    sql("clean files for table part_clean options('force'='true')")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | OVERWRITE INTO TABLE part_clean OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    val showSegments = sql("show segments for table part_clean").collect()
+    showSegments.find(_.get(0).toString.contains("3")) match {
+      case Some(row) => assert(row.get(1).toString.contains("Success"))
+      case None => assert(false)
+    }
+    showSegments.find(_.get(0).toString.contains("2")) match {
+      case Some(row) => assert(row.get(1).toString.contains("Marked for Delete"))
+      case None => assert(false)
+    }
+  }
+
+  test("test clean files and overwrite partitions with 0th segment being compacted segment") {
+    sql("drop table if exists part_clean_compac")
+    sql(
+      """
+        | CREATE TABLE part_clean_compac (empno int, empname String, designation String, doj
+        | Timestamp,
+        |  workgroupcategoryname String, deptno int, deptname String, projectcode int,
+        |  projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (workgroupcategory int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE part_clean_compac OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE part_clean_compac OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE part_clean_compac OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    sql("alter table part_clean_compac compact 'major'")
+    sql("clean files for table part_clean_compac options('force'='true')")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+         | OVERWRITE INTO TABLE part_clean_compac OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+         | """.stripMargin)
+    val showSegments = sql("show segments for table part_clean_compac").collect()
+    showSegments.find(_.get(0).toString.contains("3")) match {
+      case Some(row) => assert(row.get(1).toString.contains("Success"))
+      case None => assert(false)
+    }
+    showSegments.find(_.get(0).toString.contains("0.1")) match {
+      case Some(row) => assert(row.get(1).toString.contains("Marked for Delete"))
+      case None => assert(false)
+    }
+  }
+
 
   override def afterAll: Unit = {
     CarbonProperties.getInstance()
@@ -221,6 +302,8 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitionshow")
     sql("drop table if exists staticpartition")
     sql("drop table if exists partitionalldeleteseg")
+    sql("drop table if exists part_clean")
+    sql("drop table if exists part_clean_compac")
   }
 
 }
