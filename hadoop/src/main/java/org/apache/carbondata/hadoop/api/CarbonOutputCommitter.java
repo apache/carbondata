@@ -336,9 +336,11 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           .filter(partitionList::contains).collect(Collectors.toList());
       if (!overlappingPartitions.isEmpty()) {
         List<LoadMetadataDetails> validLoadMetadataDetails =
-            loadModel.getLoadMetadataDetails().stream().filter(
-                loadMetadataDetail -> !loadMetadataDetail.getLoadName()
-                    .equalsIgnoreCase(newMetaEntry.getLoadName())).collect(Collectors.toList());
+            loadModel.getLoadMetadataDetails().stream().filter(loadMetadataDetail ->
+                !loadMetadataDetail.getLoadName().equalsIgnoreCase(newMetaEntry.getLoadName()) && (
+                    loadMetadataDetail.getSegmentStatus().equals(SegmentStatus.SUCCESS)
+                        || loadMetadataDetail.getSegmentStatus()
+                        .equals(SegmentStatus.LOAD_PARTIAL_SUCCESS))).collect(Collectors.toList());
         String uniqueId = String.valueOf(System.currentTimeMillis());
         List<String> toBeUpdatedSegments = new ArrayList<>(validLoadMetadataDetails.size());
         List<String> toBeDeletedSegments = new ArrayList<>(validLoadMetadataDetails.size());
