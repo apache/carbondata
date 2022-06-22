@@ -38,31 +38,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterEach {
     sql("set carbon.enable.mv = true")
   }
 
-  private def restoreData(dblocation: String, tableName: String) = {
-    val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-      FileUtils.deleteDirectory(new File(source))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data restore failed.")
-    } finally {
-
-    }
-  }
-
-  private def backUpData(dblocation: String, database: Option[String], tableName: String) = {
-    val source = CarbonEnv.getTablePath(database, tableName)(sqlContext.sparkSession)
-    val destination = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data backup failed.")
-    }
-  }
-
   test("register tables test") {
     sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")

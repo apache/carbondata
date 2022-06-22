@@ -16,9 +16,6 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
-import java.io.{File, IOException}
-
-import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
@@ -35,29 +32,6 @@ class TestRegisterIndexCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists carbon cascade")
   }
 
-  private def restoreData(dblocation: String, tableName: String) = {
-    val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-      FileUtils.deleteDirectory(new File(source))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data restore failed.")
-    } finally {
-
-    }
-  }
-  private def backUpData(dblocation: String, tableName: String) = {
-    val source = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val destination = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data backup failed.")
-    }
-  }
   test("register tables test") {
     val location = TestQueryExecutor.warehouse +
                            CarbonCommonConstants.FILE_SEPARATOR + "dbName"
@@ -68,8 +42,8 @@ class TestRegisterIndexCarbonTable extends QueryTest with BeforeAndAfterAll {
         "c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("create index index_on_c3 on table carbontable (c3, c5) AS 'carbondata'")
-    backUpData(location, "carbontable")
-    backUpData(location, "index_on_c3")
+    backUpData(location, None, "carbontable")
+    backUpData(location, None, "index_on_c3")
     sql("drop table carbontable")
     restoreData(location, "carbontable")
     restoreData(location, "index_on_c3")

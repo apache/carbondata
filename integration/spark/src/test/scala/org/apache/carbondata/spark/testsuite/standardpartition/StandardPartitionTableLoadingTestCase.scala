@@ -405,7 +405,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     val partitions = sql("show partitions restorepartition").collect()
     val table = CarbonMetadata.getInstance().getCarbonTable("default_restorepartition")
     val dblocation = table.getTablePath.substring(0, table.getTablePath.lastIndexOf("/"))
-    backUpData(dblocation, "restorepartition")
+    backUpData(dblocation, None, "restorepartition")
     sql("drop table restorepartition")
     if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "restorepartition")
@@ -739,31 +739,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       dataSize += file.getSize
     }
     (Strings.formatSize(dataSize.toFloat), Strings.formatSize(indexSize.toFloat))
-  }
-
-  private def restoreData(dblocation: String, tableName: String) = {
-    val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-      FileUtils.deleteDirectory(new File(source))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data restore failed.")
-    } finally {
-
-    }
-  }
-
-  private def backUpData(dblocation: String, tableName: String) = {
-    val source = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val destination = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data backup failed.", e)
-    }
   }
 
 

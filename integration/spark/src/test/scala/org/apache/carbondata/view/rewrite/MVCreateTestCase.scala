@@ -27,6 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
@@ -1554,6 +1555,41 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view decimal_mv as select empname, sum(salary1 - salary2) from sum_agg_decimal group by empname")
     val df = sql("select empname, sum( salary1 - salary2) from sum_agg_decimal group by empname")
     assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "decimal_mv"))
+  }
+
+  test("test create MV after alter add column, drop table and refresh") {
+    sql("drop table if exists source1")
+    sql("CREATE table source1 (empno int, empname String, " +
+        "designation String, doj Timestamp, workgroupcategory int, " +
+        "workgroupcategoryname String, deptno int, deptname String, projectcode int, " +
+        "projectjoindate Timestamp, projectenddate Timestamp, attendance int, " +
+        "utilization int,salary int) STORED AS CARBONDATA")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO " +
+        "TABLE source1 OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', " +
+        "'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
+    sql("alter table source1 add columns(a int, b string) tblproperties " +
+        "('LONG_STRING_COLUMNS'='b')")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default_source1")
+    val dblocation = table.getTablePath.substring(0, table.getTablePath.lastIndexOf("/"))
+    sql("drop MATERIALIZED VIEW if exists uniq2_mv")
+    sql("create MATERIALIZED VIEW uniq2_mv as " +
+        "select b, sum(empno) from source1 group by b")
+    val desc = sql("describe formatted uniq2_mv").collect
+    desc.find(_.get(0).toString.contains("LONG_STRING_COLUMNS")) match {
+      case Some(row) => assert(row.get(1).toString.contains("source1_b"))
+      case None => assert(false)
+    }
+    backUpData(dblocation, None, "source1")
+    sql("drop table source1")
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
+      restoreData(dblocation, "source1")
+      sql("refresh table source1")
+    }
+    sql("drop MATERIALIZED VIEW if exists uniq2_mv")
+    sql("create MATERIALIZED VIEW uniq2_mv as " +
+        "select b, sum(empno) from source1 group by b")
+    sql("drop MATERIALIZED VIEW if exists uniq2_mv")
+    sql("drop table if exists source1")
   }
 
   def copy(oldLoc: String, newLoc: String): Unit = {
