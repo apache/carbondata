@@ -173,6 +173,10 @@ object CarbonSessionUtil {
       .alterTableDataSchema(tableIdentifier.database.get,
         tableIdentifier.table,
         StructType(colArray))
+    // Updates the table properties in catalog table.
+    CarbonSessionCatalogUtil.alterTableProperties(
+      sparkSession, tableIdentifier,
+      carbonTable.getTableInfo.getFactTable.getTableProperties.asScala.toMap, Seq.empty)
   }
 
   def updateCachedPlan(plan: LogicalPlan): LogicalPlan = {
