@@ -18,9 +18,11 @@
 package org.apache.spark.sql.execution.command.view
 
 import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
+
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonAtomicRunnableCommands, CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
@@ -28,11 +30,12 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Coalesce, Expression, Literal, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Average}
 import org.apache.spark.sql.catalyst.plans.logical.{Join, Limit, LogicalPlan, Sort}
-import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Field, PartitionerField, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command.{ Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.MVQueryParser
 import org.apache.spark.sql.types.{ArrayType, DateType, MapType, StructType}
+
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -43,7 +46,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationId
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.view._
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus, withEvents}
+import org.apache.carbondata.events.withEvents
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, SimpleModularizer}
 import org.apache.carbondata.mv.plans.util.{BirdcageOptimizer, SQLBuilder}
 import org.apache.carbondata.spark.util.CommonUtil

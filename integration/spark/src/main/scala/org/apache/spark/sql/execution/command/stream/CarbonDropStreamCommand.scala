@@ -18,7 +18,7 @@
 package org.apache.spark.sql.execution.command.stream
 
 import org.apache.spark.sql.{CarbonCommands, Row, SparkSession}
-import org.apache.spark.sql.execution.command.MetadataCommand
+
 import org.apache.carbondata.stream.StreamJobManager
 
 /**

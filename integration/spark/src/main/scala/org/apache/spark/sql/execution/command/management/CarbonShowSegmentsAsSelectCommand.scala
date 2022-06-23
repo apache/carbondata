@@ -22,7 +22,8 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.Project
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
-import org.apache.spark.sql.types.{ArrayType, DataType, DataTypes, LongType, StringType}
+import org.apache.spark.sql.types.DataTypes
+
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.api.CarbonStore.readSegments
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException

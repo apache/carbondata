@@ -18,11 +18,14 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.util
+
 import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
+
 import org.apache.carbondata.tool.CarbonCli
 
 /**

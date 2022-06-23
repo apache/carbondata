@@ -21,7 +21,7 @@ import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.{CatalogTablePartition, ExternalCatalogUtils}
-import org.apache.spark.sql.catalyst.expressions.{Attribute, PlanExpression, Expression => SparkExpression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression => SparkExpression, PlanExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.execution.{DataSourceScanExec, WholeStageCodegenExec}
 import org.apache.spark.sql.execution.metric.SQLMetrics
@@ -29,6 +29,7 @@ import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.vectorized.ColumnarBatch
+
 import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.scan.expression.Expression

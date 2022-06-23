@@ -21,8 +21,9 @@ import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
 import org.apache.spark.sql.{AnalysisException, CarbonCommands, CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
-import org.apache.spark.sql.execution.command.{CreateDataSourceTableCommand, DropTableCommand, MetadataCommand}
+import org.apache.spark.sql.execution.command.DropTableCommand
 import org.apache.spark.sql.execution.datasources.PartitioningUtils
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 
 /**

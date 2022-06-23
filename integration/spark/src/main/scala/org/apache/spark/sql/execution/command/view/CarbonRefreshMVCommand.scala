@@ -19,7 +19,7 @@ package org.apache.spark.sql.execution.command.view
 
 import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.DataCommand
+
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.view.MVStatus
 import org.apache.carbondata.events.withEvents

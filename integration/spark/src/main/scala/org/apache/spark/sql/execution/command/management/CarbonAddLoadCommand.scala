@@ -19,8 +19,10 @@ package org.apache.spark.sql.execution.command.management
 
 import java.io.File
 import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+
 import org.apache.hadoop.fs.FileStatus
 import org.apache.spark.sql.{AnalysisException, CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertSparkToCarbonDataType
@@ -28,7 +30,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
-import org.apache.spark.sql.types.StructType
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -45,9 +47,8 @@ import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, SegmentUpdateDetails
 import org.apache.carbondata.core.reader.CarbonDeleteDeltaFileReaderImpl
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.view.{MVSchema, MVStatus}
-import org.apache.carbondata.events.{BuildIndexPostExecutionEvent, BuildIndexPreExecutionEvent, OperationContext, OperationListenerBus}
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePostStatusUpdateEvent
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.sdk.file.Schema

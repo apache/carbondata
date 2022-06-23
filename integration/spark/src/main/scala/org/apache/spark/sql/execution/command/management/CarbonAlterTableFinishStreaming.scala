@@ -18,7 +18,7 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonCommands, CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.MetadataCommand
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.streaming.segment.StreamSegment

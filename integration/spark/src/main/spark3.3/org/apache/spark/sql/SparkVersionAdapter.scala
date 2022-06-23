@@ -20,14 +20,18 @@ package org.apache.spark.sql
 import java.sql.{Date, Timestamp}
 import java.time.ZoneId
 import javax.xml.bind.DatatypeConverter
+
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, QueryPlanningTracker, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeSeq, Expression, Predicate, SortOrder, UnaryExpression}
 import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide}
@@ -37,7 +41,7 @@ import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, CreateTable, InsertIntoStatement, Join, JoinHint, LogicalPlan, OneRowRelation, QualifiedColType}
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
 import org.apache.spark.sql.catalyst.util.{DateTimeUtils, RebaseDateTime, TimestampFormatter}
-import org.apache.spark.sql.execution.{BinaryExecNode, ExplainMode, QueryExecution, SQLExecution, ShuffledRowRDD, SimpleMode, SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.execution.{BinaryExecNode, ExplainMode, QueryExecution, ShuffledRowRDD, SimpleMode, SparkPlan, SQLExecution, UnaryExecNode}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataCommand, DataWritingCommand, ExplainCommand, Field, MetadataCommand, PartitionerField, RefreshTableCommand, RunnableCommand, ShowPartitionsCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.execution.datasources.{BasicWriteJobStatsTracker, DataSource, DataSourceStrategy, FilePartition, FileScanRDD, OutputWriter, PartitionedFile}
@@ -51,6 +55,7 @@ import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.{AbstractDataType, CharType, DataType, StructField, StructType, VarcharType}
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.unsafe.types.UTF8String
+
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -63,9 +68,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.mv.plans.modular.ModularPlan
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
-import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-
-import scala.collection.mutable.ArrayBuffer
 
 trait SparkVersionAdapter {
 

@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{MetadataCommand, ShowCreateTableCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.StringType
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 
 case class CarbonShowCreateTableCommand(

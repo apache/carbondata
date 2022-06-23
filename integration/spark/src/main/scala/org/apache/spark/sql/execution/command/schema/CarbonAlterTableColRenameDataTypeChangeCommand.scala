@@ -18,13 +18,16 @@
 package org.apache.spark.sql.execution.command.schema
 
 import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+
 import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql.{CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, DataTypeInfo, MetadataCommand}
 import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.apache.spark.util.AlterTableUtil
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants

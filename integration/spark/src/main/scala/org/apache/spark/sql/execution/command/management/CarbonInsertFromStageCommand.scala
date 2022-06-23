@@ -17,13 +17,14 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.io.{DataInputStream, File, IOException, InputStreamReader}
+import java.io.{DataInputStream, File, InputStreamReader, IOException}
 import java.util
 import java.util.Collections
-import java.util.concurrent.{Callable, ExecutorService, Executors, TimeUnit}
+import java.util.concurrent.{Callable, Executors, ExecutorService}
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
+
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit

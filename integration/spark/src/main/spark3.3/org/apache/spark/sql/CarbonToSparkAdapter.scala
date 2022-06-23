@@ -18,13 +18,15 @@
 package org.apache.spark.sql
 
 import java.net.URI
+
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, ExternalCatalogWithListener}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, DynamicPruningSubquery, ExprId, Expression, NamedExpression, Predicate, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, DynamicPruningSubquery, Expression, ExprId, NamedExpression, Predicate, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.BindReferences.bindReference
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
@@ -37,10 +39,9 @@ import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.types.{DataType, Metadata, StringType}
+
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.geo.{InPolygonJoinUDF, ToRangeListAsStringUDF}
-import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.execution.command.ShowPartitionsCommand
 
 object CarbonToSparkAdapter extends SparkVersionAdapter {
 

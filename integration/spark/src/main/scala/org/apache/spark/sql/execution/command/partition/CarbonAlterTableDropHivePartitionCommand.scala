@@ -18,7 +18,9 @@
 package org.apache.spark.sql.execution.command.partition
 
 import java.util
+
 import scala.collection.JavaConverters._
+
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{CarbonAtomicRunnableCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -27,10 +29,10 @@ import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, Al
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.util.AlterTableUtil
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable

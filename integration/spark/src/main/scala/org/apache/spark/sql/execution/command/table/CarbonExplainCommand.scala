@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, Union}
 import org.apache.spark.sql.execution.command.{ExplainCommand, MetadataCommand}
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.util.SparkSQLUtil
+
 import org.apache.carbondata.core.profiler.ExplainCollector
 
 case class CarbonExplainCommand(

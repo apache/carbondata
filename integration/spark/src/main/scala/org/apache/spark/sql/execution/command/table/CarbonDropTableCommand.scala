@@ -19,13 +19,14 @@ package org.apache.spark.sql.execution.command.table
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+
 import org.apache.spark.sql.{CarbonAtomicRunnableCommands, CarbonEnv, EnvHelper, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.index.DropIndexCommand
 import org.apache.spark.sql.execution.command.view.CarbonDropMVCommand
 import org.apache.spark.sql.hive.CarbonFileMetastore
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory

@@ -18,12 +18,13 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.execution.command.Checker
+
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.events.{DeleteSegmentByDatePostEvent, DeleteSegmentByDatePreEvent, withEvents}
+import org.apache.carbondata.events.{withEvents, DeleteSegmentByDatePostEvent, DeleteSegmentByDatePreEvent}
 
 case class CarbonDeleteLoadByLoadDateCommand(
     databaseNameOp: Option[String],

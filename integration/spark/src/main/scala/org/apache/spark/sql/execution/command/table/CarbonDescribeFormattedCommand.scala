@@ -18,17 +18,19 @@
 package org.apache.spark.sql.execution.command.table
 
 import java.util.Date
+
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
+
 import org.apache.spark.sql.{CarbonCommands, CarbonEnv, EnvHelper, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.Checker
-import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.{ArrayType, MapType, MetadataBuilder, StringType, StructField, StructType}
+
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
