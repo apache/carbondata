@@ -399,6 +399,8 @@ object MixedFormatHandler {
    */
   def otherFormatSegmentsExist(metadataPath: String, tableStatusVersion: String): Boolean = {
     val allSegments = SegmentStatusManager.readLoadMetadata(metadataPath, tableStatusVersion)
-    allSegments.exists(a => a.getFileFormat != null && !a.isCarbonFormat)
+    allSegments.exists(a => (a.getSegmentStatus == SegmentStatus.SUCCESS ||
+                             a.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) &&
+                            a.getFileFormat != null && !a.isCarbonFormat)
   }
 }
