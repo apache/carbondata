@@ -644,13 +644,7 @@ class CarbonScanRDD[T: ClassTag](
     // On success,
     // TODO: no memory leak should be there, resources should be freed on
     // success completion.
-    val onCompleteCallbacksField =
-    context.getClass.getDeclaredField("onCompleteCallbacks")
-    onCompleteCallbacksField.setAccessible(true)
-    val listeners = onCompleteCallbacksField.get(context)
-      .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
-
-    val isAdded = listeners.exists(p => p.isInstanceOf[CarbonLoadTaskCompletionListener])
+    val isAdded = CarbonToSparkAdapter.check(context)
     model.setFreeUnsafeMemory(!isAdded)
     // add task completion before calling initialize as initialize method will internally
     // call for usage of unsafe method for processing of one blocklet and if there is any

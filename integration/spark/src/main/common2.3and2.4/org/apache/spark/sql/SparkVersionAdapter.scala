@@ -24,6 +24,7 @@ import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.serializer.Serializer
+import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -49,6 +50,7 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil.{checkIfDuplicateCol
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 import org.apache.spark.unsafe.types.UTF8String
+import org.apache.spark.util.TaskCompletionListener
 
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -493,6 +495,15 @@ trait SparkVersionAdapter {
   def getFileScanRDD(spark: SparkSession, readFunction: PartitionedFile => Iterator[InternalRow],
       partitions: ArrayBuffer[FilePartition]) : FileScanRDD = {
     new FileScanRDD(spark, readFunction, partitions)
+  }
+
+  def check(context: TaskContext): Boolean = {
+    val onCompleteCallbacksField =
+      context.getClass.getDeclaredField("onCompleteCallbacks")
+    onCompleteCallbacksField.setAccessible(true)
+    val listeners = onCompleteCallbacksField.get(context)
+      .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
+    listeners.exists(p => p.isInstanceOf[CarbonLoadTaskCompletionListener])
   }
 
 }
