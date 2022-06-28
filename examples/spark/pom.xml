@@ -63,7 +63,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
-      <version>4.1.17.Final</version>
+      <version>4.1.74.Final</version>
     </dependency>
     <dependency>
       <groupId>org.alluxio</groupId>
@@ -217,7 +217,7 @@
       </activation>
       <properties>
         <spark.binary.version>3.3</spark.binary.version>
-        <dep.jackson.version>2.10.0</dep.jackson.version>
+        <dep.jackson.version>2.13.3</dep.jackson.version>
       </properties>
     </profile>
   </profiles>

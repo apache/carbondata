@@ -729,7 +729,7 @@
         <spark.version>3.3.0</spark.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala.version>2.12.8</scala.version>
-        <dep.jackson.version>2.10.0</dep.jackson.version>
+        <dep.jackson.version>2.13.3</dep.jackson.version>
       </properties>
       <build>
         <plugins>

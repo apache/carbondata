@@ -34,7 +34,7 @@
     <httpcore.version>4.4.9</httpcore.version>
     <dev.path>${basedir}/../../dev</dev.path>
     <jacoco.append>true</jacoco.append>
-    <jackson.core.version>2.10.0</jackson.core.version>
+    <jackson.core.version>2.13.3</jackson.core.version>
     <airlift.bootstrap.version>0.193</airlift.bootstrap.version>
   </properties>
 
