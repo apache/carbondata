@@ -1190,6 +1190,52 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assert(ex.getMessage.contains("PATH cannot be empty"))
   }
 
+  test("Test delete/update on a carbon table after deleting all non-carbon format segments") {
+    createCarbonTable()
+    createParquetTable()
+    createOrcTable()
+    // parquet files
+    val parquet_path = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("addsegment2")).location
+    val parquet_newPath = copyseg("addsegment2", "parquet_addsegtest1")
+    checkAnswer(sql("select count(*) from addsegment2"), Seq(Row(10)))
+    FileFactory.deleteAllFilesOfDir(new File(parquet_newPath))
+    CarbonTestUtil.copy(parquet_path.toString, parquet_newPath)
+    // orc files
+    val orc_path = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("addsegment3")).location
+    val orc_newPath = copyseg("addsegment3", "orc_addsegtest1")
+    checkAnswer(sql("select count(*) from addsegment3"), Seq(Row(10)))
+    FileFactory.deleteAllFilesOfDir(new File(orc_newPath))
+    CarbonTestUtil.copy(orc_path.toString, orc_newPath)
+    // check data before performing alter
+    checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(10)))
+    checkAnswer(sql("select count(*) from addsegment1 where empname='ravi'"), Seq(Row(0)))
+    sql("alter table addsegment1 add segment " +
+        s"options('path'='$parquet_newPath', 'format'='parquet')").collect()
+    sql(s"alter table addsegment1 add segment options('path'='$orc_newPath', 'format'='orc')")
+      .collect()
+    val exception1 = intercept[MalformedCarbonCommandException](sql(
+      """update addsegment1 d  set (d.empname) = ('ravi') where d.empname = 'arvind'""").collect())
+    assertResult("Unsupported update operation on table containing mixed format segments")(
+      exception1.getMessage())
+    val exception2 = intercept[MalformedCarbonCommandException](sql(
+      "delete from addsegment1 where deptno = 10"))
+    assertResult("Unsupported delete operation on table containing mixed format segments")(
+      exception2.getMessage())
+    // update operation should be successful after deleting other formats segments
+    sql("delete from table addsegment1 where segment.id in (1,2)")
+    sql(
+      """update addsegment1 d  set (d.empname) = ('ravi') where d.empname = 'arvind'""").collect()
+    checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(10)))
+    checkAnswer(sql("select count(*) from addsegment1 where empname='ravi'"), Seq(Row(1)))
+    sql("delete from addsegment1 where deptno = 11")
+    checkAnswer(sql("select count(*) from addsegment1 where deptno = 11"), Seq(Row(0)))
+    checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(8)))
+    FileFactory.deleteAllFilesOfDir(new File(parquet_newPath))
+    FileFactory.deleteAllFilesOfDir(new File(orc_newPath))
+  }
+
   def getDataSize(path: String): String = {
     val allFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = {
