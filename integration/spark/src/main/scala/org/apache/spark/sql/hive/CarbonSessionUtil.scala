@@ -115,7 +115,9 @@ object CarbonSessionUtil {
       sparkSession: SparkSession,
       carbonTable: CarbonTable): Seq[CatalogTablePartition] = {
     val allPartitions = PartitionCacheManager.get(PartitionCacheKey(carbonTable.getTableId,
-      carbonTable.getTablePath, CarbonUtil.getExpiration_time(carbonTable))).asScala
+      carbonTable.getTablePath,
+      CarbonUtil.getExpiration_time(carbonTable),
+      carbonTable.getTableStatusVersion)).asScala
     ExternalCatalogUtils.prunePartitionsByFilter(
       sparkSession.sessionState.catalog.getTableMetadata(TableIdentifier(carbonTable.getTableName,
         Some(carbonTable.getDatabaseName))),
@@ -171,6 +173,10 @@ object CarbonSessionUtil {
       .alterTableDataSchema(tableIdentifier.database.get,
         tableIdentifier.table,
         StructType(colArray))
+    // Updates the table properties in catalog table.
+    CarbonSessionCatalogUtil.alterTableProperties(
+      sparkSession, tableIdentifier,
+      carbonTable.getTableInfo.getFactTable.getTableProperties.asScala.toMap, Seq.empty)
   }
 
   def updateCachedPlan(plan: LogicalPlan): LogicalPlan = {

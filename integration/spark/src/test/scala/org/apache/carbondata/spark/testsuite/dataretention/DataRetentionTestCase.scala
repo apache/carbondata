@@ -129,8 +129,11 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("RetentionTest_DeleteSegmentsByLoadTime") {
+    val carbonTable2 =
+      CarbonEnv.getCarbonTable(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+        "dataRetentionTable")(sqlContext.sparkSession)
     val segments: Array[LoadMetadataDetails] =
-      SegmentStatusManager.readLoadMetadata(carbonTablePath)
+      SegmentStatusManager.readLoadMetadata(carbonTablePath, carbonTable2.getTableStatusVersion)
     // check segment length, it should be 3 (loads)
     if (segments.length != 2) {
       assert(false)

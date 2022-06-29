@@ -514,10 +514,14 @@ class AlterTableColumnSchemaGenerator(
 
     // The Final Map should contain the combined Local Dictionary Include and
     // Local Dictionary Exclude Columns from both Main table and Alter table
-    tablePropertiesMap
-      .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, localDictionaryIncludeColumn.toString())
-    tablePropertiesMap
-      .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, localDictionaryExcludeColumn.toString())
+    if (localDictionaryIncludeColumn.toString().nonEmpty) {
+      tablePropertiesMap.put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE,
+        localDictionaryIncludeColumn.toString())
+    }
+    if (localDictionaryExcludeColumn.toString().nonEmpty) {
+      tablePropertiesMap.put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE,
+        localDictionaryExcludeColumn.toString())
+    }
     // This part will create dictionary file for all newly added dictionary columns
     // if valid default value is provided,
     // then that value will be included while creating dictionary file

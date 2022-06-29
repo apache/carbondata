@@ -31,6 +31,7 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     sql("insert into coalesce_test_main select 1,'tom',170,130")
     sql("insert into coalesce_test_main select 2,'tom',170,120")
     sql("insert into coalesce_test_main select 3,'lily',160,100")
+    sql("set carbon.enable.mv = true")
   }
 
   def drop(): Unit = {
@@ -86,6 +87,7 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
 
   override def afterAll(): Unit = {
     drop
+    sql("set carbon.enable.mv = false")
   }
 }
 

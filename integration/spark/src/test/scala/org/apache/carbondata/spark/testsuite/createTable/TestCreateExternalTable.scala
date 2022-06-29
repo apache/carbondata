@@ -35,6 +35,8 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
   var originDataPath: String = _
 
   override def beforeAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS, "false")
     sql("DROP TABLE IF EXISTS origin")
     sql("drop table IF EXISTS rsext")
     sql("drop table IF EXISTS rstest1")
@@ -46,6 +48,9 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS,
+        CarbonCommonConstants.CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT)
     sql("DROP TABLE IF EXISTS origin")
     sql("drop table IF EXISTS rsext")
     sql("drop table IF EXISTS rstest1")

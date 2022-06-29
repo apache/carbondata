@@ -40,6 +40,7 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
   // scalastyle:off lineLength
   override def beforeEach(): Unit = {
+    sql("set carbon.enable.mv = true")
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
@@ -59,6 +60,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
   }
 
   override def afterEach(): Unit = {
+    sql("set carbon.enable.mv = false")
     sql("drop materialized view if exists dm_mv ")
     sql("drop materialized view if exists dm_pre ")
     sql("drop table IF EXISTS maintable")
@@ -727,6 +729,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   test("drop meta cache on mv materialized view table") {
     defaultConfig()
+    sql("set carbon.enable.mv = true")
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")

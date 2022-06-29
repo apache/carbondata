@@ -70,7 +70,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     if (res.isEmpty) {
       return Array(Row(updatedRowCount)).toSeq
     }
-    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    var carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> plan.prettyJson))
     // Do not allow spatial index and its source columns to be updated.
@@ -95,7 +95,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
     }
 
     // Block the update operation for non carbon formats
-    if (MixedFormatHandler.otherFormatSegmentsExist(carbonTable.getMetadataPath)) {
+    if (MixedFormatHandler.otherFormatSegmentsExist(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)) {
       throw new MalformedCarbonCommandException(
         s"Unsupported update operation on table containing mixed format segments")
     }
@@ -163,14 +164,15 @@ private[sql] case class CarbonProjectForUpdateCommand(
           }
 
           // do delete operation.
-          val (segmentsToBeDeleted, updatedRowCountTemp) = DeleteExecution.deleteDeltaExecution(
-            databaseNameOp,
-            tableName,
-            sparkSession,
-            dataSet.rdd,
-            currentTime + "",
-            isUpdateOperation = true,
-            executionErrors)
+          val (segmentsToBeDeleted, updatedRowCountTemp, isUpdateRequired, tblStatusVersion) =
+            DeleteExecution.deleteDeltaExecution(
+              databaseNameOp,
+              tableName,
+              sparkSession,
+              dataSet.rdd,
+              currentTime + "",
+              isUpdateOperation = true,
+              executionErrors)
 
           if (executionErrors.failureCauses != FailureCauses.NONE) {
             throw new Exception(executionErrors.errorMsg)
@@ -201,7 +203,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
       if (executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
       }
-
+      if (CarbonProperties.isTableStatusMultiVersionEnabled) {
+        carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+      }
       // Do IUD Compaction.
       HorizontalCompaction.tryHorizontalCompaction(
         sparkSession, carbonTable)

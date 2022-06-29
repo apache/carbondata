@@ -38,7 +38,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.UpdateTableModel
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FindDataSourceTable, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
-import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, DistributionUtil}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -151,9 +151,9 @@ object CommonLoadUtils {
     val carbonLoadModel = new CarbonLoadModel()
     carbonLoadModel.setFactFilePath(factPath)
     carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
-    carbonLoadModel.setAggLoadRequest(
-      internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
-        CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean)
+    val isInternalLoadCall = internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
+      CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean
+    carbonLoadModel.setAggLoadRequest(isInternalLoadCall)
     carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
     val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.COMPRESSOR,
@@ -168,6 +168,11 @@ object CommonLoadUtils {
         javaPartition(k) = v.get
       }
     }
+    // generate new timestamp for tablestatus version
+    if(isInternalLoadCall) {
+      carbonLoadModel.setLatestTableStatusWriteVersion(table.getTableStatusVersion)
+    }
+
     new CarbonLoadModelBuilder(table).build(
       options.asJava,
       optionsFinal,
@@ -706,6 +711,7 @@ object CommonLoadUtils {
     }
     val options = new mutable.HashMap[String, String]()
     options ++= catalogTable.storage.properties
+    options += (("latestversion", loadModel.getLatestTableStatusWriteVersion))
     options += (("overwrite", overWrite.toString))
     if (partition.nonEmpty) {
       val staticPartitionStr = ObjectSerializationUtil.convertObjectToString(
@@ -1065,6 +1071,9 @@ object CommonLoadUtils {
       // Create and ddd the segment to the tablestatus.
       CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadParams.carbonLoadModel,
         loadParams.isOverwriteTable)
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(table,
+        loadParams.sparkSession,
+        loadParams.carbonLoadModel.getLatestTableStatusWriteVersion)
       val convertRelation = convertToLogicalRelation(
         catalogTable,
         loadParams.sizeInBytes,

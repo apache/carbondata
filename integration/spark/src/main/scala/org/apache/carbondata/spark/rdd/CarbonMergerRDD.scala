@@ -328,7 +328,8 @@ class CarbonMergerRDD[K, V](
     // Only for range column get the details for the size of segments
     if (null != rangeColumn) {
       loadMetadataDetails = SegmentStatusManager
-        .readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath))
+        .readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath),
+          carbonTable.getTableStatusVersion)
     }
 
     val validSegIds: java.util.List[String] = new util.ArrayList[String]()

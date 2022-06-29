@@ -116,8 +116,9 @@ public class TestBlockletIndexFactory {
   @Test public void getValidDistributables() throws IOException {
     BlockletIndexInputSplit blockletIndexInputSplit = new BlockletIndexInputSplit(
         "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756709.carbonindex");
-    Segment segment = new Segment("0", null, new TableStatusReadCommittedScope(carbonTable
-        .getAbsoluteTableIdentifier(), new Configuration(false)));
+    Segment segment = new Segment("0", null,
+        new TableStatusReadCommittedScope(carbonTable.getAbsoluteTableIdentifier(),
+            new Configuration(false), carbonTable.getTableStatusVersion()));
     blockletIndexInputSplit.setSegment(segment);
     BlockletIndexInputSplit indexInputSplit = new BlockletIndexInputSplit(
         "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756701.carbonindex");

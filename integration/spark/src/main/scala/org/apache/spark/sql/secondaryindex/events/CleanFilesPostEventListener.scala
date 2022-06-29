@@ -24,6 +24,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.command.management.CarbonCleanFilesCommand
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 
@@ -34,7 +35,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{CleanFilesPostEvent, Event, OperationContext, OperationEventListener}
 import org.apache.carbondata.view.MVManagerInSpark
@@ -76,9 +77,14 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
         Seq.empty[Expression],
         sparkSession,
         indexTable)
-      SegmentStatusManager.deleteLoadsAndUpdateMetadata(
+      val newTblStatusVersion = SegmentStatusManager.deleteLoadsAndUpdateMetadata(
         indexTable, isForceDelete, partitions.map(_.asJava).orNull, cleanStaleInProgress,
         true)
+      if (newTblStatusVersion.nonEmpty) {
+        // if clean files update is complete, then update the table status version to index table
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(indexTable,
+          sparkSession, newTblStatusVersion)
+      }
       cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
     }
   }
@@ -116,10 +122,14 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
       indexTableLocked = indexTableStatusLock.lockWithRetries()
       if (mainTableLocked && indexTableLocked) {
         val mainTableMetadataDetails =
-          SegmentStatusManager.readLoadMetadata(mainTable.getMetadataPath).toSet ++
+          SegmentStatusManager
+            .readLoadMetadata(mainTable.getMetadataPath, mainTable.getTableStatusVersion)
+            .toSet ++
           SegmentStatusManager.readLoadHistoryMetadata(mainTable.getMetadataPath).toSet
         val indexTableMetadataDetails =
-          SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath).toSet
+          SegmentStatusManager
+            .readLoadMetadata(indexTable.getMetadataPath, indexTable.getTableStatusVersion)
+            .toSet
         val segToStatusMap = mainTableMetadataDetails
           .map(detail => detail.getLoadName -> detail.getSegmentStatus).toMap
 
@@ -141,9 +151,9 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
           detail.setSegmentStatus(segToStatusMap(detail.getLoadName))
           detail.setVisibility("false")
         }
-        SegmentStatusManager.writeLoadDetailsIntoFile(
-          indexTable.getMetadataPath + CarbonCommonConstants.FILE_SEPARATOR +
-            CarbonTablePath.TABLE_STATUS_FILE, indexTableMetadataDetails.toArray)
+        SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
+          indexTable.getTablePath, indexTable.getTableStatusVersion),
+          indexTableMetadataDetails.toArray)
       } else {
         LOGGER.error("Unable to get the lock file for main/Index table. Please try again later")
       }

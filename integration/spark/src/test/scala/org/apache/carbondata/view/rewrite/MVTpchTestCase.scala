@@ -60,6 +60,7 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""load data inpath "$resourcesPath/tpch/region.csv" into table REGION1 options('DELIMITER'='|','FILEHEADER'='R_REGIONKEY,R_NAME,R_COMMENT')""")
     sql(s"""load data inpath "$resourcesPath/tpch/nation.csv" into table NATION1 options('DELIMITER'='|','FILEHEADER'='N_NATIONKEY,N_NAME,N_REGIONKEY,N_COMMENT')""")
     sql(s"""load data inpath "$resourcesPath/tpch/supplier.csv" into table SUPPLIER1 options('DELIMITER'='|','FILEHEADER'='S_SUPPKEY,S_NAME,S_ADDRESS,S_NATIONKEY,S_PHONE,S_ACCTBAL,S_COMMENT')""")
+    sql("set carbon.enable.mv = true")
   }
 
   test("test create materialized view with tpch1") {
@@ -216,6 +217,7 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
+    sql("set carbon.enable.mv = false")
 //    drop()
   }
   // scalastyle:on lineLength

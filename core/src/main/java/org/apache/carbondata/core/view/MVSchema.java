@@ -29,15 +29,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.carbondata.common.Strings;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
-import org.apache.carbondata.core.statusmanager.SegmentStatus;
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-
-import com.google.gson.Gson;
 
 /**
  * It is the new schema of mv and it has less fields compare to {{@link MVSchema}}
@@ -241,40 +234,6 @@ public class MVSchema implements Serializable, Writable {
       }
     }
     return MVStatus.DISABLED;
-  }
-
-  public String getSyncStatus() {
-    LoadMetadataDetails[] loads =
-        SegmentStatusManager.readLoadMetadata(
-            CarbonTablePath.getMetadataPath(this.getIdentifier().getTablePath()));
-    if (loads.length > 0) {
-      for (int i = loads.length - 1; i >= 0; i--) {
-        LoadMetadataDetails load = loads[i];
-        if (load.getSegmentStatus().equals(SegmentStatus.SUCCESS)) {
-          Map<String, List<String>> segmentMaps =
-              new Gson().fromJson(load.getExtraInfo(), Map.class);
-          Map<String, String> syncInfoMap = new HashMap<>();
-          for (Map.Entry<String, List<String>> entry : segmentMaps.entrySet()) {
-            // when in join scenario, one table is loaded and one more is not loaded,
-            // then put value as NA
-            if (entry.getValue().isEmpty()) {
-              syncInfoMap.put(entry.getKey(), "NA");
-            } else {
-              syncInfoMap.put(entry.getKey(), getMaxSegmentID(entry.getValue()));
-            }
-          }
-          String loadEndTime;
-          if (load.getLoadEndTime() == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-            loadEndTime = "NA";
-          } else {
-            loadEndTime = new java.sql.Timestamp(load.getLoadEndTime()).toString();
-          }
-          syncInfoMap.put(CarbonCommonConstants.LOAD_SYNC_TIME, loadEndTime);
-          return new Gson().toJson(syncInfoMap);
-        }
-      }
-    }
-    return "NA";
   }
 
   private static String getMaxSegmentID(List<String> segmentList) {

@@ -23,12 +23,12 @@ import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.index.IndexType
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{DeleteSegmentByIdPostEvent, Event, OperationContext, OperationEventListener}
 
@@ -55,12 +55,13 @@ class DeleteSegmentByIdListener extends OperationEventListener with Logging {
             val table = metastore
               .lookupRelation(Some(carbonTable.getDatabaseName), tableName)(sparkSession)
               .asInstanceOf[CarbonRelation].carbonTable
-            val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(table.getTablePath)
+            val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(table.getTablePath,
+              table.getTableStatusVersion)
             // this check is added to verify if the table status file for the index table exists
             // or not. Delete on index tables is only to be called if the table status file exists.
             if (FileFactory.isFileExist(tableStatusFilePath)) {
-              CarbonStore
-                .deleteLoadById(loadIds, carbonTable.getDatabaseName, table.getTableName, table)
+              CarbonStore.deleteLoadById(loadIds, carbonTable.getDatabaseName,
+                table.getTableName, table, sparkSession)
             }
           }
         }

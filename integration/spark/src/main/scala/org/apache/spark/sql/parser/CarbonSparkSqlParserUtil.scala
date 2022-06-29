@@ -309,6 +309,12 @@ object CarbonSparkSqlParserUtil {
     }
     tableInfo.setTablePath(identifier.getTablePath)
     tableInfo.setTransactionalTable(isTransactionalTable)
+    if (isTransactionalTable && isExternal) {
+      val tblStatusVersion = CarbonScalaUtil.getLatestTableStatusVersion(identifier.getTablePath)
+      if (tblStatusVersion.nonEmpty) {
+        tableInfo.getFactTable.getTableProperties.put("latestversion", tblStatusVersion)
+      }
+    }
     tableInfo
   }
 

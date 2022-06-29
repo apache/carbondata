@@ -26,7 +26,7 @@ import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession, SQ
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CompactionModel}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.AlterTableUtil
@@ -112,7 +112,7 @@ case class CarbonAlterTableCompactionCommand(
       try {
         if (tableStatusLock.lockWithRetries()) {
           val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
-            .getTableStatusFilePath(table.getTablePath))
+            .getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion))
           loadMetaDataDetails.foreach { loadMetaDataDetail =>
             // "0" check is added to reproduce a scenario similar to 1.1 store where the size
             // would be null. For test case in the new version it would be set to 0.
@@ -123,8 +123,9 @@ case class CarbonAlterTableCompactionCommand(
                   table)
             }
           }
-          SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath
-            .getTableStatusFilePath(table.getTablePath), loadMetaDataDetails)
+          SegmentStatusManager.writeLoadDetailsIntoFile(
+            CarbonTablePath.getTableStatusFilePath(table.getTablePath, table.getTableStatusVersion),
+            loadMetaDataDetails)
         } else {
           throw new ConcurrentOperationException(table.getDatabaseName,
             table.getTableName, "table status update", "upgrade segments")

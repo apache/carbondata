@@ -217,7 +217,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
         .asInstanceOf[CarbonRelation].carbonTable
       // read load metadata details
       val loadDetails: Array[LoadMetadataDetails] = SegmentStatusManager
-        .readLoadMetadata(CarbonTablePath.getMetadataPath(indexCarbonTable.getTablePath))
+        .readLoadMetadata(CarbonTablePath.getMetadataPath(indexCarbonTable.getTablePath), indexCarbonTable.getTableStatusVersion)
       assert(loadDetails.length == 3)
       // compacted status segment should only be 2
       val compactedStatusSegments = loadDetails
@@ -305,8 +305,10 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     val mock = mockreadSegmentList()
     sql("CLEAN FILES FOR TABLE table1 options('force'='true')")
     mock.tearDown()
-    val details = SegmentStatusManager.readLoadMetadata(CarbonEnv
-        .getCarbonTable(Some("default"), "idx1")(sqlContext.sparkSession).getMetadataPath)
+    val table = CarbonEnv
+      .getCarbonTable(Some("default"), "idx1")(sqlContext.sparkSession)
+    val details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath,
+      table.getTableStatusVersion)
     assert(SegmentStatusManager.countInvisibleSegments(details, 4) == 1)
     checkSegmentList(4)
     CarbonProperties.getInstance()

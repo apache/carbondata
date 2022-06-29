@@ -151,7 +151,7 @@ object CarbonIndexUtil {
     .ArrayList[LoadMetadataDetails](
       factLoadMetadataDetails.size)
     val indexTableStatusDetailsArray: Array[LoadMetadataDetails] = SegmentStatusManager
-      .readLoadMetadata(indexTable.getMetadataPath)
+      .readLoadMetadata(indexTable.getMetadataPath, indexTable.getTableStatusVersion)
     if (null !=
         indexTableStatusDetailsArray) {
       for (loadMetadataDetails <- indexTableStatusDetailsArray) {
@@ -282,7 +282,8 @@ object CarbonIndexUtil {
 
     if (isLoadToFailedSISegments && null != failedLoadMetaDataDetils) {
       val metadata = CarbonInternalLoaderUtil
-        .getListOfValidSlices(SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath))
+        .getListOfValidSlices(SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath,
+          indexTable.getTableStatusVersion))
       segmentIdToLoadStartTimeMapping = CarbonInternalLoaderUtil
         .getSegmentToLoadStartTimeMapping(carbonLoadModel.getLoadMetadataDetails.asScala.toArray)
         .asScala
@@ -519,7 +520,7 @@ object CarbonIndexUtil {
       if (compactionLock.lockWithRetries()) {
         var mainTableDetails = try {
           SegmentStatusManager.readTableStatusFile(CarbonTablePath.getTableStatusFilePath(
-            carbonTable.getTablePath))
+            carbonTable.getTablePath, carbonTable.getTableStatusVersion))
         } catch {
           case exception: Exception =>
             if (!isLoadOrCompaction) {
@@ -533,7 +534,8 @@ object CarbonIndexUtil {
             loadMetaDataDetails => segments.get.contains(loadMetaDataDetails.getLoadName))
         }
         val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
-          SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
+          SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath,
+            indexTable.getTableStatusVersion)
         if (!CarbonInternalLoaderUtil.checkMainTableSegEqualToSISeg(
           mainTableDetails,
           siTblLoadMetadataDetails)) {

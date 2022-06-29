@@ -1173,6 +1173,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             sql(s"alter table binarytable CHANGE binaryField binaryField3 STRING ")
         }
         assert(e.getMessage.contains("operation failed for default.binarytable: Alter table data type change operation failed: Given column binaryfield with data type BINARY cannot be modified. Only Int and Decimal data types are allowed for modification"))
+        sql("DROP TABLE IF EXISTS binaryTable")
     }
 
     test("Create table and load data with binary column for hive: test encode with base64") {

@@ -32,6 +32,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.execution.datasources.PartitioningUtils
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CollectionAccumulator, MergeIndexUtil}
 
@@ -228,8 +229,11 @@ class CarbonTableCompactor(
       maxSegmentColumnSchemaList = null,
       currentPartitions = partitions)
     carbonLoadModel.setTablePath(carbonMergerMapping.hdfsStoreLocation)
+    val tblStatusVersion = carbonLoadModel.getCarbonDataLoadSchema
+      .getCarbonTable.getTableStatusVersion
     carbonLoadModel.setLoadMetadataDetails(
-      SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath).toList.asJava)
+      SegmentStatusManager
+        .readLoadMetadata(carbonTable.getMetadataPath, tblStatusVersion).toList.asJava)
     // trigger event for compaction
     val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
       AlterTableCompactionPreEvent(sqlContext.sparkSession,
@@ -416,6 +420,9 @@ class CarbonTableCompactor(
                             s" ${ carbonLoadModel.getDatabaseName }." +
                             s"${ carbonLoadModel.getTableName }")
       }
+      CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+        sc.sparkSession,
+        carbonLoadModel.getLatestTableStatusWriteVersion)
 
       val compactionLoadStatusPostEvent = AlterTableCompactionPostStatusUpdateEvent(sc.sparkSession,
         carbonTable,

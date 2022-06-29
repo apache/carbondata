@@ -71,7 +71,8 @@ object IndexRebuildRDD {
       schema: IndexSchema
   ): Unit = {
     val tableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    val segmentStatusManager = new SegmentStatusManager(tableIdentifier)
+    val segmentStatusManager = new SegmentStatusManager(tableIdentifier,
+      carbonTable.getTableStatusVersion)
     val validAndInvalidSegments = segmentStatusManager
       .getValidAndInvalidSegments(carbonTable.isMV)
     val validSegments = validAndInvalidSegments.getValidSegments
@@ -428,7 +429,9 @@ class IndexRebuildRDD[K, V](
     // make the partitions based on block path so that all the CarbonInputSplits in a
     // MultiBlockSplit are used for bloom reading. This means 1 task for 1 shard(unique block path).
     val splits = format.getSplits(job)
-    readCommittedScope = format.getReadCommitted(job, null)
+    val carbonTable = CarbonTable.buildFromTableInfo(getTableInfo)
+    readCommittedScope = format.getReadCommitted(
+      job, carbonTable.getAbsoluteTableIdentifier, carbonTable.getTableStatusVersion)
     splits.asScala
       .map(_.asInstanceOf[CarbonInputSplit])
       .groupBy(p => (p.getSegmentId, p.taskId, p.getBlockPath))

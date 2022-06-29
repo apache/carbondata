@@ -72,9 +72,11 @@ public final class DeleteLoadFolders {
       boolean isForceDelete,
       List<PartitionSpec> specs,
       boolean cleanStaleInProgress,
-      Set<String> loadsToDelete) {
+      Set<String> loadsToDelete,
+      String tblStatusVersion) {
     LoadMetadataDetails[] currentDetails =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath(),
+            tblStatusVersion);
     physicalFactAndMeasureMetadataDeletion(carbonTable,
         currentDetails,
         isForceDelete,
@@ -230,8 +232,9 @@ public final class DeleteLoadFolders {
   }
 
   private static LoadMetadataDetails getCurrentLoadStatusOfSegment(String segmentId,
-      String metadataPath) {
-    LoadMetadataDetails[] currentDetails = SegmentStatusManager.readLoadMetadata(metadataPath);
+      String metadataPath, String version) {
+    LoadMetadataDetails[] currentDetails =
+        SegmentStatusManager.readLoadMetadata(metadataPath, version);
     for (LoadMetadataDetails oneLoad : currentDetails) {
       if (oneLoad.getLoadName().equalsIgnoreCase(segmentId)) {
         return oneLoad;
@@ -242,7 +245,7 @@ public final class DeleteLoadFolders {
 
   public static Set<String> deleteLoadFoldersFromFileSystem(
       AbsoluteTableIdentifier absoluteTableIdentifier, boolean isForceDelete, LoadMetadataDetails[]
-      details, String metadataPath, boolean cleanStaleInProgress) {
+      details, String metadataPath, boolean cleanStaleInProgress, String version) {
     Set<String> loadsToDelete = new HashSet<>();
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneLoad : details) {
@@ -251,7 +254,7 @@ public final class DeleteLoadFolders {
           if (oneLoad.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
               || oneLoad.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
             LoadMetadataDetails currentDetails =
-                getCurrentLoadStatusOfSegment(oneLoad.getLoadName(), metadataPath);
+                getCurrentLoadStatusOfSegment(oneLoad.getLoadName(), metadataPath, version);
             if (currentDetails != null && checkIfLoadCanBeDeleted(currentDetails,
                 isForceDelete, cleanStaleInProgress, absoluteTableIdentifier)) {
               oneLoad.setVisibility("false");

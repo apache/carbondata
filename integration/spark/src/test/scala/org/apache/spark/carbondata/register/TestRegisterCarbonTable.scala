@@ -35,31 +35,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterEach {
     sql("drop database if exists carbon cascade")
     sql("drop database if exists carbon1 cascade")
     sql("drop database if exists carbon2 cascade")
-  }
-
-  private def restoreData(dblocation: String, tableName: String) = {
-    val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-      FileUtils.deleteDirectory(new File(source))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data restore failed.")
-    } finally {
-
-    }
-  }
-
-  private def backUpData(dblocation: String, database: Option[String], tableName: String) = {
-    val source = CarbonEnv.getTablePath(database, tableName)(sqlContext.sparkSession)
-    val destination = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data backup failed.")
-    }
+    sql("set carbon.enable.mv = true")
   }
 
   test("register tables test") {
@@ -271,6 +247,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterEach {
   }
 
   override def afterEach {
+    sql("set carbon.enable.mv = false")
     sql("use default")
     sql("drop database if exists carbon cascade")
     sql("drop database if exists carbon1 cascade")

@@ -71,7 +71,8 @@ case class SIRebuildSegmentRunner(
     // check if the list of given segments in the command are valid
     val segmentIds = segments.getOrElse(List.empty)
     if (segmentIds.nonEmpty) {
-      val segmentStatusManager = new SegmentStatusManager(indexTable.getAbsoluteTableIdentifier)
+      val segmentStatusManager = new SegmentStatusManager(indexTable.getAbsoluteTableIdentifier,
+        indexTable.getTableStatusVersion)
       val validSegments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala
         .map(_.getSegmentNo)
       segmentIds.foreach { segmentId =>
@@ -102,7 +103,8 @@ case class SIRebuildSegmentRunner(
         withEvents(
           LoadTableSIPreExecutionEvent(sparkSession, identifier, null, indexTable),
           LoadTableSIPostExecutionEvent(sparkSession, identifier, null, indexTable)) {
-          SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath) collect {
+          SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath,
+            parentTable.getTableStatusVersion) collect {
             case loadDetails if null == segmentList ||
               segmentList.contains(loadDetails.getLoadName) =>
               segmentFileNameMap.put(
@@ -110,7 +112,7 @@ case class SIRebuildSegmentRunner(
           }
 
           val loadMetadataDetails = SegmentStatusManager
-            .readLoadMetadata(indexTable.getMetadataPath)
+            .readLoadMetadata(indexTable.getMetadataPath, indexTable.getTableStatusVersion)
             .filter(loadMetadataDetail =>
               (null == segmentList || segmentList.contains(loadMetadataDetail.getLoadName)) &&
                 (loadMetadataDetail.getSegmentStatus == SegmentStatus.SUCCESS ||

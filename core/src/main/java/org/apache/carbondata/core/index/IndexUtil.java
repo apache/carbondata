@@ -34,9 +34,7 @@ import org.apache.carbondata.core.index.dev.expr.IndexExprWrapper;
 import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -337,26 +335,9 @@ public class IndexUtil {
   public static SegmentStatusManager.ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
       CarbonTable carbonTable, Configuration configuration) throws IOException {
     SegmentStatusManager ssm =
-        new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(), configuration);
+        new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(), configuration,
+            carbonTable.getTableStatusVersion());
     return ssm.getValidAndInvalidSegments(carbonTable.isMV());
   }
 
-  /**
-   * Returns valid segment list for a given RelationIdentifier
-   *
-   * @param relationIdentifier get list of segments for relation identifier
-   * @return list of valid segment id's
-   * @throws IOException
-   */
-  public static List<String> getMainTableValidSegmentList(RelationIdentifier relationIdentifier)
-      throws IOException {
-    List<String> segmentList = new ArrayList<>();
-    List<Segment> validSegments = new SegmentStatusManager(AbsoluteTableIdentifier
-        .from(relationIdentifier.getTablePath(), relationIdentifier.getDatabaseName(),
-            relationIdentifier.getTableName())).getValidAndInvalidSegments().getValidSegments();
-    for (Segment segment : validSegments) {
-      segmentList.add(segment.getSegmentNo());
-    }
-    return segmentList;
-  }
 }

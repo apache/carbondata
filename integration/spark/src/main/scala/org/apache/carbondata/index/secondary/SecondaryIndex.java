@@ -69,9 +69,9 @@ public class SecondaryIndex extends CoarseGrainIndex {
     positionReferenceInfo = model.getPositionReferenceInfo();
   }
 
-  public void validateSegmentList(String indexPath) {
+  public void validateSegmentList(String indexPath, String tableStatusVersion) {
     LoadMetadataDetails[] loadMetadataDetails = SegmentStatusManager
-        .readLoadMetadata(CarbonTablePath.getMetadataPath(indexPath));
+        .readLoadMetadata(CarbonTablePath.getMetadataPath(indexPath), tableStatusVersion);
     Set<String> validSISegments = new HashSet<>();
     for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
       if (loadMetadataDetail.getSegmentStatus() == SegmentStatus.SUCCESS

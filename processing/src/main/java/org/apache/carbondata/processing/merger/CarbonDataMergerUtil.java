@@ -162,7 +162,8 @@ public final class CarbonDataMergerUtil {
     boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier identifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier,
+        carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getTableStatusVersion());
 
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
 
@@ -177,9 +178,14 @@ public final class CarbonDataMergerUtil {
         LOGGER.info("Acquired lock for the table " + carbonLoadModel.getDatabaseName() + "."
             + carbonLoadModel.getTableName() + " for table status updation ");
 
-        String statusFilePath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+        carbonLoadModel.setLatestTableStatusWriteVersion(
+            String.valueOf(System.currentTimeMillis()));
 
-        LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(metaDataFilepath);
+        String statusFilePath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(),
+            carbonLoadModel.getLatestTableStatusWriteVersion());
+
+        LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(metaDataFilepath,
+            carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getTableStatusVersion());
 
         long modificationOrDeletionTimeStamp = CarbonUpdateUtil.readCurrentTime();
         for (LoadMetadataDetails loadDetail : loadDetails) {
@@ -840,8 +846,8 @@ public final class CarbonDataMergerUtil {
 
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments = null;
     try {
-      validAndInvalidSegments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-          .getValidAndInvalidSegments(carbonTable.isMV());
+      validAndInvalidSegments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
+          carbonTable.getTableStatusVersion()).getValidAndInvalidSegments(carbonTable.isMV());
     } catch (IOException e) {
       LOGGER.error("Error while getting valid segment list for a table identifier");
       throw new IOException();
@@ -1077,9 +1083,11 @@ public final class CarbonDataMergerUtil {
     String metaDataFilepath = table.getMetadataPath();
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
 
-    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(),
+        table.getTableStatusVersion());
 
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(identifier, table.getTableStatusVersion());
 
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
 
@@ -1093,7 +1101,7 @@ public final class CarbonDataMergerUtil {
                         + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-                SegmentStatusManager.readLoadMetadata(metaDataFilepath);
+            SegmentStatusManager.readLoadMetadata(metaDataFilepath, table.getTableStatusVersion());
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
           if (loadMetadata.getLoadName().equalsIgnoreCase("0")) {

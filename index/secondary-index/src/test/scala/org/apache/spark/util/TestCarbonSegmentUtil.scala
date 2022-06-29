@@ -147,7 +147,8 @@ class TestCarbonSegmentUtil extends QueryTest {
     createTable(tableName)
     val carbonTable = CarbonEnv
       .getCarbonTable(Option(databaseName), tableName)(SparkTestQueryExecutor.spark)
-    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)
     val expected = SecondaryIndexUtil
       .getMergedLoadName(loadMetadataDetails.toList.asJava)
     assert(expected.equalsIgnoreCase("Segment_0.1"))
@@ -162,7 +163,8 @@ class TestCarbonSegmentUtil extends QueryTest {
     sql(s"INSERT INTO $tableName SELECT 'c1v1', '1', 'c3v1'")
     val carbonTable = CarbonEnv
       .getCarbonTable(Option(databaseName), tableName)(SparkTestQueryExecutor.spark)
-    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath,
+      carbonTable.getTableStatusVersion)
     val exception = intercept[UnsupportedOperationException] {
       SecondaryIndexUtil
         .getMergedLoadName(loadMetadataDetails.toList.asJava)
@@ -179,7 +181,6 @@ class TestCarbonSegmentUtil extends QueryTest {
     createTable(tableName)
     val carbonTable = CarbonEnv
       .getCarbonTable(Option(databaseName), tableName)(SparkTestQueryExecutor.spark)
-    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     val segments: util.List[LoadMetadataDetails] = new util.ArrayList[LoadMetadataDetails]()
     val load1 = new LoadMetadataDetails()
     load1.setLoadName("1")

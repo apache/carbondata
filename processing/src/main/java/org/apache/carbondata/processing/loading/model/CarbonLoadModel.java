@@ -28,6 +28,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -229,6 +230,8 @@ public class CarbonLoadModel implements Serializable {
   private DataLoadMetrics metrics;
 
   private boolean skipParsers = false;
+
+  private String latestTableStatusWriteVersion = "";
 
   public void setSkipParsers() {
     skipParsers = true;
@@ -485,6 +488,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.metrics = metrics;
     copyObj.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copyObj.isLoadWithoutConverterWithoutReArrangeStep = isLoadWithoutConverterWithoutReArrangeStep;
+    copyObj.latestTableStatusWriteVersion = latestTableStatusWriteVersion;
     return copyObj;
   }
 
@@ -809,8 +813,14 @@ public class CarbonLoadModel implements Serializable {
    * Read segments metadata from table status file and set it to this load model object
    */
   public void readAndSetLoadMetadataDetails() {
+    String tblStatusVersion = carbonDataLoadSchema.getCarbonTable().getTableStatusVersion();
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
-    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metadataPath);
+    LoadMetadataDetails[] details;
+    if (tblStatusVersion.isEmpty()) {
+      details = SegmentStatusManager.readLoadMetadata(metadataPath);
+    } else {
+      details = SegmentStatusManager.readLoadMetadata(metadataPath, tblStatusVersion);
+    }
     setLoadMetadataDetails(Arrays.asList(details));
   }
 
@@ -904,5 +914,18 @@ public class CarbonLoadModel implements Serializable {
 
   public void setNonSchemaColumnsPresent(boolean nonSchemaColumnsPresent) {
     this.nonSchemaColumnsPresent = nonSchemaColumnsPresent;
+  }
+
+  public String getLatestTableStatusWriteVersion() {
+    if (!CarbonProperties.isTableStatusMultiVersionEnabled()) {
+      return "";
+    }
+    return latestTableStatusWriteVersion;
+  }
+
+  public void setLatestTableStatusWriteVersion(String latestTableStatusWriteVersion) {
+    if (this.latestTableStatusWriteVersion.isEmpty()) {
+      this.latestTableStatusWriteVersion = latestTableStatusWriteVersion;
+    }
   }
 }

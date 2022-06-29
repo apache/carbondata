@@ -49,7 +49,7 @@ object PartitionCacheManager extends Cache[PartitionCacheKey,
     LOGGER.info("Reading partition values from store")
     // read the tableStatus file to get valid and invalid segments
     val validInvalidSegments = new SegmentStatusManager(AbsoluteTableIdentifier.from(
-      identifier.tablePath, null, null, identifier.tableId))
+      identifier.tablePath, null, null, identifier.tableId), identifier.tblStatusVersion)
       .getValidAndInvalidSegments
     val existingCache = CACHE.get(identifier.tableId)
     val cacheablePartitionSpecs = validInvalidSegments.getValidSegments.asScala.map { segment =>
@@ -142,7 +142,10 @@ object PartitionCacheManager extends Cache[PartitionCacheKey,
   }
 }
 
-case class PartitionCacheKey(tableId: String, tablePath: String, expirationTime: Long)
+case class PartitionCacheKey(tableId: String,
+    tablePath: String,
+    expirationTime: Long,
+    tblStatusVersion: String)
 
 /**
  * Cacheable instance of the CatalogTablePartitions.

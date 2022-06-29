@@ -40,7 +40,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists tpcds cascade")
     sql("create database tpcds")
     sql("use tpcds")
-
+    sql("set carbon.enable.mv = true")
     tpcds1_4Tables.foreach { create_table =>
       sql(create_table)
     }
@@ -126,6 +126,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     drop()
+    sql("set carbon.enable.mv = false")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

@@ -152,7 +152,7 @@ class VarcharDataTypesBasicTestCase
       CarbonCommonConstants.DATABASE_DEFAULT_NAME, "long_string_table")
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val segmentStatusManager: SegmentStatusManager =
-      new SegmentStatusManager(absoluteTableIdentifier)
+      new SegmentStatusManager(absoluteTableIdentifier, carbonTable.getTableStatusVersion)
     val segments = segmentStatusManager
       .getValidAndInvalidSegments
       .getValidSegments

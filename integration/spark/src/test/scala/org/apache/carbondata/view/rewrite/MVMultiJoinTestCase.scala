@@ -28,10 +28,12 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table dim_table(name string,age int,height int) using carbondata")
     sql("create table sdr_table(name varchar(20), score int) using carbondata")
     sql("create table areas(aid int, title string, pid int) using carbondata")
+    sql("set carbon.enable.mv = true")
   }
 
   override def afterAll() {
     drop
+    sql("set carbon.enable.mv = false")
   }
 
   test("test mv self join") {

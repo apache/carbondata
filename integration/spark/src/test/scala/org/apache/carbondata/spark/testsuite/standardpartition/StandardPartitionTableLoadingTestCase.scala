@@ -352,7 +352,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_mergeindexpartitionthree")
     val details = SegmentStatusManager.readTableStatusFile(
-      CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
+      CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath, carbonTable.getTableStatusVersion))
     val store = new SegmentFileStore(carbonTable.getTablePath, details(0).getSegmentFile)
     store.readIndexFiles(new Configuration(false))
     store.getIndexFiles
@@ -405,7 +405,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     val partitions = sql("show partitions restorepartition").collect()
     val table = CarbonMetadata.getInstance().getCarbonTable("default_restorepartition")
     val dblocation = table.getTablePath.substring(0, table.getTablePath.lastIndexOf("/"))
-    backUpData(dblocation, "restorepartition")
+    backUpData(dblocation, None, "restorepartition")
     sql("drop table restorepartition")
     if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "restorepartition")
@@ -630,18 +630,18 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("select * from partition_cache where b = 1").collect()
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "partition_cache")
     var partitionSpecs: util.List[CatalogTablePartition] = PartitionCacheManager.getIfPresent(
-      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L, carbonTable.getTableStatusVersion))
     assert(partitionSpecs.size == 1)
     sql("insert into partition_cache select 'k',2")
     sql("select * from partition_cache where b = 2").collect()
     sql("select * from partition_cache where b = 2").collect()
     partitionSpecs = PartitionCacheManager.getIfPresent(
-      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L, carbonTable.getTableStatusVersion))
     assert(partitionSpecs.size == 2)
     sql("delete from table partition_cache where segment.id in (1)")
     sql("select * from partition_cache where b = 2").collect()
     partitionSpecs = PartitionCacheManager.getIfPresent(
-      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L, carbonTable.getTableStatusVersion))
     assert(partitionSpecs.size == 1)
     CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
   }
@@ -655,7 +655,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("select * from partition_cache where b = 1").collect()
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "partition_cache")
     val partitionSpecs: util.List[CatalogTablePartition] = PartitionCacheManager.getIfPresent(
-      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L, carbonTable.getTableStatusVersion))
     assert(partitionSpecs.size == 1)
     assert(partitionSpecs.get(0).spec.size == 2)
     CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
@@ -673,7 +673,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     checkAnswer(sql("select count(*) from partition_cache"), Seq(Row(4)))
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "partition_cache")
     val partitionSpecs = PartitionCacheManager.getIfPresent(
-      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L, carbonTable.getTableStatusVersion))
     assert(partitionSpecs.size == 2)
     CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
   }
@@ -686,7 +686,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("select * from partition_cache where b = 1").collect()
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "partition_cache")
     val partitionSpecs = PartitionCacheManager.getIfPresent(
-      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L))
+      PartitionCacheKey(carbonTable.getTableId, carbonTable.getTablePath, 1L, carbonTable.getTableStatusVersion))
     assert(partitionSpecs.size == 1)
     CarbonProperties.getInstance().addProperty("carbon.read.partition.hive.direct", "true")
   }
@@ -739,31 +739,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       dataSize += file.getSize
     }
     (Strings.formatSize(dataSize.toFloat), Strings.formatSize(indexSize.toFloat))
-  }
-
-  private def restoreData(dblocation: String, tableName: String) = {
-    val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-      FileUtils.deleteDirectory(new File(source))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data restore failed.")
-    } finally {
-
-    }
-  }
-
-  private def backUpData(dblocation: String, tableName: String) = {
-    val source = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val destination = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    try {
-      FileUtils.copyDirectory(new File(source), new File(destination))
-    } catch {
-      case e : Exception =>
-        throw new IOException("carbon table data backup failed.", e)
-    }
   }
 
 

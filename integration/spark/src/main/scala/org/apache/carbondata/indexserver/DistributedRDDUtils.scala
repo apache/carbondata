@@ -393,7 +393,7 @@ object DistributedRDDUtils {
       if (indexServerEnabled && prePrimingEnabled) {
         LOGGER.info(s" Loading segments for the table: ${ carbonTable.getTableName } in the cache")
         val readCommittedScope = new TableStatusReadCommittedScope(AbsoluteTableIdentifier.from(
-          carbonTable.getTablePath), conf)
+          carbonTable.getTablePath), conf, carbonTable.getTableStatusVersion)
         val validSegments: Seq[Segment] = segmentId.map {
           segmentToPrime =>
             val loadDetailsForCurrentSegment = readCommittedScope

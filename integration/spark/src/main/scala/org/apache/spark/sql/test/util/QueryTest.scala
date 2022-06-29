@@ -17,10 +17,12 @@
 
 package org.apache.spark.sql.test.util
 
+import java.io.{File, IOException}
 import java.util.{Locale, TimeZone}
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
@@ -174,10 +176,11 @@ class QueryTest extends PlanTest {
   }
 
   def removeSegmentEntryFromTableStatusFile(carbonTable: CarbonTable, segmentNo: String) : Unit = {
-    val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val details = SegmentStatusManager.readLoadMetadata(
+      carbonTable.getMetadataPath, carbonTable.getTableStatusVersion)
       .filter(as => as.getLoadName != segmentNo)
     SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
-      carbonTable.getTablePath), details)
+      carbonTable.getTablePath, carbonTable.getTableStatusVersion), details)
   }
 
   def printTable(table: String, database: String = "default"): Unit = {
@@ -218,6 +221,31 @@ class QueryTest extends PlanTest {
           sqlContext.sessionState.conf.setConfString(entry(0), "")
         }
       }
+    }
+  }
+
+  def restoreData(dblocation: String, tableName: String): Unit = {
+    val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    try {
+      FileUtils.copyDirectory(new File(source), new File(destination))
+      FileUtils.deleteDirectory(new File(source))
+    } catch {
+      case e: Exception =>
+        throw new IOException("carbon table data restore failed.")
+    } finally {
+
+    }
+  }
+
+  def backUpData(dblocation: String, database: Option[String], tableName: String): Unit = {
+    val source = CarbonEnv.getTablePath(database, tableName)(sqlContext.sparkSession)
+    val destination = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    try {
+      FileUtils.copyDirectory(new File(source), new File(destination))
+    } catch {
+      case e: Exception =>
+        throw new IOException("carbon table data backup failed.")
     }
   }
 }

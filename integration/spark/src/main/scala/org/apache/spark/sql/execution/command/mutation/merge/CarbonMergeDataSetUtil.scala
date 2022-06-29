@@ -393,7 +393,8 @@ object CarbonMergeDataSetUtil {
     // blocklets of the target table. If the index server disabled, just call the getSplits of
     // the driver side to cache and get the splits. These CarbonInputSplits basically contain
     // the filePaths and the min max of each columns.
-    val ssm = new SegmentStatusManager(targetCarbonTable.getAbsoluteTableIdentifier)
+    val ssm = new SegmentStatusManager(targetCarbonTable.getAbsoluteTableIdentifier,
+      targetCarbonTable.getTableStatusVersion)
     val validSegments = ssm.getValidAndInvalidSegments.getValidSegments
     val defaultIndex = IndexStoreManager.getInstance.getDefaultIndex(targetCarbonTable)
 

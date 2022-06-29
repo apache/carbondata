@@ -742,7 +742,8 @@ object CarbonDataRDDFactory {
         carbonLoadModel.getFactTimeStamp.toString,
         true,
         true,
-        updateModel.get.deletedSegments.asJava)
+        updateModel.get.deletedSegments.asJava,
+        carbonLoadModel.getLatestTableStatusWriteVersion).get("status").toBoolean
     }
     done = done && CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
       overwriteTable, uuid, false)

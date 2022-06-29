@@ -28,6 +28,7 @@ class MVRewriteTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""create table data_table(
         |starttime int, seq long,succ long,LAYER4ID string,tmp int)
         |using carbondata""".stripMargin)
+    sql("set carbon.enable.mv = true")
   }
 
   def drop(): Unit = {
@@ -83,5 +84,6 @@ class MVRewriteTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     drop
+    sql("set carbon.enable.mv = false")
   }
 }

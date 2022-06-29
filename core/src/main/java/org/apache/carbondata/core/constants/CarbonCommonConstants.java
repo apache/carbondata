@@ -1231,7 +1231,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_ENABLE_MV = "carbon.enable.mv";
 
-  public static final String CARBON_ENABLE_MV_DEFAULT = "true";
+  public static final String CARBON_ENABLE_MV_DEFAULT = "false";
 
   /**
    * Related mv table's map for a fact table
@@ -2875,5 +2875,16 @@ public final class CarbonCommonConstants {
       "carbon.enable.schema.enforcement";
 
   public static final String CARBON_ENABLE_SCHEMA_ENFORCEMENT_DEFAULT = "true";
+
+  /**
+   * This property will enable creating multi-versioned table status files. The information about
+   * the latest version will be stored in table properties
+   */
+  @CarbonProperty
+  public static final String CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS =
+      "carbon.enable.multi.version.table.status";
+
+  public static final String CARBON_ENABLE_MULTI_VERSION_TABLE_STATUS_DEFAULT = "false";
+
 
 }

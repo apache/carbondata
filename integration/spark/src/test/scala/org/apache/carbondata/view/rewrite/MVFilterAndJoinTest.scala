@@ -29,6 +29,7 @@ class MVFilterAndJoinTest extends QueryTest with BeforeAndAfterAll {
     sql("create table main_table (name string,age int,height int) STORED AS carbondata")
     sql("create table dim_table (name string,age int,height int) STORED AS carbondata")
     sql("create table sdr_table (name varchar(20),score int) STORED AS carbondata")
+    sql("set carbon.enable.mv = true")
   }
 
   def drop() {
@@ -71,6 +72,7 @@ class MVFilterAndJoinTest extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     drop
+    sql("set carbon.enable.mv = false")
   }
 
 }

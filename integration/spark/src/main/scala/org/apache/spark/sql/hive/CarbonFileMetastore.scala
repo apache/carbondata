@@ -325,6 +325,11 @@ class CarbonFileMetastore extends CarbonMetaStore {
               .getTableProperties
               .put("_external", parameters("isExternal"))
           }
+          if (parameters.contains("latestversion")) {
+            wrapperTableInfo.getFactTable
+              .getTableProperties
+              .put("latestversion", parameters("latestversion"))
+          }
           Some(wrapperTableInfo)
         } else {
           None

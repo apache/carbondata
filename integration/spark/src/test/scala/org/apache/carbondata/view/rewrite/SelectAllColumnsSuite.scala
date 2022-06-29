@@ -28,6 +28,7 @@ class SelectAllColumnsSuite extends QueryTest {
     sql("create table all_table(name string, age int, height int) STORED AS carbondata")
     sql("insert into all_table select 'tom',20,175")
     sql("insert into all_table select 'tom',32,180")
+    sql("set carbon.enable.mv = true")
     sql("create materialized view all_table_mv " +
         "as select avg(age),avg(height),name from all_table group by name")
     sql("refresh materialized view all_table_mv")
@@ -37,6 +38,7 @@ class SelectAllColumnsSuite extends QueryTest {
     val frame = sql("select avg(age),avg(height),name from all_table group by name")
     assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "all_table_mv"))
     sql("drop table if exists all_table")
+    sql("set carbon.enable.mv = false")
   }
 
 }

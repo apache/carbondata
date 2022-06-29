@@ -252,12 +252,13 @@ public class CarbonUpdateUtil {
    * @param segmentsToBeDeleted
    * @return
    */
-  public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+  public static Map<String, String> updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
-      boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted) {
+      boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted,
+      String tblStatusWriteVersion) {
     return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
         isTimestampUpdateRequired, isUpdateStatusFileUpdateRequired,
-        segmentsToBeDeleted, new ArrayList<Segment>(), "");
+        segmentsToBeDeleted, new ArrayList<Segment>(), tblStatusWriteVersion);
   }
 
   /**
@@ -269,17 +270,19 @@ public class CarbonUpdateUtil {
    * @param segmentsToBeDeleted
    * @return
    */
-  public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+  public static Map<String, String> updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
       boolean isUpdateStatusFileUpdateRequired, List<Segment> segmentsToBeDeleted,
       List<Segment> segmentFilesTobeUpdated, String uuid) {
 
     boolean status = false;
+    Map<String, String> tuple = new HashMap<>();
     String metaDataFilepath = table.getMetadataPath();
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
     String tableStatusPath =
-        CarbonTablePath.getTableStatusFilePathWithUUID(identifier.getTablePath(), uuid);
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
+        CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(), uuid);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(identifier, table.getTableStatusVersion());
 
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     boolean lockStatus = false;
@@ -289,8 +292,14 @@ public class CarbonUpdateUtil {
         LOGGER.info("Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
              + " for table status update");
 
+        if (uuid.isEmpty() && CarbonProperties.isTableStatusMultiVersionEnabled()) {
+          String tblStatusWriteVersion = String.valueOf(System.currentTimeMillis());
+          tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath(),
+              tblStatusWriteVersion);
+          tuple.put("tblStatusWriteVersion", tblStatusWriteVersion);
+        }
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-            SegmentStatusManager.readLoadMetadata(metaDataFilepath);
+            SegmentStatusManager.readLoadMetadata(metaDataFilepath, table.getTableStatusVersion());
         // to update table status only when required.
         boolean isUpdateRequired = false;
 
@@ -340,7 +349,8 @@ public class CarbonUpdateUtil {
                 .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
           }
         } catch (IOException e) {
-          return false;
+          tuple.put("status", "false");
+          return tuple;
         }
 
         status = true;
@@ -361,7 +371,8 @@ public class CarbonUpdateUtil {
         }
       }
     }
-    return status;
+    tuple.put("status", String.valueOf(status));
+    return tuple;
 
   }
 
@@ -701,9 +712,10 @@ public class CarbonUpdateUtil {
    */
   public static long cleanUpDeltaFiles(CarbonTable table, boolean isDryRun) throws IOException {
 
-    SegmentStatusManager ssm = new SegmentStatusManager(table.getAbsoluteTableIdentifier());
-    LoadMetadataDetails[] details =
-            SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
+    SegmentStatusManager ssm =
+        new SegmentStatusManager(table.getAbsoluteTableIdentifier(), table.getTableStatusVersion());
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath(),
+        table.getTableStatusVersion());
     long totalSizeDeleted = 0;
     ArrayList<CarbonFile> filesToBeDeleted = new ArrayList<>();
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(table);

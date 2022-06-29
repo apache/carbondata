@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.hive
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.hive.ql.exec.UDF
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -24,8 +26,10 @@ import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.CarbonProperties
 
 
 /**
@@ -56,6 +60,33 @@ object CarbonHiveIndexMetadataUtil {
           s"Error While deleting the table $databaseName.$tableName during drop carbon table" +
           e.getMessage)
         throw e
+    }
+  }
+
+  def updateTableStatusVersion(carbonTable: CarbonTable,
+      sparkSession: SparkSession,
+      latestVersion: String): Unit = {
+    val isMultiVersionEnabled = CarbonProperties.isTableStatusMultiVersionEnabled
+    if (isMultiVersionEnabled || carbonTable.getTableStatusVersion.nonEmpty) {
+      // save to hive table metadata and update carbon table
+      val sql =
+        s"""ALTER TABLE `${ carbonTable.getDatabaseName }`.`${ carbonTable.getTableName }`
+           | SET SERDEPROPERTIES ('latestversion'='$latestVersion')""".stripMargin
+      CarbonSessionCatalogUtil.getClient(sparkSession).runSqlHive(sql)
+      carbonTable.getTableInfo
+        .getFactTable
+        .getTableProperties
+        .put("latestversion", latestVersion)
+      var propkeys: Seq[String] = Seq.empty
+      propkeys = propkeys.:+("latestversion")
+      CarbonSessionCatalogUtil.alterTableProperties(
+        sparkSession,
+        new TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName)),
+        carbonTable.getTableInfo.getFactTable.getTableProperties.asScala.toMap,
+        propkeys)
+      refreshTable(carbonTable.getDatabaseName, carbonTable.getTableName, sparkSession)
+      CarbonMetadata.getInstance.removeTable(carbonTable.getDatabaseName, carbonTable.getTableName)
+      CarbonMetadata.getInstance.loadTableMetadata(carbonTable.getTableInfo)
     }
   }
 

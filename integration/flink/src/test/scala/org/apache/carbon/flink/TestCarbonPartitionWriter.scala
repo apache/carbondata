@@ -310,7 +310,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists mv_1")
     sql("create materialized view mv_1 " +
         s"as select stringField, shortField from $tableName where intField=9")
-
+    sql("set carbon.enable.mv = true")
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
       val writerProperties = newWriterProperties(dataTempPath)
@@ -335,7 +335,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll {
       }
       assert(tables.exists(_.identifier.table.equalsIgnoreCase("mv_1")))
       checkAnswer(df, Seq(Row("test9", 12345)))
-
+    } finally {
+      sql("set carbon.enable.mv = false")
     }
   }
 

@@ -208,7 +208,8 @@ class PrestoInsertIntoTableTestCase
     val absoluteTableIdentifier: AbsoluteTableIdentifier = getAbsoluteIdentifier("testdb",
       "testtable")
     val carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier)
-    val ssm = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+    val ssm = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier,
+      carbonTable.getTableStatusVersion)
     ssm.getValidAndInvalidSegments.getValidSegments.asScala.foreach { segment =>
       val loadMetadataDetails = segment.getLoadMetadataDetails
       assert(loadMetadataDetails.getSegmentFile != null)

@@ -306,7 +306,8 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     sql("create index ud_index1 on table uniqdata (workgroupcategoryname) AS 'carbondata'")
     val indexTable = CarbonEnv.getCarbonTable(Some("default"), "ud_index1")(sqlContext.sparkSession)
     val carbontable = CarbonEnv.getCarbonTable(Some("default"), "uniqdata")(sqlContext.sparkSession)
-    val details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
+    val details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath,
+      indexTable.getTableStatusVersion)
     val failSegments = List("3", "4")
     sql(s"""set carbon.si.repair.limit = 2""")
     var loadMetadataDetailsList = Array[LoadMetadataDetails]()
@@ -320,10 +321,8 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
       }
     }
 
-    SegmentStatusManager.writeLoadDetailsIntoFile(
-      indexTable.getMetadataPath + CarbonCommonConstants.FILE_SEPARATOR +
-      CarbonTablePath.TABLE_STATUS_FILE,
-      loadMetadataDetailsList)
+    SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
+      indexTable.getTablePath, indexTable.getTableStatusVersion), loadMetadataDetailsList)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_CLEAN_FILES_FORCE_ALLOWED, "true")
     sql(s"CLEAN FILES FOR TABLE ud_index1  OPTIONS('stale_inprogress'='true','force'='true')")

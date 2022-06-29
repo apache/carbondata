@@ -340,6 +340,7 @@ test("Creation of partition table should fail if the colname in table schema and
       """.stripMargin)
     sql("insert into partitionTable select 1,'huawei','abc'")
     val location = target + "/" + "def"
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location))
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
     sql(s"""alter table partitionTable add partition (email='def') location '$location'""")
     sql("insert into partitionTable select 1,'huawei','def'")

@@ -27,7 +27,8 @@ import scala.util.control.Breaks.{break, breakable}
 
 import com.google.gson.Gson
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -50,13 +51,14 @@ object CarbonStore {
   def readSegments(
       tablePath: String,
       showHistory: Boolean,
-      limit: Option[Int]): Array[LoadMetadataDetails] = {
+      limit: Option[Int],
+      tableStatusVersion: String): Array[LoadMetadataDetails] = {
     val metaFolder = CarbonTablePath.getMetadataPath(tablePath)
     var segmentsMetadataDetails = if (showHistory) {
-      SegmentStatusManager.readLoadMetadata(metaFolder) ++
+      SegmentStatusManager.readLoadMetadata(metaFolder, tableStatusVersion) ++
       SegmentStatusManager.readLoadHistoryMetadata(metaFolder)
     } else {
-      SegmentStatusManager.readLoadMetadata(metaFolder)
+      SegmentStatusManager.readLoadMetadata(metaFolder, tableStatusVersion)
     }
     if (!showHistory) {
       segmentsMetadataDetails = segmentsMetadataDetails
@@ -295,16 +297,26 @@ object CarbonStore {
       loadIds: Seq[String],
       dbName: String,
       tableName: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      session: SparkSession): Unit = {
 
     validateLoadIds(loadIds)
 
     val path = carbonTable.getMetadataPath
 
     try {
-      val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
-        carbonTable.getAbsoluteTableIdentifier, loadIds.asJava, path).asScala
+      val tuple = SegmentStatusManager.updateDeletionStatus(
+        carbonTable.getAbsoluteTableIdentifier, loadIds.asJava,
+        path, carbonTable.getTableStatusVersion).asScala
+      val invalidLoadIds = tuple("invalidLoadIds").asScala
       if (invalidLoadIds.isEmpty) {
+        val tblStatusWriteVersion = if (tuple.contains("tblStatusWriteVersion")) {
+          tuple("tblStatusWriteVersion").get(0)
+        } else {
+          ""
+        }
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+          session, tblStatusWriteVersion)
         LOGGER.info(s"Delete segment by Id is successful for $dbName.$tableName.")
       } else {
         sys.error(s"Delete segment by Id is failed. Invalid ID is: ${invalidLoadIds.mkString(",")}")
@@ -321,19 +333,29 @@ object CarbonStore {
       timestamp: String,
       dbName: String,
       tableName: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      sparkSession: SparkSession): Unit = {
 
     val time = validateTimeFormat(timestamp)
     val path = carbonTable.getMetadataPath
 
     try {
-      val invalidLoadTimestamps =
+      val tuple =
         SegmentStatusManager.updateDeletionStatus(
           carbonTable.getAbsoluteTableIdentifier,
           timestamp,
           path,
-          time).asScala
+          time,
+          carbonTable.getTableStatusVersion).asScala
+      val invalidLoadTimestamps = tuple("invalidLoadTimestamps")
       if (invalidLoadTimestamps.isEmpty) {
+        val tblStatusWriteVersion = if (tuple.contains("tblStatusWriteVersion")) {
+          tuple("tblStatusWriteVersion").get(0)
+        } else {
+          ""
+        }
+        CarbonHiveIndexMetadataUtil.updateTableStatusVersion(carbonTable,
+          sparkSession, tblStatusWriteVersion)
         LOGGER.info(s"Delete segment by date is successful for $dbName.$tableName.")
       } else {
         sys.error("Delete segment by date is failed. No matching segment found.")
@@ -349,11 +371,11 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       storePath: String,
-      segmentId: String): Boolean = {
+      segmentId: String,
+      tableStatusVersion: String): Boolean = {
     val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName, tableName)
     val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
-        SegmentStatusManager(
-          identifier).getValidAndInvalidSegments
+        SegmentStatusManager(identifier, tableStatusVersion).getValidAndInvalidSegments
     validAndInvalidSegments.getValidSegments.contains(segmentId)
   }
 

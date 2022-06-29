@@ -54,9 +54,11 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
         | STORED AS carbondata
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql("set carbon.enable.mv = true")
   }
 
   override def afterAll(): Unit = {
+    sql("set carbon.enable.mv = false")
     sql("drop database if exists partition_mv cascade")
     sql("use default")
     CarbonProperties.getInstance()
@@ -569,7 +571,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
   test("test dropping partition which has already been deleted") {
     sql("drop table if exists partitiontable")
     sql("create table partitiontable(id int,name string) partitioned by (email string) " +
-        "STORED AS carbondata tblproperties('sort_scope'='global_sort')")
+        "STORED AS carbondata tblproperties('sort_scope'='global_sort', 'sort_columns'='email')")
     sql("insert into table partitiontable select 1,'huawei','abc'")
     sql("create materialized view ag1 as select count(email),id" +
         " from partitiontable group by id")
@@ -598,7 +600,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
   test("test mv table creation with count(*) on Partition table") {
     sql("drop table if exists partitiontable")
     sql("create table partitiontable(id int,name string) partitioned by (email string) " +
-        "STORED AS carbondata tblproperties('sort_scope'='global_sort')")
+        "STORED AS carbondata tblproperties('sort_scope'='global_sort', 'sort_columns'='email')")
     sql("insert into table partitiontable select 1,'huawei','abc'")
     sql("drop materialized view if exists ag1")
     sql("create materialized view ag1 as select count(*),id" +

@@ -440,6 +440,11 @@ trait SparkVersionAdapter {
           val newProperties = tableDesc.properties. +("hasexternalkeyword" -> "false")
           val updatedTableDesc = tableDesc.copy(properties = newProperties)
           CreateTable(updatedTableDesc, mode, query)
+        } else if (tableDesc.storage.properties.contains("latestversion")) {
+          val newProperties = tableDesc.storage
+            .properties.filterNot(_._1.equalsIgnoreCase("latestversion"))
+          val updatedStorage = tableDesc.storage.copy(properties = newProperties)
+          CreateTable(tableDesc.copy(storage = updatedStorage), mode, query)
         } else {
           create
         }
