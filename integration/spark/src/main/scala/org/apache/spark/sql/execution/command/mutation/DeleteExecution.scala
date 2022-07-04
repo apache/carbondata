@@ -37,7 +37,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.index.Segment
+import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
@@ -84,6 +84,9 @@ object DeleteExecution {
     if (executorErrors.failureCauses == FailureCauses.NONE) {
       operatedRowCount = res.flatten.map(_._2._3).sum
     }
+    // clear invalid segments from cache
+    IndexStoreManager.getInstance()
+      .clearInvalidSegments(carbonTable, segmentsTobeDeleted.map(_.getSegmentNo).toList.asJava)
     (segmentsTobeDeleted, operatedRowCount, isUpdateRequired, tblStatusWriteVersion)
   }
 

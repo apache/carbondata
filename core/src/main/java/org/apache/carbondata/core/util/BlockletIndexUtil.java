@@ -31,16 +31,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
-import org.apache.carbondata.core.datastore.filesystem.AbstractDFSCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.S3CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
@@ -61,9 +58,6 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
 import org.apache.log4j.Logger;
 
 public class BlockletIndexUtil {
@@ -79,8 +73,7 @@ public class BlockletIndexUtil {
 
   public static Map<String, BlockMetaInfo> getBlockMetaInfoMap(
       TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
-      SegmentIndexFileStore indexFileStore, Set<String> filesRead,
-      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, List<DataFileFooter> indexInfos)
+      SegmentIndexFileStore indexFileStore, Set<String> filesRead, List<DataFileFooter> indexInfos)
       throws IOException {
     boolean isTransactionalTable = true;
     TableBlockIndexUniqueIdentifier identifier =
@@ -115,6 +108,7 @@ public class BlockletIndexUtil {
             .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
         isTransactionalTable);
     indexInfos.addAll(indexInfo);
+    // It gets valid carbondata file paths from footer and creates BlockMetaInfo for each file.
     for (DataFileFooter footer : indexInfo) {
       if ((!isTransactionalTable) && (tableColumnList.size() != 0) &&
           !isSameColumnAndDifferentDatatypeInSchema(footer.getColumnInTable(), tableColumnList)) {
@@ -130,8 +124,7 @@ public class BlockletIndexUtil {
       }
       String blockPath = footer.getBlockInfo().getFilePath();
       if (null == blockMetaInfoMap.get(blockPath)) {
-        BlockMetaInfo blockMetaInfo = createBlockMetaInfo(
-            fileNameToMetaInfoMapping, footer.getBlockInfo());
+        BlockMetaInfo blockMetaInfo = createBlockMetaInfo(footer.getBlockInfo());
         // if blockMetaInfo is null that means the file has been deleted from the file system.
         // This can happen in case IUD scenarios where after deleting or updating the data the
         // complete block is deleted but the entry still exists in index or merge index file
@@ -143,38 +136,7 @@ public class BlockletIndexUtil {
     return blockMetaInfoMap;
   }
 
-  /**
-   * This method will create file name to block Meta Info Mapping. This method will reduce the
-   * number of nameNode calls and using this method one namenode will fetch 1000 entries
-   *
-   * @param segmentFilePath
-   * @return
-   * @throws IOException
-   */
-  public static Map<String, BlockMetaInfo> createCarbonDataFileBlockMetaInfoMapping(
-      String segmentFilePath, Configuration configuration) throws IOException {
-    Map<String, BlockMetaInfo> fileNameToMetaInfoMapping = new TreeMap();
-    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFilePath, configuration);
-    if (carbonFile instanceof AbstractDFSCarbonFile && !(carbonFile instanceof S3CarbonFile)) {
-      PathFilter pathFilter = new PathFilter() {
-        @Override
-        public boolean accept(Path path) {
-          return CarbonTablePath.isCarbonDataFile(path.getName());
-        }
-      };
-      CarbonFile[] carbonFiles = carbonFile.locationAwareListFiles(pathFilter);
-      for (CarbonFile file : carbonFiles) {
-        String[] location = file.getLocations();
-        long len = file.getSize();
-        BlockMetaInfo blockMetaInfo = new BlockMetaInfo(location, len);
-        fileNameToMetaInfoMapping.put(file.getPath(), blockMetaInfo);
-      }
-    }
-    return fileNameToMetaInfoMapping;
-  }
-
-  private static BlockMetaInfo createBlockMetaInfo(
-      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, TableBlockInfo blockInfo)
+  private static BlockMetaInfo createBlockMetaInfo(TableBlockInfo blockInfo)
       throws IOException {
     String carbonDataFile = blockInfo.getFilePath();
     FileFactory.FileType fileType = FileFactory.getFileType(carbonDataFile);
@@ -193,7 +155,11 @@ public class BlockletIndexUtil {
         CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile);
         return new BlockMetaInfo(new String[] { "localhost" }, carbonFile.getSize());
       default:
-        return fileNameToMetaInfoMapping.get(FileFactory.getFormattedPath(carbonDataFile));
+        if (!FileFactory.isFileExist(carbonDataFile)) {
+          return null;
+        }
+        CarbonFile file = FileFactory.getCarbonFile(FileFactory.getFormattedPath(carbonDataFile));
+        return new BlockMetaInfo(file.getLocations(), file.getSize());
     }
   }
 
