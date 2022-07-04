@@ -71,7 +71,7 @@ abstract class ModularPattern extends GenericPattern[ModularPlan] {
   override protected def modularizeLater(plan: LogicalPlan): ModularPlan = ModularizeLater(plan)
 }
 
-case class ModularizeLater(plan: LogicalPlan) extends LeafNode {
+case class ModularizeLater(plan: LogicalPlan) extends MVModularizeLater {
   override def output: Seq[Attribute] = plan.output
 }
 

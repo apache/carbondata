@@ -321,10 +321,10 @@ object DDLHelper {
       showPartitionsCommand
     } else {
       if (cols.isDefined) {
-        ShowPartitionsCommand(tableName,
-          Option(CarbonSparkSqlParserUtil.copyTablePartition(cols.get)))
+        CarbonToSparkAdapter.showPartitionsCommand(Option(CarbonSparkSqlParserUtil
+          .copyTablePartition(cols.get)), showPartitionsCommand)
       } else {
-        ShowPartitionsCommand(tableName, None)
+        CarbonToSparkAdapter.showPartitionsCommand(None, showPartitionsCommand)
       }
     }
   }

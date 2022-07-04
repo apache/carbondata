@@ -18,10 +18,10 @@
 package org.apache.spark.sql.execution.command.table
 
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSource, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonCommands, CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
-import org.apache.spark.sql.execution.command.{CreateDataSourceTableCommand, DropTableCommand, MetadataCommand}
+import org.apache.spark.sql.execution.command.DropTableCommand
 import org.apache.spark.sql.execution.datasources.PartitioningUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -34,7 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 case class CarbonCreateDataSourceTableCommand(
     table: CatalogTable,
     ignoreIfExists: Boolean
-) extends MetadataCommand {
+) extends CarbonCommands {
   override protected def opName: String = "CREATE TABLE"
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {

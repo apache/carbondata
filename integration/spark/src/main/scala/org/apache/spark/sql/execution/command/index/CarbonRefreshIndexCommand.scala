@@ -21,10 +21,9 @@ import java.util
 
 import scala.util.control.Breaks.{break, breakable}
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.SIRebuildSegmentRunner
 
@@ -45,7 +44,7 @@ import org.apache.carbondata.index.IndexProvider
 case class CarbonRefreshIndexCommand(
     indexName: String,
     parentTableIdent: TableIdentifier,
-    segments: Option[List[String]]) extends DataCommand {
+    segments: Option[List[String]]) extends CarbonDataCommands {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 

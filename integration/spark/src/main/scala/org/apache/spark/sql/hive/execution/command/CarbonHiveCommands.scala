@@ -18,7 +18,7 @@
 package org.apache.spark.sql.hive.execution.command
 
 import org.apache.hadoop.hive.metastore.api.InvalidOperationException
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, CarbonRunnableCommand, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -31,7 +31,7 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, SessionParams}
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
-  extends RunnableCommand {
+  extends CarbonRunnableCommand {
 
   override val output: Seq[Attribute] = command.output
 
@@ -89,7 +89,7 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
 }
 
 case class CarbonSetCommand(command: SetCommand)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override val output: Seq[Attribute] = command.output
 

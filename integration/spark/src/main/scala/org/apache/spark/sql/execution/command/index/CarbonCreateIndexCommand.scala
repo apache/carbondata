@@ -52,7 +52,7 @@ case class CarbonCreateIndexCommand(
     properties: Map[String, String],
     ifNotExistsSet: Boolean = false,
     var deferredRebuild: Boolean = false)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   private var provider: IndexProvider = _

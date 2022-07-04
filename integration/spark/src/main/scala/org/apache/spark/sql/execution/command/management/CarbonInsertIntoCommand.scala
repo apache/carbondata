@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonToSparkAdapter, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonAtomicRunnableCommands, CarbonEnv, CarbonToSparkAdapter, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
@@ -46,7 +46,6 @@ import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLo
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.events.exception.PreEventException
-import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -67,7 +66,7 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     var partition: Map[String, Option[String]] = Map.empty,
     var operationContext: OperationContext = new OperationContext,
     var updateModel: Option[UpdateTableModel] = None)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   var table: CarbonTable = _
 

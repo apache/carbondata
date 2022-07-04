@@ -25,7 +25,8 @@ import org.apache.spark.sql.types.DataType
 /**
  * Custom expression to override the deterministic property .
  */
-case class CustomDeterministicExpression(nonDt: Expression ) extends Expression with Serializable{
+case class CustomDeterministicExpression(nonDt: Expression ) extends
+    CarbonCustomDeterministicExpression with Serializable{
   override def nullable: Boolean = nonDt.nullable
 
   override def eval(input: InternalRow): Any = nonDt.eval(input)
@@ -39,4 +40,5 @@ case class CustomDeterministicExpression(nonDt: Expression ) extends Expression 
   override def genCode(ctx: CodegenContext): ExprCode = nonDt.genCode(ctx)
 
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = ev.copy()
+
 }

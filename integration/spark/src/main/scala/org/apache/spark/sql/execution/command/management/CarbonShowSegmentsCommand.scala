@@ -19,8 +19,7 @@ package org.apache.spark.sql.execution.command.management
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
@@ -38,7 +37,7 @@ case class CarbonShowSegmentsCommand(
     limit: Option[Int],
     showHistory: Boolean = false,
     withStage: Boolean = false)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   // add new columns of show segments at last
   override def output: Seq[Attribute] = {

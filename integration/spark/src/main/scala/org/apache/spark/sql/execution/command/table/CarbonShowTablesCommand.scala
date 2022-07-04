@@ -17,13 +17,13 @@
 
 package org.apache.spark.sql.execution.command.table
 
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.command.{MetadataCommand, ShowTablesCommand}
 
 
 private[sql] case class CarbonShowTablesCommand(showTablesCommand: ShowTablesCommand)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override val output: Seq[Attribute] = showTablesCommand.output
 

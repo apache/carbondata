@@ -32,7 +32,7 @@ import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, OutputWriterCarbon, Row, SparkSession}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils
 import org.apache.spark.sql.internal.SQLConf
@@ -477,7 +477,7 @@ private class CarbonOutputWriter(path: String,
     nonPartitionFieldTypes: Seq[DataType],
     taskNo : String,
     model: CarbonLoadModel)
-  extends OutputWriter with AbstractCarbonOutputWriter {
+  extends OutputWriterCarbon(path) with AbstractCarbonOutputWriter {
   var actualPath = path
   var tmpPath = context.getConfiguration.get("carbon.newTaskTempFile.path", actualPath)
   val converter = new DataTypeConverterImpl

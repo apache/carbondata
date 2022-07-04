@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -47,7 +47,7 @@ case class CarbonDeleteStageFilesCommand(
     databaseNameOp: Option[String],
     tableName: String,
     options: Map[String, String]
-) extends DataCommand {
+) extends CarbonDataCommands {
 
   @transient val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

@@ -20,10 +20,9 @@ package org.apache.spark.sql.execution.command.stream
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.stream.StreamJobManager
@@ -33,7 +32,7 @@ import org.apache.carbondata.stream.StreamJobManager
  */
 case class CarbonShowStreamsCommand(
     tableOp: Option[TableIdentifier]
-) extends MetadataCommand {
+) extends CarbonCommands {
   override def output: Seq[Attribute] = {
     Seq(AttributeReference("Stream Name", StringType, nullable = false)(),
       AttributeReference("JobId", StringType, nullable = false)(),

@@ -19,9 +19,8 @@ package org.apache.spark.sql.execution.command.cache
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
@@ -32,7 +31,7 @@ import org.apache.carbondata.events.{DropTableCacheEvent, OperationContext, Oper
 import org.apache.carbondata.view.MVManagerInSpark
 
 case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean = false)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

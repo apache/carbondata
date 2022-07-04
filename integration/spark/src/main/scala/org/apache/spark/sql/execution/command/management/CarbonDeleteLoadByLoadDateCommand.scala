@@ -17,8 +17,8 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.execution.command.Checker
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -31,7 +31,7 @@ case class CarbonDeleteLoadByLoadDateCommand(
     tableName: String,
     dateField: String,
     loadDate: String)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)

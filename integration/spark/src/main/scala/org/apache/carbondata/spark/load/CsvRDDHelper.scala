@@ -111,7 +111,7 @@ object CsvRDDHelper {
 
     // 2. read function
     val readFunction = getReadFunction(hadoopConf)
-    new FileScanRDD(spark, readFunction, partitions)
+    CarbonToSparkAdapter.getFileScanRDD(spark, readFunction, partitions)
   }
 
   /**
@@ -146,7 +146,7 @@ object CsvRDDHelper {
 
     // 2. read function
     val readFunction = getReadFunction(hadoopConf)
-    new FileScanRDD(spark, readFunction, partitions)
+    CarbonToSparkAdapter.getFileScanRDD(spark, readFunction, partitions)
   }
 
   private def getReadFunction(configuration: Configuration): (PartitionedFile =>

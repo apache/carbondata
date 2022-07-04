@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.{JobID, TaskAttemptID, TaskID, TaskType}
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonToSparkAdapter, Column, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonDataCommands, CarbonEnv, CarbonToSparkAdapter, Column, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.avro.AvroFileFormatFactory
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -69,7 +69,7 @@ case class CarbonMergeDataSetCommand(
     var mergeMatches: MergeDataSetMatches = null,
     keyColumn: String = null,
     operationType: String = null)
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 

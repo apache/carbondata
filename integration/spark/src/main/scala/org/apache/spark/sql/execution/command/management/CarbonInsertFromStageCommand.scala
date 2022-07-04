@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.management
 import java.io.{DataInputStream, File, InputStreamReader, IOException}
 import java.util
 import java.util.Collections
-import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
+import java.util.concurrent.{Callable, Executors, ExecutorService}
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
@@ -28,7 +28,7 @@ import scala.util.control.Breaks.{break, breakable}
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonDataCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -64,7 +64,7 @@ case class CarbonInsertFromStageCommand(
     databaseNameOp: Option[String],
     tableName: String,
     options: Map[String, String]
-) extends DataCommand {
+) extends CarbonDataCommands {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

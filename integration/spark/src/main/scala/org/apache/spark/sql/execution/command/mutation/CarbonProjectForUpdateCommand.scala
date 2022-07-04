@@ -50,7 +50,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     databaseNameOp: Option[String],
     tableName: String,
     columns: List[String])
-  extends DataCommand {
+  extends CarbonDataCommands {
 
   override val output: Seq[Attribute] = {
     Seq(AttributeReference("Updated Row Count", LongType, nullable = false)())

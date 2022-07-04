@@ -63,7 +63,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
-      <version>4.1.17.Final</version>
+      <version>4.1.74.Final</version>
     </dependency>
     <dependency>
       <groupId>org.alluxio</groupId>
@@ -200,9 +200,6 @@
     </profile>
     <profile>
       <id>spark-2.3</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.binary.version>2.3</spark.binary.version>
       </properties>
@@ -214,10 +211,13 @@
       </properties>
     </profile>
     <profile>
-      <id>spark-3.1</id>
+      <id>spark-3.3</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
-        <spark.binary.version>3.1</spark.binary.version>
-        <dep.jackson.version>2.10.0</dep.jackson.version>
+        <spark.binary.version>3.3</spark.binary.version>
+        <dep.jackson.version>2.13.3</dep.jackson.version>
       </properties>
     </profile>
   </profiles>

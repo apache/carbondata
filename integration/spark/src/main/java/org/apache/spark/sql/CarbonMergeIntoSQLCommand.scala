@@ -26,7 +26,7 @@ import org.apache.spark.util.SparkUtil._
 import org.apache.spark.util.TableAPIUtil
 
 case class CarbonMergeIntoSQLCommand(mergeInto: CarbonMergeIntoModel)
-  extends AtomicRunnableCommand {
+  extends CarbonMergeIntoSQLCommandCarbon {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     Seq.empty

@@ -20,9 +20,8 @@ package org.apache.spark.sql.execution.command.table
 import java.util
 import java.util.UUID
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -40,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.{TableInfo, TableSchema}
 case class CarbonCreateTableLikeCommand(
     sourceTable: TableIdentifier,
     targetTable: TableIdentifier,
-    ifNotExists: Boolean = false) extends MetadataCommand {
+    ifNotExists: Boolean = false) extends CarbonCommands {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 

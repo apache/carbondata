@@ -128,7 +128,9 @@ trait AggregatePushDown { // self: ModularPlan =>
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case sum@MatchAggregateExpression(Sum(cast@MatchCast(expr, dataType)), _, false, _, _) =>
+
+      case sum@MatchAggregateExpression(Sum(cast@MatchCast(expr, dataType), _)
+        , _, false, _, _) =>
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
@@ -190,7 +192,8 @@ trait AggregatePushDown { // self: ModularPlan =>
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case avg@MatchAggregateExpression(Average(cast@MatchCast(expr, dataType)), _, false, _, _) =>
+      case avg@MatchAggregateExpression(
+      Sum(cast@MatchCast(expr, dataType), _), _, false, _, _) =>
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {

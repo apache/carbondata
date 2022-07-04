@@ -86,7 +86,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
    */
   override def visitPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String] = {
     val props = visitTablePropertyList(ctx)
-    CarbonSparkSqlParserUtil.visitPropertyKeyValues(ctx, props)
+    CarbonToSparkAdapter.visitPropertyKeyValues(ctx, props)
   }
 
   def getPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String]

@@ -93,7 +93,7 @@ class MajorCompactionWithMeasureSortColumns extends QueryTest with BeforeAndAfte
 
     val answer = sql("select * from store ").orderBy("code1")
     assert(csvRows.count() == answer.distinct().count())
-    if (!sqlContext.sparkContext.version.startsWith("3.1")) {
+    if (!sqlContext.sparkContext.version.startsWith("3.3")) {
       checkAnswer(answer.distinct(),
         Seq(Row("51job, Inc.", "21695-534", "FR", 610, 60, Date.valueOf("2017-11-27"), 4483, 0,
           510), Row("Intercontinental Exchange Inc.", "22100-020", "TH", 87, 4,

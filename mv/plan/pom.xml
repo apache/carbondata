@@ -145,9 +145,6 @@
   <profiles>
     <profile>
       <id>spark-2.3</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.binary.version>2.3</spark.binary.version>
       </properties>
@@ -158,7 +155,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
               <excludes>
-                <exclude>src/main/spark3.1</exclude>
+                <exclude>src/main/spark3.3</exclude>
                 <exclude>src/main/spark2.4</exclude>
               </excludes>
             </configuration>
@@ -198,7 +195,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
               <excludes>
-                <exclude>src/main/spark3.1</exclude>
+                <exclude>src/main/spark3.3</exclude>
                 <exclude>src/main/spark2.3</exclude>
               </excludes>
             </configuration>
@@ -227,9 +224,12 @@
       </build>
     </profile>
     <profile>
-      <id>spark-3.1</id>
+      <id>spark-3.3</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
-        <spark.binary.version>3.1</spark.binary.version>
+        <spark.binary.version>3.3</spark.binary.version>
       </properties>
       <build>
         <plugins>
@@ -240,7 +240,7 @@
               <excludes>
                 <exclude>src/main/spark2.3</exclude>
                 <exclude>src/main/spark2.4</exclude>
-                <source>src/main/common2.3and2.4</source>
+                <exclude>src/main/common2.3and2.4</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -257,7 +257,7 @@
                 </goals>
                 <configuration>
                   <sources>
-                    <source>src/main/spark3.1</source>
+                    <source>src/main/spark3.3</source>
                   </sources>
                 </configuration>
               </execution>

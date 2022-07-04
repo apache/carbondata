@@ -50,7 +50,7 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
 case class RefreshCarbonTableCommand(
     databaseNameOp: Option[String],
     tableName: String)
-  extends MetadataCommand {
+  extends CarbonCommands {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {

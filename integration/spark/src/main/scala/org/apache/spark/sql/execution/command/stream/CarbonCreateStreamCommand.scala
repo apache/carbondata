@@ -47,7 +47,7 @@ case class CarbonCreateStreamCommand(
     ifNotExists: Boolean,
     optionMap: Map[String, String],
     query: String
-) extends DataCommand {
+) extends CarbonDataCommands {
 
   override def output: Seq[Attribute] =
     Seq(AttributeReference("Stream Name", StringType, nullable = false)(),

@@ -17,9 +17,8 @@
 
 package org.apache.spark.sql.execution.command.schema
 
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil, MockClassForAlterRevertTests}
 import org.apache.spark.sql.index.CarbonIndexUtil
@@ -41,7 +40,7 @@ import org.apache.carbondata.view.MVManagerInSpark
 
 private[sql] case class CarbonAlterTableRenameCommand(
     alterTableRenameModel: AlterTableRenameModel)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Nothing] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

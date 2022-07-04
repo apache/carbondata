@@ -17,12 +17,14 @@
 
 package org.apache.carbondata.view
 
+import org.apache.spark.sql.MvPlanWrapperCarbon
 import org.apache.spark.sql.catalyst.expressions.Attribute
 
 import org.apache.carbondata.core.view.MVSchema
 import org.apache.carbondata.mv.plans.modular.ModularPlan
 
-case class MVPlanWrapper(modularPlan: ModularPlan, viewSchema: MVSchema) extends ModularPlan {
+case class MVPlanWrapper(modularPlan: ModularPlan, viewSchema: MVSchema)
+  extends MvPlanWrapperCarbon {
 
   override def output: Seq[Attribute] = modularPlan.output
 

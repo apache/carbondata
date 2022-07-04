@@ -41,7 +41,7 @@ case class ModularRelation(
     tableName: String,
     outputList: Seq[NamedExpression],
     flags: FlagSet,
-    rest: Seq[Seq[Any]]) extends GetVerboseString {
+    rest: Seq[Seq[Any]]) extends MVModularRelation {
   protected override def computeStats(spark: SparkSession): Statistics = {
     val plan = spark.table(s"${ databaseName }.${ tableName }").queryExecution.optimizedPlan
     val stats = plan.stats
@@ -125,7 +125,7 @@ object HarmonizedRelation {
 }
 
 // support harmonization for dimension table
-case class HarmonizedRelation(source: ModularPlan) extends GetVerboseString {
+case class HarmonizedRelation(source: ModularPlan) extends ModularRelationHarmonizedRelation {
   require(HarmonizedRelation.canHarmonize(source), "invalid plan for harmonized relation")
   lazy val tableName = source.asInstanceOf[GroupBy].child.children(0).asInstanceOf[ModularRelation]
     .tableName

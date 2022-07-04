@@ -39,8 +39,8 @@ import org.apache.spark.unsafe.types.UTF8String
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum
-import org.apache.carbondata.mv.expressions.modular.{ModularSubquery, ScalarModularSubquery}
-import org.apache.carbondata.mv.plans.modular.{ExpressionHelper, GroupBy, HarmonizedRelation, LeafNode, Matchable, ModularPlan, ModularRelation, Select, SimpleModularizer}
+import org.apache.carbondata.mv.expressions.modular.{ModularSubquery}
+import org.apache.carbondata.mv.plans.modular.{ExpressionHelper, GroupBy, HarmonizedRelation, LeafNode, Matchable, ModularPlan, ModularRelation, ScalarModularSubquery, Select, SimpleModularizer}
 import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
 import org.apache.carbondata.view.{MVCatalogInSpark, MVHelper, MVPlanWrapper, MVSchemaWrapper, MVTimeGranularity, TimeSeriesFunction}
 

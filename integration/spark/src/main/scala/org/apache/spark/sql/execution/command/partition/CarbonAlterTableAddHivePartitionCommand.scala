@@ -22,7 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.{break, breakable}
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonAtomicRunnableCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AlterTableModel, AtomicRunnableCommand}
@@ -53,7 +53,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
     tableName: TableIdentifier,
     partitionSpecsAndLocs: Seq[(TablePartitionSpec, Option[String])],
     ifNotExists: Boolean)
-  extends AtomicRunnableCommand {
+  extends CarbonAtomicRunnableCommands {
 
   var partitionSpecsAndLocsTobeAdded : util.List[PartitionSpec] = _
   var table: CarbonTable = _

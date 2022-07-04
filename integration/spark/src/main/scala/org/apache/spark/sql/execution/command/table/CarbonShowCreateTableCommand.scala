@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.command.table
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{MetadataCommand, ShowCreateTableCommand}
@@ -28,7 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 
 case class CarbonShowCreateTableCommand(
     child: ShowCreateTableCommand
-) extends MetadataCommand {
+) extends CarbonCommands {
   override val output: Seq[Attribute] = Seq(
     AttributeReference("createtab_stmt", StringType, nullable = false)()
   )

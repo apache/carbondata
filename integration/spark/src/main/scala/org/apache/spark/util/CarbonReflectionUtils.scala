@@ -160,16 +160,6 @@ object CarbonReflectionUtils {
     isFormatted
   }
 
-  def invokeWriteAndReadMethod(dataSourceObj: DataSource,
-      dataFrame: DataFrame,
-      data: LogicalPlan,
-      session: SparkSession,
-      mode: SaveMode,
-      query: LogicalPlan,
-      physicalPlan: SparkPlan): BaseRelation = {
-    dataSourceObj.writeAndRead(mode, query, query.output.map(_.name), physicalPlan)
-  }
-
   /**
    * method to invoke alter table add columns for hive table from carbon session
    * @param table

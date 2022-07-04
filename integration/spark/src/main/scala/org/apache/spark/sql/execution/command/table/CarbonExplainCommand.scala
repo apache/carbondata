@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.command.table
 
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{CarbonCommands, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, Union}
 import org.apache.spark.sql.execution.command.{ExplainCommand, MetadataCommand}
@@ -30,7 +30,7 @@ case class CarbonExplainCommand(
     child: LogicalPlan,
     override val output: Seq[Attribute] =
     Seq(AttributeReference("plan", StringType, nullable = true)()))
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val explainCommand = child.asInstanceOf[ExplainCommand]
@@ -51,7 +51,7 @@ case class CarbonInternalExplainCommand(
     explainCommand: ExplainCommand,
     override val output: Seq[Attribute] =
     Seq(AttributeReference("plan", StringType, nullable = true)()))
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     CarbonExplainCommand

@@ -42,7 +42,7 @@ case class CarbonCreateTableCommand(
     isExternal : Boolean = false,
     createDSTable: Boolean = true,
     isVisible: Boolean = true)
-  extends MetadataCommand {
+  extends CarbonCommands {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

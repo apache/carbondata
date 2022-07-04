@@ -332,26 +332,6 @@ object CarbonSparkSqlParserUtil {
   }
 
   /**
-   * Parse a key-value map from a [[TablePropertyListContext]], assuming all values are specified.
-   *
-   * @param ctx   Instance of TablePropertyListContext defining parser rule for the table
-   *              properties.
-   * @param props <Map[String, String]> Map of table property list
-   * @return <Map[String, String]> Map of transformed table property.
-   */
-  def visitPropertyKeyValues(ctx: TablePropertyListContext,
-      props: Map[String, String]): Map[String, String] = {
-    val badKeys = props.filter { case (_, v) => v == null }.keys
-    if (badKeys.nonEmpty) {
-      operationNotAllowed(
-        s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
-    }
-    props.map { case (key, value) =>
-      (key.toLowerCase, value)
-    }
-  }
-
-  /**
    * check's whether need to convert to lower case
    *
    * @param key <String> property key
