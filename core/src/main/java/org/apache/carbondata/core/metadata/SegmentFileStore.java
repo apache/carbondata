@@ -1094,6 +1094,7 @@ public class SegmentFileStore {
       LoadMetadataDetails[] details,
       List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
+    Set<String> partitionDirectoryToDelete = new HashSet<>();
     // scan through each segment.
     for (LoadMetadataDetails segment : details) {
       // if this segment is valid then only we will go for deletion of related
@@ -1115,7 +1116,8 @@ public class SegmentFileStore {
               partitionSpecs,
               fileStore.getIndexFilesMap(),
               indexOrMergeFiles,
-              table.getTablePath());
+              table.getTablePath(),
+              partitionDirectoryToDelete);
         }
         for (Map.Entry<String, List<String>> entry : fileStore.indexFilesMap.entrySet()) {
           String indexFile = entry.getKey();
@@ -1152,6 +1154,11 @@ public class SegmentFileStore {
           }
         }
       }
+    }
+    // try to delete the empty partition directory
+    for (String partition : partitionDirectoryToDelete) {
+      CarbonFile path = FileFactory.getCarbonFile(partition);
+      deleteEmptyPartitionFolders(path);
     }
   }
 
@@ -1208,7 +1215,8 @@ public class SegmentFileStore {
    */
   public static void deleteSegment(String tablePath, Segment segment,
       List<PartitionSpec> partitionSpecs,
-      SegmentUpdateStatusManager updateStatusManager) throws Exception {
+      SegmentUpdateStatusManager updateStatusManager,
+      Set<String> partitionDirectoryToDelete) throws Exception {
     SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
     List<String> indexOrMergeFiles = fileStore.readIndexFiles(SegmentStatus.SUCCESS, true,
         FileFactory.getConfiguration());
@@ -1232,7 +1240,8 @@ public class SegmentFileStore {
     }
     LOGGER.info("Deleted the files: " + String.join(",", deletedFiles) + " on clean" +
         " files operation");
-    deletePhysicalPartition(partitionSpecs, indexFilesMap, indexOrMergeFiles, tablePath);
+    deletePhysicalPartition(partitionSpecs, indexFilesMap, indexOrMergeFiles, tablePath,
+        partitionDirectoryToDelete);
   }
 
   /**
@@ -1242,8 +1251,9 @@ public class SegmentFileStore {
    * If partition specs are null, then directly delete parent directory in locationMap.
    */
   private static void deletePhysicalPartition(List<PartitionSpec> partitionSpecs,
-      Map<String, List<String>> locationMap, List<String> indexOrMergeFiles, String tablePath) {
-    LOGGER.info("Deleting files: ");
+      Map<String, List<String>> locationMap, List<String> indexOrMergeFiles, String tablePath,
+      Set<String> partitionDirectoryToDelete) {
+    // 1. delete carbonindex or carbonindexmerge files
     for (String indexOrMergeFile : indexOrMergeFiles) {
       if (null != partitionSpecs) {
         Path location = new Path(indexOrMergeFile);
@@ -1258,6 +1268,7 @@ public class SegmentFileStore {
         LOGGER.info(location.toString());
       }
     }
+    // 2. delete carbondata files
     for (Map.Entry<String, List<String>> entry : locationMap.entrySet()) {
       if (partitionSpecs != null) {
         Path location = new Path(entry.getKey());
@@ -1268,8 +1279,7 @@ public class SegmentFileStore {
             FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(carbonDataFile));
           }
         }
-        CarbonFile path = FileFactory.getCarbonFile(location.getParent().toString());
-        deleteEmptyPartitionFolders(path);
+        partitionDirectoryToDelete.add(location.getParent().toString());
       } else {
         Path location = new Path(entry.getKey()).getParent();
         // delete the segment folder
@@ -1291,7 +1301,7 @@ public class SegmentFileStore {
    */
   public static void deleteEmptyPartitionFolders(CarbonFile path) {
     if (path != null && path.listFiles().length == 0) {
-      FileFactory.deleteAllCarbonFilesOfDir(path);
+      path.delete();
       Path parentsLocation = new Path(path.getAbsolutePath()).getParent();
       deleteEmptyPartitionFolders(
           FileFactory.getCarbonFile(parentsLocation.toString()));

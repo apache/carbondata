@@ -122,6 +122,9 @@ public final class DeleteLoadFolders {
     }
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(carbonTable, currLoadDetails);
+
+    // 1. find and delete segment that can be deleted
+    Set<String> partitionDirectoryToDelete = new HashSet<>();
     for (final LoadMetadataDetails oneLoad : loadDetails) {
       if (loadsToDelete.contains(oneLoad.getLoadName())) {
         try {
@@ -130,7 +133,8 @@ public final class DeleteLoadFolders {
             Segment segment = new Segment(oneLoad.getLoadName(), oneLoad.getSegmentFile());
             // No need to delete physical data for external segments.
             if (oneLoad.getPath() == null || oneLoad.getPath().equalsIgnoreCase("NA")) {
-              SegmentFileStore.deleteSegment(tablePath, segment, specs, updateStatusManager);
+              SegmentFileStore.deleteSegment(tablePath, segment, specs, updateStatusManager,
+                  partitionDirectoryToDelete);
             }
             // delete segment files for all segments.
             SegmentFileStore.deleteSegmentFile(tablePath, segment);
@@ -184,6 +188,11 @@ public final class DeleteLoadFolders {
           LOGGER.warn("Unable to delete the file as per delete command " + oneLoad.getLoadName());
         }
       }
+    }
+    // 2. try to delete the empty partition directory
+    for (String partition : partitionDirectoryToDelete) {
+      CarbonFile path = FileFactory.getCarbonFile(partition);
+      SegmentFileStore.deleteEmptyPartitionFolders(path);
     }
   }
 
