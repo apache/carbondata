@@ -117,6 +117,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       sql(s"SELECT * FROM index_test WHERE city='c020'"))
 
     sql("drop index dm on table index_test")
+        
   }
 
   // for CARBONDATA-2820, we will first block deferred refresh for lucene
