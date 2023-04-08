@@ -55,7 +55,7 @@ We use a review-then-commit workflow in CarbonData for all contributions.
 We discuss design and implementation issues on dev@carbondata.apache.org Join by
 emailing dev-subscribe@carbondata.apache.org. 
 
-Or you can directly visit [Apache CarbonData Dev Mailing List archive](http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com/). If you do not already have an account, sign up [here](http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com/template/NamlServlet.jtp?macro=start_registration_page).
+Or you can directly visit [Apache CarbonData Dev Mailing List archive](https://lists.apache.org/list.html?dev@carbondata.apache.org). If you do not already have an account, sign up [here](https://lists.apache.org/oauth.html).
 
 ### Apache JIRA
 
