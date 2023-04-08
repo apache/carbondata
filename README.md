@@ -95,7 +95,7 @@ To get involved in CarbonData:
 
 * First join by emailing to [dev-subscribe@carbondata.apache.org](mailto:dev-subscribe@carbondata.apache.org), then you can discuss issues by emailing to [dev@carbondata.apache.org](mailto:dev@carbondata.apache.org). 
   You can also directly visit [dev@carbondata.apache.org](https://lists.apache.org/list.html?dev@carbondata.apache.org). 
-  Or you can visit [Apache CarbonData Dev Mailing List archive](http://apache-carbondata-dev-mailing-list-archive.168.s1.nabble.com/). 
+  Or you can visit [Apache CarbonData Dev Mailing List archive](https://lists.apache.org/list.html?dev@carbondata.apache.org). 
   
 * Report issues on [github issues](https://github.com/apache/carbondata/issues).
 
