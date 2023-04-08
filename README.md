@@ -97,7 +97,7 @@ To get involved in CarbonData:
   You can also directly visit [dev@carbondata.apache.org](https://lists.apache.org/list.html?dev@carbondata.apache.org). 
   Or you can visit [Apache CarbonData Dev Mailing List archive](http://apache-carbondata-dev-mailing-list-archive.168.s1.nabble.com/). 
   
-* Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA). If you do not already have an Apache JIRA account, sign up [here](https://issues.apache.org/jira/).
+* Report issues on [github issues](https://github.com/apache/carbondata/issues).
 
 * You can also slack to get in touch with the community. After we invite you, you can use this [Slack Link](https://carbondataworkspace.slack.com/) to sign in to CarbonData.
   
