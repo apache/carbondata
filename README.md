@@ -100,10 +100,6 @@ To get involved in CarbonData:
 * Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA). If you do not already have an Apache JIRA account, sign up [here](https://issues.apache.org/jira/).
 
 * You can also slack to get in touch with the community. After we invite you, you can use this [Slack Link](https://carbondataworkspace.slack.com/) to sign in to CarbonData.
-
-* Of course, you can scan the QR Code to join in our WeChat Group to get in touch.
-  ![QRCode_WechatGroup](docs/images/QRCode_WechatGroup.png)
-
   
 
 ## About
