@@ -47,7 +47,7 @@ REQUIRED_PACKAGES = [
     'jnius>=1.1.0',
     'pyjnius>=1.2.0',
     'huaweicloud-sdk-python-modelarts-dataset>=0.1.1',
-    'future==0.17.1',
+    'future==0.18.3',
     'futures>=2.0; python_version == "2.7"',
 ]
 
