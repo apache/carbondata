@@ -37,6 +37,7 @@ public class UnsafeRowComparatorForNormalDims implements Comparator<UnsafeCarbon
   /**
    * Below method will be used to compare two mdkey
    */
+  @Override
   public int compare(UnsafeCarbonRow rowL, UnsafeCarbonRow rowR) {
     int diff = 0;
     long rowA = rowL.address;

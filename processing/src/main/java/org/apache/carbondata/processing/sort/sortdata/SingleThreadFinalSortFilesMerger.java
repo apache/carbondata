@@ -140,6 +140,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   private List<File> getFilesToMergeSort() {
     final int rangeId = sortParameters.getRangeId();
     FileFilter fileFilter = new FileFilter() {
+      @Override
       public boolean accept(File pathname) {
         return pathname.getName().startsWith(tableName + '_' + rangeId);
       }
@@ -246,6 +247,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @return sorted row
    * @throws CarbonSortKeyAndGroupByException
    */
+  @Override
   public Object[] next() {
     if (hasNext()) {
       IntermediateSortTempRow sortTempRow = getSortedRecordFromFile();
@@ -305,10 +307,12 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    *
    * @return more element is present
    */
+  @Override
   public boolean hasNext() {
     return this.recordHolderHeapLocal != null && this.recordHolderHeapLocal.size() > 0;
   }
 
+  @Override
   public void close() {
     if (null != executorService && !executorService.isShutdown()) {
       executorService.shutdownNow();

@@ -48,6 +48,7 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
   /**
    * Below method will be used to compare two sort temp row
    */
+  @Override
   public int compare(IntermediateSortTempRow rowA, IntermediateSortTempRow rowB) {
     int diff = 0;
     int dictIndex = 0;

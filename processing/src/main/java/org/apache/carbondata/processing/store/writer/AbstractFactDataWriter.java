@@ -324,6 +324,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    *
    * @throws CarbonDataWriterException
    */
+  @Override
   public void initializeWriter() throws CarbonDataWriterException {
     this.carbonDataFileName = CarbonTablePath
         .getCarbonDataFileName(fileCount, model.getCarbonDataFileAttributes().getTaskId(),

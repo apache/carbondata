@@ -254,6 +254,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    *
    * @return row
    */
+  @Override
   public IntermediateSortTempRow getRow() {
     return this.returnRow;
   }
@@ -264,6 +265,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    *
    * @return more row present in file
    */
+  @Override
   public boolean hasNext() {
     if (prefetch) {
       return this.prefetchRecordsProceesed < this.entryCount;
@@ -274,6 +276,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
   /**
    * Below method will be used to close streams
    */
+  @Override
   public void close() {
     CarbonUtil.closeStreams(stream);
     if (null != executorService && !executorService.isShutdown()) {
@@ -286,6 +289,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    *
    * @return entryCount
    */
+  @Override
   public int numberOfRows() {
     return entryCount;
   }

@@ -381,6 +381,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    *
    * @throws CarbonDataWriterException
    */
+  @Override
   public void closeWriter() throws CarbonDataWriterException {
     CarbonDataWriterException exception = null;
     try {
