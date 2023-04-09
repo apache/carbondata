@@ -33,15 +33,15 @@ import static org.apache.hadoop.fs.s3a.Constants.*;
 public class SDKS3SchemaReadExample {
   public static void main(String[] args) throws Exception {
     Logger logger = LogServiceFactory.getLogService(SDKS3SchemaReadExample.class.getName());
-    if (args == null || args.length < 3) {
+    int parameterLength = 3;
+    if (args == null || args.length < parameterLength) {
       logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
           + "<s3-endpoint> [table-path-on-s3]");
       System.exit(0);
     }
 
-    String path = "s3a://sdk/WriterOutput/carbondata2/";
-
-    if (args.length > 3) {
+    String path = "s3a://obs-xubo4/sdkdata/test";
+    if (args.length > parameterLength) {
       path = args[3];
     }
 
