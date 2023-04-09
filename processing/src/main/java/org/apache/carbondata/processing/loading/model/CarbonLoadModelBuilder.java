@@ -159,34 +159,34 @@ public class CarbonLoadModelBuilder {
     CarbonDataLoadSchema dataLoadSchema = new CarbonDataLoadSchema(table);
     // Need to fill dimension relation
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema);
-    String sort_scope = optionsFinal.get("sort_scope");
-    String bad_records_logger_enable = optionsFinal.get("bad_records_logger_enable");
-    String bad_records_action = optionsFinal.get("bad_records_action");
-    String bad_record_path = optionsFinal.get("bad_record_path");
-    String global_sort_partitions = optionsFinal.get("global_sort_partitions");
+    String sortScope = optionsFinal.get("sort_scope");
+    String badRecordsLoggerEnable = optionsFinal.get("bad_records_logger_enable");
+    String badRecordsAction = optionsFinal.get("bad_records_action");
+    String badRecordPath = optionsFinal.get("bad_record_path");
+    String globalSortPartitions = optionsFinal.get("global_sort_partitions");
     String timestampformat = optionsFinal.get("timestampformat");
     String dateFormat = optionsFinal.get("dateformat");
     String delimiter = optionsFinal.get("delimiter");
-    String complex_delimiter_level1 = optionsFinal.get("complex_delimiter_level_1");
-    String complex_delimiter_level2 = optionsFinal.get("complex_delimiter_level_2");
-    String complex_delimiter_level3 = optionsFinal.get("complex_delimiter_level_3");
-    String complex_delimiter_level4 = optionsFinal.get("complex_delimiter_level_4");
+    String complexDelimiterLevel1 = optionsFinal.get("complex_delimiter_level_1");
+    String complexDelimiterLevel2 = optionsFinal.get("complex_delimiter_level_2");
+    String complexDelimiterLevel3 = optionsFinal.get("complex_delimiter_level_3");
+    String complexDelimiterLevel4 = optionsFinal.get("complex_delimiter_level_4");
     validateDateTimeFormat(timestampformat, "TimestampFormat");
     validateDateTimeFormat(dateFormat, "DateFormat");
 
-    if (Boolean.parseBoolean(bad_records_logger_enable) ||
-        LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
-      if (!StringUtils.isEmpty(bad_record_path)) {
-        bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path);
+    if (Boolean.parseBoolean(badRecordsLoggerEnable) ||
+        LoggerAction.REDIRECT.name().equalsIgnoreCase(badRecordsAction)) {
+      if (!StringUtils.isEmpty(badRecordPath)) {
+        badRecordPath = CarbonUtil.checkAndAppendHDFSUrl(badRecordPath);
       } else {
         throw new InvalidLoadOptionException(
             "Cannot redirect bad records as bad record location is not provided.");
       }
     }
 
-    carbonLoadModel.setBadRecordsLocation(bad_record_path);
+    carbonLoadModel.setBadRecordsLocation(badRecordPath);
 
-    validateGlobalSortPartitions(global_sort_partitions);
+    validateGlobalSortPartitions(globalSortPartitions);
     carbonLoadModel.setEscapeChar(checkDefaultValue(optionsFinal.get("escapechar"), "\\"));
     carbonLoadModel.setQuoteChar(
         CarbonUtil.unescapeChar(checkDefaultValue(optionsFinal.get("quotechar"), "\"")));
@@ -245,10 +245,10 @@ public class CarbonLoadModelBuilder {
             optionsFinal.get("serialization_null_format"));
 
     carbonLoadModel.setBadRecordsLoggerEnable(
-        TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + bad_records_logger_enable);
+        TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + badRecordsLoggerEnable);
 
     carbonLoadModel.setBadRecordsAction(
-        TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + bad_records_action.toUpperCase());
+        TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + badRecordsAction.toUpperCase());
 
     carbonLoadModel.setIsEmptyDataBadRecord(
         DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," +
@@ -256,22 +256,22 @@ public class CarbonLoadModelBuilder {
 
     carbonLoadModel.setSkipEmptyLine(optionsFinal.get("skip_empty_line"));
 
-    carbonLoadModel.setSortScope(sort_scope);
-    if (global_sort_partitions == null) {
-      global_sort_partitions = table.getGlobalSortPartitions();
+    carbonLoadModel.setSortScope(sortScope);
+    if (globalSortPartitions == null) {
+      globalSortPartitions = table.getGlobalSortPartitions();
     }
-    carbonLoadModel.setGlobalSortPartitions(global_sort_partitions);
+    carbonLoadModel.setGlobalSortPartitions(globalSortPartitions);
 
-    if (delimiter.equalsIgnoreCase(complex_delimiter_level1) ||
-        complex_delimiter_level1.equalsIgnoreCase(complex_delimiter_level2) ||
-        delimiter.equalsIgnoreCase(complex_delimiter_level2) ||
-        delimiter.equalsIgnoreCase(complex_delimiter_level3)) {
+    if (delimiter.equalsIgnoreCase(complexDelimiterLevel1) ||
+        complexDelimiterLevel1.equalsIgnoreCase(complexDelimiterLevel2) ||
+        delimiter.equalsIgnoreCase(complexDelimiterLevel2) ||
+        delimiter.equalsIgnoreCase(complexDelimiterLevel3)) {
       throw new InvalidLoadOptionException("Field Delimiter and Complex types delimiter are same");
     } else {
-      carbonLoadModel.setComplexDelimiter(complex_delimiter_level1);
-      carbonLoadModel.setComplexDelimiter(complex_delimiter_level2);
-      carbonLoadModel.setComplexDelimiter(complex_delimiter_level3);
-      carbonLoadModel.setComplexDelimiter(complex_delimiter_level4);
+      carbonLoadModel.setComplexDelimiter(complexDelimiterLevel1);
+      carbonLoadModel.setComplexDelimiter(complexDelimiterLevel2);
+      carbonLoadModel.setComplexDelimiter(complexDelimiterLevel3);
+      carbonLoadModel.setComplexDelimiter(complexDelimiterLevel4);
     }
     carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter));
     carbonLoadModel.setCsvHeader(fileHeader);

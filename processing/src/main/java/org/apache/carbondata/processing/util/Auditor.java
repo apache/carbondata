@@ -48,7 +48,7 @@ import org.apache.log4j.Logger;
 @InterfaceAudience.Internal
 public class Auditor {
   private static final Logger LOGGER = Logger.getLogger("carbon.audit");
-  private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+  private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
   private static String username;
 
   static {
@@ -93,7 +93,7 @@ public class Auditor {
       OpEndMessage message = new OpEndMessage(opName, opId, table, opTime,
           success ? OpStatus.SUCCESS : OpStatus.FAILED,
           extraInfo != null ? extraInfo : new HashMap<String, String>());
-      String json = gson.toJson(message);
+      String json = GSON.toJson(message);
       LOGGER.log(AuditLevel.AUDIT, json);
     }
   }
