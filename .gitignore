@@ -15,6 +15,7 @@ target/
 store/CSDK/cmake-build-debug/*
 .project
 .classpath
+.DS_Store
 metastore_db/
 derby.log
 python/.idea/
