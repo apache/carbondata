@@ -27,11 +27,10 @@ import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.sdk.file.CarbonReader;
 
-import static org.apache.carbondata.sdk.file.utils.SDKUtil.listFiles;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
+import static org.apache.carbondata.sdk.file.utils.SDKUtil.listFiles;
 import static org.apache.hadoop.fs.s3a.Constants.ACCESS_KEY;
 import static org.apache.hadoop.fs.s3a.Constants.ENDPOINT;
 import static org.apache.hadoop.fs.s3a.Constants.SECRET_KEY;
@@ -44,12 +43,13 @@ public class SDKS3ReadExample {
     Logger logger = LogServiceFactory.getLogService(SDKS3ReadExample.class.getName());
     if (args == null || args.length < 3) {
       logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
-          + "<s3-endpoint> [table-path-on-s3]");
+        + "<s3-endpoint> [table-path-on-s3]");
       System.exit(0);
     }
 
-    String path = "s3a://sdk/WriterOutput/carbondata5";
-    if (args.length > 3) {
+    String path = "s3a://obs-xubo4/sdkdata/test";
+    int parameterLength = 3;
+    if (args.length > parameterLength) {
       path = args[3];
     }
 
@@ -78,7 +78,8 @@ public class SDKS3ReadExample {
 
     System.out.println("\nData:");
     int i = 0;
-    while (i < 20 && reader.hasNext()) {
+    int count = 20;
+    while (i < count && reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
       System.out.println(row[0] + " " + row[1]);
       i++;
@@ -97,7 +98,7 @@ public class SDKS3ReadExample {
 
     System.out.println("\nData:");
     i = 0;
-    while (i < 20 && reader2.hasNext()) {
+    while (i < count && reader2.hasNext()) {
       Object[] row = (Object[]) reader2.readNextRow();
       System.out.println(row[0] + " " + row[1]);
       i++;
