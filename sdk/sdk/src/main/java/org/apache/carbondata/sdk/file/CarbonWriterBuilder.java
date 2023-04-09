@@ -227,25 +227,25 @@ public class CarbonWriterBuilder {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
     for (String option : options.keySet()) {
-      if (!option.equalsIgnoreCase("bad_records_logger_enable") &&
-          !option.equalsIgnoreCase("bad_records_action") &&
-          !option.equalsIgnoreCase("bad_record_path") &&
-          !option.equalsIgnoreCase("dateformat") &&
-          !option.equalsIgnoreCase("timestampformat") &&
-          !option.equalsIgnoreCase("complex_delimiter_level_1") &&
-          !option.equalsIgnoreCase("complex_delimiter_level_2") &&
-          !option.equalsIgnoreCase("complex_delimiter_level_3") &&
-          !option.equalsIgnoreCase("quotechar") &&
-          !option.equalsIgnoreCase("escapechar") &&
-          !option.equalsIgnoreCase("binary_decoder") &&
-          !option.equalsIgnoreCase("fileheader")) {
+      if (!"bad_records_logger_enable".equalsIgnoreCase(option) &&
+          !"bad_records_action".equalsIgnoreCase(option) &&
+          !"bad_record_path".equalsIgnoreCase(option) &&
+          !"dateformat".equalsIgnoreCase(option) &&
+          !"timestampformat".equalsIgnoreCase(option) &&
+          !"complex_delimiter_level_1".equalsIgnoreCase(option) &&
+          !"complex_delimiter_level_2".equalsIgnoreCase(option) &&
+          !"complex_delimiter_level_3".equalsIgnoreCase(option) &&
+          !"quotechar".equalsIgnoreCase(option) &&
+          !"escapechar".equalsIgnoreCase(option) &&
+          !"binary_decoder".equalsIgnoreCase(option) &&
+          !"fileheader".equalsIgnoreCase(option)) {
         throw new IllegalArgumentException("Unsupported option:" + option
             + ". Refer method header or documentation");
       }
     }
 
     for (Map.Entry<String, String> entry : options.entrySet()) {
-      if (entry.getKey().equalsIgnoreCase("bad_records_action")) {
+      if ("bad_records_action".equalsIgnoreCase(entry.getKey())) {
         try {
           LoggerAction.valueOf(entry.getValue().toUpperCase());
         } catch (Exception e) {
@@ -253,24 +253,24 @@ public class CarbonWriterBuilder {
               "option BAD_RECORDS_ACTION can have only either " +
                   "FORCE or IGNORE or REDIRECT or FAIL. It shouldn't be " + entry.getValue());
         }
-      } else if (entry.getKey().equalsIgnoreCase("bad_records_logger_enable")) {
+      } else if ("bad_records_logger_enable".equalsIgnoreCase(entry.getKey())) {
         boolean isValid;
         isValid = CarbonUtil.validateBoolean(entry.getValue());
         if (!isValid) {
           throw new IllegalArgumentException("Invalid value "
               + entry.getValue() + " for key " + entry.getKey());
         }
-      } else if (entry.getKey().equalsIgnoreCase("quotechar")) {
+      } else if ("quotechar".equalsIgnoreCase(entry.getKey())) {
         String quoteChar = entry.getValue();
         if (quoteChar.length() > 1) {
           throw new IllegalArgumentException("QUOTECHAR cannot be more than one character.");
         }
-      } else if (entry.getKey().equalsIgnoreCase("escapechar")) {
+      } else if ("escapechar".equalsIgnoreCase(entry.getKey())) {
         String escapeChar = entry.getValue();
         if (escapeChar.length() > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapeChar)) {
           throw new IllegalArgumentException("ESCAPECHAR cannot be more than one character.");
         }
-      } else if (entry.getKey().toLowerCase().equalsIgnoreCase("binary_decoder")) {
+      } else if ("binary_decoder".equalsIgnoreCase(entry.getKey().toLowerCase())) {
         String binaryDecoderChar = entry.getValue();
         if (binaryDecoderChar.length() > 1 &&
             !CarbonLoaderUtil.isValidBinaryDecoder(binaryDecoderChar)) {
@@ -347,15 +347,15 @@ public class CarbonWriterBuilder {
     }
 
     for (Map.Entry<String, String> entry : options.entrySet()) {
-      if (entry.getKey().equalsIgnoreCase("table_blocksize")) {
+      if ("table_blocksize".equalsIgnoreCase(entry.getKey())) {
         this.withBlockSize(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("table_blocklet_size")) {
+      } else if ("table_blocklet_size".equalsIgnoreCase(entry.getKey())) {
         this.withBlockletSize(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("local_dictionary_threshold")) {
+      } else if ("local_dictionary_threshold".equalsIgnoreCase(entry.getKey())) {
         this.localDictionaryThreshold(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("local_dictionary_enable")) {
-        this.enableLocalDictionary((entry.getValue().equalsIgnoreCase("true")));
-      } else if (entry.getKey().equalsIgnoreCase("sort_columns")) {
+      } else if ("local_dictionary_enable".equalsIgnoreCase(entry.getKey())) {
+        this.enableLocalDictionary(("true".equalsIgnoreCase(entry.getKey())));
+      } else if ("sort_columns".equalsIgnoreCase(entry.getKey())) {
         //sort columns
         String[] sortColumns;
         if (entry.getValue().trim().isEmpty()) {
@@ -364,11 +364,11 @@ public class CarbonWriterBuilder {
           sortColumns = entry.getValue().split(",");
         }
         this.sortBy(sortColumns);
-      } else if (entry.getKey().equalsIgnoreCase("sort_scope")) {
+      } else if ("sort_scope".equalsIgnoreCase(entry.getKey())) {
         this.withSortScope(entry);
-      } else if (entry.getKey().equalsIgnoreCase("long_string_columns")) {
+      } else if ("long_string_columns".equalsIgnoreCase(entry.getKey())) {
         updateToLoadOptions(entry);
-      } else if (entry.getKey().equalsIgnoreCase("inverted_index")) {
+      } else if ("inverted_index".equalsIgnoreCase(entry.getKey())) {
         //inverted index columns
         String[] invertedIndexColumns;
         if (entry.getValue().trim().isEmpty()) {
@@ -377,7 +377,7 @@ public class CarbonWriterBuilder {
           invertedIndexColumns = entry.getValue().split(",");
         }
         this.invertedIndexFor(invertedIndexColumns);
-      } else if (entry.getKey().equalsIgnoreCase("table_page_size_inmb")) {
+      } else if ("table_page_size_inmb".equalsIgnoreCase(entry.getKey())) {
         this.withPageSizeInMb(Integer.parseInt(entry.getValue()));
       }
     }
@@ -1108,7 +1108,7 @@ public class CarbonWriterBuilder {
           }
         }
         if (field.getChildren() != null && field.getChildren().size() > 0) {
-          if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+          if ("ARRAY".equalsIgnoreCase(field.getDataType().getName())) {
             // Loop through the inner columns and for a StructData
             DataType complexType = DataTypes
                 .createArrayType(field.getChildren().get(0).getDataType(),
@@ -1116,7 +1116,7 @@ public class CarbonWriterBuilder {
             tableSchemaBuilder
                 .addColumn(new StructField(field.getFieldName(), complexType, field.getChildren()),
                     valIndex, false, isInvertedIdxColumn > -1);
-          } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
+          } else if ("STRUCT".equalsIgnoreCase(field.getDataType().getName())) {
             // Loop through the inner columns and for a StructData
             List<StructField> structFieldsArray =
                 new ArrayList<StructField>(field.getChildren().size());
@@ -1128,7 +1128,7 @@ public class CarbonWriterBuilder {
             tableSchemaBuilder
                 .addColumn(new StructField(field.getFieldName(), complexType, field.getChildren()),
                     valIndex, false, isInvertedIdxColumn > -1);
-          } else if (field.getDataType().getName().equalsIgnoreCase("MAP")) {
+          } else if ("MAP".equalsIgnoreCase(field.getDataType().getName())) {
             // Loop through the inner columns for MapType
             DataType mapType = DataTypes.createMapType(((MapType) field.getDataType()).getKeyType(),
                 field.getChildren().get(0).getDataType());
@@ -1199,7 +1199,7 @@ public class CarbonWriterBuilder {
     if (sortScope != null) {
       if ((!CarbonUtil.isValidSortOption(sortScope))) {
         throw new IllegalArgumentException("Invalid Sort Scope Option: " + sortScope);
-      } else if (sortScope.equalsIgnoreCase("global_sort")) {
+      } else if ("global_sort".equalsIgnoreCase(sortScope)) {
         throw new IllegalArgumentException("global sort is not supported");
       }
     }

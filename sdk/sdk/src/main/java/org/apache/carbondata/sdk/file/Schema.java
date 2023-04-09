@@ -155,7 +155,7 @@ public class Schema {
    * @return ordinal array child element data type name
    */
   public String getArrayElementTypeName(int ordinal) {
-    if (getFieldDataTypeName(ordinal).equalsIgnoreCase("ARRAY")) {
+    if ("ARRAY".equalsIgnoreCase(getFieldDataTypeName(ordinal))) {
       return ((ArrayType) fields[ordinal].getDataType()).getElementType().getName();
     }
     throw new RuntimeException("Only support Array type.");
