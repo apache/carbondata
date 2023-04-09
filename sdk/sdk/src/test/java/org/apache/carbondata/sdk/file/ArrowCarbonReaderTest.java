@@ -101,7 +101,8 @@ public class ArrowCarbonReaderTest extends TestCase {
           CarbonReader.builder(path, "_temp").withRowRecordReader().buildArrowReader();
       Schema carbonSchema = CarbonSchemaReader.readSchema(path);
       byte[] data = reader.readArrowBatch(carbonSchema);
-      BufferAllocator bufferAllocator = ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
+      BufferAllocator bufferAllocator = ArrowUtils.ROOT_ALLOCATOR
+        .newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
       ArrowRecordBatch arrowRecordBatch =
           ArrowConverter.byteArrayToArrowBatch(data, bufferAllocator);
       VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot
@@ -142,7 +143,7 @@ public class ArrowCarbonReaderTest extends TestCase {
       int length = CarbonUnsafe.getUnsafe().getInt(address);
       byte[] data1 = new byte[length];
       CarbonUnsafe.getUnsafe().copyMemory(null, address + 4 , data1, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
-      bufferAllocator = ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
+      bufferAllocator = ArrowUtils.ROOT_ALLOCATOR.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
       arrowRecordBatch =
           ArrowConverter.byteArrayToArrowBatch(data1, bufferAllocator);
       vectorSchemaRoot = VectorSchemaRoot
@@ -189,7 +190,7 @@ public class ArrowCarbonReaderTest extends TestCase {
 
       // Read arrowSchema
       byte[] schema = CarbonSchemaReader.getArrowSchemaAsBytes(path);
-      bufferAllocator = ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
+      bufferAllocator = ArrowUtils.ROOT_ALLOCATOR.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
       arrowRecordBatch =
           ArrowConverter.byteArrayToArrowBatch(schema, bufferAllocator);
       vectorSchemaRoot = VectorSchemaRoot

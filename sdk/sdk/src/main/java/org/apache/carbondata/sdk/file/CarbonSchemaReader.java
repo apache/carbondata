@@ -375,9 +375,9 @@ public class CarbonSchemaReader {
   private static Schema readSchemaFromIndexFile(String indexFilePath, Configuration conf) {
     IndexHeader readIndexHeader = SegmentIndexFileStore.readIndexHeader(indexFilePath, conf);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    List<org.apache.carbondata.format.ColumnSchema> table_columns =
+    List<org.apache.carbondata.format.ColumnSchema> tableColumns =
         readIndexHeader.getTable_columns();
-    for (org.apache.carbondata.format.ColumnSchema columnSchema : table_columns) {
+    for (org.apache.carbondata.format.ColumnSchema columnSchema : tableColumns) {
       if (!(columnSchema.column_name.contains("."))) {
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(columnSchema));
       }

@@ -44,7 +44,7 @@ public class ArrowConverter {
   public ArrowConverter(Schema schema, int initialSize) {
     this.arrowSchema = ArrowUtils.toArrowSchema(schema, TimeZone.getDefault().getID());
     this.allocator =
-        ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initialSize, Long.MAX_VALUE);
+        ArrowUtils.ROOT_ALLOCATOR.newChildAllocator("toArrowBuffer", initialSize, Long.MAX_VALUE);
     this.root = VectorSchemaRoot.create(arrowSchema, allocator);
     this.arrowWriter = ArrowWriter.create(root);
     // currently blocklet level read and set initial value to 32 MB.

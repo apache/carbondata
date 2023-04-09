@@ -132,9 +132,9 @@ public class CarbonIUD {
     if (!StringUtils.isEmpty(path)) {
       path = path + CarbonCommonConstants.FILE_SEPARATOR +
           CarbonCommonConstants.CARBON_SDK_EMPTY_METADATA_PATH;
-      CarbonFile emptySDKDirectory = FileFactory.getCarbonFile(path);
-      if (!emptySDKDirectory.exists()) {
-        emptySDKDirectory.mkdirs();
+      CarbonFile emptySdkDirectory = FileFactory.getCarbonFile(path);
+      if (!emptySdkDirectory.exists()) {
+        emptySdkDirectory.mkdirs();
       }
     }
   }
@@ -317,14 +317,14 @@ public class CarbonIUD {
             new EqualToExpression(new ColumnExpression(column.getKey(), dataType),
                 new LiteralExpression(value, dataType)));
       }
-      Expression OrFilterExpression = null;
+      Expression orFilterExpression = null;
       if (listOfOrExpressions.size() > 0) {
-        OrFilterExpression = listOfOrExpressions.get(0);
+        orFilterExpression = listOfOrExpressions.get(0);
       }
       for (int i = 1; i < listOfOrExpressions.size(); i++) {
-        OrFilterExpression = new OrExpression(OrFilterExpression, listOfOrExpressions.get(i));
+        orFilterExpression = new OrExpression(orFilterExpression, listOfOrExpressions.get(i));
       }
-      listOfExpressions.add(OrFilterExpression);
+      listOfExpressions.add(orFilterExpression);
     }
     Expression filterExpression = null;
     if (listOfExpressions.size() > 0) {
