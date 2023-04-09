@@ -167,7 +167,7 @@ public class CarbonSchemaReader {
    */
   public static Schema readSchema(String path, boolean validateSchema, Configuration conf)
       throws IOException {
-    // Check whether it is transational table reads the schema
+    // Check whether it is transactional table reads the schema
     String schemaFilePath = CarbonTablePath.getSchemaFilePath(path);
     if (FileFactory.getCarbonFile(schemaFilePath, conf).exists()) {
       return readSchemaInSchemaFile(schemaFilePath, conf);

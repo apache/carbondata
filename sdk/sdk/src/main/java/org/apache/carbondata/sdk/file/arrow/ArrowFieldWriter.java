@@ -337,11 +337,13 @@ class ArrayWriter extends ArrowFieldWriter {
     listVector.endValue(count, array.length);
   }
 
+  @Override
   public void finish() {
     super.finish();
     elementWriter.finish();
   }
 
+  @Override
   public void reset() {
     super.reset();
     elementWriter.reset();
@@ -380,6 +382,7 @@ class StructWriter extends ArrowFieldWriter {
     structVector.setIndexDefined(count);
   }
 
+  @Override
   public void finish() {
     super.finish();
     for (int i = 0; i < children.length; i++) {
@@ -387,6 +390,7 @@ class StructWriter extends ArrowFieldWriter {
     }
   }
 
+  @Override
   public void reset() {
     super.reset();
     for (int i = 0; i < children.length; i++) {
