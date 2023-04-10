@@ -27,10 +27,11 @@ import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.sdk.file.CarbonReader;
 
+import static org.apache.carbondata.sdk.file.utils.SDKUtil.listFiles;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import static org.apache.carbondata.sdk.file.utils.SDKUtil.listFiles;
 import static org.apache.hadoop.fs.s3a.Constants.ACCESS_KEY;
 import static org.apache.hadoop.fs.s3a.Constants.ENDPOINT;
 import static org.apache.hadoop.fs.s3a.Constants.SECRET_KEY;
@@ -41,14 +42,14 @@ import static org.apache.hadoop.fs.s3a.Constants.SECRET_KEY;
 public class SDKS3ReadExample {
   public static void main(String[] args) throws Exception {
     Logger logger = LogServiceFactory.getLogService(SDKS3ReadExample.class.getName());
-    if (args == null || args.length < 3) {
+    int parameterLength = 3;
+    if (args == null || args.length < parameterLength) {
       logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
-        + "<s3-endpoint> [table-path-on-s3]");
+          + "<s3-endpoint> [table-path-on-s3]");
       System.exit(0);
     }
 
     String path = "s3a://obs-xubo4/sdkdata/test";
-    int parameterLength = 3;
     if (args.length > parameterLength) {
       path = args[3];
     }

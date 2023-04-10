@@ -47,11 +47,11 @@ import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
+import org.apache.hadoop.conf.Configuration;
+
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.INDEX_FILE_EXT;
-
-import org.apache.hadoop.conf.Configuration;
 
 /**
  * Schema reader for carbon files, including carbondata file, carbonindex file, and schema file
@@ -168,7 +168,7 @@ public class CarbonSchemaReader {
   public static Schema readSchema(String path, boolean validateSchema, Configuration conf)
       throws IOException {
     // Check whether it is transactional table reads the schema
-    String schemaFilePath = CarbonTablePath.getSchemaFilePath(path);
+    String schemaFilePath = CarbonTablePath.getSchemaFilePath(path, conf);
     if (FileFactory.getCarbonFile(schemaFilePath, conf).exists()) {
       return readSchemaInSchemaFile(schemaFilePath, conf);
     }
