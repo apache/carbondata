@@ -49,13 +49,13 @@ public class BadRecordsLoggerProvider {
     boolean badRecordsLoggerEnable = Boolean.parseBoolean(
         configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
             .toString());
-    Object bad_records_action =
+    Object badRecordsAction =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION)
             .toString();
-    if (null != bad_records_action) {
+    if (null != badRecordsAction) {
       LoggerAction loggerAction = null;
       try {
-        loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
+        loggerAction = LoggerAction.valueOf(badRecordsAction.toString().toUpperCase());
       } catch (IllegalArgumentException e) {
         loggerAction = LoggerAction.FORCE;
       }
