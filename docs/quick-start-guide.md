@@ -49,6 +49,8 @@ CarbonData can be integrated with Spark, Presto, Flink and Hive execution engine
 
 [Installing and Configuring CarbonData Thrift Server for Query Execution](#query-execution-using-the-thrift-server)
 
+### Notebook
+[Using CarbonData in notebook](#using-carbondata-in-notebook.md)
 
 #### Presto
 [Installing and Configuring CarbonData on Presto](#installing-and-configuring-carbondata-on-presto)
