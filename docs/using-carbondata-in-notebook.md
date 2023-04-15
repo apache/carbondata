@@ -69,10 +69,11 @@ http://127.0.0.1:8888/?token=f2f24cd38ddb1d2e11d8dd09ab27a2062dca66efbc50c75c
 ## Using carbondata in notebook:
 Opening the carbondata_notebook.ipynb
 
-![File Directory Structure](../docs/images/using-carbondata-in-notebook.png?raw=true)
+![File Directory Structure](images/using-carbondata-in-notebook-1.png?raw=true)
 
 You also can open this file from notebook directory：[carbondata_notebook_with_visualization.ipynb](#notebook/You also can open this file from notebook directory：[carbondata_notebook.ipynb](#notebook/carbondata_notebook.ipynb))
 
 Running carbondata example in notebook file:
 
-![File Directory Structure](../docs/images/using-carbondata-in-notebook2.png?raw=true)
+![File Directory Structure](images/using-carbondata-in-notebook-2.png?raw=true)
+![File Directory Structure](images/using-carbondata-in-notebook-3.png?raw=true)
