@@ -51,6 +51,7 @@ CarbonData can be integrated with Spark, Presto, Flink and Hive execution engine
 
 ### Notebook
 [Using CarbonData in notebook](#using-carbondata-in-notebook.md)
+[Using CarbonData to visualization_in notebook](#using-carbondata-to visualization_in-notebook.md)
 
 #### Presto
 [Installing and Configuring CarbonData on Presto](#installing-and-configuring-carbondata-on-presto)
