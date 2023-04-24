@@ -325,12 +325,12 @@ public class CarbonReaderBuilder {
       table.getTableInfo().getFactTable().setTableProperties(tableProperties);
     }
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
-    format.setTableInfo(job.getConfiguration(), table.getTableInfo());
-    format.setTablePath(job.getConfiguration(), table.getTablePath());
-    format.setTableName(job.getConfiguration(), table.getTableName());
-    format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
+    CarbonFileInputFormat.setTableInfo(job.getConfiguration(), table.getTableInfo());
+    CarbonFileInputFormat.setTablePath(job.getConfiguration(), table.getTablePath());
+    CarbonFileInputFormat.setTableName(job.getConfiguration(), table.getTableName());
+    CarbonFileInputFormat.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
     if (filterExpression != null) {
-      format.setFilterPredicates(job.getConfiguration(),
+      CarbonFileInputFormat.setFilterPredicates(job.getConfiguration(),
           new IndexFilter(table, filterExpression, true));
     }
     if (null != this.fileLists) {
@@ -345,7 +345,7 @@ public class CarbonReaderBuilder {
               "Complex child columns projection NOT supported through CarbonReader");
         }
       }
-      format.setColumnProjection(job.getConfiguration(), projectionColumns);
+      CarbonFileInputFormat.setColumnProjection(job.getConfiguration(), projectionColumns);
     }
     if ((disableLoadBlockIndex) && (filterExpression == null)) {
       job.getConfiguration().set("filter_blocks", "false");
