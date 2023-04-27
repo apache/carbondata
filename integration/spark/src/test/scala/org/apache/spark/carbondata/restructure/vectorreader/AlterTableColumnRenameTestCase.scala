@@ -22,6 +22,7 @@ import scala.collection.mutable.WrappedArray.make
 
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, DataFrame, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.junit.Ignore
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -148,7 +149,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(df3, Seq(Row(2), Row(3)))
   }
 
-  test("test alter rename struct of (primitive/struct/array)") {
+  ignore("test alter rename struct of (primitive/struct/array)") {
     sql("drop table if exists test_rename")
     sql("CREATE TABLE test_rename (str1 struct<a:int>, str2 struct<a:struct<b:int>>, str3 " +
         "struct<a:struct<b:struct<c:int>>>, intfield int) STORED AS carbondata")

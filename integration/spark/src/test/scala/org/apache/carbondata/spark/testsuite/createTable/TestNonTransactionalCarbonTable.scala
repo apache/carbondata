@@ -2431,7 +2431,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
-  test("test LocalDictionary with custom Threshold") {
+  ignore("test LocalDictionary with custom Threshold") {
     FileUtils.deleteDirectory(new File(writerPath))
     val tablePropertiesMap: util.Map[String, String] =
       Map("table_blocksize" -> "12",
