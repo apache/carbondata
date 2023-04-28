@@ -376,6 +376,7 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
     assertResult("bloomfilter")(showCache(1).getString(2))
     Thread.sleep(1000)
+    
     showCache = sql("show metacache on table carbonTable").collect()
     assert(showCache.length == 1)
     assert(showCache(0).get(2).toString.equalsIgnoreCase("0/1 index files cached"))
