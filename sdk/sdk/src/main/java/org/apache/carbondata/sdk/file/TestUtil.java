@@ -34,12 +34,9 @@ import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.JsonDecoder;
-import org.apache.hadoop.conf.Configuration;
 
 @InterfaceAudience.Developer("Test")
 public class TestUtil {
-
-  public static final Configuration configuration = new Configuration();
 
   public static GenericData.Record jsonToAvro(String json, String avroSchema) throws IOException {
     InputStream input = null;

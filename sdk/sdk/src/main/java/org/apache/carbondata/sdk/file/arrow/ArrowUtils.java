@@ -38,7 +38,7 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 
 public class ArrowUtils {
 
-  public static final RootAllocator rootAllocator = new RootAllocator(Long.MAX_VALUE);
+  public static final RootAllocator ROOT_ALLOCATOR = new RootAllocator(Long.MAX_VALUE);
 
   public static ArrowType toArrowType(DataType carbonDataType, String timeZoneId) {
     if (carbonDataType == DataTypes.STRING || carbonDataType == DataTypes.VARCHAR

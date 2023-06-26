@@ -82,7 +82,7 @@ public class ArrowWriter {
   public static ArrowWriter create(Schema schema, String timeZoneId) {
     org.apache.arrow.vector.types.pojo.Schema arrowSchema =
         ArrowUtils.toArrowSchema(schema, timeZoneId);
-    VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, ArrowUtils.rootAllocator);
+    VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, ArrowUtils.ROOT_ALLOCATOR);
     return create(root);
   }
 
