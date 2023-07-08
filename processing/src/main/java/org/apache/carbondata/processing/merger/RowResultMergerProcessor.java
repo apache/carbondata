@@ -105,6 +105,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * Merge function
    *
    */
+  @Override
   public boolean execute(List<RawResultIterator> unsortedResultIteratorList,
       List<RawResultIterator> sortedResultIteratorList) throws Exception {
     List<RawResultIterator> finalIteratorList = new ArrayList<>(unsortedResultIteratorList);

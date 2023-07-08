@@ -67,6 +67,7 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
         tableFieldStat.getDictSortColIdxSchemaOrderMapping());
   }
 
+  @Override
   public boolean hasNext() {
     if (counter < actualSize) {
       return true;
@@ -74,11 +75,13 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     return false;
   }
 
+  @Override
   public void readRow() {
     currentRow = rowPages[rowPageIndexes[counter]].getRow(mergedAddresses[counter]);
     counter++;
   }
 
+  @Override
   public IntermediateSortTempRow getRow() {
     return currentRow;
   }
@@ -107,10 +110,12 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     return super.hashCode();
   }
 
+  @Override
   public int numberOfRows() {
     return actualSize;
   }
 
+  @Override
   public void close() {
     for (int i = 0; i < rowPages.length; i++) {
       rowPages[i].freeMemory();

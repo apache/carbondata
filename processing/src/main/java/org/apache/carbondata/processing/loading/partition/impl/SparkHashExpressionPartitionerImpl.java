@@ -88,6 +88,7 @@ public class SparkHashExpressionPartitionerImpl implements Partitioner<CarbonRow
       this.index = index;
     }
 
+    @Override
     public int getHash(Object[] value) {
       if (value[index] == null) {
         return 42;
@@ -113,6 +114,7 @@ public class SparkHashExpressionPartitionerImpl implements Partitioner<CarbonRow
       this.index = index;
     }
 
+    @Override
     public int getHash(Object[] value) {
       if (value[index] == null) {
         return 42;
@@ -135,6 +137,7 @@ public class SparkHashExpressionPartitionerImpl implements Partitioner<CarbonRow
       this.index = index;
     }
 
+    @Override
     public int getHash(Object[] value) {
       if (value[index] == null) {
         return 42;
@@ -153,6 +156,7 @@ public class SparkHashExpressionPartitionerImpl implements Partitioner<CarbonRow
       this.index = index;
     }
 
+    @Override
     public int getHash(Object[] value) {
       if (value[index] == null) {
         return 42;

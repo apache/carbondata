@@ -46,6 +46,7 @@ public class NewRowComparatorForNormalDims implements Comparator<Object[]>, Seri
    *
    * @see Comparator#compare(Object, Object)
    */
+  @Override
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
 

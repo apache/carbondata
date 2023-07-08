@@ -164,6 +164,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     final int rangeId = parameters.getRangeId();
 
     FileFilter fileFilter = new FileFilter() {
+      @Override
       public boolean accept(File pathname) {
         return pathname.getName().startsWith(tableName + '_' + rangeId);
       }
@@ -196,6 +197,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    *
    * @return sorted row
    */
+  @Override
   public Object[] next() {
     if (hasNext()) {
       return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(getSortedRecordFromFile());
@@ -255,6 +257,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    *
    * @return more element is present
    */
+  @Override
   public boolean hasNext() {
     return this.fileCounter > 0;
   }

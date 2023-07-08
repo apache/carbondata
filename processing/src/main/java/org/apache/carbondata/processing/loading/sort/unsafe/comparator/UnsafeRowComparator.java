@@ -43,6 +43,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
   /**
    * Below method will be used to compare two mdkey
    */
+  @Override
   public int compare(UnsafeCarbonRow rowL, UnsafeCarbonRow rowR) {
     return compare(rowL, baseObject, rowR, baseObject);
   }

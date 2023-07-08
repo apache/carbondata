@@ -206,6 +206,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    *
    * @throws CarbonDataWriterException
    */
+  @Override
   public void initialise() throws CarbonDataWriterException {
     setWritingConfiguration();
   }
@@ -216,6 +217,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @param row
    * @throws CarbonDataWriterException
    */
+  @Override
   public void addDataToStore(CarbonRow row) throws CarbonDataWriterException {
     int totalComplexColumnDepth = setFlatCarbonRowForComplex(row);
     if (noDictColumnPageSize == null) {
@@ -410,6 +412,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    *
    * @throws CarbonDataWriterException
    */
+  @Override
   public void finish() throws CarbonDataWriterException {
     // still some data is present in stores if entryCount is more
     // than 0
@@ -480,6 +483,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   /**
    * below method will be used to close the handler
    */
+  @Override
   public void closeHandler() throws CarbonDataWriterException {
     if (null != this.dataWriter) {
       // wait until all blocklets have been finished writing

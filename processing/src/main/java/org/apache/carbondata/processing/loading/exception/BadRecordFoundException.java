@@ -51,6 +51,7 @@ public class BadRecordFoundException extends CarbonDataLoadingException {
   /**
    * getMessage
    */
+  @Override
   public String getMessage() {
     return this.msg;
   }
