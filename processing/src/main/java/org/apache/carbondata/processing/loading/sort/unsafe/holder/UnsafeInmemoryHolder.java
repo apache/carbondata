@@ -55,6 +55,7 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
     this.rowPage.setReadConvertedNoSortField();
   }
 
+  @Override
   public boolean hasNext() {
     if (counter < actualSize) {
       return true;
@@ -62,12 +63,14 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
     return false;
   }
 
+  @Override
   public void readRow() {
     address = rowPage.getBuffer().get(counter);
     currentRow = rowPage.getRow(address + rowPage.getDataBlock().getBaseOffset());
     counter++;
   }
 
+  @Override
   public IntermediateSortTempRow getRow() {
     return currentRow;
   }
@@ -97,10 +100,12 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
     return super.hashCode();
   }
 
+  @Override
   public int numberOfRows() {
     return actualSize;
   }
 
+  @Override
   public void close() {
     rowPage.freeMemory();
   }

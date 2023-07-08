@@ -70,8 +70,8 @@ public class JsonCarbonWriter extends CarbonWriter {
     JobID jobId = new JobID(UUID.randomUUID().toString(), 0);
     Random random = new Random();
     TaskID task = new TaskID(jobId, TaskType.MAP, random.nextInt());
-    TaskAttemptID attemptID = new TaskAttemptID(task, random.nextInt());
-    TaskAttemptContextImpl context = new TaskAttemptContextImpl(configuration, attemptID);
+    TaskAttemptID attemptId = new TaskAttemptID(task, random.nextInt());
+    TaskAttemptContextImpl context = new TaskAttemptContextImpl(configuration, attemptId);
     this.recordWriter = outputFormat.getRecordWriter(context);
     this.context = context;
     this.writable = new ObjectArrayWritable();

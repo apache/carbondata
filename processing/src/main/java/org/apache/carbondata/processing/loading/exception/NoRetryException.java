@@ -42,6 +42,7 @@ public class NoRetryException extends RuntimeException {
   /**
    * getMessage
    */
+  @Override
   public String getMessage() {
     return this.msg;
   }

@@ -68,6 +68,7 @@ public class CarbonDataLoadingException extends RuntimeException {
   /**
    * getMessage
    */
+  @Override
   public String getMessage() {
     return this.msg;
   }

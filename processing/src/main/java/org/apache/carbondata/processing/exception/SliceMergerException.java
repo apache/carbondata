@@ -50,6 +50,7 @@ public class SliceMergerException extends Exception {
   /**
    * getMessage
    */
+  @Override
   public String getMessage() {
     return this.msg;
   }

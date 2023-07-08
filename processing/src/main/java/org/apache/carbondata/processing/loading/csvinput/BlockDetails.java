@@ -66,6 +66,7 @@ public class BlockDetails extends FileSplit implements Serializable {
     this.filePath = filePath;
   }
 
+  @Override
   public String[] getLocations() {
     return locations;
   }

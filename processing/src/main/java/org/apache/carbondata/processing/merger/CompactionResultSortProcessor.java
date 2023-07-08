@@ -170,6 +170,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return if the compaction is success or not
    * @throws Exception
    */
+  @Override
   public boolean execute(List<RawResultIterator> unsortedResultIteratorList,
       List<RawResultIterator> sortedResultIteratorList) throws Exception {
     boolean isCompactionSuccess = false;

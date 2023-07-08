@@ -73,6 +73,7 @@ public class InMemorySortTempChunkHolder extends SortTempFileChunkHolder {
    * 2. Convert it to IntermediateSortTempRow
    * 3. Store it in memory to read through getRow() method
    */
+  @Override
   public void readRow() {
     Object[] row = this.rawResultIterator.next();
     //TODO add code to get directly Object[] Instead Of CarbonRow Object
@@ -88,6 +89,7 @@ public class InMemorySortTempChunkHolder extends SortTempFileChunkHolder {
 
   }
 
+  @Override
   public int getEntryCount() {
     // this will not be used for intermediate sorting
     throw new UnsupportedOperationException("Operation Not supported");
@@ -99,6 +101,7 @@ public class InMemorySortTempChunkHolder extends SortTempFileChunkHolder {
    *
    * @return more row present in file
    */
+  @Override
   public boolean hasNext() {
     return this.rawResultIterator.hasNext();
   }
@@ -118,6 +121,7 @@ public class InMemorySortTempChunkHolder extends SortTempFileChunkHolder {
   /**
    * Below method will be used to close streams
    */
+  @Override
   public void closeStream() {
     rawResultIterator.close();
   }
@@ -126,6 +130,7 @@ public class InMemorySortTempChunkHolder extends SortTempFileChunkHolder {
    *
    * @return row
    */
+  @Override
   public IntermediateSortTempRow getRow() {
     return returnRow;
   }

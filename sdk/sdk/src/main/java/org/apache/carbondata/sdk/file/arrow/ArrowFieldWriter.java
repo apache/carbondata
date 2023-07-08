@@ -226,21 +226,21 @@ class DateWriter extends ArrowFieldWriter {
 }
 
 class TimeStampWriter extends ArrowFieldWriter {
-  private TimeStampMicroTZVector timeStampMicroTZVector;
+  private TimeStampMicroTZVector timeStampMicroTzVector;
 
   public TimeStampWriter(TimeStampMicroTZVector timeStampMicroTZVector) {
     super(timeStampMicroTZVector);
-    this.timeStampMicroTZVector = timeStampMicroTZVector;
+    this.timeStampMicroTzVector = timeStampMicroTZVector;
   }
 
   @Override
   public void setNull() {
-    this.timeStampMicroTZVector.setNull(count);
+    this.timeStampMicroTzVector.setNull(count);
   }
 
   @Override
   public void setValue(Object data, int ordinal) {
-    this.timeStampMicroTZVector.setSafe(count, (long)data);
+    this.timeStampMicroTzVector.setSafe(count, (long)data);
   }
 }
 

@@ -75,6 +75,7 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
       this.index = index;
     }
 
+    @Override
     public int getHash(Object[] value) {
       return value[index] != null ? Long.valueOf(value[index].toString()).hashCode() : 0;
     }
@@ -88,6 +89,7 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
       this.index = index;
     }
 
+    @Override
     public int getHash(Object[] value) {
       return value[index] != null ? Double.valueOf(value[index].toString()).hashCode() : 0;
     }
