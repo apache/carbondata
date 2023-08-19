@@ -138,8 +138,8 @@ public class CarbonLocalInputSplit {
         carbonLocalInputSplit.getDeleteDeltaFiles());
     inputSplit.setFormat(carbonLocalInputSplit.getFileFormat());
     if (FileFormat.COLUMNAR_V3.ordinal() == inputSplit.getFileFormat().ordinal()
-        && null != carbonLocalInputSplit.detailInfo && !carbonLocalInputSplit.detailInfo
-        .equalsIgnoreCase("null")) {
+        && null != carbonLocalInputSplit.detailInfo && !"null"
+        .equalsIgnoreCase(carbonLocalInputSplit.detailInfo)) {
       GsonBuilder gsonBuilder = new GsonBuilder();
       // add typeAdapter for DataType Class for deserialization
       gsonBuilder.registerTypeAdapter(DataType.class, new DataTypeDeserializer());

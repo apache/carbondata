@@ -166,7 +166,7 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
    */
   private void setCarbonEnum() throws Exception {
     for (HiveStorageFormat format : HiveStorageFormat.values()) {
-      if (format.name().equals("CARBON")) {
+      if ("CARBON".equals(format.name())) {
         return;
       }
     }
