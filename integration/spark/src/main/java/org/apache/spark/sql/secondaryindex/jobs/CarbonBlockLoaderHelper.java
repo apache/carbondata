@@ -29,7 +29,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
  */
 public class CarbonBlockLoaderHelper {
 
-  private static final CarbonBlockLoaderHelper carbonBlockLoaderHelper =
+  private static final CarbonBlockLoaderHelper CARBON_BLOCK_LOADER_HELPER =
       new CarbonBlockLoaderHelper();
   /**
    * maintains the map of segments already considered for the btree load
@@ -46,7 +46,7 @@ public class CarbonBlockLoaderHelper {
    * @return
    */
   public static CarbonBlockLoaderHelper getInstance() {
-    return carbonBlockLoaderHelper;
+    return CARBON_BLOCK_LOADER_HELPER;
   }
 
   private Set<String> getTableBlocks(AbsoluteTableIdentifier absoluteTableIdentifier) {

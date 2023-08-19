@@ -531,6 +531,7 @@ public class CarbonVectorProxy {
       return vector.getChild(i);
     }
 
+    @Override
     public void reset() {
       isLoaded = false;
       pageLoad = null;
@@ -546,6 +547,7 @@ public class CarbonVectorProxy {
       }
     }
 
+    @Override
     public void setLazyPage(LazyPageLoader lazyPage) {
       this.pageLoad = lazyPage;
     }

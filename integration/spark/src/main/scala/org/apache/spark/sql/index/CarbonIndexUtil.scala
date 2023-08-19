@@ -536,7 +536,7 @@ object CarbonIndexUtil {
         val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
           SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath,
             indexTable.getTableStatusVersion)
-        if (!CarbonInternalLoaderUtil.checkMainTableSegEqualToSISeg(
+        if (!CarbonInternalLoaderUtil.checkMainTableSegEqualToSiSeg(
           mainTableDetails,
           siTblLoadMetadataDetails)) {
           val indexColumns = indexMetadata.getIndexColumns(secondaryIndexProvider,

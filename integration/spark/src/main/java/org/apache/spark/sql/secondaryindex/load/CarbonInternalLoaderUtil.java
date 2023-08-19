@@ -54,13 +54,17 @@ public class CarbonInternalLoaderUtil {
     List<String> activeSlices = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (LoadMetadataDetails oneLoad : details) {
       // External added segments are not loaded to SI
-      if (oneLoad.getPath() == null && SegmentStatus.SUCCESS.equals(oneLoad.getSegmentStatus())
-          || SegmentStatus.LOAD_PARTIAL_SUCCESS.equals(oneLoad.getSegmentStatus())
-          || SegmentStatus.MARKED_FOR_UPDATE.equals(oneLoad.getSegmentStatus())) {
+      if (isaBoolean(oneLoad)) {
         activeSlices.add(oneLoad.getLoadName());
       }
     }
     return activeSlices;
+  }
+
+  private static boolean isaBoolean(LoadMetadataDetails oneLoad) {
+    return oneLoad.getPath() == null && SegmentStatus.SUCCESS.equals(oneLoad.getSegmentStatus())
+        || SegmentStatus.LOAD_PARTIAL_SUCCESS.equals(oneLoad.getSegmentStatus())
+        || SegmentStatus.MARKED_FOR_UPDATE.equals(oneLoad.getSegmentStatus());
   }
 
   /**
@@ -340,17 +344,17 @@ public class CarbonInternalLoaderUtil {
     return tableStatusUpdateStatus;
   }
 
-  public static boolean checkMainTableSegEqualToSISeg(
+  public static boolean checkMainTableSegEqualToSiSeg(
       LoadMetadataDetails[] mainTableLoadMetadataDetails,
       LoadMetadataDetails[] siTableLoadMetadataDetails) throws ErrorMessage {
-    return checkMainTableSegEqualToSISeg(mainTableLoadMetadataDetails, siTableLoadMetadataDetails,
+    return checkMainTableSegEqualToSiSeg(mainTableLoadMetadataDetails, siTableLoadMetadataDetails,
         false);
   }
 
   /**
    * Method to check if main table and SI have same number of valid segments or not
    */
-  public static boolean checkMainTableSegEqualToSISeg(
+  public static boolean checkMainTableSegEqualToSiSeg(
       LoadMetadataDetails[] mainTableLoadMetadataDetails,
       LoadMetadataDetails[] siTableLoadMetadataDetails, boolean isRegisterIndex)
       throws ErrorMessage {
@@ -385,7 +389,7 @@ public class CarbonInternalLoaderUtil {
   /**
    * Method to check if main table has in progress load and same segment not present in SI
    */
-  public static boolean checkInProgLoadInMainTableAndSI(CarbonTable carbonTable,
+  public static boolean checkInProgLoadInMainTableAndSi(CarbonTable carbonTable,
       LoadMetadataDetails[] mainTableLoadMetadataDetails,
       LoadMetadataDetails[] siTableLoadMetadataDetails) {
     List<String> allSiSlices = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
