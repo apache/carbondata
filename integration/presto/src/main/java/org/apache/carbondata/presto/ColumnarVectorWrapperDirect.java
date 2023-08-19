@@ -207,14 +207,17 @@ public class ColumnarVectorWrapperDirect implements CarbonColumnVector, Sequenti
     columnVector.putObject(rowId, obj);
   }
 
+  @Override
   public CarbonColumnVectorImpl getColumnVector() {
     return this.columnVector;
   }
 
+  @Override
   public List<CarbonColumnVector> getChildrenVector() {
     return columnVector.getChildrenVector();
   }
 
+  @Override
   public void putComplexObject(List<Integer> offsetVector) {
     columnVector.putComplexObject(offsetVector);
   }
