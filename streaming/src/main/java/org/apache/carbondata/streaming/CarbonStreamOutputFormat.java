@@ -49,7 +49,7 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
 
   public static final int CARBON_STREAM_CACHE_SIZE_DEFAULT = 32 * 1024 * 1024;
 
-  private static final String LOAD_Model = "mapreduce.output.carbon.load.model";
+  private static final String LOAD_MODEL = "mapreduce.output.carbon.load.model";
 
   private static final String SEGMENT_ID = "carbon.segment.id";
 
@@ -62,12 +62,12 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
   public static void setCarbonLoadModel(Configuration hadoopConf, CarbonLoadModel carbonLoadModel)
       throws IOException {
     if (carbonLoadModel != null) {
-      hadoopConf.set(LOAD_Model, ObjectSerializationUtil.convertObjectToString(carbonLoadModel));
+      hadoopConf.set(LOAD_MODEL, ObjectSerializationUtil.convertObjectToString(carbonLoadModel));
     }
   }
 
   public static CarbonLoadModel getCarbonLoadModel(Configuration hadoopConf) throws IOException {
-    String value = hadoopConf.get(LOAD_Model);
+    String value = hadoopConf.get(LOAD_MODEL);
     if (value == null) {
       return null;
     } else {
