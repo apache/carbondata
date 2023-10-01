@@ -94,8 +94,8 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
     }
     CarbonTable carbonTable = getCarbonTable(carbonSplit, configuration);
     boolean isDirectVectorFill =
-        carbonTableReader.config.getPushRowFilter() == null || carbonTableReader.config
-            .getPushRowFilter().equalsIgnoreCase("false");
+        carbonTableReader.config.getPushRowFilter() == null || "false"
+            .equalsIgnoreCase(carbonTableReader.config.getPushRowFilter());
     return new CarbondataPageSource(carbonTable, queryId, carbonSplit, columns, table,
         configuration, isDirectVectorFill);
   }
