@@ -22,7 +22,6 @@ import java.util.Optional;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-import org.apache.carbondata.core.util.ByteUtil;
 
 import io.airlift.slice.Slices;
 import io.prestosql.spi.block.Block;
@@ -144,7 +143,9 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     super.putAllByteArray(data, offset, length);
     int[] lengths = getLengths();
     int[] offsets = getOffsets();
-    if (lengths == null) return;
+    if (lengths == null) {
+      return;
+    }
     for (int i = 0; i < lengths.length; i++) {
       if (offsets[i] != 0) {
         putByteArray(i, offsets[i], lengths[i], data);

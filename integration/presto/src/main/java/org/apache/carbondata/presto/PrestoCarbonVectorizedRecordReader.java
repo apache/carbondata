@@ -139,10 +139,14 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   public boolean nextKeyValue() {
     resultBatch();
 
-    if (returnColumnarBatch) return nextBatch();
+    if (returnColumnarBatch) {
+      return nextBatch();
+    }
 
     if (batchIdx >= numBatched) {
-      if (!nextBatch()) return false;
+      if (!nextBatch()) {
+        return false;
+      }
     }
     ++batchIdx;
     return true;
@@ -228,7 +232,9 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   private CarbonVectorBatch resultBatch() {
-    if (columnarBatch == null) initBatch();
+    if (columnarBatch == null) {
+      initBatch();
+    }
     return columnarBatch;
   }
 
