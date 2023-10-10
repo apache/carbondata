@@ -112,7 +112,7 @@
     <module>integration/flink-build</module>
     <module>integration/flink-proxy</module>
     <module>integration/presto</module>
-    <module>sdk/sdk</module>
+    <!-- <module>sdk/sdk</module> -->
     <module>tools/cli</module>
     <module>examples/spark</module>
     <module>examples/flink</module>
