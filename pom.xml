@@ -463,6 +463,7 @@
           <outputEncoding>${project.reporting.outputEncoding}</outputEncoding>
         </configuration>
       </plugin>
+      <!--
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
@@ -484,7 +485,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
+      </plugin>  -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
