@@ -112,6 +112,7 @@ public class ComplexTypeStreamReader extends CarbonColumnVectorImpl
     this.batchSize = batchSize;
   }
 
+  @Override
   public void putComplexObject(List<Integer> offsetVector) {
     if (type instanceof ArrayType) {
       // build child block
