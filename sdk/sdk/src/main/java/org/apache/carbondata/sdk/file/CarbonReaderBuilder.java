@@ -441,19 +441,19 @@ public class CarbonReaderBuilder {
       throws IOException, InterruptedException {
     CarbonFileInputFormat format = this.prepareFileInputFormat(job, false, true);
     long sum = 0;
-    boolean isIUDTable = false;
+    boolean isIudTable = false;
     if (!StringUtils.isEmpty(this.tablePath)) {
       // Check if update or delete happened on the table.
       CarbonFile emptyMetadataFile = FileFactory.getCarbonFile(this.tablePath +
           CarbonCommonConstants.FILE_SEPARATOR +
           CarbonCommonConstants.CARBON_SDK_EMPTY_METADATA_PATH, this.hadoopConf);
       if (emptyMetadataFile.exists() && emptyMetadataFile.isDirectory()) {
-        isIUDTable = true;
+        isIudTable = true;
       }
     }
     // if filter exists or IUD happened then read the total number of rows after
     // building carbon reader else get the row count from the details info of each splits.
-    if (this.filterExpression != null || isIUDTable) {
+    if (this.filterExpression != null || isIudTable) {
       RecordReader reader = null;
       CarbonReader carbonReader = null;
       for (InputSplit split : splits) {

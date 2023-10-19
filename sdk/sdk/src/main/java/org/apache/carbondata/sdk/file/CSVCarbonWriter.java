@@ -63,8 +63,8 @@ class CSVCarbonWriter extends CarbonWriter {
     JobID jobId = new JobID(UUID.randomUUID().toString(), 0);
     Random random = new Random();
     TaskID task = new TaskID(jobId, TaskType.MAP, random.nextInt());
-    TaskAttemptID attemptID = new TaskAttemptID(task, random.nextInt());
-    TaskAttemptContextImpl context = new TaskAttemptContextImpl(hadoopConf, attemptID);
+    TaskAttemptID attemptId = new TaskAttemptID(task, random.nextInt());
+    TaskAttemptContextImpl context = new TaskAttemptContextImpl(hadoopConf, attemptId);
     this.recordWriter = format.getRecordWriter(context);
     this.context = context;
     this.writable = new ObjectArrayWritable();
