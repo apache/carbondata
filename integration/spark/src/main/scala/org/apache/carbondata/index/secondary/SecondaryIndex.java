@@ -72,15 +72,15 @@ public class SecondaryIndex extends CoarseGrainIndex {
   public void validateSegmentList(String indexPath, String tableStatusVersion) {
     LoadMetadataDetails[] loadMetadataDetails = SegmentStatusManager
         .readLoadMetadata(CarbonTablePath.getMetadataPath(indexPath), tableStatusVersion);
-    Set<String> validSISegments = new HashSet<>();
+    Set<String> validSiSegments = new HashSet<>();
     for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
       if (loadMetadataDetail.getSegmentStatus() == SegmentStatus.SUCCESS
           || loadMetadataDetail.getSegmentStatus() == SegmentStatus.MARKED_FOR_UPDATE
           || loadMetadataDetail.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-        validSISegments.add(loadMetadataDetail.getLoadName());
+        validSiSegments.add(loadMetadataDetail.getLoadName());
       }
     }
-    validSegmentIds = Sets.intersection(validSISegments, validSegmentIds);
+    validSegmentIds = Sets.intersection(validSiSegments, validSegmentIds);
   }
 
   private Set<String> getPositionReferences(String databaseName, String indexName,

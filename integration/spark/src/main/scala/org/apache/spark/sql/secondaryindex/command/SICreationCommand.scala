@@ -263,7 +263,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       if (isRegisterIndex) {
         // check if SI segments are more than main table segments
         CarbonInternalLoaderUtil
-          .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,
+          .checkMainTableSegEqualToSiSeg(mainTblLoadMetadataDetails,
             siTblLoadMetadataDetails, isRegisterIndex)
         // check if SI table has undergone any Update or delete operation, which can happen in
         // case of compatibility scenario. IUD after Refresh SI and before register index

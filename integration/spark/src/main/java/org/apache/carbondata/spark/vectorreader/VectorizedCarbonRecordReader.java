@@ -101,7 +101,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       String enableBatch) {
     this.queryModel = queryModel;
     this.inputMetricsStats = inputMetricsStats;
-    if (enableBatch.equals("true")) {
+    if ("true".equals(enableBatch)) {
       enableReturningBatches();
     }
   }

@@ -54,6 +54,7 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
     this.inputMetricsStats = inputMetricsStats;
   }
 
+  @Override
   protected void initializeAtFirstRow() throws IOException {
     super.initializeAtFirstRow();
     outputRow = new GenericInternalRow(outputValues);
