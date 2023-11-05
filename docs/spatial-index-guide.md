@@ -114,7 +114,7 @@ Note:
 | SPATIAL_INDEX.xxx.sourcecolumns | longitude and latitude column names as in the table. These columns are used to generate index value for each row.|
 | SPATIAL_INDEX.xxx.originLatitude | Latitude of origin.|
 | SPATIAL_INDEX.xxx.gridSize | Grid size of raster data in metres. Currently, spatial index supports raster data.|
-| SPATIAL_INDEX.xxx.conversionRatio | Conversion factor. It allows user to translate longitude and latitude to long. For example, if the data to load is longitude = 13.123456, latitude = 101.12356. User can configure conversion ratio sub-property value as 1000000, and change data to load as longitude = 13123456 and latitude = 10112356. Operations on long is much faster compared to floating-point numbers.|
+| SPATIAL_INDEX.xxx.conversionRatio | Conversion factor. It allows user to translate longitude and latitude to long. For example, if the data to load is longitude = 13.123456, latitude = 101.12356. User can configure conversion ratio sub-property value as 1000000, and change data to load as longitude = 13123456 and latitude = 101123560. Operations on long is much faster compared to floating-point numbers.|
 | SPATIAL_INDEX.xxx.class | Optional user custom implementation class. Value is fully qualified class name.|
 
 ### Load/Insert
