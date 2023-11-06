@@ -66,7 +66,7 @@ class TestInsertAndOtherCommandConcurrent
       .option("tableName", "temp_table")
       .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
-      .save()
+      .saveAsTable("temp_table")
 
     sql(s"insert into orders select * from temp_table")
     sql(s"insert into orders_overwrite select * from temp_table")
@@ -139,7 +139,7 @@ class TestInsertAndOtherCommandConcurrent
   }
 
   // block updating records from table which has index. see PR2483
-  ignore("update should fail if insert overwrite is in progress") {
+  test("update should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
       sql("update orders set (o_country)=('newCountry') where o_country='china'").collect()
@@ -150,7 +150,7 @@ class TestInsertAndOtherCommandConcurrent
   }
 
   // block deleting records from table which has index. see PR2483
-  ignore("delete should fail if insert overwrite is in progress") {
+  test("delete should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
       sql("delete from orders where o_country='china'").collect()
@@ -246,7 +246,7 @@ class TestInsertAndOtherCommandConcurrent
   }
 
   // block updating records from table which has index. see PR2483
-  ignore("update should fail if insert is in progress") {
+  test("update should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
       sql("update orders set (o_country)=('newCountry') where o_country='china'").collect()
@@ -257,7 +257,7 @@ class TestInsertAndOtherCommandConcurrent
   }
 
   // block deleting records from table which has index. see PR2483
-  ignore("delete should fail if insert is in progress") {
+  test("delete should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
       sql("delete from orders where o_country='china'").collect()

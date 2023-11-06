@@ -93,7 +93,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
       if (!segments.contains(requiredSeg)) {
         // wait for 2 seconds for compaction to complete.
         // scalastyle:off println
-        System.out.println("sleping for 2 seconds.")
+        System.out.println("sleeping for 2 seconds.")
         // scalastyle:on println
         Thread.sleep(2000)
         noOfRetries += 1

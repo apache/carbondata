@@ -39,7 +39,8 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
       hiveClient.runSqlHive(create_table)
     }
 
-    val writer = new PrintWriter(new File("batch.txt"))
+
+    val writer = new PrintWriter(new File(s"$target/batch.txt"))
 //    val dest = "case_30"
 //    val dest = "case_32"
 //    val dest = "case_33"
