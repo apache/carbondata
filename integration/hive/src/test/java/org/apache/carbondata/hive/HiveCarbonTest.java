@@ -171,9 +171,11 @@ public class HiveCarbonTest extends HiveTestUtils {
 
   @Test
   public void arrayOfTimestamp() throws Exception {
+    File rootPath = new File(HiveTestUtils.class.getResource("/").getPath() + "../../../..");
+    String tablePath = rootPath.getAbsolutePath() + "/integration/hive/target/hivee";
     statement.execute("drop table if exists hivee");
     statement.execute("CREATE external TABLE hivee(arrayInt ARRAY<timestamp>)"
-        + " ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES ('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '%s' TBLPROPERTIES('external.table.purge'='false')");
+        + " ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES ('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '"+ tablePath +"' TBLPROPERTIES('external.table.purge'='false')");
     statement.execute("insert into table hivee values (array(Timestamp('2000-03-12 15:00:00'),Timestamp('2001-04-15 15:58:00'),Timestamp('2002-05-27 15:20:00')))");
     statement.execute("drop table if exists carbonn");
     statement.execute(

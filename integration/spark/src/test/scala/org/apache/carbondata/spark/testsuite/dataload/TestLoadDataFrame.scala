@@ -168,7 +168,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test datasource table with specified table path") {
-    val path = "./source"
+    val path = s"$target/source"
     df2.write
       .format("carbondata")
       .option("tableName", "carbon10")
