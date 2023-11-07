@@ -154,7 +154,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
     sql(
       "create table test_timestamp_hive(col timestamp) row format delimited fields terminated by " +
       "','")
-    sql("load data inpath '" + csvFilePath + "' into table test_timestamp_hive ")
+    sql("load data local inpath '" + csvFilePath + "' into table test_timestamp_hive ")
     checkAnswer(sql(
       "select col from test_timestamp where col not between '2014-01-01 18:00:00' and '0'"),
       sql("select col from test_timestamp_hive where col not between '2014-01-01 18:00:00' and " +

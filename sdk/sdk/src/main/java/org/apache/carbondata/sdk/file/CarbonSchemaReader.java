@@ -49,10 +49,6 @@ import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
 import org.apache.hadoop.conf.Configuration;
 
-import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
-import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
-import static org.apache.carbondata.core.util.path.CarbonTablePath.INDEX_FILE_EXT;
-
 /**
  * Schema reader for carbon files, including carbondata file, carbonindex file, and schema file
  */
@@ -172,12 +168,12 @@ public class CarbonSchemaReader {
     if (FileFactory.getCarbonFile(schemaFilePath, conf).exists()) {
       return readSchemaInSchemaFile(schemaFilePath, conf);
     }
-    if (path.endsWith(INDEX_FILE_EXT)) {
+    if (path.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
       return readSchemaFromIndexFile(path, conf);
-    } else if (path.endsWith(CARBON_DATA_EXT)) {
+    } else if (path.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
       return readSchemaFromDataFile(path, conf);
     } else if (validateSchema) {
-      CarbonFile[] carbonIndexFiles = getCarbonFile(path, INDEX_FILE_EXT, conf);
+      CarbonFile[] carbonIndexFiles = getCarbonFile(path, CarbonTablePath.INDEX_FILE_EXT, conf);
       Schema schema;
       if (carbonIndexFiles != null && carbonIndexFiles.length != 0) {
         schema = readSchemaFromIndexFile(carbonIndexFiles[0].getAbsolutePath(), conf);
@@ -187,7 +183,7 @@ public class CarbonSchemaReader {
             throw new CarbonDataLoadingException("Schema is different between different files.");
           }
         }
-        CarbonFile[] carbonDataFiles = getCarbonFile(path, CARBON_DATA_EXT, conf);
+        CarbonFile[] carbonDataFiles = getCarbonFile(path, CarbonTablePath.CARBON_DATA_EXT, conf);
         for (int i = 0; i < carbonDataFiles.length; i++) {
           Schema schema2 = readSchemaFromDataFile(carbonDataFiles[i].getAbsolutePath(), conf);
           if (!schema.equals(schema2)) {
@@ -379,7 +375,7 @@ public class CarbonSchemaReader {
         readIndexHeader.getTable_columns();
     for (org.apache.carbondata.format.ColumnSchema columnSchema : tableColumns) {
       if (!(columnSchema.column_name.contains("."))) {
-        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(columnSchema));
+        columnSchemaList.add(CarbonUtil.thriftColumnSchemaToWrapperColumnSchema(columnSchema));
       }
     }
     return new Schema(columnSchemaList);
