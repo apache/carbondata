@@ -50,8 +50,10 @@ public class CarbonReaderTest {
     while (reader.hasNext()) {
       Object[] row = (Object[])reader.readNextRow();
       Assert.assertEquals("robot" + (i % 10), row[0]);
+        
       Assert.assertEquals(i, row[1]);
       i++;
+
     }
 
     FileUtils.deleteDirectory(new File(path));
