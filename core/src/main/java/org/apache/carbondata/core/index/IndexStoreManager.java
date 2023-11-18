@@ -163,6 +163,8 @@ public final class IndexStoreManager {
     // contains the stale carbon table schema mismatch exception is thrown. To avoid such scenarios
     // it is always better to update the carbon table object retrieved
     index.getIndexFactory().setCarbonTable(table);
+    index.getIndexFactory().setIndexSchema(indexSchema);
+    index.setIndexSchema(indexSchema);
     return index;
   }
 

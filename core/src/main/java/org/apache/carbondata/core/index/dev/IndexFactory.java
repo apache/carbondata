@@ -63,6 +63,10 @@ public abstract class IndexFactory<T extends Index> {
     return indexSchema;
   }
 
+  public void setIndexSchema(IndexSchema indexSchema) {
+    this.indexSchema = indexSchema;
+  }
+
   public IndexInputSplitWrapper toDistributableSegment(Segment segment,
       IndexSchema schema, AbsoluteTableIdentifier identifier, String uniqueId) {
     return null;
