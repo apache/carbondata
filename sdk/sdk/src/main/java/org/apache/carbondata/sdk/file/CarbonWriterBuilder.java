@@ -354,7 +354,7 @@ public class CarbonWriterBuilder {
       } else if ("local_dictionary_threshold".equalsIgnoreCase(entry.getKey())) {
         this.localDictionaryThreshold(Integer.parseInt(entry.getValue()));
       } else if ("local_dictionary_enable".equalsIgnoreCase(entry.getKey())) {
-        this.enableLocalDictionary(("true".equalsIgnoreCase(entry.getKey())));
+        this.enableLocalDictionary("true".equalsIgnoreCase(entry.getValue()));
       } else if ("sort_columns".equalsIgnoreCase(entry.getKey())) {
         //sort columns
         String[] sortColumns;

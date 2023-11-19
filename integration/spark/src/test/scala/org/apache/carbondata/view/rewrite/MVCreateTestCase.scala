@@ -388,12 +388,12 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create materialized view with simple and sub group by query") {
-    sql("drop materialized view if exists mv13")
-    sql("create materialized view mv13 as select empname, sum(utilization) from fact_table1 group by empname")
+    sql("drop materialized view if exists mv13_1")
+    sql("create materialized view mv13_1 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select sum(utilization) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv13"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv13_1"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 group by empname"))
-    sql(s"drop materialized view mv13")
+    sql(s"drop materialized view mv13_1")
   }
 
   test("test create materialized view with simple and sub group by query with filter on query") {
@@ -858,15 +858,15 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("jira carbondata-2523") {
 
-    sql("drop materialized view if exists mv13")
+    sql("drop materialized view if exists mv13_2")
     sql("drop table if exists test4")
     sql("create table test4 ( name string,age int,salary int) STORED AS carbondata")
 
     sql(" insert into test4 select 'babu',12,12").collect()
-    sql("create materialized view mv13 as select name,sum(salary) from test4 group by name")
+    sql("create materialized view mv13_2 as select name,sum(salary) from test4 group by name")
     val frame = sql(
       "select name,sum(salary) from test4 group by name")
-    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv13"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv13_2"))
   }
 
   test("jira carbondata-2528-1") {

@@ -594,6 +594,10 @@ public final class TableIndex extends OperationEventListener {
     return indexSchema;
   }
 
+  public void setIndexSchema(IndexSchema indexSchema) {
+    this.indexSchema = indexSchema;
+  }
+
   public IndexFactory getIndexFactory() {
     return indexFactory;
   }
