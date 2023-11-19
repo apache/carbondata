@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.apache.carbondata</groupId>
         <artifactId>carbondata-parent</artifactId>
-        <version>apache-carbondata-2.3.1-rc1</version>
+        <version>2.3.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
