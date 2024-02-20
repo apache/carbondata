@@ -80,12 +80,16 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       } else if (dataType == DataTypes.SHORT) {
         return ((Short) value).intValue();
       } else if (dataType == DataTypes.INT ||
+          dataType == DataTypes.FLOAT ||
           dataType == DataTypes.DOUBLE) {
         if (value instanceof Double) {
           return ((Double) value).intValue();
         }
         if (value instanceof Long) {
           return ((Long) value).intValue();
+        }
+        if (value instanceof Float) {
+          return ((Float) value).intValue();
         }
         return (Integer) value;
       } else if (dataType == DataTypes.DATE) {
@@ -129,9 +133,12 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         }
       } else if (dataType == DataTypes.SHORT ||
           dataType == DataTypes.INT ||
+          dataType == DataTypes.FLOAT ||
           dataType == DataTypes.DOUBLE) {
         if (value instanceof Double) {
           return ((Double) value).shortValue();
+        } else if (value instanceof Float) {
+          return ((Float) value).shortValue();
         } else if (value instanceof Integer) {
           return ((Integer) value).shortValue();
         }
@@ -182,6 +189,54 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
   }
 
+  public Float getFloat() throws FilterIllegalMemberException {
+    if (value == null) {
+      return null;
+    }
+    try {
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        try {
+          return Float.parseFloat(value.toString());
+        } catch (NumberFormatException e) {
+          throw new FilterIllegalMemberException(e);
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        return ((Short) value).floatValue();
+      } else if (dataType == DataTypes.INT) {
+        return ((Integer) value).floatValue();
+      } else if (dataType == DataTypes.LONG) {
+        return ((Long) value).floatValue();
+      } else if (dataType == DataTypes.FLOAT) {
+        return (Float) value;
+      } else if (dataType == DataTypes.DOUBLE) {
+        return ((Double) value).floatValue();
+      } else if (dataType == DataTypes.DATE) {
+        if (value instanceof java.sql.Date) {
+          return (float) ((java.sql.Date) value).getTime();
+        } else {
+          return (Float) value;
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (value instanceof Timestamp) {
+          return (float) ((Timestamp) value).getTime();
+        } else {
+          if (isLiteral) {
+            long l = (Long) value / 1000;
+            return (float) l;
+          }
+          return (Float) value;
+        }
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert" + this.getDataType().getName() + " to float type value");
+      }
+    } catch (ClassCastException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().getName() + " to Float type value");
+    }
+  }
+
   public Double getDouble() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
@@ -200,6 +255,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         return ((Integer) value).doubleValue();
       } else if (dataType == DataTypes.LONG) {
         return ((Long) value).doubleValue();
+      } else if (dataType == DataTypes.FLOAT) {
+        return ((Float) value).doubleValue();
       } else if (dataType == DataTypes.DOUBLE) {
         return (Double) value;
       } else if (dataType == DataTypes.DATE) {
@@ -246,6 +303,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         return (Long) value;
       } else if (dataType == DataTypes.LONG) {
         return (Long) value;
+      } else if (dataType == DataTypes.FLOAT) {
+        return (Long) value;
       } else if (dataType == DataTypes.DOUBLE) {
         return (Long) value;
       } else if (dataType == DataTypes.DATE) {
@@ -290,7 +349,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         return new BigDecimal((int) value);
       } else if (dataType == DataTypes.LONG) {
         return new BigDecimal((long) value);
-      } else if (dataType == DataTypes.DOUBLE || DataTypes.isDecimal(dataType)) {
+      } else if (dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE ||
+          DataTypes.isDecimal(dataType)) {
         return new BigDecimal(value.toString());
       } else if (dataType == DataTypes.DATE) {
         if (value instanceof java.sql.Date) {
@@ -343,7 +403,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         return ((Short) value).longValue();
       } else if (dataType == DataTypes.INT || dataType == DataTypes.LONG) {
         return (Long) value;
-      } else if (dataType == DataTypes.DOUBLE) {
+      } else if (dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
         return (Long) value;
       } else if (dataType == DataTypes.DATE) {
         if (value instanceof java.sql.Date) {
@@ -396,7 +456,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         return ((Short) value).longValue();
       } else if (dataType == DataTypes.INT || dataType == DataTypes.LONG) {
         return (Long) value;
-      } else if (dataType == DataTypes.DOUBLE) {
+      } else if (dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
         return (Long) value;
       } else if (dataType == DataTypes.DATE) {
         if (value instanceof java.sql.Date) {
@@ -527,6 +587,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           dataType == DataTypes.DATE ||
           dataType == DataTypes.TIMESTAMP) {
         result = this.getLong().equals(objToCompare.getLong());
+      } else if (dataType == DataTypes.FLOAT) {
+        result = this.getFloat().equals(objToCompare.getFloat());
       } else if (dataType == DataTypes.DOUBLE) {
         result = this.getDouble().equals(objToCompare.getDouble());
       } else if (DataTypes.isDecimal(dataType)) {
@@ -550,6 +612,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       if (type == DataTypes.SHORT ||
           type == DataTypes.INT ||
           type == DataTypes.LONG ||
+          type == DataTypes.FLOAT ||
           type == DataTypes.DOUBLE) {
         Double d1 = this.getDouble();
         Double d2 = o.getDouble();

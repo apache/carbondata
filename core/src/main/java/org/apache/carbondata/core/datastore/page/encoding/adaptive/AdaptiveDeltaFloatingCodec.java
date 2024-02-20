@@ -53,6 +53,7 @@ import org.apache.carbondata.format.Encoding;
 public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
 
   private Double factor;
+  private float floatFactor;
   private long max;
 
   public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
@@ -65,6 +66,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       SimpleStatsResult stats, boolean isInvertedIndex) {
     super(srcDataType, targetDataType, stats, isInvertedIndex);
     this.factor = Math.pow(10, stats.getDecimalCount());
+    floatFactor = factor.floatValue();
     if (srcDataType == DataTypes.FLOAT) {
       this.max =
           (long) ((long) Math.pow(10, stats.getDecimalCount()) * ((float) stats.getMax()));
@@ -185,13 +187,15 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
     @Override
     public void encode(int rowId, float value) {
       if (targetDataType.equals(DataTypes.BYTE)) {
-        encodedPage.putByte(rowId, (byte) (max - (value * factor)));
+        encodedPage.putByte(rowId, (byte) (max - (value * floatFactor)));
       } else if (targetDataType.equals(DataTypes.SHORT)) {
-        encodedPage.putShort(rowId, (short) (max - (value * factor)));
+        encodedPage.putShort(rowId, (short) (max - (value * floatFactor)));
       } else if (targetDataType.equals(DataTypes.SHORT_INT)) {
-        encodedPage.putShortInt(rowId, (int) (max - (value * factor)));
+        encodedPage.putShortInt(rowId, (int) (max - (value * floatFactor)));
       } else if (targetDataType.equals(DataTypes.INT)) {
-        encodedPage.putInt(rowId, (int) (max - (value * factor)));
+        encodedPage.putInt(rowId, (int) (max - (value * floatFactor)));
+      } else if (targetDataType.equals(DataTypes.FLOAT)) {
+        encodedPage.putFloat(rowId, value);
       } else {
         throw new RuntimeException("internal error: " + debugInfo());
       }
@@ -230,6 +234,21 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
     }
 
     @Override
+    public float decodeFloat(byte value) {
+      return (max - value) / floatFactor;
+    }
+
+    @Override
+    public float decodeFloat(short value) {
+      return (max - value) / floatFactor;
+    }
+
+    @Override
+    public float decodeFloat(int value) {
+      return (max - value) / floatFactor;
+    }
+
+    @Override
     public double decodeDouble(byte value) {
       return (max - value) / factor;
     }
@@ -265,7 +284,6 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       int intSizeInBytes = DataTypes.INT.getSizeInBytes();
       int longSizeInBytes = DataTypes.LONG.getSizeInBytes();
       if (vectorDataType == DataTypes.FLOAT) {
-        float floatFactor = factor.floatValue();
         if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
           for (int i = 0; i < pageSize; i++) {
             vector.putFloat(i, (max - pageData[i]) / floatFactor);
