@@ -59,7 +59,7 @@
 
 ### 建表 Create table 时字典的选择
 
-​        建表时用户可以选择使用本地字典或者不使用字典。通常情况下使用本地字典数据加载时比较耗时，但是查询时较快; 而不使用本地字典时加载较快，查询不如使用本地字典。用户在实际使用时可以根据自身业务的诉求来选择合适的模式。关于CarbonData本地字典的具体描述可以参考官网的[文档](http://carbondata.apache.org/ddl-of-carbondata.html#create-table)。
+​        建表时用户可以选择使用本地字典或者不使用字典。通常情况下使用本地字典数据加载时比较耗时，但是查询时较快; 而不使用本地字典时加载较快，查询不如使用本地字典。用户在实际使用时可以根据自身业务的诉求来选择合适的模式。关于CarbonData本地字典的具体描述可以参考官网的[文档](https://carbondata.apache.org/ddl-of-carbondata.html#create-table)。
 
 ​        为此这里做了一个验证，分别对不使用字典，使用本地字典的数据表进行加载和点查操作，分析其加载和查询性能。
 
@@ -300,9 +300,9 @@ select * from test.detail_loacl_dict where MSISDN like "1391%" limit 2000;
 
 ### 建表 Create table 时SORT_COLUMNS和SORT_SCOPE的选择
 
-​        关于SORT_COLUMNS的配置可以参考CarbonData[官网](http://carbondata.apache.org/ddl-of-carbondata.html#create-table)的说明, 当用户不指定SORT_COLUMNS时，默认将不建立SORT_COLUMNS，当前的SORT_COLUMNS只支持：string, date, timestamp, short, int, long, byte, boolean类型。SORT_COLUMNS 在用户指定的列上建立MKD索引，将有助于查询性能的提升，但是将稍微影响加载性能，因此只需要给需要的列上设置SORT_COLUMNS即可，无需给所有列都设置SORT_COLUMNS。
+​        关于SORT_COLUMNS的配置可以参考CarbonData[官网](https://carbondata.apache.org/ddl-of-carbondata.html#create-table)的说明, 当用户不指定SORT_COLUMNS时，默认将不建立SORT_COLUMNS，当前的SORT_COLUMNS只支持：string, date, timestamp, short, int, long, byte, boolean类型。SORT_COLUMNS 在用户指定的列上建立MKD索引，将有助于查询性能的提升，但是将稍微影响加载性能，因此只需要给需要的列上设置SORT_COLUMNS即可，无需给所有列都设置SORT_COLUMNS。
 
-​         [SORT_SCOPE](http://carbondata.apache.org/ddl-of-carbondata.html#create-table)参数用户在指定了SORT_COLUMNS后，数据加载时排序的设置，当前支持的设置有：
+​         [SORT_SCOPE](https://carbondata.apache.org/ddl-of-carbondata.html#create-table)参数用户在指定了SORT_COLUMNS后，数据加载时排序的设置，当前支持的设置有：
 
 NO_SORT:  对加载的数据不排序
 
@@ -458,20 +458,20 @@ ESCAPECHAR：如果用户希望严格验证 CSV 文件中的转义字符，可�
 
 下面给出一些加载队列的主要配置参数以供参考，更详细的信息可以参考CarbonData的官方文档：
 
-http://carbondata.apache.org/configuration-parameters.html
+https://carbondata.apache.org/configuration-parameters.html
 
-| 参数名                                  | 设置数值 | 参数描述                                                     |
-| --------------------------------------- | -------- | ------------------------------------------------------------ |
-| enable.unsafe.sort                      | true     | 指定在数据加载期间是否使用unsafe api，提升内存操作的性能。   |
-| carbon.use.local.dir                    | true     | 在数据加载期间，CarbonData在将文件复制到HDFS之前将文件写入本地临时目录。此配置用于指定CarbonData是否可以本地写入容器的tmp目录或YARN应用程序目录。 |
-| carbon.number.of.cores.while.loading    | 15       | 该值默认为2，增加加载时的核数有助于提升数据加载的效率。      |
-| carbon.detail.batch.size                | 100      | 存储记录的缓冲区大小，这里是从bolck扫描返回的数据量。该值的设置需要根据查询是需要返回的数据量的大小，当查询时返回数据限制是1000条，参数配置为3000条就有数据浪费了。 |
-| carbon.sort.file.buffer.size            | 50       | 排序期间使用的文件读取缓冲区大小（以MB为单位）：MIN=1:MAX=100。 |
-| max.query.execution.time                | 60       | 查询执行的最大时间，该值的单位是分钟。                       |
+| 参数名                                  | 设置数值 | 参数描述                                                                                                                                                                                                                                                                                |
+| --------------------------------------- | -------- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| enable.unsafe.sort                      | true     | 指定在数据加载期间是否使用unsafe api，提升内存操作的性能。                                                                                                                                                                                                                                                  |
+| carbon.use.local.dir                    | true     | 在数据加载期间，CarbonData在将文件复制到HDFS之前将文件写入本地临时目录。此配置用于指定CarbonData是否可以本地写入容器的tmp目录或YARN应用程序目录。                                                                                                                                                                                            |
+| carbon.number.of.cores.while.loading    | 15       | 该值默认为2，增加加载时的核数有助于提升数据加载的效率。                                                                                                                                                                                                                                                        |
+| carbon.detail.batch.size                | 100      | 存储记录的缓冲区大小，这里是从bolck扫描返回的数据量。该值的设置需要根据查询是需要返回的数据量的大小，当查询时返回数据限制是1000条，参数配置为3000条就有数据浪费了。                                                                                                                                                                                            |
+| carbon.sort.file.buffer.size            | 50       | 排序期间使用的文件读取缓冲区大小（以MB为单位）：MIN=1:MAX=100。                                                                                                                                                                                                                                             |
+| max.query.execution.time                | 60       | 查询执行的最大时间，该值的单位是分钟。                                                                                                                                                                                                                                                                 |
 | carbon.unsafe.working.memory.in.mb      | 16000    | 该数值是CarbonData支持将数据存储在堆外内存中，以便在数据加载和查询期间执行某些操作。这有助于避免Java GC，从而提高整体性能。建议的最小值为512MB。低于此值的任何值都将重置为默认值512MB。官网有公式介绍了如何计算对外内存的大小：（carbon.number.of.cores.while.Loading）*（要并行加载的表数）*（off heap.sort.chunk.size.in mb+carbon.blockletgroup.size.in.mb+carbon.blockletgroup.size.in.mb/3.5） |
-| carbon.compaction.level.threshold       | 6,0      | 配置此参数用于将小文件合并，提升查询性能。6表示第一阶段压缩，每6个文件将触发一次level1的压缩，这里并没有使用level2压缩，为了节省入库时间。配置时由于有大表，有小表，因此对于合并是单表控制的，未设置全局开关。详见社区配置[说明](http://carbondata.apache.org/ddl-of-carbondata.html#create-table)中Table Compaction Configuration章节。 |
-| carbon.number.of.cores.while.compacting | 15       | 在压缩过程中写数据使用到的核数，这里默认数值是2。            |
-| carbon.sort.storage.inmemory.size.inmb  | 1024     | CarbonData在数据加载期间将每个carbon.sort.size记录数写入中间临时文件，以确保内存占用在限制范围内。启用enable.unsafe.sort配置时，将使用内存中占用的大小（本参数）来确定何时将数据页刷新到中间临时文件，而不是使用基于行数的carbon.sort.size。此配置确定用于在内存中存储数据页的内存。注意：配置一个更高的值可以确保在内存中保留更多的数据，从而由于IO减少或没有IO而提高数据加载性能。根据集群节点中的内存可用性，相应地配置这些值。 |
+| carbon.compaction.level.threshold       | 6,0      | 配置此参数用于将小文件合并，提升查询性能。6表示第一阶段压缩，每6个文件将触发一次level1的压缩，这里并没有使用level2压缩，为了节省入库时间。配置时由于有大表，有小表，因此对于合并是单表控制的，未设置全局开关。详见社区配置[说明](https://carbondata.apache.org/ddl-of-carbondata.html#create-table)中Table Compaction Configuration章节。                                                       |
+| carbon.number.of.cores.while.compacting | 15       | 在压缩过程中写数据使用到的核数，这里默认数值是2。                                                                                                                                                                                                                                                           |
+| carbon.sort.storage.inmemory.size.inmb  | 1024     | CarbonData在数据加载期间将每个carbon.sort.size记录数写入中间临时文件，以确保内存占用在限制范围内。启用enable.unsafe.sort配置时，将使用内存中占用的大小（本参数）来确定何时将数据页刷新到中间临时文件，而不是使用基于行数的carbon.sort.size。此配置确定用于在内存中存储数据页的内存。注意：配置一个更高的值可以确保在内存中保留更多的数据，从而由于IO减少或没有IO而提高数据加载性能。根据集群节点中的内存可用性，相应地配置这些值。                                   |
 
 ​        在进行数据加载时，根据数据量可以划分多个加载队列，分配不同的资源，加载时根据入库的数据量选择不同的加载队列进行加载，这样可以有效避免大数据量表的加载阻塞加载队列，导致小数据量表入库延迟，这部分数据具体的业务规划和实现，就不在这里过多介绍了。
 

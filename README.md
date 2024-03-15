@@ -20,7 +20,7 @@
 Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g. Apache Hadoop, Apache Spark, etc.
 
 You can find the latest CarbonData document and learn more at:
-[http://carbondata.apache.org](http://carbondata.apache.org/)
+[https://carbondata.apache.org](https://carbondata.apache.org/)
 
 [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
