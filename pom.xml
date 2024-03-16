@@ -31,7 +31,7 @@
   <description>Apache CarbonData is an indexed columnar data format for fast analytics
     on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
   </description>
-  <url>http://carbondata.apache.org</url>
+  <url>https://carbondata.apache.org</url>
   <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
 
@@ -88,9 +88,9 @@
     <developer>
       <name>The Apache CarbonData Team</name>
       <email>dev@carbondata.apache.org</email>
-      <url>http://carbondata.apache.org</url>
+      <url>https://carbondata.apache.org</url>
       <organization>Apache Software Foundation</organization>
-      <organizationUrl>http://www.apache.org</organizationUrl>
+      <organizationUrl>https://www.apache.org</organizationUrl>
     </developer>
   </developers>
 
