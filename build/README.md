@@ -15,29 +15,34 @@
     limitations under the License.
 -->
 
-# Building CarbonData
+# Build from source
 
 ## Prerequisites
+
 * Unix-like environment (Linux, Mac OS X)
 * Git
 * [Apache Maven (Recommend version 3.3 or later)](https://maven.apache.org/download.cgi)
 * [Oracle Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Apache Thrift 0.9.3](http://archive.apache.org/dist/thrift/0.9.3/)
 
-## Build command
 Build with different supported versions of Spark, by default using Spark 2.4.5
-```
-mvn -DskipTests -Pspark-2.4 clean package
-```
 
-Note:
+To be noticed:
  - If you are working in Windows environment, remember to add `-Pwindows` while building the project.
  - The mv feature is not compiled by default. If you want to use this feature, remember to add `-Pmv` while building the project.
 
-## For contributors : To build the format code after any changes, please follow the below command.
-Note:Need install Apache Thrift 0.9.3
-```
+## Development
+
+To build the format code after any changes, please follow the below command:
+
+```shell
 mvn clean -DskipTests -Pbuild-with-format -Pspark-2.4 package
+```
+
+And you can skip the `build-with-format` stage if you're building from the release tarball:
+
+```shell
+mvn -DskipTests -Pspark-2.4 clean package
 ```
 
 # Building CarbonData notebook images
