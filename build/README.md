@@ -39,8 +39,7 @@ To build the format code after any changes, please follow the below command:
 mvn clean -DskipTests -Pbuild-with-format -Pspark-2.4 package
 ```
 
-And you can skip the `build-with-format` stage if you're building from the release tarball
-or once the format codes are generated:
+And you can skip the build-with-format stage if you're building an assemble jar:
 
 ```shell
 mvn -DskipTests -Pspark-2.4 clean package
