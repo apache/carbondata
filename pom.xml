@@ -105,7 +105,7 @@
     <module>index/lucene</module>
     <module>index/examples</module>
     <module>streaming</module>
-    <module>geo</module>
+    <!-- <module>geo</module> -->
     <module>integration/spark</module>
     <module>integration/hive</module>
     <module>integration/flink</module>
