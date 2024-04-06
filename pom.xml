@@ -623,8 +623,8 @@
               <sourceDirectories>
                 <sourceDirectory>${basedir}/common/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/core/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/geo/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory>
+                <!-- <sourceDirectory>${basedir}/geo/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory> -->
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
@@ -699,8 +699,8 @@
               <sourceDirectories>
                 <sourceDirectory>${basedir}/common/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/core/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/geo/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory>
+                <!--<sourceDirectory>${basedir}/geo/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory> -->
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
@@ -774,8 +774,8 @@
               <sourceDirectories>
                 <sourceDirectory>${basedir}/common/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/core/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/geo/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory>
+                <!--<sourceDirectory>${basedir}/geo/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory> -->
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
