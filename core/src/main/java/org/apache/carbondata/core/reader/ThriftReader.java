@@ -87,9 +87,13 @@ public class ThriftReader {
   /**
    * Constructor.
    */
-  public ThriftReader(byte[] fileData) {
+  public ThriftReader(byte[] fileData) throws IOException {
     dataInputStream = new DataInputStream(new ByteArrayInputStream(fileData));
-    binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+    try {
+      binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+    } catch (TException e) {
+      throw new IOException(e);
+    }
   }
 
   /**
@@ -98,7 +102,11 @@ public class ThriftReader {
   public void open() throws IOException {
     Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
     dataInputStream = FileFactory.getDataInputStream(fileName, conf);
-    binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+    try {
+      binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+    } catch (TException e) {
+      throw new IOException(e);
+    }
   }
 
   /**

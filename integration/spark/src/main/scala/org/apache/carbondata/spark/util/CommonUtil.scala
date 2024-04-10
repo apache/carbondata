@@ -20,7 +20,6 @@ package org.apache.carbondata.spark.util
 import java.io.{ByteArrayOutputStream, DataOutputStream, File}
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
-import java.util
 import java.util.UUID
 import java.util.regex.{Matcher, Pattern}
 
@@ -29,27 +28,24 @@ import scala.collection.mutable
 import scala.collection.mutable.Map
 import scala.math.BigDecimal.RoundingMode
 
+import java.util
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.{UnsafeArrayData, UnsafeMapData, UnsafeRow}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
-import org.apache.spark.sql.types.{ArrayType, DataType, DateType, DecimalType, MapType, StringType, StructField, StructType, TimestampType}
+import org.apache.spark.sql.types._
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil, ThreadLocalTaskInfo}
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.datatypes.{ArrayDataType, GenericDataType, StructDataType}
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration
 import org.apache.carbondata.processing.loading.complexobjects.{ArrayObject, StructObject}

@@ -80,7 +80,11 @@ public class ThriftWriter {
    */
   public void open() throws IOException {
     dataOutputStream = FileFactory.getDataOutputStream(fileName, bufferSize, append);
-    binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+    try {
+      binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+    } catch (TException e) {
+      throw new IOException(e);
+    }
   }
 
   /**
@@ -92,7 +96,11 @@ public class ThriftWriter {
   public void open(FileWriteOperation fileWriteOperation) throws IOException {
     atomicFileOperationsWriter = AtomicFileOperationFactory.getAtomicFileOperations(fileName);
     dataOutputStream = atomicFileOperationsWriter.openForWrite(fileWriteOperation);
-    binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+    try {
+      binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+    } catch (TException e) {
+      throw new IOException(e);
+    }
   }
 
   /**

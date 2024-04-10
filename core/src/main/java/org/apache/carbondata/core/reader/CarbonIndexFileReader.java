@@ -87,7 +87,7 @@ public class CarbonIndexFileReader {
    *
    * @param fileData
    */
-  public void openThriftReader(byte[] fileData) {
+  public void openThriftReader(byte[] fileData) throws IOException {
     thriftReader = new ThriftReader(fileData);
   }
 

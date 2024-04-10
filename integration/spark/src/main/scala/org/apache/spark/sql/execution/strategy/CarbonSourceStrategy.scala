@@ -323,8 +323,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     } else {
       requiredColumns
     }
-    val supportBatch = CarbonPlanHelper.supportBatchedDataSource(relation.relation.sqlContext,
-      updateRequestedColumns, extraRDD)
+    val supportBatch = CarbonPlanHelper.supportBatchedDataSource(updateRequestedColumns, extraRDD)
     if (directScanSupport && !supportBatch && filterSet.nonEmpty &&
       !filterSet.toSeq.exists(_.dataType.isInstanceOf[ArrayType])) {
       // revert for row scan

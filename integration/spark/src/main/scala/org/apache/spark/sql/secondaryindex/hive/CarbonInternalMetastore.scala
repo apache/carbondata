@@ -249,9 +249,9 @@ object CarbonInternalMetastore {
           }
         }
       } catch {
-        case e: Exception =>
+        case _: Exception =>
           // In case of creating a table, hive table will not be available.
-          LOGGER.error(e.getMessage)
+          // LOGGER.error(e.getMessage)
       }
     }
     // add cg and fg index info to table properties
