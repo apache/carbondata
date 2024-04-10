@@ -113,4 +113,7 @@ case class CarbonTakeOrderedAndProjectExec(
     }
   }
 
+  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan = {
+    withNewChildren(Seq(newChild))
+  }
 }

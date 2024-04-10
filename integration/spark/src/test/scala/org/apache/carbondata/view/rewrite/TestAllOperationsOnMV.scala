@@ -47,6 +47,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS testtable")
     sql("create table testtable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table testtable select 'abc',21,2000")
+    sql("drop table if exists dm1")
+    sql("drop view if exists dm1")
     sql("drop materialized view if exists dm1")
     sql("create materialized view dm1 with deferred refresh as select name,sum(price) " +
         "from maintable group by name")

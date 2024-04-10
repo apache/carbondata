@@ -18,12 +18,11 @@
 package org.apache.carbondata.streaming.parser
 
 import java.text.SimpleDateFormat
-import java.util
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Encoders, Row}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -43,14 +42,14 @@ class RowStreamParserImp extends CarbonStreamParser {
 
   var timeStampFormat: SimpleDateFormat = _
   var dateFormat: SimpleDateFormat = _
-  val complexDelimiters: util.ArrayList[String] = new util.ArrayList[String]()
+  val complexDelimiters: java.util.ArrayList[String] = new java.util.ArrayList[String]()
   var serializationNullFormat: String = _
 
   override def initialize(configuration: Configuration,
       structType: StructType, isVarcharTypeMapping: Array[Boolean]): Unit = {
     this.configuration = configuration
     this.structType = structType
-    this.encoder = RowEncoder.apply(this.structType).resolveAndBind()
+    this.encoder = Encoders.row(this.structType).asInstanceOf[ExpressionEncoder[Row]]
     this.isVarcharTypeMapping = isVarcharTypeMapping
 
     this.timeStampFormat = new SimpleDateFormat(
