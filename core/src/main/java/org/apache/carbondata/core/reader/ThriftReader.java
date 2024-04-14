@@ -31,6 +31,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
+import org.apache.thrift.transport.TTransportException;
 
 /**
  * A simple class for reading Thrift objects (of a single type) from a fileName.
@@ -89,7 +90,11 @@ public class ThriftReader {
    */
   public ThriftReader(byte[] fileData) {
     dataInputStream = new DataInputStream(new ByteArrayInputStream(fileData));
-    binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+    try {
+      binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+    } catch (TTransportException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -98,7 +103,11 @@ public class ThriftReader {
   public void open() throws IOException {
     Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
     dataInputStream = FileFactory.getDataInputStream(fileName, conf);
-    binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+    try {
+      binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+    } catch (TTransportException e) {
+      throw new IOException(e);
+    }
   }
 
   /**

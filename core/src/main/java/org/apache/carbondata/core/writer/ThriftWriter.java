@@ -31,6 +31,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
+import org.apache.thrift.transport.TTransportException;
 
 /**
  * Simple class that makes it easy to write Thrift objects to disk.
@@ -80,7 +81,11 @@ public class ThriftWriter {
    */
   public void open() throws IOException {
     dataOutputStream = FileFactory.getDataOutputStream(fileName, bufferSize, append);
-    binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+    try {
+      binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+    } catch (TTransportException e) {
+      throw new IOException(e);
+    }
   }
 
   /**
@@ -92,7 +97,11 @@ public class ThriftWriter {
   public void open(FileWriteOperation fileWriteOperation) throws IOException {
     atomicFileOperationsWriter = AtomicFileOperationFactory.getAtomicFileOperations(fileName);
     dataOutputStream = atomicFileOperationsWriter.openForWrite(fileWriteOperation);
-    binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+    try {
+      binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+    } catch (TTransportException e) {
+      throw new IOException(e);
+    }
   }
 
   /**
