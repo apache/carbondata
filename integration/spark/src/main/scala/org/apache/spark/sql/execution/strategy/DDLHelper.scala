@@ -315,16 +315,17 @@ object DDLHelper {
       showPartitionsCommand: ShowPartitionsCommand,
       sparkSession: SparkSession): RunnableCommand = {
     val tableName = showPartitionsCommand.tableName
+    val output = showPartitionsCommand.output
     val cols = showPartitionsCommand.spec
     val carbonTable = getTable(tableName, sparkSession)
     if (!carbonTable.isHivePartitionTable) {
       showPartitionsCommand
     } else {
       if (cols.isDefined) {
-        ShowPartitionsCommand(tableName,
+        ShowPartitionsCommand(tableName, output,
           Option(CarbonSparkSqlParserUtil.copyTablePartition(cols.get)))
       } else {
-        ShowPartitionsCommand(tableName, None)
+        ShowPartitionsCommand(tableName, output, None)
       }
     }
   }

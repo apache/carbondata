@@ -134,9 +134,7 @@ object DDLStrategy extends SparkStrategy {
         if (EnvHelper.isLegacy(sparkSession)) {
           Nil
         } else {
-          DataWritingCommandExec(
-            DDLHelper.createCarbonFileHiveTableAsSelect(ctas),
-            planLater(ctas.query)) :: Nil
+          ExecutedCommandExec(DDLHelper.createCarbonFileHiveTableAsSelect(ctas)) :: Nil
         }
       case showCreateTable: ShowCreateTableCommand
         if isCarbonTable(showCreateTable.table) =>

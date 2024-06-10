@@ -22,6 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonMetaStore, CarbonRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
@@ -262,5 +263,10 @@ private[sql] case class DropIndexCommand(
     // refreshed when SI table is dropped
     CarbonInternalMetastore
       .removeTableFromMetadataCache(dbName, parentTableName)(sparkSession)
+  }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
   }
 }

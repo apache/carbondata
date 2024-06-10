@@ -209,7 +209,7 @@ abstract class ModularPlan
 
   override protected def withNewChildrenInternal(
       newChildren: IndexedSeq[ModularPlan]): ModularPlan = {
-    throw new UnsupportedOperationException()
+    this
   }
 }
 

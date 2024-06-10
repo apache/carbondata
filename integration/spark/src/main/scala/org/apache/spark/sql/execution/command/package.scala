@@ -23,6 +23,8 @@ import scala.language.implicitConversions
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -54,7 +56,7 @@ object Checker {
       .carbonMetaStore
       .lookupRelation(databaseNameOp, tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
-    (StructType.fromAttributes(relation.output), relation.carbonTable)
+    (DataTypeUtils.fromAttributes(relation.output), relation.carbonTable)
   }
 }
 
@@ -136,6 +138,11 @@ abstract class MetadataCommand
   override def run(sparkSession: SparkSession): Seq[Row] = {
     runWithAudit(processMetadata, sparkSession)
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
+  }
 }
 
 /**
@@ -144,6 +151,11 @@ abstract class MetadataCommand
 abstract class DataCommand extends RunnableCommand with DataProcessOperation with Auditable {
   override def run(sparkSession: SparkSession): Seq[Row] = {
     runWithAudit(processData, sparkSession)
+  }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
   }
 }
 
@@ -166,6 +178,7 @@ abstract class AtomicRunnableCommand
           throw e
       }
     }, sparkSession)
+
   }
 
   /**
@@ -179,5 +192,10 @@ abstract class AtomicRunnableCommand
               s"But this command does not support undo yet, skipping the undo part."
     LogServiceFactory.getLogService(this.getClass.getCanonicalName).error(msg)
     Seq.empty
+  }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
   }
 }

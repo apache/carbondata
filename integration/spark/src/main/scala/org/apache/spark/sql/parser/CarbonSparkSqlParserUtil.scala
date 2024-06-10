@@ -383,7 +383,7 @@ object CarbonSparkSqlParserUtil {
   def validateCreateTableReqAndGetColumns(tableHeader: CreateTableHeaderContext,
       skewSpecContext: SkewSpecContext,
       bucketSpecContext: BucketSpecContext,
-      columns: ColTypeListContext,
+      columns: CreateOrReplaceTableColTypeListContext,
       cols: Seq[StructField],
       tableIdentifier: TableIdentifier,
       isTempTable: Boolean): Seq[String] = {
@@ -406,7 +406,7 @@ object CarbonSparkSqlParserUtil {
     colNames
   }
 
-  def checkIfDuplicateColumnExists(columns: ColTypeListContext,
+  def checkIfDuplicateColumnExists(columns: CreateOrReplaceTableColTypeListContext,
       tableIdentifier: TableIdentifier,
       colNames: Seq[String]): Unit = {
     if (colNames.length != colNames.distinct.length) {

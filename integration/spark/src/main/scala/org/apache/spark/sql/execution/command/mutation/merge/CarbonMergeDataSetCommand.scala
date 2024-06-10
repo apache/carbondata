@@ -30,10 +30,12 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonToSparkAdapter, Column, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.avro.AvroFileFormatFactory
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, GenericInternalRow}
-import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.{LogicalRDD, ProjectExec}
 import org.apache.spark.sql.execution.command.{DataCommand, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.execution.command.mutation.HorizontalCompaction
@@ -461,7 +463,7 @@ case class CarbonMergeDataSetCommand(
       insertHistOfUpdate, insertHistOfDelete)
 
     val loadDF = Dataset.ofRows(sparkSession,
-      LogicalRDD(targetSchema.toAttributes,
+      LogicalRDD(targetSchema.map(f => DataTypeUtils.toAttribute(f)),
         processedRDD)(sparkSession))
 
     loadDF.cache()
@@ -869,4 +871,9 @@ case class CarbonMergeDataSetCommand(
   }
 
   override protected def opName: String = "MERGE DATASET"
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
+  }
 }

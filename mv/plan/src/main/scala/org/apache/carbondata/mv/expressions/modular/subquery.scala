@@ -41,7 +41,7 @@ abstract class ModularSubquery(
 
   override protected def withNewChildrenInternal(
       newChildren: IndexedSeq[Expression]): Expression = {
-    throw new UnsupportedOperationException()
+    this
   }
   def canonicalize(attrs: AttributeSeq): ModularSubquery = {
     // Normalize the outer references in the subquery plan.

@@ -16,6 +16,7 @@
  */
 package org.apache.spark.sql.parser
 
+import collection.JavaConverters._
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.sql.{CarbonThreadUtil, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
@@ -94,8 +95,9 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
   }
 
   def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
-    BucketSpecContext, PartitionFieldListContext, ColTypeListContext, PropertyListContext,
-    LocationSpecContext, Option[String], TerminalNode, QueryContext, String)): LogicalPlan = {
+    BucketSpecContext, PartitionFieldListContext, CreateOrReplaceTableColTypeListContext,
+    PropertyListContext, LocationSpecContext, Option[String], TerminalNode, QueryContext, String)
+  ): LogicalPlan = {
 
     val (tableHeader, skewSpecContext,
       bucketSpecContext,
@@ -111,7 +113,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     val (tableIdent, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
     val parts = visitMultipartIdentifier(tableIdent.multipartIdentifier())
     val tableIdentifier = CarbonToSparkAdapter.getTableIdentifier(parts)
-    val cols: Seq[StructField] = Option(columns).toSeq.flatMap(visitColTypeList)
+    val cols: Seq[StructField] = columns.createOrReplaceTableColType()
+      .asScala.map(visitCreateOrReplaceTableColType)
     val colNames: Seq[String] = CarbonSparkSqlParserUtil
       .validateCreateTableReqAndGetColumns(tableHeader,
         skewSpecContext,
