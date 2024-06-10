@@ -258,8 +258,8 @@ trait SparkVersionAdapter {
    *
    */
   def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
-    BucketSpecContext, PartitionFieldListContext, ColTypeListContext, PropertyListContext,
-    LocationSpecContext, Option[String], TerminalNode, QueryContext, String),
+    BucketSpecContext, PartitionFieldListContext, CreateOrReplaceTableColTypeListContext,
+    PropertyListContext, LocationSpecContext, Option[String], TerminalNode, QueryContext, String),
     extraTableTuple: (Seq[StructField], Boolean, TableIdentifier, Boolean, Seq[String],
     Option[String], mutable.Map[String, String], Map[String, String], Seq[StructField],
     Seq[PartitionerField], CarbonSpark2SqlParser, SparkSession,

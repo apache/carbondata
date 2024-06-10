@@ -74,7 +74,7 @@ private[sql] object CarbonSourceStrategy extends SparkStrategy {
     projects foreach {
       case alias: Alias if alias.child.isInstanceOf[Expression] =>
         alias.child match {
-          case Cast(s: ScalaUDF, _, _) => validateGeoUtilUDFs(s)
+          case Cast(s: ScalaUDF, _, _, _) => validateGeoUtilUDFs(s)
           case s: ScalaUDF => validateGeoUtilUDFs(s)
           case _ =>
         }
