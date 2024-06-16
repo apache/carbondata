@@ -24,7 +24,7 @@ import java.util.{Date, Random}
 import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil

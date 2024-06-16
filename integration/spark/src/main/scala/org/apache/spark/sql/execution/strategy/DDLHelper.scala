@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.strategy
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}

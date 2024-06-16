@@ -343,7 +343,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
     val base64CarbonResult = sql("SELECT base64(image) FROM carbon_table")
     checkAnswer(base64HiveResult, base64CarbonResult)
     base64CarbonResult.collect().foreach { each =>
-      val result = new String(Base64.decodeBase64((each.getAs[Array[Char]](0)).toString))
+      val result = new String(Base64.decodeBase64(each.getAs[Array[Byte]](0)))
       assert("binary".equals(result)
              || "test".equals(result))
     }
