@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 import io.prestosql.jdbc.PrestoStatement
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.plans._

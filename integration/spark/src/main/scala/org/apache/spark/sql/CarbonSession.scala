@@ -19,7 +19,7 @@ package org.apache.spark.sql
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession.Builder

@@ -26,7 +26,7 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-spark_${spark.binary.version}</artifactId>
+  <artifactId>carbondata-spark</artifactId>
   <name>Apache CarbonData :: Spark</name>
 
   <properties>
@@ -158,7 +158,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-streaming_${spark.binary.version}</artifactId>
+      <artifactId>carbondata-streaming</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
@@ -169,7 +169,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-mv-plan_${spark.binary.version}</artifactId>
+      <artifactId>carbondata-mv-plan</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
@@ -278,6 +278,17 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>3.1</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>commons-codec</artifactId>
+          <groupId>commons-codec</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
       <version>${httpclient.version}</version>
@@ -286,6 +297,12 @@
       <groupId>net.java.dev.jets3t</groupId>
       <artifactId>jets3t</artifactId>
       <version>0.9.0</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>commons-codec</artifactId>
+          <groupId>commons-codec</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- scala -->
     <dependency>

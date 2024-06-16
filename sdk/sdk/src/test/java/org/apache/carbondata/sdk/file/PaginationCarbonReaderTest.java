@@ -34,7 +34,7 @@ import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpressio
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

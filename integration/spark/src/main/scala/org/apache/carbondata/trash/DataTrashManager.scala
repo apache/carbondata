@@ -19,7 +19,7 @@ package org.apache.carbondata.trash
 
 import scala.collection.JavaConverters._
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 

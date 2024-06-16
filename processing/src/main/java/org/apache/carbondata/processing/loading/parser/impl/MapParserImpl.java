@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class MapParserImpl extends ArrayParserImpl {
 

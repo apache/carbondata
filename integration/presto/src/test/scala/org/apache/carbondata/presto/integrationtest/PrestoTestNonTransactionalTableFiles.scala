@@ -23,7 +23,7 @@ import java.util
 
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuiteLike}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
