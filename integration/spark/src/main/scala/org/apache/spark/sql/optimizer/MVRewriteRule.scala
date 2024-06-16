@@ -56,7 +56,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
     try {
       tryRewritePlan(logicalPlan)
     } catch {
-      case e =>
+      case e: Throwable =>
         // if exception is thrown while rewriting the query, will fallback to original query plan.
         MVRewriteRule.LOGGER
           .warn("Failed to rewrite plan with mv. Enable debug log to check the Exception")

@@ -29,6 +29,7 @@ import org.apache.spark.sql.catalyst.expressions.{AttributeSeq, NamedExpression}
 import org.apache.spark.sql.catalyst.optimizer.{CheckCartesianProducts, EliminateOuterJoin, NullPropagation, PullupCorrelatedPredicates, RemoveRedundantAliases, ReorderJoin}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, Statistics, Union}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.internal.{SessionState, SQLConf}
 import org.apache.spark.sql.types.StructType
@@ -45,7 +46,7 @@ object SparkSQLUtil {
   }
 
   def execute(rdd: RDD[InternalRow], schema: StructType, sparkSession: SparkSession): DataFrame = {
-    execute(LogicalRDD(schema.toAttributes, rdd)(sparkSession), sparkSession)
+    execute(LogicalRDD(DataTypeUtils.toAttributes(schema), rdd)(sparkSession), sparkSession)
   }
 
   def getSparkSession: SparkSession = {

@@ -206,6 +206,11 @@ abstract class ModularPlan
   protected def preHarmonized: ModularPlan = {
     this
   }
+
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[ModularPlan]): ModularPlan = {
+    this
+  }
 }
 
 object ModularPlan extends PredicateHelper {

@@ -32,8 +32,8 @@ import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 import org.apache.carbondata.processing.loading.complexobjects.StructObject;
 import org.apache.carbondata.processing.loading.parser.RowParser;
 
-import org.apache.htrace.fasterxml.jackson.core.type.TypeReference;
-import org.apache.htrace.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonRowParser implements RowParser {
 

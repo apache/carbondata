@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.config.ConfigEntry
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
@@ -85,8 +85,7 @@ class CarbonEnv {
     sparkSession.udf.register("getBlockPaths", new BlockPathsUDF)
     // add NI as a temp function, for queries to not hit SI table, it will be added as HiveSimpleUDF
     CreateFunctionCommand(
-      databaseName = None,
-      functionName = "NI",
+      identifier = FunctionIdentifier("NI", None, None),
       className = "org.apache.spark.sql.hive.NonIndexUDFExpression",
       resources = Seq(),
       isTemp = true,

@@ -28,7 +28,7 @@ import org.apache.carbondata.geo.GeoConstants;
 import org.apache.carbondata.geo.GeoHashUtils;
 import org.apache.carbondata.geo.GeoOperationType;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * InPolygonList expression processor. It inputs the InPolygonList string to the Geo

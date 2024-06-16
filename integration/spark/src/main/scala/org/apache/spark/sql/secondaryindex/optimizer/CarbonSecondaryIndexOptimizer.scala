@@ -239,7 +239,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
   }
 
   private def createDF(sparkSession: SparkSession, logicalPlan: LogicalPlan): DataFrame = {
-    new Dataset[Row](sparkSession, logicalPlan, RowEncoder(logicalPlan.schema))
+    new Dataset[Row](sparkSession, logicalPlan, RowEncoder.encoderFor(logicalPlan.schema))
   }
 
   /**

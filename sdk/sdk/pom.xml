@@ -14,6 +14,7 @@
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
+    <arrow.version>12.0.1</arrow.version>
   </properties>
 
   <dependencies>
@@ -72,7 +73,7 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-format</artifactId>
-      <version>0.12.0</version>
+      <version>${arrow.version}</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
@@ -83,7 +84,8 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-memory</artifactId>
-      <version>0.12.0</version>
+      <version>${arrow.version}</version>
+      <type>pom</type>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
@@ -102,7 +104,7 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
-      <version>0.12.0</version>
+      <version>${arrow.version}</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
@@ -120,34 +122,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-plasma</artifactId>
-      <version>0.12.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-classic</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-flight</artifactId>
-      <version>0.12.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-classic</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-buffer</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-tools</artifactId>
-      <version>0.12.0</version>
+      <version>${arrow.version}</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>

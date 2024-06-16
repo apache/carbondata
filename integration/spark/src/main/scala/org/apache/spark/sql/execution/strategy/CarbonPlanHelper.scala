@@ -266,9 +266,9 @@ object CarbonPlanHelper {
     vectorizedReader.toBoolean
   }
 
-  def supportBatchedDataSource(sqlContext: SQLContext,
-      cols: Seq[Attribute],
+  def supportBatchedDataSource(cols: Seq[Attribute],
       extraRDD: Option[(RDD[InternalRow], Boolean)]): Boolean = {
+    val sqlContext = SparkSession.getActiveSession.orNull.sqlContext
     vectorReaderEnabled() &&
       extraRDD.getOrElse((null, true))._2 &&
       sqlContext.conf.wholeStageEnabled &&

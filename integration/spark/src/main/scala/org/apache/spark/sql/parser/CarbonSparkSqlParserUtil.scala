@@ -339,7 +339,7 @@ object CarbonSparkSqlParserUtil {
    * @param props <Map[String, String]> Map of table property list
    * @return <Map[String, String]> Map of transformed table property.
    */
-  def visitPropertyKeyValues(ctx: TablePropertyListContext,
+  def visitPropertyKeyValues(ctx: PropertyListContext,
       props: Map[String, String]): Map[String, String] = {
     val badKeys = props.filter { case (_, v) => v == null }.keys
     if (badKeys.nonEmpty) {
@@ -383,7 +383,7 @@ object CarbonSparkSqlParserUtil {
   def validateCreateTableReqAndGetColumns(tableHeader: CreateTableHeaderContext,
       skewSpecContext: SkewSpecContext,
       bucketSpecContext: BucketSpecContext,
-      columns: ColTypeListContext,
+      columns: CreateOrReplaceTableColTypeListContext,
       cols: Seq[StructField],
       tableIdentifier: TableIdentifier,
       isTempTable: Boolean): Seq[String] = {
@@ -406,7 +406,7 @@ object CarbonSparkSqlParserUtil {
     colNames
   }
 
-  def checkIfDuplicateColumnExists(columns: ColTypeListContext,
+  def checkIfDuplicateColumnExists(columns: CreateOrReplaceTableColTypeListContext,
       tableIdentifier: TableIdentifier,
       colNames: Seq[String]): Unit = {
     if (colNames.length != colNames.distinct.length) {
@@ -436,7 +436,7 @@ object CarbonSparkSqlParserUtil {
       case Some(value) =>
         val result = value.children.get(1).getText
         if (result.equalsIgnoreCase("by")) {
-          value.storageHandler().STRING().getSymbol.getText
+          value.storageHandler().stringLit().STRING_LITERAL().getSymbol.getText
         } else if (result.equalsIgnoreCase("as") && value.children.size() > 1) {
           value.children.get(2).getText
         } else {

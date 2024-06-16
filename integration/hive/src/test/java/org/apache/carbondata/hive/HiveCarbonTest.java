@@ -83,7 +83,7 @@ public class HiveCarbonTest extends HiveTestUtils {
     statement.execute("CREATE TABLE hive_carbon_table(shortField SMALLINT , intField INT, bigintField BIGINT , doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT) stored by 'org.apache.carbondata.hive.CarbonStorageHandler' TBLPROPERTIES ('local_dictionary_enable'='true','local_dictionary_include'='stringField')");
     statement.execute("insert into hive_carbon_table select * from hive_table");
     File rootPath = new File(HiveTestUtils.class.getResource("/").getPath() + "../../../..");
-    String storePath = rootPath.getAbsolutePath() + "/integration/hive/target/warehouse/warehouse/hive_carbon_table/";
+    String storePath = rootPath.getAbsolutePath() + "/integration/hive/target/warehouse/hive_carbon_table/";
     ArrayList<DimensionRawColumnChunk> dimRawChunk = CarbonTestUtil.getDimRawChunk(storePath, 0);
     String[] dictionaryData = new String[]{"hive", "impala", "flink", "spark"};
     assert(CarbonTestUtil.validateDictionary(dimRawChunk.get(0), dictionaryData));

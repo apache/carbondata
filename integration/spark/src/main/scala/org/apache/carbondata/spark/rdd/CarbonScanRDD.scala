@@ -648,9 +648,9 @@ class CarbonScanRDD[T: ClassTag](
     context.getClass.getDeclaredField("onCompleteCallbacks")
     onCompleteCallbacksField.setAccessible(true)
     val listeners = onCompleteCallbacksField.get(context)
-      .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
+      .asInstanceOf[java.util.Stack[TaskCompletionListener]]
 
-    val isAdded = listeners.exists(p => p.isInstanceOf[CarbonLoadTaskCompletionListener])
+    val isAdded = listeners.asScala.exists(p => p.isInstanceOf[CarbonLoadTaskCompletionListener])
     model.setFreeUnsafeMemory(!isAdded)
     // add task completion before calling initialize as initialize method will internally
     // call for usage of unsafe method for processing of one blocklet and if there is any

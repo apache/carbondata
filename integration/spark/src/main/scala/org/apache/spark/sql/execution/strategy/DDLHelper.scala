@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.strategy
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.hive.metastore.api.InvalidOperationException
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
@@ -315,16 +315,17 @@ object DDLHelper {
       showPartitionsCommand: ShowPartitionsCommand,
       sparkSession: SparkSession): RunnableCommand = {
     val tableName = showPartitionsCommand.tableName
+    val output = showPartitionsCommand.output
     val cols = showPartitionsCommand.spec
     val carbonTable = getTable(tableName, sparkSession)
     if (!carbonTable.isHivePartitionTable) {
       showPartitionsCommand
     } else {
       if (cols.isDefined) {
-        ShowPartitionsCommand(tableName,
+        ShowPartitionsCommand(tableName, output,
           Option(CarbonSparkSqlParserUtil.copyTablePartition(cols.get)))
       } else {
-        ShowPartitionsCommand(tableName, None)
+        ShowPartitionsCommand(tableName, output, None)
       }
     }
   }

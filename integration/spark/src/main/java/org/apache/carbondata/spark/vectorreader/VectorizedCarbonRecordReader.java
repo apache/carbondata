@@ -53,7 +53,7 @@ import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.execution.vectorized.ColumnVectorUtils;
+import org.apache.spark.sql.execution.vectorized.CarbonColumnVectorUtils;
 import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -274,7 +274,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     if (partitionColumns != null) {
       int partitionIdx = fields.length;
       for (int i = 0; i < partitionColumns.fields().length; i++) {
-        ColumnVectorUtils.populate(vectorProxy.column(i + partitionIdx), partitionValues, i);
+        CarbonColumnVectorUtils.populate(vectorProxy.column(i + partitionIdx), partitionValues, i);
         vectorProxy.column(i + partitionIdx).setIsConstant();
       }
     }

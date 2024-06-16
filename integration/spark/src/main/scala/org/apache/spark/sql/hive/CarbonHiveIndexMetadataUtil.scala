@@ -19,6 +19,7 @@ package org.apache.spark.sql.hive
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.hive.ql.exec.UDF
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDF
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Expression
@@ -161,14 +162,16 @@ object CarbonHiveIndexMetadataUtil {
 
   def transformToRemoveNI(expression: Expression): Expression = {
     expression.transform {
-      case hiveUDF: HiveSimpleUDF if hiveUDF.function.isInstanceOf[NonIndexUDFExpression] =>
-        hiveUDF.asInstanceOf[HiveSimpleUDF].children.head
+      case hiveUDF: HiveSimpleUDF if hiveUDF.funcWrapper
+        .createFunction[UDF]().isInstanceOf[NonIndexUDFExpression] =>
+        hiveUDF.children.head
     }
   }
 
   def checkNIUDF(condition: Expression): Boolean = {
     condition match {
-      case hiveUDF: HiveSimpleUDF if hiveUDF.function.isInstanceOf[NonIndexUDFExpression] => true
+      case hiveUDF: HiveSimpleUDF if hiveUDF.funcWrapper
+        .createFunction[UDF]().isInstanceOf[NonIndexUDFExpression] => true
       case _ => false
     }
   }

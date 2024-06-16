@@ -1569,6 +1569,8 @@ private object SelectSelectGroupbyChildDelta
         ev: ExprCode): ExprCode = ev
 
     override def dataType: DataType = alias.dataType
+
+    override protected def withNewChildInternal(newChild: Expression): Expression = this
   }
 
 }

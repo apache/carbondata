@@ -22,6 +22,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
@@ -86,6 +87,11 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
     CarbonUtil.dropDatabaseDirectory(carbonDatabaseLocation)
     rows
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
+  }
 }
 
 case class CarbonSetCommand(command: SetCommand)
@@ -105,6 +111,10 @@ case class CarbonSetCommand(command: SetCommand)
 
   override protected def opName: String = "SET"
 
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
+  }
 }
 
 object CarbonSetCommand {

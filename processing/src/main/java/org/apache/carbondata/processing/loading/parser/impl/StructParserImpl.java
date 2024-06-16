@@ -26,7 +26,7 @@ import org.apache.carbondata.processing.loading.complexobjects.StructObject;
 import org.apache.carbondata.processing.loading.parser.ComplexParser;
 import org.apache.carbondata.processing.loading.parser.GenericParser;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * It parses the string to @{@link StructObject} using delimiter.

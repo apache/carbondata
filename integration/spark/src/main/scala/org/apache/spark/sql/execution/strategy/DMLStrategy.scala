@@ -94,7 +94,7 @@ object DMLStrategy extends SparkStrategy {
           val dataType = StringType
           var children: Seq[Expression] = mutable.Seq.empty
           val geoHashColumn = condition.get.children.head match {
-            case Cast(attr: AttributeReference, _, _) =>
+            case Cast(attr: AttributeReference, _, _, _) =>
               attr
             case attr: AttributeReference =>
               attr
@@ -252,7 +252,7 @@ object DMLStrategy extends SparkStrategy {
         case join: Join =>
           ExtractEquiJoinKeys.unapply(join) match {
               // TODO: Spark is using hints now, carbon also should use join hints
-            case Some(x) => Some(x._1, x._2, x._3, x._4, x._5, x._6)
+            case Some(x) => Some(x._1, x._2, x._3, x._4, x._6, x._7)
             case None => None
           }
         case _ => None
@@ -395,7 +395,7 @@ case class UnionCommandExec(cmd: RunnableCommand) extends LeafExecNode {
 
   protected[sql] lazy val sideEffectResult: Seq[InternalRow] = {
     val converter = CatalystTypeConverters.createToCatalystConverter(schema)
-    val internalRow = cmd.run(sqlContext.sparkSession).map(converter(_).asInstanceOf[InternalRow])
+    val internalRow = cmd.run(session).map(converter(_).asInstanceOf[InternalRow])
     val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
     // To make GenericInternalRow to UnsafeRow
     val row = unsafeProjection(internalRow.head)
@@ -405,7 +405,7 @@ case class UnionCommandExec(cmd: RunnableCommand) extends LeafExecNode {
   override def output: Seq[Attribute] = cmd.output
 
   protected override def doExecute(): RDD[InternalRow] = {
-    sqlContext.sparkContext.parallelize(sideEffectResult, 1)
+    sparkContext.parallelize(sideEffectResult, 1)
   }
 }
 

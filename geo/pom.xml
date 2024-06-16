@@ -44,7 +44,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.5</version>
+      <version>3.12.0</version>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
@@ -126,6 +126,7 @@
       <plugin>
         <groupId>com.ning.maven.plugins</groupId>
         <artifactId>maven-duplicate-finder-plugin</artifactId>
+        <version>1.0.9</version>
         <configuration>
           <skip>true</skip>
         </configuration>

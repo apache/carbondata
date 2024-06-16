@@ -20,6 +20,7 @@ package org.apache.spark.sql.secondaryindex.command
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
@@ -168,5 +169,10 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extend
       })
       loadMetadataDetails
     }
+  }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
   }
 }

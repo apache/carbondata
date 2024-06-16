@@ -26,6 +26,8 @@ import scala.collection.mutable
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataLoadTableFileMapping}
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
@@ -296,7 +298,7 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
       options = options.toMap)(sparkSession = sparkSession)
 
     CarbonReflectionUtils.getLogicalRelation(hdfsRelation,
-      hdfsRelation.schema.toAttributes,
+      DataTypeUtils.toAttributes(hdfsRelation.schema),
       Some(catalogTable),
       false)
   }
@@ -308,5 +310,10 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
     } else {
       "LOAD DATA"
     }
+  }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
   }
 }

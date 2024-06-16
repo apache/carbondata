@@ -472,7 +472,7 @@ private trait AbstractCarbonOutputWriter {
   def writeCarbon(row: InternalRow): Unit
 }
 
-private class CarbonOutputWriter(path: String,
+private class CarbonOutputWriter(val path: String,
     context: TaskAttemptContext,
     nonPartitionFieldTypes: Seq[DataType],
     taskNo : String,

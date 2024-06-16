@@ -23,10 +23,10 @@ import scala.collection.JavaConverters._
 import org.apache.avro.Schema
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericRecord
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.avro.{AvroDeserializer, SchemaConverters}
+import org.apache.spark.sql.{CarbonEnv, Encoders, Row, SparkSession}
+import org.apache.spark.sql.avro.{AvroFileFormatFactory, SchemaConverters}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.execution.command.mutation.merge.CarbonMergeDataSetUtil
 import org.apache.spark.sql.functions.col
@@ -162,7 +162,7 @@ abstract class Source {
           }.map { case (field, i) =>
           (field.name(), field.defaultVal(), i)
         }
-        val encoder = RowEncoder.apply(sparkDataTypes).resolveAndBind()
+        val encoder = Encoders.row(sparkDataTypes).asInstanceOf[ExpressionEncoder[Row]]
         new Iterator[Row] {
           override def hasNext: Boolean = {
             iterator.hasNext
@@ -174,7 +174,8 @@ abstract class Source {
             }
             val record = iterator.next()
             val avroWriteSchema = record.getSchema
-            var sparkAvroDeserializer = new AvroDeserializer(avroWriteSchema, sparkDataTypes)
+            var sparkAvroDeserializer =
+              AvroFileFormatFactory.getAvroDeserializer(avroWriteSchema, sparkDataTypes)
             val internalRow = sparkAvroDeserializer.deserialize(record).asInstanceOf[InternalRow]
             // update with the default values if the value is null
             if (avroWriteSchema.getFields.size() != sparkDataTypes.fields.length) {

@@ -17,11 +17,10 @@
 
 package org.apache.spark.sql.execution.command.mutation.merge
 
-import scala.collection.mutable
-
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonToSparkAdapter, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression, InterpretedPredicate}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
+import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.types.StructType
 
 /**
@@ -44,7 +43,7 @@ case class MergeProjection(
   val targetTableAttributes = rltn.carbonRelation.output
 
   val indexesToFetch: Seq[(Expression, Int)] = {
-    val existingDsOutput = rltn.carbonRelation.schema.toAttributes
+    val existingDsOutput = DataTypeUtils.toAttributes(rltn.carbonRelation.schema)
     val literalToAttributeMap: collection.mutable.Map[Expression, Attribute] =
       collection.mutable.Map.empty[Expression, Attribute]
     val colsMap = mergeAction match {

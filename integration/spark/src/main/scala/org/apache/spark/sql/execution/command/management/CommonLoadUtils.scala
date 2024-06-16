@@ -460,7 +460,8 @@ object CommonLoadUtils {
       isNoRearrangeFlow: Boolean,
       table: CarbonTable,
       partition: Map[String, Option[String]]): (LogicalPlan, Int, Option[RDD[InternalRow]]) = {
-    val catalogAttributes = catalogTable.schema.toAttributes
+    val catalogAttributes = catalogTable.schema.map(
+      x => AttributeReference(x.name, x.dataType, x.nullable, x.metadata)())
     // Converts the data as per the loading steps before give it to writer or sorter
     var attributes = curAttributes.map(a => {
       catalogAttributes.find(_.name.equalsIgnoreCase(a.name)).get
@@ -746,12 +747,14 @@ object CommonLoadUtils {
 
     if (options.contains(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS)) {
       CarbonReflectionUtils.getLogicalRelation(hdfsRelation,
-        metastoreSchema.toAttributes,
+        metastoreSchema.map(
+          x => AttributeReference(x.name, x.dataType, x.nullable, x.metadata)()),
         Some(catalogTable),
         false)
     } else {
       CarbonReflectionUtils.getLogicalRelation(hdfsRelation,
-        hdfsRelation.schema.toAttributes,
+        hdfsRelation.schema.map(
+          x => AttributeReference(x.name, x.dataType, x.nullable, x.metadata)()),
         Some(catalogTable),
         false)
     }
@@ -872,7 +875,8 @@ object CommonLoadUtils {
     CarbonThreadUtil.threadSet("partition.operationcontext", loadParams.operationContext)
     val attributes = if (loadParams.scanResultRDD.isDefined) {
       // take the already re-arranged attributes
-      catalogTable.schema.toAttributes
+      catalogTable.schema.map(
+        x => AttributeReference(x.name, x.dataType, x.nullable, x.metadata)())
     } else {
       // input data from csv files. Convert to logical plan
       val allCols = new ArrayBuffer[String]()
@@ -881,7 +885,8 @@ object CommonLoadUtils {
       allCols ++= table.getVisibleMeasures.asScala.map(_.getColName)
       StructType(
         allCols.filterNot(_.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)).map(
-          StructField(_, StringType))).toAttributes
+          StructField(_, StringType))).map(
+        x => AttributeReference(x.name, x.dataType, x.nullable, x.metadata)())
     }
     var partitionsLen = 0
     val sortScope = CarbonDataProcessorUtil.getSortScope(loadParams.carbonLoadModel.getSortScope)
@@ -1093,7 +1098,7 @@ object CommonLoadUtils {
           overwrite = false,
           ifPartitionNotExists = false)
       SparkUtil.setNullExecutionId(loadParams.sparkSession)
-      Dataset.ofRows(loadParams.sparkSession, convertedPlan).collect()
+      SparkSqlAdapter.ofRows(loadParams.sparkSession, convertedPlan).collect()
     } catch {
       case ex: Throwable =>
         val (executorMessage, errorMessage) = CarbonScalaUtil.retrieveAndLogErrorMsg(ex, LOGGER)

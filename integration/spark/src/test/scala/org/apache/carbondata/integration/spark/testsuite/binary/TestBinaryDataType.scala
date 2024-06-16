@@ -702,7 +702,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         val base64CarbonResult = sql("SELECT base64(binaryField) FROM carbontable")
         checkAnswer(base64HiveResult, base64CarbonResult)
         base64CarbonResult.collect().foreach { each =>
-            val result = new String(Base64.decodeBase64((each.getAs[Array[Char]](0)).toString))
+            val result = new String(Base64.decodeBase64(each.getAs[Array[Byte]](0)))
             assert("\u0001history\u0002".equals(result)
                     || "\u0001biology\u0002".equals(result)
                     || "\u0001education\u0002".equals(result))
