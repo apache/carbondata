@@ -570,27 +570,7 @@ class CarbonScanRDD[T: ClassTag](
             throw new java.util.NoSuchElementException("End of stream")
           }
           havePair = false
-          val value = reader.getCurrentValue
-          if (CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3,
-                  CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3_DEFAULT).toBoolean &&
-              timeStampProjectionColumns.nonEmpty) {
-            value match {
-              case row: GenericInternalRow if needRebaseTimeValue(reader) =>
-                // rebase timestamp data by converting julian to Gregorian time
-                timeStampProjectionColumns.foreach {
-                  projectionColumnWithIndex =>
-                    val timeStampData = row.get(projectionColumnWithIndex._2,
-                      org.apache.spark.sql.types.DataTypes.TimestampType)
-                    if (null != timeStampData) {
-                      row.update(projectionColumnWithIndex._2,
-                        CarbonToSparkAdapter.rebaseTime(timeStampData.asInstanceOf[Long]))
-                    }
-                }
-              case _ =>
-            }
-          }
-          value
+          reader.getCurrentValue
         }
 
       }
@@ -620,17 +600,6 @@ class CarbonScanRDD[T: ClassTag](
         }
         !isComplexDimension && column._1.getDataType == DataTypes.TIMESTAMP
     }
-  }
-
-  def needRebaseTimeValue(reader: RecordReader[Void, Object]): Boolean = {
-    // carbonDataFileWrittenVersion will be in the format x.x.x-SNAPSHOT
-    // (eg., 2.1.0-SNAPSHOT), get the version name and check if the data file is
-    // written before 2.2.0 version, then rebase timestamp value
-    reader.isInstanceOf[CarbonRecordReader[T]] &&
-    null != reader.asInstanceOf[CarbonRecordReader[T]].getCarbonDataFileWrittenVersion &&
-    reader.asInstanceOf[CarbonRecordReader[T]].getCarbonDataFileWrittenVersion
-      .split(CarbonCommonConstants.HYPHEN).head
-      .compareTo(CarbonCommonConstants.CARBON_SPARK3_VERSION) < 0
   }
 
   private def addTaskCompletionListener(split: Partition,

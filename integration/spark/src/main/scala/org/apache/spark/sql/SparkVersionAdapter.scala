@@ -122,25 +122,6 @@ trait SparkVersionAdapter {
     DateTimeUtils.daysToLocalDate(date).toString
   }
 
-  /**
-   * Rebase the timestamp value from julian to gregorian time micros
-   */
-  def rebaseTime(timestamp: Long): Long = {
-    RebaseDateTime.rebaseJulianToGregorianMicros(timestamp)
-  }
-
-  def rebaseTime(timestamp: Long, carbonDataFileWrittenVersion: String): Long = {
-    // carbonDataFileWrittenVersion will be in the format x.x.x-SNAPSHOT(eg., 2.1.0-SNAPSHOT),
-    // get the version name and check if the data file is written before 2.2.0 version
-    if (null != carbonDataFileWrittenVersion &&
-        carbonDataFileWrittenVersion.split(CarbonCommonConstants.HYPHEN).head
-          .compareTo(CarbonCommonConstants.CARBON_SPARK3_VERSION) < 0) {
-      RebaseDateTime.rebaseJulianToGregorianMicros(timestamp)
-    } else {
-      timestamp
-    }
-  }
-
   // Note that due to this scala bug: https://github.com/scala/bug/issues/11016, we need to make
   // this function polymorphic for every scala version >= 2.12, otherwise an overloaded method
   // resolution error occurs at compile time.

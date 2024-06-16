@@ -544,50 +544,10 @@ public final class DataTypeUtil {
   }
 
   private static Object parseTimestamp(String dimensionValue, String dateFormat) {
-    Date dateToStr;
-    DateFormat dateFormatter = null;
-    long timeValue;
     try {
-      if (Boolean.parseBoolean(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3,
-              CarbonCommonConstants.CARBON_SPARK_VERSION_SPARK3_DEFAULT))) {
-        try {
-          return createTimeInstant(dimensionValue, dateFormat.trim());
-        } catch (DateTimeParseException e) {
-          throw new NumberFormatException(e.getMessage());
-        }
-      }
-      if (null != dateFormat && !dateFormat.trim().isEmpty()) {
-        dateFormatter = new SimpleDateFormat(dateFormat);
-        dateFormatter.setLenient(false);
-      } else {
-        dateFormatter = timestampFormatter.get();
-      }
-      dateToStr = dateFormatter.parse(dimensionValue);
-      timeValue = dateToStr.getTime();
-      validateTimeStampRange(timeValue);
-      return timeValue;
-    } catch (ParseException e) {
-      // If the parsing fails, try to parse again with setLenient to true if the property is set
-      // (example: 1941-03-15 00:00:00 is invalid data and will fail to parse in Asia/Shanghai zone
-      // as DST is observed and clocks were turned forward 1 hour to 1941-03-15 01:00:00)
-      if (CarbonProperties.getInstance().isSetLenientEnabled()) {
-        try {
-          dateFormatter.setLenient(true);
-          dateToStr = dateFormatter.parse(dimensionValue);
-          timeValue = dateToStr.getTime();
-          validateTimeStampRange(timeValue);
-          LOGGER.info("Parsed data with lenience as true, setting back to default mode");
-          return timeValue;
-        } catch (ParseException ex) {
-          LOGGER.info("Failed to parse data with lenience as true, setting back to default mode");
-          throw new NumberFormatException(ex.getMessage());
-        } finally {
-          dateFormatter.setLenient(false);
-        }
-      } else {
-        throw new NumberFormatException(e.getMessage());
-      }
+      return createTimeInstant(dimensionValue, dateFormat.trim());
+    } catch (DateTimeParseException e) {
+      throw new NumberFormatException(e.getMessage());
     }
   }
 

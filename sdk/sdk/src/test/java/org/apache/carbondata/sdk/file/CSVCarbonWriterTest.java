@@ -758,7 +758,7 @@ public class CSVCarbonWriterTest {
 
   @Test
   public void testWritingAndReadingArrayStruct() throws IOException {
-    String path = "./testWriteFilesArrayStruct";
+    String path = "./target/testWriteFilesArrayStruct";
     FileUtils.deleteDirectory(new File(path));
 
     Field[] fields = new Field[4];

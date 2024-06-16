@@ -49,6 +49,6 @@ object AvroFileFormatFactory {
   }
 
   def getAvroDeserializer(rootAvroType: Schema, rootCatalystType: DataType): AvroDeserializer = {
-    new AvroDeserializer(rootAvroType: Schema, rootCatalystType: DataType);
+    new AvroDeserializer(rootAvroType, rootCatalystType, "EXCEPTION", false)
   }
 }
