@@ -73,7 +73,7 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-format</artifactId>
-      <version>0.12.0</version>
+      <version>${arrow.version}</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
@@ -84,7 +84,8 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-memory</artifactId>
-      <version>0.12.0</version>
+      <version>${arrow.version}</version>
+      <type>pom</type>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
