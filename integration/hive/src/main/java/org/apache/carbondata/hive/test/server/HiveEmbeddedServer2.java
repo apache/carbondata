@@ -32,7 +32,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.ql.metadata.Hive;
-import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hive.service.Service;
 import org.apache.hive.service.cli.CLIService;
@@ -47,7 +46,7 @@ import org.apache.log4j.Logger;
  * a child JVM (which Hive calls local) or external.
  */
 public class HiveEmbeddedServer2 {
-  private String SCRATCH_DIR = "";
+  private String STORE_DIR = "";
   private static final Logger log = LogServiceFactory.getLogService(Hive.class.getName());
   private HiveServer2 hiveServer;
   private HiveConf config;
@@ -55,7 +54,7 @@ public class HiveEmbeddedServer2 {
 
   public void start(String storePath) throws Exception {
     log.info("Starting Hive Local/Embedded Server...");
-    SCRATCH_DIR = storePath;
+    STORE_DIR = storePath;
     if (hiveServer == null) {
       System.setProperty("datanucleus.schema.autoCreateAll", "true");
       System.setProperty("hive.metastore.schema.verification", "false");
@@ -114,20 +113,17 @@ public class HiveEmbeddedServer2 {
 
   private HiveConf configure() throws Exception {
     log.info("Setting The Hive Conf Variables");
-    String scratchDir = SCRATCH_DIR;
-
     Configuration cfg = new Configuration();
     HiveConf conf = new HiveConf(cfg, HiveConf.class);
     conf.addToRestrictList("columns.comments");
     conf.set("hive.scratch.dir.permission", "777");
     conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "777");
-
-    conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse");
-    conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db");
-    conf.set("hive.exec.scratchdir", scratchDir);
+    conf.set("hive.metastore.warehouse.dir", STORE_DIR + "/warehouse");
+    conf.set("hive.metastore.metadb.dir", STORE_DIR + "/metastore_db");
+    conf.set("hive.exec.scratchdir", STORE_DIR + "/scratch");
     conf.set("fs.permissions.umask-mode", "000");
     conf.set("javax.jdo.option.ConnectionURL",
-        "jdbc:derby:;databaseName=" + scratchDir + "/metastore_db" + ";create=true");
+        "jdbc:derby:;databaseName=" + STORE_DIR + "/metastore_db" + ";create=true");
     conf.set("hive.metastore.local", "true");
     conf.set("hive.aux.jars.path", "");
     conf.set("hive.added.jars.path", "");
@@ -146,9 +142,6 @@ public class HiveEmbeddedServer2 {
     props.remove("mapreduce.framework.name");
     props.setProperty("fs.default.name", "file:///");
 
-    // intercept SessionState to clean the threadlocal
-    Field tss = SessionState.class.getDeclaredField("tss");
-    tss.setAccessible(true);
     return conf;
   }
 
