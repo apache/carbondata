@@ -1413,8 +1413,8 @@ public final class CarbonUtil {
   public static byte[] getByteArray(TBase t) {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     byte[] thriftByteArray = null;
-    TProtocol binaryOut = new TCompactProtocol(new TIOStreamTransport(stream));
     try {
+      TProtocol binaryOut = new TCompactProtocol(new TIOStreamTransport(stream));
       t.write(binaryOut);
       stream.flush();
       thriftByteArray = stream.toByteArray();
@@ -1439,9 +1439,9 @@ public final class CarbonUtil {
 
   public static DataChunk3 readDataChunk3(InputStream stream) throws IOException {
     TBaseCreator creator = DataChunk3::new;
-    TProtocol binaryIn = new TCompactProtocol(new TIOStreamTransport(stream));
     TBase t = creator.create();
     try {
+      TProtocol binaryIn = new TCompactProtocol(new TIOStreamTransport(stream));
       t.read(binaryIn);
     } catch (TException e) {
       throw new IOException(e);
@@ -1461,9 +1461,9 @@ public final class CarbonUtil {
   private static TBase read(byte[] data, TBaseCreator creator, int offset, int length)
       throws IOException {
     ByteArrayInputStream stream = new ByteArrayInputStream(data, offset, length);
-    TProtocol binaryIn = new TCompactProtocol(new TIOStreamTransport(stream));
     TBase t = creator.create();
     try {
+      TProtocol binaryIn = new TCompactProtocol(new TIOStreamTransport(stream));
       t.read(binaryIn);
     } catch (TException e) {
       throw new IOException(e);
