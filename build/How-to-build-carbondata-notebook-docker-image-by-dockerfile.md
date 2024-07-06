@@ -12,7 +12,7 @@ cd build/docker/carbondata-notebook
 ```
 build image：
 ```
-docker build -t carbondata:2.3.0  .
+docker build -t carbondata:2.3.1  .
 ```
 
 ```history

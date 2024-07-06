@@ -32,7 +32,7 @@ struct SegmentInfo{
 }
 
 /**
- * Btree index of one blocklet
+ * Btree index of one blocklet for V3 format
  */
 struct BlockletBTreeIndex{
     1: required binary start_key; // Bit-packed start key of one blocklet
@@ -40,7 +40,7 @@ struct BlockletBTreeIndex{
 }
 
 /**
- * Min-max index of one blocklet
+ * Min-max index of one blocklet for V3 format
  */
 struct BlockletMinMaxIndex{
     1: required list<binary> min_values; //Min value of all columns of one blocklet Bit-Packed
@@ -49,7 +49,7 @@ struct BlockletMinMaxIndex{
 }
 
 /**
- * Index of one blocklet
+ * Index of one blocklet for V3 format
  */
 struct BlockletIndex{
     1: optional BlockletMinMaxIndex min_max_index;
@@ -57,7 +57,7 @@ struct BlockletIndex{
 }
 
 /**
- * Sort state of one column
+ * Sort state of one column for V3 format
  */
 enum SortState{
     SORT_NONE = 0; // Data is not sorted
@@ -211,7 +211,7 @@ struct FileFooter3{
 }
 
 /**
- * Header for appendable carbon file
+ * Header for appendable carbon file for V3 format
  */
 struct FileHeader{
 	1: required i32 version; // Version used for data compatibility

@@ -37,10 +37,10 @@ CONTAINER ID   IMAGE                                    COMMAND                 
 ```
 Add carbondata jar to spark jars directory:
 ```
-docker cp apache-carbondata-2.3.0-bin-spark3.1.1-hadoop2.7.2.jar  305f1277690c:/usr/local/spark-3.1.1-bin-hadoop3.2/jars/
+docker cp apache-carbondata-2.3.1-bin-spark3.1.1-hadoop2.7.2.jar  305f1277690c:/usr/local/spark-3.1.1-bin-hadoop3.2/jars/
 ```
 
-The apache-carbondata-2.3.0-bin-spark3.1.1-hadoop2.7.2.jar is from assembly/target/scala-2.12/ directory of carbondata project.
+The apache-carbondata-2.3.1-bin-spark3.1.1-hadoop2.7.2.jar is from assembly/target/scala-2.12/ directory of carbondata project.
 You can build jar by maven, For example:
 
 ```
