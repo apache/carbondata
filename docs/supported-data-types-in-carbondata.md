@@ -28,7 +28,7 @@
     * FLOAT
     * BYTE
     
-    **NOTE**: Float and Bytes are only supported for SDK and FileFormat.
+    **NOTE**: Bytes is only supported for SDK and FileFormat.
 
   * Date/Time Types
     * TIMESTAMP
