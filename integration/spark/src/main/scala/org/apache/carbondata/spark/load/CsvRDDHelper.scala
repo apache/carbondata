@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+import org.apache.spark.paths.SparkPath
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
@@ -70,7 +71,7 @@ object CsvRDDHelper {
       totalLength = totalLength + fileSplit.getLength
       PartitionedFile(
         InternalRow.empty,
-        fileSplit.getPath.toString,
+        SparkPath.fromPath(fileSplit.getPath),
         fileSplit.getStart,
         fileSplit.getLength,
         fileSplit.getLocations)
@@ -111,7 +112,7 @@ object CsvRDDHelper {
 
     // 2. read function
     val readFunction = getReadFunction(hadoopConf)
-    new FileScanRDD(spark, readFunction, partitions)
+    new FileScanRDD(spark, readFunction, partitions, null)
   }
 
   /**
@@ -132,7 +133,7 @@ object CsvRDDHelper {
         val tableBlock = distributable.asInstanceOf[TableBlockInfo]
         PartitionedFile(
           InternalRow.empty,
-          tableBlock.getFilePath,
+          SparkPath.fromPathString(tableBlock.getFilePath),
           tableBlock.getBlockOffset,
           tableBlock.getBlockLength,
           tableBlock.getLocations)
@@ -146,7 +147,7 @@ object CsvRDDHelper {
 
     // 2. read function
     val readFunction = getReadFunction(hadoopConf)
-    new FileScanRDD(spark, readFunction, partitions)
+    new FileScanRDD(spark, readFunction, partitions, null)
   }
 
   private def getReadFunction(configuration: Configuration): (PartitionedFile =>
@@ -161,7 +162,7 @@ object CsvRDDHelper {
           val hadoopAttemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration,
             attemptId)
           val inputSplit =
-            new FileSplit(new Path(file.filePath), file.start, file.length, file.locations)
+            new FileSplit(file.filePath.toPath, file.start, file.length, file.locations)
           var finished = false
           val inputFormat = new CSVInputFormat()
           val reader = inputFormat.createRecordReader(inputSplit, hadoopAttemptContext)

@@ -116,7 +116,7 @@ case class CarbonFileIndex(
         dir.files.filter{f =>
           f.getPath.getName.endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
           f.getPath.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)}.
-          map(new HDFSCarbonFile(_))
+          map(f => new HDFSCarbonFile(f.fileStatus))
       }.toArray.asInstanceOf[Array[CarbonFile]]
       if (indexFiles.length == 0 && totalFiles > 0) {
         return directories

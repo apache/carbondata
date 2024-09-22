@@ -21,6 +21,7 @@ import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{CreateDataSourceTableCommand, DropTableCommand, MetadataCommand}
 import org.apache.spark.sql.execution.datasources.PartitioningUtils
 
@@ -92,7 +93,7 @@ case class CarbonCreateDataSourceTableCommand(
         } else {
           throw ex
         }
-      case ex =>
+      case ex: Throwable =>
         throw ex
     }
 
@@ -114,4 +115,8 @@ case class CarbonCreateDataSourceTableCommand(
     rows
   }
 
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
+  }
 }

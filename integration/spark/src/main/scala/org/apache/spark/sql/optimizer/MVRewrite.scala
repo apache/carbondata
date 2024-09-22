@@ -542,25 +542,27 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
       subsumeeTable: LeafNode,
       subsumerIndex: Int,
       subsumeeIndex: Int): Boolean = {
-    (subsumerTable, subsumeeTable) match {
-      case _: (ModularRelation, ModularRelation) =>
-        val subsumerTableParent = subsumer.find(plan => plan.children.contains(subsumerTable)).get
-        val subsumeeTableParent = subsumee.find(plan => plan.children.contains(subsumeeTable)).get
-        (subsumerTableParent, subsumeeTableParent) match {
-          case  (subsumerSelect: Select, subsumeeSelect: Select) =>
-            val intersectJoinEdges = subsumeeSelect.joinEdges intersect subsumerSelect.joinEdges
-            if (intersectJoinEdges.nonEmpty) {
-              return intersectJoinEdges.exists(
-                join =>
-                  join.left == subsumerIndex &&
-                  join.left == subsumeeIndex || join.right == subsumerIndex &&
-                                                join.right == subsumeeIndex
-              )
-            }
-          case _ => return false
-        }
+    if (!subsumeeTable.isInstanceOf[ModularRelation]
+        || !subsumeeTable.isInstanceOf[ModularRelation]) {
+      return true
     }
-    true
+
+    val subsumerTableParent = subsumer.find(plan => plan.children.contains(subsumerTable)).get
+    val subsumeeTableParent = subsumee.find(plan => plan.children.contains(subsumeeTable)).get
+    (subsumerTableParent, subsumeeTableParent) match {
+      case (subsumerSelect: Select, subsumeeSelect: Select) =>
+        val intersectJoinEdges = subsumeeSelect.joinEdges intersect subsumerSelect.joinEdges
+        if (intersectJoinEdges.nonEmpty) {
+          return intersectJoinEdges.exists(
+            join =>
+              join.left == subsumerIndex &&
+              join.left == subsumeeIndex || join.right == subsumerIndex &&
+                                            join.right == subsumeeIndex
+          )
+        }
+        true
+      case _ => false
+    }
   }
 
   // add Select operator as placeholder on top of subsumee to facilitate matching

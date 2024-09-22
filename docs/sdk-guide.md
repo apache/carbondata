@@ -95,7 +95,7 @@ import org.apache.carbondata.sdk.file.CarbonWriter;
 import org.apache.carbondata.core.metadata.datatype.Field;
 
 import org.apache.avro.generic.GenericData;
-import org.apache.commons.lang.CharEncoding;
+import org.apache.commons.lang3.CharEncoding;
 
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 

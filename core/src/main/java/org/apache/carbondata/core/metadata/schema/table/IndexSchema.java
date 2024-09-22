@@ -31,7 +31,7 @@ import org.apache.carbondata.core.metadata.schema.index.IndexProperty;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
 import com.google.gson.annotations.SerializedName;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * It is the new schema of index and it has less fields compare to {{@link IndexSchema}}

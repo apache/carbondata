@@ -18,6 +18,7 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.mutation.merge._
 import org.apache.spark.sql.functions.col
@@ -116,4 +117,9 @@ case class CarbonMergeIntoSQLCommand(mergeInto: CarbonMergeIntoModel)
   }
 
   override protected def opName: String = "MERGE SQL COMMAND"
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+  : LogicalPlan = {
+    this
+  }
 }

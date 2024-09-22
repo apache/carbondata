@@ -89,17 +89,17 @@ object CarbonFilters {
         translateEqualTo(a.name, v, columnTypes)
       case EqualTo(Literal(v, _), a: Attribute) =>
         translateEqualTo(a.name, v, columnTypes)
-      case c@EqualTo(Cast(_: Attribute, _, _), _: Literal) =>
+      case c@EqualTo(Cast(_: Attribute, _, _, _), _: Literal) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
-      case c@EqualTo(_: Literal, Cast(_: Attribute, _, _)) =>
+      case c@EqualTo(_: Literal, Cast(_: Attribute, _, _, _)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case Not(EqualTo(a: Attribute, Literal(v, _))) =>
         translateNotEqualTo(a.name, v, columnTypes)
       case Not(EqualTo(Literal(v, _), a: Attribute)) =>
         translateNotEqualTo(a.name, v, columnTypes)
-      case c@Not(EqualTo(Cast(_: Attribute, _, _), _: Literal)) =>
+      case c@Not(EqualTo(Cast(_: Attribute, _, _, _), _: Literal)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
-      case c@Not(EqualTo(_: Literal, Cast(_: Attribute, _, _))) =>
+      case c@Not(EqualTo(_: Literal, Cast(_: Attribute, _, _, _))) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case IsNotNull(a: Attribute) =>
         translateNotEqualTo(a.name, null, columnTypes, true)
@@ -109,9 +109,9 @@ object CarbonFilters {
         translateNotIn(a.name, list.map(e => e.eval(EmptyRow)), columnTypes)
       case In(a: Attribute, list) if list.forall(_.isInstanceOf[Literal]) =>
         translateIn(a.name, list.map(e => e.eval(EmptyRow)), columnTypes)
-      case c@Not(In(Cast(_: Attribute, _, _), list)) if list.forall(_.isInstanceOf[Literal]) =>
+      case c@Not(In(Cast(_: Attribute, _, _, _), list)) if list.forall(_.isInstanceOf[Literal]) =>
         Some(transformExpression(c))
-      case c@In(Cast(_: Attribute, _, _), list) if list.forall(_.isInstanceOf[Literal]) =>
+      case c@In(Cast(_: Attribute, _, _, _), list) if list.forall(_.isInstanceOf[Literal]) =>
         Some(transformExpression(c))
       case InSet(a: Attribute, set) =>
         translateIn(a.name, set.toSeq, columnTypes)
@@ -121,33 +121,33 @@ object CarbonFilters {
         translateGreaterThan(a.name, v, columnTypes)
       case GreaterThan(Literal(v, _), a: Attribute) =>
         translateLessThan(a.name, v, columnTypes)
-      case c@GreaterThan(Cast(_: Attribute, _, _), _: Literal) =>
+      case c@GreaterThan(Cast(_: Attribute, _, _, _), _: Literal) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
-      case c@GreaterThan(_: Literal, Cast(_: Attribute, _, _)) =>
+      case c@GreaterThan(_: Literal, Cast(_: Attribute, _, _, _)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case LessThan(a: Attribute, Literal(v, _)) =>
         translateLessThan(a.name, v, columnTypes)
       case LessThan(Literal(v, _), a: Attribute) =>
         translateGreaterThan(a.name, v, columnTypes)
-      case c@LessThan(Cast(_: Attribute, _, _), _: Literal) =>
+      case c@LessThan(Cast(_: Attribute, _, _, _), _: Literal) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
-      case c@LessThan(_: Literal, Cast(_: Attribute, _, _)) =>
+      case c@LessThan(_: Literal, Cast(_: Attribute, _, _, _)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case GreaterThanOrEqual(a: Attribute, Literal(v, _)) =>
         translateGreaterThanEqual(a.name, v, columnTypes)
       case GreaterThanOrEqual(Literal(v, _), a: Attribute) =>
         translateLessThanEqual(a.name, v, columnTypes)
-      case c@GreaterThanOrEqual(Cast(_: Attribute, _, _), _: Literal) =>
+      case c@GreaterThanOrEqual(Cast(_: Attribute, _, _, _), _: Literal) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
-      case c@GreaterThanOrEqual(_: Literal, Cast(_: Attribute, _, _)) =>
+      case c@GreaterThanOrEqual(_: Literal, Cast(_: Attribute, _, _, _)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case LessThanOrEqual(a: Attribute, Literal(v, _)) =>
         translateLessThanEqual(a.name, v, columnTypes)
       case LessThanOrEqual(Literal(v, _), a: Attribute) =>
         translateGreaterThanEqual(a.name, v, columnTypes)
-      case c@LessThanOrEqual(Cast(_: Attribute, _, _), Literal(v, t)) =>
+      case c@LessThanOrEqual(Cast(_: Attribute, _, _, _), Literal(v, t)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
-      case c@LessThanOrEqual(_: Literal, Cast(_: Attribute, _, _)) =>
+      case c@LessThanOrEqual(_: Literal, Cast(_: Attribute, _, _, _)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case StartsWith(a: Attribute, Literal(v, _)) if v.toString.nonEmpty =>
         translateStartsWith(a.name, v, columnTypes)
@@ -159,7 +159,7 @@ object CarbonFilters {
         Some(new FalseExpression(null))
       case ArrayContains(a: Attribute, Literal(v, _)) =>
         translateArrayContains(a, v, columnTypes)
-      case ac@ArrayContains(Cast(_: Attribute, _, _), _: Literal) =>
+      case ac@ArrayContains(Cast(_: Attribute, _, _, _), _: Literal) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(EqualTo(ac.left, ac.right))
       case _ => None
     }

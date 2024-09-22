@@ -36,7 +36,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark_${spark.binary.version}</artifactId>
+      <artifactId>carbondata-spark</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -77,26 +77,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>spark-2.3</id>
-      <properties>
-        <spark.binary.version>2.3</spark.binary.version>
-      </properties>
-    </profile>
-    <profile>
-      <id>spark-2.4</id>
-      <properties>
-        <spark.binary.version>2.4</spark.binary.version>
-      </properties>
-    </profile>
-    <profile>
-      <id>spark-3.1</id>
-      <properties>
-        <spark.binary.version>3.1</spark.binary.version>
-      </properties>
-    </profile>
-  </profiles>
-
 </project>

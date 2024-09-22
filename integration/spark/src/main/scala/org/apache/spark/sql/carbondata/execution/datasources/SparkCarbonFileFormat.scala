@@ -36,8 +36,9 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.readsupport.SparkUnsafeRowReadSupport
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.{CarbonLoadTaskCompletionListenerImpl, CarbonQueryTaskCompletionListenerImpl}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.JoinedRow
+import org.apache.spark.sql.catalyst.expressions.{AttributeReference, JoinedRow}
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
+import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.catalyst.util.{ArrayData, MapData}
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
@@ -191,7 +192,7 @@ class SparkCarbonFileFormat extends FileFormat
   /**
    * Writer class for carbondata files
    */
-  private class CarbonOutputWriter(path: String,
+  private class CarbonOutputWriter(val path: String,
       context: TaskAttemptContext,
       fieldTypes: Array[StructField]) extends OutputWriter with AbstractCarbonOutputWriter {
 
@@ -397,10 +398,10 @@ class SparkCarbonFileFormat extends FileFormat
 
     file: PartitionedFile => {
       assert(file.partitionValues.numFields == partitionSchema.size)
-
-      if (file.filePath.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
+      val filePath = file.filePath.toString
+      if (filePath.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
         val split = new CarbonInputSplit("null",
-          new Path(new URI(file.filePath)).toString,
+          new Path(new URI(filePath)).toString,
           file.start,
           file.length,
           file.locations,
@@ -455,9 +456,10 @@ class SparkCarbonFileFormat extends FileFormat
         if (carbonReader.isInstanceOf[VectorizedCarbonRecordReader] && readVector) {
           iter.asInstanceOf[Iterator[InternalRow]]
         } else {
-          val fullSchema = requiredSchema.toAttributes ++ partitionSchema.toAttributes
+          val fullSchema = StructType(requiredSchema.fields).merge(partitionSchema)
+            .map(f => DataTypeUtils.toAttribute(f))
           val joinedRow = new JoinedRow()
-          val appendPartitionColumns = GenerateUnsafeProjection.generate(fullSchema, fullSchema)
+          val appendPartitionColumns = GenerateUnsafeProjection.generate(fullSchema)
           if (partitionSchema.length == 0) {
             // There is no partition columns
             iter.asInstanceOf[Iterator[InternalRow]]
@@ -506,13 +508,7 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
     // Call only in case of carbon flow.
     if (carbonFlow != null) {
       val (allAbsPathFiles, allPartitionPaths) =
-        // spark 2.1 and 2.2 case
-        if (taskCommits.exists(_.obj.isInstanceOf[Map[String, String]])) {
-        (taskCommits.map(_.obj.asInstanceOf[Map[String, String]]), null)
-      } else {
-          // spark 2.3 and above
         taskCommits.map(_.obj.asInstanceOf[(Map[String, String], Set[String])]).unzip
-      }
       val filesToMove = allAbsPathFiles.foldLeft(Map[String, String]())(_ ++ _)
       val fs = new Path(path).getFileSystem(jobContext.getConfiguration)
       // Move files from stage directory to actual location.

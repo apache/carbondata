@@ -22,7 +22,7 @@ import java.text.SimpleDateFormat
 import java.util.{Date, Random}
 
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.DataSourceTestUtil._
 import org.apache.spark.sql.test.TestQueryExecutor

@@ -112,6 +112,11 @@ case class BroadCastPolygonFilterPushJoin(
   }
 
   override def output: Seq[Attribute] = left.output ++ right.output
+
+  override protected def withNewChildrenInternal(newLeft: SparkPlan,
+      newRight: SparkPlan): SparkPlan = {
+    copy(left = newLeft, right = newRight)
+  }
 }
 
 object BroadCastPolygonFilterPushJoin {

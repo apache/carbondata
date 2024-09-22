@@ -162,7 +162,7 @@ object TestQueryExecutor {
     jarsLocal
   }
 
-  lazy val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
+  lazy val INSTANCE = new SparkTestQueryExecutor()
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
     .addProperty(CarbonCommonConstants.CARBON_ENABLE_AUDIT, "false")
@@ -170,11 +170,6 @@ object TestQueryExecutor {
     .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "1024")
     .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")
     .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "40")
-
-  private def lookupQueryExecutor: Class[_] = {
-    ServiceLoader.load(classOf[TestQueryExecutorRegister], Utils.getContextOrSparkClassLoader)
-      .iterator().next().getClass
-  }
 
   private def createDirectory(badStoreLocation: String) = {
     FileFactory.mkdirs(badStoreLocation)

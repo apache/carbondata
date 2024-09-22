@@ -82,14 +82,6 @@ object SparkTestQueryExecutor {
     .getOrCreate()
   spark.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
   CarbonEnv.getInstance(spark)
-  if (warehouse.startsWith("hdfs://")) {
-    System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, warehouse)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
-      CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
-    ResourceRegisterAndCopier.
-      copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark/src/test/resources",
-        s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")
-  }
   if (System.getProperty("useIndexServer") != null) {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_IP, "localhost")

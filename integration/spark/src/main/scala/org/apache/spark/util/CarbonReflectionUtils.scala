@@ -167,7 +167,7 @@ object CarbonReflectionUtils {
       mode: SaveMode,
       query: LogicalPlan,
       physicalPlan: SparkPlan): BaseRelation = {
-    dataSourceObj.writeAndRead(mode, query, query.output.map(_.name), physicalPlan)
+    dataSourceObj.writeAndRead(mode, query, query.output.map(_.name))
   }
 
   /**

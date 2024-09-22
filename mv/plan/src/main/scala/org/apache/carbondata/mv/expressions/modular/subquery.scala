@@ -39,16 +39,10 @@ abstract class ModularSubquery(
 
   override def withNewPlan(plan: ModularPlan): ModularSubquery
 
-  override def semanticEquals(o: Expression): Boolean = {
-    o match {
-      case p: ModularSubquery =>
-        this.getClass.getName.equals(p.getClass.getName) && plan.sameResult(p.plan) &&
-        children.length == p.children.length &&
-        children.zip(p.children).forall(p => p._1.semanticEquals(p._2))
-      case _ => false
-    }
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[Expression]): Expression = {
+    this
   }
-
   def canonicalize(attrs: AttributeSeq): ModularSubquery = {
     // Normalize the outer references in the subquery plan.
     val normalizedPlan = plan.transformAllExpressions {

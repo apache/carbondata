@@ -25,6 +25,7 @@ import org.apache.carbondata.core.locks.ZooKeeperLocking;
 import org.apache.carbondata.core.locks.ZookeeperInit;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
+import org.apache.zookeeper.server.admin.AdminServer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.junit.After;
 import org.junit.Assert;
@@ -67,7 +68,7 @@ public class ZooKeeperLockingTest {
       public void run() {
         try {
           zooKeeperServer.runFromConfig(configuration);
-        } catch (IOException e) {
+        } catch (IOException | AdminServer.AdminServerException e) {
           System.out.println("ZooKeeper failure");
         }
       }

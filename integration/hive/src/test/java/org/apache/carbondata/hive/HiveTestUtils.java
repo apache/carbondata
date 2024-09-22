@@ -45,8 +45,8 @@ public abstract class HiveTestUtils {
   static {
     try {
       File rootPath = new File(HiveTestUtils.class.getResource("/").getPath() + "../../../..");
-      String targetLoc = rootPath.getAbsolutePath() + "/integration/hive/target/warehouse";
-      String metadatadbLoc = rootPath.getAbsolutePath() + "/integration/hive/target/metastore_db";
+      String targetLoc = rootPath.getCanonicalPath() + "/integration/hive/target";
+      String metadatadbLoc = targetLoc + "/metastore_db";
       File file = new File(metadatadbLoc);
       if (file.exists()) {
         file.delete();

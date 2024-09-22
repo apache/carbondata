@@ -2660,18 +2660,6 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SDK_EMPTY_METADATA_PATH = "emptyMetadataFolder";
 
   /**
-   * Property to identify if the spark version is above 3.x version
-   */
-  public static final String CARBON_SPARK_VERSION_SPARK3 = "carbon.spark.version.spark3";
-
-  public static final String CARBON_SPARK_VERSION_SPARK3_DEFAULT = "false";
-
-  /**
-   * Carbon Spark 3.x supported data file written version
-   */
-  public static final String CARBON_SPARK3_VERSION = "2.2.0";
-
-  /**
    * This property is to enable the min max pruning of target carbon table based on input/source
    * data
    */
