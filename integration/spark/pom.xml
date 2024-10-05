@@ -145,8 +145,7 @@
         </exclusion>
       </exclusions>
     </dependency>
-
-    <!-- <dependency>
+    <dependency>
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-geo</artifactId>
       <version>${project.version}</version>
@@ -156,8 +155,7 @@
           <artifactId>hive-exec</artifactId>
         </exclusion>
       </exclusions>
-    </dependency> -->
-    
+    </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-streaming_${spark.binary.version}</artifactId>
