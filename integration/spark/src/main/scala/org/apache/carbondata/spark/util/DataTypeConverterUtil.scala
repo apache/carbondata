@@ -42,7 +42,7 @@ object DataTypeConverterUtil {
       case "bigint" => DataTypes.LONG
       case "numeric" => DataTypes.DOUBLE
       case "double" => DataTypes.DOUBLE
-      case "float" => DataTypes.DOUBLE
+      case "float" => DataTypes.FLOAT
       case "decimal" => DataTypes.createDefaultDecimalType
       case FIXED_DECIMAL(_, _) => DataTypes.createDefaultDecimalType
       case "timestamp" => DataTypes.TIMESTAMP
@@ -67,7 +67,7 @@ object DataTypeConverterUtil {
       case "biginttype" => DataTypes.LONG
       case "numerictype" => DataTypes.DOUBLE
       case "doubletype" => DataTypes.DOUBLE
-      case "floattype" => DataTypes.DOUBLE
+      case "floattype" => DataTypes.FLOAT
       case "decimaltype" => DataTypes.createDefaultDecimalType
       case FIXED_DECIMALTYPE(_, _) => DataTypes.createDefaultDecimalType
       case "timestamptype" => DataTypes.TIMESTAMP
@@ -159,6 +159,7 @@ object DataTypeConverterUtil {
       case "boolean" => ThriftDataType.BOOLEAN
       case "short" => ThriftDataType.SHORT
       case "long" | "bigint" => ThriftDataType.LONG
+      case "float" => ThriftDataType.FLOAT
       case "double" => ThriftDataType.DOUBLE
       case "decimal" => ThriftDataType.DECIMAL
       case "date" => ThriftDataType.DATE

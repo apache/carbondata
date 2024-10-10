@@ -299,10 +299,11 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
     IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
@@ -310,14 +311,19 @@ public class CarbonReaderTest extends TestCase {
     EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
         new LiteralExpression("3.5", DataTypes.DOUBLE));
 
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    EqualToExpression equalToExpression1 = new EqualToExpression(columnExpression1,
+        new LiteralExpression("3.5", DataTypes.FLOAT));
+
     ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
     EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
-    AndExpression andExpression = new AndExpression(equalToExpression, equalToExpression2);
+    AndExpression andExpression = new AndExpression(equalToExpression,
+        new AndExpression(equalToExpression1, equalToExpression2));
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(andExpression)
         .build();
 
@@ -327,6 +333,7 @@ public class CarbonReaderTest extends TestCase {
       assert (((String) row[0]).contains("robot7"));
       assert (7 == (int) (row[1]));
       assert (3.5 == (double) (row[2]));
+      assert (3.5 == (float) (row[3]));
       i++;
     }
     Assert.assertEquals(i, 1);
@@ -342,10 +349,11 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
     IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
@@ -353,14 +361,19 @@ public class CarbonReaderTest extends TestCase {
     EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
         new LiteralExpression("3.5", DataTypes.DOUBLE));
 
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    EqualToExpression equalToExpression1 = new EqualToExpression(columnExpression1,
+        new LiteralExpression("3.5", DataTypes.FLOAT));
+
     ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
     EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
-    OrExpression orExpression = new OrExpression(equalToExpression, equalToExpression2);
+    OrExpression orExpression = new OrExpression(equalToExpression,
+        new OrExpression(equalToExpression1, equalToExpression2));
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(orExpression)
         .build();
 
@@ -370,6 +383,7 @@ public class CarbonReaderTest extends TestCase {
       assert (((String) row[0]).contains("robot7"));
       assert (7 == ((int) (row[1]) % 10));
       assert (0.5 == ((double) (row[2]) % 1));
+      assert (0.5 == ((float) (row[3]) % 1));
       i++;
     }
     Assert.assertEquals(i, 20);
@@ -385,10 +399,11 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
     IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
@@ -396,14 +411,19 @@ public class CarbonReaderTest extends TestCase {
     GreaterThanExpression greaterThanExpression = new GreaterThanExpression(columnExpression,
         new LiteralExpression("13.5", DataTypes.DOUBLE));
 
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    GreaterThanExpression greaterThanExpression1 = new GreaterThanExpression(columnExpression1,
+        new LiteralExpression("13.5", DataTypes.FLOAT));
+
     ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
     EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
-    AndExpression andExpression = new AndExpression(greaterThanExpression, equalToExpression2);
+    AndExpression andExpression = new AndExpression(greaterThanExpression,
+        new AndExpression(greaterThanExpression1,  equalToExpression2));
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(andExpression)
         .build();
 
@@ -413,6 +433,7 @@ public class CarbonReaderTest extends TestCase {
       assert (((String) row[0]).contains("robot7"));
       assert (7 == ((int) (row[1]) % 10));
       assert ((double) row[2] > 13.5);
+      assert ((float) row[3] > 13.5);
       i++;
     }
     Assert.assertEquals(i, 17);
@@ -426,10 +447,11 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterEqualSet() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
@@ -439,7 +461,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(prepareEqualToExpressionSet("name", "String", values))
         .build();
 
@@ -449,9 +471,11 @@ public class CarbonReaderTest extends TestCase {
       if (((String) row[0]).contains("robot7")) {
         assert (7 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else if (((String) row[0]).contains("robot1")) {
         assert (1 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else {
         Assert.assertTrue(false);
       }
@@ -467,7 +491,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(prepareEqualToExpressionSet("age", "int", values2))
         .build();
 
@@ -477,9 +501,11 @@ public class CarbonReaderTest extends TestCase {
       if (((String) row[0]).contains("robot7")) {
         assert (7 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else if (((String) row[0]).contains("robot1")) {
         assert (1 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else {
         Assert.assertTrue(false);
       }
@@ -494,8 +520,9 @@ public class CarbonReaderTest extends TestCase {
     values3.add(3.5);
     CarbonReader reader3 = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(prepareEqualToExpressionSet("doubleField", "double", values3))
+        .filter(prepareEqualToExpressionSet("floatField", "float", values3))
         .build();
 
     i = 0;
@@ -504,9 +531,11 @@ public class CarbonReaderTest extends TestCase {
       if (((String) row[0]).contains("robot7")) {
         assert (7 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else if (((String) row[0]).contains("robot1")) {
         assert (1 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else {
         Assert.assertTrue(false);
       }
@@ -517,7 +546,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader4 = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(prepareEqualToExpression("name", "string", "robot7"))
         .build();
 
@@ -527,6 +556,7 @@ public class CarbonReaderTest extends TestCase {
       if (((String) row[0]).contains("robot7")) {
         assert (7 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else {
         Assert.assertTrue(false);
       }
@@ -542,7 +572,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader5 = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(prepareOrExpression(expressions))
         .build();
 
@@ -552,12 +582,15 @@ public class CarbonReaderTest extends TestCase {
       if (((String) row[0]).contains("robot7")) {
         assert (7 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else if (((String) row[0]).contains("robot1")) {
         assert (1 == ((int) (row[1]) % 10));
         assert (0.5 == ((double) (row[2]) % 1));
+        assert (0.5 == ((float) (row[3]) % 1));
       } else if (((String) row[0]).contains("robot2")) {
         assert (2 == ((int) (row[1]) % 10));
         assert (0 == ((double) (row[2]) % 1));
+        assert (0 == ((float) (row[3]) % 1));
       } else {
         Assert.assertTrue(false);
       }
@@ -577,10 +610,11 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
     IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
@@ -588,14 +622,19 @@ public class CarbonReaderTest extends TestCase {
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
         new LiteralExpression("13.5", DataTypes.DOUBLE));
 
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    LessThanExpression lessThanExpression1 = new LessThanExpression(columnExpression1,
+        new LiteralExpression("13.5", DataTypes.FLOAT));
+
     ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
     EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
-    AndExpression andExpression = new AndExpression(lessThanExpression, equalToExpression2);
+    AndExpression andExpression = new AndExpression(lessThanExpression,
+        new AndExpression(lessThanExpression1, equalToExpression2));
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(andExpression)
         .build();
 
@@ -605,6 +644,7 @@ public class CarbonReaderTest extends TestCase {
       assert (((String) row[0]).contains("robot7"));
       assert (7 == ((int) (row[1]) % 10));
       assert ((double) row[2] < 13.5);
+      assert ((float) row[3] < 13.5);
       i++;
     }
     Assert.assertEquals(i, 2);
@@ -620,10 +660,11 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
     IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
@@ -631,14 +672,19 @@ public class CarbonReaderTest extends TestCase {
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
         new LiteralExpression("13.5", DataTypes.DOUBLE));
 
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    LessThanExpression lessThanExpression1 = new LessThanExpression(columnExpression1,
+        new LiteralExpression("13.5", DataTypes.FLOAT));
+
     ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
     NotEqualsExpression notEqualsExpression = new NotEqualsExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
-    AndExpression andExpression = new AndExpression(lessThanExpression, notEqualsExpression);
+    AndExpression andExpression = new AndExpression(lessThanExpression,
+        new AndExpression(lessThanExpression1, notEqualsExpression));
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(andExpression)
         .build();
 
@@ -648,6 +694,7 @@ public class CarbonReaderTest extends TestCase {
       assert (!((String) row[0]).contains("robot7"));
       assert (7 != ((int) (row[1]) % 10));
       assert ((double) row[2] < 13.5);
+      assert ((float) row[3] < 13.5);
       i++;
     }
     Assert.assertEquals(i, 25);
@@ -662,10 +709,11 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
     IndexStoreManager.getInstance()
@@ -674,14 +722,19 @@ public class CarbonReaderTest extends TestCase {
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
         new LiteralExpression("13.5", DataTypes.DOUBLE));
 
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    LessThanExpression lessThanExpression1 = new LessThanExpression(columnExpression1,
+        new LiteralExpression("13.5", DataTypes.FLOAT));
+
     ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
     InExpression inExpression = new InExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
-    AndExpression andExpression = new AndExpression(lessThanExpression, inExpression);
+    AndExpression andExpression = new AndExpression(lessThanExpression,
+        new AndExpression(lessThanExpression1, inExpression));
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(andExpression)
         .build();
 
@@ -691,6 +744,7 @@ public class CarbonReaderTest extends TestCase {
       assert (((String) row[0]).contains("robot7"));
       assert (7 == ((int) (row[1]) % 10));
       assert ((double) row[2] < 13.5);
+      assert ((float) row[3] < 13.5);
       i++;
     }
     Assert.assertEquals(i, 2);
@@ -706,10 +760,11 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
     IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
-    Field[] fields = new Field[3];
+    Field[] fields = new Field[4];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+    fields[3] = new Field("floatField", DataTypes.FLOAT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
@@ -717,14 +772,19 @@ public class CarbonReaderTest extends TestCase {
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
         new LiteralExpression("13.5", DataTypes.DOUBLE));
 
+    ColumnExpression columnExpression1 = new ColumnExpression("floatField", DataTypes.FLOAT);
+    LessThanExpression lessThanExpression1 = new LessThanExpression(columnExpression1,
+        new LiteralExpression("13.5", DataTypes.FLOAT));
+
     ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
     NotInExpression notInExpression = new NotInExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
-    AndExpression andExpression = new AndExpression(lessThanExpression, notInExpression);
+    AndExpression andExpression = new AndExpression(lessThanExpression,
+        new AndExpression(lessThanExpression1, notInExpression));
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age", "doubleField"})
+        .projection(new String[]{"name", "age", "doubleField", "floatField"})
         .filter(andExpression)
         .build();
 
@@ -734,6 +794,7 @@ public class CarbonReaderTest extends TestCase {
       assert (!((String) row[0]).contains("robot7"));
       assert (7 != ((int) (row[1]) % 10));
       assert ((double) row[2] < 13.5);
+      assert ((float) row[3] < 13.5);
       i++;
     }
     Assert.assertEquals(i, 25);
@@ -1065,7 +1126,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
-    Field[] fields = new Field[9];
+    Field[] fields = new Field[10];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("intField", DataTypes.INT);
     fields[2] = new Field("shortField", DataTypes.SHORT);
@@ -1075,6 +1136,7 @@ public class CarbonReaderTest extends TestCase {
     fields[6] = new Field("dateField", DataTypes.DATE);
     fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+    fields[9] = new Field("floatField", DataTypes.FLOAT);
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
@@ -1091,7 +1153,8 @@ public class CarbonReaderTest extends TestCase {
             String.valueOf(true),
             "2018-05-12",
             "2018-05-12",
-            "12.345"
+            "12.345",
+            String.valueOf((float) i / 2),
         };
         writer.write(row);
         String[] row2 = new String[]{
@@ -1103,7 +1166,8 @@ public class CarbonReaderTest extends TestCase {
             String.valueOf(true),
             "2019-03-02",
             "2019-02-12 03:03:34",
-            "12.345"
+            "12.345",
+            String.valueOf((float) i / 2),
         };
         writer.write(row2);
       }
@@ -1135,7 +1199,8 @@ public class CarbonReaderTest extends TestCase {
             , "boolField"
             , "dateField"
             , "timeField"
-            , "decimalField"})
+            , "decimalField"
+            , "floatField"})
         .build();
 
     int i = 0;
@@ -1149,6 +1214,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(true, (boolean) row[5]);
       Assert.assertEquals("2019-03-02", row[6]);
       Assert.assertEquals("2019-02-12 03:03:34", row[7]);
+      Assert.assertEquals((float) id / 2, row[9]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -1181,7 +1247,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
-    Field[] fields = new Field[9];
+    Field[] fields = new Field[10];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("shortField", DataTypes.SHORT);
     fields[2] = new Field("intField", DataTypes.INT);
@@ -1191,6 +1257,7 @@ public class CarbonReaderTest extends TestCase {
     fields[6] = new Field("dateField", DataTypes.DATE);
     fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+    fields[9] = new Field("floatField", DataTypes.FLOAT);
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
@@ -1207,7 +1274,8 @@ public class CarbonReaderTest extends TestCase {
             String.valueOf(true),
             "2019-03-02",
             "2019-02-12 03:03:34",
-            "12.345"
+            "12.345",
+            String.valueOf((float) i / 2),
         };
         writer.write(row2);
       }
@@ -1259,6 +1327,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(true, (boolean) row[5]);
       Assert.assertEquals("2019-03-02", row[6]);
       Assert.assertEquals("2019-02-12 03:03:34", row[7]);
+      Assert.assertEquals((float) id / 2, row[9]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -1291,7 +1360,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
-    Field[] fields = new Field[9];
+    Field[] fields = new Field[10];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("shortField", DataTypes.SHORT);
     fields[2] = new Field("intField", DataTypes.INT);
@@ -1301,6 +1370,7 @@ public class CarbonReaderTest extends TestCase {
     fields[6] = new Field("dateField", DataTypes.DATE);
     fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+    fields[9] = new Field("floatField", DataTypes.FLOAT);
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path)
@@ -1318,7 +1388,8 @@ public class CarbonReaderTest extends TestCase {
             String.valueOf(true),
             "2019-03-02",
             "2019-02-12 03:03:34",
-            "12.345"
+            "12.345",
+            String.valueOf((float) i / 2),
         };
         writer.write(row2);
       }
@@ -1370,6 +1441,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(true, (boolean) row[5]);
       Assert.assertEquals("2019-03-02", row[6]);
       Assert.assertEquals("2019-02-12 03:03:34", row[7]);
+      Assert.assertEquals((float) id / 2, row[9]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -1657,7 +1729,7 @@ public class CarbonReaderTest extends TestCase {
     try {
       FileUtils.deleteDirectory(new File(path));
 
-      Field[] fields = new Field[11];
+      Field[] fields = new Field[12];
       fields[0] = new Field("stringField", DataTypes.STRING);
       fields[1] = new Field("shortField", DataTypes.SHORT);
       fields[2] = new Field("intField", DataTypes.INT);
@@ -1669,6 +1741,7 @@ public class CarbonReaderTest extends TestCase {
       fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
       fields[9] = new Field("varcharField", DataTypes.VARCHAR);
       fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+      fields[11] = new Field("floatField", DataTypes.FLOAT);
       Map<String, String> map = new HashMap<>();
       map.put("complex_delimiter_level_1", "#");
       CarbonWriter writer = CarbonWriter.builder()
@@ -1690,7 +1763,8 @@ public class CarbonReaderTest extends TestCase {
             "2019-02-12 03:03:34",
             "12.345",
             "varchar",
-            "Hello#World#From#Carbon"
+            "Hello#World#From#Carbon",
+            String.valueOf((float) i / 2),
         };
         writer.write(row2);
       }
