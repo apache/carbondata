@@ -38,7 +38,7 @@ REQUIRED_PACKAGES = [
     'numpy>=1.13.3',
     'pandas>=0.19.0',
     'psutil>=4.0.0',
-    'pyspark==2.3.2',
+    'pyspark==3.3.2',
     'pyzmq>=14.0.0',
     'pyarrow==14.0.1',
     'six>=1.5.0',
