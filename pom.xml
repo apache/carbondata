@@ -851,7 +851,7 @@
     <profile>
       <id>prestodb</id>
       <properties>
-        <presto.version>0.217</presto.version>
+        <presto.version>0.291</presto.version>
         <scala.version>2.11.8</scala.version>
         <airlift.version>0.31</airlift.version>
         <presto.groupid>com.facebook.presto</presto.groupid>
