@@ -442,6 +442,19 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable2")
   }
 
+  test("test cache after delete") {
+    sql("drop table if exists carbonTable1")
+    sql("create table carbonTable1(col1 int, col2 string,col3 string) stored as carbondata")
+    sql("insert into carbonTable1 select 1, 'ab', 'vf'")
+    sql("insert into carbonTable1 select 1, 'ab', 'vf'")
+    var showCache = sql("show metacache on table carbonTable1").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("0/2 index files cached"))
+    sql("delete from carbonTable1 where col3 ='vf'").collect()
+    showCache = sql("show metacache on table carbonTable1").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("0/0 index files cached"))
+    sql("drop table if exists carbonTable1")
+  }
+
   // Runs only when index server is enabled.
   test("test embedded pruning", false) {
     val mock: MockUp[CarbonInputFormat[Object]] = new MockUp[CarbonInputFormat[Object]]() {
