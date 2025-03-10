@@ -735,6 +735,74 @@ public class ThriftWrapperSchemaConverterImplTest {
     assertEquals(thriftColumnSchema, actualResult);
   }
 
+  @Test
+  public void testFromWrapperToExternalColumnSchemaForFloatDatatype() {
+    org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
+        new org.apache.carbondata.format.ColumnSchema(org.apache.carbondata.format.DataType.FLOAT,
+            "columnName", "1", true, encoders, true);
+    thriftColumnSchema.setSchemaOrdinal(1);
+    thriftColumnSchema.setAggregate_function("");
+
+    new MockUp<ColumnSchema>() {
+      @Mock public List<Encoding> getEncodingList() {
+        return encodings;
+      }
+
+      @Mock public int getSchemaOrdinal() {
+        return 1;
+      }
+
+      @Mock public DataType getDataType() {
+        return DataTypes.FLOAT;
+      }
+
+      @Mock public String getColumnName() {
+        return "columnName";
+      }
+
+      @Mock public String getColumnUniqueId() {
+        return "1";
+      }
+
+      @Mock public boolean isDimensionColumn() {
+        return true;
+      }
+
+      @Mock public int getScale() {
+        return 1;
+      }
+
+      @Mock public int getPrecision() {
+        return 1;
+      }
+
+      @Mock public int getNumberOfChild() {
+        return 1;
+      }
+
+      @Mock public byte[] getDefaultValue() {
+        return new byte[] { 1, 2 };
+      }
+
+      @Mock public Map<String, String> getColumnProperties() {
+        return columnPropertyMap;
+      }
+
+      @Mock public boolean isInvisible() {
+        return true;
+      }
+
+      @Mock public String getColumnReferenceId() {
+        return "1";
+      }
+    };
+
+    ColumnSchema wrapperColumnSchema = new ColumnSchema();
+    org.apache.carbondata.format.ColumnSchema actualResult =
+        thriftWrapperSchemaConverter.fromWrapperToExternalColumnSchema(wrapperColumnSchema);
+    assertEquals(thriftColumnSchema, actualResult);
+  }
+
   @Test public void testFromWrapperToExternalColumnSchemaForDoubleDatatype() {
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
         new org.apache.carbondata.format.ColumnSchema(org.apache.carbondata.format.DataType.DOUBLE,
