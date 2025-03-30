@@ -17,13 +17,12 @@
 
 package org.apache.carbondata.spark.testsuite.index
 
-import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
@@ -353,11 +352,11 @@ class CGIndexWriter(
     val file = indexPath + "/testcg.indexSchema"
     val stream: DataOutputStream = FileFactory
       .getDataOutputStream(file)
-    val out = new ByteOutputStream()
+    val out = new ByteArrayOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)
     outStream.close()
-    val bytes = compressor.compressByte(out.getBytes)
+    val bytes = compressor.compressByte(out.toByteArray)
     stream.write(bytes.array(), 0, bytes.limit())
     stream.writeInt(bytes.limit())
     stream.close()
