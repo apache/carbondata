@@ -125,7 +125,7 @@
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
     <snappy.version>1.1.2.6</snappy.version>
-    <hadoop.version>2.7.2</hadoop.version>
+    <hadoop.version>3.4.0</hadoop.version>
     <httpclient.version>4.3.4</httpclient.version>
     <httpcore.version>4.3-alpha1</httpcore.version>
     <scala.binary.version>2.11</scala.binary.version>
