@@ -43,6 +43,12 @@ public interface ColumnPageValueConverter {
 
   long decodeLong(int value);
 
+  float decodeFloat(byte value);
+
+  float decodeFloat(short value);
+
+  float decodeFloat(int value);
+
   double decodeDouble(byte value);
 
   double decodeDouble(short value);
