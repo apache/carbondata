@@ -94,9 +94,31 @@ public class SnappyCompressor extends AbstractCompressor {
     }
   }
 
+  /**
+   * Check the uncompressed data length is valid, otherwise throw IOException
+   * @throws IOException if uncompressed data length is invalid
+   */
+  private void validateUncompressedLength(byte[] compInput) throws IOException {
+    int uncompressedLength = Snappy.uncompressedLength(compInput);
+
+    // CHECK 1: Handle integer overflow that results in a negative size.
+    if (uncompressedLength < 0) {
+      throw new IOException("Invalid snappy stream: declared uncompressed length is negative (" +
+          uncompressedLength + "), likely due to an integer overflow attack.");
+    }
+
+    // CHECK 2: Handle sizes that are valid but too large for our system.
+    if (uncompressedLength > MAX_BYTE_TO_COMPRESS) {
+      throw new IOException("Declared uncompressed length (" + uncompressedLength +
+          " bytes) is larger than the allowed limit (" +
+          MAX_BYTE_TO_COMPRESS + " bytes).");
+    }
+  }
+
   @Override
   public byte[] unCompressByte(byte[] compInput) {
     try {
+      validateUncompressedLength(compInput);
       return Snappy.uncompress(compInput);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
@@ -109,6 +131,7 @@ public class SnappyCompressor extends AbstractCompressor {
     int uncompressedLength = 0;
     byte[] data;
     try {
+      validateUncompressedLength(compInput);
       uncompressedLength = Snappy.uncompressedLength(compInput, offset, length);
       data = new byte[uncompressedLength];
       snappyNative.rawUncompress(compInput, offset, length, data, 0);
@@ -122,6 +145,7 @@ public class SnappyCompressor extends AbstractCompressor {
   @Override
   public short[] unCompressShort(byte[] compInput, int offset, int length) {
     try {
+      validateUncompressedLength(compInput);
       return Snappy.uncompressShortArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
@@ -132,6 +156,7 @@ public class SnappyCompressor extends AbstractCompressor {
   @Override
   public int[] unCompressInt(byte[] compInput, int offset, int length) {
     try {
+      validateUncompressedLength(compInput);
       return Snappy.uncompressIntArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
@@ -142,6 +167,7 @@ public class SnappyCompressor extends AbstractCompressor {
   @Override
   public long[] unCompressLong(byte[] compInput, int offset, int length) {
     try {
+      validateUncompressedLength(compInput);
       return Snappy.uncompressLongArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
@@ -152,6 +178,7 @@ public class SnappyCompressor extends AbstractCompressor {
   @Override
   public float[] unCompressFloat(byte[] compInput, int offset, int length) {
     try {
+      validateUncompressedLength(compInput);
       return Snappy.uncompressFloatArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
@@ -162,6 +189,7 @@ public class SnappyCompressor extends AbstractCompressor {
   @Override
   public double[] unCompressDouble(byte[] compInput, int offset, int length) {
     try {
+      validateUncompressedLength(compInput);
       int uncompressedLength = Snappy.uncompressedLength(compInput, offset, length);
       double[] result = new double[uncompressedLength / 8];
       snappyNative.rawUncompress(compInput, offset, length, result, 0);
