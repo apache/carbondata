@@ -17,8 +17,16 @@
 
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
 
-Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g. Apache Hadoop, Apache Spark, etc.
+- AI-native data storage for CarbonData's new scope, In AI projects, data scientists and engineers spend 80% of their time on data preparation. Traditional storage presents numerous bottlenecks in this process:
+  - Data silos: Training data may be scattered across data lakes, data warehouses, file systems, object storage, and other locations, making integration difficult.
+  - Performance bottlenecks:Training phase: High-speed, low-latency data throughput is required to feed GPUs to avoid expensive GPU resources sitting idle.
+  - Inference phase: High-concurrency, low-latency vector similarity search capabilities are required.
+  - Complex data formats: AI processes data types far beyond tables, including unstructured data (images, videos, text, audio) and semi-structured data (JSON, XML). Traditional databases have limited capabilities for processing and querying such data.
+  - Lack of metadata management: The lack of effective management of rich metadata such as data versions, lineage, annotation information, and experimental parameters leads to poor experimental reproducibility.
+  - Vectorization requirements: Modern AI models (such as large language models) convert all data into vector embeddings. Traditional storage cannot efficiently store and retrieve high-dimensional vectors.
 
+    
+- In the previous releases Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g. Apache Hadoop, Apache Spark, etc.
 You can find the latest CarbonData document and learn more at:
 [https://carbondata.apache.org](https://carbondata.apache.org/)
 
