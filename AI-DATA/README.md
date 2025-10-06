@@ -18,27 +18,25 @@
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
 
 
-## What is AI-native data storage
+## What is AI-native data
 
-* AI-native data storage is a data storage and management system designed and built specifically for the needs of artificial intelligence (AI) workloads, particularly machine learning and deep learning. Its core concept is to transform data storage from a passive, isolated component of the AI ​​process into an active, intelligent, and deeply integrated infrastructure.
+AI-native data storage is a data storage and management system designed and built specifically for the needs of artificial intelligence (AI) workloads, particularly machine learning and deep learning. Its core concept is to transform data storage from a passive, isolated component of the AI ​​process into an active, intelligent, and deeply integrated infrastructure.
 
-## Why AI-native data storage for CarbonData's new scope
+## Why AI-native data for CarbonData's new scope
 
 In AI projects, data scientists and engineers spend 80% of their time on data preparation. Traditional storage presents numerous bottlenecks in this process:
 
-Data silos: Training data may be scattered across data lakes, data warehouses, file systems, object storage, and other locations, making integration difficult.
+* Data silos: Training data may be scattered across data lakes, data warehouses, file systems, object storage, and other locations, making integration difficult.
 
-Performance bottlenecks:
+* Performance bottlenecks:Training phase: High-speed, low-latency data throughput is required to feed GPUs to avoid expensive GPU resources sitting idle.
 
-Training phase: High-speed, low-latency data throughput is required to feed GPUs to avoid expensive GPU resources sitting idle.
+* Inference phase: High-concurrency, low-latency vector similarity search capabilities are required.
 
-Inference phase: High-concurrency, low-latency vector similarity search capabilities are required.
+* Complex data formats: AI processes data types far beyond tables, including unstructured data (images, videos, text, audio) and semi-structured data (JSON, XML). Traditional databases have limited capabilities for processing and querying such data.
 
-Complex data formats: AI processes data types far beyond tables, including unstructured data (images, videos, text, audio) and semi-structured data (JSON, XML). Traditional databases have limited capabilities for processing and querying such data.
+* Lack of metadata management: The lack of effective management of rich metadata such as data versions, lineage, annotation information, and experimental parameters leads to poor experimental reproducibility.
 
-Lack of metadata management: The lack of effective management of rich metadata such as data versions, lineage, annotation information, and experimental parameters leads to poor experimental reproducibility.
-
-Vectorization requirements: Modern AI models (such as large language models) convert all data into vector embeddings. Traditional storage cannot efficiently store and retrieve high-dimensional vectors.
+* Vectorization requirements: Modern AI models (such as large language models) convert all data into vector embeddings. Traditional storage cannot efficiently store and retrieve high-dimensional vectors.
   
 
 ## About
