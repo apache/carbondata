@@ -1,0 +1,189 @@
+async def demo_single_agents():
+    """Demo individual agents"""
+    print("=== Single Agent Demo ===\n")
+    
+    # Create agents
+    echo_agent = EchoAgent()
+    calculator_agent = CalculatorAgent()
+    weather_agent = WeatherAgent()
+    translator_agent = TranslatorAgent()
+    chat_agent = ChatAgent()
+    
+    # Test echo agent
+    print("1. Testing Echo Agent:")
+    response = await echo_agent.process(AgentMessage(
+        content="Hello, world!", 
+        sender="User",
+        timestamp=time.time()
+    ))
+    print(f"Input: Hello, world!")
+    print(f"Output: {response.content}\n")
+    
+    # Test calculator agent
+    print("2. Testing Calculator Agent:")
+    response = await calculator_agent.process(AgentMessage(
+        content="(15 + 25) * 2", 
+        sender="User",
+        timestamp=time.time()
+    ))
+    print(f"Input: (15 + 25) * 2")
+    print(f"Output: {response.content}\n")
+    
+    # Test weather agent
+    print("3. Testing Weather Agent:")
+    response = await weather_agent.process(AgentMessage(
+        content="Tokyo", 
+        sender="User",
+        timestamp=time.time()
+    ))
+    print(f"Input: Tokyo")
+    print(f"Output: {response.content}\n")
+    
+    # Test translator agent
+    print("4. Testing Translator Agent:")
+    response = await translator_agent.process(AgentMessage(
+        content="Hello, how are you?", 
+        sender="User",
+        timestamp=time.time(),
+        metadata={"target_language": "french"}
+    ))
+    print(f"Input: Hello, how are you? (to French)")
+    print(f"Output: {response.content}\n")
+    
+    # Test chat agent
+    print("5. Testing Chat Agent:")
+    response = await chat_agent.process(AgentMessage(
+        content="Hello! What can you do?", 
+        sender="User",
+        timestamp=time.time()
+    ))
+    print(f"Input: Hello! What can you do?")
+    print(f"Output: {response.content}\n")
+
+async def demo_agent_system():
+    """Demo the complete agent system"""
+    print("\n=== Agent System Demo ===\n")
+    
+    # Create agent manager and register agents
+    manager = AgentManager()
+    
+    manager.register_agent(EchoAgent())
+    manager.register_agent(CalculatorAgent())
+    manager.register_agent(WeatherAgent())
+    manager.register_agent(TranslatorAgent())
+    manager.register_agent(ChatAgent())
+    
+    print(f"Registered {len(manager.agents)} agents:")
+    for agent_name in manager.agents.keys():
+        print(f"  - {agent_name}")
+    
+    # Test individual agent communication
+    print("\n1. Testing Calculator Agent through Manager:")
+    response = await manager.send_message("CalculatorAgent", "45 + 17 * 3")
+    print(f"Response: {response.content}")
+    
+    print("\n2. Testing Weather Agent through Manager:")
+    response = await manager.send_message("WeatherAgent", "London")
+    print(f"Response: {response.content}")
+    
+    print("\n3. Testing Broadcast Message:")
+    responses = await manager.broadcast_message("Hello everyone!")
+    print("Broadcast responses:")
+    for agent_name, response in responses.items():
+        print(f"  {agent_name}: {response.content[:50]}...")
+    
+    # Demonstrate agent discovery
+    print("\n4. Agent Discovery:")
+    math_agents = manager.find_agent_by_capability("calculation")
+    print(f"Agents for calculations: {math_agents}")
+    
+    weather_agents = manager.find_agent_by_capability("weather")
+    print(f"Agents for weather: {weather_agents}")
+    
+    # Show system statistics
+    print("\n5. System Statistics:")
+    stats = manager.get_system_stats()
+    for key, value in stats.items():
+        print(f"  {key}: {value}")
+
+async def interactive_demo():
+    """Interactive demo where users can talk to agents"""
+    print("\n=== Interactive Demo ===\n")
+    
+    manager = AgentManager()
+    manager.register_agent(ChatAgent())
+    manager.register_agent(CalculatorAgent())
+    manager.register_agent(WeatherAgent())
+    manager.register_agent(TranslatorAgent())
+    
+    print("Available agents: ChatAgent, CalculatorAgent, WeatherAgent, TranslatorAgent")
+    print("Type 'quit' to exit, 'help' for commands, 'agents' to list agents\n")
+    
+    while True:
+        try:
+            user_input = input("You: ").strip()
+            
+            if user_input.lower() in ['quit', 'exit']:
+                break
+            elif user_input.lower() == 'help':
+                print("\nAvailable commands:")
+                print("  'calc [expression]' - Use calculator")
+                print("  'weather [city]' - Get weather")
+                print("  'translate [text] to [language]' - Translate text")
+                print("  'agents' - List all agents")
+                print("  'stats' - Show system statistics")
+                print("  'quit' - Exit\n")
+                continue
+            elif user_input.lower() == 'agents':
+                print("\nRegistered agents:")
+                for name, agent in manager.agents.items():
+                    print(f"  {name}: {agent.description}")
+                print()
+                continue
+            elif user_input.lower() == 'stats':
+                stats = manager.get_system_stats()
+                print("\nSystem Statistics:")
+                for key, value in stats.items():
+                    print(f"  {key}: {value}")
+                print()
+                continue
+            
+            # Route to appropriate agent based on input
+            if user_input.startswith('calc '):
+                expression = user_input[5:]
+                response = await manager.send_message("CalculatorAgent", expression)
+                print(f"Calculator: {response.content}\n")
+            
+            elif user_input.startswith('weather '):
+                city = user_input[8:]
+                response = await manager.send_message("WeatherAgent", city)
+                print(f"Weather: {response.content}\n")
+            
+            elif user_input.startswith('translate '):
+                # Simple parsing for translation commands
+                parts = user_input[10:].split(' to ')
+                if len(parts) == 2:
+                    text, language = parts
+                    response = await manager.send_message(
+                        "TranslatorAgent", 
+                        text, 
+                        {"target_language": language.strip()}
+                    )
+                    print(f"Translator: {response.content}\n")
+                else:
+                    print("Usage: translate [text] to [language]\n")
+            
+            else:
+                # Default to chat agent
+                response = await manager.send_message("ChatAgent", user_input)
+                print(f"ChatAgent: {response.content}\n")
+                
+        except KeyboardInterrupt:
+            break
+        except Exception as e:
+            print(f"Error: {e}\n")
+
+if __name__ == "__main__":
+    # Run demos
+    asyncio.run(demo_single_agents())
+    asyncio.run(demo_agent_system())
