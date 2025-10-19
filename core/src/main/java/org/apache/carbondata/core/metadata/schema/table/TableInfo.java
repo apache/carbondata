@@ -323,4 +323,9 @@ public class TableInfo implements Serializable, Writable {
   public String getTablePath() {
     return tablePath;
   }
+
+  public void setIdentifier(AbsoluteTableIdentifier identifier) {
+    this.identifier = identifier;
+  }
+
 }

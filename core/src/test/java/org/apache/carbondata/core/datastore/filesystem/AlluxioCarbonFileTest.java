@@ -22,7 +22,6 @@ import mockit.MockUp;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FSInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -39,9 +38,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
@@ -259,110 +256,6 @@ public class AlluxioCarbonFileTest {
         };
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
         assertFalse(alluxioCarbonFile.getParentFile().equals(null));
-    }
-
-    //@Test
-    public void testForNonDisributedSystem() {
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
-        new MockUp<FileStatus>() {
-            @Mock
-            public Path getPath() {
-                return new Path(file.getAbsolutePath());
-            }
-        };
-        new MockUp<Path>() {
-            @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
-                return fileStatus.getPath().getFileSystem(conf);
-            }
-        };
-        new MockUp<FileSystem>() {
-            @Mock
-            public boolean delete(Path var1,boolean overwrite) throws IOException {
-                return getMockInstance().delete(var1,overwrite);
-            }
-        };
-        new MockUp<FileSystem>() {
-            @Mock
-            public boolean rename(Path var1,Path changeToName) throws IOException {
-                return getMockInstance().rename(var1, changeToName);
-            }
-        };
-        assertTrue(alluxioCarbonFile.renameForce(fileName));
-    }
-
-    //@Test
-    public void testrenameForceForDisributedSystem() {
-        new MockUp<FileStatus>() {
-            @Mock
-            public Path getPath() {
-                return new Path(file.getAbsolutePath());
-            }
-        };
-        new MockUp<Path>() {
-            @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException, URISyntaxException {
-                return new DummyAlluxioFileSystem();
-            }
-        };
-        new MockUp<FileSystem>() {
-            @Mock
-            public boolean delete(Path var1,boolean overwrite) throws IOException {
-                return getMockInstance().delete(var1,overwrite);
-            }
-        };
-        new MockUp<FileSystem>() {
-            @Mock
-            public FSDataOutputStream create(Path var1,boolean overwrite) throws IOException {
-                //return getMockInstance().create(var1,overwrite);
-                return new FSDataOutputStream(new OutputStream() {
-                    @Override
-                    public void write(int b) throws IOException {
-
-                    }
-                }, null);
-            }
-        };
-        new MockUp<FileSystem>() {
-            @Mock
-            public FSDataInputStream open(Path var1) throws IOException {
-                return new FSDataInputStream(new FSInputStream() {
-                    @Override
-                    public void seek(long l) throws IOException {
-
-                    }
-
-                    @Override
-                    public long getPos() throws IOException {
-                        return 0;
-                    }
-
-                    @Override
-                    public boolean seekToNewSource(long l) throws IOException {
-                        return false;
-                    }
-
-                    @Override
-                    public int read() throws IOException {
-                        return 0;
-                    }
-                });
-            }
-        };
-        new MockUp<FSDataInputStream>() {
-            @Mock
-            public void close() throws IOException {
-                getMockInstance().close();
-            }
-        };
-        new MockUp<FSDataOutputStream>() {
-            @Mock
-            public void close() throws IOException {
-                getMockInstance().close();
-            }
-        };
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
-        assertTrue(alluxioCarbonFile.renameForce(fileName));
     }
 
     class DummyAlluxioFileSystem extends FileSystem {

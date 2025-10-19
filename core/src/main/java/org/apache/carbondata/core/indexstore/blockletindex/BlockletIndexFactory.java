@@ -760,4 +760,9 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     }
   }
 
+  public void setCache(
+      Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletIndexWrapper> cache) {
+    this.cache = cache;
+  }
+
 }

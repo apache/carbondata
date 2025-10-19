@@ -460,7 +460,6 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("create table maintable1(a string, b int, c string) stored as carbondata")
     sql("insert into maintable1 select 'k',1,'k'")
     checkAnswer(sql("select * from maintable1"), Seq(Row("k", 1, "k")))
-    mock.tearDown()
   }
 
 }

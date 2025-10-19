@@ -304,7 +304,6 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     // after clean files
     val mock = mockreadSegmentList()
     sql("CLEAN FILES FOR TABLE table1 options('force'='true')")
-    mock.tearDown()
     val table = CarbonEnv
       .getCarbonTable(Some("default"), "idx1")(sqlContext.sparkSession)
     val details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath,
@@ -373,7 +372,6 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
       sql(s"insert into table1 values(1,'a1','b1')")
     }
     assert(ex.getMessage.contains("An exception occurred while loading data to SI table"))
-    mock.tearDown()
     sql("drop table if exists table1")
   }
 
@@ -404,7 +402,6 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
       sql("ALTER TABLE table1 COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (1,2)")
     }
     assert(ex.getMessage.contains("An exception occurred while triggering pre priming."))
-    mock.tearDown()
     checkExistence(sql("show indexes on table table1"), true,
       "idx1", "idx2", "enabled")
   }

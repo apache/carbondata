@@ -1289,4 +1289,7 @@ public class CarbonTable implements Serializable, Writable {
     return this.tableInfo.getFactTable().getTableProperties().getOrDefault("latestversion", "");
   }
 
+  public void setTableInfo(TableInfo tableInfo) {
+    this.tableInfo = tableInfo;
+  }
 }

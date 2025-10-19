@@ -66,6 +66,8 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
   private boolean isRangeFullyCoverBlock;
   private boolean isNaturalSorted;
 
+  public RangeValueFilterExecutorImpl() { }
+
   public RangeValueFilterExecutorImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
       Expression exp, byte[][] filterRangeValues, SegmentProperties segmentProperties) {
 
@@ -731,5 +733,34 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
                 rawBlockletColumnChunks.getFileReader(), chunkIndex);
       }
     }
+  }
+
+  public void setIsDimensionPresentInCurrentBlock(boolean isDimensionPresentInCurrentBlock) {
+    this.isDimensionPresentInCurrentBlock = isDimensionPresentInCurrentBlock;
+  }
+
+  public void setLessThanExp(boolean lessThanExp) {
+    this.lessThanExp = lessThanExp;
+  }
+
+  public void setGreaterThanExp(boolean greaterThanExp) {
+    this.greaterThanExp = greaterThanExp;
+  }
+
+  public void setDimColEvaluatorInfo(
+      DimColumnResolvedFilterInfo dimColEvaluatorInfo) {
+    this.dimColEvaluatorInfo = dimColEvaluatorInfo;
+  }
+
+  public boolean isEndBlockMaxisDefaultEnd() {
+    return endBlockMaxisDefaultEnd;
+  }
+
+  public boolean isStartBlockMinIsDefaultStart() {
+    return startBlockMinIsDefaultStart;
+  }
+
+  public boolean isRangeFullyCoverBlock() {
+    return isRangeFullyCoverBlock;
   }
 }

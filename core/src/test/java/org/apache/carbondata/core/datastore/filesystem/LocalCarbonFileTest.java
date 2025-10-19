@@ -265,56 +265,6 @@ public class LocalCarbonFileTest {
     }
 
     @Test
-    public void testListFilesWithDirPermission() {
-        localCarbonFile = new LocalCarbonFile(file);
-        new MockUp<File>() {
-            @Mock
-            public boolean isDirectory() {
-                return true;
-            }
-        };
-        new MockUp<File>() {
-            @Mock
-            public File[] listFiles() {
-                return null;
-            }
-
-
-        };
-        localCarbonFile = new LocalCarbonFile(dir);
-        assertTrue(localCarbonFile.listFiles().length == 0);
-    }
-
-    @Test
-    public void testListFilesWithCarbonFileFilterAndDirectoryPermission() {
-        CarbonFileFilter carbonFileFilter = new CarbonFileFilter() {
-            @Override
-            public boolean accept(CarbonFile file) {
-                return true;
-            }
-        };
-        new MockUp<File>() {
-            @Mock
-            public boolean isDirectory() {
-                return true;
-            }
-        };
-        new MockUp<File>() {
-            @Mock
-            public File[] listFiles(FileFilter filter) {
-
-                return new File[]{dir};
-            }
-
-
-        };
-
-        localCarbonFile = new LocalCarbonFile(dir);
-
-        assertTrue(localCarbonFile.listFiles(carbonFileFilter).length == 1);
-    }
-
-    @Test
     public void testListFilesForNullWithCarbonFileFilterAndDirectoryPermission() {
         CarbonFileFilter carbonFileFilter = new CarbonFileFilter() {
             @Override

@@ -161,7 +161,6 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     assert(!plan.contains("idx_x1_mac1"))
     checkAnswer(sql("select count(*) from x1 where mac = '2'"), Row(1))
     sql("DROP TABLE IF EXISTS x1")
-    mock.tearDown();
   }
 
   /*

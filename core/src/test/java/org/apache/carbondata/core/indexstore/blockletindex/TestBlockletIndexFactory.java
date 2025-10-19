@@ -42,7 +42,6 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 
-import mockit.Deencapsulation;
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.hadoop.conf.Configuration;
@@ -80,9 +79,9 @@ public class TestBlockletIndexFactory {
     absoluteTableIdentifier = AbsoluteTableIdentifier
         .from("/opt/store/default/carbon_table/", "default", "carbon_table",
             UUID.randomUUID().toString());
-    Deencapsulation.setField(tableInfo, "identifier", absoluteTableIdentifier);
-    Deencapsulation.setField(tableInfo, "factTable", factTable);
-    Deencapsulation.setField(carbonTable, "tableInfo", tableInfo);
+    tableInfo.setIdentifier(absoluteTableIdentifier);
+    tableInfo.setFactTable(factTable);
+    carbonTable.setTableInfo(tableInfo);
     new MockUp<CarbonTable>() {
       @Mock
       public AbsoluteTableIdentifier getAbsoluteTableIdentifier(){
@@ -90,8 +89,7 @@ public class TestBlockletIndexFactory {
       }
     };
     blockletIndexFactory = new BlockletIndexFactory(carbonTable, new IndexSchema());
-    Deencapsulation.setField(blockletIndexFactory, "cache",
-        CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX));
+    blockletIndexFactory.setCache(CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX));
     tableBlockIndexUniqueIdentifier =
         new TableBlockIndexUniqueIdentifier("/opt/store/default/carbon_table/Fact/Part0/Segment_0",
             "0_batchno0-0-1521012756709.carbonindex", null, "0");

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.common.logging.impl;
 
+import org.apache.log4j.helpers.QuietWriter;
 import org.apache.log4j.spi.LoggingEvent;
 
 /**
@@ -35,5 +36,25 @@ public class AuditExtendedRollingFileAppender extends ExtendedRollingFileAppende
       currentLevel = AuditLevel.AUDIT.toInt();
       super.subAppend(event);
     }
+  }
+
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
+  }
+
+  public void setMaxBackupIndex(int maxBackupIndex) {
+    this.maxBackupIndex = maxBackupIndex;
+  }
+
+  public void setMaxFileSize(long maxFileSize) {
+    this.maxFileSize = maxFileSize;
+  }
+
+  public void setQuiteWriter(QuietWriter qw) {
+    this.qw = qw;
+  }
+
+  public QuietWriter getQuiteWriter() {
+    return this.qw;
   }
 }

@@ -17,8 +17,10 @@
 
 package org.apache.carbondata.common.logging.impl;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import org.junit.Assert;
-import mockit.Deencapsulation;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Before;
@@ -30,9 +32,9 @@ public class ExtendedRollingFileAppenderTest_UT {
 
   @Before public void setUp() {
     rAppender = new ExtendedRollingFileAppender();
-    Deencapsulation.setField(rAppender, "fileName", "dummy.log");
-    Deencapsulation.setField(rAppender, "maxBackupIndex", 1);
-    Deencapsulation.setField(rAppender, "maxFileSize", 1000L);
+    rAppender.setFile("dummy.log");
+    rAppender.setMaxBackupIndex(1);
+    rAppender.setMaxFileSize("1000");
   }
 
   @Test public void testRollOver() {
@@ -42,12 +44,16 @@ public class ExtendedRollingFileAppenderTest_UT {
     Assert.assertTrue(true);
   }
 
-  @Test public void testCleanLogs() {
+  @Test public void testCleanLogs()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     final String startName = "dummy";
     final String folderPath = "./";
     int maxBackupIndex = 1;
 
-    Deencapsulation.invoke(rAppender, "cleanLogs", startName, folderPath, maxBackupIndex);
+    Method cleanLogsMethod = ExtendedRollingFileAppender.class.getDeclaredMethod("cleanLogs",
+        String.class, String.class, int.class);
+    cleanLogsMethod.setAccessible(true);
+    cleanLogsMethod.invoke(rAppender, startName, folderPath, maxBackupIndex);
   }
 
   @Test public void testSubAppendLoggingEvent() {
