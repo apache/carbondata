@@ -752,14 +752,26 @@ public class RangeValueFilterExecutorImpl implements FilterExecutor {
     this.dimColEvaluatorInfo = dimColEvaluatorInfo;
   }
 
+  /**
+   * For testcase purpose
+   * @return endBlockMaxisDefaultEnd
+   */
   public boolean isEndBlockMaxisDefaultEnd() {
     return endBlockMaxisDefaultEnd;
   }
 
+  /**
+   * For testcase purpose
+   * @return startBlockMinIsDefaultStart
+   */
   public boolean isStartBlockMinIsDefaultStart() {
     return startBlockMinIsDefaultStart;
   }
 
+  /**
+   * For testcase purpose
+   * @return isRangeFullyCoverBlock
+   */
   public boolean isRangeFullyCoverBlock() {
     return isRangeFullyCoverBlock;
   }

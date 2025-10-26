@@ -38,7 +38,7 @@ public class CarbonLRUCacheTest {
       @SuppressWarnings("unused")
       @Mock
       long getMemorySize() {
-        return 15L; // 模拟 getMemorySize 方法
+        return 15L;
       }
 
       @SuppressWarnings("unused")
@@ -46,7 +46,7 @@ public class CarbonLRUCacheTest {
       void invalidate() {
       }
 
-    }; // <-- 获取模拟实例
+    };
     cacheable = new Cacheable() {
       @Override public int getAccessCount() {
         return 0;
