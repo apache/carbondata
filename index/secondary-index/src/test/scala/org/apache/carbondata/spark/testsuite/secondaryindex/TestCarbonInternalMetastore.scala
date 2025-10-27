@@ -92,7 +92,6 @@ class TestCarbonInternalMetastore extends QueryTest with BeforeAndAfterAll with 
       }
     }
     checkExistence(sql("show indexes on table1"), true, "index1")
-    mock.tearDown()
   }
 
   test("test refresh index with different value of isIndexTableExists") {
@@ -130,7 +129,6 @@ class TestCarbonInternalMetastore extends QueryTest with BeforeAndAfterAll with 
     parentCarbonTable = CarbonEnv.getCarbonTable(Some("test"), "table1")(sqlContext.sparkSession)
     assert(CarbonIndexUtil.isIndexExists(parentCarbonTable).equalsIgnoreCase("true"))
     assert(CarbonIndexUtil.isIndexTableExists(parentCarbonTable).equalsIgnoreCase("false"))
-    mock.tearDown()
   }
 
   test("test refresh index with indexExists as null") {

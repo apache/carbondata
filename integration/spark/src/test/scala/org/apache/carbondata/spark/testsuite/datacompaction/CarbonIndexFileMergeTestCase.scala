@@ -559,7 +559,6 @@ class CarbonIndexFileMergeTestCase
     }
     checkAnswer(sql("Select count(*) from indexmerge"), Seq(Row(0)))
     sql("DROP TABLE indexmerge")
-    mockMethod.tearDown()
   }
 
   test("verify load when merge index fails for partition table") {
@@ -587,7 +586,6 @@ class CarbonIndexFileMergeTestCase
     }
     checkAnswer(sql("Select count(*) from indexmergePartition"), Seq(Row(0)))
     sql("DROP TABLE indexmergePartition")
-    mockMethod.tearDown()
   }
 
   private def mergeFileNameIsNull(segmentId: String, dbName: String, tableName: String): Boolean = {

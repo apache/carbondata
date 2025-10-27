@@ -115,7 +115,6 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
         }
       }
       sql("drop table if exists testDrop")
-      mock.tearDown()
       assert(Files.exists(Paths.get(indexTablePath)))
       sql("drop table if exists testDrop")
     } finally {

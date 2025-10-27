@@ -50,7 +50,7 @@ public class RawBlockletColumnChunks {
 
   private BitSetGroup bitSetGroup;
 
-  private RawBlockletColumnChunks() { }
+  public RawBlockletColumnChunks() { }
 
   public static RawBlockletColumnChunks newInstance(int numberOfDimensionChunk,
       int numberOfMeasureChunk, FileReader fileReader, DataRefNode dataBlock) {

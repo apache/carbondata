@@ -253,7 +253,7 @@ public class FilterUtilTest {
   }
 
   @Test public void testCreateBitSetGroupWithColumnChunk() {
-    BlockletDataRefNode blockletDataRefNode = new MockUp<BlockletDataRefNode>() {
+    new MockUp<BlockletDataRefNode>() {
       @Mock
       public int numberOfPages() {
         return 2;
@@ -266,13 +266,16 @@ public class FilterUtilTest {
           return 6;
         }
       }
-    }.getMockInstance();
-    RawBlockletColumnChunks rawBlockletColumnChunks = new MockUp<RawBlockletColumnChunks>() {
+    };
+
+    BlockletDataRefNode blockletDataRefNode = new BlockletDataRefNode();
+    new MockUp<RawBlockletColumnChunks>() {
       @Mock
       public DataRefNode getDataBlock() {
         return blockletDataRefNode;
       }
-    }.getMockInstance();
+    };
+    RawBlockletColumnChunks rawBlockletColumnChunks = new RawBlockletColumnChunks();
     BitSetGroup bitSetGroupWithColumnChunk =
         FilterUtil.createBitSetGroupWithColumnChunk(rawBlockletColumnChunks, true);
     assertTrue(bitSetGroupWithColumnChunk.getNumberOfPages() == 2);

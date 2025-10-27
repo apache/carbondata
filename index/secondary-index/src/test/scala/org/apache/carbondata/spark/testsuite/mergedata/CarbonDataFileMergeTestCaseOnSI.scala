@@ -258,7 +258,6 @@ class CarbonDataFileMergeTestCaseOnSI
     val ex = intercept[RuntimeException] {
       sql("REFRESH INDEX nonindexmerge_index1 ON TABLE nonindexmerge").collect()
     }
-    mock1.tearDown()
     assert(ex.getMessage.contains("An exception occurred while merging data files in SI"))
     var df1 = sql("""Select * from nonindexmerge where name='n16000'""")
       .queryExecution.sparkPlan
@@ -270,7 +269,6 @@ class CarbonDataFileMergeTestCaseOnSI
     val exception = intercept[AnalysisException] {
       sql("REFRESH INDEX nonindexmerge_index1 ON TABLE nonindexmerge").collect()
     }
-    mock2.tearDown()
     assert(exception.getMessage.contains("Table is already locked for compaction. " +
       "Please try after some time."))
     df1 = sql("""Select * from nonindexmerge where name='n16000'""")
@@ -289,7 +287,6 @@ class CarbonDataFileMergeTestCaseOnSI
     val exception2 = intercept[Exception] {
       sql("REFRESH INDEX nonindexmerge_index1 ON TABLE nonindexmerge").collect()
     }
-    mock3.tearDown()
     assert(exception2.getMessage.contains("Merge data files Failure in Merger Rdd."))
     df1 = sql("""Select * from nonindexmerge where name='n16000'""")
         .queryExecution.sparkPlan
@@ -314,7 +311,6 @@ class CarbonDataFileMergeTestCaseOnSI
       }
     }
     sql("REFRESH INDEX nonindexmerge_index1 ON TABLE nonindexmerge").collect()
-    mock.tearDown()
     val df1 = sql("""Select * from nonindexmerge where name='n16000'""")
         .queryExecution.sparkPlan
     assert(isFilterPushedDownToSI(df1))

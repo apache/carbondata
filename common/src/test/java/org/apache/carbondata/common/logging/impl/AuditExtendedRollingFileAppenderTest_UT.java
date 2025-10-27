@@ -17,8 +17,11 @@
 
 package org.apache.carbondata.common.logging.impl;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import org.apache.log4j.helpers.QuietWriter;
 import org.junit.Assert;
-import mockit.Deencapsulation;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Before;
@@ -30,10 +33,9 @@ public class AuditExtendedRollingFileAppenderTest_UT {
 
   @Before public void setUp() {
     rAppender = new AuditExtendedRollingFileAppender();
-    Deencapsulation.setField(rAppender, "fileName", "audit.log");
-    Deencapsulation.setField(rAppender, "maxBackupIndex", 1);
-    Deencapsulation.setField(rAppender, "maxFileSize", 1000L);
-
+    rAppender.setFile("audit.log");
+    rAppender.setMaxBackupIndex(1);
+    rAppender.setMaxFileSize(1000L);
   }
 
   @Test public void testRollOver() {
@@ -43,26 +45,31 @@ public class AuditExtendedRollingFileAppenderTest_UT {
     Assert.assertTrue(true);
   }
 
-  @Test public void testCleanLogs() {
+  @Test public void testCleanLogs()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     final String startName = "audit";
     final String folderPath = "./";
     int maxBackupIndex = 1;
 
-    Deencapsulation.invoke(rAppender, "cleanLogs", startName, folderPath, maxBackupIndex);
+    Method cleanLogsMethod = ExtendedRollingFileAppender.class.getDeclaredMethod("cleanLogs",
+      String.class, String.class, int.class);
+    cleanLogsMethod.setAccessible(true);
+    cleanLogsMethod.invoke(rAppender, startName, folderPath, maxBackupIndex);
     Assert.assertTrue(true);
   }
 
   @Test public void testSubAppendLoggingEvent() {
     Logger logger = Logger.getLogger(this.getClass());
     LoggingEvent event = new LoggingEvent(null, logger, 0L, AuditLevel.AUDIT, null, null);
-
-    Deencapsulation.setField(rAppender, "qw", null);
+    QuietWriter qw = rAppender.getQuiteWriter();
+    rAppender.setQuiteWriter(null);
     try {
       rAppender.subAppend(event);
     } catch (Exception e) {
       //
     }
     Assert.assertTrue(true);
+    rAppender.setQuiteWriter(qw);
   }
 
 }

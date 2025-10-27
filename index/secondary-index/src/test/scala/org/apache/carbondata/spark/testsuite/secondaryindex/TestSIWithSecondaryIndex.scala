@@ -711,7 +711,6 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
     val ex = intercept[Exception] {
       sql("create index m_indextable on table maintable2(b,c) AS 'carbondata'")
     }
-    mock.tearDown()
     assert(ex.getMessage.contains("Problem loading data while creating secondary index:"))
   }
 
@@ -744,7 +743,6 @@ class TestSIWithSecondaryIndex extends QueryTest with BeforeAndAfterAll {
       }
     }
     sql("create index m_indextable on table maintable2(b,c) AS 'carbondata'")
-    mock.tearDown()
     checkExistence(sql("show indexes on table maintable2"),
       true, "m_indextable", "enabled")
     assert(sql("show segments on m_indextable").collect().isEmpty)

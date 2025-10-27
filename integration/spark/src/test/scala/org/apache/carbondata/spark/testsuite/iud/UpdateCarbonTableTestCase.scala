@@ -1250,8 +1250,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case ex: Exception =>
     }
-    mock.tearDown()
-
   }
 
   override def afterAll {

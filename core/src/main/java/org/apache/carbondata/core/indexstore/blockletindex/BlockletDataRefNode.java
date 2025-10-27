@@ -47,6 +47,8 @@ public class BlockletDataRefNode implements DataRefNode {
 
   private BlockletSerializer blockletSerializer;
 
+  public BlockletDataRefNode() { }
+
   BlockletDataRefNode(List<TableBlockInfo> blockInfos, int index) {
     this.blockInfos = blockInfos;
     // Update row count and page count to blocklet info

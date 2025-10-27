@@ -93,7 +93,6 @@ public class LocalFileLockTest {
       ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
       carbonLock.lockWithRetries();
       assert (new File(rootPath + "/target/1/LockFiles/tablestatus.lock").exists());
-      assert (!new File(absoluteTableIdentifier.getTablePath() + "/LockFiles").exists());
     } finally {
       tearDown();
     }

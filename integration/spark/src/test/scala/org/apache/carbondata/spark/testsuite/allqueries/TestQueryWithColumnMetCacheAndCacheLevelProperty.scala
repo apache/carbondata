@@ -367,7 +367,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty
     sql("CREATE INDEX parallel_index on parallel_index_load(b) AS 'carbondata'")
     checkAnswer(sql("select b from parallel_index"), Seq(Row("bb"), Row("dd"), Row("ff")))
     sql("drop index if exists parallel_index on parallel_index_load")
-    val mock: MockUp[TableInfo] = new MockUp[TableInfo] {
+    new MockUp[TableInfo] {
       @Mock
       def isSchemaModified(): Boolean = {
         true
@@ -376,6 +376,5 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty
     sql("CREATE INDEX parallel_index on parallel_index_load(b) AS 'carbondata'")
     checkAnswer(sql("select b from parallel_index"), Seq(Row("bb"), Row("dd"), Row("ff")))
     sql("drop index if exists parallel_index on parallel_index_load")
-    mock.tearDown()
   }
 }

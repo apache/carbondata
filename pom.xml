@@ -128,8 +128,8 @@
     <hadoop.version>2.7.2</hadoop.version>
     <httpclient.version>4.3.4</httpclient.version>
     <httpcore.version>4.3-alpha1</httpcore.version>
-    <scala.binary.version>2.11</scala.binary.version>
-    <scala.version>2.11.12</scala.version>
+    <scala.binary.version>2.12</scala.binary.version>
+    <scala.version>2.12.10</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.version>2.4.5</spark.version>
     <spark.binary.version>2.4</spark.binary.version>
@@ -156,6 +156,8 @@
     <suite.name>org.apache.carbondata.cluster.sdv.suite.SDVSuites</suite.name>
     <script.extension>.sh</script.extension>
     <carbon.hive.based.metastore>false</carbon.hive.based.metastore>
+    <jmockit.version>1.49</jmockit.version>
+    <surefire.version>3.5.3</surefire.version>
   </properties>
 
   <repositories>
@@ -361,7 +363,7 @@
       <dependency>
         <groupId>org.jmockit</groupId>
         <artifactId>jmockit</artifactId>
-        <version>1.10</version>
+        <version>${jmockit.version}</version>
         <exclusions>
           <exclusion>
             <groupId>*</groupId>
@@ -465,97 +467,36 @@
           <outputEncoding>${project.reporting.outputEncoding}</outputEncoding>
         </configuration>
       </plugin>
-      <!--
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-        <version>3.0.4</version>
-        <configuration>
-          <excludeFilterFile>${dev.path}/findbugs-exclude.xml</excludeFilterFile>
-          <failOnError>true</failOnError>
-          <findbugsXmlOutput>true</findbugsXmlOutput>
-          <xmlOutput>true</xmlOutput>
-          <effort>Max</effort>
-          <maxHeap>1024</maxHeap>
-        </configuration>
-        <executions>
-          <execution>
-            <id>analyze-compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>  -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.7.9</version>
-        <executions>
-          <execution>
-            <id>default-prepare-agent</id>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>default-prepare-agent-integration</id>
-            <goals>
-              <goal>prepare-agent-integration</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>default-report</id>
-            <goals>
-              <goal>report</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>default-report-integration</id>
-            <goals>
-              <goal>report-integration</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>default-check</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <configuration>
-              <excludes>
-                <exclude>**/*SparkUnknownExpression*.class</exclude>
-                <exclude>**/org/apache/carbondata/cluster/sdv/generated/*</exclude>
-                <exclude>**/org.apache.carbondata.cluster.sdv.generated.*</exclude>
-                <exclude>**/org.apache.spark.sql.test.*</exclude>
-                <exclude>**/org.apache.carbondata.format.*</exclude>
-                <exclude>**/org.apache.carbondata.core.unsafe*</exclude>
-              </excludes>
-              <includes>
-                <include>**/org.apache.*</include>
-              </includes>
-              <rules>
-                <!-- implementation is needed only for Maven 2 -->
-                <rule implementation="org.jacoco.maven.RuleConfiguration">
-                  <element>BUNDLE</element>
-                  <limits>
-                    <!-- implementation is needed only for Maven 2 -->
-                    <limit implementation="org.jacoco.report.check.Limit">
-                      <counter>COMPLEXITY</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.10</minimum>
-                    </limit>
-                  </limits>
-                </rule>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
+        <version>0.8.12</version>
       </plugin>
       <plugin>
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
         <version>${antlr4.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.version}</version> <!-- 使用较新版本 -->
+        <configuration>
+          <argLine>
+            -javaagent:"${settings.localRepository}/org/jmockit/jmockit/${jmockit.version}/jmockit-${jmockit.version}.jar"
+            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens java.base/jdk.internal.ref=ALL-UNNAMED
+            --add-opens java.base/java.nio=ALL-UNNAMEDss
+          </argLine>
+        </configuration>
+        <dependencies>
+          <!-- 确保 Surefire 插件能找到 JMockit JAR -->
+          <dependency>
+            <groupId>org.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
+            <version>${jmockit.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
@@ -656,8 +597,6 @@
       <properties>
         <spark.binary.version>2.4</spark.binary.version>
         <spark.version>2.4.5</spark.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.12</scala.version>
       </properties>
       <build>
         <plugins>
@@ -852,7 +791,6 @@
       <id>prestodb</id>
       <properties>
         <presto.version>0.291</presto.version>
-        <scala.version>2.11.8</scala.version>
         <airlift.version>0.31</airlift.version>
         <presto.groupid>com.facebook.presto</presto.groupid>
         <presto.hadoop.groupid>com.facebook.presto.hadoop</presto.hadoop.groupid>
@@ -892,7 +830,6 @@
       </activation>
       <properties>
         <presto.version>333</presto.version>
-        <scala.version>2.11.8</scala.version>
         <airlift.version>0.38</airlift.version>
         <presto.groupid>io.prestosql</presto.groupid>
         <presto.hadoop.groupid>io.prestosql.hadoop</presto.hadoop.groupid>

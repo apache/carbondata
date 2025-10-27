@@ -39,7 +39,6 @@ import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptimizer;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
-import mockit.Deencapsulation;
 import mockit.MockUp;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -324,12 +323,11 @@ public class RangeFilterProcessorTest {
 
     byte[][] filterMinMax = { { (byte) 10 }, { (byte) 20 } };
 
-    RangeValueFilterExecutorImpl range = new MockUp<RangeValueFilterExecutorImpl>() {
-    }.getMockInstance();
-    Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
-    Deencapsulation.setField(range, "lessThanExp", true);
-    Deencapsulation.setField(range, "greaterThanExp", true);
-    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    RangeValueFilterExecutorImpl range = new RangeValueFilterExecutorImpl();
+    range.setIsDimensionPresentInCurrentBlock(true);
+    range.setLessThanExp(true);
+    range.setGreaterThanExp(true);
+    range.setDimColEvaluatorInfo(dimColumnResolvedFilterInfo);
 
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
@@ -342,12 +340,11 @@ public class RangeFilterProcessorTest {
 
     byte[][] filterMinMax = { { (byte) 10 }, { (byte) 20 } };
 
-    RangeValueFilterExecutorImpl range = new MockUp<RangeValueFilterExecutorImpl>() {
-    }.getMockInstance();
-    Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
-    Deencapsulation.setField(range, "lessThanExp", true);
-    Deencapsulation.setField(range, "greaterThanExp", true);
-    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    RangeValueFilterExecutorImpl range = new RangeValueFilterExecutorImpl();
+    range.setIsDimensionPresentInCurrentBlock(true);
+    range.setLessThanExp(true);
+    range.setGreaterThanExp(true);
+    range.setDimColEvaluatorInfo(dimColumnResolvedFilterInfo);
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
   }
@@ -359,12 +356,11 @@ public class RangeFilterProcessorTest {
 
     byte[][] filterMinMax = { { (byte) 10 }, { (byte) 20 } };
 
-    RangeValueFilterExecutorImpl range = new MockUp<RangeValueFilterExecutorImpl>() {
-    }.getMockInstance();
-    Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
-    Deencapsulation.setField(range, "lessThanExp", true);
-    Deencapsulation.setField(range, "greaterThanExp", true);
-    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    RangeValueFilterExecutorImpl range = new RangeValueFilterExecutorImpl();
+    range.setIsDimensionPresentInCurrentBlock(true);
+    range.setLessThanExp(true);
+    range.setGreaterThanExp(true);
+    range.setDimColEvaluatorInfo(dimColumnResolvedFilterInfo);
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertTrue(result);
   }
@@ -377,15 +373,14 @@ public class RangeFilterProcessorTest {
 
     byte[][] filterMinMax = { { (byte) 10 }, { (byte) 20 } };
 
-    RangeValueFilterExecutorImpl range = new MockUp<RangeValueFilterExecutorImpl>() {
-    }.getMockInstance();
-    Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
-    Deencapsulation.setField(range, "lessThanExp", true);
-    Deencapsulation.setField(range, "greaterThanExp", true);
-    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    RangeValueFilterExecutorImpl range = new RangeValueFilterExecutorImpl();
+    range.setIsDimensionPresentInCurrentBlock(true);
+    range.setLessThanExp(true);
+    range.setGreaterThanExp(true);
+    range.setDimColEvaluatorInfo(dimColumnResolvedFilterInfo);
 
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
-    rangeCovered = Deencapsulation.getField(range, "isRangeFullyCoverBlock");
+    rangeCovered = range.isRangeFullyCoverBlock();
     Assert.assertTrue(result);
     Assert.assertTrue(rangeCovered);
   }
@@ -398,15 +393,14 @@ public class RangeFilterProcessorTest {
 
     byte[][] filterMinMax = { { (byte) 10 }, { (byte) 20 } };
 
-    RangeValueFilterExecutorImpl range = new MockUp<RangeValueFilterExecutorImpl>() {
-    }.getMockInstance();
-    Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
-    Deencapsulation.setField(range, "lessThanExp", true);
-    Deencapsulation.setField(range, "greaterThanExp", true);
-    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    RangeValueFilterExecutorImpl range = new RangeValueFilterExecutorImpl();
+    range.setIsDimensionPresentInCurrentBlock(true);
+    range.setLessThanExp(true);
+    range.setGreaterThanExp(true);
+    range.setDimColEvaluatorInfo(dimColumnResolvedFilterInfo);
 
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
-    startBlockMinIsDefaultStart = Deencapsulation.getField(range, "startBlockMinIsDefaultStart");
+    startBlockMinIsDefaultStart = range.isStartBlockMinIsDefaultStart();
     Assert.assertTrue(result);
     Assert.assertTrue(startBlockMinIsDefaultStart);
   }
@@ -419,15 +413,14 @@ public class RangeFilterProcessorTest {
 
     byte[][] filterMinMax = { { (byte) 15 }, { (byte) 20 } };
 
-    RangeValueFilterExecutorImpl range = new MockUp<RangeValueFilterExecutorImpl>() {
-    }.getMockInstance();
-    Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
-    Deencapsulation.setField(range, "lessThanExp", true);
-    Deencapsulation.setField(range, "greaterThanExp", true);
-    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    RangeValueFilterExecutorImpl range = new RangeValueFilterExecutorImpl();
+    range.setIsDimensionPresentInCurrentBlock(true);
+    range.setLessThanExp(true);
+    range.setGreaterThanExp(true);
+    range.setDimColEvaluatorInfo(dimColumnResolvedFilterInfo);
 
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
-    endBlockMaxisDefaultEnd = Deencapsulation.getField(range, "endBlockMaxisDefaultEnd");
+    endBlockMaxisDefaultEnd = range.isEndBlockMaxisDefaultEnd();
     Assert.assertTrue(result);
     Assert.assertTrue(endBlockMaxisDefaultEnd);
   }

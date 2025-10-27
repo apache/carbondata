@@ -559,7 +559,6 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     }
     assert(ex.getMessage.contains("Not able to acquire lock. Another Data Modification operation " +
       "is already in progress for either default.maintable or default or indextable."))
-    mock.tearDown()
     sql("drop table if exists maintable")
   }
 
@@ -581,14 +580,12 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     val ex = intercept[RuntimeException] {
       sql("create index indextable1 on table maintable(b, c) AS 'carbondata'")
     }
-    mock.tearDown()
     assert(ex.getMessage.contains("Index with [indextable1] under database [default] is present " +
         "in stale state. Please use drop index if exists command to delete the index table"))
     val mock2 = TestSecondaryIndexUtils.mockIsFileExists()
     val exception = intercept[RuntimeException] {
       sql("create index indextable1 on table maintable(b, c) AS 'carbondata'")
     }
-    mock2.tearDown()
     assert(exception.getMessage.contains("Index with [indextable1] under database [default] " +
         "is present in stale state. Please use drop index " +
         "if exists command to delete the index table"))
@@ -613,7 +610,6 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     val ex = intercept[IOException] {
       sql("create index indextable on table maintable(b) AS 'carbondata'")
     }
-    mock.tearDown()
     assert(ex.getMessage.contains("An exception occurred while creating index table."))
   }
 
