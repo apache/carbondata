@@ -94,6 +94,10 @@ Some features are marked as experimental because the syntax/implementation might
 * [Apache CarbonData meetup material](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=66850609)
 * [Use Case Articles](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+Articles)
 
+## Contributor Wall of Fame
+
+[![carbondata contributors](https://contrib.rocks/image?repo=apache/carbondata)](https://github.com/apache/carbondata/graphs/contributors)
+
 ## Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
 This guide document introduces [how to contribute to CarbonData](https://github.com/apache/carbondata/blob/master/docs/how-to-contribute-to-apache-carbondata.md).
