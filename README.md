@@ -16,6 +16,12 @@
 -->
 
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
+    
+- Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g. Apache Hadoop, Apache Spark, etc.
+You can find the latest CarbonData document and learn more at:
+[https://carbondata.apache.org](https://carbondata.apache.org/)
+
+[CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
 - AI-native data storage for CarbonData's new scope, In AI projects, data scientists and engineers spend 80% of their time on data preparation. Traditional storage presents numerous bottlenecks in this process:
   - Data silos: Training data may be scattered across data lakes, data warehouses, file systems, object storage, and other locations, making integration difficult.
@@ -25,13 +31,6 @@
   - Lack of metadata management: The lack of effective management of rich metadata such as data versions, lineage, annotation information, and experimental parameters leads to poor experimental reproducibility.
   - Vectorization requirements: Modern AI models (such as large language models) convert all data into vector embeddings. Traditional storage cannot efficiently store and retrieve high-dimensional vectors.
 
-    
-- In the previous releases Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g. Apache Hadoop, Apache Spark, etc.
-You can find the latest CarbonData document and learn more at:
-[https://carbondata.apache.org](https://carbondata.apache.org/)
-
-[CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
-
 ## Status
 Spark2.4:
 [![Coverage Status](https://coveralls.io/repos/github/apache/carbondata/badge.svg?branch=master)](https://coveralls.io/github/apache/carbondata?branch=master)
@@ -39,6 +38,9 @@ Spark2.4:
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/13444/badge.svg"/>
 </a>
+
+## Contributor Wall of Fame
+[![carbondata contributors](https://contrib.rocks/image?repo=apache/carbondata)](https://github.com/apache/carbondata/graphs/contributors)
 
 ## Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema, complex data type etc, and CarbonData has following unique features:
@@ -93,10 +95,6 @@ Some features are marked as experimental because the syntax/implementation might
 ## Other Technical Material
 * [Apache CarbonData meetup material](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=66850609)
 * [Use Case Articles](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+Articles)
-
-## Contributor Wall of Fame
-
-[![carbondata contributors](https://contrib.rocks/image?repo=apache/carbondata)](https://github.com/apache/carbondata/graphs/contributors)
 
 ## Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
