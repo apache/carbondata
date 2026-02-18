@@ -186,6 +186,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val REGISTER = carbonKeyWord("REGISTER")
   protected val PROPERTIES = carbonKeyWord("PROPERTIES")
   protected val REFRESH = carbonKeyWord("REFRESH")
+  protected val EXPECT = carbonKeyWord("EXPECT")
+  protected val REMAIN_NUMBER = carbonKeyWord("REMAIN_NUMBER")
 
   // For materialized view
   // Keywords used in this parser
@@ -359,4 +361,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       p.getClass.getSimpleName.equals("FloatLit") ||
       p.getClass.getSimpleName.equals("DecimalLit")
     }) ^^ (_.chars)
+
+  protected lazy val number: Parser[Int] = numericLit ^^ (_.toInt)
 }
