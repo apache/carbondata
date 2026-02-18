@@ -122,6 +122,60 @@ public class NotInExpressionUnitTest {
 
   }
 
+  @Test
+  public void testEvaluateForNotInExpressionWithFloatDataType()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.FLOAT);
+    left.setColIndex(0);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.FLOAT);
+    right.setColIndex(1);
+    notInExpression = new NotInExpression(left, right);
+    RowImpl value = new RowImpl();
+    float row = 44521f;
+    float row1 = 44521.023f;
+    Object[] objectRow = { row, row1 };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      @Mock public Float getFloat() {
+        return 44521.023f;
+      }
+    };
+
+    ExpressionResult result = notInExpression.evaluate(value);
+    assertTrue(result.getBoolean());
+  }
+
+  @Test
+  public void testEvaluateForNotInExpressionWithFloatDataType1()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.FLOAT);
+    left.setColIndex(0);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.FLOAT);
+    right.setColIndex(1);
+    notInExpression = new NotInExpression(left, right);
+    RowImpl value = new RowImpl();
+    float row = 44521f;
+    float row1 = 44521.023f;
+    Object[] objectRow = { row, row1 };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      @Mock public boolean isNull() {
+        return true;
+      }
+    };
+
+    new MockUp<ExpressionResult>() {
+      @Mock public Float getFloat() {
+        return 44521.023f;
+      }
+    };
+
+    ExpressionResult result = notInExpression.evaluate(value);
+    assertFalse(result.getBoolean());
+  }
+
   @Test public void testEvaluateForNotInExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);

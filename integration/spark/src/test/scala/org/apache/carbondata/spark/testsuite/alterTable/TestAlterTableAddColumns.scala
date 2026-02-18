@@ -136,7 +136,7 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
       s"""select id, name, file, add_column_ls, map_column, struct_column
          | from ${ tableName } where id = 10""".stripMargin),
       Seq(Row(10, "name10", mutable.WrappedArray.make(Array(mutable.WrappedArray.make(
-        Array(1.4, 2.4)), mutable.WrappedArray.make(Array(1.4, 2.4)))),
+        Array(1.4f, 2.4f)), mutable.WrappedArray.make(Array(1.4f, 2.4f)))),
         ("999" * 12000), Map(4 -> 4), Row(4))))
 
     sql(s"""DROP TABLE IF EXISTS ${ tableName }""")

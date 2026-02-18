@@ -38,7 +38,6 @@ class FloatDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/floatSample.csv' into table tfloat
            """)
-
   }
 
   test("select row whose rating is more than 2.8 from tfloat") {
@@ -47,10 +46,70 @@ class FloatDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(6)))
   }
 
+  test("test col greater than equal literal") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating >= 2.8"),
+      Seq(Row(6)))
+  }
+
+  test("test col less than literal") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating < 2.8"),
+      Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(7), Row(8), Row(9), Row(10)))
+  }
+
+  test("test col less than equal literal") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating <= 2.8"),
+      Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(7), Row(8), Row(9), Row(10)))
+  }
+
   test("select row whose rating is 3.5 from tfloat") {
     checkAnswer(
       sql("SELECT ID FROM tfloat where rating=3.5"),
       Seq(Row(6)))
+  }
+
+  test("test col not equal literal") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating != 3.5"),
+      Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(7), Row(8), Row(9), Row(10)))
+  }
+
+  test("test col is null") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating is null"),
+      Seq())
+  }
+
+  test("test col is not null") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating is not null"),
+      Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(6), Row(7), Row(8), Row(9), Row(10)))
+  }
+
+  test("test col in literal list") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating in (3.5, 2.5)"),
+      Seq(Row(6)))
+  }
+
+  test("test col not in literal list") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating not in (3.5, 2.5)"),
+      Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(7), Row(8), Row(9), Row(10)))
+  }
+
+  test("test and") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating > 2.8 and id = 6"),
+      Seq(Row(6)))
+  }
+
+  test("test or") {
+    checkAnswer(
+      sql("SELECT ID FROM tfloat where rating < 2.8 or id = 6"),
+      Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(6), Row(7), Row(8), Row(9), Row(10)))
   }
 
   test("select sum of rating column from tfloat") {

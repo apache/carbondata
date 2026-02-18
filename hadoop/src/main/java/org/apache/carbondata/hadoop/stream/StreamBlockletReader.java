@@ -236,6 +236,10 @@ public class StreamBlockletReader {
     return v;
   }
 
+  public float readFloat() {
+    return Float.intBitsToFloat(readInt());
+  }
+
   public double readDouble() {
     return Double.longBitsToDouble(readLong());
   }

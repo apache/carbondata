@@ -1067,7 +1067,7 @@ object CarbonParserUtil {
       case "integer" | "int" => field.copy(dataType = Some("Integer"))
       case "long" => field.copy(dataType = Some("Long"))
       case "double" => field.copy(dataType = Some("Double"))
-      case "float" => field.copy(dataType = Some("Double"))
+      case "float" => field.copy(dataType = Some("Float"))
       case "timestamp" => field.copy(dataType = Some("Timestamp"))
       case "date" => field.copy(dataType = Some("Date"))
       case "numeric" => field.copy(dataType = Some("Numeric"))

@@ -230,7 +230,7 @@ public class CSVCarbonWriterTest {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
-    Field[] fields = new Field[9];
+    Field[] fields = new Field[10];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("intField", DataTypes.INT);
     fields[2] = new Field("shortField", DataTypes.SHORT);
@@ -240,6 +240,7 @@ public class CSVCarbonWriterTest {
     fields[6] = new Field("dateField", DataTypes.DATE);
     fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+    fields[9] = new Field("floatField", DataTypes.FLOAT);
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
@@ -255,7 +256,8 @@ public class CSVCarbonWriterTest {
             true,
             "2019-03-02",
             "2019-02-12 03:03:34",
-            "1.234567"
+            "1.234567",
+            ((float) i / 2)
         };
         writer.write(row);
       }

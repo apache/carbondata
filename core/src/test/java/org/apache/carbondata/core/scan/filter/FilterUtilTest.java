@@ -105,6 +105,16 @@ public class FilterUtilTest {
     assertEquals(expectedResult, actualResult);
   }
 
+  @Test
+  public void testCompareFilterKeyBasedOnDataTypeForFloatValue() {
+    String dictionaryVal = "1.90";
+    String memberVal = "1.89";
+    int actualResult =
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.FLOAT);
+    int expectedResult = 1;
+    assertEquals(expectedResult, actualResult);
+  }
+
   @Test public void testCompareFilterKeyBasedOnDataTypeForDoubleValue() {
     String dictionaryVal = "1.90";
     String memberVal = "1.89";

@@ -123,6 +123,8 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
       return DataTypes.IntegerType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
       return DataTypes.LongType;
+    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.FLOAT) {
+      return DataTypes.FloatType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE) {
       return DataTypes.DoubleType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN) {
@@ -171,7 +173,8 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY
-            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR) {
+            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR
+            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.FLOAT) {
           fields[i] =
               new StructField(carbonColumn.getColName(), convertCarbonToSparkDataType(dataType),
                   true, null);

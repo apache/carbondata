@@ -572,6 +572,10 @@ public final class ByteUtil {
     return toBytes(Double.doubleToLongBits(val));
   }
 
+  public static float toFloat(byte[] value, int offset, int length) {
+    return Float.intBitsToFloat(toInt(value, offset, length));
+  }
+
   public static double toDouble(byte[] value, int offset, int length) {
     return Double.longBitsToDouble(toLong(value, offset, length));
   }

@@ -765,12 +765,15 @@ object CommonLoadUtils {
     var timeStampIndex = scala.collection.mutable.Set[Int]()
     var dateIndex = scala.collection.mutable.Set[Int]()
     var doubleIndex = scala.collection.mutable.Set[Int]()
+    val floatIndex = scala.collection.mutable.Set[Int]()
     var i: Int = 0
     for (col <- columnSchema) {
       if (col.getDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.TIMESTAMP) {
         timeStampIndex += i
       } else if (col.getDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
         dateIndex += i;
+      } else if (col.getDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.FLOAT) {
+        floatIndex += i;
       } else if (col.getDataType ==
                  org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE) {
         doubleIndex += i
@@ -795,6 +798,14 @@ object CommonLoadUtils {
           internalRow.setLong(
             index,
             internalRow.getLong(index) / TimeStampGranularityTypeValue.MILLIS_SECONDS.getValue)
+        }
+      }
+      var floatValue: Float = 0
+      for (index <- doubleIndex) {
+        floatValue = internalRow.getFloat(index)
+        if (floatValue.isNaN || floatValue.isInfinite) {
+          // converter used to set null for NAN or infinite
+          internalRow.setNullAt(index)
         }
       }
       var doubleValue: Double = 0

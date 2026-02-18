@@ -505,6 +505,18 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
           } else {
             input.skipBytes(8);
           }
+        } else if (dataType == DataTypes.FLOAT) {
+          if (isRequired[colCount]) {
+            float v = input.readFloat();
+            if (isFilterRequired[colCount]) {
+              filterValues[filterMap[colCount]] = v;
+            }
+            if (isProjectionRequired[colCount]) {
+              outputValues[projectionMap[colCount]] = v;
+            }
+          } else {
+            input.skipBytes(4);
+          }
         } else if (dataType == DataTypes.DOUBLE) {
           if (isRequired[colCount]) {
             double v = input.readDouble();
@@ -586,6 +598,8 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
           outputValues[colCount] = input.readInt();
         } else if (dataType == DataTypes.LONG) {
           outputValues[colCount] = input.readLong();
+        } else if (dataType == DataTypes.FLOAT) {
+          outputValues[colCount] = input.readFloat();
         } else if (dataType == DataTypes.DOUBLE) {
           outputValues[colCount] = input.readDouble();
         } else if (DataTypes.isDecimal(dataType)) {

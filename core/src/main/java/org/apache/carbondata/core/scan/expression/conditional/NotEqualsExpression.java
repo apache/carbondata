@@ -72,6 +72,8 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
       result = val1.getShort().shortValue() != val2.getShort().shortValue();
     } else if (dataType == DataTypes.INT) {
       result = val1.getInt().intValue() != val2.getInt().intValue();
+    } else if (dataType == DataTypes.FLOAT) {
+      result = val1.getFloat().floatValue() != val2.getFloat().floatValue();
     } else if (dataType == DataTypes.DOUBLE) {
       result = val1.getDouble().doubleValue() != val2.getDouble().doubleValue();
     } else if (dataType == DataTypes.DATE) {

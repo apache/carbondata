@@ -176,7 +176,6 @@ object CarbonSparkUtil {
 
   def updateDataType(dataType: DataType): DataType = {
     dataType match {
-      case _: FloatType => DataTypes.DoubleType
       case struct: StructType => updateStruct(struct)
       case array: ArrayType => updateArray(array)
       case map: MapType => updateMap(map)

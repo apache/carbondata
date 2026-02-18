@@ -435,6 +435,8 @@ public final class DataTypeUtil {
       return Integer.parseInt(dimensionValue);
     } else if (actualDataType == DataTypes.LONG) {
       return Long.parseLong(dimensionValue);
+    } else if (actualDataType == DataTypes.FLOAT) {
+      return Float.parseFloat(dimensionValue);
     } else if (actualDataType == DataTypes.DOUBLE) {
       return Double.parseDouble(dimensionValue);
     } else if (DataTypes.isDecimal(actualDataType)) {
@@ -830,6 +832,12 @@ public final class DataTypeUtil {
           return null;
         }
         return Short.parseShort(data2);
+      } else if (dataType == DataTypes.FLOAT) {
+        String data3 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data3.isEmpty()) {
+          return null;
+        }
+        return Float.parseFloat(data3);
       } else if (dataType == DataTypes.DOUBLE) {
         String data3 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
         if (data3.isEmpty()) {
@@ -1007,6 +1015,9 @@ public final class DataTypeUtil {
       } else if (dataType == DataTypes.SHORT) {
         parsedIntVal = Short.parseShort(data);
         return String.valueOf(parsedIntVal)
+            .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else if (dataType == DataTypes.FLOAT) {
+        return String.valueOf(Float.parseFloat(data))
             .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       } else if (dataType == DataTypes.DOUBLE) {
         return String.valueOf(Double.parseDouble(data))

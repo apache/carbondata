@@ -62,6 +62,8 @@ public class LessThanExpression extends BinaryConditionalExpression {
       result = elRes.getShort() < (erRes.getShort());
     } else if (dataType == DataTypes.INT) {
       result = elRes.getInt() < (erRes.getInt());
+    } else if (dataType == DataTypes.FLOAT) {
+      result = elRes.getFloat() < (erRes.getFloat());
     } else if (dataType == DataTypes.DOUBLE) {
       result = elRes.getDouble() < (erRes.getDouble());
     } else if (dataType == DataTypes.DATE) {

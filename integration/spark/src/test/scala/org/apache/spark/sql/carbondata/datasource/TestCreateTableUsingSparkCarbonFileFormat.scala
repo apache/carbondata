@@ -367,8 +367,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       Seq(Row(50000)))
     // expected answer for min max flag. FInally there should be 2 blocklets with one blocklet
     // having min max flag as false for email column and other as true
-    val blocklet1MinMaxFlag = Array(true, true, true, true, true, false, true, true, true)
-    val blocklet2MinMaxFlag = Array(true, true, true, true, true, true, true, true, true)
+    val blocklet1MinMaxFlag = Array(true, true, true, true, true, false, true, true, true, true)
+    val blocklet2MinMaxFlag = Array(true, true, true, true, true, true, true, true, true, true)
     val expectedMinMaxFlag = Array(blocklet1MinMaxFlag, blocklet2MinMaxFlag)
     validateMinMaxFlag(expectedMinMaxFlag, 2)
 
@@ -381,7 +381,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
 
   def buildTestDataMuliBlockLet(recordsInBlocklet1: Int, recordsInBlocklet2: Int): Unit = {
     FileUtils.deleteDirectory(new File(writerPath))
-    val fields = new Array[Field](8)
+    val fields = new Array[Field](9)
     fields(0) = new Field("myid", DataTypes.INT)
     fields(1) = new Field("event_id", DataTypes.STRING)
     fields(2) = new Field("eve_time", DataTypes.DATE)
@@ -390,6 +390,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     fields(5) = new Field("subject", DataTypes.STRING)
     fields(6) = new Field("from_email", DataTypes.STRING)
     fields(7) = new Field("sal", DataTypes.DOUBLE)
+    fields(8) = new Field("floatField", DataTypes.FLOAT)
     import scala.collection.JavaConverters._
     val emailDataBlocklet1 = "FromEmail"
     val emailDataBlocklet2 = "Email for testing min max for allowed chars"
@@ -411,7 +412,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
           "" + date_F.format(time) + "$" + date_F.format(time),
           "Subject_0",
           emailDataBlocklet1,
-          "" + new Random().nextDouble()))
+          "" + new Random().nextDouble(),
+          "" + new Random().nextFloat()))
       }
       for (i <- 1 to recordsInBlocklet2) {
         val time = new Date(System.currentTimeMillis())

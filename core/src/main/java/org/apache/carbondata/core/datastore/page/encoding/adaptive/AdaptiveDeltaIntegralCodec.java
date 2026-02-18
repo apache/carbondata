@@ -69,6 +69,8 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       this.max = (int) stats.getMax();
     } else if (srcDataType == DataTypes.LONG || srcDataType == DataTypes.TIMESTAMP) {
       this.max = (long) stats.getMax();
+    } else if (srcDataType == DataTypes.FLOAT) {
+      this.max = (int) (float) stats.getMax();
     } else if (srcDataType == DataTypes.DOUBLE) {
       this.max = (long) (double) stats.getMax();
     } else if (DataTypes.isDecimal(srcDataType)) {
@@ -236,8 +238,6 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         encodedPage.putShortInt(rowId, (int) (max - value));
       } else if (targetDataType == DataTypes.INT) {
         encodedPage.putInt(rowId, (int) (max - value));
-      } else if (targetDataType == DataTypes.LONG) {
-        encodedPage.putLong(rowId, (long) (max - value));
       } else {
         throw new RuntimeException("internal error");
       }
@@ -272,6 +272,21 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
 
     @Override
     public long decodeLong(int value) {
+      return max - value;
+    }
+
+    @Override
+    public float decodeFloat(byte value) {
+      return max - value;
+    }
+
+    @Override
+    public float decodeFloat(short value) {
+      return max - value;
+    }
+
+    @Override
+    public float decodeFloat(int value) {
       return max - value;
     }
 

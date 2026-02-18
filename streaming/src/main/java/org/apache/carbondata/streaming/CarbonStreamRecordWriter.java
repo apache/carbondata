@@ -281,6 +281,9 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
           } else if (dataType == DataTypes.LONG) {
             output.writeLong((long) columnValue);
             output.msrStatsCollectors[msrCount].update((long) columnValue);
+          } else if (dataType == DataTypes.FLOAT) {
+            output.writeFloat((float) columnValue);
+            output.msrStatsCollectors[msrCount].update((float) columnValue);
           } else if (dataType == DataTypes.DOUBLE) {
             output.writeDouble((double) columnValue);
             output.msrStatsCollectors[msrCount].update((double) columnValue);
