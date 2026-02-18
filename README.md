@@ -24,6 +24,7 @@ You can find the latest CarbonData document and learn more at:
 [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
 - AI-native data storage for CarbonData's new scope, In AI projects, data scientists and engineers spend 80% of their time on data preparation. Traditional storage presents numerous bottlenecks in this process:
+  - Support Agent Data format, for sharing context between different sessions. 
   - Data silos: Training data may be scattered across data lakes, data warehouses, file systems, object storage, and other locations, making integration difficult.
   - Performance bottlenecks:Training phase: High-speed, low-latency data throughput is required to feed GPUs to avoid expensive GPU resources sitting idle.
   - Inference phase: High-concurrency, low-latency vector similarity search capabilities are required.
