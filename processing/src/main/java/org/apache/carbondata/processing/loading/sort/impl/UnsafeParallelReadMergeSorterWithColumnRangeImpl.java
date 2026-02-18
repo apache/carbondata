@@ -32,6 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.ColumnRangeInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -68,6 +69,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
    * counters to collect information about rows processed by each range
    */
   private List<AtomicLong> insideRowCounterList;
+  private ExecutorService writeService;
 
   public UnsafeParallelReadMergeSorterWithColumnRangeImpl(AtomicLong rowCounter,
       ColumnRangeInfo columnRangeInfo) {
@@ -99,6 +101,8 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
     UnsafeSortDataRows[] sortDataRows = new UnsafeSortDataRows[columnRangeInfo.getNumOfRanges()];
     intermediateFileMergers = new UnsafeIntermediateMerger[columnRangeInfo.getNumOfRanges()];
     SortParameters[] sortParameterArray = new SortParameters[columnRangeInfo.getNumOfRanges()];
+    this.writeService = Executors.newFixedThreadPool(originSortParameters.getNumberOfCores(),
+            new CarbonThreadFactory("WritePool: ", true));
     try {
       for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
         SortParameters parameters = originSortParameters.getCopy();
@@ -108,7 +112,8 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
         setTempLocation(parameters);
         intermediateFileMergers[i] = new UnsafeIntermediateMerger(parameters);
         sortDataRows[i] =
-            new UnsafeSortDataRows(parameters, intermediateFileMergers[i], inMemoryChunkSizeInMB);
+            new UnsafeSortDataRows(writeService, parameters,
+                    intermediateFileMergers[i], inMemoryChunkSizeInMB);
         sortDataRows[i].initialize();
       }
     } catch (Exception e) {

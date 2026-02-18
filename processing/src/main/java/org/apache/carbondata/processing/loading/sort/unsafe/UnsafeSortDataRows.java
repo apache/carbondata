@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -63,9 +64,11 @@ public class UnsafeSortDataRows {
   private final String taskId;
 
   private int instanceId;
+  private ExecutorService writeService;
 
-  public UnsafeSortDataRows(SortParameters parameters,
-      UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSize) {
+  public UnsafeSortDataRows(ExecutorService writeService, SortParameters parameters,
+                            UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger,
+                            int inMemoryChunkSize) {
     this.parameters = parameters;
     this.tableFieldStat = new TableFieldStat(parameters);
     this.reUsableByteArrayDataOutputStream = new ThreadLocal<ReUsableByteArrayDataOutputStream>() {
@@ -81,6 +84,7 @@ public class UnsafeSortDataRows {
     this.threadStatusObserver = new ThreadStatusObserver();
     this.taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
     this.inMemoryChunkSize = inMemoryChunkSize * 1024L * 1024L;
+    this.writeService = writeService;
   }
 
   public void setInstanceId(int instanceId) {
@@ -200,25 +204,44 @@ public class UnsafeSortDataRows {
    * @param file file
    * @throws CarbonSortKeyAndGroupByException
    */
-  private void writeDataToFile(UnsafeCarbonRowPage rowPage, File file)
-      throws CarbonSortKeyAndGroupByException {
-    DataOutputStream stream = null;
-    try {
-      // open stream
-      stream = FileFactory.getDataOutputStream(file.getPath(),
-          parameters.getFileWriteBufferSize(), parameters.getSortTempCompressorName());
-      int actualSize = rowPage.getBuffer().getActualSize();
-      // write number of entries to the file
-      stream.writeInt(actualSize);
-      for (int i = 0; i < actualSize; i++) {
-        rowPage.writeRow(
-            rowPage.getBuffer().get(i) + rowPage.getDataBlock().getBaseOffset(), stream);
+  private void writeDataToFile(UnsafeCarbonRowPage rowPage, File file) {
+    writeService.submit(new WriteThread(rowPage, file));
+  }
+
+  public class WriteThread implements Runnable {
+    private File file;
+    private UnsafeCarbonRowPage rowPage;
+
+    public WriteThread(UnsafeCarbonRowPage rowPage, File file) {
+      this.rowPage = rowPage;
+      this.file = file;
+
+    }
+
+    @Override
+    public void run() {
+      DataOutputStream stream = null;
+      try {
+        // open stream
+        stream = FileFactory.getDataOutputStream(this.file.getPath(),
+                parameters.getFileWriteBufferSize(), parameters.getSortTempCompressorName());
+        int actualSize = rowPage.getBuffer().getActualSize();
+        // write number of entries to the file
+        stream.writeInt(actualSize);
+        for (int i = 0; i < actualSize; i++) {
+          rowPage.writeRow(
+                  rowPage.getBuffer().get(i) + rowPage.getDataBlock().getBaseOffset(), stream);
+        }
+        // add sort temp filename to and arrayList. When the list size reaches 20 then
+        // intermediate merging of sort temp files will be triggered
+        unsafeInMemoryIntermediateFileMerger.addFileToMerge(file);
+      } catch (IOException | MemoryException e) {
+        LOGGER.error(e.getMessage(), e);
+      } finally {
+        // close streams
+        CarbonUtil.closeStreams(stream);
+        rowPage.freeMemory();
       }
-    } catch (IOException | MemoryException e) {
-      throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
-    } finally {
-      // close streams
-      CarbonUtil.closeStreams(stream);
     }
   }
 
@@ -280,10 +303,6 @@ public class UnsafeSortDataRows {
                 + " and write is: " + (System.currentTimeMillis() - startTime) + ": location:"
                 + sortTempFile + ", sort temp file size in MB is "
                 + sortTempFile.length() * 0.1 * 10 / 1024 / 1024);
-        rowPage.freeMemory();
-        // add sort temp filename to and arrayList. When the list size reaches 20 then
-        // intermediate merging of sort temp files will be triggered
-        unsafeInMemoryIntermediateFileMerger.addFileToMerge(sortTempFile);
       } else {
         // copying data from working memory manager block to storage memory manager block
         CarbonUnsafe.getUnsafe().copyMemory(
