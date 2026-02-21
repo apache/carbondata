@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn:*)",
+      "Bash(git -C /Users/apple/Carbon-dev/carbonparis status)",
+      "Bash(git -C /Users/apple/Carbon-dev/carbonparis diff)",
+      "Bash(git -C /Users/apple/Carbon-dev/carbonparis diff --name-only)",
+      "Bash(git -C /Users/apple/Carbon-dev/carbonparis checkout -- core/src/main/java/org/apache/carbondata/core/scan/executor/util/RestructureUtil.java core/src/main/java/org/apache/carbondata/core/scan/result/iterator/AbstractDetailQueryResultIterator.java core/src/main/java/org/apache/carbondata/core/stats/QueryStatisticsRecorderImpl.java core/src/main/java/org/apache/carbondata/core/util/CarbonUtil.java core/src/main/java/org/apache/carbondata/core/view/MVManager.java core/src/main/java/org/apache/carbondata/core/view/MVProvider.java integration/spark/pom.xml)"
+    ]
+  }
+}
