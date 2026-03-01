@@ -23,8 +23,8 @@ You can find the latest CarbonData document and learn more at:
 
 [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 ## Agent module
-[What is Agent module for CarbonData project](https://github.com/apache/carbondata/blob/master/Agent_module/README.md)
-[How to start CarbonData's Agent](https://github.com/apache/carbondata/blob/master/Agent_module/QUICKSTART.md)
+* [What is Agent module for CarbonData project](https://github.com/apache/carbondata/blob/master/Agent_module/README.md)
+* [How to start CarbonData's Agent](https://github.com/apache/carbondata/blob/master/Agent_module/QUICKSTART.md)
 
 ## Status
 Spark2.4:
