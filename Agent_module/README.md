@@ -1,67 +1,68 @@
 # Agent Module
 
-Python 多智能体框架，提供 Agent 抽象基类、编排管理器与线程安全的上下文共享系统。
+A Python multi-agent framework providing an abstract agent base class, an orchestration manager, and a thread-safe async context sharing system.
 
 ---
 
-## 目录结构
+## Directory Structure
 
 ```
 Agent_module/
-├── Framework.py                    # 核心抽象：BaseAgent、AgentMessage、AgentStatus
-├── Manager.py                      # 多 Agent 编排与调度
-├── Implementation.py               # 内置 Agent 实现（Echo / Calculator / Weather / Translator）
-├── Chat_Agent.py                   # 对话智能体
-├── ContextStore.py                 # 统一异步上下文存储（推荐使用）
-├── SharedContext.py                # 同步共享内存（旧版）
-├── ContextBridge.py                # Pub/Sub 桥接器（旧版）
-├── Agent_Demo.py                   # Agent 系统完整演示
-├── ContextStore_Demo.py            # ContextStore 功能演示
-├── SharedContext_Demo.py           # SharedContext 功能演示
+├── Framework.py                    # Core abstractions: BaseAgent, AgentMessage, AgentStatus
+├── Manager.py                      # Multi-agent orchestration and routing
+├── Implementation.py               # Built-in agents: Echo / Calculator / Weather / Translator
+├── Chat_Agent.py                   # Rule-based conversational agent
+├── ContextStore.py                 # Unified async context store (recommended)
+├── SharedContext.py                # Synchronous shared memory (legacy)
+├── ContextBridge.py                # Pub/sub bridge for SharedContext (legacy)
+├── Agent_Demo.py                   # Full agent system demo
+├── ContextStore_Demo.py            # ContextStore feature demo
+├── SharedContext_Demo.py           # SharedContext feature demo
 └── Example/
-    └── Agent_format_example.py     # 面向 LLM 的完整 Agent 数据结构示例
+    └── Agent_format_example.py     # Complete LLM-oriented agent data structure example
 ```
 
 ---
 
-## 核心模块
+## Core Modules
 
-### Framework.py — 基础抽象层
+### Framework.py — Base Abstraction
 
-所有 Agent 的公共基类与数据模型。
+Shared base class and data models for all agents.
 
 ```python
 from Framework import BaseAgent, AgentMessage, AgentStatus
+import time
 
 class MyAgent(BaseAgent):
     def __init__(self):
-        super().__init__(name="MyAgent", description="示例 Agent")
+        super().__init__(name="MyAgent", description="An example agent")
 
     async def _process_impl(self, message: AgentMessage) -> AgentMessage:
         return AgentMessage(
-            content=f"已处理：{message.content}",
+            content=f"Processed: {message.content}",
             sender=self.name,
             timestamp=time.time()
         )
 ```
 
-**`AgentMessage` 字段**
+**`AgentMessage` fields**
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |---|---|---|
-| `content` | `Any` | 消息内容 |
-| `sender` | `str` | 发送方标识 |
-| `timestamp` | `float` | Unix 时间戳 |
-| `message_type` | `str` | 消息类型标签（默认 `"text"`） |
-| `metadata` | `dict` | 任意附加数据 |
+| `content` | `Any` | Message payload |
+| `sender` | `str` | Sender identifier |
+| `timestamp` | `float` | Unix timestamp |
+| `message_type` | `str` | Type label (default: `"text"`) |
+| `metadata` | `dict` | Arbitrary additional data |
 
-**`AgentStatus` 枚举**：`IDLE` / `PROCESSING` / `ERROR` / `STOPPED`
+**`AgentStatus` enum**: `IDLE` / `PROCESSING` / `ERROR` / `STOPPED`
 
 ---
 
-### Manager.py — 编排层
+### Manager.py — Orchestration Layer
 
-注册多个 Agent，支持单播、广播与能力发现。
+Register multiple agents with support for unicast, broadcast, and capability discovery.
 
 ```python
 from Manager import AgentManager
@@ -69,39 +70,39 @@ from Manager import AgentManager
 manager = AgentManager()
 manager.register_agent(MyAgent())
 
-# 单播
+# Unicast to a specific agent
 response = await manager.send_message("MyAgent", "hello")
 
-# 广播（asyncio.gather 并发）
+# Broadcast to all agents concurrently (asyncio.gather)
 responses = await manager.broadcast_message("ping")
 
-# 按关键词发现 Agent
+# Discover agents by capability keyword
 agents = manager.find_agent_by_capability("calculation")
 
-# 系统统计
+# System statistics
 stats = manager.get_system_stats()
 ```
 
 ---
 
-### ContextStore.py — 异步上下文存储（推荐）
+### ContextStore.py — Async Context Store (Recommended)
 
-多 Agent 间的统一数据交换层，替代旧版 `SharedContext` + `ContextBridge`。
+The unified data exchange layer for multi-agent systems. Replaces the legacy `SharedContext` + `ContextBridge` pair.
 
-#### 主要特性
+#### Features
 
-| 特性 | 说明 |
+| Feature | Description |
 |---|---|
-| 异步优先 | 所有读写操作为 `async`，`asyncio.Lock` 保护 |
-| 写入历史 | 每个 key 保留最近 50 条写入记录 |
-| P2P 消息通道 | `send` / `receive` / `inbox` FIFO 队列 |
-| Pub/Sub | 写入后自动通知订阅者，支持同步/异步回调 |
-| TTL 惰性驱逐 | 读取时自动检查过期，也可调用 `cleanup_expired()` |
-| 命名空间隔离 | 多租户支持，`ContextNamespace` 提供代理视图 |
-| 合并策略 | last-write-wins（按版本号），支持跨 Store 合并 |
-| 序列化 | `to_dict()` / `to_json()` 完整快照与恢复 |
+| Async-first | All read/write operations are `async`, protected by `asyncio.Lock` |
+| Write history | Each key retains the last 50 write records |
+| P2P channels | `send` / `receive` / `inbox` FIFO queues between agents |
+| Pub/sub | Subscribers are notified after every `put()`; supports sync and async callbacks |
+| TTL eviction | Lazy expiry on reads; batch eviction via `cleanup_expired()` |
+| Namespace isolation | Multi-tenancy support; `ContextNamespace` provides a scoped proxy view |
+| Merge strategy | Last-write-wins by version number; supports cross-store merging |
+| Serialization | Full snapshot and restore via `to_dict()` / `to_json()` |
 
-#### 状态读写
+#### State Read / Write
 
 ```python
 from ContextStore import ContextStore, ContextNamespace
@@ -109,38 +110,38 @@ from ContextStore import ContextStore, ContextNamespace
 store = ContextStore()
 ns = ContextNamespace(store, "pipeline_v1")
 
-# 写入
+# Write a value
 record = await ns.put("status", "running", writer="coordinator")
 
-# 读取当前值
+# Read the current value
 value = await ns.get("status")
 
-# 读取完整条目（含历史）
+# Read the full entry (current record + history)
 entry = await ns.get_entry("status")
 
-# 写入历史（newest-first）
+# Write history, newest-first
 history = await ns.history("status")
 
-# 带 TTL（秒）写入
+# Write with TTL (seconds)
 await ns.put("heartbeat", {"alive": True}, writer="worker", ttl=30)
 
-# 带标签写入
+# Write with tags
 await ns.put("result", data, writer="worker", tags=["output"])
 
-# 按条件查询
+# Query by writer and/or tags
 entries = await ns.query(writer="worker", tags=["output"])
 ```
 
-#### P2P 消息通道
+#### P2P Message Channels
 
 ```python
-# 发送
+# Send a message from coordinator to worker
 await store.send("coordinator", "worker", {"cmd": "run"})
 
-# 接收单条
+# Receive the next message from a specific channel
 msg = await store.receive("coordinator", "worker")
 
-# 收取所有发往 worker 的消息（跨所有 sender，按时间排序）
+# Collect all pending messages for worker (across all senders, sorted by time)
 inbox = await store.inbox("worker")
 ```
 
@@ -148,56 +149,56 @@ inbox = await store.inbox("worker")
 
 ```python
 async def on_change(key: str, record) -> None:
-    print(f"变更: {key} = {record.value}")
+    print(f"Changed: {key} = {record.value}")
 
-# 订阅命名空间内所有 key
+# Subscribe to all keys in the namespace
 ns.subscribe("monitor", on_change)
 
-# 订阅指定 key
+# Subscribe to specific keys only
 ns.subscribe("monitor", on_change, keys=["status", "result"])
 
-# 取消订阅
+# Unsubscribe
 ns.unsubscribe("monitor")
 ```
 
-> 写入方不会收到自己触发的通知。回调在锁释放后执行，避免死锁。
+> Writers do not receive their own notifications. Callbacks fire after the lock is released to prevent re-entrant deadlocks.
 
-#### 维护与序列化
+#### Maintenance and Serialization
 
 ```python
-# 清理过期条目
+# Remove all expired entries
 removed = await ns.cleanup_expired()
 
-# 深拷贝快照
+# Deep-copy snapshot of current state
 snapshot = await ns.snapshot()
 
-# 合并另一个 ContextStore（last-write-wins）
+# Merge another ContextStore (last-write-wins by version)
 merged = await store.merge(other_store, namespace="pipeline_v1")
 
-# 统计信息
+# Store statistics
 stats = await store.stats()
 
-# 完整序列化
+# Full JSON serialization
 json_str = await store.to_json()
 ```
 
 ---
 
-### 内置 Agent 实现
+### Built-in Agents
 
-| Agent | 说明 |
+| Agent | Description |
 |---|---|
-| `EchoAgent` | 回显收到的消息 |
-| `CalculatorAgent` | 数学表达式计算（字符白名单过滤） |
-| `WeatherAgent` | 模拟天气查询（内置 4 个城市，其余随机生成） |
-| `TranslatorAgent` | 模拟多语言翻译（通过 `metadata.target_language` 指定目标语言） |
-| `ChatAgent` | 基于规则的对话智能体，支持问候/问答/路由意图识别 |
+| `EchoAgent` | Echoes back every received message |
+| `CalculatorAgent` | Evaluates math expressions (character whitelist filter) |
+| `WeatherAgent` | Simulated weather lookup (4 preset cities; random data for others) |
+| `TranslatorAgent` | Simulated translation; target language set via `metadata.target_language` |
+| `ChatAgent` | Rule-based conversational agent with greeting / Q&A / routing intent detection |
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 单 Agent 使用
+### Single Agent
 
 ```python
 import asyncio
@@ -217,7 +218,7 @@ async def main():
 asyncio.run(main())
 ```
 
-### 多 Agent 编排
+### Multi-Agent Orchestration
 
 ```python
 import asyncio
@@ -240,7 +241,7 @@ async def main():
 asyncio.run(main())
 ```
 
-### 多 Agent 共享上下文
+### Shared Context Between Agents
 
 ```python
 import asyncio
@@ -250,57 +251,58 @@ async def main():
     store = ContextStore()
     ns = ContextNamespace(store, "my_pipeline")
 
-    # coordinator 分配任务
-    await ns.put("task", {"id": "001", "desc": "处理数据"}, writer="coordinator")
+    # Coordinator assigns a task
+    await ns.put("task", {"id": "001", "desc": "Process data"}, writer="coordinator")
     await ns.put("status", "pending", writer="coordinator")
 
-    # worker 处理任务
+    # Worker processes the task
     task = await ns.get("task")
     await ns.put("status", "in_progress", writer="worker")
     await ns.put("result", {"processed": 1000}, writer="worker")
     await ns.put("status", "completed", writer="worker")
 
-    # 查看写入历史
+    # Inspect write history
     for r in await ns.history("status"):
-        print(f"v{r.version} [{r.writer}] → {r.value}")
+        print(f"v{r.version} [{r.writer}] -> {r.value}")
 
 asyncio.run(main())
 ```
 
 ---
 
-## 运行演示
+## Running the Demos
 
 ```bash
-# Agent 系统演示（单 Agent + 多 Agent 广播）
+# Agent system demo (single agent + multi-agent broadcast)
 python3 Agent_Demo.py
 
-# ContextStore 功能演示（pub/sub / 通道 / TTL / merge / 序列化）
+# ContextStore feature demo (pub/sub, channels, TTL, merge, serialization)
 python3 ContextStore_Demo.py
 
-# SharedContext 功能演示（旧版同步 API）
+# SharedContext feature demo (legacy synchronous API)
 python3 SharedContext_Demo.py
 
-# Agent 数据结构格式演示（面向 LLM）
+# Agent data structure format demo (LLM-oriented)
 python3 Example/Agent_format_example.py
 ```
 
 ---
 
-## 模块演化说明
+## Module Evolution
 
 ```
-SharedContext.py + ContextBridge.py   ← 旧版（同步，非线程安全）
-            ↓ 重构升级
-        ContextStore.py               ← 当前推荐（异步，线程安全）
+SharedContext.py + ContextBridge.py   <- Legacy (synchronous, not thread-safe)
+            |
+            v  refactored
+        ContextStore.py               <- Current recommendation (async, thread-safe)
 ```
 
-`SharedContext` 与 `ContextBridge` 保留作为参考，新开发应直接使用 `ContextStore`。
+`SharedContext` and `ContextBridge` are retained for reference. New development should use `ContextStore` directly.
 
 ---
 
-## 注意事项
+## Notes
 
-- **`ContextBridge.py`**：内部通过 `importlib` 加载 `.python` 扩展名文件，与当前 `.py` 扩展名不匹配，直接导入会报错。如需使用旧版 API，请参考 `SharedContext_Demo.py` 中的加载方式。
-- **`CalculatorAgent`**：使用字符白名单过滤后调用 `eval()`，仅适用于受信任环境。生产场景建议替换为安全的数学解析库。
-- **`SharedContext`** 非线程安全，并发场景请使用 `ContextStore`。
+- **`ContextBridge.py`**: Loads its dependency via `importlib` using a `.python` file extension, which does not match the current `.py` extension. Direct import will fail. Refer to `SharedContext_Demo.py` for the correct loading pattern if you need the legacy API.
+- **`CalculatorAgent`**: Uses a character whitelist before calling `eval()`. Suitable only for trusted input. Replace with a dedicated math parser library for production use.
+- **`SharedContext`** is not thread-safe. Use `ContextStore` for any concurrent workload.
