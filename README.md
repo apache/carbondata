@@ -18,13 +18,15 @@
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
     
 - Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g. Apache Hadoop, Apache Spark, etc.
-You can find the latest CarbonData document and learn more at:
-[https://carbondata.apache.org](https://carbondata.apache.org/)
+- Apache CarbonData start a new journey as Agent metadata storage to support multi-agents work together.
 
-[CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 ## Agent module
 * [What is Agent module for CarbonData project](https://github.com/apache/carbondata/blob/master/Agent_module/README.md)
 * [How to start CarbonData's Agent](https://github.com/apache/carbondata/blob/master/Agent_module/QUICKSTART.md)
+
+You can find the latest CarbonData document and learn more at:
+[https://carbondata.apache.org](https://carbondata.apache.org/)
+[CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
 ## Status
 Spark2.4:
