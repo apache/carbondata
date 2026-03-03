@@ -1,6 +1,6 @@
-# Agent Module — Quick Start
+# Quick Start for CarbonData's Agent
 
-This guide walks you through the most common usage patterns, from running a single agent to building a multi-agent pipeline with shared state.
+CarbonData as Agent metadata storage , how to support Multi Agents work together. 
 
 **Requirements**: Python 3.10+ — no third-party packages needed, stdlib only.
 
