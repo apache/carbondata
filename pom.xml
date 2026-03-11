@@ -486,7 +486,7 @@
             -javaagent:"${settings.localRepository}/org/jmockit/jmockit/${jmockit.version}/jmockit-${jmockit.version}.jar"
             --add-opens java.base/sun.nio.ch=ALL-UNNAMED
             --add-opens java.base/jdk.internal.ref=ALL-UNNAMED
-            --add-opens java.base/java.nio=ALL-UNNAMEDss
+            --add-opens java.base/java.nio=ALL-UNNAMED
           </argLine>
         </configuration>
         <dependencies>
