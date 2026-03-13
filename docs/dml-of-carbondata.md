@@ -37,13 +37,28 @@ CarbonData DML statements are documented here,which includes:
   This command is used to load csv files to carbondata, OPTIONS are not mandatory for data loading process. 
 
   ```
-  LOAD DATA INPATH 'folder_path'
+  LOAD DATA INPATH 'folder_path' [ OVERWRITE ] 
   INTO TABLE [db_name.]table_name 
   OPTIONS(property_name=property_value, ...)
   ```
   **NOTE**:
-    * Use 'file://' prefix to indicate local input files path, but it just supports local mode.
-    * If run on cluster mode, please upload all input files to distributed file system, for example 'hdfs://' for hdfs.
+   * Use 'file://' prefix to indicate local input files path, but it just supports local mode.
+
+   * If run on cluster mode, please upload all input files to distributed file system, for example 'hdfs://' for hdfs.
+
+* [ OVERWRITE ] :
+
+  ​	By default, new data is appended to the table. If `OVERWRITE` is used, the table is instead overwritten with new data.
+
+  ​	Example:   
+
+  ```sql
+  CREATE TABLE carbon_load_overwrite(id int, name string, city string, age int)
+  STORED AS carbondata
+  LOAD DATA LOCAL INPATH 'filepath.csv' overwrite into table carbon_load_overwrite
+  ```
+
+  
 
   **Supported Properties:**
 
@@ -266,7 +281,7 @@ CarbonData DML statements are documented here,which includes:
       numPartitions = total size of input data / splitSize
     ```
     The default value is 3, and the range is [1, 300].
- 
+
     ```
       OPTIONS('SCALE_FACTOR'='10')
     ```
@@ -322,9 +337,9 @@ CarbonData DML statements are documented here,which includes:
 
   Stage input files are data files written by external application (such as Flink). These files 
   are committed but not loaded into the table. 
-  
+
   User can use this command to insert them into the table, thus making them visible for a query.
-  
+
   ```
   INSERT INTO <CARBONDATA TABLE> STAGE OPTIONS(property_name=property_value, ...)
   ```
@@ -357,10 +372,10 @@ CarbonData DML statements are documented here,which includes:
     Examples:
     ```
     INSERT INTO table1 STAGE
-  
+    
     INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5')
     Note: This command uses the default file order, will insert the earliest stage files into the table.
-  
+    
     INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5', 'batch_file_order'='DESC')
     Note: This command will insert the latest stage files into the table.
     ```
@@ -404,10 +419,10 @@ CarbonData DML statements are documented here,which includes:
 ## UPDATE AND DELETE
 
   Since the data stored in a file system like HDFS is immutable, the update and delete in carbondata are done via maintaining two files namely:
-  
+
   * Insert Delta: Stores newly added rows (CarbonData file format)
   * Delete Delta: Store RowId of rows that are deleted (Bitmap file format)
-  
+
 ### UPDATE
 
   This command will allow to update the CarbonData table based on the column expression and optional filter conditions.
@@ -480,13 +495,13 @@ CarbonData DML statements are documented here,which includes:
   ```
   DELETE FROM carbontable WHERE column1 IN (SELECT column11 FROM sourceTable2 WHERE column1 = 'USA')
   ```
-    
+
 ### DELETE STAGE
 
   This command allows us to delete the data files (stage data) which is already loaded into the table.
   ```
   DELETE FROM TABLE [db_name.]table_name STAGE OPTIONS(property_name=property_value, ...)
-  ```  
+  ```
   **Supported Properties:**
 
 | Property                                                | Description                                                 |
