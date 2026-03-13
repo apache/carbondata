@@ -120,7 +120,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     var dataPath: String = null
     dataPath = resourcesPath + "/jsonFiles/data/allPrimitiveType.json"
 
-    val fields = new Array[Field](9)
+    val fields = new Array[Field](10)
     fields(0) = new Field("stringField", DataTypes.STRING)
     fields(1) = new Field("intField", DataTypes.INT)
     fields(2) = new Field("shortField", DataTypes.SHORT)
@@ -130,6 +130,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     fields(6) = new Field("dateField", DataTypes.DATE)
     fields(7) = new Field("timeField", DataTypes.TIMESTAMP)
     fields(8) = new Field("decimalField", DataTypes.createDecimalType(8, 2))
+    fields(9) = new Field("floatField", DataTypes.FLOAT)
 
     val jsonRow = readFromFile(dataPath)
     writeCarbonFileFromJsonRowInput(jsonRow, new Schema(fields))
@@ -148,7 +149,8 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
         false,
         java.sql.Date.valueOf("2019-03-02"),
         Timestamp.valueOf("2019-02-12 03:03:34"),
-        55.35)))
+        55.35,
+        23.33f)))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -162,7 +164,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     var dataPath: String = null
     dataPath = resourcesPath + "/jsonFiles/data/allPrimitiveTypeBadRecord.json"
 
-    val fields = new Array[Field](9)
+    val fields = new Array[Field](10)
     fields(0) = new Field("stringField", DataTypes.STRING)
     fields(1) = new Field("intField", DataTypes.INT)
     fields(2) = new Field("shortField", DataTypes.SHORT)
@@ -172,6 +174,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     fields(6) = new Field("dateField", DataTypes.DATE)
     fields(7) = new Field("timeField", DataTypes.TIMESTAMP)
     fields(8) = new Field("decimalField", DataTypes.createDecimalType(8, 2))
+    fields(9) = new Field("floatField", DataTypes.FLOAT)
 
     val jsonRow = readFromFile(dataPath)
     var exception = intercept[java.lang.AssertionError] {
@@ -307,12 +310,13 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     FileUtils.deleteDirectory(new File(writerPath))
     var dataPath: String = null
     dataPath = resourcesPath + "/jsonFiles/data/PrimitiveTypeWithNull.json"
-    val fields = new Array[Field](5)
+    val fields = new Array[Field](6)
     fields(0) = new Field("stringField", DataTypes.STRING)
     fields(1) = new Field("intField", DataTypes.INT)
     fields(2) = new Field("shortField", DataTypes.SHORT)
     fields(3) = new Field("longField", DataTypes.LONG)
     fields(4) = new Field("doubleField", DataTypes.DOUBLE)
+    fields(5) = new Field("floatField", DataTypes.FLOAT)
     val jsonRow = readFromFile(dataPath)
     writeCarbonFileFromJsonRowInput(jsonRow, new Schema(fields))
     assert(new File(writerPath).exists())
@@ -321,7 +325,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"),
-      Seq(Row(null, 26, null, null, null)))
+      Seq(Row(null, 26, null, null, null, null)))
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).listFiles().length > 0)

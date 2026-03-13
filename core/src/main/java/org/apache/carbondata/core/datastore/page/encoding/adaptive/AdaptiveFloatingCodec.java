@@ -172,7 +172,19 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
     @Override
     public void encode(int rowId, float value) {
-      encode(rowId, (double) value);
+      if (targetDataType == DataTypes.BYTE) {
+        encodedPage.putByte(rowId, (byte) Math.round(value * floatFactor));
+      } else if (targetDataType == DataTypes.SHORT) {
+        encodedPage.putShort(rowId, (short) Math.round(value * floatFactor));
+      } else if (targetDataType == DataTypes.SHORT_INT) {
+        encodedPage.putShortInt(rowId, Math.round(value * floatFactor));
+      } else if (targetDataType == DataTypes.INT) {
+        encodedPage.putInt(rowId, Math.round(value * floatFactor));
+      } else if (targetDataType == DataTypes.FLOAT) {
+        encodedPage.putFloat(rowId, value);
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
+      }
     }
 
     @Override
@@ -207,6 +219,21 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     @Override
     public long decodeLong(int value) {
       throw new RuntimeException("internal error: " + debugInfo());
+    }
+
+    @Override
+    public float decodeFloat(byte value) {
+      return value / floatFactor;
+    }
+
+    @Override
+    public float decodeFloat(short value) {
+      return value / floatFactor;
+    }
+
+    @Override
+    public float decodeFloat(int value) {
+      return value / floatFactor;
     }
 
     @Override

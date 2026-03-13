@@ -252,6 +252,21 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     }
 
     @Override
+    public float decodeFloat(byte value) {
+      return value;
+    }
+
+    @Override
+    public float decodeFloat(short value) {
+      return value;
+    }
+
+    @Override
+    public float decodeFloat(int value) {
+      return value;
+    }
+
+    @Override
     public double decodeDouble(byte value) {
       return value;
     }
