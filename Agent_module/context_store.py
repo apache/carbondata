@@ -1,43 +1,26 @@
 """
-ContextStore.py
-===============
+context_store.py
+================
 Unified, thread-safe, async-first context exchange for multi-agent systems.
 
-Replaces SharedContext + ContextBridge with a single module that provides:
+Provides:
   - Keyed state store with full write history (last 50 writes per key)
   - Point-to-point FIFO message channels between agents
   - Pub/sub notifications supporting both sync and async callbacks
   - TTL, tagging, querying, merge, snapshot, and serialisation
-
-Usage:
-    store = ContextStore()
-
-    # State store
-    rec = await store.put("task", {"id": 1}, writer="coordinator")
-    val = await store.get("task")
-
-    # Channels
-    await store.send("coordinator", "worker", {"cmd": "run"})
-    msg = await store.receive("coordinator", "worker")
-
-    # Pub/sub
-    store.subscribe("monitor", my_callback)
-
-    # Namespace-scoped view
-    ns = ContextNamespace(store, "pipeline_v1")
-    await ns.put("status", "running", writer="coordinator")
 """
 
 from __future__ import annotations
 
 import asyncio
 import copy
+import inspect
 import json
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable
 
 
 # ============================================================================
@@ -47,12 +30,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 @dataclass(frozen=True)
 class ContextRecord:
-    """
-    Immutable record of a single write.
-
-    Every put() call appends a new ContextRecord to the key's history.
-    Frozen so the record is safe to share across tasks without copying.
-    """
+    """Immutable record of a single write."""
 
     key: str
     value: Any
@@ -60,17 +38,16 @@ class ContextRecord:
     version: int
     timestamp: str
     record_id: str
-    ttl: Optional[int]      # seconds until expiry; None = never expires
-    tags: Tuple[str, ...]
+    ttl: int | None              # seconds until expiry; None = never expires
+    tags: tuple[str, ...]
 
     def is_expired(self) -> bool:
-        """Return True if this record has passed its TTL."""
         if self.ttl is None:
             return False
         written_at = datetime.fromisoformat(self.timestamp)
         return (datetime.now() - written_at).total_seconds() > self.ttl
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "key": self.key,
             "value": self.value,
@@ -83,7 +60,7 @@ class ContextRecord:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ContextRecord":
+    def from_dict(cls, data: dict[str, Any]) -> ContextRecord:
         return cls(
             key=data["key"],
             value=data["value"],
@@ -98,12 +75,7 @@ class ContextRecord:
 
 @dataclass
 class ContextEntry:
-    """
-    Active state for one key: current record + full write history.
-
-    history is a deque with maxlen=50; oldest records are dropped
-    automatically when the limit is reached.
-    """
+    """Active state for one key: current record plus bounded write history."""
 
     current: ContextRecord
     history: deque = field(default_factory=lambda: deque(maxlen=50))
@@ -111,14 +83,14 @@ class ContextEntry:
     def is_expired(self) -> bool:
         return self.current.is_expired()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "current": self.current.to_dict(),
             "history": [r.to_dict() for r in self.history],
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ContextEntry":
+    def from_dict(cls, data: dict[str, Any]) -> ContextEntry:
         current = ContextRecord.from_dict(data["current"])
         history: deque = deque(
             [ContextRecord.from_dict(r) for r in data.get("history", [])],
@@ -136,9 +108,9 @@ class ContextMessage:
     payload: Any
     timestamp: str
     message_id: str
-    tags: Tuple[str, ...]
+    tags: tuple[str, ...]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "sender": self.sender,
             "receiver": self.receiver,
@@ -149,7 +121,7 @@ class ContextMessage:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ContextMessage":
+    def from_dict(cls, data: dict[str, Any]) -> ContextMessage:
         return cls(
             sender=data["sender"],
             receiver=data["receiver"],
@@ -176,20 +148,17 @@ class ContextChannel:
         async with self._lock:
             self._queue.append(message)
 
-    async def receive(self) -> Optional[ContextMessage]:
-        """Pop and return the oldest message, or None if empty."""
+    async def receive(self) -> ContextMessage | None:
         async with self._lock:
             return self._queue.popleft() if self._queue else None
 
-    async def receive_all(self) -> List[ContextMessage]:
-        """Pop and return all pending messages in FIFO order."""
+    async def receive_all(self) -> list[ContextMessage]:
         async with self._lock:
             msgs = list(self._queue)
             self._queue.clear()
             return msgs
 
-    async def peek(self) -> Optional[ContextMessage]:
-        """Return the oldest message without removing it."""
+    async def peek(self) -> ContextMessage | None:
         async with self._lock:
             return self._queue[0] if self._queue else None
 
@@ -208,8 +177,8 @@ class Subscription:
 
     agent_id: str
     namespace: str
-    keys: Set[str]      # empty set = subscribe to ALL keys in namespace
-    callback: Callable  # sync or async; called as callback(key, record)
+    keys: set[str]      # empty set = subscribe to ALL keys in namespace
+    callback: Callable
 
 
 # ============================================================================
@@ -223,10 +192,10 @@ class ContextStore:
 
     Internal layout
     ---------------
-    _entries:  Dict[namespace, Dict[key, ContextEntry]]  — asyncio.Lock protected
-    _channels: Dict[(sender, receiver), ContextChannel]  — each has its own lock
-    _subs:     Dict[namespace, Dict[agent_id, Subscription]]
-    _lock:     asyncio.Lock  (single global lock protecting _entries)
+    _entries:  dict[namespace, dict[key, ContextEntry]]  — asyncio.Lock protected
+    _channels: dict[(sender, receiver), ContextChannel]  — each has its own lock
+    _subs:     dict[namespace, dict[agent_id, Subscription]]
+    _lock:     asyncio.Lock (single global lock protecting _entries)
 
     Notification contract
     ---------------------
@@ -241,22 +210,21 @@ class ContextStore:
     """
 
     def __init__(self) -> None:
-        self._entries: Dict[str, Dict[str, ContextEntry]] = {}
-        self._channels: Dict[Tuple[str, str], ContextChannel] = {}
-        self._subs: Dict[str, Dict[str, Subscription]] = {}
+        self._entries: dict[str, dict[str, ContextEntry]] = {}
+        self._channels: dict[tuple[str, str], ContextChannel] = {}
+        self._subs: dict[str, dict[str, Subscription]] = {}
         self._lock = asyncio.Lock()
 
     # -----------------------------------------------------------------------
     # Internal helpers
     # -----------------------------------------------------------------------
 
-    def _ns_entries(self, namespace: str) -> Dict[str, ContextEntry]:
-        """Return (creating if needed) the entries dict for *namespace*."""
+    def _ns_entries(self, namespace: str) -> dict[str, ContextEntry]:
         if namespace not in self._entries:
             self._entries[namespace] = {}
         return self._entries[namespace]
 
-    def _ns_subs(self, namespace: str) -> Dict[str, Subscription]:
+    def _ns_subs(self, namespace: str) -> dict[str, Subscription]:
         if namespace not in self._subs:
             self._subs[namespace] = {}
         return self._subs[namespace]
@@ -271,18 +239,11 @@ class ContextStore:
         value: Any,
         writer: str,
         namespace: str = "default",
-        ttl: Optional[int] = None,
-        tags: Optional[List[str]] = None,
+        ttl: int | None = None,
+        tags: list[str] | None = None,
     ) -> ContextRecord:
-        """
-        Write *key* → *value* on behalf of *writer*.
-
-        Creates a new ContextRecord and appends it to the key's history.
-        Notifies subscribers after the lock is released.
-        Returns the new ContextRecord.
-        """
-        to_notify: List[Subscription] = []
-        record: ContextRecord
+        """Write *key* → *value* on behalf of *writer*."""
+        to_notify: list[Subscription] = []
 
         async with self._lock:
             entries = self._ns_entries(namespace)
@@ -308,22 +269,20 @@ class ContextStore:
                 existing.history.append(record)
                 existing.current = record
 
-            # Collect subscribers before releasing the lock
             for sub in self._ns_subs(namespace).values():
                 if sub.agent_id == writer:
-                    continue  # no self-notification
+                    continue
                 if sub.keys and key not in sub.keys:
                     continue
                 to_notify.append(sub)
 
-        # Fire callbacks AFTER the lock is released
         for sub in to_notify:
             try:
                 result = sub.callback(key, record)
-                if asyncio.iscoroutine(result):
+                if inspect.isawaitable(result):
                     await result
             except Exception:
-                pass  # bad callbacks must not crash the store
+                pass
 
         return record
 
@@ -331,20 +290,13 @@ class ContextStore:
     # State API — reads
     # -----------------------------------------------------------------------
 
-    async def get(self, key: str, namespace: str = "default") -> Optional[Any]:
-        """Return current value for *key*, or None if missing or TTL-expired."""
+    async def get(self, key: str, namespace: str = "default") -> Any | None:
         entry = await self.get_entry(key, namespace)
         return entry.current.value if entry else None
 
     async def get_entry(
         self, key: str, namespace: str = "default"
-    ) -> Optional[ContextEntry]:
-        """
-        Return the full ContextEntry (current + history) for *key*.
-
-        Lazily evicts the entry if its TTL has expired.
-        Returns None if missing or expired.
-        """
+    ) -> ContextEntry | None:
         async with self._lock:
             entries = self._ns_entries(namespace)
             entry = entries.get(key)
@@ -358,7 +310,6 @@ class ContextStore:
     async def delete(
         self, key: str, writer: str, namespace: str = "default"
     ) -> bool:
-        """Remove *key* from the store. Returns True if it existed."""
         async with self._lock:
             entries = self._ns_entries(namespace)
             if key in entries:
@@ -370,22 +321,15 @@ class ContextStore:
         self,
         key: str,
         namespace: str = "default",
-        limit: Optional[int] = None,
-    ) -> List[ContextRecord]:
-        """
-        Return write history for *key*, newest-first.
-
-        Returns at most *limit* records if specified.
-        Returns [] if the key does not exist or is expired.
-        """
+        limit: int | None = None,
+    ) -> list[ContextRecord]:
         entry = await self.get_entry(key, namespace)
         if entry is None:
             return []
         records = list(reversed(entry.history))
         return records[:limit] if limit is not None else records
 
-    async def keys(self, namespace: str = "default") -> List[str]:
-        """Return all non-expired keys in *namespace*."""
+    async def keys(self, namespace: str = "default") -> list[str]:
         await self.cleanup_expired(namespace)
         async with self._lock:
             return list(self._ns_entries(namespace).keys())
@@ -394,25 +338,18 @@ class ContextStore:
         self,
         namespace: str = "default",
         *,
-        writer: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        since: Optional[str] = None,    # ISO-8601 datetime string (inclusive)
-        until: Optional[str] = None,    # ISO-8601 datetime string (inclusive)
-    ) -> List[ContextEntry]:
-        """
-        Return ContextEntry objects whose current record matches all filters.
-
-        writer — only entries last written by this agent
-        tags   — entry must have ALL of these tags
-        since  — entry timestamp >= since
-        until  — entry timestamp <= until
-        """
+        writer: str | None = None,
+        tags: list[str] | None = None,
+        since: str | None = None,
+        until: str | None = None,
+    ) -> list[ContextEntry]:
+        """Filter entries by writer / tags / since / until."""
         await self.cleanup_expired(namespace)
         tag_set = set(tags) if tags else None
 
         async with self._lock:
             entries = self._ns_entries(namespace)
-            results: List[ContextEntry] = []
+            results: list[ContextEntry] = []
             for entry in entries.values():
                 rec = entry.current
                 if writer and rec.writer != writer:
@@ -431,7 +368,6 @@ class ContextStore:
     # -----------------------------------------------------------------------
 
     def channel(self, sender: str, receiver: str) -> ContextChannel:
-        """Return (creating if needed) the channel from *sender* to *receiver*."""
         key = (sender, receiver)
         if key not in self._channels:
             self._channels[key] = ContextChannel()
@@ -442,9 +378,8 @@ class ContextStore:
         sender: str,
         receiver: str,
         payload: Any,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> ContextMessage:
-        """Send a directed message from *sender* to *receiver*."""
         msg = ContextMessage(
             sender=sender,
             receiver=receiver,
@@ -458,19 +393,13 @@ class ContextStore:
 
     async def receive(
         self, sender: str, receiver: str
-    ) -> Optional[ContextMessage]:
-        """Pop the next message from the *sender* → *receiver* channel."""
+    ) -> ContextMessage | None:
         return await self.channel(sender, receiver).receive()
 
-    async def inbox(self, receiver: str) -> List[ContextMessage]:
-        """
-        Collect and return all pending messages for *receiver* across every
-        sender channel, sorted by timestamp (oldest first).
-
-        This is a destructive read — messages are removed from the channel.
-        """
-        msgs: List[ContextMessage] = []
-        for (s, r), ch in self._channels.items():
+    async def inbox(self, receiver: str) -> list[ContextMessage]:
+        """Destructively collect every pending message addressed to *receiver*."""
+        msgs: list[ContextMessage] = []
+        for (_, r), ch in self._channels.items():
             if r == receiver:
                 msgs.extend(await ch.receive_all())
         msgs.sort(key=lambda m: m.timestamp)
@@ -485,14 +414,11 @@ class ContextStore:
         agent_id: str,
         callback: Callable,
         namespace: str = "default",
-        keys: Optional[List[str]] = None,
+        keys: list[str] | None = None,
     ) -> None:
         """
-        Register *agent_id* to be notified on writes to *keys*.
-
-        keys=None (or []) means subscribe to ALL keys in the namespace.
-        callback(key, record) is called after each put(); both sync and
-        async callbacks are supported.
+        Register *agent_id* to be notified on writes. keys=None subscribes
+        to every key in *namespace*.
         """
         subs = self._ns_subs(namespace)
         subs[agent_id] = Subscription(
@@ -503,7 +429,6 @@ class ContextStore:
         )
 
     def unsubscribe(self, agent_id: str, namespace: str = "default") -> None:
-        """Remove *agent_id*'s subscription in *namespace*."""
         self._ns_subs(namespace).pop(agent_id, None)
 
     # -----------------------------------------------------------------------
@@ -511,10 +436,6 @@ class ContextStore:
     # -----------------------------------------------------------------------
 
     async def cleanup_expired(self, namespace: str = "default") -> int:
-        """
-        Remove all TTL-expired entries from *namespace*.
-        Returns the number of keys removed.
-        """
         async with self._lock:
             entries = self._ns_entries(namespace)
             expired = [k for k, e in entries.items() if e.is_expired()]
@@ -522,27 +443,16 @@ class ContextStore:
                 del entries[k]
             return len(expired)
 
-    async def snapshot(self, namespace: str = "default") -> Dict[str, Any]:
-        """
-        Return a deep copy of current non-expired entries in *namespace*
-        as a plain dictionary (key → entry dict).
-        """
+    async def snapshot(self, namespace: str = "default") -> dict[str, Any]:
         await self.cleanup_expired(namespace)
         async with self._lock:
             entries = self._ns_entries(namespace)
             return copy.deepcopy({k: e.to_dict() for k, e in entries.items()})
 
     async def merge(
-        self, other: "ContextStore", namespace: str = "default"
+        self, other: ContextStore, namespace: str = "default"
     ) -> int:
-        """
-        Merge entries from *other* into this store for *namespace*.
-
-        Uses last-write-wins by version number: an entry from *other* is
-        accepted only if its current version is higher than the local one.
-        Returns the number of entries merged (updated or inserted).
-        """
-        # Copy other's entries while holding *its* lock (avoids concurrent mutation)
+        """Merge *other*'s entries into this store (last-write-wins by version)."""
         async with other._lock:
             other_snapshot = copy.deepcopy(
                 dict(other._entries.get(namespace, {}))
@@ -561,10 +471,9 @@ class ContextStore:
                     merged += 1
         return merged
 
-    async def stats(self) -> Dict[str, Any]:
-        """Return high-level statistics about the store."""
+    async def stats(self) -> dict[str, Any]:
         async with self._lock:
-            ns_stats = {}
+            ns_stats: dict[str, Any] = {}
             for ns, entries in self._entries.items():
                 subs = self._subs.get(ns, {})
                 ns_stats[ns] = {
@@ -586,11 +495,9 @@ class ContextStore:
             "total_channels": len(self._channels),
         }
 
-    async def to_dict(self) -> Dict[str, Any]:
-        """Full serialisation of the store to a plain Python dict."""
-        # Snapshot all namespaces, filtering out expired entries in one lock pass
+    async def to_dict(self) -> dict[str, Any]:
         async with self._lock:
-            entries_dict: Dict[str, Any] = {}
+            entries_dict: dict[str, Any] = {}
             for ns, entries in self._entries.items():
                 entries_dict[ns] = {
                     k: e.to_dict()
@@ -598,13 +505,12 @@ class ContextStore:
                     if not e.is_expired()
                 }
 
-        # Snapshot channels (each under its own lock)
-        channels_dict: Dict[str, Any] = {}
+        channels_dict: dict[str, Any] = {}
         for (s, r), ch in self._channels.items():
             async with ch._lock:
                 channels_dict[f"{s}->{r}"] = [m.to_dict() for m in ch._queue]
 
-        subs_dict: Dict[str, Any] = {
+        subs_dict: dict[str, Any] = {
             ns: {
                 aid: {
                     "agent_id": sub.agent_id,
@@ -623,7 +529,6 @@ class ContextStore:
         }
 
     async def to_json(self, indent: int = 2) -> str:
-        """Return a JSON string of the full store."""
         return json.dumps(await self.to_dict(), indent=indent, ensure_ascii=False)
 
 
@@ -633,18 +538,7 @@ class ContextStore:
 
 
 class ContextNamespace:
-    """
-    A proxy view of ContextStore that fixes the *namespace* parameter.
-
-    All methods have the same signatures as ContextStore but without needing
-    to specify *namespace* on every call.
-
-    Example:
-        store = ContextStore()
-        ns = ContextNamespace(store, "pipeline_v1")
-        await ns.put("status", "running", writer="coordinator")
-        val = await ns.get("status")
-    """
+    """Proxy view of ContextStore that fixes the *namespace* parameter."""
 
     def __init__(self, store: ContextStore, namespace: str) -> None:
         self._store = store
@@ -661,38 +555,38 @@ class ContextNamespace:
         key: str,
         value: Any,
         writer: str,
-        ttl: Optional[int] = None,
-        tags: Optional[List[str]] = None,
+        ttl: int | None = None,
+        tags: list[str] | None = None,
     ) -> ContextRecord:
         return await self._store.put(
             key, value, writer, self._namespace, ttl, tags
         )
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         return await self._store.get(key, self._namespace)
 
-    async def get_entry(self, key: str) -> Optional[ContextEntry]:
+    async def get_entry(self, key: str) -> ContextEntry | None:
         return await self._store.get_entry(key, self._namespace)
 
     async def delete(self, key: str, writer: str) -> bool:
         return await self._store.delete(key, writer, self._namespace)
 
     async def history(
-        self, key: str, limit: Optional[int] = None
-    ) -> List[ContextRecord]:
+        self, key: str, limit: int | None = None
+    ) -> list[ContextRecord]:
         return await self._store.history(key, self._namespace, limit)
 
-    async def keys(self) -> List[str]:
+    async def keys(self) -> list[str]:
         return await self._store.keys(self._namespace)
 
     async def query(
         self,
         *,
-        writer: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        since: Optional[str] = None,
-        until: Optional[str] = None,
-    ) -> List[ContextEntry]:
+        writer: str | None = None,
+        tags: list[str] | None = None,
+        since: str | None = None,
+        until: str | None = None,
+    ) -> list[ContextEntry]:
         return await self._store.query(
             self._namespace, writer=writer, tags=tags, since=since, until=until
         )
@@ -703,7 +597,7 @@ class ContextNamespace:
         self,
         agent_id: str,
         callback: Callable,
-        keys: Optional[List[str]] = None,
+        keys: list[str] | None = None,
     ) -> None:
         self._store.subscribe(agent_id, callback, self._namespace, keys)
 
@@ -715,7 +609,7 @@ class ContextNamespace:
     async def cleanup_expired(self) -> int:
         return await self._store.cleanup_expired(self._namespace)
 
-    async def snapshot(self) -> Dict[str, Any]:
+    async def snapshot(self) -> dict[str, Any]:
         return await self._store.snapshot(self._namespace)
 
     async def merge(self, other: ContextStore) -> int:
