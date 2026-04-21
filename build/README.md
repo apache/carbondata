@@ -22,8 +22,8 @@
 * Unix-like environment (Linux, Mac OS X)
 * Git
 * [Apache Maven (Recommend version 3.3 or later)](https://maven.apache.org/download.cgi)
-* [Oracle Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-* [Apache Thrift 0.20.0](http://archive.apache.org/dist/thrift/0.20.0/)
+* [Oracle Java 8](https://www.oracle.com/technetwork/java/javase/downloads/index.html)
+* [Apache Thrift 0.20.0](https://archive.apache.org/dist/thrift/0.20.0/)
 
 Build with different supported versions of Spark, by default using Spark 2.4.5
 
