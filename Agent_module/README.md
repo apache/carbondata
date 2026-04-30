@@ -1,8 +1,17 @@
 # Agent Module
 
-A small multi-agent framework with a thread-safe async context store.
+Two cooperating modules in one package:
 
-**Requirements:** Python 3.10+. No third-party packages required (pytest only for the test suite).
+- **`carbon_data/`** — **Agent Data Infra**. A self-contained `.carbondata`
+  file format serving four query modes (RAG / long-term memory / structured
+  query / graph traversal) over one shared data model. **This is the primary
+  product.** See [QUICKSTART.md](QUICKSTART.md) and [docs/DESIGN.md](docs/DESIGN.md).
+- **`framework.py` / `manager.py` / `agents.py` / `context_store.py`** — a
+  multi-agent runtime with async context store. Retained for in-memory
+  agent orchestration; complementary to (not replaced by) carbon_data.
+
+**Requirements:** Python 3.10+ • `numpy` • optional: `hnswlib` (ANN search),
+`pytest` (tests).
 
 ---
 
@@ -10,166 +19,111 @@ A small multi-agent framework with a thread-safe async context store.
 
 ```
 Agent_module/
-├── __init__.py           # Re-exports the public API
-├── framework.py          # BaseAgent, AgentMessage, AgentStatus
-├── manager.py            # AgentManager — registry + routing
-├── agents.py             # Built-in agents (Echo/Calculator/Weather/Translator/Chat)
-├── safe_eval.py          # AST-based arithmetic evaluator (no eval())
-├── context_store.py      # Async context store + P2P channels + pub/sub
-├── demos/
-│   ├── agent_demo.py            # Agent system walkthrough
-│   └── context_store_demo.py    # ContextStore walkthrough
+├── carbon_data/                   # Agent Data Infra (primary product)
+│   ├── store.py                   # CarbonStore: open/create + all APIs
+│   ├── models.py                  # Entity / Chunk / Memory / Relation / ...
+│   ├── schema.py                  # SQLite DDL + version pragmas
+│   ├── chunkers/                  # by_tokens / by_paragraph / by_sentence
+│   ├── embedders/                 # Embedder protocol + helpers
+│   └── index/                     # vector_brute + vector_hnsw
+├── framework.py                   # BaseAgent, AgentMessage, AgentStatus
+├── manager.py                     # AgentManager — registry + routing
+├── agents.py                      # Built-in demo agents
+├── safe_eval.py                   # AST-based arithmetic evaluator
+├── context_store.py               # Async in-memory context + pub/sub
+├── docs/DESIGN.md                 # carbon_data design doc
+├── QUICKSTART.md                  # carbon_data 上手指南
 ├── examples/
-│   ├── 01_data_models.py        # LLM-oriented agent data format
-│   ├── agent_format_example.py  # Same, with a worked example
-│   ├── 02_framework_agents.py   # Integration tests for agents
-│   ├── 03_agent_manager.py      # Integration tests for the manager
-│   ├── 04_context_store.py      # Integration tests for ContextStore
-│   └── run_all.py               # Runs every example and prints a summary
-└── tests/
-    ├── test_safe_eval.py        # pytest: safe_eval arithmetic + rejections
-    └── test_async_callbacks.py  # pytest: sync/async callback dispatch
+│   └── carbondata_quickstart.py   # End-to-end carbon_data demo
+└── tests/carbon_data/             # 249 tests across M1–M9
 ```
 
 ---
 
-## Quick Start
+## carbon_data — Agent Data Infra
 
-### Single agent
+A `.carbondata` file is a SQLite database with carbondata schema markers; one
+file holds entities, chunks, embeddings, relations, and memories — and serves
+all of them through a single Python handle.
+
+**30-second tour:**
 
 ```python
-import asyncio
-from Agent_module import AgentMessage, CalculatorAgent
+import numpy as np
+from Agent_module.carbon_data import LambdaEmbedder, create
 
-async def main():
-    agent = CalculatorAgent()
-    response = await agent.process(AgentMessage(
-        content="(15 + 25) * 2",
-        sender="User",
-    ))
-    print(response.content)   # (15 + 25) * 2 = 80
+def encode(texts):
+    return np.random.randn(len(texts), 384).astype(np.float32)
 
-asyncio.run(main())
+embedder = LambdaEmbedder(encode, model="my-model", dim=384)
+
+store = create("kb.carbondata")
+store.ingest_text("para 1.\n\npara 2.\n\npara 3.", id="doc-1", embedder=embedder)
+
+hits = store.search("para 2", embedder=embedder, top_k=2)        # vector RAG
+hits = store.search("para",   mode="keyword")                    # FTS5 BM25
+hits = store.search("para",   mode="hybrid", embedder=embedder)  # RRF fusion
+
+store.remember("user prefers vim", session_id="s1", embedder=embedder)
+mems = store.recall("editor preferences", session_id="s1", embedder=embedder)
+
+store.add_relation("doc-1", "doc-2", "references")
+sg = store.subgraph(["doc-1"], max_hops=2)
+
+store.close()
 ```
 
-### Multiple agents via `AgentManager`
+Full API walkthrough: [QUICKSTART.md](QUICKSTART.md). Design rationale and
+nine-milestone breakdown: [docs/DESIGN.md](docs/DESIGN.md). Runnable end-to-end
+demo: `examples/carbondata_quickstart.py`.
+
+---
+
+## Multi-agent runtime
+
+Pre-carbon_data scaffolding; still works for agent orchestration, kept as a
+companion to carbon_data (long-term knowledge) for the in-memory side
+(transient agent state, P2P channels, pub/sub).
 
 ```python
 import asyncio
-from Agent_module import AgentManager, CalculatorAgent, WeatherAgent, ChatAgent
+from Agent_module import AgentManager, CalculatorAgent, ChatAgent
 
 async def main():
     manager = AgentManager()
     manager.register_agent(CalculatorAgent())
-    manager.register_agent(WeatherAgent())
     manager.register_agent(ChatAgent())
 
-    print((await manager.send_message("CalculatorAgent", "3.14 * 2")).content)
-    print((await manager.send_message("WeatherAgent", "Tokyo")).content)
-
+    print((await manager.send_message("CalculatorAgent", "(15+25)*2")).content)
     responses = await manager.broadcast_message("Hello!")
     for name, r in responses.items():
-        print(f"{name}: {r.content[:60]}")
+        print(name, "→", r.content[:60])
 
 asyncio.run(main())
 ```
 
-### Writing your own agent
+Custom agents subclass `BaseAgent` and implement `async _process_impl`.
+Shared mutable state goes through `ContextStore` / `ContextNamespace`
+(async-first, write-history, TTL, P2P channels, pub/sub).
 
-Subclass `BaseAgent` and implement `_process_impl`:
-
-```python
-from Agent_module import AgentMessage, BaseAgent
-
-class GreetingAgent(BaseAgent):
-    def __init__(self):
-        super().__init__(name="GreetingAgent", description="Says hi")
-
-    async def _process_impl(self, message: AgentMessage) -> AgentMessage:
-        name = message.metadata.get("user_name", "stranger")
-        return AgentMessage(content=f"Hello, {name}!", sender=self.name)
-```
-
-### Shared context across agents
-
-```python
-import asyncio
-from Agent_module import ContextStore, ContextNamespace
-
-async def main():
-    store = ContextStore()
-    ns = ContextNamespace(store, "my_pipeline")
-
-    await ns.put("task", {"id": "001", "desc": "Process data"}, writer="coordinator")
-    await ns.put("status", "pending", writer="coordinator")
-
-    task = await ns.get("task")
-    await ns.put("status", "in_progress", writer="worker")
-    await ns.put("result", {"processed": 1000}, writer="worker")
-    await ns.put("status", "completed", writer="worker")
-
-    for r in await ns.history("status"):
-        print(f"v{r.version} [{r.writer}] -> {r.value}")
-
-asyncio.run(main())
-```
-
----
-
-## Public API
-
-### `framework.py`
-
-| Symbol | Notes |
+| Module | Public surface |
 |---|---|
-| `AgentStatus` | Enum: `IDLE`, `PROCESSING`, `ERROR`, `STOPPED` |
-| `AgentMessage` | Dataclass — `content`, `sender`, `timestamp` (default=now), `message_type`, `metadata` |
-| `BaseAgent` | Abstract base. Subclasses implement `async _process_impl`. `add_callback()` accepts **sync or async** callables. |
-
-### `manager.py`
-
-`AgentManager` — `register_agent`, `send_message`, `broadcast_message` (concurrent via `asyncio.gather`), `find_agent_by_capability`, `get_system_stats`.
-
-### `agents.py`
-
-| Agent | Summary |
-|---|---|
-| `EchoAgent` | Echoes every input |
-| `CalculatorAgent` | Arithmetic via `safe_eval` — only `+ - * / // % **` and numeric literals |
-| `WeatherAgent` | Simulated: four preset cities, random data for others |
-| `TranslatorAgent` | Simulated; target language from `metadata.target_language` |
-| `ChatAgent` | Rule-based, keeps per-user context |
-
-### `context_store.py`
-
-| Feature | Description |
-|---|---|
-| Async-first | Every read/write is `async`, protected by `asyncio.Lock` |
-| Write history | Up to 50 records per key |
-| P2P channels | `send` / `receive` / `inbox` FIFO queues between agents |
-| Pub/sub | Subscribers notified after `put()`; sync + async callbacks |
-| TTL | Lazy eviction on reads; batch via `cleanup_expired()` |
-| Namespaces | Multi-tenant isolation; `ContextNamespace` is a scoped proxy |
-| Merge | Last-write-wins by version number |
-| Serialisation | `snapshot()`, `to_dict()`, `to_json()` |
-
-Writers do not receive their own notifications. Callbacks fire **after** the store lock is released — safe from re-entrant deadlocks.
+| `framework.py` | `AgentStatus`, `AgentMessage`, `BaseAgent` |
+| `manager.py` | `AgentManager.{register_agent, send_message, broadcast_message, find_agent_by_capability, get_system_stats}` |
+| `agents.py` | `EchoAgent`, `CalculatorAgent`, `WeatherAgent`, `TranslatorAgent`, `ChatAgent` |
+| `context_store.py` | `ContextStore`, `ContextNamespace`, `ContextRecord` |
 
 ---
 
 ## Running
 
-Run as a package (from the repo root):
+From the repo root:
 
 ```bash
-# Demos
-python3 -m Agent_module.demos.agent_demo
-python3 -m Agent_module.demos.context_store_demo
+# carbon_data end-to-end demo (heavily commented)
+python3 Agent_module/examples/carbondata_quickstart.py
 
-# Integration tests
-python3 Agent_module/examples/run_all.py
-
-# Unit tests
+# Test suite — 249 tests across M1–M9
 pytest Agent_module/tests/ -v
 ```
 
@@ -177,4 +131,7 @@ pytest Agent_module/tests/ -v
 
 ## Notes on security
 
-`CalculatorAgent` uses `safe_eval.py`, which parses the input with `ast.parse` and only accepts arithmetic nodes — attribute access, function calls, names, comprehensions, and comparisons are rejected *before* any code runs. It is safe to feed untrusted input.
+`CalculatorAgent` uses `safe_eval.py`, which parses input with `ast.parse`
+and only accepts arithmetic nodes — attribute access, function calls,
+names, comprehensions, and comparisons are rejected *before* any code
+runs. It is safe to feed untrusted input.
