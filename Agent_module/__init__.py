@@ -1,48 +1,13 @@
 """
 Agent_module
 ============
-Multi-agent framework with an async context store.
+Agent Data Infra. The primary product is :mod:`Agent_module.carbon_data`.
 
-Public API:
+    from Agent_module.carbon_data import create, open
 
-    from Agent_module import (
-        AgentMessage, AgentStatus, BaseAgent,
-        AgentManager,
-        EchoAgent, CalculatorAgent, WeatherAgent, TranslatorAgent, ChatAgent,
-        ContextStore, ContextNamespace, ContextRecord, ContextEntry, ContextMessage,
-    )
+See ``carbon_data/__init__.py`` for the full public API.
 """
 
-from .framework import AgentMessage, AgentStatus, BaseAgent
-from .manager import AgentManager
-from .agents import (
-    EchoAgent,
-    CalculatorAgent,
-    WeatherAgent,
-    TranslatorAgent,
-    ChatAgent,
-)
-from .context_store import (
-    ContextStore,
-    ContextNamespace,
-    ContextRecord,
-    ContextEntry,
-    ContextMessage,
-)
+from . import carbon_data
 
-__all__ = [
-    "AgentMessage",
-    "AgentStatus",
-    "BaseAgent",
-    "AgentManager",
-    "EchoAgent",
-    "CalculatorAgent",
-    "WeatherAgent",
-    "TranslatorAgent",
-    "ChatAgent",
-    "ContextStore",
-    "ContextNamespace",
-    "ContextRecord",
-    "ContextEntry",
-    "ContextMessage",
-]
+__all__ = ["carbon_data"]
