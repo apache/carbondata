@@ -1,17 +1,31 @@
-# Agent Module
+# Agent Module — Agent Data Infra
 
-Two cooperating modules in one package:
+`Agent_module` is a Python library that gives an LLM agent **a single
+knowledge file** to read from. That file — with the `.carbondata` extension
+— is a self-contained SQLite database that simultaneously serves the four
+data-access patterns agents actually need:
 
-- **`carbon_data/`** — **Agent Data Infra**. A self-contained `.carbondata`
-  file format serving four query modes (RAG / long-term memory / structured
-  query / graph traversal) over one shared data model. **This is the primary
-  product.** See [QUICKSTART.md](QUICKSTART.md) and [docs/DESIGN.md](docs/DESIGN.md).
-- **`framework.py` / `manager.py` / `agents.py` / `context_store.py`** — a
-  multi-agent runtime with async context store. Retained for in-memory
-  agent orchestration; complementary to (not replaced by) carbon_data.
+| Pattern | What an agent calls it for |
+|---|---|
+| **RAG semantic search** | "Find chunks relevant to this question." |
+| **Long-term memory** | "What have I learned about this user / session before?" |
+| **Structured query** | "Give me all rows where `team = 'ml'`." |
+| **Knowledge-graph traversal** | "Which documents does this one reference, two hops out?" |
 
-**Requirements:** Python 3.10+ • `numpy` • optional: `hnswlib` (ANN search),
-`pytest` (tests).
+One file. One Python handle (`CarbonStore`). One schema. No separate vector
+DB, KV store, graph DB, or relational DB to wire together.
+
+```
+                   ┌─────────────────────────────┐
+   agent code ───► │  CarbonStore (kb.carbondata)│
+                   │                             │
+                   │  search()    recall()       │
+                   │  query()     traverse()     │
+                   └─────────────────────────────┘
+                                 │
+                  one SQLite file: entities, chunks,
+                  embeddings, relations, memories
+```
 
 ---
 
@@ -19,119 +33,136 @@ Two cooperating modules in one package:
 
 ```
 Agent_module/
-├── carbon_data/                   # Agent Data Infra (primary product)
-│   ├── store.py                   # CarbonStore: open/create + all APIs
+├── carbon_data/                   # the library
+│   ├── store.py                   # CarbonStore — open/create + all APIs
 │   ├── models.py                  # Entity / Chunk / Memory / Relation / ...
 │   ├── schema.py                  # SQLite DDL + version pragmas
 │   ├── chunkers/                  # by_tokens / by_paragraph / by_sentence
 │   ├── embedders/                 # Embedder protocol + helpers
 │   └── index/                     # vector_brute + vector_hnsw
-├── framework.py                   # BaseAgent, AgentMessage, AgentStatus
-├── manager.py                     # AgentManager — registry + routing
-├── agents.py                      # Built-in demo agents
-├── safe_eval.py                   # AST-based arithmetic evaluator
-├── context_store.py               # Async in-memory context + pub/sub
-├── docs/DESIGN.md                 # carbon_data design doc
-├── QUICKSTART.md                  # carbon_data 上手指南
+├── QUICKSTART.md                  # full hands-on guide (read this next)
 ├── examples/
-│   └── carbondata_quickstart.py   # End-to-end carbon_data demo
+│   └── carbondata_quickstart.py   # end-to-end runnable demo
 └── tests/carbon_data/             # 249 tests across M1–M9
 ```
 
 ---
 
-## carbon_data — Agent Data Infra
+## Requirements
 
-A `.carbondata` file is a SQLite database with carbondata schema markers; one
-file holds entities, chunks, embeddings, relations, and memories — and serves
-all of them through a single Python handle.
+- Python 3.10+
+- `numpy` (required)
+- `hnswlib` (optional — enables ANN acceleration when corpus > ~10k chunks;
+  falls back to brute force when missing)
+- `pytest` (optional — for running the test suite)
 
-**30-second tour:**
+```bash
+pip install numpy
+pip install hnswlib   # optional but recommended
+```
+
+---
+
+## Your first demo in 5 minutes
+
+The fastest path is to run the bundled end-to-end example, then read
+[QUICKSTART.md](QUICKSTART.md) to understand each step.
+
+### Step 1 — run the bundled demo
+
+From the repo root:
+
+```bash
+python3 Agent_module/examples/carbondata_quickstart.py
+```
+
+This script walks through all four scenarios on a tiny in-memory corpus
+about Python web frameworks, ML libraries, and recipes. It uses a
+hand-rolled vocabulary embedder so you don't need any external model to see
+real top-k ranking. Expected output is a series of labelled sections
+showing search hits, recalled memories, structured-query rows, and a graph
+traversal.
+
+### Step 2 — write your own minimal demo
+
+Once the bundled example runs, paste this into `my_first_demo.py` and run
+it from the repo root with `python3 my_first_demo.py`:
 
 ```python
 import numpy as np
 from Agent_module.carbon_data import LambdaEmbedder, create
 
+# 1) An embedder. In a real app this wraps OpenAI / sentence-transformers /
+#    a local model. Here we use random vectors just to make the API run.
 def encode(texts):
     return np.random.randn(len(texts), 384).astype(np.float32)
 
-embedder = LambdaEmbedder(encode, model="my-model", dim=384)
+embedder = LambdaEmbedder(encode, model="demo-model", dim=384)
 
-store = create("kb.carbondata")
-store.ingest_text("para 1.\n\npara 2.\n\npara 3.", id="doc-1", embedder=embedder)
+# 2) Create a knowledge file.
+store = create("kb.carbondata", exist_ok=True)
 
-hits = store.search("para 2", embedder=embedder, top_k=2)        # vector RAG
-hits = store.search("para",   mode="keyword")                    # FTS5 BM25
-hits = store.search("para",   mode="hybrid", embedder=embedder)  # RRF fusion
+# 3) Ingest some text — chunked by paragraph, embedded, indexed for FTS.
+store.ingest_text(
+    "Django is a Python web framework.\n\n"
+    "PyTorch is a deep-learning library.\n\n"
+    "Sourdough needs a long fermentation.",
+    id="doc-1",
+    embedder=embedder,
+)
 
-store.remember("user prefers vim", session_id="s1", embedder=embedder)
-mems = store.recall("editor preferences", session_id="s1", embedder=embedder)
+# 4) Query in three modes.
+print("vector :", store.search("python web", embedder=embedder, top_k=2))
+print("keyword:", store.search("python", mode="keyword", top_k=2))
+print("hybrid :", store.search("python", mode="hybrid", embedder=embedder, top_k=2))
 
+# 5) Write and read a memory tied to a session.
+store.remember("user prefers Vim", session_id="s1", embedder=embedder)
+print("recall :", store.recall("editor", session_id="s1", embedder=embedder))
+
+# 6) Add a relation and walk the graph.
+store.put_entity(id="doc-2", kind="document", content="Flask")
 store.add_relation("doc-1", "doc-2", "references")
-sg = store.subgraph(["doc-1"], max_hops=2)
+print("subgraph:", store.subgraph(["doc-1"], max_hops=2))
 
 store.close()
 ```
 
-Full API walkthrough: [QUICKSTART.md](QUICKSTART.md). Design rationale and
-nine-milestone breakdown: [docs/DESIGN.md](docs/DESIGN.md). Runnable end-to-end
-demo: `examples/carbondata_quickstart.py`.
+You now have a working `kb.carbondata` file on disk. Open it again in
+another script with `carbon_data.open("kb.carbondata")` — all your
+entities, embeddings, relations, and memories will still be there.
+
+### Step 3 — go deeper
+
+[**QUICKSTART.md**](QUICKSTART.md) covers each scenario in detail:
+custom chunkers, namespace isolation, transactions, HNSW dispatch policy,
+admin operations (`validate`, `compact`, `export`, `stats`), and what is
+deliberately **out of scope** for v1.
+
+For the full API surface, read the `class CarbonStore` docstring in
+[`carbon_data/store.py`](carbon_data/store.py).
 
 ---
 
-## Multi-agent runtime
-
-Pre-carbon_data scaffolding; still works for agent orchestration, kept as a
-companion to carbon_data (long-term knowledge) for the in-memory side
-(transient agent state, P2P channels, pub/sub).
-
-```python
-import asyncio
-from Agent_module import AgentManager, CalculatorAgent, ChatAgent
-
-async def main():
-    manager = AgentManager()
-    manager.register_agent(CalculatorAgent())
-    manager.register_agent(ChatAgent())
-
-    print((await manager.send_message("CalculatorAgent", "(15+25)*2")).content)
-    responses = await manager.broadcast_message("Hello!")
-    for name, r in responses.items():
-        print(name, "→", r.content[:60])
-
-asyncio.run(main())
-```
-
-Custom agents subclass `BaseAgent` and implement `async _process_impl`.
-Shared mutable state goes through `ContextStore` / `ContextNamespace`
-(async-first, write-history, TTL, P2P channels, pub/sub).
-
-| Module | Public surface |
-|---|---|
-| `framework.py` | `AgentStatus`, `AgentMessage`, `BaseAgent` |
-| `manager.py` | `AgentManager.{register_agent, send_message, broadcast_message, find_agent_by_capability, get_system_stats}` |
-| `agents.py` | `EchoAgent`, `CalculatorAgent`, `WeatherAgent`, `TranslatorAgent`, `ChatAgent` |
-| `context_store.py` | `ContextStore`, `ContextNamespace`, `ContextRecord` |
-
----
-
-## Running
-
-From the repo root:
+## Running the tests
 
 ```bash
-# carbon_data end-to-end demo (heavily commented)
-python3 Agent_module/examples/carbondata_quickstart.py
-
-# Test suite — 249 tests across M1–M9
 pytest Agent_module/tests/ -v
 ```
 
+Tests are split by milestone (M1 schema → M9 admin); each file is a
+self-contained walkthrough of one feature area and doubles as readable
+documentation.
+
 ---
 
-## Notes on security
+## Debugging tip
 
-`CalculatorAgent` uses `safe_eval.py`, which parses input with `ast.parse`
-and only accepts arithmetic nodes — attribute access, function calls,
-names, comprehensions, and comparisons are rejected *before* any code
-runs. It is safe to feed untrusted input.
+A `.carbondata` file is just SQLite. You can inspect it with any SQLite
+tool at any time:
+
+```bash
+sqlite3 kb.carbondata
+sqlite> .tables
+sqlite> SELECT id, kind, namespace FROM entity LIMIT 10;
+```

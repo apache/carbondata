@@ -1,8 +1,6 @@
 """
 Agent Data Infra — .carbondata file format and query API.
 
-See docs/DESIGN.md for design rationale.
-
 Quick start (M1 surface):
 
     from Agent_module.carbon_data import open, create

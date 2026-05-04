@@ -1,7 +1,5 @@
 """
 Data model for Agent Data Infra.
-
-See docs/DESIGN.md §4.
 """
 from __future__ import annotations
 

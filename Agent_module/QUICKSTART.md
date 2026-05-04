@@ -5,8 +5,6 @@ one self-contained knowledge base, simultaneously serving **RAG semantic
 search / long-term memory / structured queries / knowledge-graph traversal**.
 
 > Companion runnable demo: [`examples/carbondata_quickstart.py`](../examples/carbondata_quickstart.py)
->
-> Full design rationale: [`docs/DESIGN.md`](DESIGN.md)
 
 ---
 
@@ -268,20 +266,8 @@ print(store.stats())
 
 ---
 
-## 6. Out of scope for v1
 
-DESIGN.md §1.3 lists what v1 deliberately does **not** attempt, so you don't
-reach for the wrong tool:
-
-- ❌ Distributed / sharded / multi-node deployment
-- ❌ Multi-process concurrent writes (v1 is single-writer / multi-reader via SQLite WAL)
-- ❌ Bundled embedding model (you bring your own; the library defines the `Embedder` protocol only)
-- ❌ SQL compatibility layer (Pythonic API only, no SQL parser)
-- ❌ OLAP / data-warehouse performance (the target workload is agent reads, not analytics)
-
----
-
-## 7. Next steps
+## 6. Next steps
 
 Run the demo to see it all in action:
 

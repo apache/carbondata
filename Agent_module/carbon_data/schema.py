@@ -1,7 +1,5 @@
 """
 SQLite schema for .carbondata files.
-
-See docs/DESIGN.md §5.
 """
 from __future__ import annotations
 
