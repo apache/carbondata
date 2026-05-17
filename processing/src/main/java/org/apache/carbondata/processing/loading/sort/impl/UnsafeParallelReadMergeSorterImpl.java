@@ -63,6 +63,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
   private AtomicLong rowCounter;
 
   private ExecutorService executorService;
+  private ExecutorService writeService;
 
   public UnsafeParallelReadMergeSorterImpl(AtomicLong rowCounter) {
     this.rowCounter = rowCounter;
@@ -89,18 +90,23 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     this.executorService = Executors.newFixedThreadPool(sortParameters.getNumberOfCores(),
         new CarbonThreadFactory("UnsafeParallelSorterPool:" + sortParameters.getTableName(),
                 true));
+    this.writeService = Executors.newFixedThreadPool(sortParameters.getNumberOfCores(),
+            new CarbonThreadFactory("WritePool: ", true));
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
 
     try {
       for (int i = 0; i < iterators.length; i++) {
-        UnsafeSortDataRows sortDataRows = new UnsafeSortDataRows(
-                sortParameters, unsafeIntermediateFileMerger, inMemoryChunkSizeInMB);
+        UnsafeSortDataRows sortDataRows = new UnsafeSortDataRows(writeService,
+                sortParameters,
+                unsafeIntermediateFileMerger, inMemoryChunkSizeInMB);
         sortDataRows.setInstanceId(i);
         executorService.execute(new SortIteratorThread(iterators[i], sortDataRows,
                 batchSize, rowCounter, this.threadStatusObserver));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
+      writeService.shutdown();
+      writeService.awaitTermination(2, TimeUnit.DAYS);
       if (!sortParameters.getObserver().isFailed()) {
         LOGGER.info("Record Processed For table: " + sortParameters.getTableName());
         CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSortRowsStepTotalTime(
