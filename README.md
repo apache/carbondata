@@ -22,7 +22,7 @@
 
 ## Agent module
 * [What is Agent module for CarbonData project](https://github.com/apache/carbondata/blob/master/Agent_module/README.md)
-* [How to start CarbonData's Agent](https://github.com/apache/carbondata/blob/master/Agent_module/QUICKSTART.md)
+* [How to start and use CarbonData as Agent data](https://github.com/apache/carbondata/blob/master/Agent_module/QUICKSTART.md)
 
 You can find the latest CarbonData document and learn more at:
 [https://carbondata.apache.org](https://carbondata.apache.org/)
