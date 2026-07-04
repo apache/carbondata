@@ -56,12 +56,8 @@ def by_tokens(
     return _chunk
 
 
-def by_paragraph(*, min_chars: int = 0) -> Chunker:
-    """
-    Split on runs of blank lines. Drops any chunk shorter than
-    ``min_chars`` after stripping; set to 0 to keep every paragraph.
-    """
-    splitter = re.compile(r"\n\s*\n")
+def _regex_chunker(splitter: "re.Pattern[str]", min_chars: int) -> Chunker:
+    """Split on ``splitter``; keep stripped pieces of at least ``min_chars``."""
 
     def _chunk(text: str) -> list[str]:
         return [
@@ -73,22 +69,21 @@ def by_paragraph(*, min_chars: int = 0) -> Chunker:
     return _chunk
 
 
+def by_paragraph(*, min_chars: int = 0) -> Chunker:
+    """
+    Split on runs of blank lines. Drops any chunk shorter than
+    ``min_chars`` after stripping; set to 0 to keep every paragraph.
+    """
+    return _regex_chunker(re.compile(r"\n\s*\n"), min_chars)
+
+
 def by_sentence(*, min_chars: int = 0) -> Chunker:
     """
     Naive sentence splitter: end-of-sentence punctuation followed by
     whitespace and a capital letter. Good enough for prose; for legal/
     technical text use ``by_tokens`` or a real tokenizer.
     """
-    splitter = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
-
-    def _chunk(text: str) -> list[str]:
-        return [
-            s.strip()
-            for s in splitter.split(text)
-            if s.strip() and len(s.strip()) >= min_chars
-        ]
-
-    return _chunk
+    return _regex_chunker(re.compile(r"(?<=[.!?])\s+(?=[A-Z])"), min_chars)
 
 
 __all__ = ["Chunker", "by_tokens", "by_paragraph", "by_sentence"]

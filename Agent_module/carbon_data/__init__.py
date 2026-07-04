@@ -19,7 +19,6 @@ from .chunkers import Chunker, by_paragraph, by_sentence, by_tokens
 from .embedders import BaseEmbedder, Embedder, LambdaEmbedder, NullEmbedder
 from .models import (
     Chunk,
-    Embedding,
     Entity,
     MemoryHit,
     MemoryItem,
@@ -55,7 +54,6 @@ __all__ = [
     "CarbonStore",
     "Entity",
     "Chunk",
-    "Embedding",
     "Relation",
     "MemoryItem",
     "MemoryHit",
