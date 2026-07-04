@@ -4,16 +4,8 @@ Data model for Agent Data Infra.
 from __future__ import annotations
 
 import time
-import uuid
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
-
-if TYPE_CHECKING:
-    import numpy as np
-
-
-def _uuid() -> str:
-    return str(uuid.uuid4())
+from typing import Any, Optional
 
 
 @dataclass
@@ -37,14 +29,6 @@ class Chunk:
     kind: str = "text"
     metadata: dict[str, Any] = field(default_factory=dict)
     token_count: Optional[int] = None
-
-
-@dataclass
-class Embedding:
-    chunk_id: str
-    model: str
-    dim: int
-    vector: "np.ndarray"
 
 
 @dataclass
@@ -121,7 +105,6 @@ class ValidationReport:
 __all__ = [
     "Entity",
     "Chunk",
-    "Embedding",
     "Relation",
     "MemoryItem",
     "SearchHit",

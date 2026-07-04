@@ -632,18 +632,20 @@ class CarbonStore:
                        hnswlib); 'off' always uses brute force.
         """
         if mode == "vector":
-            return self._search_vector(
+            ranked = self._run_vector(
                 query, top_k=top_k, model=model, embedder=embedder,
                 namespace=namespace, filters=filters, metric=metric,
                 use_hnsw=use_hnsw,
             )
+            return self._materialize_hits(ranked)
         if mode == "keyword":
             if not isinstance(query, str):
                 raise TypeError("keyword mode requires a string query")
-            return self._search_keyword(
+            ranked = self._run_keyword(
                 query, top_k=top_k, namespace=namespace,
                 filters=filters, raw_fts=raw_fts,
             )
+            return self._materialize_hits(ranked)
         if mode == "hybrid":
             if not isinstance(query, str):
                 raise TypeError("hybrid mode requires a string query")
@@ -660,25 +662,6 @@ class CarbonStore:
 
     # ---- vector ------------------------------------------------------
 
-    def _search_vector(
-        self,
-        query: Union[str, Any],
-        *,
-        top_k: int,
-        model: Optional[str],
-        embedder: Optional[Embedder],
-        namespace: Optional[str],
-        filters: Optional[dict[str, Any]],
-        metric: Literal["cosine", "dot", "l2"],
-        use_hnsw: Literal["auto", "on", "off"] = "auto",
-    ) -> list[SearchHit]:
-        ranked = self._run_vector(
-            query, top_k=top_k, model=model, embedder=embedder,
-            namespace=namespace, filters=filters, metric=metric,
-            use_hnsw=use_hnsw,
-        )
-        return self._materialize_hits(ranked)
-
     def _run_vector(
         self,
         query: Union[str, Any],
@@ -691,22 +674,9 @@ class CarbonStore:
         metric: Literal["cosine", "dot", "l2"],
         use_hnsw: Literal["auto", "on", "off"] = "auto",
     ) -> list[tuple[str, float]]:
-        import numpy as np
-
-        if embedder is not None and model is None:
-            model = embedder.model
-        if model is None:
-            raise TypeError(
-                "vector search requires either `model=` or an `embedder=` "
-                "(to infer the model)"
-            )
-
-        if isinstance(query, str):
-            if embedder is None:
-                raise TypeError("string query requires an `embedder=`")
-            q_vec = embedder.encode([query])[0]
-        else:
-            q_vec = np.ascontiguousarray(query, dtype=np.float32).reshape(-1)
+        q_vec, model = _resolve_query_vector(
+            query, model=model, embedder=embedder, caller="vector search"
+        )
 
         # Pick HNSW vs brute. HNSW only handles cosine + no JSON filters;
         # namespace is fine because we post-filter on the result set.
@@ -751,8 +721,6 @@ class CarbonStore:
         top_k: int,
         metric: Literal["cosine", "dot", "l2"],
     ) -> list[tuple[str, float]]:
-        import numpy as np
-
         conn = self._require_open()
         clauses = ["embedding.model = ?"]
         params: list[Any] = [model]
@@ -776,22 +744,7 @@ class CarbonStore:
             return []
 
         ids = [r[0] for r in rows]
-        dims = {r[2] for r in rows}
-        if len(dims) != 1:
-            raise RuntimeError(
-                f"inconsistent dims for model {model!r}: {sorted(dims)}"
-            )
-        dim = dims.pop()
-        if q_vec.shape[0] != dim:
-            raise ValueError(
-                f"query dim {q_vec.shape[0]} != embedding dim {dim} "
-                f"for model {model!r}"
-            )
-
-        vectors = np.empty((len(rows), dim), dtype=np.float32)
-        for i, r in enumerate(rows):
-            vectors[i] = bytes_to_vector(r[1], dim)
-
+        vectors, _dim = _stack_vectors(rows, model=model, q_vec=q_vec)
         return search_brute(q_vec, vectors, ids, top_k=top_k, metric=metric)
 
     def _run_vector_hnsw(
@@ -906,8 +859,6 @@ class CarbonStore:
             return None
 
     def _rebuild_hnsw(self, model: str) -> Optional[HnswIndex]:
-        import numpy as np
-
         conn = self._require_open()
         rows = conn.execute(
             "SELECT chunk.rowid, embedding.vector, embedding.dim "
@@ -918,18 +869,8 @@ class CarbonStore:
         if not rows:
             return None
 
-        dims = {r[2] for r in rows}
-        if len(dims) != 1:
-            raise RuntimeError(
-                f"inconsistent dims for model {model!r}: {sorted(dims)}"
-            )
-        dim = dims.pop()
-
-        vectors = np.empty((len(rows), dim), dtype=np.float32)
+        vectors, dim = _stack_vectors(rows, model=model)
         labels = [int(r[0]) for r in rows]
-        for i, r in enumerate(rows):
-            vectors[i] = bytes_to_vector(r[1], dim)
-
         idx = HnswIndex.build(vectors, labels)
         self._hnsw_cache[model] = idx
         if self._mode != "r":
@@ -1164,22 +1105,9 @@ class CarbonStore:
         Filters compose with AND. Expired memories are excluded by default.
         Returns ranked ``MemoryHit`` (highest score first).
         """
-        import numpy as np
-
-        if embedder is not None and model is None:
-            model = embedder.model
-        if model is None:
-            raise TypeError(
-                "recall requires either `model=` or an `embedder=` "
-                "(to infer the model)"
-            )
-
-        if isinstance(query, str):
-            if embedder is None:
-                raise TypeError("string query requires an `embedder=`")
-            q_vec = embedder.encode([query])[0]
-        else:
-            q_vec = np.ascontiguousarray(query, dtype=np.float32).reshape(-1)
+        q_vec, model = _resolve_query_vector(
+            query, model=model, embedder=embedder, caller="recall"
+        )
 
         conn = self._require_open()
         clauses = ["embedding.model = ?", "entity.kind = 'memory'"]
@@ -1215,22 +1143,7 @@ class CarbonStore:
             return []
 
         ids = [r[0] for r in rows]
-        dims = {r[2] for r in rows}
-        if len(dims) != 1:
-            raise RuntimeError(
-                f"inconsistent dims for model {model!r}: {sorted(dims)}"
-            )
-        dim = dims.pop()
-        if q_vec.shape[0] != dim:
-            raise ValueError(
-                f"query dim {q_vec.shape[0]} != embedding dim {dim} "
-                f"for model {model!r}"
-            )
-
-        vectors = np.empty((len(rows), dim), dtype=np.float32)
-        for i, r in enumerate(rows):
-            vectors[i] = bytes_to_vector(r[1], dim)
-
+        vectors, _dim = _stack_vectors(rows, model=model, q_vec=q_vec)
         ranked = search_brute(q_vec, vectors, ids, top_k=top_k, metric=metric)
         return [
             MemoryHit(memory=m, score=score)
@@ -1284,13 +1197,7 @@ class CarbonStore:
             f"WHERE {' AND '.join(clauses)}"
         )
         ids = [r[0] for r in conn.execute(sql, params).fetchall()]
-        if not ids:
-            return 0
-        with self._write_ctx() as wconn:
-            wconn.executemany(
-                "DELETE FROM entity WHERE id=?", [(i,) for i in ids]
-            )
-        return len(ids)
+        return self._delete_entities(ids)
 
     def forget_expired(self, *, now: Optional[float] = None) -> int:
         """Delete every memory whose ``expires_at`` is in the past."""
@@ -1304,10 +1211,13 @@ class CarbonStore:
                 (t,),
             ).fetchall()
         ]
+        return self._delete_entities(ids)
+
+    def _delete_entities(self, ids: list[str]) -> int:
         if not ids:
             return 0
-        with self._write_ctx() as wconn:
-            wconn.executemany(
+        with self._write_ctx() as conn:
+            conn.executemany(
                 "DELETE FROM entity WHERE id=?", [(i,) for i in ids]
             )
         return len(ids)
@@ -1505,24 +1415,7 @@ class CarbonStore:
         """
         if max_hops < 1:
             raise ValueError("max_hops must be >= 1")
-        if direction not in ("out", "in", "both"):
-            raise ValueError(
-                f"direction must be 'out' | 'in' | 'both', got {direction!r}"
-            )
-
-        # Recursive step varies by direction.
-        if direction == "out":
-            join_cond = "r.src = walk.id"
-            next_node = "r.dst"
-        elif direction == "in":
-            join_cond = "r.dst = walk.id"
-            next_node = "r.src"
-        else:
-            join_cond = "(r.src = walk.id OR r.dst = walk.id)"
-            next_node = (
-                "CASE WHEN r.src = walk.id THEN r.dst ELSE r.src END"
-            )
-
+        join_cond, next_node = _direction_sql(direction)
         kind_clause = "AND r.kind = ?" if kind is not None else ""
 
         cte_sql = (
@@ -1573,40 +1466,23 @@ class CarbonStore:
             return Subgraph()
         if max_hops < 0:
             raise ValueError("max_hops must be >= 0")
-        if direction not in ("out", "in", "both"):
-            raise ValueError(
-                f"direction must be 'out' | 'in' | 'both', got {direction!r}"
-            )
+        join_cond, next_node = _direction_sql(direction)
+        kind_clause = "AND r.kind = ?" if kind is not None else ""
 
         # Multi-source seed set is fed to the CTE via json_each — works
         # for any seed count without dynamic placeholders.
-        if direction == "out":
-            join_cond = "r.src = walk.id"
-            next_node = "r.dst"
-        elif direction == "in":
-            join_cond = "r.dst = walk.id"
-            next_node = "r.src"
-        else:
-            join_cond = "(r.src = walk.id OR r.dst = walk.id)"
-            next_node = (
-                "CASE WHEN r.src = walk.id THEN r.dst ELSE r.src END"
-            )
-        kind_clause = "AND r.kind = ?" if kind is not None else ""
-
         seeds_json = json.dumps(seed_list)
         params: list[Any] = [seeds_json]
-        if max_hops >= 1:
-            params.append(max_hops)
-            if kind is not None:
-                params.append(kind)
 
         # When max_hops == 0, just collect the seeds themselves.
         if max_hops == 0:
             cte_sql = (
                 "SELECT DISTINCT value AS id FROM json_each(?)"
             )
-            params = [seeds_json]
         else:
+            params.append(max_hops)
+            if kind is not None:
+                params.append(kind)
             cte_sql = (
                 f"WITH RECURSIVE walk(id, hop) AS ("
                 f"  SELECT value, 0 FROM json_each(?)"
@@ -1867,12 +1743,6 @@ class CarbonStore:
         conn = self._require_open()
         out_path = Path(path)
 
-        def _rows(table: str, cols: str) -> list[dict]:
-            return [
-                dict(zip(cols.split(", "), r))
-                for r in conn.execute(f"SELECT {cols} FROM {table}")
-            ]
-
         entities = []
         for r in conn.execute(
             "SELECT id, kind, namespace, content, metadata, "
@@ -1947,6 +1817,93 @@ class CarbonStore:
             "memories": len(memories),
             "bytes_written": out_path.stat().st_size,
         }
+
+
+# ----------------------------------------------------------------------
+# shared query helpers
+# ----------------------------------------------------------------------
+
+def _resolve_query_vector(
+    query: Union[str, Any],
+    *,
+    model: Optional[str],
+    embedder: Optional[Embedder],
+    caller: str,
+) -> tuple[Any, str]:
+    """
+    Normalize a search/recall query into (float32 query vector, model name).
+
+    ``model`` falls back to ``embedder.model``; string queries require an
+    embedder to encode them.
+    """
+    import numpy as np
+
+    if embedder is not None and model is None:
+        model = embedder.model
+    if model is None:
+        raise TypeError(
+            f"{caller} requires either `model=` or an `embedder=` "
+            f"(to infer the model)"
+        )
+
+    if isinstance(query, str):
+        if embedder is None:
+            raise TypeError("string query requires an `embedder=`")
+        q_vec = embedder.encode([query])[0]
+    else:
+        q_vec = np.ascontiguousarray(query, dtype=np.float32).reshape(-1)
+    return q_vec, model
+
+
+def _stack_vectors(
+    rows: list[tuple],
+    *,
+    model: str,
+    q_vec: Optional[Any] = None,
+) -> tuple[Any, int]:
+    """
+    Stack ``(key, vector_blob, dim)`` rows into an (N, dim) float32 matrix.
+
+    Enforces a single consistent dim across rows and, when ``q_vec`` is
+    given, that the query vector matches it. Returns (matrix, dim).
+    """
+    import numpy as np
+
+    dims = {r[2] for r in rows}
+    if len(dims) != 1:
+        raise RuntimeError(
+            f"inconsistent dims for model {model!r}: {sorted(dims)}"
+        )
+    dim = dims.pop()
+    if q_vec is not None and q_vec.shape[0] != dim:
+        raise ValueError(
+            f"query dim {q_vec.shape[0]} != embedding dim {dim} "
+            f"for model {model!r}"
+        )
+
+    vectors = np.empty((len(rows), dim), dtype=np.float32)
+    for i, r in enumerate(rows):
+        vectors[i] = bytes_to_vector(r[1], dim)
+    return vectors, dim
+
+
+def _direction_sql(direction: str) -> tuple[str, str]:
+    """
+    Map a traversal direction to the recursive-CTE (join condition,
+    next-node expression) pair shared by ``traverse`` and ``subgraph``.
+    """
+    if direction == "out":
+        return "r.src = walk.id", "r.dst"
+    if direction == "in":
+        return "r.dst = walk.id", "r.src"
+    if direction == "both":
+        return (
+            "(r.src = walk.id OR r.dst = walk.id)",
+            "CASE WHEN r.src = walk.id THEN r.dst ELSE r.src END",
+        )
+    raise ValueError(
+        f"direction must be 'out' | 'in' | 'both', got {direction!r}"
+    )
 
 
 # ----------------------------------------------------------------------
