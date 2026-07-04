@@ -35,9 +35,11 @@
 
   <dependencies>
     <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>1.2.12</version>
+      <!-- Drop-in replacement for EOL log4j 1.x (keeps the org.apache.log4j
+           packages) without CVE-2019-17571 / CVE-2022-23302/23305/23307. -->
+      <groupId>ch.qos.reload4j</groupId>
+      <artifactId>reload4j</artifactId>
+      <version>1.2.25</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

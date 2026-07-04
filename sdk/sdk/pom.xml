@@ -180,7 +180,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${dep.jackson.version}</version>
+      <version>${dep.jackson.databind.version}</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
