@@ -74,8 +74,13 @@ class CarbonEnv {
     var storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
     if (storePath == null) {
       storePath = FileFactory.getUpdatedFilePath(sparkSession.conf.get("spark.sql.warehouse.dir"))
-      properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
     }
+    val tmpPath = new Path(storePath)
+    val fs = tmpPath.getFileSystem(sparkSession.sparkContext.hadoopConfiguration)
+    val qualifiedPath = fs.makeQualified(tmpPath)
+    storePath = qualifiedPath.toString
+    properties.addProperty(CarbonCommonConstants.STORE_LOCATION,
+      Path.getPathWithoutSchemeAndAuthority(qualifiedPath).toString)
     LOGGER.info(s"Initializing CarbonEnv, store location: $storePath")
     // Creating the index server temp folder where splits for select query is written
     CarbonUtil.createTempFolderForIndexServer(null);
