@@ -84,6 +84,8 @@ public class NotInExpression extends BinaryConditionalExpression {
           val = new ExpressionResult(val.getDataType(), exprResVal.getShort());
         } else if (dataType == DataTypes.INT) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getInt());
+        } else if (dataType == DataTypes.FLOAT) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getFloat());
         } else if (dataType == DataTypes.DOUBLE) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getDouble());
         } else if (dataType == DataTypes.DATE) {

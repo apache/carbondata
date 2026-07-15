@@ -63,6 +63,8 @@ public class InExpression extends BinaryConditionalExpression {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getShort());
         } else if (dataType == DataTypes.INT) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getInt());
+        } else if (dataType == DataTypes.FLOAT) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getFloat());
         } else if (dataType == DataTypes.DOUBLE) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
         } else if (dataType == DataTypes.LONG) {

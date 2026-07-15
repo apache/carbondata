@@ -282,11 +282,11 @@ public class PaginationCarbonReaderTest {
   @Test
   public void testSDKPaginationInsertData() throws IOException, InvalidLoadOptionException, InterruptedException {
     List<String[]> data1 = new ArrayList<String[]>();
-    String[] row1 = {"1", "AAA", "3", "3444345.66", "true", "1979-12-09", "2011-2-10 1:00:20", "Pune", "IT"};
-    String[] row2 = {"2", "BBB", "2", "543124.66", "false", "1987-2-19", "2017-1-1 12:00:20", "Bangalore", "DATA"};
-    String[] row3 = {"3", "CCC", "1", "787878.888", "false", "1982-05-12", "2015-12-1 2:20:20", "Pune", "DATA"};
-    String[] row4 = {"4", "DDD", "1", "99999.24", "true", "1981-04-09", "2000-1-15 7:00:20", "Delhi", "MAINS"};
-    String[] row5 = {"5", "EEE", "3", "545656.99", "true", "1987-12-09", "2017-11-25 04:00:20", "Delhi", "IT"};
+    String[] row1 = {"1", "AAA", "3", "3444345.66", "true", "1979-12-09", "2011-2-10 1:00:20", "Pune", "IT", "3444345.66"};
+    String[] row2 = {"2", "BBB", "2", "543124.66", "false", "1987-2-19", "2017-1-1 12:00:20", "Bangalore", "DATA", "543124.66"};
+    String[] row3 = {"3", "CCC", "1", "787878.888", "false", "1982-05-12", "2015-12-1 2:20:20", "Pune", "DATA", "787878.888"};
+    String[] row4 = {"4", "DDD", "1", "99999.24", "true", "1981-04-09", "2000-1-15 7:00:20", "Delhi", "MAINS", "99999.24"};
+    String[] row5 = {"5", "EEE", "3", "545656.99", "true", "1987-12-09", "2017-11-25 04:00:20", "Delhi", "IT", "545656.99"};
 
     data1.add(row1);
     data1.add(row2);
@@ -296,7 +296,7 @@ public class PaginationCarbonReaderTest {
 
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    Field[] fields = new Field[9];
+    Field[] fields = new Field[10];
     fields[0] = new Field("id", DataTypes.INT);
     fields[1] = new Field("name", DataTypes.STRING);
     fields[2] = new Field("rank", DataTypes.SHORT);
@@ -306,6 +306,7 @@ public class PaginationCarbonReaderTest {
     fields[6] = new Field("doj", DataTypes.TIMESTAMP);
     fields[7] = new Field("city", DataTypes.STRING);
     fields[8] = new Field("dept", DataTypes.STRING);
+    fields[9] = new Field("floatField", DataTypes.FLOAT);
 
     CarbonWriterBuilder builder = CarbonWriter.builder()
         .outputPath(path).withBlockletSize(1).withBlockSize(2);
@@ -315,7 +316,7 @@ public class PaginationCarbonReaderTest {
     }
     writer.close();
 
-    String[] row = {"222", "Daisy", "3", "334.456", "true", "1956-11-08", "2013-12-10 12:00:20", "Pune", "IT"};
+    String[] row = {"222", "Daisy", "3", "334.456", "true", "1956-11-08", "2013-12-10 12:00:20", "Pune", "IT", "334.456"};
     writer = CarbonWriter.builder()
         .outputPath(path).withBlockletSize(1).withBlockSize(2)
         .withCsvInput(new Schema(fields)).writtenBy("TestUtil").build();
@@ -329,7 +330,7 @@ public class PaginationCarbonReaderTest {
     PaginationCarbonReader<Object> paginationCarbonReader =
         (PaginationCarbonReader<Object>) CarbonReader.builder(path, "_temp")
             .withPaginationSupport().projection(new String[]
-                {"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept"}).build();
+                {"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept", "floatField"}).build();
     assert (paginationCarbonReader.getTotalRows() == 6);
     Object[] rows = paginationCarbonReader.read(1, 6);
     assert (rows.length == 6);
@@ -337,7 +338,7 @@ public class PaginationCarbonReaderTest {
     CarbonIUD.getInstance().delete(path, "name", "AAA").commit();
 
     CarbonReaderBuilder carbonReaderBuilder = CarbonReader.builder(path, "_temp")
-        .withPaginationSupport().projection(new String[]{"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept"});
+        .withPaginationSupport().projection(new String[]{"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept", "floatField"});
     paginationCarbonReader = (PaginationCarbonReader<Object>) carbonReaderBuilder.build();
 
     assert (paginationCarbonReader.getTotalRows() == 5);
@@ -349,7 +350,7 @@ public class PaginationCarbonReaderTest {
     paginationCarbonReader =
         (PaginationCarbonReader<Object>) CarbonReader.builder(path, "_temp")
             .withPaginationSupport().projection(new String[]
-                {"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept"}).build();
+                {"id", "name", "rank", "salary", "active", "dob", "doj", "city", "dept", "floatField"}).build();
     assert (paginationCarbonReader.getTotalRows() == 5);
     rows = paginationCarbonReader.read(1, 5);
     assert (rows.length == 5);

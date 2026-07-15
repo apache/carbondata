@@ -168,6 +168,10 @@ public class StreamBlockletWriter {
     count += 8;
   }
 
+  void writeFloat(float val) {
+    writeInt(Float.floatToIntBits(val));
+  }
+
   void writeDouble(double val) {
     writeLong(Double.doubleToLongBits(val));
   }

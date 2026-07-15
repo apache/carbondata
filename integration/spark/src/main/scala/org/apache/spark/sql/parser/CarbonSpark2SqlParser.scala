@@ -827,9 +827,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         // to tokenize and it wont be able to differentiate between whether its actual character or
         // token character. So just for parsing temporarily replace with !, then once field is
         // prepared, just replace the original name.
-        getScannerInput(dataType, columnComment, name.replaceAll("`", "!"), isExternal)
+        getScannerInput(dataType, columnComment, name.replaceAll("`", "!"))
       } else {
-        getScannerInput(dataType, columnComment, name, isExternal)
+        getScannerInput(dataType, columnComment, name)
       }
       var field: Field = anyFieldDef(new lexical.Scanner(scannerInput.toLowerCase))
       match {
@@ -845,7 +845,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         val actualName = indexesToReplace.foldLeft(field.column)((s, i) => s.updated(i
           .asInstanceOf[Int], '`'))
         field = field.copy(column = actualName, name = Some(actualName))
-        scannerInput = getScannerInput(dataType, columnComment, name, isExternal)
+        scannerInput = getScannerInput(dataType, columnComment, name)
       }
       // the data type of the decimal type will be like decimal(10,0)
       // so checking the start of the string and taking the precision and scale.
@@ -859,9 +859,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       if (field.dataType.getOrElse("").startsWith("char")) {
         field.dataType = Some("char")
       }
-      else if (field.dataType.getOrElse("").startsWith("float") && !isExternal) {
-        field.dataType = Some("double")
-      }
       field.rawSchema = scannerInput
       if (comment.isDefined) {
         field.columnComment = plainComment
@@ -871,14 +868,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   def getScannerInput(dataType: DataType,
       columnComment: String,
-      columnName: String,
-      isExternal: Boolean): String = {
-    if (dataType.catalogString == "float" && !isExternal) {
-      '`' + columnName + '`' + " double" + columnComment
-    } else {
-      '`' + columnName + '`' + ' ' + dataType.catalogString +
-        columnComment
-    }
+      columnName: String) : String = {
+    '`' + columnName + '`' + ' ' + dataType.catalogString + columnComment
   }
 
   def getBucketFields(

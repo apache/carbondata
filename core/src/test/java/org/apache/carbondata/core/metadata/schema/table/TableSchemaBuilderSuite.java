@@ -43,11 +43,13 @@ public class TableSchemaBuilderSuite {
         builder.addColumn(new StructField("a", DataTypes.INT), new AtomicInteger(0), true, false);
     builder.setSortColumns(Arrays.asList(columnSchema));
     builder.addColumn(new StructField("b", DataTypes.DOUBLE), new AtomicInteger(0), false, false);
+    builder.addColumn(new StructField("c", DataTypes.FLOAT), new AtomicInteger(0), false, false);
     TableSchema schema = builder.build();
-    Assert.assertEquals(2, schema.getListOfColumns().size());
+    Assert.assertEquals(3, schema.getListOfColumns().size());
     List<ColumnSchema> columns = schema.getListOfColumns();
     Assert.assertEquals("a", columns.get(0).getColumnName());
     Assert.assertEquals("b", columns.get(1).getColumnName());
+    Assert.assertEquals("c", columns.get(2).getColumnName());
   }
 
   @Test(expected = IllegalArgumentException.class)

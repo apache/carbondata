@@ -496,6 +496,11 @@ class DataFile {
         dataValue = ByteUtil.toLong(data, 0, data.length) - minValue;
         factorValue =
             ByteUtil.toLong(max, 0, max.length) - ByteUtil.toLong(min, 0, min.length);
+      } else if (column.getDataType() == DataTypes.FLOAT) {
+        minValue = ByteUtil.toFloat(min, 0, min.length);
+        dataValue = ByteUtil.toFloat(data, 0, data.length) - minValue;
+        factorValue =
+            ByteUtil.toFloat(max, 0, max.length) - ByteUtil.toFloat(min, 0, min.length);
       } else if (column.getDataType() == DataTypes.DOUBLE) {
         minValue = ByteUtil.toDouble(min, 0, min.length);
         dataValue = ByteUtil.toDouble(data, 0, data.length) - minValue;

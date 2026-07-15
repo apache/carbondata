@@ -368,11 +368,11 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
     sql(s"LOAD DATA INPATH '$rootPath/examples/spark/src/main/resources/streamSample.csv' " +
         s"INTO TABLE complexTable OPTIONS('HEADER'='TRUE')")
     checkAnswer(sql("select id,name, salary from complexTable"),
-      Seq(Row(100000001, "batch_1", 0.1),
-        Row(100000002, "batch_2", 0.2),
-        Row(100000003, "batch_3", 0.3),
-        Row(100000004, "batch_4", 0.4),
-        Row(100000005, "batch_5", 0.5)))
+      Seq(Row(100000001, "batch_1", 0.1f),
+        Row(100000002, "batch_2", 0.2f),
+        Row(100000003, "batch_3", 0.3f),
+        Row(100000004, "batch_4", 0.4f),
+        Row(100000005, "batch_5", 0.5f)))
     sql("drop table if exists complexTable")
   }
 

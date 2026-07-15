@@ -94,7 +94,22 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public float getFloat(int rowId) {
-    return (float) getDouble(rowId);
+    DataType dataType = columnPage.getDataType();
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      return converter.decodeFloat(columnPage.getByte(rowId));
+    } else if (dataType == DataTypes.SHORT) {
+      return converter.decodeFloat(columnPage.getShort(rowId));
+    } else if (dataType == DataTypes.SHORT_INT) {
+      return converter.decodeFloat(columnPage.getShortInt(rowId));
+    } else if (dataType == DataTypes.INT) {
+      return converter.decodeFloat(columnPage.getInt(rowId));
+    } else if (dataType == DataTypes.FLOAT) {
+      return columnPage.getFloat(rowId);
+    } else if (dataType == DataTypes.BINARY) {
+      return converter.decodeFloat(columnPage.getByte(rowId));
+    } else {
+      throw new RuntimeException("internal error: " + this);
+    }
   }
 
   @Override

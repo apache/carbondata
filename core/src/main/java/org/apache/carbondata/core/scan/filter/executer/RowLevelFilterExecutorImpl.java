@@ -510,6 +510,8 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
         msrType = DataTypes.LONG;
       } else if (DataTypes.isDecimal(dataType)) {
         msrType = DataTypes.createDefaultDecimalType();
+      } else if (dataType == DataTypes.FLOAT) {
+        msrType = DataTypes.FLOAT;
       } else {
         msrType = DataTypes.DOUBLE;
       }

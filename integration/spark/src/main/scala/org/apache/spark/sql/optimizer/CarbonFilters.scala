@@ -109,10 +109,18 @@ object CarbonFilters {
         translateNotIn(a.name, list.map(e => e.eval(EmptyRow)), columnTypes)
       case In(a: Attribute, list) if list.forall(_.isInstanceOf[Literal]) =>
         translateIn(a.name, list.map(e => e.eval(EmptyRow)), columnTypes)
-      case c@Not(In(Cast(_: Attribute, _, _), list)) if list.forall(_.isInstanceOf[Literal]) =>
-        Some(transformExpression(c))
-      case c@In(Cast(_: Attribute, _, _), list) if list.forall(_.isInstanceOf[Literal]) =>
-        Some(transformExpression(c))
+      case c@Not(In(Cast(a: Attribute, _, _), list)) if list.forall(_.isInstanceOf[Literal]) =>
+        if (a.dataType == FloatType) {
+          CastExpressionOptimization.checkIfCastCanBeRemove(c)
+        } else {
+          Some(transformExpression(c))
+        }
+      case c@In(Cast(a: Attribute, _, _), list) if list.forall(_.isInstanceOf[Literal]) =>
+        if (a.dataType == FloatType) {
+          CastExpressionOptimization.checkIfCastCanBeRemove(c)
+        } else {
+          Some(transformExpression(c))
+        }
       case InSet(a: Attribute, set) =>
         translateIn(a.name, set.toSeq, columnTypes)
       case Not(InSet(a: Attribute, set)) =>

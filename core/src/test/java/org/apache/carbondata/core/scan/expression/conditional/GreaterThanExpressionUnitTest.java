@@ -141,6 +141,37 @@ public class GreaterThanExpressionUnitTest {
 
   }
 
+  @Test
+  public void testEvaluateForGreaterThanExpressionWithFloatDataType()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.FLOAT);
+    right.setColIndex(0);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.FLOAT);
+    left.setColIndex(1);
+    greaterThanExpression = new GreaterThanExpression(left, right);
+    RowImpl value = new RowImpl();
+    Float[] row = { 44f };
+    Float[] row1 = { 20f };
+    Object[] objectRow = { row1, row };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
+      @Mock public Float getFloat() {
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return 44f;
+        } else {
+          return 20f;
+        }
+      }
+    };
+
+    ExpressionResult result = greaterThanExpression.evaluate(value);
+    assertTrue(result.getBoolean());
+  }
+
   @Test public void testEvaluateForGreaterThanExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);
