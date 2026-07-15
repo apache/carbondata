@@ -657,6 +657,35 @@ private object SelectSelectNoChildDelta extends MVMatchPattern with PredicateHel
     }
   }
 
+  def getSubsumeeOutputList(subsumeeOutputList: Seq[NamedExpression],
+      subsumerOutputList: Seq[NamedExpression]): Seq[NamedExpression] = {
+    // Map the subsumee output attribute with subsumer attribute and
+    // return the final projection list. For example, if mv is created with alias column, c1 as e1
+    // and the actual user query is just c1, then we have to return c1 as output.
+    var projOutputList: Seq[NamedExpression] = Seq.empty
+    subsumeeOutputList.foreach {
+      case attrRef: AttributeReference =>
+        // get the mapped subsumer output, in the above example case, it will return c1 as e1
+        var output = subsumerOutputList.find {
+          case Alias(attr: AttributeReference, _) =>
+            attrRef.semanticEquals(attr)
+          case attr: AttributeReference =>
+            attrRef.semanticEquals(attr)
+          case exp: Expression =>
+            exp.semanticEquals(attrRef)
+        }.getOrElse(attrRef)
+        // replace alias with subsumee output, example case, it will be c1 as c1
+        output = output match {
+          case Alias(attr: AttributeReference, _) =>
+            Alias(attrRef, attr.name)(exprId = attrRef.exprId)
+          case _ => output
+        }
+        projOutputList = projOutputList.:+(output)
+      case exp: Expression => projOutputList = projOutputList.:+(exp)
+    }
+    projOutputList
+  }
+
   def apply(subsumer: ModularPlan,
       subsumee: ModularPlan,
       compensation: Option[ModularPlan],
@@ -755,10 +784,41 @@ private object SelectSelectNoChildDelta extends MVMatchPattern with PredicateHel
 
           if (r2eJoinsMatch) {
             if (isPredicateEmR && isOutputEmR && isOutputRmE && rejoin.isEmpty && isLOEmLOR) {
-              if (sel_1q.flagSpec.isEmpty) {
-                Seq(sel_1a)
+              // check if the projection output list is same as subsumer and if not get the output
+              // list based on subsumer. If already same, avoid updating the output list, to avoid
+              // rewriting the plan
+              val isAllProjectsAreSame = sel_1q.outputList.forall(expr =>
+                sel_1a.outputList.exists {
+                  case alias@Alias(child, name) =>
+                    expr match {
+                      case Alias(exprChild, exprName) =>
+                        exprChild.semanticEquals(child) && name.equalsIgnoreCase(exprName)
+                      case _: NamedExpression =>
+                        alias.semanticEquals(expr)
+                    }
+                  case exp: NamedExpression =>
+                    expr.semanticEquals(exp)
+                })
+              val sel1qOutputList = if (!isAllProjectsAreSame) {
+                getSubsumeeOutputList(sel_1q.outputList, sel_1a.outputList)
               } else {
-                Seq(sel_1a.copy(flags = sel_1q.flags, flagSpec = sel_1q.flagSpec))
+                Seq.empty
+              }
+              if (sel_1q.flagSpec.isEmpty) {
+                if (sel1qOutputList.isEmpty) {
+                  Seq(sel_1a)
+                } else {
+                  Seq(sel_1a.copy(outputList = sel1qOutputList))
+                }
+              } else {
+                if (sel1qOutputList.isEmpty) {
+                  Seq(sel_1a.copy(flags = sel_1q.flags,
+                    flagSpec = sel_1q.flagSpec))
+                } else {
+                  Seq(sel_1a.copy(flags = sel_1q.flags,
+                    flagSpec = sel_1q.flagSpec,
+                    outputList = sel1qOutputList))
+                }
               }
             } else {
               // no compensation needed
@@ -808,7 +868,9 @@ private object SelectSelectNoChildDelta extends MVMatchPattern with PredicateHel
               } else {
                 Seq.empty
               })
+              val sel1qOutputList = getSubsumeeOutputList(sel_1q.outputList, usel_1a.outputList)
               val sel_1q_temp = sel_1q.copy(
+                outputList = sel1qOutputList,
                 predicateList = tPredicateList,
                 children = tChildren,
                 joinEdges = tJoinEdges.filter(_ != null),
