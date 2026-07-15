@@ -153,18 +153,6 @@ case class CarbonCreateTableCommand(
               CarbonEnv.getInstance(sparkSession).carbonMetaStore
                 .removeTableFromMetadata(dbName, tableName)
 
-              // Delete the folders created by this call if the actual path is different
-              val actualPath = CarbonEnv
-                .getCarbonTable(TableIdentifier(tableName, Option(dbName)))(sparkSession)
-                .getTablePath
-
-              if (!actualPath.equalsIgnoreCase(tablePath)) {
-                LOGGER
-                  .error(
-                    "TableAlreadyExists with path : " + actualPath + " So, deleting " + tablePath)
-                FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(tablePath))
-              }
-
               // No need to throw for create if not exists
               if (ifNotExistsSet) {
                 LOGGER.error(e, e)

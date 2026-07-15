@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
+import java.io.File
 import java.util.concurrent.{Callable, Executors, ExecutorService, Future, TimeUnit}
 
 import org.apache.spark.sql.AnalysisException
@@ -42,6 +43,22 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
       case ex: Exception =>
         assert(false)
     }
+  }
+
+  test("test create table with consistent table location") {
+    val dbName = "testdb"
+    val tblName = "testtbl"
+    sql(s"drop database if exists $dbName cascade")
+    val dblocation = warehouse + File.separator + dbName
+    sql(s"create database $dbName location '$dblocation'")
+    sql(s"use $dbName")
+
+    // here, we make sure the carbontablepath contains uuid
+    val tbllocation = dblocation + File.separator + tblName
+    new File(tbllocation).mkdir()
+    assert(new File(tbllocation).exists())
+
+    sql(s"create table $tblName(a int, b string) stored as carbondata")
   }
 
   test("test create table if not exist concurrently") {
