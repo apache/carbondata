@@ -7,6 +7,9 @@
 *.iws
 *.pyc
 *.pyo
+.pytest_cache/
+.venv/
+*.egg-info/
 .idea/
 .idea_modules/
 .settings

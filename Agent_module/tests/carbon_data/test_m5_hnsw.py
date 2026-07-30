@@ -292,6 +292,63 @@ class TestCacheInvalidation:
                      model=emb.model, top_k=1)
         assert store._hnsw_cache[emb.model].count == 5
 
+    def test_replace_embedding_invalidates_cache_and_blob(
+        self, store: CarbonStore
+    ) -> None:
+        emb, _, _ = _seed(store, n=5, dim=4, seed=13)
+        store.search(np.ones(4, dtype=np.float32),
+                     model=emb.model, top_k=1)
+        assert emb.model in store._hnsw_cache
+        assert _vector_index_count(store) == 1
+
+        first_chunk = store.list_chunks("e-default")[0]
+        store.set_embedding(
+            first_chunk.id,
+            np.array([9.0, 0.0, 0.0, 0.0], dtype=np.float32),
+            model=emb.model,
+        )
+
+        assert emb.model not in store._hnsw_cache
+        assert _vector_index_count(store) == 0
+
+    def test_reembed_invalidates_cache_and_blob(
+        self, store: CarbonStore
+    ) -> None:
+        emb, _, _ = _seed(store, n=5, dim=4, seed=14)
+        store.search(np.ones(4, dtype=np.float32),
+                     model=emb.model, top_k=1)
+        assert emb.model in store._hnsw_cache
+        assert _vector_index_count(store) == 1
+
+        store.embed_chunks(emb, missing_only=False)
+
+        assert emb.model not in store._hnsw_cache
+        assert _vector_index_count(store) == 0
+
+    def test_rollback_clears_index_built_from_uncommitted_vectors(
+        self, store: CarbonStore
+    ) -> None:
+        emb, _, _ = _seed(store, n=5, dim=4, seed=15)
+        first_chunk = store.list_chunks("e-default")[0]
+
+        with pytest.raises(RuntimeError):
+            with store.transaction():
+                store.set_embedding(
+                    first_chunk.id,
+                    np.array([9.0, 0.0, 0.0, 0.0], dtype=np.float32),
+                    model=emb.model,
+                )
+                store.search(
+                    np.ones(4, dtype=np.float32),
+                    model=emb.model,
+                    top_k=1,
+                    use_hnsw="on",
+                )
+                assert emb.model in store._hnsw_cache
+                raise RuntimeError("rollback")
+
+        assert emb.model not in store._hnsw_cache
+
     def test_full_cleanup_drops_cache_entry(self, store: CarbonStore) -> None:
         emb, _, _ = _seed(store, n=3, dim=4, seed=12)
         store.search(np.zeros(4, dtype=np.float32),
@@ -327,5 +384,43 @@ class TestNamespacePostFilter:
                 model="m5-test", top_k=4, namespace="ns-a",
             )
             assert all(h.entity.namespace == "ns-a" for h in hits)
+        finally:
+            s.close()
+
+    def test_sparse_namespace_expands_until_top_k(self, tmp_path: Path) -> None:
+        p = tmp_path / "kb.carbondata"
+        s = create(p)
+        try:
+            s.put_entity(id="target", kind="document", namespace="target")
+            target_chunks = s.add_chunks(
+                "target", [f"target-{i}" for i in range(4)]
+            )
+            s.put_entity(id="other", kind="document", namespace="other")
+            other_chunks = s.add_chunks(
+                "other", [f"other-{i}" for i in range(12)]
+            )
+            for chunk_id in target_chunks:
+                s.set_embedding(
+                    chunk_id,
+                    np.array([-1.0, 0.0], dtype=np.float32),
+                    model="sparse-ns",
+                )
+            for chunk_id in other_chunks:
+                s.set_embedding(
+                    chunk_id,
+                    np.array([1.0, 0.0], dtype=np.float32),
+                    model="sparse-ns",
+                )
+
+            hits = s.search(
+                np.array([1.0, 0.0], dtype=np.float32),
+                model="sparse-ns",
+                top_k=4,
+                namespace="target",
+                use_hnsw="on",
+            )
+
+            assert len(hits) == 4
+            assert all(hit.entity.namespace == "target" for hit in hits)
         finally:
             s.close()

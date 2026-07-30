@@ -110,7 +110,8 @@ class CarbonStore:
         self._mode: Mode = mode
         self._tx_depth = 0  # 0 = autocommit-per-write; >0 = user transaction
         # Per-model HNSW index cache. Populated lazily on first vector
-        # search; invalidated whenever embedding count diverges.
+        # search; mutations explicitly invalidate affected models while
+        # count checks protect against out-of-band adds/deletes.
         self._hnsw_cache: dict[str, HnswIndex] = {}
 
     # ------------------------------------------------------------------
@@ -214,20 +215,33 @@ class CarbonStore:
         """
         Group writes atomically.
 
-        Nested calls are a no-op at the inner level: only the outermost
-        context commits/rolls back. On any exception, the outer frame
-        rolls back and re-raises.
+        Nested calls use SQLite savepoints. An exception rolls back the
+        current nesting level and is re-raised; if the caller catches an
+        inner exception, the outer transaction may continue safely.
         """
         conn = self._require_rw()
         outer = self._tx_depth == 0
+        savepoint = f"carbondata_tx_{self._tx_depth}"
+        if outer:
+            conn.execute("BEGIN")
+        else:
+            conn.execute(f"SAVEPOINT {savepoint}")
         self._tx_depth += 1
         try:
             yield
             if outer:
                 conn.commit()
+            else:
+                conn.execute(f"RELEASE SAVEPOINT {savepoint}")
         except Exception:
             if outer:
                 conn.rollback()
+            else:
+                conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+                conn.execute(f"RELEASE SAVEPOINT {savepoint}")
+            # A search inside the failed scope may have built an in-memory
+            # index from data that no longer exists after rollback.
+            self._hnsw_cache.clear()
             raise
         finally:
             self._tx_depth -= 1
@@ -336,9 +350,15 @@ class CarbonStore:
         """Remove an entity and (via ON DELETE CASCADE) its chunks,
         embeddings, relations, and memory_ext row. Returns True iff
         something was deleted."""
+        deleted = False
         with self._write_ctx() as conn:
             cur = conn.execute("DELETE FROM entity WHERE id=?", (entity_id,))
-            return cur.rowcount > 0
+            deleted = cur.rowcount > 0
+            if deleted:
+                conn.execute("DELETE FROM vector_index")
+        if deleted:
+            self._hnsw_cache.clear()
+        return deleted
 
     # ------------------------------------------------------------------
     # Chunk CRUD
@@ -420,7 +440,12 @@ class CarbonStore:
         """Delete all chunks for an entity. Returns the count removed."""
         with self._write_ctx() as conn:
             cur = conn.execute("DELETE FROM chunk WHERE entity_id=?", (entity_id,))
-            return cur.rowcount
+            deleted = cur.rowcount
+            if deleted:
+                conn.execute("DELETE FROM vector_index")
+        if deleted:
+            self._hnsw_cache.clear()
+        return deleted
 
     # ------------------------------------------------------------------
     # Structured query
@@ -505,6 +530,8 @@ class CarbonStore:
                    (chunk_id, model, dim, vector) VALUES (?, ?, ?, ?)""",
                 (chunk_id, model, dim, blob),
             )
+            conn.execute("DELETE FROM vector_index WHERE model=?", (model,))
+        self._hnsw_cache.pop(model, None)
 
     def get_embedding(self, chunk_id: str, *, model: str) -> Optional[Any]:
         """Return the stored vector (numpy array) or None."""
@@ -585,6 +612,13 @@ class CarbonStore:
                     payload,
                 )
                 total += len(batch)
+            if total:
+                write_conn.execute(
+                    "DELETE FROM vector_index WHERE model=?",
+                    (embedder.model,),
+                )
+        if total:
+            self._hnsw_cache.pop(embedder.model, None)
         return total
 
     # ------------------------------------------------------------------
@@ -631,6 +665,8 @@ class CarbonStore:
                        'on' forces HNSW (errors if filters/non-cosine/no
                        hnswlib); 'off' always uses brute force.
         """
+        if top_k <= 0:
+            return []
         if mode == "vector":
             ranked = self._run_vector(
                 query, top_k=top_k, model=model, embedder=embedder,
@@ -764,37 +800,46 @@ class CarbonStore:
                 f"for model {model!r}"
             )
 
-        # Over-fetch when post-filtering by namespace so we can survive
-        # candidates that get dropped. 3x is plenty for typical workloads.
-        oversample = 3 if namespace is not None else 1
-        raw = idx.search(q_vec, top_k=top_k * oversample)
-        if not raw:
-            return []
-
-        rowids = [r[0] for r in raw]
-        placeholders = ",".join("?" * len(rowids))
-        params: list[Any] = list(rowids)
-        sql = (
-            f"SELECT chunk.rowid, chunk.id "
-            f"FROM chunk JOIN entity ON entity.id = chunk.entity_id "
-            f"WHERE chunk.rowid IN ({placeholders})"
-        )
-        if namespace is not None:
-            sql += " AND entity.namespace = ?"
-            params.append(namespace)
-
         conn = self._require_open()
-        rid_to_cid = {r[0]: r[1] for r in conn.execute(sql, params).fetchall()}
+        fetch_k = min(
+            idx.count,
+            max(top_k, top_k * 3 if namespace is not None else top_k),
+        )
 
-        out: list[tuple[str, float]] = []
-        for rid, score in raw:
-            cid = rid_to_cid.get(rid)
-            if cid is None:
-                continue
-            out.append((cid, score))
-            if len(out) >= top_k:
-                break
-        return out
+        while fetch_k > 0:
+            raw = idx.search(q_vec, top_k=fetch_k)
+            if not raw:
+                return []
+
+            rowids = [r[0] for r in raw]
+            placeholders = ",".join("?" * len(rowids))
+            params: list[Any] = list(rowids)
+            sql = (
+                f"SELECT chunk.rowid, chunk.id "
+                f"FROM chunk JOIN entity ON entity.id = chunk.entity_id "
+                f"WHERE chunk.rowid IN ({placeholders})"
+            )
+            if namespace is not None:
+                sql += " AND entity.namespace = ?"
+                params.append(namespace)
+
+            rid_to_cid = {
+                r[0]: r[1] for r in conn.execute(sql, params).fetchall()
+            }
+            out = [
+                (rid_to_cid[rid], score)
+                for rid, score in raw
+                if rid in rid_to_cid
+            ]
+            if len(out) >= top_k or fetch_k >= idx.count:
+                return out[:top_k]
+
+            # A sparse namespace may not occur in the first 3× candidates.
+            # Expand progressively until top_k is satisfied or the complete
+            # index has been considered.
+            fetch_k = min(idx.count, max(fetch_k * 2, top_k))
+
+        return []
 
     # ---- HNSW cache + persistence ------------------------------------
 
@@ -810,8 +855,8 @@ class CarbonStore:
         Return a usable HNSW for ``model``, building or reloading as needed.
 
         Cache invariant: ``HnswIndex.count`` equals the live embedding
-        count. Any divergence — adds, deletes, or first use after a
-        reopen — triggers a rebuild from the embedding table.
+        count. Adds/deletes are caught by the count check; in-process vector
+        replacements explicitly invalidate the affected model.
         """
         cur_count = self._embedding_count(model)
         if cur_count == 0:
@@ -1220,6 +1265,8 @@ class CarbonStore:
             conn.executemany(
                 "DELETE FROM entity WHERE id=?", [(i,) for i in ids]
             )
+            conn.execute("DELETE FROM vector_index")
+        self._hnsw_cache.clear()
         return len(ids)
 
     def _load_memory(self, entity_id: str) -> Optional[MemoryItem]:
@@ -1617,13 +1664,13 @@ class CarbonStore:
 
     def validate(self) -> ValidationReport:
         """
-        Run consistency checks. Read-only; safe on a r-mode handle.
+        Run consistency checks. Safe on a read-only handle.
 
         Catches:
           - SQLite page-level corruption (PRAGMA integrity_check)
           - Foreign-key violations (PRAGMA foreign_key_check)
           - Bad application_id / unsupported schema_version
-          - chunk vs chunk_fts row-count divergence
+          - FTS5 index corruption (deep check on writable handles)
           - Stale per-model HNSW blob (count != live embedding count)
         """
         conn = self._require_open()
@@ -1660,16 +1707,30 @@ class CarbonStore:
                 f"SELECT COUNT(*) FROM {table}"
             ).fetchone()[0]
 
-        # FTS5 'integrity-check' compares index entries against the
-        # external content table (chunk). It surfaces missing index rows,
-        # stale tokens, and corruption — anything a row-count check
-        # cannot, since external-content COUNT(*) is served from chunk.
-        try:
-            conn.execute(
-                "INSERT INTO chunk_fts(chunk_fts) VALUES('integrity-check')"
-            )
-        except sqlite3.DatabaseError as exc:
-            issues.append(f"chunk_fts integrity-check: {exc}")
+        if self._mode == "r":
+            # FTS5 exposes its deep integrity check as a special INSERT,
+            # which SQLite rejects on a read-only connection. Still verify
+            # that the virtual table is readable without producing a false
+            # corruption report for a healthy read-only store.
+            try:
+                conn.execute("SELECT rowid FROM chunk_fts LIMIT 1").fetchall()
+            except sqlite3.DatabaseError as exc:
+                issues.append(f"chunk_fts read-check: {exc}")
+        else:
+            # FTS5 'integrity-check' compares index entries against the
+            # external content table. The control command opens a SQLite
+            # transaction even though it does not change user data, so end
+            # that transaction when validate() started it.
+            was_in_transaction = conn.in_transaction
+            try:
+                conn.execute(
+                    "INSERT INTO chunk_fts(chunk_fts) VALUES('integrity-check')"
+                )
+            except sqlite3.DatabaseError as exc:
+                issues.append(f"chunk_fts integrity-check: {exc}")
+            finally:
+                if not was_in_transaction and conn.in_transaction:
+                    conn.rollback()
 
         # Per-model HNSW staleness — only complain when a blob exists.
         idx_rows = conn.execute(

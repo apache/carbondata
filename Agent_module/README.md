@@ -1,19 +1,30 @@
-# Agent Module — Agent Data Infra
+# Agent Module — Agent-Native Context Data
 
-`Agent_module` is a Python library that gives an LLM agent **a single
-knowledge file** to read from. That file — with the `.carbondata` extension
-— is a self-contained SQLite database that simultaneously serves the four
-data-access patterns agents actually need:
+`Agent_module` provides a data format and local store designed specifically
+for Agent access. Its primary job is to persist and share context across
+Agents — including memories, task artifacts, structured state, semantic
+fragments, and the relationships among them — so another Agent can recover
+the right context efficiently instead of replaying an entire conversation.
+
+The `.carbondata` context file is a self-contained SQLite database serving
+four complementary access patterns:
 
 | Pattern | What an agent calls it for |
 |---|---|
-| **RAG semantic search** | "Find chunks relevant to this question." |
-| **Long-term memory** | "What have I learned about this user / session before?" |
-| **Structured query** | "Give me all rows where `team = 'ml'`." |
-| **Knowledge-graph traversal** | "Which documents does this one reference, two hops out?" |
+| **Semantic context retrieval** | "Find the prior context relevant to this task." |
+| **Cross-agent memory** | "What did another Agent learn or decide earlier?" |
+| **Structured state query** | "Give me the state for this task/session/actor." |
+| **Context relationship traversal** | "Which artifacts, decisions, and tasks led here?" |
 
 One file. One Python handle (`CarbonStore`). One schema. No separate vector
 DB, KV store, graph DB, or relational DB to wire together.
+
+> **Format boundary:** the Agent module's `.carbondata` file is an
+> application-identified SQLite database. It is not the same binary format
+> as the classic Apache CarbonData columnar fact files that also use the
+> `.carbondata` suffix, and the two are not interchangeable. Treat the Agent
+> format as an experimental local-store format while its long-term naming
+> and interoperability contract is defined.
 
 ```
                    ┌─────────────────────────────┐
@@ -43,7 +54,7 @@ Agent_module/
 ├── QUICKSTART.md                  # full hands-on guide (read this next)
 ├── examples/
 │   └── carbondata_quickstart.py   # end-to-end runnable demo
-└── tests/carbon_data/             # 249 tests across M1–M9
+└── tests/carbon_data/             # 250+ tests across M1–M9
 ```
 
 ---
@@ -52,13 +63,15 @@ Agent_module/
 
 - Python 3.10+
 - `numpy` (required)
-- `hnswlib` (optional — enables ANN acceleration when corpus > ~10k chunks;
-  falls back to brute force when missing)
+- `hnswlib` (optional — enables ANN acceleration and is most useful for
+  larger corpora; falls back to brute force when missing)
 - `pytest` (optional — for running the test suite)
 
+From the repository root, install the module and its test dependencies:
+
 ```bash
-pip install numpy
-pip install hnswlib   # optional but recommended
+python3 -m pip install -e "./Agent_module[test]"
+python3 -m pip install -e "./Agent_module[all]"  # also install optional HNSW support
 ```
 
 ---
@@ -132,6 +145,11 @@ You now have a working `kb.carbondata` file on disk. Open it again in
 another script with `carbon_data.open("kb.carbondata")` — all your
 entities, embeddings, relations, and memories will still be there.
 
+SQLite WAL mode may create temporary `-wal` and `-shm` sidecar files while
+the store is open. A clean close normally checkpoints the database back to
+the primary file; applications must not copy a live store without its WAL
+state.
+
 ### Step 3 — go deeper
 
 [**QUICKSTART.md**](QUICKSTART.md) covers each scenario in detail:
@@ -147,7 +165,7 @@ For the full API surface, read the `class CarbonStore` docstring in
 ## Running the tests
 
 ```bash
-pytest Agent_module/tests/ -v
+python3 -m pytest Agent_module/tests/ -v
 ```
 
 Tests are split by milestone (M1 schema → M9 admin); each file is a

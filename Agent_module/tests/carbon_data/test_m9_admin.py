@@ -64,6 +64,28 @@ class TestValidateClean:
         assert r.ok is True
         assert r.counts["entity"] == 0
 
+    def test_validate_does_not_leave_transaction_open(
+        self, store: CarbonStore
+    ) -> None:
+        _populate(store)
+        assert store._require_open().in_transaction is False
+        assert store.validate().ok is True
+        assert store._require_open().in_transaction is False
+
+    def test_readonly_validate_passes(self, tmp_path: Path) -> None:
+        p = tmp_path / "kb.carbondata"
+        s = create(p)
+        _populate(s)
+        s.close()
+
+        readonly = cd_open(p, mode="r")
+        try:
+            report = readonly.validate()
+            assert report.ok is True
+            assert report.issues == []
+        finally:
+            readonly.close()
+
 
 class TestValidateDetectsIssues:
     def test_detects_stale_hnsw_meta(self, tmp_path: Path) -> None:

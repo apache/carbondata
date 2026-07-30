@@ -1,10 +1,15 @@
 # carbon_data Quickstart
 
-`Agent_module.carbon_data` is the Agent Data Infra: one `.carbondata` file =
-one self-contained knowledge base, simultaneously serving **RAG semantic
-search / long-term memory / structured queries / knowledge-graph traversal**.
+`Agent_module.carbon_data` is an Agent-native context store: one
+`.carbondata` file persists context that multiple Agents can write, retrieve,
+and hand off. It combines **semantic context retrieval / cross-agent memory /
+structured state queries / context relationship traversal**.
 
 > Companion runnable demo: [`examples/carbondata_quickstart.py`](../examples/carbondata_quickstart.py)
+>
+> The Agent module stores SQLite data. It is not binary-compatible with
+> classic Apache CarbonData columnar fact files, even though both currently
+> use the `.carbondata` suffix.
 
 ---
 
@@ -20,13 +25,16 @@ Optional dependencies are loaded on demand:
 | `hnswlib` | fast ANN for 10k+ vectors | optional (falls back to brute force when missing) |
 
 ```bash
-pip install numpy
-pip install hnswlib   # optional
+# Run from the repository root.
+python3 -m pip install -e "./Agent_module[test]"
+python3 -m pip install -e "./Agent_module[all]"  # optional HNSW support too
 ```
 
 A `.carbondata` file **is just a SQLite database**, so you can crack it open
 with any SQLite tool (`sqlite3 kb.carbondata`, DBeaver, DataGrip) for ad-hoc
-debugging.
+debugging. WAL mode can create temporary `-wal` and `-shm` sidecars while
+the database is open, so copy or back up a live store using SQLite-aware
+tools rather than copying only the primary file.
 
 ---
 
@@ -193,7 +201,8 @@ acceleration whenever:
 - `mode="vector"` (including the vector leg of `mode="hybrid"`)
 - `metric="cosine"`
 - no JSON `filters=` are present
-- `namespace=` is applied as a post-filter (with 3× over-sampling)
+- `namespace=` is applied as an adaptive post-filter that expands until
+  `top_k` is satisfied or the full index has been considered
 
 Explicit override:
 ```python
@@ -203,8 +212,8 @@ store.search(q, embedder=emb, use_hnsw="on")    # force HNSW (raises if not elig
 ```
 
 On the first search, HNSW is built from the entire `embedding` table and
-persisted to a `vector_index` blob; later add/delete calls are detected via
-a row-count comparison and trigger a lazy rebuild.
+persisted to a `vector_index` blob. API mutations explicitly invalidate the
+affected index; row-count checks also detect out-of-band adds and deletes.
 
 ### 4.3 Namespace isolation
 
@@ -226,7 +235,9 @@ with store.transaction():
 ```
 
 `ingest_text` / `ingest_table` / `remember` are already wrapped in their own
-transactions internally.
+transactions internally. Nested `transaction()` calls use savepoints: an
+inner exception rolls back the inner block, while an outer transaction may
+continue if it catches that exception.
 
 ### 4.5 Admin & ops
 
@@ -260,8 +271,7 @@ print(store.stats())
   — each file covers one milestone end-to-end.
 - **Run the suite:**
   ```bash
-  cd Agent_module
-  .venv/bin/pytest tests/carbon_data/ -q
+  python3 -m pytest Agent_module/tests/carbon_data/ -q
   ```
 
 ---
@@ -272,8 +282,7 @@ print(store.stats())
 Run the demo to see it all in action:
 
 ```bash
-cd Agent_module
-.venv/bin/python examples/carbondata_quickstart.py
+python3 Agent_module/examples/carbondata_quickstart.py
 ```
 
 For the full API surface, read the `class CarbonStore` docstring in

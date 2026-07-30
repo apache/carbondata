@@ -309,6 +309,23 @@ class TestTransactions:
         assert store.get_entity("a") is None
         assert store.get_entity("b") is None
 
+    def test_caught_inner_exception_rolls_back_to_savepoint(
+        self, store: CarbonStore
+    ) -> None:
+        with store.transaction():
+            store.put_entity(id="a", kind="doc")
+            try:
+                with store.transaction():
+                    store.put_entity(id="b", kind="doc")
+                    raise RuntimeError("inner")
+            except RuntimeError:
+                pass
+            store.put_entity(id="c", kind="doc")
+
+        assert store.get_entity("a") is not None
+        assert store.get_entity("b") is None
+        assert store.get_entity("c") is not None
+
     def test_chunks_added_in_transaction_all_or_nothing(
         self, store: CarbonStore
     ) -> None:
