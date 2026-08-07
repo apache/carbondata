@@ -1,289 +1,186 @@
-# carbon_data Quickstart
+# AI_carbon Quickstart
 
-`Agent_module.carbon_data` is an Agent-native context store: one
-`.carbondata` file persists context that multiple Agents can write, retrieve,
-and hand off. It combines **semantic context retrieval / cross-agent memory /
-structured state queries / context relationship traversal**.
+This guide shows how to create an `.AI_carbon` archive, store Agent-generated files and context, inspect the archive in a browser, and optimize a file later using its historical context.
 
-> Companion runnable demo: [`examples/carbondata_quickstart.py`](../examples/carbondata_quickstart.py)
->
-> The Agent module stores SQLite data. It is not binary-compatible with
-> classic Apache CarbonData columnar fact files, even though both currently
-> use the `.carbondata` suffix.
+## 1. Install the module
 
----
-
-## 1. Install & dependencies
-
-The library itself only needs the Python standard library plus `numpy`.
-Optional dependencies are loaded on demand:
-
-| Dependency | Purpose | Required? |
-|---|---|---|
-| Python ≥ 3.10 | | required |
-| `numpy` | vector ops | required |
-| `hnswlib` | fast ANN for 10k+ vectors | optional (falls back to brute force when missing) |
+Run the following command from the repository root:
 
 ```bash
-# Run from the repository root.
-python3 -m pip install -e "./Agent_module[test]"
-python3 -m pip install -e "./Agent_module[all]"  # optional HNSW support too
+python -m pip install -e Agent_module
 ```
 
-A `.carbondata` file **is just a SQLite database**, so you can crack it open
-with any SQLite tool (`sqlite3 kb.carbondata`, DBeaver, DataGrip) for ad-hoc
-debugging. WAL mode can create temporary `-wal` and `-shm` sidecars while
-the database is open, so copy or back up a live store using SQLite-aware
-tools rather than copying only the primary file.
+The module requires Python 3.10 or newer and has no external runtime dependencies.
 
----
+## 2. Enable Codex Synchronization
 
-## 2. 30-second tour
+The `ai-carbon-sync` skill synchronizes generated files, Agent conversations, and per-file context into an `.AI_carbon` archive.
+
+Activate it in the first Codex request of a development session:
+
+```text
+$ai-carbon-sync Use .AI_carbon/quickstart.AI_carbon for this session.
+```
+
+If no archive is specified, the skill uses `.AI_carbon/<workspace-name>.AI_carbon` by default. When a file is created or modified, the skill records the file and the context that explains its goal, inputs, decisions, constraints, and validation.
+
+## 3. Create an archive
+
+Create a file named `quickstart.AI_carbon`:
 
 ```python
-import numpy as np
-from Agent_module.carbon_data import create, LambdaEmbedder
+from Agent_module.ai_carbon import AI_carbon
 
-# Your embedding function — the library does not bundle a model.
-def embed(texts):
-    return np.random.randn(len(texts), 384).astype(np.float32)
+project = AI_carbon.create("quickstart.AI_carbon", "Quickstart Project")
 
-embedder = LambdaEmbedder(embed, model="my-model", dim=384)
-
-# 1) Create or open a knowledge base
-store = create("kb.carbondata")
-
-# 2) Feed it data
-store.ingest_text(
-    "This is paragraph one.\n\nParagraph two.\n\nAnd paragraph three.",
-    id="doc-1",
-    embedder=embedder,
+artifact = project.add_text(
+    "This is an Agent-generated draft.",
+    "output/draft.txt",
+    context={
+        "goal": "Create a short project draft",
+        "inputs": ["The user's initial request"],
+        "decisions": ["Use plain English"],
+        "constraints": ["Keep the draft concise"],
+        "acceptance_criteria": ["The result is readable and complete"],
+    },
+    conversation=[
+        {"role": "user", "content": "Create a short project draft."},
+        {"role": "assistant", "content": "Created output/draft.txt."},
+    ],
 )
 
-# 3) Semantic search
-hits = store.search("paragraph one", embedder=embedder, top_k=3)
-for h in hits:
-    print(h.score, h.chunk.content)
-
-store.close()
+project.close()
 ```
 
----
+An `.AI_carbon` archive is a self-contained ZIP file. It contains the generated file, its context, and its conversation history.
 
-## 3. The four core scenarios
-
-### 3.1 RAG semantic search
+## 4. Open and inspect an archive
 
 ```python
-# Vector retrieval (default)
-hits = store.search("user login flow", embedder=embedder, top_k=5)
+from Agent_module.ai_carbon import AI_carbon
 
-# BM25 keyword
-hits = store.search("login", mode="keyword", top_k=5)
+project = AI_carbon.open("quickstart.AI_carbon")
 
-# Vector + keyword fused via Reciprocal Rank Fusion
-hits = store.search("user login", mode="hybrid", embedder=embedder, top_k=5)
+for artifact in project.list_files():
+    print("Path:", artifact.path)
+    print("Revision:", artifact.revision)
+    print("Context:", project.get_context(artifact))
+    print("Conversation:", project.get_conversation(artifact))
+    print("Content:", project.read_file(artifact).decode("utf-8"))
 ```
 
-Every `SearchHit` carries `chunk` (the matched fragment), `entity` (its
-parent), and `score`.
+## 5. Start the management page
 
-### 3.2 Long-term memory
-
-```python
-# Write
-store.remember(
-    "user prefers Vim for editing code",
-    session_id="sess-001",
-    actor="CodingAgent",
-    salience=0.8,           # importance, 0..1
-    ttl=86400,              # expires after 24h
-    embedder=embedder,
-)
-
-# Semantic recall (expired memories are excluded by default)
-memories = store.recall(
-    "editor preferences",
-    session_id="sess-001",
-    min_salience=0.5,
-    embedder=embedder,
-    top_k=3,
-)
-for m in memories:
-    print(m.score, m.memory.content, m.memory.actor)
-
-# Cleanup
-store.forget(session_id="sess-001")    # by session
-store.forget_expired()                  # GC expired memories
-```
-
-### 3.3 Structured queries
-
-```python
-# Ingest a table (list of dicts or a CSV path)
-store.ingest_table(
-    [{"id": "u1", "name": "Alice", "team": "infra"},
-     {"id": "u2", "name": "Bob",   "team": "ml"}],
-    table_name="users",
-    id_column="id",
-    embedder=embedder,
-)
-
-# Structured filter — note the JSON path goes through `columns.`
-# because ingest_table stores rows as metadata = {table, columns}.
-rows = store.query_entities(
-    kind="table_row",
-    where={"metadata.columns.team": "ml"},
-)
-
-# Metadata filters with operators
-recent = store.query_entities(
-    kind="document",
-    where={"created_at": (">=", 1700000000.0)},
-    order_by="updated_at DESC",
-    limit=20,
-)
-```
-
-### 3.4 Knowledge graph
-
-```python
-# Add edges between existing entities
-store.add_relation("doc:paper", "doc:guide", "references", weight=0.9)
-store.add_relation("doc:paper", "doc:guide", "supersedes")  # multiple kinds per pair
-
-# 1-hop neighbors
-ns = store.neighbors("doc:paper", direction="out", kind="references")
-
-# Multi-hop traversal (recursive CTE, cycle-safe, bounded)
-hits = store.traverse(
-    "doc:paper",
-    kind="references",
-    direction="out",
-    max_hops=3,
-)
-for h in hits:
-    print(h.entity.id, "at hop", h.hop)
-
-# Subgraph extraction
-sg = store.subgraph(seeds=["doc:paper"], max_hops=2, direction="both")
-print(len(sg.entities), len(sg.relations))
-```
-
----
-
-## 4. Going further
-
-### 4.1 Custom chunkers
-
-```python
-from Agent_module.carbon_data import by_tokens, by_paragraph, by_sentence
-
-# Sliding token window (with overlap)
-chunker = by_tokens(max_tokens=256, overlap=32)
-
-# By paragraph (default)
-chunker = by_paragraph(min_chars=20)
-
-# By sentence
-chunker = by_sentence()
-
-store.ingest_text(text, chunker=chunker, embedder=embedder)
-```
-
-You can roll your own: `Chunker = Callable[[str], list[str]]`.
-
-### 4.2 HNSW dispatch
-
-When `hnswlib` is installed, the library **automatically** uses HNSW
-acceleration whenever:
-
-- `mode="vector"` (including the vector leg of `mode="hybrid"`)
-- `metric="cosine"`
-- no JSON `filters=` are present
-- `namespace=` is applied as an adaptive post-filter that expands until
-  `top_k` is satisfied or the full index has been considered
-
-Explicit override:
-```python
-store.search(q, embedder=emb, use_hnsw="auto")  # default
-store.search(q, embedder=emb, use_hnsw="off")   # force brute force
-store.search(q, embedder=emb, use_hnsw="on")    # force HNSW (raises if not eligible)
-```
-
-On the first search, HNSW is built from the entire `embedding` table and
-persisted to a `vector_index` blob. API mutations explicitly invalidate the
-affected index; row-count checks also detect out-of-band adds and deletes.
-
-### 4.3 Namespace isolation
-
-```python
-store.put_entity(id="x", kind="document", namespace="tenant-a")
-hits = store.search(q, embedder=emb, namespace="tenant-a")
-```
-
-Useful when multiple tenants or datasets share one file.
-
-### 4.4 Transactions
-
-```python
-with store.transaction():
-    store.put_entity(id="a", kind="document")
-    store.add_chunks("a", [...])
-    store.add_relation("a", "b", "ref")
-    # any exception inside the block → full rollback
-```
-
-`ingest_text` / `ingest_table` / `remember` are already wrapped in their own
-transactions internally. Nested `transaction()` calls use savepoints: an
-inner exception rolls back the inner block, while an outer transaction may
-continue if it catches that exception.
-
-### 4.5 Admin & ops
-
-```python
-# Consistency check (read-only)
-report = store.validate()
-if not report.ok:
-    for issue in report.issues:
-        print(issue)
-
-# VACUUM + FTS rebuild + clear vector_index cache
-sizes = store.compact()
-print("freed:", sizes["size_before"] - sizes["size_after"], "bytes")
-
-# One-file JSON backup (embeddings encoded as base64)
-store.export("backup.json")
-store.export("backup_no_vec.json", include_embeddings=False)
-
-# Snapshot of current state
-print(store.stats())
-```
-
----
-
-## 5. Debugging tips
-
-- **It really is SQLite.** `sqlite3 kb.carbondata` drops you straight into
-  the REPL where you can run raw SQL against any table.
-- **Schema** lives entirely in `carbon_data/schema.py`, ~150 lines.
-- **Test fixtures are good textbook material**: `tests/carbon_data/test_m{1..9}_*.py`
-  — each file covers one milestone end-to-end.
-- **Run the suite:**
-  ```bash
-  python3 -m pytest Agent_module/tests/carbon_data/ -q
-  ```
-
----
-
-
-## 6. Next steps
-
-Run the demo to see it all in action:
+Start the local Web manager without specifying an archive:
 
 ```bash
-python3 Agent_module/examples/carbondata_quickstart.py
+python -m Agent_module.ai_carbon web
 ```
 
-For the full API surface, read the `class CarbonStore` docstring in
-`carbon_data/store.py`.
+The browser opens a file picker. Select an existing `.AI_carbon` file from your computer, or drag and drop the file onto the drop zone.
+
+You can also open an archive directly:
+
+```bash
+python -m Agent_module.ai_carbon create .AI_carbon/quickstart.AI_carbon --name "Quickstart Project"
+python -m Agent_module.ai_carbon web .AI_carbon/quickstart.AI_carbon
+```
+
+Open this address in a browser:
+
+```text
+http://127.0.0.1:8765/
+```
+
+The page shows:
+
+- Every generated file in the archive
+- The current revision, size, update time, and SHA-256 checksum
+- The context associated with each file
+- The Agent conversation history
+- The current file content
+
+Use `Ctrl+C` in the terminal to stop the Web manager.
+
+## 6. Optimize a file using historical context
+
+The `optimize()` method passes the existing file and all relevant history to an Agent callback.
+
+```python
+def agent(previous, instruction):
+    current_text = previous.content.decode("utf-8")
+
+    print("Previous goal:", previous.context["goal"])
+    print("Previous messages:", len(previous.conversation))
+    print("Previous revisions:", len(previous.revisions))
+
+    # Replace this example with a call to your Agent or model API.
+    return (
+        current_text
+        + "\n\nImproved according to: "
+        + instruction
+    )
+
+
+project = AI_carbon.open("quickstart.AI_carbon")
+artifact = project.list_files()[0]
+
+project.optimize(
+    artifact,
+    "Improve clarity while preserving the existing constraints.",
+    agent,
+    context={"optimization_reason": "The draft needs clearer wording."},
+)
+
+project.close()
+```
+
+The optimization creates a new revision such as `v002.json`. Previous context snapshots remain available for future optimization.
+
+## 7. Archive layout
+
+The internal archive layout is:
+
+```text
+manifest.json
+generated/
+  output/draft.txt
+contexts/
+  <artifact-id>/
+    v001.json
+    v002.json
+conversations/
+  <artifact-id>.jsonl
+```
+
+`manifest.json` links each generated file to its current content and context. The archive can be backed up or transferred as a single file.
+
+## 8. Command line shortcuts
+
+Create an empty archive:
+
+```bash
+python -m Agent_module.ai_carbon create new.AI_carbon --name "New Project"
+```
+
+List the files in an archive:
+
+```bash
+python -m Agent_module.ai_carbon show quickstart.AI_carbon
+```
+
+Start the manager on another port:
+
+```bash
+python -m Agent_module.ai_carbon web quickstart.AI_carbon --port 9000
+```
+
+Then open `http://127.0.0.1:9000/`.
+
+## 9. Run tests
+
+From the repository root:
+
+```bash
+python -m pytest Agent_module/tests/test_ai_carbon.py -q
+```

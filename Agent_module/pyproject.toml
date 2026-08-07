@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "apache-carbondata-agent"
+version = "1.0.0"
+description = "Self-contained .AI_carbon archives for Agent-generated files and reusable context"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+
+[tool.setuptools]
+packages = ["Agent_module", "Agent_module.ai_carbon"]
+package-dir = { Agent_module = "." }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

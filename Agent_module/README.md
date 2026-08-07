@@ -1,186 +1,192 @@
-# Agent Module — Agent-Native Context Data
+# AI_carbon
 
-`Agent_module` provides a data format and local store designed specifically
-for Agent access. Its primary job is to persist and share context across
-Agents — including memories, task artifacts, structured state, semantic
-fragments, and the relationships among them — so another Agent can recover
-the right context efficiently instead of replaying an entire conversation.
+`AI_carbon` is an Agent-oriented archive module for generated files and reusable context. It stores Agent-generated files, generation context, conversation history, and later revisions in a single `.AI_carbon` file.
 
-The `.carbondata` context file is a self-contained SQLite database serving
-four complementary access patterns:
+The main goal is to let an Agent optimize an existing file using its previous context instead of rebuilding the understanding from scratch.
 
-| Pattern | What an agent calls it for |
-|---|---|
-| **Semantic context retrieval** | "Find the prior context relevant to this task." |
-| **Cross-agent memory** | "What did another Agent learn or decide earlier?" |
-| **Structured state query** | "Give me the state for this task/session/actor." |
-| **Context relationship traversal** | "Which artifacts, decisions, and tasks led here?" |
+## Features
 
-One file. One Python handle (`CarbonStore`). One schema. No separate vector
-DB, KV store, graph DB, or relational DB to wire together.
+- Uses `.AI_carbon` as a unified project archive format
+- Stores multiple generated files and their directory structure
+- Stores an independent context for each generated file
+- Stores system, user, assistant, and tool messages
+- Tracks file revisions and preserves historical context
+- Provides an optimization API that supplies historical information to an Agent
+- Provides a local Web management page for browsing files, context, conversations, and content
+- Provides command-line commands for creating, inspecting, and serving archives
 
-> **Format boundary:** the Agent module's `.carbondata` file is an
-> application-identified SQLite database. It is not the same binary format
-> as the classic Apache CarbonData columnar fact files that also use the
-> `.carbondata` suffix, and the two are not interchangeable. Treat the Agent
-> format as an experimental local-store format while its long-term naming
-> and interoperability contract is defined.
+## Installation
 
-```
-                   ┌─────────────────────────────┐
-   agent code ───► │  CarbonStore (kb.carbondata)│
-                   │                             │
-                   │  search()    recall()       │
-                   │  query()     traverse()     │
-                   └─────────────────────────────┘
-                                 │
-                  one SQLite file: entities, chunks,
-                  embeddings, relations, memories
-```
-
----
-
-## Layout
-
-```
-Agent_module/
-├── carbon_data/                   # the library
-│   ├── store.py                   # CarbonStore — open/create + all APIs
-│   ├── models.py                  # Entity / Chunk / Memory / Relation / ...
-│   ├── schema.py                  # SQLite DDL + version pragmas
-│   ├── chunkers/                  # by_tokens / by_paragraph / by_sentence
-│   ├── embedders/                 # Embedder protocol + helpers
-│   └── index/                     # vector_brute + vector_hnsw
-├── QUICKSTART.md                  # full hands-on guide (read this next)
-├── examples/
-│   └── carbondata_quickstart.py   # end-to-end runnable demo
-└── tests/carbon_data/             # 250+ tests across M1–M9
-```
-
----
-
-## Requirements
-
-- Python 3.10+
-- `numpy` (required)
-- `hnswlib` (optional — enables ANN acceleration and is most useful for
-  larger corpora; falls back to brute force when missing)
-- `pytest` (optional — for running the test suite)
-
-From the repository root, install the module and its test dependencies:
+Run this command from the repository root:
 
 ```bash
-python3 -m pip install -e "./Agent_module[test]"
-python3 -m pip install -e "./Agent_module[all]"  # also install optional HNSW support
+python -m pip install -e Agent_module
 ```
 
----
+The module requires Python 3.10 or newer and uses only the Python standard library.
 
-## Your first demo in 5 minutes
+## Enable Codex Synchronization
 
-The fastest path is to run the bundled end-to-end example, then read
-[QUICKSTART.md](QUICKSTART.md) to understand each step.
+The repository includes the `ai-carbon-sync` Codex skill. The skill keeps generated files, Agent conversations, and file-level context synchronized with an `.AI_carbon` archive during a development session.
 
-### Step 1 — run the bundled demo
+Activate it in the first Codex request of a session:
 
-From the repo root:
-
-```bash
-python3 Agent_module/examples/carbondata_quickstart.py
+```text
+$ai-carbon-sync Use .AI_carbon/project.AI_carbon for this development session.
 ```
 
-This script walks through all four scenarios on a tiny in-memory corpus
-about Python web frameworks, ML libraries, and recipes. It uses a
-hand-rolled vocabulary embedder so you don't need any external model to see
-real top-k ranking. Expected output is a series of labelled sections
-showing search hits, recalled memories, structured-query rows, and a graph
-traversal.
+If no archive is specified, the skill uses `.AI_carbon/<workspace-name>.AI_carbon` as the default location. The project-level `AGENTS.md` also instructs Codex to use this workflow when working in this module.
 
-### Step 2 — write your own minimal demo
-
-Once the bundled example runs, paste this into `my_first_demo.py` and run
-it from the repo root with `python3 my_first_demo.py`:
+## Quick Start
 
 ```python
-import numpy as np
-from Agent_module.carbon_data import LambdaEmbedder, create
+from Agent_module.ai_carbon import AI_carbon
 
-# 1) An embedder. In a real app this wraps OpenAI / sentence-transformers /
-#    a local model. Here we use random vectors just to make the API run.
-def encode(texts):
-    return np.random.randn(len(texts), 384).astype(np.float32)
+project = AI_carbon.create("demo.AI_carbon", "Demo Project")
 
-embedder = LambdaEmbedder(encode, model="demo-model", dim=384)
-
-# 2) Create a knowledge file.
-store = create("kb.carbondata", exist_ok=True)
-
-# 3) Ingest some text — chunked by paragraph, embedded, indexed for FTS.
-store.ingest_text(
-    "Django is a Python web framework.\n\n"
-    "PyTorch is a deep-learning library.\n\n"
-    "Sourdough needs a long fermentation.",
-    id="doc-1",
-    embedder=embedder,
+artifact = project.add_text(
+    "This is the first draft.",
+    "output/result.txt",
+    context={
+        "goal": "Generate a concise result summary",
+        "decisions": ["Use clear language", "Keep it under 100 words"],
+        "constraints": ["Do not change the conclusion"],
+        "acceptance_criteria": ["Clear content", "Correct format"],
+    },
+    conversation=[
+        {"role": "user", "content": "Generate a result summary."},
+        {"role": "assistant", "content": "Generated output/result.txt."},
+    ],
 )
 
-# 4) Query in three modes.
-print("vector :", store.search("python web", embedder=embedder, top_k=2))
-print("keyword:", store.search("python", mode="keyword", top_k=2))
-print("hybrid :", store.search("python", mode="hybrid", embedder=embedder, top_k=2))
-
-# 5) Write and read a memory tied to a session.
-store.remember("user prefers Vim", session_id="s1", embedder=embedder)
-print("recall :", store.recall("editor", session_id="s1", embedder=embedder))
-
-# 6) Add a relation and walk the graph.
-store.put_entity(id="doc-2", kind="document", content="Flask")
-store.add_relation("doc-1", "doc-2", "references")
-print("subgraph:", store.subgraph(["doc-1"], max_hops=2))
-
-store.close()
+project.close()
 ```
 
-You now have a working `kb.carbondata` file on disk. Open it again in
-another script with `carbon_data.open("kb.carbondata")` — all your
-entities, embeddings, relations, and memories will still be there.
+Open an existing archive:
 
-SQLite WAL mode may create temporary `-wal` and `-shm` sidecar files while
-the store is open. A clean close normally checkpoints the database back to
-the primary file; applications must not copy a live store without its WAL
-state.
+```python
+from Agent_module.ai_carbon import AI_carbon
 
-### Step 3 — go deeper
+project = AI_carbon.open("demo.AI_carbon")
 
-[**QUICKSTART.md**](QUICKSTART.md) covers each scenario in detail:
-custom chunkers, namespace isolation, transactions, HNSW dispatch policy,
-admin operations (`validate`, `compact`, `export`, `stats`), and what is
-deliberately **out of scope** for v1.
-
-For the full API surface, read the `class CarbonStore` docstring in
-[`carbon_data/store.py`](carbon_data/store.py).
-
----
-
-## Running the tests
-
-```bash
-python3 -m pytest Agent_module/tests/ -v
+for file in project.list_files():
+    print(file.path, file.revision)
+    print(project.get_context(file))
+    print(project.get_conversation(file))
 ```
 
-Tests are split by milestone (M1 schema → M9 admin); each file is a
-self-contained walkthrough of one feature area and doubles as readable
-documentation.
+## Optimizing with Historical Context
 
----
+`optimize()` passes an `OptimizationContext` object to the Agent callback. It contains:
 
-## Debugging tip
+- `content`: the current file content
+- `context`: the current file context
+- `conversation`: the historical Agent conversation
+- `revisions`: context snapshots from all previous revisions
+- `artifact`: file path, revision, size, SHA-256 checksum, and other metadata
 
-A `.carbondata` file is just SQLite. You can inspect it with any SQLite
-tool at any time:
+```python
+def agent(previous, instruction):
+    old_text = previous.content.decode("utf-8")
+    old_context = previous.context
+
+    # Connect your actual Agent or model API here.
+    return (
+        f"Goal: {old_context['goal']}\n\n"
+        f"{old_text}\n\n"
+        f"Optimization request: {instruction}"
+    )
+
+
+project.optimize(
+    artifact,
+    "Improve clarity while preserving the existing constraints.",
+    agent,
+    context={"last_optimizer": "writing-agent"},
+)
+```
+
+Optimization does not overwrite historical context. It creates a new revision, such as `v002.json`.
+
+## `.AI_carbon` Archive Structure
+
+`.AI_carbon` is a ZIP container and can be inspected with standard archive tools:
+
+```text
+manifest.json
+generated/
+  output/result.txt
+contexts/
+  <artifact-id>/
+    v001.json
+    v002.json
+conversations/
+  <artifact-id>.jsonl
+```
+
+`manifest.json` records the project name, generated file paths, revision numbers, file sizes, SHA-256 checksums, and context paths.
+
+## Web Management Page
+
+Start the local management page without specifying an archive:
 
 ```bash
-sqlite3 kb.carbondata
-sqlite> .tables
-sqlite> SELECT id, kind, namespace FROM entity LIMIT 10;
+python -m Agent_module.ai_carbon web
+```
+
+The browser opens a file picker. Select an existing `.AI_carbon` file from your computer, or drag and drop the file onto the drop zone.
+
+You can still open an archive directly:
+
+```bash
+python -m Agent_module.ai_carbon create .AI_carbon/demo.AI_carbon --name "Demo Project"
+python -m Agent_module.ai_carbon web .AI_carbon/demo.AI_carbon
+```
+
+Open the following address in a browser:
+
+```text
+http://127.0.0.1:8765/
+```
+
+Specify a different host or port if needed:
+
+```bash
+python -m Agent_module.ai_carbon web demo.AI_carbon --host 0.0.0.0 --port 9000
+```
+
+The page displays:
+
+- All generated files in the project
+- File revision, size, update time, and SHA-256 checksum
+- Current file content
+- The context associated with each file
+- The Agent conversation history
+
+## Command Line
+
+Create an archive:
+
+```bash
+python -m Agent_module.ai_carbon create demo.AI_carbon --name "Demo Project"
+```
+
+List the files in an archive:
+
+```bash
+python -m Agent_module.ai_carbon show demo.AI_carbon
+```
+
+Start the Web management page:
+
+```bash
+python -m Agent_module.ai_carbon web demo.AI_carbon
+```
+
+## Development and Testing
+
+Run the tests from the repository root:
+
+```bash
+python -m pytest Agent_module/tests/test_ai_carbon.py -q
 ```
