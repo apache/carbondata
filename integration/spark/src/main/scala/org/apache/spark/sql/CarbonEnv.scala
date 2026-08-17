@@ -401,7 +401,7 @@ object CarbonEnv {
       tmpPath = tmpPath + "_" + tableId
     }
     val path = new Path(tmpPath)
-    val fs = path.getFileSystem(sparkSession.sparkContext.hadoopConfiguration)
+    val fs = path.getFileSystem(sparkSession.sessionState.newHadoopConf())
     fs.makeQualified(path).toString
   }
 
