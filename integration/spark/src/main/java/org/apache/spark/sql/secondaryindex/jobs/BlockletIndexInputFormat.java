@@ -20,11 +20,9 @@ package org.apache.spark.sql.secondaryindex.jobs;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -38,7 +36,6 @@ import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.index.dev.CacheableIndex;
 import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.index.dev.expr.IndexExprWrapper;
-import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.BlockletIndexStore;
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
@@ -127,8 +124,6 @@ public class BlockletIndexInputFormat
       Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletIndexWrapper> cache =
           CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX);
       private Iterator<TableBlockIndexUniqueIdentifier> iterator;
-      // Cache to avoid multiple times listing of files
-      private Map<String, Map<String, BlockMetaInfo>> segInfoCache = new HashMap<>();
 
       @Override
       public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
@@ -152,8 +147,7 @@ public class BlockletIndexInputFormat
               new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier, table,
                   false, true, true);
           this.tableBlockIndexUniqueIdentifierWrapper = tableBlockIndexUniqueIdentifierWrapper;
-          wrapper = ((BlockletIndexStore) cache)
-              .get(tableBlockIndexUniqueIdentifierWrapper, segInfoCache);
+          wrapper = ((BlockletIndexStore) cache).get(tableBlockIndexUniqueIdentifierWrapper);
           return true;
         }
         return false;

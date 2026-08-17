@@ -19,7 +19,6 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,11 +66,6 @@ public class BlockletIndexStore
 
   @Override
   public BlockletIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper) {
-    return get(identifierWrapper, null);
-  }
-
-  public BlockletIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
-      Map<String, Map<String, BlockMetaInfo>> segInfoCache) {
     TableBlockIndexUniqueIdentifier identifier =
         identifierWrapper.getTableBlockIndexUniqueIdentifier();
     String lruCacheKey = identifier.getUniqueTableSegmentIdentifier();
@@ -83,24 +77,11 @@ public class BlockletIndexStore
         SegmentIndexFileStore indexFileStore =
             new SegmentIndexFileStore(identifierWrapper.getConfiguration());
         Set<String> filesRead = new HashSet<>();
-        String segmentFilePath = identifier.getIndexFilePath();
-        if (segInfoCache == null) {
-          segInfoCache = new HashMap<>();
-        }
-        Map<String, BlockMetaInfo> carbonDataFileBlockMetaInfoMapping =
-            segInfoCache.get(segmentFilePath);
-        if (carbonDataFileBlockMetaInfoMapping == null) {
-          carbonDataFileBlockMetaInfoMapping =
-              BlockletIndexUtil.createCarbonDataFileBlockMetaInfoMapping(segmentFilePath,
-                  identifierWrapper.getConfiguration());
-          segInfoCache.put(segmentFilePath, carbonDataFileBlockMetaInfoMapping);
-        }
         // if the identifier is not a merge file we can directly load the indexes
         if (identifier.getMergeIndexFileName() == null) {
           List<DataFileFooter> indexInfos = new ArrayList<>();
           Map<String, BlockMetaInfo> blockMetaInfoMap = BlockletIndexUtil
-              .getBlockMetaInfoMap(identifierWrapper, indexFileStore, filesRead,
-                  carbonDataFileBlockMetaInfoMapping, indexInfos);
+              .getBlockMetaInfoMap(identifierWrapper, indexFileStore, filesRead, indexInfos);
           BlockIndex blockIndex =
               loadAndGetIndex(identifier, indexFileStore, blockMetaInfoMap,
                   identifierWrapper.getCarbonTable(),
@@ -120,8 +101,7 @@ public class BlockletIndexStore
             List<DataFileFooter> indexInfos = new ArrayList<>();
             Map<String, BlockMetaInfo> blockMetaInfoMap = BlockletIndexUtil.getBlockMetaInfoMap(
                 new TableBlockIndexUniqueIdentifierWrapper(blockIndexUniqueIdentifier,
-                    identifierWrapper.getCarbonTable()), indexFileStore, filesRead,
-                carbonDataFileBlockMetaInfoMapping, indexInfos);
+                    identifierWrapper.getCarbonTable()), indexFileStore, filesRead, indexInfos);
             if (!blockMetaInfoMap.isEmpty()) {
               BlockIndex blockIndex =
                   loadAndGetIndex(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap,
@@ -157,8 +137,6 @@ public class BlockletIndexStore
   public List<BlockletIndexWrapper> getAll(
       List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiers)
       throws IOException {
-    Map<String, Map<String, BlockMetaInfo>> segInfoCache =
-        new HashMap<String, Map<String, BlockMetaInfo>>();
 
     List<BlockletIndexWrapper> blockletIndexWrappers =
         new ArrayList<>(tableSegmentUniqueIdentifiers.size());
@@ -177,7 +155,7 @@ public class BlockletIndexStore
       }
       if (missedIdentifiersWrapper.size() > 0) {
         for (TableBlockIndexUniqueIdentifierWrapper identifierWrapper : missedIdentifiersWrapper) {
-          blockletIndexWrapper = get(identifierWrapper, segInfoCache);
+          blockletIndexWrapper = get(identifierWrapper);
           blockletIndexWrappers.add(blockletIndexWrapper);
         }
       }

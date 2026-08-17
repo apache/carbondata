@@ -22,7 +22,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.permission.FsPermission;
 
 public interface CarbonFile {
@@ -40,11 +39,6 @@ public interface CarbonFile {
   List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter) throws IOException;
 
   List<CarbonFile> listDirs() throws IOException;
-
-  /**
-   * It returns list of files with location details.
-   */
-  CarbonFile[] locationAwareListFiles(PathFilter pathFilter) throws IOException;
 
   String getName();
 

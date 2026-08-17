@@ -49,7 +49,6 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.log4j.Logger;
 import org.xerial.snappy.SnappyInputStream;
@@ -440,11 +439,6 @@ public class LocalCarbonFile implements CarbonFile {
   @Override
   public boolean createNewLockFile() throws IOException {
     return file.createNewFile();
-  }
-
-  @Override
-  public CarbonFile[] locationAwareListFiles(PathFilter pathFilter) {
-    return listFiles();
   }
 
   @Override
