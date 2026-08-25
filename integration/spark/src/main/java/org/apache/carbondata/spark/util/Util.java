@@ -69,6 +69,8 @@ public class Util {
       return DataTypes.IntegerType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
       return DataTypes.LongType;
+    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.FLOAT) {
+      return DataTypes.FloatType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE) {
       return DataTypes.DoubleType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN) {

@@ -169,6 +169,59 @@ public class GreaterThanEqualToExpressionUnitTest {
     assertFalse(result.getBoolean());
   }
 
+  @Test
+  public void testEvaluateForGreaterThanEqualToExpressionWithFloatDataType()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.FLOAT);
+    right.setColIndex(0);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.FLOAT);
+    left.setColIndex(1);
+    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    RowImpl value = new RowImpl();
+    Float[] row = { 44f };
+    Float[] row1 = { 45f };
+    Object[] objectRow = { row1, row };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      @Mock public Float getFloat() {
+        return 45f;
+      }
+    };
+
+    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    assertTrue(result.getBoolean());
+  }
+
+  @Test
+  public void testEvaluateForGreaterThanEqualToExpressionWithFloatDataType1()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.FLOAT);
+    right.setColIndex(0);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.FLOAT);
+    left.setColIndex(1);
+    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    RowImpl value = new RowImpl();
+    Float[] row = { 44f };
+    Float[] row1 = { 45f };
+    Object[] objectRow = { row1, row };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      boolean isFirst = true;
+      @Mock public Float getFloat() {
+        if (isFirst) {
+          isFirst = false;
+          return 44f;
+        }
+        return 45f;
+      }
+    };
+
+    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    assertFalse(result.getBoolean());
+  }
+
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);

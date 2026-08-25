@@ -445,6 +445,8 @@ public abstract class ColumnPage {
       return getInt(rowId);
     } else if (dataType == LONG) {
       return getLong(rowId);
+    } else if (dataType == DataTypes.FLOAT) {
+      return getFloat(rowId);
     } else if (dataType == DataTypes.DOUBLE) {
       return getDouble(rowId);
     } else if (DataTypes.isDecimal(dataType)) {
@@ -560,6 +562,8 @@ public abstract class ColumnPage {
       result = getInt(rowId);
     } else if (dataType == LONG) {
       result = getLong(rowId);
+    } else if (dataType == DataTypes.FLOAT) {
+      return getFloat(rowId);
     } else if (dataType == DataTypes.DOUBLE) {
       result = getDouble(rowId);
     } else if (DataTypes.isDecimal(dataType)) {

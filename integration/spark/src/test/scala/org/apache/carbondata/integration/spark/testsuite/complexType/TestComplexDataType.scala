@@ -1263,7 +1263,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(s"select count(1) from ${tableName}"), Seq(Row(10)))
     checkAnswer(sql(s"select modela[0][0], modela_ms[0][1] from ${tableName} " +
                     s"where id = 'e01a1773-bd37-40be-a1de-d7e74837a281'"),
-      Seq(Row(0.0, 0.10781755)))
+      Seq(Row(0.0, 0.107818f)))
     sql(s"drop table if exists ${tableName}")
   }
   // scalastyle:on lineLength

@@ -172,6 +172,37 @@ public class LessThanExpressionUnitTest {
 
   }
 
+  @Test
+  public void testEvaluateForLessThanExpressionWithFloatDataType()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.FLOAT);
+    right.setColIndex(0);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.FLOAT);
+    left.setColIndex(1);
+    lessThanExpression = new LessThanExpression(left, right);
+    RowImpl value = new RowImpl();
+    Float[] row = { 2087f };
+    Float[] row1 = { 4454f };
+    Object[] objectRow = { row1, row };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
+      @Mock public Float getFloat() {
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return 2087f;
+        } else {
+          return 4454f;
+        }
+      }
+    };
+
+    ExpressionResult result = lessThanExpression.evaluate(value);
+    assertTrue(result.getBoolean());
+  }
+
   @Test public void testEvaluateForLessThanExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);

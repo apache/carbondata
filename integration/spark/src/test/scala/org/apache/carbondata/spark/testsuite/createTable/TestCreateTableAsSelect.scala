@@ -469,6 +469,18 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from target_table"), Seq(Row("shenzhen", "shenzhen")))
   }
 
+  test("test float column") {
+    sql("create table if not exists float_table(f float)")
+    sql("insert into table float_table select 12.36")
+    sql("create table carbon_table stored as carbondata as select * from float_table")
+    checkAnswer(sql("select * from carbon_table"),
+      sql("select * from float_table"))
+    sql("create table carbon_table1(f float) stored as carbondata")
+    sql("insert into table carbon_table1 select 12.36")
+    checkAnswer(sql("select * from carbon_table1"),
+      sql("select * from float_table"))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS carbon_ctas_test")
     sql("DROP TABLE IF EXISTS parquet_ctas_test")
@@ -485,5 +497,8 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS ctas_if_table_name")
     sql("DROP TABLE IF EXISTS source_table")
     sql("DROP TABLE IF EXISTS target_table")
+    sql("DROP TABLE IF EXISTS float_table")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("DROP TABLE IF EXISTS carbon_table1")
   }
 }

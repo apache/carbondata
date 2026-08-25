@@ -166,6 +166,8 @@ public class DefaultEncodingFactory extends EncodingFactory {
       return fitLongMinMax((int) max, (int) min);
     } else if ((dataType == DataTypes.LONG) || (dataType == DataTypes.TIMESTAMP)) {
       return fitLongMinMax((long) max, (long) min);
+    } else if (dataType == DataTypes.FLOAT) {
+      return fitLongMinMax((long) (float) max, (long) (float) min);
     } else if (dataType == DataTypes.DOUBLE) {
       return fitLongMinMax((long) (double) max, (long) (double) min);
     } else {
@@ -212,6 +214,8 @@ public class DefaultEncodingFactory extends EncodingFactory {
       value = (long) (short) max - (long) (short) min;
     } else if (dataType == DataTypes.INT) {
       value = (long) (int) max - (long) (int) min;
+    } else if (dataType == DataTypes.FLOAT) {
+      value = (long) (float) max - (long) (float) min;
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       value = (long) max - (long) min;
       // The subtraction overflowed iff the operands have opposing signs
@@ -329,6 +333,9 @@ public class DefaultEncodingFactory extends EncodingFactory {
     // If absMaxValue exceeds LONG.MAX_VALUE, then go for direct compression
     if ((Math.pow(10, decimalCount) * absMaxValue) > Long.MAX_VALUE) {
       return new DirectCompressCodec(DataTypes.DOUBLE);
+    } else if (srcDataType == DataTypes.FLOAT &&
+        (Math.pow(10, decimalCount) * absMaxValue) > Integer.MAX_VALUE) {
+      return new DirectCompressCodec(DataTypes.FLOAT);
     } else {
       long max = (long) (Math.pow(10, decimalCount) * absMaxValue);
       DataType adaptiveDataType = fitLongMinMax(max, 0);

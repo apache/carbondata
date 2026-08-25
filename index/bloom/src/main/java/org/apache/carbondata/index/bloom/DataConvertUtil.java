@@ -63,6 +63,8 @@ public class DataConvertUtil {
       return 0;
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return 0L;
+    } else if (dataType == DataTypes.FLOAT) {
+      return 0.0f;
     } else if (dataType == DataTypes.DOUBLE) {
       return 0.0;
     } else if (DataTypes.isDecimal(dataType)) {

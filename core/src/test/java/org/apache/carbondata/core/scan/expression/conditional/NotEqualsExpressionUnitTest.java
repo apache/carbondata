@@ -190,6 +190,37 @@ public class NotEqualsExpressionUnitTest {
     assertFalse(result.getBoolean());
   }
 
+  @Test
+  public void testEvaluateForNotEqualsExpressionWithFloatDataType()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.FLOAT);
+    right.setColIndex(1);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.FLOAT);
+    left.setColIndex(0);
+    notEqualsExpression = new NotEqualsExpression(left, right);
+    RowImpl value = new RowImpl();
+    Float[] row = { 445.2f };
+    Float[] row1 = { 452.08f };
+    Object[] objectRow = { row, row1 };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
+      @Mock public Float getFloat() {
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return 445.2f;
+        } else {
+          return 452.08f;
+        }
+      }
+    };
+
+    ExpressionResult result = notEqualsExpression.evaluate(value);
+    assertTrue(result.getBoolean());
+  }
+
   @Test public void testEvaluateForNotEqualsExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);

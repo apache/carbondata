@@ -833,6 +833,8 @@ public final class FilterUtil {
         return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
       } else if (dataType == DataTypes.INT) {
         return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
+      } else if (dataType == DataTypes.FLOAT) {
+        return Float.compare((Float.parseFloat(dictionaryVal)), (Float.parseFloat(memberVal)));
       } else if (dataType == DataTypes.DOUBLE) {
         return Double.compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
       } else if (dataType == DataTypes.LONG) {
@@ -890,6 +892,10 @@ public final class FilterUtil {
     }
   }
 
+  public static boolean nanSafeEqualsFloats(Float f1, Float f2) {
+    return (f1.floatValue() == f2.floatValue()) || (Float.isNaN(f1) && Float.isNaN(f2));
+  }
+
   /**
    * This method will compare double values for its equality and also it will preserve
    * the -0.0 and 0.0 equality as per == ,also preserve NaN equality check as per
@@ -901,7 +907,6 @@ public final class FilterUtil {
    */
   public static boolean nanSafeEqualsDoubles(Double d1, Double d2) {
     return (d1.doubleValue() == d2.doubleValue()) || (Double.isNaN(d1) && Double.isNaN(d2));
-
   }
 
   /**

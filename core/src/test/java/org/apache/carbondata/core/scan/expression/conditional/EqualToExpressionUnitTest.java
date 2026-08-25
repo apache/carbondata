@@ -116,6 +116,27 @@ public class EqualToExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
+  @Test
+  public void testEvaluateForEqualToExpressionWithFloatDataType()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression right = new ColumnExpression("contact", DataTypes.FLOAT);
+    right.setColIndex(0);
+    equalToExpression = new EqualToExpression(right, right);
+    RowImpl value = new RowImpl();
+    Float[] row = { 44f };
+    Object[] objectRow = { row };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      @Mock public Float getFloat() {
+        return 44f;
+      }
+    };
+
+    ExpressionResult result = equalToExpression.evaluate(value);
+    assertTrue(result.getBoolean());
+  }
+
   @Test public void testEvaluateForEqualToExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataTypes.DOUBLE);

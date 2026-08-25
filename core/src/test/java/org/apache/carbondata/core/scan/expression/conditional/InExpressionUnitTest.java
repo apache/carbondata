@@ -122,6 +122,30 @@ public class InExpressionUnitTest {
 
   }
 
+  @Test
+  public void testEvaluateForInExpressionWithFloatDataType()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.FLOAT);
+    left.setColIndex(0);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.FLOAT);
+    right.setColIndex(1);
+    inExpression = new InExpression(left, right);
+    RowImpl value = new RowImpl();
+    float row = 44521f;
+    float row1 = 44521f;
+    Object[] objectRow = { row, row1 };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      @Mock public Float getFloat() {
+        return 44521f;
+      }
+    };
+
+    ExpressionResult result = inExpression.evaluate(value);
+    assertTrue(result.getBoolean());
+  }
+
   @Test public void testEvaluateForInExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
