@@ -59,6 +59,9 @@ import org.apache.log4j.Logger;
 public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     implements Serializable, Writable {
 
+  // Keep attacker-controlled RPC allocations bounded. This matches Hadoop's default IPC limit.
+  static final int MAX_FILTER_RESOLVER_SIZE = 64 * 1024 * 1024;
+
   private static final transient Logger LOGGER =
       LogServiceFactory.getLogService(IndexInputFormat.class.getName());
 
@@ -317,10 +320,15 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
       }
     }
     if (in.readBoolean()) {
-      byte[] filterResolverBytes = new byte[in.readInt()];
+      int filterResolverSize = in.readInt();
+      if (filterResolverSize < 0 || filterResolverSize > MAX_FILTER_RESOLVER_SIZE) {
+        throw new IOException("Invalid filter resolver size: " + filterResolverSize);
+      }
+      byte[] filterResolverBytes = new byte[filterResolverSize];
       in.readFully(filterResolverBytes, 0, filterResolverBytes.length);
-      this.filterResolverIntf = (FilterResolverIntf) ObjectSerializationUtil
-          .convertStringToObject(new String(filterResolverBytes, Charset.defaultCharset()));
+      this.filterResolverIntf = ObjectSerializationUtil.convertStringToObject(
+          new String(filterResolverBytes, Charset.defaultCharset()), FilterResolverIntf.class,
+          "org.apache.carbondata.");
     }
     this.indexToClear = in.readUTF();
     this.taskGroupId = in.readUTF();
