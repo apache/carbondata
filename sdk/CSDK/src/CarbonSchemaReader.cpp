@@ -34,7 +34,7 @@ jobject CarbonSchemaReader::readSchema(char *path) {
     return readSchema(path, conf);
 }
 
-jobject CarbonSchemaReader::readSchema(char *path, Configuration conf) {
+jobject CarbonSchemaReader::readSchema(char *path, Configuration &conf) {
     if (path == NULL) {
         throw std::runtime_error("path parameter can't be NULL.");
     }
@@ -54,7 +54,7 @@ jobject CarbonSchemaReader::readSchema(char *path, Configuration conf) {
     return result;
 }
 
-jobject CarbonSchemaReader::readSchema(char *path, bool validateSchema, Configuration conf) {
+jobject CarbonSchemaReader::readSchema(char *path, bool validateSchema, Configuration &conf) {
     if (path == NULL) {
         throw std::runtime_error("path parameter can't be NULL.");
     }

@@ -58,6 +58,9 @@ public:
     * @param env JNI env
     */
     Configuration(JNIEnv *env);
+    ~Configuration();
+    Configuration(const Configuration &) = delete;
+    Configuration &operator=(const Configuration &) = delete;
 
     /**
      * configure parameter, including ak,sk and endpoint
