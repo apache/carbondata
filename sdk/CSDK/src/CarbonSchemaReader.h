@@ -60,7 +60,7 @@ public:
      *                       end point and other conf with this
      * @return schema
      */
-    jobject readSchema(char *path, Configuration conf);
+    jobject readSchema(char *path, Configuration &conf);
 
     /**
      *  read schema from path,
@@ -73,7 +73,7 @@ public:
      *                       end point and other conf with this
      * @return schema
      */
-    jobject readSchema(char *path, bool validateSchema, Configuration conf);
+    jobject readSchema(char *path, bool validateSchema, Configuration &conf);
 
     /**
      *  read schema from path,

@@ -20,18 +20,48 @@
 
 Configuration::Configuration(JNIEnv *env) {
     this->jniEnv = env;
-    configurationClass = env->FindClass("org/apache/hadoop/conf/Configuration");
+    jclass localClass = env->FindClass("org/apache/hadoop/conf/Configuration");
+    if (localClass == NULL) {
+        throw std::runtime_error("Can't find the class in java: org/apache/hadoop/conf/Configuration");
+    }
+    configurationClass = (jclass) env->NewGlobalRef(localClass);
+    env->DeleteLocalRef(localClass);
     if (configurationClass == NULL) {
         throw std::runtime_error("Can't find the class in java: org/apache/hadoop/conf/Configuration");
     }
 
     initID = jniEnv->GetMethodID(configurationClass, "<init>", "()V");
     if (initID == NULL) {
+        jniEnv->DeleteGlobalRef(configurationClass);
+        configurationClass = NULL;
         throw std::runtime_error("Can't find init it in java: org/apache/hadoop/conf/Configuration");
     }
-    configurationObject = jniEnv->NewObject(configurationClass, initID);
-    if (configurationClass == NULL) {
+    jobject localObject = jniEnv->NewObject(configurationClass, initID);
+    if (localObject == NULL) {
+        jniEnv->DeleteGlobalRef(configurationClass);
+        configurationClass = NULL;
         throw std::runtime_error("Can't create object in java: org/apache/hadoop/conf/Configuration");
+    }
+    configurationObject = jniEnv->NewGlobalRef(localObject);
+    jniEnv->DeleteLocalRef(localObject);
+    if (configurationObject == NULL) {
+        jniEnv->DeleteGlobalRef(configurationClass);
+        configurationClass = NULL;
+        throw std::runtime_error("Can't create object in java: org/apache/hadoop/conf/Configuration");
+    }
+}
+
+Configuration::~Configuration() {
+    if (jniEnv == NULL) {
+        return;
+    }
+    if (configurationObject != NULL) {
+        jniEnv->DeleteGlobalRef(configurationObject);
+        configurationObject = NULL;
+    }
+    if (configurationClass != NULL) {
+        jniEnv->DeleteGlobalRef(configurationClass);
+        configurationClass = NULL;
     }
 }
 
@@ -61,10 +91,18 @@ void Configuration::set(char *key, char *value) {
         }
     }
 
+    jstring jKey = jniEnv->NewStringUTF(key);
+    jstring jValue = jniEnv->NewStringUTF(value);
     jvalue args[2];
-    args[0].l = jniEnv->NewStringUTF(key);
-    args[1].l = jniEnv->NewStringUTF(value);
+    args[0].l = jKey;
+    args[1].l = jValue;
     jniEnv->CallObjectMethodA(configurationObject, setID, args);
+    if (jKey != NULL) {
+        jniEnv->DeleteLocalRef(jKey);
+    }
+    if (jValue != NULL) {
+        jniEnv->DeleteLocalRef(jValue);
+    }
 }
 
 
@@ -86,12 +124,20 @@ char *Configuration::get(char *key, char *defaultValue) {
         }
     }
 
+    jstring jKey = jniEnv->NewStringUTF(key);
+    jstring jDefaultValue = jniEnv->NewStringUTF(defaultValue);
     jvalue args[2];
-    args[0].l = jniEnv->NewStringUTF(key);
-    args[1].l = jniEnv->NewStringUTF(defaultValue);
+    args[0].l = jKey;
+    args[1].l = jDefaultValue;
 
     jobject result = jniEnv->CallObjectMethodA(configurationObject, getID, args);
     char *str = (char *) jniEnv->GetStringUTFChars((jstring) result, JNI_FALSE);
+    if (jKey != NULL) {
+        jniEnv->DeleteLocalRef(jKey);
+    }
+    if (jDefaultValue != NULL) {
+        jniEnv->DeleteLocalRef(jDefaultValue);
+    }
     jniEnv->DeleteLocalRef(result);
     return str;
 }
