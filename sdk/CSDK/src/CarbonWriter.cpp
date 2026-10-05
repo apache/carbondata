@@ -18,21 +18,82 @@
 #include <stdexcept>
 #include "CarbonWriter.h"
 
+namespace {
+
+// This SDK embeds a JVM and keeps JNIEnv for the writer lifetime, so local
+// references are not released when a C++ function returns. Temporaries go in
+// a local frame. Objects stored on CarbonWriter are global references.
+class JniLocalFrame {
+public:
+    explicit JniLocalFrame(JNIEnv *env, jint capacity) : env_(env), active_(false) {
+        if (env_->PushLocalFrame(capacity) != 0) {
+            throw std::runtime_error("Can't push JNI local frame.");
+        }
+        active_ = true;
+    }
+
+    ~JniLocalFrame() {
+        if (active_) {
+            env_->PopLocalFrame(NULL);
+        }
+    }
+
+    jobject pop(jobject keep) {
+        active_ = false;
+        return env_->PopLocalFrame(keep);
+    }
+
+private:
+    JniLocalFrame(const JniLocalFrame &);
+    JniLocalFrame &operator=(const JniLocalFrame &);
+
+    JNIEnv *env_;
+    bool active_;
+};
+
+template <typename T>
+void storeGlobalRef(JNIEnv *env, T &slot, T localRef) {
+    if (localRef == NULL) {
+        return;
+    }
+    T globalRef = static_cast<T>(env->NewGlobalRef(localRef));
+    env->DeleteLocalRef(localRef);
+    if (globalRef == NULL) {
+        throw std::runtime_error("Failed to create JNI global reference.");
+    }
+    if (slot != NULL) {
+        env->DeleteGlobalRef(slot);
+    }
+    slot = globalRef;
+}
+
+template <typename T>
+void deleteGlobalRef(JNIEnv *env, T &slot) {
+    if (slot != NULL) {
+        env->DeleteGlobalRef(slot);
+        slot = NULL;
+    }
+}
+
+}  // namespace
+
 void CarbonWriter::builder(JNIEnv *env) {
     if (env == NULL) {
         throw std::runtime_error("JNIEnv parameter can't be NULL.");
     }
     jniEnv = env;
-    carbonWriter = env->FindClass("org/apache/carbondata/sdk/file/CarbonWriter");
-    if (carbonWriter == NULL) {
+    jclass localClass = env->FindClass("org/apache/carbondata/sdk/file/CarbonWriter");
+    if (localClass == NULL) {
         throw std::runtime_error("Can't find the class in java: org/apache/carbondata/sdk/file/CarbonWriter");
     }
+    storeGlobalRef(env, carbonWriter, localClass);
     jmethodID carbonWriterBuilderID = env->GetStaticMethodID(carbonWriter, "builder",
         "()Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
     if (carbonWriterBuilderID == NULL) {
         throw std::runtime_error("Can't find the method in java: carbonWriterBuilder");
     }
-    carbonWriterBuilderObject = env->CallStaticObjectMethod(carbonWriter, carbonWriterBuilderID);
+    jobject localBuilder = env->CallStaticObjectMethod(carbonWriter, carbonWriterBuilderID);
+    storeGlobalRef(env, carbonWriterBuilderObject, localBuilder);
 }
 
 bool CarbonWriter::checkBuilder() {
@@ -46,6 +107,7 @@ void CarbonWriter::outputPath(char *path) {
         throw std::runtime_error("path parameter can't be NULL.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "outputPath",
         "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -55,7 +117,8 @@ void CarbonWriter::outputPath(char *path) {
     jstring jPath = jniEnv->NewStringUTF(path);
     jvalue args[1];
     args[0].l = jPath;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::sortBy(int argc, char **argv) {
@@ -66,28 +129,47 @@ void CarbonWriter::sortBy(int argc, char **argv) {
         throw std::runtime_error("argv parameter can't be NULL.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "sortBy",
         "([Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: sortBy");
     }
-    jclass objectArrayClass = jniEnv->FindClass("Ljava/lang/String;");
+    jclass objectArrayClass = jniEnv->FindClass("java/lang/String");
     if (objectArrayClass == NULL) {
         throw std::runtime_error("Can't find the class in java: java/lang/String");
     }
     jobjectArray array = jniEnv->NewObjectArray(argc, objectArrayClass, NULL);
+    if (array == NULL) {
+        if (jniEnv->ExceptionCheck()) {
+            jthrowable exception = jniEnv->ExceptionOccurred();
+            throw (jthrowable) frame.pop(exception);
+        }
+        throw std::runtime_error("Can't create String array for sortBy.");
+    }
     for (int i = 0; i < argc; ++i) {
         jstring value = jniEnv->NewStringUTF(argv[i]);
+        if (value == NULL) {
+            jthrowable exception = jniEnv->ExceptionOccurred();
+            throw (jthrowable) frame.pop(exception);
+        }
         jniEnv->SetObjectArrayElement(array, i, value);
+        jniEnv->DeleteLocalRef(value);
+        if (jniEnv->ExceptionCheck()) {
+            jthrowable exception = jniEnv->ExceptionOccurred();
+            throw (jthrowable) frame.pop(exception);
+        }
     }
 
     jvalue args[1];
     args[0].l = array;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 /**
@@ -101,6 +183,7 @@ void CarbonWriter::withCsvInput(char *jsonSchema) {
         throw std::runtime_error("jsonSchema parameter can't be NULL.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withCsvInput",
         "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -110,24 +193,29 @@ void CarbonWriter::withCsvInput(char *jsonSchema) {
     jstring jPath = jniEnv->NewStringUTF(jsonSchema);
     jvalue args[1];
     args[0].l = jPath;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 };
 
 void CarbonWriter::withCsvInput() {
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withCsvInput",
                                              "()Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: withCsvInput");
     }
-    carbonWriterBuilderObject = jniEnv->CallObjectMethod(carbonWriterBuilderObject, methodID);
+    jobject result = jniEnv->CallObjectMethod(carbonWriterBuilderObject, methodID);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 };
 
 void CarbonWriter::withHadoopConf(char *key, char *value) {
@@ -138,6 +226,7 @@ void CarbonWriter::withHadoopConf(char *key, char *value) {
         throw std::runtime_error("value parameter can't be NULL.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withHadoopConf",
         "(Ljava/lang/String;Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -147,7 +236,8 @@ void CarbonWriter::withHadoopConf(char *key, char *value) {
     jvalue args[2];
     args[0].l = jniEnv->NewStringUTF(key);
     args[1].l = jniEnv->NewStringUTF(value);
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::withTableProperty(char *key, char *value) {
@@ -158,6 +248,7 @@ void CarbonWriter::withTableProperty(char *key, char *value) {
         throw std::runtime_error("value parameter can't be NULL.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withTableProperty",
         "(Ljava/lang/String;Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -167,10 +258,12 @@ void CarbonWriter::withTableProperty(char *key, char *value) {
     jvalue args[2];
     args[0].l = jniEnv->NewStringUTF(key);
     args[1].l = jniEnv->NewStringUTF(value);
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::withLoadOption(char *key, char *value) {
@@ -181,6 +274,7 @@ void CarbonWriter::withLoadOption(char *key, char *value) {
         throw std::runtime_error("value parameter can't be NULL.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withLoadOption",
          "(Ljava/lang/String;Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -190,10 +284,12 @@ void CarbonWriter::withLoadOption(char *key, char *value) {
     jvalue args[2];
     args[0].l = jniEnv->NewStringUTF(key);
     args[1].l = jniEnv->NewStringUTF(value);
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::taskNo(long taskNo) {
@@ -201,6 +297,7 @@ void CarbonWriter::taskNo(long taskNo) {
         throw std::runtime_error("taskNo parameter can't be negative.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "taskNo",
         "(J)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -209,10 +306,12 @@ void CarbonWriter::taskNo(long taskNo) {
     }
     jvalue args[1];
     args[0].j = taskNo;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::uniqueIdentifier(long timestamp) {
@@ -220,6 +319,7 @@ void CarbonWriter::uniqueIdentifier(long timestamp) {
         throw std::runtime_error("timestamp parameter can't be negative.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "uniqueIdentifier",
         "(J)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -228,10 +328,12 @@ void CarbonWriter::uniqueIdentifier(long timestamp) {
     }
     jvalue args[1];
     args[0].j = timestamp;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::withThreadSafe(short numOfThreads) {
@@ -239,6 +341,7 @@ void CarbonWriter::withThreadSafe(short numOfThreads) {
         throw std::runtime_error("numOfThreads parameter can't be negative.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withThreadSafe",
         "(S)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -247,10 +350,12 @@ void CarbonWriter::withThreadSafe(short numOfThreads) {
     }
     jvalue args[1];
     args[0].s = numOfThreads;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::withBlockSize(int blockSize) {
@@ -258,6 +363,7 @@ void CarbonWriter::withBlockSize(int blockSize) {
         throw std::runtime_error("blockSize parameter should be positive number.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withBlockSize",
         "(I)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -266,10 +372,12 @@ void CarbonWriter::withBlockSize(int blockSize) {
     }
     jvalue args[1];
     args[0].i = blockSize;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::withBlockletSize(int blockletSize) {
@@ -277,6 +385,7 @@ void CarbonWriter::withBlockletSize(int blockletSize) {
         throw std::runtime_error("blockletSize parameter should be positive number.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withBlockletSize",
         "(I)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -285,10 +394,12 @@ void CarbonWriter::withBlockletSize(int blockletSize) {
     }
     jvalue args[1];
     args[0].i = blockletSize;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 /**
@@ -297,6 +408,7 @@ void CarbonWriter::withBlockletSize(int blockletSize) {
  */
 void CarbonWriter::withSchemaFile(char *schemaFilePath) {
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withSchemaFile",
                                              "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -305,10 +417,12 @@ void CarbonWriter::withSchemaFile(char *schemaFilePath) {
     }
     jvalue args[1];
     args[0].l = jniEnv->NewStringUTF(schemaFilePath);
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::localDictionaryThreshold(int localDictionaryThreshold) {
@@ -316,6 +430,7 @@ void CarbonWriter::localDictionaryThreshold(int localDictionaryThreshold) {
         throw std::runtime_error("localDictionaryThreshold parameter should be positive number.");
     }
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "localDictionaryThreshold",
         "(I)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -324,14 +439,17 @@ void CarbonWriter::localDictionaryThreshold(int localDictionaryThreshold) {
     }
     jvalue args[1];
     args[0].i = localDictionaryThreshold;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::enableLocalDictionary(bool enableLocalDictionary) {
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "enableLocalDictionary",
         "(Z)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -340,14 +458,17 @@ void CarbonWriter::enableLocalDictionary(bool enableLocalDictionary) {
     }
     jvalue args[1];
     args[0].z = enableLocalDictionary;
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::writtenBy(char *appName) {
     checkBuilder();
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "writtenBy",
         "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
@@ -356,7 +477,8 @@ void CarbonWriter::writtenBy(char *appName) {
     }
     jvalue args[1];
     args[0].l = jniEnv->NewStringUTF(appName);
-    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    jobject result = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    storeGlobalRef(jniEnv, carbonWriterBuilderObject, frame.pop(result));
 }
 
 void CarbonWriter::build() {
@@ -365,17 +487,19 @@ void CarbonWriter::build() {
     // If not add this, it will throw java.io.IOException: No FileSystem for scheme: file
     withHadoopConf("fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem");
 
+    JniLocalFrame frame(jniEnv, 16);
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "build",
         "()Lorg/apache/carbondata/sdk/file/CarbonWriter;");
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: build");
     }
-    carbonWriterObject = jniEnv->CallObjectMethod(carbonWriterBuilderObject, methodID);
-
+    jobject result = jniEnv->CallObjectMethod(carbonWriterBuilderObject, methodID);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
+    storeGlobalRef(jniEnv, carbonWriterObject, frame.pop(result));
 }
 
 bool CarbonWriter::checkWriter() {
@@ -387,8 +511,9 @@ bool CarbonWriter::checkWriter() {
 void CarbonWriter::write(jobject obj) {
     checkWriter();
     if (writeID == NULL) {
-        carbonWriter = jniEnv->GetObjectClass(carbonWriterObject);
-        writeID = jniEnv->GetMethodID(carbonWriter, "write", "(Ljava/lang/Object;)V");
+        JniLocalFrame frame(jniEnv, 4);
+        jclass writerClass = jniEnv->GetObjectClass(carbonWriterObject);
+        writeID = jniEnv->GetMethodID(writerClass, "write", "(Ljava/lang/Object;)V");
         if (writeID == NULL) {
             throw std::runtime_error("Can't find the method in java: write");
         }
@@ -403,16 +528,20 @@ void CarbonWriter::write(jobject obj) {
 
 void CarbonWriter::close() {
     checkWriter();
-    jclass carbonWriter = jniEnv->GetObjectClass(carbonWriterObject);
-    jmethodID methodID = jniEnv->GetMethodID(carbonWriter, "close", "()V");
+    JniLocalFrame frame(jniEnv, 4);
+    jclass writerClass = jniEnv->GetObjectClass(carbonWriterObject);
+    jmethodID methodID = jniEnv->GetMethodID(writerClass, "close", "()V");
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: close");
     }
     jniEnv->CallBooleanMethod(carbonWriterObject, methodID);
     if (jniEnv->ExceptionCheck()) {
-        throw jniEnv->ExceptionOccurred();
+        jthrowable exception = jniEnv->ExceptionOccurred();
+        throw (jthrowable) frame.pop(exception);
     }
-    jniEnv->DeleteLocalRef(carbonWriterBuilderObject);
-    jniEnv->DeleteLocalRef(carbonWriterObject);
-    jniEnv->DeleteLocalRef(carbonWriter);
+    frame.pop(NULL);
+    deleteGlobalRef(jniEnv, carbonWriterBuilderObject);
+    deleteGlobalRef(jniEnv, carbonWriterObject);
+    deleteGlobalRef(jniEnv, carbonWriter);
+    writeID = NULL;
 }
