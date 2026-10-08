@@ -394,13 +394,8 @@ object CarbonEnv {
       isExternal: Boolean,
       isTransactionalTable: Boolean
   )(sparkSession: SparkSession): String = {
-    var tmpPath = location.getOrElse(
-      CarbonEnv.newTablePath(databaseNameOp, tableName)(sparkSession))
-    if (!isExternal && isTransactionalTable && location.isEmpty &&
-        (FileFactory.getCarbonFile(tmpPath).exists() || EnvHelper.isLegacy(sparkSession))) {
-      tmpPath = tmpPath + "_" + tableId
-    }
-    val path = new Path(tmpPath)
+    val path = new Path(location.getOrElse(
+      CarbonEnv.newTablePath(databaseNameOp, tableName)(sparkSession)))
     val fs = path.getFileSystem(sparkSession.sparkContext.hadoopConfiguration)
     fs.makeQualified(path).toString
   }
