@@ -171,7 +171,7 @@ object CarbonSparkUtil {
   }
 
   def updateField(field: StructField): StructField = {
-    field.copy(name = field.name.toLowerCase, dataType = updateDataType(field.dataType))
+    field.copy(name = field.name, dataType = updateDataType(field.dataType))
   }
 
   def updateDataType(dataType: DataType): DataType = {
